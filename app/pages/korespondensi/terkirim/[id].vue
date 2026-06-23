@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
-  Users, FileText, Building2
+  Users, FileText, Building2, ChevronRight, ArrowDown,
+  PanelRightOpen, PanelRightClose, List, ArrowUpDown
 } from "lucide-vue-next";
 
 // Import Component Baru
@@ -34,6 +35,50 @@ const details = ref<any[]>([]);
 const selected = ref<any>(null);
 const isLoading = ref(true);
 const isKonsepData = ref(false);
+
+// Collapse management
+const collapsedIndices = ref<Set<number>>(new Set());
+const viewMode = ref<'all' | 'first-only'>('all');
+
+// Sidebar TOC state
+const showSidebar = ref(false);
+const activeSuratIndex = ref(0);
+
+const toggleSidebar = () => { showSidebar.value = !showSidebar.value; };
+
+const navigateToSurat = (index: number) => {
+  const detail = details.value[index];
+  if (!detail) return;
+  if (collapsedIndices.value.has(index)) {
+    toggleCardCollapse(index);
+  }
+  nextTick(() => {
+    const element = document.getElementById(`card-${detail.id || detail.urutan}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
+const updateActiveSurat = () => {
+  let bestIndex = 0;
+  let bestTop = Infinity;
+  details.value.forEach((detail, i) => {
+    const el = document.getElementById(`card-${detail.id || detail.urutan}`);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const dist = Math.abs(rect.top - 120);
+      if (rect.top < window.innerHeight && dist < bestTop) {
+        bestTop = dist;
+        bestIndex = i;
+      }
+    }
+  });
+  activeSuratIndex.value = bestIndex;
+};
+
+const handleScroll = () => {
+  if (showSidebar.value) updateActiveSurat();
+  checkScrollPosition();
+};
 
 // Helper Computed: Cek apakah data tunggal (untuk mematikan highlight)
 const isSingleData = computed(() => {
@@ -373,10 +418,67 @@ const loadData = async () => {
   }
 };
 
-onMounted(() => { loadData(); });
+onMounted(() => {
+  loadData();
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  checkScrollPosition();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 
 // --- ACTION HANDLERS (Sama seperti sebelumnya) ---
 const goBack = () => router.back();
+
+// Floating scroll FAB state
+const isAtBottom = ref(false);
+const checkScrollPosition = () => {
+  const threshold = 120;
+  isAtBottom.value = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold;
+};
+
+const scrollToEdge = () => {
+  if (isAtBottom.value) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  }
+};
+
+const goToFirstSurat = () => {
+  if (details.value.length === 0) return;
+  const firstIdx = details.value.length - 1;
+  collapsedIndices.value = new Set(
+    details.value.map((_, i) => i).filter(i => i !== firstIdx)
+  );
+  viewMode.value = 'first-only';
+  nextTick(() => {
+    const firstSurat = details.value[firstIdx];
+    const element = document.getElementById(`card-${firstSurat.id || firstSurat.urutan}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+};
+
+const goToLatestSurat = () => {
+  collapsedIndices.value = new Set();
+  viewMode.value = 'all';
+  nextTick(() => {
+    const latest = details.value[0];
+    const element = document.getElementById(`card-${latest.id || latest.urutan}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
+const toggleCardCollapse = (index: number) => {
+  const newSet = new Set(collapsedIndices.value);
+  if (newSet.has(index)) newSet.delete(index);
+  else newSet.add(index);
+  collapsedIndices.value = newSet;
+  viewMode.value = newSet.size === 0 ? 'all' : 'first-only';
+};
+
+const isCardCollapsed = (index: number) => collapsedIndices.value.has(index);
 const handleFinalize = () => { showFinalizeOptionsModal.value = true; };
 const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true; };
 const handleFinalizeAndRedirect = () => {
@@ -429,7 +531,10 @@ const konsepOptions = [
 <template>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
-  <div class="w-full flex flex-col gap-6 pt-4">
+  <div class="w-full flex gap-4 pt-4 relative">
+
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col gap-6 min-w-0">
 
     <div v-if="isLoading"
       class="w-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden animate-pulse shadow-sm border border-gray-200 dark:border-gray-800">
@@ -446,22 +551,102 @@ const konsepOptions = [
 
     <template v-else-if="details && details.length > 0">
       <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
-        :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
-          'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
-        }">
+        :id="`card-${detail.id || detail.urutan}`" class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
+        :class="{ 'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail) }">
 
-        <DetailNaskah context="sent" :data="detail" :is-head="index === 0"
-          :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-          :show-edit="isKonsepData && index === 0 && showEditAction"
-          :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
-          :user-position-id="positionId" :is-jenis-d-i="isJenisDI" @back="goBack"
-          @preview="(url) => openDocumentPreview(url, detail.perihal)" @preview-file="openPreviewFile"
-          @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
-          @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"
-          @lanjut-konsep="isOpenKonsepModal = true" />
+        <!-- Timeline connector line -->
+        <div v-if="index < details.length - 1" class="absolute left-5 -bottom-2 w-0.5 h-2 bg-linear-to-b from-primary-300 to-primary-200 dark:from-primary-600 dark:to-primary-700 z-0" />
 
+        <!-- Timeline dot -->
+        <div class="absolute left-3.5 top-4 z-10">
+          <div class="w-4 h-4 rounded-full border-2 border-primary-400 bg-white dark:bg-gray-800 flex items-center justify-center">
+            <div class="w-1.5 h-1.5 rounded-full bg-primary-500" />
+          </div>
+        </div>
+
+        <div class="ml-12">
+          <DetailNaskah context="sent" :data="detail" :is-head="index === 0"
+            :collapsed="isCardCollapsed(index)"
+            :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
+            :show-edit="isKonsepData && index === 0 && showEditAction"
+            :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
+            :user-position-id="positionId" :is-jenis-d-i="isJenisDI" @back="goBack"
+            @preview="(url) => openDocumentPreview(url, detail.perihal)" @preview-file="openPreviewFile"
+            @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
+            @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"
+            @lanjut-konsep="isOpenKonsepModal = true"
+            @toggle-collapse="toggleCardCollapse(index)" />
+        </div>
       </div>
     </template>
+
+    </div><!-- end main content -->
+
+    <!-- Floating scroll FAB -->
+    <button v-if="!isLoading && details.length > 1"
+      @click="scrollToEdge"
+      class="fixed right-4 bottom-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:bg-primary-700 active:scale-95 transition-all duration-200"
+      :aria-label="isAtBottom ? 'Ke atas' : 'Ke bawah'">
+      <ArrowUpDown class="w-4 h-4 transition-transform duration-300" :class="isAtBottom ? 'rotate-180' : ''" />
+      <span class="text-xs font-semibold">{{ isAtBottom ? 'Ke Atas' : 'Ke Bawah' }}</span>
+    </button>
+
+    <!-- Toggle sidebar button (Daftar Surat) -->
+    <button v-if="!showSidebar && !isLoading && details.length > 1"
+      @click="toggleSidebar"
+      class="fixed right-4 bottom-20 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-primary-500 hover:text-white hover:border-primary-500 active:scale-95 transition-all duration-200">
+      <PanelRightOpen class="w-4 h-4" />
+      <span>Daftar Surat</span>
+    </button>
+
+    <!-- Sidebar TOC Panel (right side) -->
+    <AnimatePresence>
+      <Motion v-if="showSidebar && !isLoading && details.length > 1"
+        :initial="{ opacity: 0, x: 50 }"
+        :animate="{ opacity: 1, x: 0 }"
+        :exit="{ opacity: 0, x: 50 }"
+        :transition="{ duration: 0.3, ease: 'easeInOut' }"
+        class="hidden lg:flex flex-col w-64 shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)]"
+        tag="div">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <List class="w-4 h-4 text-primary-500" />
+              Daftar Surat
+            </div>
+            <button @click="toggleSidebar"
+              class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <PanelRightClose class="w-4 h-4" />
+            </button>
+          </div>
+          <div class="overflow-y-auto flex-1 p-2 space-y-1">
+            <button v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
+              @click="navigateToSurat(index)"
+              class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group"
+              :class="activeSuratIndex === index
+                ? 'bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                  :class="index === 0 ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'">
+                  {{ details.length - index }}
+                </span>
+                <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 truncate">
+                  {{ detail.jenis_label || detail.jenis || '-' }}
+                </span>
+              </div>
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate"
+                :class="activeSuratIndex === index ? 'text-primary-700 dark:text-primary-300' : ''">
+                {{ detail.perihal || detail.subject || '(Tidak ada perihal)' }}
+              </p>
+              <p class="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                {{ detail.pengirim?.position_text || detail.from?.position_text || '-' }}
+              </p>
+            </button>
+          </div>
+        </div>
+      </Motion>
+    </AnimatePresence>
 
     <UModal v-model:open="isOpenKonsepModal" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>

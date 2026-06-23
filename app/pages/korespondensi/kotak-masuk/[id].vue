@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
-  Users, FileText, Building2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown
+  Users, FileText, Building2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown,
+  ArrowDown, ArrowUpDown,
+  PanelRightOpen, PanelRightClose, List
 } from "lucide-vue-next";
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
@@ -81,7 +83,7 @@ const getPermissions = (bodTag: string | null | undefined, surat: string) => {
   const suratNorm = surat?.toUpperCase();
   if (!bodTag) {
     return {
-      create: ['KO'],  // ← semua jenis surat bisa lanjut konsep untuk non-BOD
+      create: ['KO'],
       forward: [],
       reject: ['KO', 'K'].includes(suratNorm) ? ['Perbaiki'] : [],
       finalize: []
@@ -137,11 +139,53 @@ const isLoading = ref(true);
 const isKonsepData = ref(false);
 
 // --- NAVIGATION (previous/next dari kotak masuk) ---
-// Backend: previous = pesan lebih lama, next = pesan lebih baru.
-// UI user: '>' = lebih lama, '<' = lebih baru.
-const navPrev = ref<any>(null); // lebih lama
-const navNext = ref<any>(null); // lebih baru
+const navPrev = ref<any>(null);
+const navNext = ref<any>(null);
 const isLoadingNav = ref(false);
+
+// Collapse management
+const collapsedIndices = ref<Set<number>>(new Set());
+const viewMode = ref<'all' | 'first-only'>('all');
+
+// Sidebar TOC state
+const showSidebar = ref(false);
+const activeSuratIndex = ref(0);
+
+const toggleSidebar = () => { showSidebar.value = !showSidebar.value; };
+
+const navigateToSurat = (index: number) => {
+  const detail = visibleDetails.value[index];
+  if (!detail) return;
+  if (collapsedIndices.value.has(index)) {
+    toggleCardCollapse(index);
+  }
+  nextTick(() => {
+    const element = document.getElementById(`card-${detail.id || detail.urutan}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
+const updateActiveSurat = () => {
+  let bestIndex = 0;
+  let bestTop = Infinity;
+  visibleDetails.value.forEach((detail, i) => {
+    const el = document.getElementById(`card-${detail.id || detail.urutan}`);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const dist = Math.abs(rect.top - 120);
+      if (rect.top < window.innerHeight && dist < bestTop) {
+        bestTop = dist;
+        bestIndex = i;
+      }
+    }
+  });
+  activeSuratIndex.value = bestIndex;
+};
+
+const handleScroll = () => {
+  if (showSidebar.value) updateActiveSurat();
+  checkScrollPosition();
+};
 
 const showEditAction = ref(false);
 const showFinalizeActions = ref(false);
@@ -177,7 +221,6 @@ const processGrouping = (individuals: any[], groups: any[], senderPositionId?: s
     user.value?.position || ''
   );
 
-  // ID yang boleh "tidak hadir" di individualIds: user login + pengirim surat
   const excludedIds = new Set([myPosId, senderPositionId].filter(Boolean));
 
   for (const group of groups) {
@@ -215,16 +258,13 @@ const loadData = async () => {
   details.value = [];
   selected.value = null;
 
-  // Reset navigasi setiap ganti naskah
   navPrev.value = null;
   navNext.value = null;
 
   try {
-    // Navigasi hanya untuk pesan kotak masuk (bukan konsep)
     if (jenisQuery !== 'K') {
       isLoadingNav.value = true;
       try {
-        // Tanpa filter jenis agar navigasi mencakup semua pesan (seperti Gmail)
         const nav = await fetchInboxNavigation(id);
         navPrev.value = nav.previous;
         navNext.value = nav.next;
@@ -254,10 +294,6 @@ const loadData = async () => {
           new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime(),
       );
 
-      // Khusus kotak masuk:
-      // 1) naskah paling baru tetap di urutan pertama
-      // 2) sisipkan KN di urutan kedua (jika ada)
-      // 3) sisanya lanjut urut terbaru -> terlama
       const sortedFlows = (() => {
         if (baseSortedFlows.length <= 1) return baseSortedFlows;
 
@@ -276,7 +312,6 @@ const loadData = async () => {
         const lastFlow = sortedFlows[0];
         selected.value = lastFlow;
 
-        // Navigasi hanya untuk card head (naskah terbaru)
         const hasNewer = Boolean(navNext.value);
         const hasOlder = Boolean(navPrev.value);
 
@@ -284,7 +319,6 @@ const loadData = async () => {
         const myPosId = String(authUser?.position?.id || authUser?.position_id || authUser?.position || '');
         const lastAksi = lastFlow.detail?.aksi || lastFlow.aksi || '';
 
-        // Setujui/Tolak = user ada di penerima flow terbaru (A = yang harus menyetujui)
         const isInPenerima = Array.isArray(lastFlow.penerima)
           ? lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') === myPosId)
           : false;
@@ -294,7 +328,6 @@ const loadData = async () => {
           (lastAksi === 'create' || lastAksi === 'forward')
         );
 
-        // Perbaiki = user adalah pengirim (B = yang membuat konsep, konsepnya ditolak)
         const pengirimId = String(lastFlow.pengirim?.position_id || '');
         showEditAction.value = (
           lastAksi === 'reject' &&
@@ -306,7 +339,6 @@ const loadData = async () => {
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
 
-          // Ambil position_id pengirim flow ini
           const senderPosId = String(
             flow.detail?.naskah_pengirim?.position_id ||
             flow.pengirim?.position_id ||
@@ -354,7 +386,6 @@ const loadData = async () => {
           };
         });
 
-        // Jika ada flow KN dengan nomor valid, paksa aksi semua row menjadi finalize
         const hasFinalKonsepNaskah = details.value.some((row: any) => {
           const isKN = String(row?.jenis || '').toUpperCase() === 'KN';
           const nomor = String(row?.nomor || '').trim();
@@ -393,7 +424,6 @@ const loadData = async () => {
       if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
 
-        // Navigasi hanya untuk card head (naskah terbaru)
         const hasNewer = Boolean(navNext.value);
         const hasOlder = Boolean(navPrev.value);
 
@@ -435,8 +465,6 @@ const loadData = async () => {
             pengirim: item.pengirim || item.from || inboxData.pengirim,
             to: listPenerima,
             cc: listTembusan,
-            // Konten utama: fallback ke inboxData kalau item.konten kosong
-            // (umum terjadi di flow karena field konten ada di root response, bukan per flow)
             mainDisplayContentHtml:
               item.konten ||
               item.isi ||
@@ -475,6 +503,12 @@ onMounted(() => {
     };
   }
   loadData();
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  checkScrollPosition();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
 });
 
 watch(
@@ -496,16 +530,64 @@ const goToNav = (target: any) => {
   });
 };
 
-const goToNewer = () => goToNav(navNext.value); // '<' = pesan lebih baru
-const goToOlder = () => goToNav(navPrev.value); // '>' = pesan lebih lama
+const goToNewer = () => goToNav(navNext.value);
+const goToOlder = () => goToNav(navPrev.value);
+
+// Floating scroll FAB state
+const isAtBottom = ref(false);
+const checkScrollPosition = () => {
+  const threshold = 120;
+  isAtBottom.value = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold;
+};
+
+const scrollToEdge = () => {
+  if (isAtBottom.value) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  }
+};
+
+const goToFirstSurat = () => {
+  if (visibleDetails.value.length === 0) return;
+  const firstIdx = visibleDetails.value.length - 1;
+  collapsedIndices.value = new Set(
+    visibleDetails.value.map((_, i) => i).filter(i => i !== firstIdx)
+  );
+  viewMode.value = 'first-only';
+  nextTick(() => {
+    const firstSurat = visibleDetails.value[firstIdx];
+    const element = document.getElementById(`card-${firstSurat.id || firstSurat.urutan}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+};
+
+const goToLatestSurat = () => {
+  collapsedIndices.value = new Set();
+  viewMode.value = 'all';
+  nextTick(() => {
+    const latest = visibleDetails.value[0];
+    const element = document.getElementById(`card-${latest.id || latest.urutan}`);
+    if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
+const toggleCardCollapse = (index: number) => {
+  const newSet = new Set(collapsedIndices.value);
+  if (newSet.has(index)) newSet.delete(index);
+  else newSet.add(index);
+  collapsedIndices.value = newSet;
+  viewMode.value = newSet.size === 0 ? 'all' : 'first-only';
+};
+
+const isCardCollapsed = (index: number) => collapsedIndices.value.has(index);
+
 const handleFinalize = () => { showFinalizeOptionsModal.value = true; };
 const handleReject = () => { rejectNote.value = ""; showRejectModal.value = true; };
 
 const handleFinalizeAndRedirect = () => {
   showFinalizeOptionsModal.value = false;
   if (selected.value?.id) {
-    /* log removed */
-    /* log removed */
     const rawKind = selected.value?.jenis_naskah_konsep || selected.value?.detail?.jenis_naskah_konsep || selected.value?.jenis || 'ND';
     const upperKind = String(rawKind).trim().toUpperCase();
 
@@ -523,7 +605,6 @@ const handleFinalizeAndRedirect = () => {
     }
 
     router.push({
-      // path: `/korespondensi/tulis/finalisasi/${pathSeg}`,
       path: `/korespondensi/tulis/${pathSeg}`,
       query: { draft_id: selected.value.id_naskah_asli, action: 'finalize' }
     });
@@ -539,26 +620,15 @@ const isPengirimKonsep = computed(() => {
   const latestFlow = details.value[0];
   if (!latestFlow || latestFlow.aksi !== 'reject') return false;
 
-  // Dari JSON: pengirim di root = EVP (70016786) = yang menyuruh & menolak
-  // penerima di root = VP (70017054) = yang diminta membuat & harus perbaiki
-  // Di mapping details: field 'from' = flow.pengirim (pengirim tiap flow)
-  // Flow reject: pengirimnya adalah EVP (yang menolak)
-  // Tapi kita butuh VP (yang harus perbaiki) = penerima di flow reject
-
-  // Cek dari raw data sortedFlows lewat selected.value
-  // selected.value = lastFlow = KONSEP-004 (flow reject terbaru)
   const rawPenerima = selected.value?.penerima || [];
   const isInPenerima = rawPenerima.some(
     (p: any) => String(p.position_id || '') === myPosId
   );
 
-  /* log removed */
-
   return isInPenerima;
 });
 
 const draftItem = computed(() => {
-  // Cek di rawFlows via details — kita simpan status asli
   return details.value.find((d: any) => d._rawStatus === 'draf') ?? null;
 });
 
@@ -600,13 +670,11 @@ const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/ko
 const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
 const selectKonsep = (opt: any) => {
-  // Jika ada draft dan opsi ini BUKAN jenis draft → disabled, tidak melakukan apa-apa
   if (draftItem.value && opt.type !== draftItem.value.jenis) return;
 
   isOpenKonsepModal.value = false;
   if (!selected.value?.id) return;
 
-  // Jika opsi ini adalah jenis yang ada draftnya → lanjut edit draft
   if (draftItem.value && opt.type === draftItem.value.jenis) {
     router.push({
       path: opt.path,
@@ -615,7 +683,6 @@ const selectKonsep = (opt: any) => {
     return;
   }
 
-  // Tidak ada draft sama sekali → buat konsep baru
   router.push({
     path: opt.path,
     query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis }
@@ -668,18 +735,10 @@ const konsepOptions = computed(() => [
 <template>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
+  <div class="w-full flex gap-4 pt-4 relative">
 
-  <!-- <div v-if="sessionDebug" class="mt-4 mb-4">
-    <UCard :ui="{ root: 'rounded-lg ring-0 shadow-sm bg-white dark:bg-gray-800' }">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Debug User Session</h3>
-        <span class="text-[11px] text-gray-500">Mode inspeksi</span>
-      </div>
-      <pre class="text-[11px] leading-5 overflow-auto max-h-80 bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">{{ JSON.stringify(sessionDebug, null, 2) }}</pre>
-    </UCard>
-  </div> -->
-
-  <div class="w-full flex flex-col gap-6 pt-4">
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col gap-6 min-w-0">
 
     <div v-if="isLoading"
       class="w-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden animate-pulse shadow-sm border border-gray-200 dark:border-gray-800">
@@ -693,31 +752,111 @@ const konsepOptions = computed(() => [
       </div>
     </div>
 
-
-    <div v-else-if="visibleDetails && visibleDetails.length > 0" class="flex flex-col gap-6">
+    <div v-else-if="visibleDetails && visibleDetails.length > 0" class="flex flex-col gap-3">
       <div v-for="(detail, index) in visibleDetails" :key="detail.id || detail.urutan || index"
-        :id="`card-${detail.id || detail.urutan}`" class="transition-all duration-500 scroll-mt-24" :class="{
-          'ring-2 ring-primary-200 rounded-xl mt-5': details.length > 1 && isHighlighted(detail)
-        }">
-<!-- {{ selected }} -->
-        <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
-          :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-          :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"
-          :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
-          :user-position-id="user?.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
-          @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
-          @lanjut-nota="handleLanjutNotaDinas" @lanjut-sdi="handleLanjutSDI" @lanjut-sde="handleLanjutSDE"
-          @lanjut-disposisi="handleLanjutDisposisi"
-          :draft="index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null"
-          @lanjut-konsep="handleLanjutKonsep"
-          @nav-newer="goToNewer"
-          @nav-older="goToOlder" />
+        :id="`card-${detail.id || detail.urutan}`" class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
+        :class="{ 'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail) }">
 
+        <!-- Timeline connector line (between cards) -->
+        <div v-if="index < visibleDetails.length - 1" class="absolute left-5 -bottom-2 w-0.5 h-2 bg-linear-to-b from-primary-300 to-primary-200 dark:from-primary-600 dark:to-primary-700 z-0" />
+
+        <!-- Timeline dot -->
+        <div class="absolute left-3.5 top-4 z-10">
+          <div class="w-4 h-4 rounded-full border-2 border-primary-400 bg-white dark:bg-gray-800 flex items-center justify-center">
+            <div class="w-1.5 h-1.5 rounded-full bg-primary-500" />
+          </div>
+        </div>
+
+        <!-- Card content -->
+        <div class="ml-12">
+          <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
+            :collapsed="isCardCollapsed(index)"
+            :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
+            :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"
+            :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
+            :user-position-id="user?.position" @back="goBack" @preview="(url) => openDocumentPreview(url, detail.perihal)"
+            @preview-file="openPreviewFile" @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
+            @lanjut-nota="handleLanjutNotaDinas" @lanjut-sdi="handleLanjutSDI" @lanjut-sde="handleLanjutSDE"
+            @lanjut-disposisi="handleLanjutDisposisi"
+            :draft="index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null"
+            @lanjut-konsep="handleLanjutKonsep"
+            @nav-newer="goToNewer"
+            @nav-older="goToOlder"
+            @toggle-collapse="toggleCardCollapse(index)" />
+        </div>
       </div>
     </div>
     <div v-else class="w-full text-center py-12 text-sm text-gray-400 dark:text-gray-500">
       Surat tidak ditemukan atau tidak dapat ditampilkan.
     </div>
+    </div><!-- end main content -->
+
+    <!-- Floating scroll FAB -->
+    <button v-if="!isLoading && visibleDetails.length > 1"
+      @click="scrollToEdge"
+      class="fixed right-4 bottom-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:bg-primary-700 active:scale-95 transition-all duration-200"
+      :aria-label="isAtBottom ? 'Ke atas' : 'Ke bawah'">
+      <ArrowUpDown class="w-4 h-4 transition-transform duration-300" :class="isAtBottom ? 'rotate-180' : ''" />
+      <span class="text-xs font-semibold">{{ isAtBottom ? 'Ke Atas' : 'Ke Bawah' }}</span>
+    </button>
+
+    <!-- Toggle sidebar button (Daftar Surat) -->
+    <button v-if="!showSidebar && !isLoading && visibleDetails.length > 1"
+      @click="toggleSidebar"
+      class="fixed right-4 bottom-20 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-primary-500 hover:text-white hover:border-primary-500 active:scale-95 transition-all duration-200">
+      <PanelRightOpen class="w-4 h-4" />
+      <span>Daftar Surat</span>
+    </button>
+
+    <!-- Sidebar TOC Panel (right side) -->
+    <AnimatePresence>
+      <Motion v-if="showSidebar && !isLoading && visibleDetails.length > 1"
+        :initial="{ opacity: 0, x: 50 }"
+        :animate="{ opacity: 1, x: 0 }"
+        :exit="{ opacity: 0, x: 50 }"
+        :transition="{ duration: 0.3, ease: 'easeInOut' }"
+        class="hidden lg:flex flex-col w-64 shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)]"
+        tag="div">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <List class="w-4 h-4 text-primary-500" />
+              Daftar Surat
+            </div>
+            <button @click="toggleSidebar"
+              class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <PanelRightClose class="w-4 h-4" />
+            </button>
+          </div>
+          <div class="overflow-y-auto flex-1 p-2 space-y-1">
+            <button v-for="(detail, index) in visibleDetails" :key="detail.id || detail.urutan || index"
+              @click="navigateToSurat(index)"
+              class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group"
+              :class="activeSuratIndex === index
+                ? 'bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                  :class="index === 0 ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'">
+                  {{ visibleDetails.length - index }}
+                </span>
+                <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 truncate">
+                  {{ detail.jenis_label || detail.jenis || '-' }}
+                </span>
+              </div>
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate"
+                :class="activeSuratIndex === index ? 'text-primary-700 dark:text-primary-300' : ''">
+                {{ detail.perihal || detail.subject || '(Tidak ada perihal)' }}
+              </p>
+              <p class="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                {{ detail.pengirim?.position_text || detail.from?.position_text || '-' }}
+              </p>
+            </button>
+          </div>
+        </div>
+      </Motion>
+    </AnimatePresence>
+
     <UModal v-model:open="isOpenKonsepModal" :dismissible="false" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
       <template #header>
         <div class="w-full flex justify-between items-start">
@@ -805,9 +944,6 @@ const konsepOptions = computed(() => [
       <template #header>
         <div class="w-full flex justify-between items-center">
           <div class="flex items-center gap-2">
-            <!-- <div class="p-2 bg-red-100 rounded-full">
-              <AlertCircle class="w-5 h-5 text-red-600" />
-            </div> -->
             <div>
               <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Tolak Konsep</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Berikan alasan penolakan konsep ini.</p>

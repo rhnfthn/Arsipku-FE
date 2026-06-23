@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from "vue";
 import {
   Hash,
   Calendar,
@@ -9,6 +9,7 @@ import {
   Printer,
   MoreHorizontal,
   ChevronUp,
+  ChevronDown,
   CheckCircle,
   XCircle,
   Edit3,
@@ -17,7 +18,11 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-vue-next';
+  Star,
+  Lock,
+  StickyNote,
+  ArrowRightLeft,
+} from "lucide-vue-next";
 
 // Tambah prop
 const props = defineProps<{
@@ -31,6 +36,7 @@ const props = defineProps<{
   userPositionId?: string | number;
   isPengirimKonsep?: boolean;
   draft?: { id: string; jenis: string } | null;
+  collapsed?: boolean;
 }>();
 
 // --- EMITS ---
@@ -48,6 +54,11 @@ const emit = defineEmits<{
   (e: 'lanjut-konsep'): void;
   (e: 'nav-newer'): void;
   (e: 'nav-older'): void;
+  (e: 'toggle-collapse'): void;
+  (e: 'favorite'): void;
+  (e: 'tindak-lanjut'): void;
+  (e: 'lock'): void;
+  (e: 'catatan'): void;
 }>();
 
 const shouldShowFinalize = computed(() => {
@@ -185,15 +196,17 @@ const hasAccess = (codes: string[]) => {
   if (!props.allowedActions) return false;
   return codes.some((code) => props.allowedActions?.includes(code));
 };
+
+// Collapse state controlled by parent via prop
+const isCollapsed = computed(() => props.collapsed ?? false);
+
 </script>
 
 <template>
-  <div
-    v-if="data.aksi !== 'pending' && data.status !== 'draf'"
-    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-md relative transition-colors"
-  >
-    <div>
-      <div class="h-14 flex items-center justify-between px-4 shrink-0">
+  <div v-if="data.aksi !== 'pending' && data.status !== 'draf'"
+    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-md relative transition-colors">
+
+    <div class="h-14 flex items-center justify-between px-4 shrink-0 border-b border-gray-100 dark:border-gray-700">
         <div class="flex items-center gap-2 min-w-0 overflow-hidden">
           <template v-if="isHead">
             <button
@@ -224,9 +237,9 @@ const hasAccess = (codes: string[]) => {
           </template>
         </div>
         <!-- {{ data }} -->
-        <div class="flex items-center gap-1 shrink-0 pl-2">
+        <div class="flex items-center gap-2 shrink-0 pl-2">
           <!-- Navigasi pesan lebih baru (<) -->
-          <UTooltip text="Pesan lebih baru">
+          <UTooltip v-if="isHead" text="Pesan lebih baru">
             <button
               @click="emit('nav-newer')"
               :disabled="!data._hasNewer"
@@ -238,7 +251,7 @@ const hasAccess = (codes: string[]) => {
           </UTooltip>
 
           <!-- Navigasi pesan lebih lama (>) -->
-          <UTooltip text="Pesan lebih lama">
+          <UTooltip v-if="isHead" text="Pesan lebih lama">
             <button
               @click="emit('nav-older')"
               :disabled="!data._hasOlder"
@@ -249,6 +262,44 @@ const hasAccess = (codes: string[]) => {
             </button>
           </UTooltip>
 
+          <!-- Favorite -->
+          <UTooltip v-if="isHead" text="Favorit">
+            <button @click="emit('favorite')"
+              class="p-2 hover:bg-yellow-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 rounded-lg transition-colors">
+              <Star class="w-4 h-4" />
+            </button>
+          </UTooltip>
+
+          <!-- Tindak Lanjut -->
+          <UTooltip v-if="isHead" text="Tindak Lanjut">
+            <button @click="emit('tindak-lanjut')"
+              class="p-2 hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors">
+              <ArrowRightLeft class="w-4 h-4" />
+            </button>
+          </UTooltip>
+
+          <!-- Lock -->
+          <UTooltip v-if="isHead" text="Kunci">
+            <button @click="emit('lock')"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-colors">
+              <Lock class="w-4 h-4" />
+            </button>
+          </UTooltip>
+
+          <!-- Catatan -->
+          <UTooltip v-if="isHead" text="Catatan">
+            <button @click="emit('catatan')"
+              class="p-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors">
+              <StickyNote class="w-4 h-4" />
+            </button>
+          </UTooltip>
+
+          <!-- Collapse toggle for non-head cards -->
+          <button v-if="!isHead" @click="emit('toggle-collapse')"
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
+            <ChevronDown v-if="isCollapsed" class="w-4 h-4 transition-transform duration-300" />
+            <ChevronUp v-else class="w-4 h-4 transition-transform duration-300" />
+          </button>
           <UTooltip text="Pratinjau Dokumen">
             <button
               v-if="data.pdf_snapshot || data.naskah?.final_pdf || data.final_pdf_url"
@@ -263,13 +314,45 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
 
-      <div
-        class="p-5 sm:py-5 sm:px-8 bg-gray-50/30 dark:bg-gray-900/30 border-y border-gray-100 dark:border-gray-700"
-      >
-        <h2
-          v-if="data.subject || data.perihal"
-          class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3"
-        >
+      <!-- Collapsed summary (only for non-head when collapsed) -->
+      <AnimatePresence>
+        <Motion v-if="!isHead && isCollapsed"
+          :initial="{ opacity: 0, height: 0 }"
+          :animate="{ opacity: 1, height: 'auto' }"
+          :exit="{ opacity: 0, height: 0 }"
+          :transition="{ duration: 0.3, ease: 'easeInOut' }"
+          class="overflow-hidden" tag="div">
+          <div class="px-4 py-3 bg-gray-50/30 dark:bg-gray-900/30 border-y border-gray-100 dark:border-gray-700">
+            <div class="flex items-center gap-3 min-w-0 flex-wrap">
+              <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                <Hash class="w-3 h-3" />
+                <span class="font-mono font-semibold">{{ data.nomor || data.naskah?.nomor || '-' }}</span>
+              </div>
+              <span class="opacity-30">•</span>
+              <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                <Calendar class="w-3 h-3" />
+                <span>{{ formatDate(data.tanggal || data.created_at || data.createdAt) }}</span>
+              </div>
+              <span class="opacity-30">•</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600 shrink-0">
+                {{ data.aksi === 'kirim_disposisi' ? 'DISPOSISI' : (data.aksi === 'create' || (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep) ? (data.jenis_naskah_konsep ? 'KONSEP ' + data.jenis_naskah_konsep : 'KONSEP') : (data.jenis_label || data.aksi)) }}
+              </span>
+              <span class="opacity-30">•</span>
+              <p class="text-sm text-gray-700 dark:text-gray-300 truncate flex-1 min-w-0">
+                {{ data.perihal || data.subject || '(Tidak ada perihal)' }}
+              </p>
+              <span class="opacity-30 shrink-0">•</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                {{ data.pengirim?.position_text || data.from?.position_text || '-' }}
+              </span>
+            </div>
+          </div>
+        </Motion>
+      </AnimatePresence>
+
+      <div v-show="isHead || !isCollapsed" class="p-5 sm:py-5 sm:px-8 bg-gray-50/30 dark:bg-gray-900/30 border-y border-gray-100 dark:border-gray-700">
+        <h2 v-if="data.subject || data.perihal"
+          class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
           {{ data.subject || data.perihal || '(Tidak ada perihal)' }}
         </h2>
         <h2
@@ -308,18 +391,10 @@ const hasAccess = (codes: string[]) => {
           </div>
           <span class="opacity-40">•</span>
           <div
-            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600"
-          >
-            {{
-              data.aksi === 'kirim_disposisi'
-                ? 'DISPOSISI'
-                : data.aksi === 'create' ||
-                    (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep)
-                  ? data.jenis_naskah_konsep
-                    ? 'KONSEP ' + data.jenis_naskah_konsep
-                    : 'KONSEP'
-                  : data.jenis_label || data.aksi
-            }}
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600">
+            {{ data.aksi === 'kirim_disposisi' ?
+              'DISPOSISI' : (data.aksi === 'create' || (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep) ?
+                (data.jenis_naskah_konsep ? 'KONSEP ' + data.jenis_naskah_konsep : 'KONSEP') : (data.jenis_label || data.aksi)) }}
           </div>
           <!-- Badge aksi tambahan: hanya muncul untuk create / forward / reject -->
           <template v-if="aksiBadge">
@@ -351,13 +426,17 @@ const hasAccess = (codes: string[]) => {
           <span class="text-gray-400 dark:text-gray-500">({{ data.dikirim_oleh.nama }})</span>
         </div>
       </div>
-    </div>
 
-    <div class="p-5 sm:p-8">
-      <div
-        v-if="!isKonsepNaskahJenis"
-        class="flex items-center gap-4 mb-5 border-gray-200 dark:border-gray-700/50"
-      >
+    <Motion
+      :animate="{ opacity: (isHead || !isCollapsed) ? 1 : 0, height: (isHead || !isCollapsed) ? 'auto' : 0 }"
+      :transition="{ duration: 0.3, ease: 'easeInOut' }"
+      class="overflow-hidden"
+      :style="{ visibility: (isHead || !isCollapsed) ? 'visible' : 'hidden' }"
+      tag="div">
+      <div class="p-5 sm:p-8">
+
+      <div v-if="!isKonsepNaskahJenis" class="flex items-center gap-4 mb-5 border-gray-200 dark:border-gray-700/50">
+
         <UAvatar size="md" class="bg-primary-500 text-white font-semibold">
           {{ getFlowInitials(data.from?.nama || data.pengirim?.nama) }}
         </UAvatar>
@@ -413,62 +492,23 @@ const hasAccess = (codes: string[]) => {
         </div>
 
         <div class="space-y-2 text-sm">
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">Nomor:</span>
-            <span class="font-medium text-gray-900 dark:text-white">{{ data.nomor || '-' }}</span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">Tanggal:</span>
-            <span class="font-medium text-gray-900 dark:text-white">{{
-              formatDate(data.tanggal || data.created_at)
-            }}</span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">Pengirim:</span>
-            <span class="font-medium text-gray-900 dark:text-white"
-              >{{ data.pengirim?.position_text || '-' }}
-              <span class="text-gray-500 dark:text-gray-400"
-                >({{ data.pengirim?.nama || '-' }})</span
-              ></span
-            >
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">Tertuju:</span>
-            <span class="font-medium text-gray-900 dark:text-white">{{
-              Array.isArray(data.to)
-                ? data.to.map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`).join(', ')
-                : '-'
-            }}</span>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400">Tembusan:</span>
-            <span class="font-medium text-gray-900 dark:text-white">{{
-              Array.isArray(data.cc) && data.cc.length > 0
-                ? data.cc.map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`).join(', ')
-                : '-'
-            }}</span>
-          </div>
+          <div><span class="text-gray-500 dark:text-gray-400">Nomor:</span> <span class="font-medium text-gray-900 dark:text-white">{{ data.nomor || '-' }}</span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Tanggal:</span> <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(data.tanggal || data.created_at) }}</span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Pengirim:</span> <span class="font-medium text-gray-900 dark:text-white">{{ data.pengirim?.position_text || '-' }} <span class="text-gray-500 dark:text-gray-400">({{ data.pengirim?.nama || '-' }})</span></span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Tertuju:</span> <span class="font-medium text-gray-900 dark:text-white">{{ Array.isArray(data.to) ? data.to.map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`).join(', ') : '-' }}</span></div>
+          <div><span class="text-gray-500 dark:text-gray-400">Tembusan:</span> <span class="font-medium text-gray-900 dark:text-white">{{ Array.isArray(data.cc) && data.cc.length > 0 ? data.cc.map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`).join(', ') : '-' }}</span></div>
         </div>
       </div>
 
-      <div
-        v-if="
-          !isKonsepJenis &&
-          (data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject')
-        "
-        class="mb-4 flex flex-col md:flex-row gap-2"
-      >
+      <div v-if="!isKonsepJenis && (data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject')"
+        class="mb-4 flex flex-col md:flex-row gap-2">
         <div
-          class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5"
-        >
-          Pengirim
-        </div>
+          class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5">
+          Pengirim </div>
         <div class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 min-w-0">
           <div class="truncate min-w-0">
             <span class="font-medium">{{ data.pengirim?.position_text }}</span>
-            <span class="text-xs text-gray-500 dark:text-gray-400 ml-1"
-              >({{ data.pengirim?.nama }})</span
-            >
+            <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ data.pengirim?.nama }})</span>
           </div>
         </div>
       </div>
@@ -894,5 +934,6 @@ const hasAccess = (codes: string[]) => {
         </div>
       </div>
     </div>
+    </Motion>
   </div>
 </template>
