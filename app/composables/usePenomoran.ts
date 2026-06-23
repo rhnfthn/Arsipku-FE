@@ -33,12 +33,14 @@ export const usePenomoran = () => {
     total: 0
   });
 
-  const userCounts = ref({
+  const userCounts = ref<Record<string, any>>({
+    position_id: 0,
     menunggu_verifikasi: 0,
     menunggu_persetujuan: 0,
     disetujui: 0,
     ditolak: 0,
     belum_diajukan: 0,
+    draft: 0,
     total: 0
   });
 
@@ -175,8 +177,8 @@ export const usePenomoran = () => {
       const formattedPayload = {
         position_id: Number(payload.position_id),
         tanggal:
-          payload.tanggal instanceof Date
-            ? payload.tanggal.toISOString().split('T')[0]
+          (payload.tanggal as any) instanceof Date
+            ? (payload.tanggal as unknown as Date).toISOString().split('T')[0]
             : String(payload.tanggal),
         jenis: String(payload.jenis),
         klasifikasi: String(payload.klasifikasi),

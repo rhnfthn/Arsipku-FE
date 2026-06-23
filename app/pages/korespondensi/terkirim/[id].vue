@@ -216,7 +216,7 @@ const loadData = async () => {
       // === KONSEP === (di halaman terkirim)
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id);
-      const rawData = response?.data || response;
+      const rawData: any = (response as any)?.data || response;
       const konsepTo = rawData?.to_konsep || null;
 
       // Handle kedua format: array langsung ATAU object dengan .flow
@@ -293,7 +293,7 @@ const loadData = async () => {
       isKonsepData.value = false;
       const response = await fetchInboxDetail(id, jenisQuery);
 
-      const rawData = response?.data || response;
+      const rawData: any = (response as any)?.data || response;
       let rawFlows: any[] = [];
       let inboxData: any = null;
 

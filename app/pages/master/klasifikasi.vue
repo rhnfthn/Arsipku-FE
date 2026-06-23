@@ -575,7 +575,7 @@ import {
   ArrowUpDown,
   ChevronDown
 } from 'lucide-vue-next';
-import type { BreadcrumbItem } from '~/types/breadcrumb';
+import type { BreadcrumbItem } from '@nuxt/ui';
 import type { Klasifikasi } from '~/types/klasifikasi';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import Modal from '@/components/Modal.vue';

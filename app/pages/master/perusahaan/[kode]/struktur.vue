@@ -1024,7 +1024,7 @@ const route = useRoute()
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const confirmDeleteOpen = ref(false)
-const itemToDelete = ref(null)
+const itemToDelete = ref<any>(null)
 
 const companyExpanded = ref(true)
 const expandedNodes = ref<Record<string, boolean>>({})
@@ -2588,7 +2588,7 @@ const handleSaveEdit = async () => {
         startDate: toDateOnly(formPosition.value.mulai),
         endDate: toDateOnly(formPosition.value.berakhir)
       }
-      await updatePosition(editingNode.value.id, payload)
+      await updatePosition(editingNode.value.id, payload as any)
       showSuccessToast(t('stu_success_edit_posisi'))
 
       editingNode.value.longText = formPosition.value.namaPos
@@ -2603,7 +2603,7 @@ const handleSaveEdit = async () => {
         startDate: toDateOnly(formMember.value.mulai),
         endDate: toDateOnly(formMember.value.berakhir)
       }
-      await updateAssignPerson(editingNode.value.id, payload)
+      await updateAssignPerson(editingNode.value.id, payload as any)
       showSuccessToast(t('stu_success_edit_anggota'))
       editingNode.value.startDate = payload.startDate
       editingNode.value.endDate = payload.endDate
@@ -2624,7 +2624,7 @@ watch(
   () => route.params.kode,
   (kode) => {
     if (!kode) return
-    fetchData(kode)
+    fetchData(kode as string)
   },
   { immediate: true }
 )

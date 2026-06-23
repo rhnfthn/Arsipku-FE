@@ -12,7 +12,7 @@ const props = defineProps({
 
 const appConfig = useAppConfig()
 const classes = computed(() => {
-  const variantClass = appConfig.ui.typography.variants[props.variant] || ''
+  const variantClass = (appConfig.ui.typography.variants as Record<string, string>)[props.variant] || ''
   const base = appConfig.ui.typography.base
   return `${base} ${variantClass}`
 })

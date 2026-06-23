@@ -1136,7 +1136,7 @@ const jenisNaskahSearchQuery = ref('');
 const statusFilter = ref('');
 const openFilterStatus = ref(false);
 const sortKey = ref('');
-const sortOrder = ref('asc');
+const sortOrder = ref<'asc' | 'desc'>('asc');
 
 // Track if dropdown data has been loaded
 const dropdownDataLoaded = ref({
@@ -1145,7 +1145,7 @@ const dropdownDataLoaded = ref({
   verifikator: false
 });
 
-function handleSort(key) {
+function handleSort(key: string) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
@@ -1216,8 +1216,8 @@ const sortedRows = computed(() => {
   if (!sortKey.value) return filteredRows.value;
 
   return [...filteredRows.value].sort((a, b) => {
-    let A = a[sortKey.value];
-    let B = b[sortKey.value];
+    let A = (a as any)[sortKey.value];
+    let B = (b as any)[sortKey.value];
 
     if (sortKey.value.toLowerCase().includes('tanggal')) {
       A = new Date(A).getTime();
@@ -1395,7 +1395,7 @@ const handleSearch = () => {
   currentPage.value = 1;
 };
 
-const selectFilterStatus = (item) => {
+const selectFilterStatus = (item: any) => {
   statusFilter.value = item.value;
   openFilterStatus.value = false;
   currentPage.value = 1;
@@ -1436,7 +1436,7 @@ const sortBy = (key: string) => {
 };
 
 const getStatusClass = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     on_progress: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300',
     completed: 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300',
     rejected: 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
@@ -1445,7 +1445,7 @@ const getStatusClass = (status: string) => {
 };
 
 const getStatusLabel = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     on_progress: 'Diproses',
     completed: 'Selesai',
     rejected: 'Ditolak',
@@ -1455,7 +1455,7 @@ const getStatusLabel = (status: string) => {
 };
 
 const getSignerStatusClass = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     waiting: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300',
     pending: 'bg-gray-200 dark:bg-gray-300 text-gray-600 dark:text-white-300',
     signed: 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300',
@@ -1465,7 +1465,7 @@ const getSignerStatusClass = (status: string) => {
 };
 
 const getSignerStatusLabel = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     waiting: 'Menunggu',
     pending: 'Pending',
     signed: 'Sudah TTD',

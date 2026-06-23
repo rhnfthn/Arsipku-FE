@@ -625,21 +625,23 @@
                   >
                     <div class="flex flex-col gap-1 max-h-60 overflow-y-auto">
                       <button
-                        v-for="opt in [
+                        v-for="opt in ([
                           { label: $t('semua_status'), value: '', color: null },
                           {
                             label: $t('nom_status_final'),
-                            value: 'terpakai_final'
+                            value: 'terpakai_final',
+                            color: null
                           },
                           {
                             label: $t('nom_status_terpakai'),
-                            value: 'Terpakai'
+                            value: 'Terpakai',
+                            color: null
                           },
-                          { label: $t('nom_status_booking'), value: 'booking' },
-                          { label: 'Draft', value: 'draft' },
-                          { label: 'Ditolak', value: 'ditolak' },
-                          { label: 'Batal', value: 'Hangus' }
-                        ]"
+                          { label: $t('nom_status_booking'), value: 'booking', color: null },
+                          { label: 'Draft', value: 'draft', color: null },
+                          { label: 'Ditolak', value: 'ditolak', color: null },
+                          { label: 'Batal', value: 'Hangus', color: null }
+                        ] as any[])"
                         :key="opt.value"
                         @mousedown.prevent
                         @click="
@@ -1236,8 +1238,8 @@ const filteredData = computed(() => {
 const sortedData = computed(() => {
   if (!sortConfig.value.key) return filteredData.value;
   return [...filteredData.value].sort((a, b) => {
-    const aVal = a[sortConfig.value.key];
-    const bVal = b[sortConfig.value.key];
+    const aVal = (a as any)[sortConfig.value.key!];
+    const bVal = (b as any)[sortConfig.value.key!];
     if (aVal < bVal) return sortConfig.value.direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortConfig.value.direction === 'asc' ? 1 : -1;
     return 0;

@@ -32,7 +32,7 @@ defineProps({
 })
 
 // Model ini akan menerima variable 'date' dari parent (CalendarDate object)
-const model = defineModel()
+const model = defineModel<any>()
 const open = ref(false)
 
 const maxDate = today(getLocalTimeZone())

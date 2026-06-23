@@ -264,7 +264,7 @@ const deleteNow = async () => {
   if (!itemToDelete.value) return
   isDeletingItem.value = true
   try {
-    const success = await deleteTitelatur(itemToDelete.value.id, itemToDelete.value.long_text)
+    const success = await deleteTitelatur(itemToDelete.value.id, itemToDelete.value.long_text || undefined)
     if (success) confirmDeleteOpen.value = false
   } finally {
     isDeletingItem.value = false

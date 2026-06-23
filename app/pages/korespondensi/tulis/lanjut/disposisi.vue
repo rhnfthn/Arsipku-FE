@@ -487,8 +487,8 @@ const createFormData = (payload: DisposisiPayload, includePdf: boolean = false) 
 const validateAndToast = (payload: DisposisiPayload) => {
   const check = validateDisposisiPayload(payload);
   if (!check.isValid) {
-    const firstKey = Object.keys(check.errors)[0];
-    toast.add({ title: 'Validasi Gagal', description: check.errors[firstKey], color: 'error' });
+    const firstKey = Object.keys(check.errors || {})[0];
+    toast.add({ title: 'Validasi Gagal', description: (check.errors || {})[firstKey], color: 'error' });
     return false;
   }
 

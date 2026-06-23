@@ -647,7 +647,7 @@
                   :key="detail.id || idx"
                   :class="[
                     'flex items-center gap-3 px-4 py-3 transition',
-                    idx < selectedRow.details.length - 1
+                    Number(idx) < selectedRow.details.length - 1
                       ? 'border-b border-gray-100 dark:border-gray-700'
                       : '',
                     detail.status === 'hangus'
@@ -658,7 +658,7 @@
                   <span
                     class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0"
                   >
-                    {{ idx + 1 }}.
+                    {{ Number(idx) + 1 }}.
                   </span>
                   <span
                     :class="[
@@ -715,7 +715,7 @@
                             : 'text-gray-700 dark:text-gray-300'
                         ]"
                       >
-                        {{ idx + 1 }}. {{ detail.nomor || selectedRow.template_nomor || '-' }}
+                        {{ Number(idx) + 1 }}. {{ detail.nomor || selectedRow.template_nomor || '-' }}
                       </span>
                       <span
                         v-if="detail.status"
@@ -1638,7 +1638,7 @@ const handleExport = async () => {
     }
 
     const sheetData = exportRows.map((row: any, idx: number) => ({
-      No: idx + 1,
+      No: Number(idx) + 1,
       'Jenis Naskah': row.jenis || '-',
       Tanggal: row.tanggal || '-',
       Perihal: row.perihal || '-',

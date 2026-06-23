@@ -11,8 +11,8 @@
           wrapper: 'w-full',
           input: 'w-full',
           trigger: { base: 'px-0 py-1 w-full text-left' },
-        }">
-        <template #item="{ item, selected }">
+        } as any">
+        <template #item="{ item, selected }: any">
           <div class="flex items-start gap-3 w-full py-1 overflow-hidden">
             <img v-if="item.image" :src="item.image" :alt="item.label"
               class="w-7 h-7 rounded-full object-cover shrink-0" />

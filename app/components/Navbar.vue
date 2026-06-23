@@ -196,11 +196,11 @@
             size="md"
             class="ring-2 ring-transparent group-hover:ring-primary-500/30 transition-all duration-200 bg-primary-500 text-white font-bold flex items-center justify-center shadow-sm"
           >
-            {{ getInitials(user?.nama) }}
+            {{ getInitials(user?.nama || '') }}
           </UAvatar>
         </div>
 
-        <template #delegation-item="{ item }">
+        <template #delegation-item="{ item }: { item: any }">
           <div class="flex flex-col w-full min-w-0 gap-0.5 py-1">
             <div class="flex items-center justify-between w-full gap-3">
               <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -526,14 +526,14 @@
                     <div class="flex flex-wrap gap-2.5">
                       <button
                         v-for="opt in jenisOptions"
-                        :key="opt.value"
+                        :key="opt.label"
                         @click="
                           advancedFilters.jenis =
                             advancedFilters.jenis === opt.value ? '' : opt.value
                         "
                         :class="[
                           'px-4 py-1.5 text-sm font-medium rounded-full border border-transparent transition-all',
-                          getCategoryStyle(opt.value),
+                          getCategoryStyle(opt.value || ''),
                           advancedFilters.jenis === opt.value
                             ? 'ring-2 ring-offset-1 ring-gray-400 opacity-100 font-bold shadow-sm'
                             : 'opacity-90 hover:opacity-100 hover:shadow-sm'
@@ -1373,14 +1373,14 @@ const advancedFilters = reactive({
   doesntHave: '',
   dateFrom: '',
   dateTo: '',
-  jenis: null,
-  sifat: null,
-  status: null,
+  jenis: '' as string | null,
+  sifat: '' as string | null,
+  status: '' as string | null,
   hasAttachment: 'Semua',
   priority: null as boolean | null
 });
 
-const jenisOptions = [
+const jenisOptions: { label: string; value: string | null }[] = [
   { label: 'Semua', value: null },
   { label: 'Nota Dinas (ND)', value: 'ND' },
   { label: 'Surat Dinas Internal (SDI)', value: 'SDI' },
@@ -1391,7 +1391,7 @@ const jenisOptions = [
 ];
 
 // "Semua" sudah ada di index-0 masing-masing, tidak perlu duplikat di template
-const sifatOptions = [
+const sifatOptions: { label: string; value: string | null }[] = [
   { label: 'Semua', value: null },
   { label: 'Biasa', value: 'biasa' },
   { label: 'Terbatas', value: 'terbatas' },
@@ -1400,7 +1400,7 @@ const sifatOptions = [
   { label: 'Terbuka', value: 'terbuka' }
 ];
 
-const statusOptions = [
+const statusOptions: { label: string; value: string | null }[] = [
   { label: 'Semua', value: null },
   { label: 'Draf', value: 'draf' },
   { label: 'Final', value: 'final' },
@@ -1765,7 +1765,7 @@ const { locale, setLocale } = useI18n();
 const currentLocale = locale;
 
 const changeLocale = (code: string) => {
-  setLocale(code);
+  setLocale(code as 'id' | 'en');
   if (process.client) {
     localStorage.setItem('arsipku_locale', code);
   }
@@ -1844,7 +1844,7 @@ onMounted(() => {
 
     const savedLocale = localStorage.getItem('arsipku_locale');
     if (savedLocale && ['id', 'en'].includes(savedLocale)) {
-      setLocale(savedLocale);
+      setLocale(savedLocale as 'id' | 'en');
     }
 
     const successMsg = localStorage.getItem('switch_role_message');

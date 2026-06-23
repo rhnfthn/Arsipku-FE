@@ -21,7 +21,7 @@
           <div class="animate-marquee whitespace-nowrap text-sm font-medium">
             <strong class="mr-2">PERHATIAN!</strong>
             {{
-              bsreAlert.message ||
+              bsreAlert?.message ||
               "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
             }}
           </div>

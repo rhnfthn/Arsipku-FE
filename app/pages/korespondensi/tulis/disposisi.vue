@@ -310,8 +310,8 @@ const validateAndToast = (payload: DisposisiPayload) => {
   // 1. Validasi bawaan dari schema Zod
   const check = validateDisposisiPayload(payload);
   if (!check.isValid) {
-    const firstKey = Object.keys(check.errors)[0];
-    const message = firstKey ? check.errors[firstKey] : "Mohon lengkapi semua field yang wajib diisi.";
+    const firstKey = Object.keys(check.errors || {})[0];
+    const message = firstKey ? (check.errors || {})[firstKey] : "Mohon lengkapi semua field yang wajib diisi.";
     toastError("Validasi Gagal", message);
     return false;
   }

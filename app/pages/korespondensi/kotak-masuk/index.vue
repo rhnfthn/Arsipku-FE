@@ -245,7 +245,7 @@ const handleToggleFlag = async (
     (item as any)[flagKey] = !(item as any)[flagKey];
     const isNowActive = (item as any)[flagKey];
 
-    toast.add({ title: "Berhasil", description: descMap[type][isNowActive ? 0 : 1], color: "success", timeout: 2000 });
+    toast.add({ title: "Berhasil", description: descMap[type][isNowActive ? 0 : 1], color: "success" } as any);
 
     // Hapus dari list jika arsip di-toggle (optimistic remove)
     if (type === "arsip") {

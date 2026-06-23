@@ -559,7 +559,7 @@ const { user, getProfile } = useAuth();
 const sortKey = ref('');
 const sortOrder = ref('asc');
 
-function handleSort(key) {
+function handleSort(key: string) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
   } else {
@@ -712,7 +712,7 @@ const fetchDetailNaskah = async () => {
     rowsPerPage.value = res.pagination?.limit ?? 10;
     totalItems.value = res.pagination?.total ?? 0;
 
-    rawData.value = res.data.map((item) => ({
+    rawData.value = res.data.map((item: any) => ({
       id: item.id,
       nomor: item.nomor,
       tanggalRaw: item.tanggal,

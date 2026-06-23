@@ -39,7 +39,7 @@
                 base: '!px-0 !bg-transparent w-full dark:text-white',
                 ring: 'ring-0',
                 shadow: 'shadow-none',
-              }"
+              } as any"
             >
               <template #item="{ item }">
                 <div class="flex flex-col truncate py-1">
@@ -141,9 +141,9 @@
                 input: 'pr-10 w-full',
                 value: 'p-0 w-full',
                 trigger: { base: 'px-0 py-1 w-full' },
-              }"
+              } as any"
             >
-              <template #item="{ item }">
+              <template #item="{ item }: { item: any }">
                 <div
                   class="flex items-start gap-3 w-full py-1 overflow-hidden"
                   :class="{ 'opacity-50 cursor-not-allowed': item.disabled }"
@@ -198,7 +198,7 @@
                     </span>
                     <UButton
                       icon="i-lucide-x"
-                      size="2xs"
+                      size="xs"
                       color="neutral"
                       variant="ghost"
                       :padded="false"
@@ -240,9 +240,9 @@
                 input: 'pr-10 w-full',
                 value: 'p-0 w-full',
                 trigger: { base: 'px-0 py-1 w-full' },
-              }"
+              } as any"
             >
-              <template #item="{ item }">
+              <template #item="{ item }: { item: any }">
                 <div
                   class="flex items-start gap-3 w-full py-1 overflow-hidden"
                   :class="{ 'opacity-50 cursor-not-allowed': item.disabled }"
@@ -297,7 +297,7 @@
                     </span>
                     <UButton
                       icon="i-lucide-x"
-                      size="2xs"
+                      size="xs"
                       color="neutral"
                       variant="ghost"
                       :padded="false"
@@ -752,7 +752,7 @@ import { useAuth } from "@/composables/useAuth"; // <--- IMPORT USEAUTH
 
 // Types
 import type { Berkas } from "~/types/berkas";
-import type { DraftPayload } from "~/types/draft";
+import type { DraftPayload } from "~/types/drafts";
 
 /* -------------------------------------------------------------------------- */
 /* COMPOSABLES                                                                */
@@ -774,6 +774,7 @@ const isFullscreenEditor = ref(false);
 const isTemplateModalOpen = ref(false);
 const isOpenPreview = ref(false);
 const loading = ref(false);
+const open = ref(false);
 
 // --- Form State ---
 const date = ref<CalendarDate>();
@@ -785,7 +786,7 @@ const english = ref(false);
 // --- Data Lists & Select ---
 const berkasList = ref<Berkas[]>([]);
 const berkasStatus = ref<"idle" | "loading" | "success" | "error">("idle");
-const selectedBerkasId = ref<string | null>(null);
+const selectedBerkasId = ref<any>(null);
 
 // *** REVISI STATE SELECT ***
 const items = ref<any[]>([]);
@@ -832,6 +833,28 @@ const formattedDate = computed(() => {
   const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
+
+// Computed items untuk tertuju & tembusan (dipakai di template)
+const itemsTertuju = computed(() => items.value);
+const itemsTembusan = computed(() => items.value);
+
+// Helpers untuk select list di template
+const isItemSelected = (item: any, list: any[]) => {
+  return Array.isArray(list) && list.some((s) => s.value === item.value || s.label === item.label);
+};
+const removeItem = (item: any, list: any[], $event?: Event) => {
+  $event?.stopPropagation();
+  const idx = list.findIndex((s) => s.value === item.value || s.label === item.label);
+  if (idx > -1) list.splice(idx, 1);
+};
+const openTemplate = () => {
+  isTemplateModalOpen.value = true;
+};
+const rawHtmlContent = computed(() => editorContent.value || content.value);
+const cleanContent = (html: string) => {
+  if (!html) return "";
+  return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+};
 
 /* -------------------------------------------------------------------------- */
 /* HELPER METHODS                                                             */
@@ -976,7 +999,7 @@ onMounted(async () => {
   try {
     berkasStatus.value = "loading";
     const response = await getBerkasList();
-    berkasList.value = Array.isArray(response) ? response : (response?.data ?? []);
+    berkasList.value = Array.isArray(response) ? response : ((response as any)?.data ?? []);
     berkasStatus.value = "success";
   } catch (err) {
     console.error("Gagal mengambil daftar berkas", err);
@@ -991,7 +1014,7 @@ onMounted(async () => {
     /* log removed */
 
     const res = await getRecipients(userPositionId);
-    const rawData = res.recipients || res.data || [];
+    const rawData = res.recipients || (res as any).data || [];
 
     // MAPPING DATA AGAR KONSISTEN (BADGE & DROPDOWN)
     items.value = rawData.map((r: any) => {

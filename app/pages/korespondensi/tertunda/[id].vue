@@ -241,7 +241,7 @@ onMounted(loadData);
           <div class="flex flex-col gap-0.5 min-w-0 flex-1">
             <div v-for="(t, ti) in (showAllTo ? penerimaList : penerimaList.slice(0, LIMIT_DISPLAY))" :key="ti"
               class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 min-w-0">
-              <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1 }}.</span>
+              <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ Number(ti) + 1 }}.</span>
               <div class="truncate min-w-0">
                 <span class="font-medium">{{ t.position_text || t.positionText || t.nama }}</span>
                 <span v-if="t.nama && (t.position_text || t.positionText)"
@@ -264,7 +264,7 @@ onMounted(loadData);
           <div class="flex flex-col gap-0.5 min-w-0 flex-1">
             <div v-for="(t, ti) in (showAllCc ? tembusanList : tembusanList.slice(0, LIMIT_DISPLAY))" :key="ti"
               class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 min-w-0">
-              <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ ti + 1 }}.</span>
+              <span class="text-gray-400 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ Number(ti) + 1 }}.</span>
               <div class="truncate min-w-0">
                 <span class="font-medium">{{ t.position_text || t.positionText || t.nama }}</span>
                 <span v-if="t.nama && (t.position_text || t.positionText)"

@@ -65,10 +65,9 @@ export const useDisposisi = () => {
 
   // --- API Actions ---
 
-  const getRecipients = async () => {
-    const res = await apiGet<RecipientApiResponse>(
-      `/DI/get-recipient/`,
-    );
+  const getRecipients = async (positionId?: string | number) => {
+    const url = positionId ? `/DI/get-recipient/${positionId}` : `/DI/get-recipient/`;
+    const res = await apiGet<RecipientApiResponse>(url);
     return {
       sender: res?.data?.sender ?? null,
       recipients: normalizeRecipients(res?.data),

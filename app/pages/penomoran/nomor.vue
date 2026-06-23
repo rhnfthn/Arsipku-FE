@@ -655,7 +655,7 @@
                   :key="item.id || `nomor-${idx}`"
                   :class="[
                     'flex items-center gap-3 px-4 py-3 transition',
-                    idx < detailData.nomor_list.length - 1
+                    Number(idx) < detailData.nomor_list.length - 1
                       ? 'border-b border-gray-100 dark:border-gray-700'
                       : '',
                     item.status === 'hangus'
@@ -666,7 +666,7 @@
                   <span
                     class="text-xs text-gray-400 dark:text-gray-500 w-5 text-right flex-shrink-0"
                   >
-                    {{ idx + 1 }}.
+                    {{ Number(idx) + 1 }}.
                   </span>
                   <span
                     :class="[
@@ -729,7 +729,7 @@
                               : 'dark:text-gray-200'
                           ]"
                         >
-                          {{ idx + 1 }}. {{ item.nomor }}
+                          {{ Number(idx) + 1 }}. {{ item.nomor }}
                         </span>
                         <span
                           :class="[
@@ -956,8 +956,8 @@ const openAdd = ref<boolean>(false)
 const openPreview = ref(false)
 const openConfirmHangus = ref(false)
 const isHangusing = ref(false)
-const selectedRow = ref(null)
-const detailData = ref(null)
+const selectedRow = ref<any>(null)
+const detailData = ref<any>(null)
 const rows = ref<any[]>([])
 const pagination = ref<any>(null)
 
@@ -1035,7 +1035,7 @@ const saveSingleFile = async () => {
     singleFileData.file_text = result?.file_text || null
 
     // Mirror onto all nomor items that are not hangus
-    detailData.value.nomor_list.forEach((n: any) => {
+    detailData.value?.nomor_list.forEach((n: any) => {
       if (n.status !== 'hangus') {
         n.file_name = singleFileData.file_name
         n.file_text = singleFileData.file_text
@@ -1376,9 +1376,9 @@ const paginationPages = computed(() => {
 })
 
 // ─── Fetch data ────────────────────────────────────────────────────────────────
-function groupDuplicateRows(dataArray) {
+function groupDuplicateRows(dataArray: any[]) {
   const grouped = new Map()
-  dataArray.forEach((item) => {
+  dataArray.forEach((item: any) => {
     const key = item.id_request
     if (grouped.has(key)) {
       grouped.get(key).nomor_list.push(item.nomor)
@@ -1426,7 +1426,7 @@ const fetchData = async () => {
   }
 }
 
-const openRowModal = async (row) => {
+const openRowModal = async (row: any) => {
   selectedRow.value = row
   openPreview.value = true
   loadingDetail.value = true
@@ -1436,7 +1436,7 @@ const openRowModal = async (row) => {
   try {
     const detail = await getDetailNomor(row.id_request)
     if (!detail) throw new Error('Detail tidak ditemukan')
-    const nomorList = (detail?.nomor_list || []).map((item, idx) => ({
+    const nomorList = (detail?.nomor_list || []).map((item: any, idx: any) => ({
       id: item.id || `${row.id_request}-${idx}`,
       nomor: item.nomor,
       status: item.status || 'terpakai',
@@ -1457,7 +1457,7 @@ const openRowModal = async (row) => {
     }
     // Populate shared file for single-file mode
     // Cari dari nomor yang masih aktif (belum hangus) dulu, kalau semua hangus pakai nomor pertama
-    const activeNomor = nomorList.find((n) => n.status !== 'hangus')
+    const activeNomor = nomorList.find((n: any) => n.status !== 'hangus')
     const sourceNomor = activeNomor || nomorList[0]
     if (detail.is_single_file && sourceNomor?.file_name) {
       singleFileData.file_name = sourceNomor.file_name
@@ -1471,7 +1471,7 @@ const openRowModal = async (row) => {
       klasifikasiDisplay: row.klasifikasi,
       jumlah: row.nomor_list?.length || 0,
       is_single_file: false,
-      nomor_list: (row.nomor_list || []).map((nomor, idx) => ({
+      nomor_list: (row.nomor_list || []).map((nomor: any, idx: any) => ({
         id: `${row.id_request}-${idx}`,
         nomor: typeof nomor === 'string' ? nomor : nomor.nomor,
         status: typeof nomor === 'string' ? 'terpakai' : nomor.status || 'terpakai',
@@ -1485,7 +1485,7 @@ const openRowModal = async (row) => {
   }
 }
 
-const handleSubmitFromModal = async (payload) => {
+const handleSubmitFromModal = async (payload: any) => {
   try {
     const response = await createPenomoranFinal(payload)
     currentPage.value = 1

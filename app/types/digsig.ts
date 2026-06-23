@@ -53,6 +53,7 @@ export interface DigsigSigner {
   nik: string | null
   nama: string
   jabatan: string
+  lokasi?: string
   positionId: string | null
   status: 'waiting' | 'pending' | 'signed' | 'rejected'
   signedAt: string | null
@@ -78,6 +79,7 @@ export interface DigsigDocument {
   fileSize: number
   fileMimeType?: string
   filePreviewUrl?: string
+  fileUrl?: string
   signedFilePath: string | null
   signedFileName?: string | null
   signedFilePreviewUrl?: string | null
@@ -109,6 +111,7 @@ export interface DigsigDocumentResponse {
 
 export interface DigsigDocumentDetailResponse {
   success: boolean
+  message?: string
   data: DigsigDocument
 }
 
@@ -118,6 +121,13 @@ export interface DigsigDocumentParams {
   search?: string
   status?: string
   sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+export interface DigsigSignerInput {
+  urutan: number
+  positionId?: number
+  persnum?: number
 }
 
 export interface CreateDocumentPayload {
@@ -128,10 +138,7 @@ export interface CreateDocumentPayload {
   perihal: string
   file: File
   visibleSign: boolean
-  signers: {
-    urutan: number
-    positionId: number
-  }[]
+  signers: DigsigSignerInput[]
 }
 
 export interface UpdateDocumentPayload {
@@ -142,10 +149,7 @@ export interface UpdateDocumentPayload {
   perihal?: string
   file?: File
   visibleSign?: boolean
-  signers?: {
-    urutan: number
-    positionId: number
-  }[]
+  signers?: DigsigSignerInput[]
 }
 
 // Klasifikasi
@@ -171,6 +175,9 @@ export interface JenisNaskah {
   jenis_text: string
   format_penomoran: string
   file_url: string
+  file_text?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface JenisNaskahResponse {
@@ -183,20 +190,20 @@ export interface JenisNaskahResponse {
 export interface Verifikator {
   persnum: number
   nama: string
-  positionId: number
+  positionId: number | string
   jabatan: string
-  lokasi: string
-  company: number
-  companyText: string
-  area: string
-  areaText: string
-  subArea: number
-  subAreaText: string
-  organization: string | null
-  organizationText: string
-  abbreviation: string | null
-  bodTag: string
-  isChief: boolean
+  lokasi?: string
+  company?: number
+  companyText?: string
+  area?: string
+  areaText?: string
+  subArea?: number
+  subAreaText?: string
+  organization?: string | null
+  organizationText?: string
+  abbreviation?: string | null
+  bodTag?: string
+  isChief?: boolean
 }
 
 export interface VerifikatorResponse {
@@ -221,9 +228,29 @@ export interface DocumentInfo {
   status: 'VALID' | 'INVALID' | 'EXPIRED'
 }
 
+export interface CekDokumenSigner {
+  name?: string
+  issuer?: string
+  signDate?: string
+  validFrom?: string
+  validUntil?: string
+  reason?: string
+  algorithm?: string
+  [key: string]: any
+}
+
 export interface CekDokumenData {
-  document: DocumentInfo
-  signatures: SignatureInfo[]
+  namaDokumen: string
+  status: string
+  isValid: boolean
+  jumlahSignature: number
+  verifiedAt: string
+  keterangan: string
+  signers?: CekDokumenSigner[]
+  verificationDetails?: Record<string, any>
+  // Legacy fields (untuk kompatibilitas dengan kode lama)
+  document?: DocumentInfo
+  signatures?: SignatureInfo[]
 }
 
 export interface CekDokumenResponse {
@@ -236,41 +263,62 @@ export interface PenandatangananSigner {
   id: string
   urutan: number
   persnum: number
+  nik?: string | null
   nama: string | null
   jabatan: string | null
+  lokasi?: string | null
+  positionId?: number
   status: 'waiting' | 'pending' | 'signed' | 'rejected'
   signedAt: string | null
+  signatureId?: string | null
+  rejectedAt?: string | null
+  keterangan?: string | null
 }
 
 export interface PenandatangananDocument {
   id: string
   uuid?: string
-  tanggalDibuat: string
-  tanggalDokumen?: string
   nomorDokumen: string
+  perihal: string
+  tanggalDokumen?: string
+  tanggalDibuat: string
   jenisNaskah: string
   jenisNaskahText?: string
   klasifikasi?: string
-  klasifikasiText?: string
-  perihal: string
+  klasifikasiText?: string | null
   totalPenandatangan: number
-  currentSignerOrder: number
-  status: 'pending' | 'signed' | 'rejected'
+  currentSignerOrder?: number
+  status?: 'pending' | 'signed' | 'rejected'
+  documentStatus: string
   mySignerStatus: 'waiting' | 'pending' | 'signed' | 'rejected'
-  documentStatus: 'draft' | 'on_progress' | 'completed' | 'rejected'
   canSign: boolean
   canReject: boolean
-  signers: PenandatangananSigner[]
   fileName?: string
   fileSize?: number
   fileMimeType?: string
-  filePreviewUrl: string | null
+  filePreviewUrl?: string | null
   signedFileName?: string | null
-  signedFilePreviewUrl: string | null
+  signedFilePreviewUrl?: string | null
+  fileUrl?: string | null
   createdBy?: number
-  createdByName: string
-  createdByPosition: string
+  createdByName?: string
+  createdByPosition?: string
   mySignerInfo?: PenandatangananSigner
+  signers?: Array<{
+    id: string
+    urutan: number
+    persnum: number
+    nik?: string | null
+    nama: string
+    jabatan: string
+    lokasi: string
+    positionId: number
+    status: string
+    signedAt?: string | null
+    signatureId?: string | null
+    rejectedAt?: string | null
+    keterangan?: string | null
+  }>
 }
 
 export interface PenandatangananResponse {
@@ -310,51 +358,8 @@ export interface DigsigConfigResponse {
   success: boolean
   data: {
     enabled: boolean
+    digsig?: boolean
+    ttdQr?: boolean
+    ttdBasah?: boolean
   }
-}
-
-export interface PenandatangananDocument {
-  id: string
-  nomorDokumen: string
-  perihal: string
-  tanggalDokumen: string
-  tanggalDibuat: string
-  jenisNaskah: string
-  jenisNaskahText?: string
-  klasifikasi: string
-  klasifikasiText?: string | null
-  totalPenandatangan: number
-  documentStatus: string
-  mySignerStatus: 'waiting' | 'signed' | 'rejected' | 'pending'
-  mySignerInfo?: {
-    nama: string
-    jabatan: string
-  }
-  canSign: boolean
-  canReject: boolean
-
-  // File preview URLs dari list endpoint (GET /digsig/penandatanganan)
-  filePreviewUrl?: string | null
-  signedFilePreviewUrl?: string | null
-
-  // ✅ fileUrl dari detail endpoint (GET /digsig/document/:id atau /digsig/penandatanganan/:id)
-  // Ini adalah signed URL dari MinIO/S3 untuk membuka PDF langsung
-  fileUrl?: string | null
-
-  // Signers (dari detail endpoint)
-  signers?: Array<{
-    id: string
-    urutan: number
-    persnum: number
-    nik?: string | null
-    nama: string
-    jabatan: string
-    lokasi: string
-    positionId: number
-    status: string
-    signedAt?: string | null
-    signatureId?: string | null
-    rejectedAt?: string | null
-    keterangan?: string | null
-  }>
 }

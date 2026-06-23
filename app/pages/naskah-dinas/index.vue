@@ -177,7 +177,7 @@
                 <div
                   class="font-medium"
                   v-html="
-                    highlight(item.penerima?.map((p) => p.position_text).join(', ') || '-', search)
+                    highlight(item.penerima?.map((p: any) => p.position_text).join(', ') || '-', search)
                   "
                 />
               </td>
@@ -320,7 +320,7 @@
                 v-if="
                   paginationPages.length > 0 &&
                   typeof paginationPages[paginationPages.length - 1] === 'number' &&
-                  paginationPages[paginationPages.length - 1] < totalPages - 1
+                  Number(paginationPages[paginationPages.length - 1]) < totalPages - 1
                 "
                 class="px-2 text-gray-400 dark:text-gray-500 text-sm"
               >
@@ -331,7 +331,7 @@
                 v-if="
                   paginationPages.length > 0 &&
                   typeof paginationPages[paginationPages.length - 1] === 'number' &&
-                  paginationPages[paginationPages.length - 1] < totalPages
+                  Number(paginationPages[paginationPages.length - 1]) < totalPages
                 "
                 @click="goToPage(totalPages)"
                 class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all dark:text-gray-200"
@@ -777,6 +777,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import type { BreadcrumbItem } from '@nuxt/ui';
 import {
   Search,
   ArrowUpDown,
@@ -969,7 +970,7 @@ const paginatedData = computed(() => {
   return filteredData.value.slice(start, start + perPage.value);
 });
 
-const paginationPages = computed(() => {
+const paginationPages = computed<(number | string)[]>(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   const pages: number[] = [];
@@ -1079,7 +1080,7 @@ const saveDelegasi = async () => {
       perihal: newDelegasi.value.perihal,
       lampiran: lampiranText.value,
       file: filesRef.value,
-      pembuat_id: Number(user.value.position)
+      pembuat_id: Number(user.value?.position)
     });
 
     toast.add({
@@ -1163,8 +1164,8 @@ function selectNewSifatNaskah(val: string) {
   openNewSifatNaskah.value = false;
 }
 
-function selectNewAsalNaskah(item: { id: number; nama: string }) {
-  newDelegasi.value.asal_naskah = item.id;
+function selectNewAsalNaskah(item: { id: number | string; nama: string }) {
+  newDelegasi.value.asal_naskah = Number(item.id);
   newDelegasi.value.asal_naskah_label = item.nama;
   modalErrors.value.asal_naskah = false;
   openNewAsalNaskah.value = false;

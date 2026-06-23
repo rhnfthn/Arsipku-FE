@@ -76,7 +76,7 @@ export const useTerkirimDetail = () => {
     // [FIX] Jika final_pdf_url sudah ada dari backend, pakai itu saja
     if (detail.value.final_pdf_url) {
       // Cek apakah URL valid/bisa diakses
-      activePdfUrl.value = detail.value.final_pdf_url;
+      pdfUrl.value = detail.value.final_pdf_url;
       showPdfModal.value = true;
       return;
     }

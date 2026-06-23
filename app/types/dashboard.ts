@@ -45,6 +45,7 @@ export interface SuratMasukTerbaru {
   flag_favorit: boolean;
   flag_note: boolean;
   flag_arsip: boolean;
+  is_priority?: boolean;
 }
 
 export interface DigsigMenungguTTD {

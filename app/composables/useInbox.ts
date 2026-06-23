@@ -307,9 +307,34 @@ export function useInbox() {
     }
   };
 
+  const fetchInboxNavigation = async (idNaskah: string, jenis?: string) => {
+    try {
+      const query = new URLSearchParams();
+      if (jenis && !["ALL", "Semua"].includes(jenis)) query.append("jenis", jenis);
+      const res: any = await apiGet(
+        `/naskah_sirkulasi/inbox/${encodeURIComponent(idNaskah)}/navigation${query.toString() ? `?${query.toString()}` : ""}`,
+        {},
+        { skipCache: true },
+      );
+
+      // Backend mengembalikan { success, message, data: { current, previous, next } }
+      // apiGet sudah me-return res.data (axios), jadi res = { success, data: {...} }
+      const navData = res?.data ?? res;
+      return {
+        current: navData?.current ?? null,
+        previous: navData?.previous ?? null,
+        next: navData?.next ?? null,
+      };
+    } catch (err) {
+      console.error("fetchInboxNavigation error:", err);
+      return { current: null, previous: null, next: null };
+    }
+  };
+
   return {
     items, pagination, summary, pending, error,
     fetchInbox, markAsRead, toggleFlag,
     fetchInboxDetail, unsetPriority, fetchKonsepDetail,
+    fetchInboxNavigation,
   };
 }

@@ -5,12 +5,16 @@ export interface DraftPayload {
   pengirim: string | number;
   penerima: (string | number)[]; // Array of persnum
   tembusan: (string | number)[]; // Array of persnum
+  penerima_grup?: (string | number)[];
+  tembusan_grup?: (string | number)[];
+  tertuju?: any[];
 
   klasifikasi: string;
   klasifikasi_text: string;
   sifat: string;
   perihal: string;
   htmlContent: string;
+  konten?: string;
   english: boolean;
 
   nama_tempat: string;
@@ -19,9 +23,12 @@ export interface DraftPayload {
   nama_lengkap: string;
 
   tgl: string; // YYYY-MM-DD
+  tanggal?: string;
 
+  lampiran?: string;
   // File objects untuk FormData
   lampiran_files?: File[];
+  lampiran_temp_ids?: string[];
   final_pdf?: Blob | File | null;
 }
 

@@ -558,10 +558,10 @@ onMounted(async () => {
       getRecipientGroups().catch(() => [])
     ]);
 
-    klasifikasiList.value = Array.isArray(klasRes) ? klasRes : (klasRes?.data || klasRes?.klasifikasi || []);
+    klasifikasiList.value = Array.isArray(klasRes) ? klasRes : ((klasRes as any)?.data || (klasRes as any)?.klasifikasi || []);
     recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
-    const rawData = recRes.recipients || recRes.data || [];
+    const rawData = recRes.recipients || (recRes as any).data || [];
     items.value = rawData.map((r: any) => {
       const posText = r.position_text || r.positionText;
       const nama = r.nama || r.person_name || r.persnum_person_text || "";
@@ -587,8 +587,8 @@ onMounted(async () => {
       editDraftId.value = refId;
       const resKonsep = await fetchKonsepDetail(refId);
 
-      const flowList = resKonsep?.flow || (resKonsep?.data && resKonsep.data.flow) || [];
-      const rootData = resKonsep?.data || resKonsep;
+      const flowList = resKonsep?.flow || ((resKonsep as any)?.data && (resKonsep as any).data.flow) || [];
+      const rootData = (resKonsep as any)?.data || resKonsep;
 
       let draftData = Array.isArray(flowList)
         ? flowList.find((d: any) => d.jenis === 'K')
