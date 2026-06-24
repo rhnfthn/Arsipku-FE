@@ -180,7 +180,7 @@
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
                     <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
-                  <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
+                  <div class="absolute bottom-4 left-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
                       Paraf
