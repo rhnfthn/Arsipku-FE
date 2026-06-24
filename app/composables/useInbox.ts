@@ -41,7 +41,7 @@ export interface InboxParams {
 }
 
 export function useInbox() {
-  const { apiGet, apiPut, apiPatch } = useApi();
+  const { apiGet, apiPut, apiPatch, clearApiCache } = useApi();
 
   // State dipindahkan ke dalam fungsi agar setiap consumer punya instance sendiri
   const items = ref<any[]>([]);
@@ -161,6 +161,8 @@ export function useInbox() {
         id_naskah: idNaskah,
         position_id: positionId,
       });
+      if (summary.value.total_belum_dibaca > 0) summary.value.total_belum_dibaca--;
+      clearApiCache();
     } catch (err) {
       console.error("Gagal update status baca (nav):", err);
     }
