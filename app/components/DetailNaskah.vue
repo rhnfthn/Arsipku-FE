@@ -25,6 +25,7 @@ import {
   LockOpen,
   StickyNote,
   Tag,
+  Loader2,
 } from "lucide-vue-next";
 
 // Tambah prop
