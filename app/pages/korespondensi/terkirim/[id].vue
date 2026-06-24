@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
@@ -21,6 +21,7 @@ const positionId = computed(() => user.value?.position?.id || user.value?.positi
 
 const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
 const { rejectKonsep } = useKonsep();
+const { fetchSentNavigation } = useSirkulasi();
 
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
@@ -35,6 +36,11 @@ const details = ref<any[]>([]);
 const selected = ref<any>(null);
 const isLoading = ref(true);
 const isKonsepData = ref(false);
+
+// --- NAVIGATION (previous/next dari terkirim) ---
+const navPrev = ref<any>(null);
+const navNext = ref<any>(null);
+const isLoadingNav = ref(false);
 
 // Collapse management
 const collapsedIndices = ref<Set<number>>(new Set());
@@ -256,7 +262,22 @@ const loadData = async () => {
   details.value = [];
   selected.value = null;
 
+  navPrev.value = null;
+  navNext.value = null;
+
   try {
+    // Fetch navigation (prev/next) untuk pesan terkirim
+    isLoadingNav.value = true;
+    try {
+      const nav = await fetchSentNavigation(id, jenisQuery);
+      navPrev.value = nav.previous;
+      navNext.value = nav.next;
+    } catch (navErr) {
+      console.error('[Detail Terkirim] fetchSentNavigation failed:', navErr);
+    } finally {
+      isLoadingNav.value = false;
+    }
+
     if (jenisQuery === 'K') {
       // === KONSEP === (di halaman terkirim)
       isKonsepData.value = true;
@@ -291,6 +312,9 @@ const loadData = async () => {
       // showFinalize & showEdit tidak relevan di terkirim, tapi tetap set
       showFinalizeActions.value = false;
       showEditAction.value = false;
+
+      const hasNewer = Boolean(navNext.value);
+      const hasOlder = Boolean(navPrev.value);
 
       details.value = sortedFlows.map((flow: any, index: number) => {
         const aksi = flow.detail?.aksi || flow.aksi || 'read';
@@ -330,7 +354,9 @@ const loadData = async () => {
           catatan: flow.detail?.catatan || flow.catatan || '',
           attachments: flow.lampiran_files || [],
           pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
-          _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
+          _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
+          _hasNewer: index === 0 ? hasNewer : false,
+          _hasOlder: index === 0 ? hasOlder : false,
         };
       });
 
@@ -360,7 +386,10 @@ const loadData = async () => {
         selected.value = inboxData;
         initFlagState();
 
-        details.value = rawFlows.map((item: any) => {
+        const hasNewer = Boolean(navNext.value);
+        const hasOlder = Boolean(navPrev.value);
+
+        details.value = rawFlows.map((item: any, index: number) => {
           // Robust checking untuk penerima
           let listPenerima: any[] = [];
           if (Array.isArray(item.penerima) && item.penerima.length > 0) listPenerima = item.penerima;
@@ -407,7 +436,9 @@ const loadData = async () => {
             disposisi: item.disposisi || item.instruksi || inboxData.disposisi_content?.disposisi,
             lampiran_files: item.lampiran_files || item.attachments || [],
             final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
-            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false }
+            _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
+            _hasNewer: index === 0 ? hasNewer : false,
+            _hasOlder: index === 0 ? hasOlder : false,
           };
         });
       }
@@ -429,6 +460,26 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
+
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) loadData();
+  },
+);
+
+// --- NAVIGATION HANDLERS (prev/next pesan terkirim) ---
+const goToNav = (target: any) => {
+  if (!target?.id_naskah) return;
+  const targetJenis = target.jenis || jenisQuery || 'ND';
+  router.push({
+    path: `/korespondensi/terkirim/${target.id_naskah}`,
+    query: { jenis: targetJenis },
+  });
+};
+
+const goToNewer = () => goToNav(navNext.value);
+const goToOlder = () => goToNav(navPrev.value);
 
 // --- ACTION HANDLERS (Sama seperti sebelumnya) ---
 const goBack = () => router.back();
@@ -651,6 +702,8 @@ const konsepOptions = [
             @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
             @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"
             @lanjut-konsep="isOpenKonsepModal = true"
+            @nav-newer="goToNewer"
+            @nav-older="goToOlder"
             @favorite="handleToggleFlag('favorit')"
             @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
             @lock="handleToggleFlag('lock')"

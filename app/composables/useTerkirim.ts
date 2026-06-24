@@ -164,5 +164,27 @@ export const useSirkulasi = () => {
     }
   };
 
-  return { items, pagination, summary, isLoading, error, fetchSentBox, bulkActionSent, toggleFlag };
+  const fetchSentNavigation = async (idNaskah: string, jenis?: string) => {
+    try {
+      const query = new URLSearchParams();
+      if (jenis && !['ALL', 'Semua'].includes(jenis)) query.append('jenis', jenis);
+      const res: any = await apiGet(
+        `/naskah_sirkulasi/sent/${encodeURIComponent(idNaskah)}/navigation${query.toString() ? `?${query.toString()}` : ''}`,
+        {},
+        { skipCache: true },
+      );
+
+      const navData = res?.data ?? res;
+      return {
+        current: navData?.current ?? null,
+        previous: navData?.previous ?? null,
+        next: navData?.next ?? null,
+      };
+    } catch (err) {
+      console.error('fetchSentNavigation error:', err);
+      return { current: null, previous: null, next: null };
+    }
+  };
+
+  return { items, pagination, summary, isLoading, error, fetchSentBox, bulkActionSent, toggleFlag, fetchSentNavigation };
 };

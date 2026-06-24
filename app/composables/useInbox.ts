@@ -144,6 +144,18 @@ export function useInbox() {
     }
   };
 
+  const markNaskahAsRead = async (idNaskah: string, positionId: string) => {
+    if (!idNaskah || !positionId) return;
+    try {
+      await apiPut("/naskah_sirkulasi/update-read-status", {
+        id_naskah: idNaskah,
+        position_id: positionId,
+      });
+    } catch (err) {
+      console.error("Gagal update status baca (nav):", err);
+    }
+  };
+
   const toggleFlag = async (
     mail: any,
     flagType: "favorit" | "arsip" | "note" | "tindak_lanjut" | "lock",
@@ -349,7 +361,7 @@ export function useInbox() {
 
   return {
     items, pagination, summary, pending, error,
-    fetchInbox, markAsRead, toggleFlag,
+    fetchInbox, markAsRead, markNaskahAsRead, toggleFlag,
     fetchInboxDetail, unsetPriority, fetchKonsepDetail,
     fetchInboxNavigation,
   };

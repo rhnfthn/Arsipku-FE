@@ -16,7 +16,7 @@ const route = useRoute();
 const router = useRouter();
 const { user } = useAuth();
 
-const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag } = useInbox();
+const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag, markNaskahAsRead } = useInbox();
 const { rejectKonsep } = useKonsep();
 
 const id = route.params.id as string;
@@ -609,6 +609,9 @@ const handleToggleFlag = async (
 const goToNav = (target: any) => {
   if (!target?.id_naskah) return;
   const targetJenis = target.jenis || jenisQuery || 'ND';
+  if (user.value?.position) {
+    markNaskahAsRead(target.id_naskah, user.value.position);
+  }
   router.push({
     path: `/korespondensi/kotak-masuk/${target.id_naskah}`,
     query: { jenis: targetJenis },
