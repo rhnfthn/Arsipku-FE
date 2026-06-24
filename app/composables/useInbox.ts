@@ -1,22 +1,24 @@
 import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
 
-const toWibDate = (value: string | null | undefined): Date | null => {
+const parseWibDate = (value: string | null | undefined): Date | null => {
   if (!value) return null;
+  // BE kirim WIB string: "YYYY-MM-DD HH:mm:ss" → parse sebagai WIB (+07:00)
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+    return new Date(value.replace(' ', 'T') + '+07:00');
+  }
   const date = new Date(value);
-  if (isNaN(date.getTime())) return null;
-  // Input dari BE adalah UTC (suffix Z). Tambahkan 7 jam untuk WIB.
-  return new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  return isNaN(date.getTime()) ? null : date;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "2-digit", month: "long", year: "numeric",
   hour: "2-digit", minute: "2-digit", hour12: false,
-  timeZone: "UTC",
+  timeZone: "Asia/Jakarta",
 });
 
 const formatDateTime = (value: string | null | undefined) => {
-  const d = toWibDate(value);
+  const d = parseWibDate(value);
   if (!d) return "-";
   return dateTimeFormatter.format(d);
 };
