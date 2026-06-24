@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import {
   Hash,
   Calendar,
+  Clock,
   Paperclip,
   FileText,
   ArrowLeft,
@@ -108,19 +109,49 @@ const LIMIT_DISPLAY = 2;
 const MAX_FLOW_HEIGHT = 200;
 
 // --- HELPERS ---
-const formatDate = (v: string) => {
-  if (!v) return '-';
+const parseWibDate = (v: string): Date | null => {
+  if (!v) return null;
+  // BE kirim WIB string: "YYYY-MM-DD HH:mm:ss" → parse sebagai WIB (+07:00)
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(v)) {
+    return new Date(v.replace(' ', 'T') + '+07:00');
+  }
+  // ISO UTC string dengan Z
   const d = new Date(v);
-  return `${d.getUTCDate()} ${new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone: 'UTC' }).format(d)} ${d.getUTCFullYear()}`;
+  return isNaN(d.getTime()) ? null : d;
+};
+const formatDate = (v: string) => {
+  const d = parseWibDate(v);
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  }).format(d);
 };
 const formatFullDateTime = (v: string) => {
-  if (!v) return '-';
-  const d = new Date(v);
-  const dateStr = `${d.getUTCDate()} ${new Intl.DateTimeFormat('id-ID', { month: 'long', timeZone: 'UTC' }).format(d)} ${d.getUTCFullYear()}`;
-  const hours = d.getUTCHours().toString().padStart(2, '0');
-  const minutes = d.getUTCMinutes().toString().padStart(2, '0');
-  const seconds = d.getUTCSeconds().toString().padStart(2, '0');
-  return `${dateStr} ${hours}:${minutes}:${seconds} WIB`;
+  const d = parseWibDate(v);
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Jakarta',
+    hour12: false,
+  }).format(d) + ' WIB';
+};
+const formatTime = (v: string) => {
+  const d = parseWibDate(v);
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta',
+    hour12: false,
+  }).format(d) + ' WIB';
 };
 const formatDisposisiInline = (v: any) =>
   Array.isArray(v) ? v.join(', ') : String(v || '').replace(/(\r\n|\n|\r)/gm, ', ');
@@ -374,6 +405,11 @@ const removeNote = () => {
                 <span>{{ formatDate(data.tanggal || data.created_at || data.createdAt) }}</span>
               </div>
               <span class="opacity-30">•</span>
+              <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                <Clock class="w-3 h-3" />
+                <span>{{ formatTime(data.created_at || data.createdAt || data.tanggal) }}</span>
+              </div>
+              <span class="opacity-30">•</span>
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600 shrink-0">
                 {{ data.aksi === 'kirim_disposisi' ? 'DISPOSISI' : (data.aksi === 'create' || (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep) ? (data.jenis_naskah_konsep ? 'KONSEP ' + data.jenis_naskah_konsep : 'KONSEP') : (data.jenis_label || data.aksi)) }}
               </span>
@@ -421,6 +457,10 @@ const removeNote = () => {
           >
             <Calendar class="w-3.5 h-3.5" /><span>{{
               formatDate(data.tanggal || data.created_at || data.createdAt)
+            }}</span>
+            <span class="opacity-40">•</span>
+            <Clock class="w-3.5 h-3.5" /><span>{{
+              formatTime(data.created_at || data.createdAt || data.tanggal)
             }}</span>
           </div>
           <span class="opacity-40">•</span>

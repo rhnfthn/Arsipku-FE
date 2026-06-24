@@ -1,16 +1,26 @@
 import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
 
+const parseWibDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  // BE kirim WIB string: "YYYY-MM-DD HH:mm:ss" → parse sebagai WIB (+07:00)
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+    return new Date(value.replace(' ', 'T') + '+07:00');
+  }
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? null : date;
+};
+
 const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "2-digit", month: "long", year: "numeric",
   hour: "2-digit", minute: "2-digit", hour12: false,
+  timeZone: "Asia/Jakarta",
 });
 
 const formatDateTime = (value: string | null | undefined) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "-";
-  return dateTimeFormatter.format(date);
+  const d = parseWibDate(value);
+  if (!d) return "-";
+  return dateTimeFormatter.format(d);
 };
 
 export interface InboxParams {
@@ -31,7 +41,7 @@ export interface InboxParams {
 }
 
 export function useInbox() {
-  const { apiGet, apiPut, apiPatch } = useApi();
+  const { apiGet, apiPut, apiPatch, clearApiCache } = useApi();
 
   // State dipindahkan ke dalam fungsi agar setiap consumer punya instance sendiri
   const items = ref<any[]>([]);
@@ -151,6 +161,8 @@ export function useInbox() {
         id_naskah: idNaskah,
         position_id: positionId,
       });
+      if (summary.value.total_belum_dibaca > 0) summary.value.total_belum_dibaca--;
+      clearApiCache();
     } catch (err) {
       console.error("Gagal update status baca (nav):", err);
     }
