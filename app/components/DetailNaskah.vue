@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import {
   Hash,
   Calendar,
+  Clock,
   Paperclip,
   FileText,
   ArrowLeft,
@@ -108,19 +109,46 @@ const LIMIT_DISPLAY = 2;
 const MAX_FLOW_HEIGHT = 200;
 
 // --- HELPERS ---
-const formatDate = (v: string) => {
-  if (!v) return '-';
+const toWibDate = (v: string): Date | null => {
+  if (!v) return null;
   const d = new Date(v);
-  return `${d.getUTCDate()} ${new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone: 'UTC' }).format(d)} ${d.getUTCFullYear()}`;
+  if (isNaN(d.getTime())) return null;
+  // Input dari BE adalah UTC (suffix Z). Tambahkan 7 jam untuk WIB.
+  return new Date(d.getTime() + 7 * 60 * 60 * 1000);
+};
+const formatDate = (v: string) => {
+  const d = toWibDate(v);
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(d);
 };
 const formatFullDateTime = (v: string) => {
-  if (!v) return '-';
-  const d = new Date(v);
-  const dateStr = `${d.getUTCDate()} ${new Intl.DateTimeFormat('id-ID', { month: 'long', timeZone: 'UTC' }).format(d)} ${d.getUTCFullYear()}`;
-  const hours = d.getUTCHours().toString().padStart(2, '0');
-  const minutes = d.getUTCMinutes().toString().padStart(2, '0');
-  const seconds = d.getUTCSeconds().toString().padStart(2, '0');
-  return `${dateStr} ${hours}:${minutes}:${seconds} WIB`;
+  const d = toWibDate(v);
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'UTC',
+    hour12: false,
+  }).format(d) + ' WIB';
+};
+const formatTime = (v: string) => {
+  const d = toWibDate(v);
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    hour12: false,
+  }).format(d) + ' WIB';
 };
 const formatDisposisiInline = (v: any) =>
   Array.isArray(v) ? v.join(', ') : String(v || '').replace(/(\r\n|\n|\r)/gm, ', ');
@@ -421,6 +449,10 @@ const removeNote = () => {
           >
             <Calendar class="w-3.5 h-3.5" /><span>{{
               formatDate(data.tanggal || data.created_at || data.createdAt)
+            }}</span>
+            <span class="opacity-40">•</span>
+            <Clock class="w-3.5 h-3.5" /><span>{{
+              formatTime(data.created_at || data.createdAt || data.tanggal)
             }}</span>
           </div>
           <span class="opacity-40">•</span>

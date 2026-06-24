@@ -2,20 +2,28 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
 
+const toWibDate = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return null;
+  // Input dari BE adalah UTC (suffix Z). Tambahkan 7 jam untuk WIB.
+  return new Date(date.getTime() + 7 * 60 * 60 * 1000);
+};
+
 const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
   month: 'long',
   year: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false
+  hour12: false,
+  timeZone: 'UTC',
 });
 
 const formatDateTime = (value: string | null | undefined): string => {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return '-';
-  return dateTimeFormatter.format(date);
+  const d = toWibDate(value);
+  if (!d) return '-';
+  return dateTimeFormatter.format(d);
 };
 
 export interface SentParams {
