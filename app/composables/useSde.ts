@@ -14,7 +14,7 @@ export const useSde = () => {
    * Endpoint: GET /SDE/get-recipient/{positionId}
    */
   const getRecipientInfo = async (positionId?: string | number) => {
-    const url = positionId ? `/SDE/get-tembusan/${positionId}` : `/SDE/get-tembusan/`;
+    const url = positionId ? `/SDE/get-tembusan?pengirim=${positionId}` : `/SDE/get-tembusan`;
     const res = await apiGet<SdeRecipientApiResponse>(url);
 
     return {
