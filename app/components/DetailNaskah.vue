@@ -299,24 +299,23 @@ const removeNote = () => {
             <button @click="emit('favorite')"
               class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
               <Star class="w-4 h-4 transition-colors cursor-pointer"
-                :class="data.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400 dark:text-gray-500 hover:text-yellow-400'" />
+                :class="isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400 dark:text-gray-500 hover:text-yellow-400'" />
             </button>
           </UTooltip>
 
-          <!-- Tindak Lanjut -->
-          <UTooltip v-if="isHead" text="Tindak Lanjut">
-            <button @click="emit('tindak-lanjut')"
-              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-              <Tag class="w-4 h-4 -rotate-45 transition-colors cursor-pointer"
-                :class="data.isTinjut ? 'text-primary-500 fill-primary-500' : 'text-gray-400 dark:text-gray-500 hover:text-primary-400'" />
-            </button>
+          <!-- Tindak Lanjut (display only, tidak bisa di-toggle manual) -->
+          <UTooltip v-if="isHead && context !== 'sent'" text="Tindak Lanjut">
+            <div class="p-1.5 rounded-lg">
+              <Tag class="w-4 h-4 -rotate-45 transition-colors"
+                :class="isTinjut ? 'text-primary-500 fill-primary-500' : 'text-gray-300 dark:text-gray-600'" />
+            </div>
           </UTooltip>
 
-          <!-- Lock -->
-          <UTooltip v-if="isHead" text="Kunci">
+          <!-- Lock (hanya untuk inbox, tidak ada di terkirim) -->
+          <UTooltip v-if="isHead && context !== 'sent'" text="Kunci">
             <button @click="emit('lock')"
               class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-              <Lock v-if="data.isLocked"
+              <Lock v-if="isLocked"
                 class="w-4 h-4 transition-colors text-red-600 fill-red-100 cursor-pointer" />
               <LockOpen v-else
                 class="w-4 h-4 transition-colors text-gray-400 dark:text-gray-500 hover:text-red-500 cursor-pointer" />
@@ -328,7 +327,7 @@ const removeNote = () => {
             <button @click="openNoteModal"
               class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
               <StickyNote class="w-4 h-4 transition-colors cursor-pointer"
-                :class="data.isNote ? 'text-orange-600 fill-orange-100' : 'text-gray-400 dark:text-gray-500 hover:text-orange-500'" />
+                :class="isNote ? 'text-orange-600 fill-orange-100' : 'text-gray-400 dark:text-gray-500 hover:text-orange-500'" />
             </button>
           </UTooltip>
 
