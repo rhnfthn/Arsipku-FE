@@ -67,7 +67,10 @@ export const useAuth = () => {
 
   const getSSORedirectUrl = async () => {
     try {
-      const res: any = await apiGet("/auth/sso-redirect");
+      // Gunakan sso-redirect-local saat development (localhost) agar redirect ke localhost:3000/autharsipku
+      const isLocal = process.client && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const endpoint = isLocal ? "/auth/sso-redirect-local" : "/auth/sso-redirect";
+      const res: any = await apiGet(endpoint);
       return (res?.url as string) ?? null;
     } catch (error) {
       console.error("[AUTH] getSSORedirectUrl error:", error);

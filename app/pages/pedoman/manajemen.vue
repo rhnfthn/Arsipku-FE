@@ -156,8 +156,8 @@
                 </button>
               </div>
             </th>
-            <th class="px-4 py-3 font-semibold">Judul</th>
-            <th class="px-4 py-3 font-semibold">Jenis</th>
+            <th class="px-4 py-3 font-semibold whitespace-nowrap">Judul</th>
+            <th class="px-4 py-3 font-semibold whitespace-nowrap min-w-[180px]">Jenis</th>
             <th class="px-4 py-3 font-semibold">No. Dokumen</th>
             <th class="px-4 py-3 font-semibold">Tanggal Berlaku</th>
             <th class="px-4 py-3 font-semibold">Lampiran</th>
@@ -191,9 +191,9 @@
               </p>
             </td>
 
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 whitespace-nowrap">
               <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
                 :class="getJenisBadgeClass(pedoman.jenis)"
               >
                 {{ pedoman.jenis }}
@@ -386,7 +386,7 @@
         </Heading>
       </template>
 
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2" data-field="judul">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
           Judul <span class="text-red-500">*</span>
         </label>
@@ -394,23 +394,31 @@
           v-model="form.judul"
           type="text"
           placeholder="Masukkan judul pedoman..."
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+          :class="['border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400', errors.judul ? 'border-red-500' : 'border-gray-300 dark:border-gray-600']"
         />
+        <p v-if="errors.judul" class="text-xs text-red-500">{{ errors.judul }}</p>
       </div>
 
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2" data-field="deskripsi">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
           Deskripsi <span class="text-red-500">*</span>
         </label>
-        <textarea
-          v-model="form.deskripsi"
-          rows="4"
-          placeholder="Masukkan deskripsi pedoman..."
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 resize-none"
-        />
+        <div
+          :class="[
+            'border rounded-md overflow-hidden dark:bg-gray-700 dark:text-white',
+            errors.deskripsi ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+          ]"
+        >
+          <TinymceEditorAsync
+            v-model="form.deskripsi"
+            api-key="no-api-key"
+            :init="tinyMceInit"
+          />
+        </div>
+        <p v-if="errors.deskripsi" class="text-xs text-red-500">{{ errors.deskripsi }}</p>
       </div>
 
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2" data-field="jenis">
         <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
           Jenis Dokumen <span class="text-red-500">*</span>
         </label>
@@ -418,7 +426,7 @@
           <button
             type="button"
             @click="openJenisDropdown = !openJenisDropdown"
-            class="w-full h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-left rounded-md flex items-center justify-between hover:border-primary transition-all"
+            :class="['border w-full h-9 px-3 text-sm bg-white dark:bg-gray-700 text-left rounded-md flex items-center justify-between hover:border-primary transition-all', errors.jenis ? 'border-red-500' : 'border-gray-300 dark:border-gray-600']"
           >
             <span
               :class="
@@ -459,10 +467,11 @@
             </div>
           </Transition>
         </div>
+        <p v-if="errors.jenis" class="text-xs text-red-500">{{ errors.jenis }}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2" data-field="nomorDokumen">
           <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
             Nomor Dokumen <span class="text-red-500">*</span>
           </label>
@@ -470,19 +479,21 @@
             v-model="form.nomorDokumen"
             type="text"
             placeholder="Masukkan nomor dokumen..."
-            class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            :class="['border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400', errors.nomorDokumen ? 'border-red-500' : 'border-gray-300 dark:border-gray-600']"
           />
+          <p v-if="errors.nomorDokumen" class="text-xs text-red-500">{{ errors.nomorDokumen }}</p>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2" data-field="tanggalBerlaku">
           <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
             Tanggal Berlaku <span class="text-red-500">*</span>
           </label>
           <input
             v-model="form.tanggalBerlaku"
             type="date"
-            class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
+            :class="['border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white', errors.tanggalBerlaku ? 'border-red-500' : 'border-gray-300 dark:border-gray-600']"
           />
+          <p v-if="errors.tanggalBerlaku" class="text-xs text-red-500">{{ errors.tanggalBerlaku }}</p>
         </div>
       </div>
 
@@ -553,17 +564,8 @@
         </label>
       </div>
 
-      <div class="flex items-center gap-2">
-        <input
-          type="checkbox"
-          v-model="form.isActive"
-          id="isActive"
-          class="rounded border-gray-300"
-        />
-        <label for="isActive" class="text-xs font-semibold text-gray-700 dark:text-gray-200">
-          Aktif (tampilkan ke user)
-        </label>
-      </div>
+      <!-- Status isActive: hidden, default true -->
+      <input type="hidden" v-model="form.isActive" />
     </Modal>
   </Teleport>
 
@@ -591,13 +593,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick, defineAsyncComponent } from 'vue';
 import { Trash2, RotateCcw, Search, Plus, Pencil, ChevronDown, BookOpen, Paperclip, Upload, X, ImageIcon, FileText } from 'lucide-vue-next';
 import Modal from '@/components/Modal.vue';
 import EmptyState from '~/components/EmptyState.vue';
 import { usePedoman, PEDOMAN_JENIS_OPTIONS } from '@/composables/usePedoman';
 import type { Pedoman, PedomanJenis, PedomanPayload, LampiranItem } from '@/composables/usePedoman';
 import { formatDateSlash } from '~/utils/mail-helpers';
+
+const TinymceEditorAsync = defineAsyncComponent(() => import('~/components/TinymceEditorAsync.vue'));
 
 definePageMeta({ middleware: 'auth' });
 
@@ -762,6 +766,7 @@ const openAdd = () => {
   isEditMode.value = false;
   editingId.value = null;
   form.value = defaultForm();
+  clearErrors();
   showModal.value = true;
 };
 
@@ -770,7 +775,7 @@ const openEdit = (pedoman: Pedoman) => {
   editingId.value = pedoman.id;
   form.value = {
     judul: pedoman.judul,
-    deskripsi: pedoman.deskripsi,
+    deskripsi: pedoman.deskripsi || '',
     jenis: pedoman.jenis,
     nomorDokumen: pedoman.nomorDokumen,
     tanggalBerlaku: pedoman.tanggalBerlaku ? pedoman.tanggalBerlaku.split('T')[0] : '',
@@ -778,26 +783,76 @@ const openEdit = (pedoman: Pedoman) => {
     lampirans: pedoman.lampirans || [],
     isActive: pedoman.isActive,
   };
+  clearErrors();
   showModal.value = true;
 };
 
-const savePedoman = async () => {
-  if (
-    !form.value.judul.trim() ||
-    !form.value.deskripsi.trim() ||
-    !form.value.jenis ||
-    !form.value.nomorDokumen?.trim() ||
-    !form.value.tanggalBerlaku
-  ) {
-    toast.add({ title: 'Mohon lengkapi semua field wajib (*)', color: 'error' });
-    return;
+const tinyMceInit = {
+  base_url: '/tinymce',
+  suffix: '.min',
+  height: 200,
+  menubar: false,
+  promotion: false,
+  branding: false,
+  statusbar: false,
+  placeholder: 'Masukkan deskripsi pedoman...',
+  plugins: 'lists',
+  toolbar: 'bold italic bullist numlist',
+  content_style: `body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; padding: 8px 12px; margin: 0; }`,
+};
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+const errors = ref<Record<string, string>>({});
+
+const clearErrors = () => {
+  errors.value = {};
+};
+
+const validateForm = (): boolean => {
+  clearErrors();
+  let firstErrorField: string | null = null;
+
+  if (!form.value.judul.trim()) {
+    errors.value.judul = 'Judul harus diisi';
+    firstErrorField = firstErrorField || 'judul';
   }
+  if (!form.value.deskripsi || form.value.deskripsi.replace(/\u003c[^\u003e]*\u003e/g, '').trim().length === 0) {
+    errors.value.deskripsi = 'Deskripsi harus diisi';
+    firstErrorField = firstErrorField || 'deskripsi';
+  }
+  if (!form.value.jenis) {
+    errors.value.jenis = 'Jenis dokumen harus dipilih';
+    firstErrorField = firstErrorField || 'jenis';
+  }
+  if (!form.value.nomorDokumen?.trim()) {
+    errors.value.nomorDokumen = 'Nomor dokumen harus diisi';
+    firstErrorField = firstErrorField || 'nomorDokumen';
+  }
+  if (!form.value.tanggalBerlaku) {
+    errors.value.tanggalBerlaku = 'Tanggal berlaku harus diisi';
+    firstErrorField = firstErrorField || 'tanggalBerlaku';
+  }
+
+  // Auto-scroll ke field pertama yang error
+  if (firstErrorField) {
+    nextTick(() => {
+      const el = document.querySelector(`[data-field="${firstErrorField}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return false;
+  }
+
+  return true;
+};
+
+const savePedoman = async () => {
+  if (!validateForm()) return;
 
   isSaving.value = true;
   try {
     const payload: PedomanPayload = {
       judul: form.value.judul.trim(),
-      deskripsi: form.value.deskripsi.trim(),
+      deskripsi: form.value.deskripsi,
       jenis: form.value.jenis,
       nomorDokumen: form.value.nomorDokumen.trim(),
       tanggalBerlaku: normalizeDate(form.value.tanggalBerlaku),
