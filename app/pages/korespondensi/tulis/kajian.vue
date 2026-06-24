@@ -67,15 +67,14 @@
           </div>
         </div>
 
+        <!-- Lampiran text -->
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
-            <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="lampiranText" readonly tabindex="-1"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-                placeholder="Otomatis terisi saat upload file..." />
-            </div>
+            <input type="text" v-model="lampiranText" readonly tabindex="-1"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+              placeholder="Otomatis terisi saat upload file..." />
           </div>
         </div>
 
@@ -317,7 +316,7 @@ const signerInfo = computed(() => ({
 
 const editDraftId = ref<string | null>(null);
 const subject = ref("");
-const lampiranText = ref("-");
+const lampiranText = ref("");
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
@@ -367,8 +366,8 @@ const formattedDate = computed(() => {
 })
 
 watch(existingFiles, (files) => {
-  lampiranText.value = files.length > 0 ? `${files.length} Berkas` : "-";
-}, { deep: true });
+  lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
+}, { deep: true, immediate: true });
 
 // --- PAYLOAD ---
 const getPayload = (): KajianPayload => {
