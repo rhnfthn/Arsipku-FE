@@ -491,6 +491,9 @@ const loadData = async () => {
   } finally {
     isLoading.value = false;
     scrollToTarget();
+    if (id && user.value?.position && jenisQuery !== 'K') {
+      markNaskahAsRead(id, user.value.position);
+    }
   }
 };
 
@@ -609,9 +612,6 @@ const handleToggleFlag = async (
 const goToNav = (target: any) => {
   if (!target?.id_naskah) return;
   const targetJenis = target.jenis || jenisQuery || 'ND';
-  if (user.value?.position) {
-    markNaskahAsRead(target.id_naskah, user.value.position);
-  }
   router.push({
     path: `/korespondensi/kotak-masuk/${target.id_naskah}`,
     query: { jenis: targetJenis },
