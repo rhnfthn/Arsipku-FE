@@ -154,6 +154,29 @@ export const useTertunda = () => {
     return dataArray[0]?.raw ?? dataArray[0] ?? null;
   };
 
+  // ── NAVIGATION: prev/next di daftar tertunda ─────────────────────────────
+  const fetchTertundaNavigation = async (idNaskah: string, jenis?: string) => {
+    try {
+      const query = new URLSearchParams();
+      if (jenis && !["ALL", "Semua"].includes(jenis)) query.append("jenis", jenis);
+      const res: any = await apiGet(
+        `/naskah_sirkulasi/tertunda/${encodeURIComponent(idNaskah)}/navigation${query.toString() ? `?${query.toString()}` : ""}`,
+        {},
+        { skipCache: true },
+      );
+
+      const navData = res?.data ?? res;
+      return {
+        current: navData?.current ?? null,
+        previous: navData?.previous ?? null,
+        next: navData?.next ?? null,
+      };
+    } catch (err) {
+      console.error("fetchTertundaNavigation error:", err);
+      return { current: null, previous: null, next: null };
+    }
+  };
+
   // ── VALIDASI FILE ─────────────────────────────────────────────────────────
   const validateTtdFile = (file: File): string => {
     if (file.type !== "application/pdf") return "File harus berformat PDF.";
@@ -179,6 +202,7 @@ export const useTertunda = () => {
     MAX_FILE_SIZE_MB,
     fetchTertunda,
     fetchTertundaDetail,
+    fetchTertundaNavigation,
     validateTtdFile,
     finalizePending,
   };

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   ArrowLeft, Printer, Hash, Calendar, Paperclip,
   FileText, Upload, X, Loader2, Send, CheckCircle,
+  ChevronLeft, ChevronRight,
 } from "lucide-vue-next";
 import { useTertunda } from "~/composables/useTertunda";
 import { formatShortDate, getInitials } from "~/utils/mail-helpers";
@@ -13,7 +14,7 @@ definePageMeta({ middleware: "auth" });
 // --- SETUP ---
 const route = useRoute();
 const router = useRouter();
-const { fetchTertundaDetail, validateTtdFile, finalizePending, MAX_FILE_SIZE_MB } = useTertunda();
+const { fetchTertundaDetail, fetchTertundaNavigation, validateTtdFile, finalizePending, MAX_FILE_SIZE_MB } = useTertunda();
 
 const id = route.params.id as string;
 const jenisQuery = (route.query.jenis as string) || "ND";
@@ -22,6 +23,22 @@ const jenisQuery = (route.query.jenis as string) || "ND";
 const isLoading = ref(true);
 const isSending = ref(false);
 const naskah = ref<any>(null);
+
+// --- NAVIGATION (previous/next dari tertunda) ---
+const navPrev = ref<any>(null);
+const navNext = ref<any>(null);
+const isLoadingNav = ref(false);
+
+const goToNav = (target: any) => {
+  if (!target?.id_naskah) return;
+  const targetJenis = target.jenis || jenisQuery || "ND";
+  router.push({
+    path: `/korespondensi/tertunda/${target.id_naskah}`,
+    query: { jenis: targetJenis },
+  });
+};
+const goToNewer = () => goToNav(navNext.value);
+const goToOlder = () => goToNav(navPrev.value);
 
 const uploadedFile = ref<File | null>(null);
 const isDragging = ref(false);
@@ -91,6 +108,21 @@ const removeFile = () => {
 // --- DATA ---
 const loadData = async () => {
   isLoading.value = true;
+  navPrev.value = null;
+  navNext.value = null;
+
+  // Fetch navigation (prev/next) untuk daftar tertunda
+  isLoadingNav.value = true;
+  try {
+    const nav = await fetchTertundaNavigation(id, jenisQuery);
+    navPrev.value = nav.previous;
+    navNext.value = nav.next;
+  } catch (navErr) {
+    console.error('[Detail Tertunda] fetchTertundaNavigation failed:', navErr);
+  } finally {
+    isLoadingNav.value = false;
+  }
+
   try {
     naskah.value = await fetchTertundaDetail(id, jenisQuery);
   } catch (e) {
@@ -99,6 +131,13 @@ const loadData = async () => {
     isLoading.value = false;
   }
 };
+
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) loadData();
+  },
+);
 
 // --- SEND ---
 const handleKirim = async () => {
@@ -169,11 +208,40 @@ onMounted(loadData);
           </button>
           <span class="text-base font-semibold text-gray-900 dark:text-white">Kembali</span>
         </div>
-        <button v-if="naskah?.final_pdf_url || naskah?.file_url"
-          @click="openPreview(naskah.final_pdf_url || naskah.file_url)"
-          class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 transition-colors">
-          <Printer class="w-4 h-4" />
-        </button>
+        <div class="flex items-center gap-1 shrink-0">
+          <!-- Navigasi pesan lebih baru (<) -->
+          <UTooltip text="Pesan lebih baru">
+            <button
+              @click="goToNewer"
+              :disabled="!navNext || isLoadingNav"
+              class="p-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              :class="navNext ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400' : 'text-gray-300 dark:text-gray-600'"
+            >
+              <Loader2 v-if="isLoadingNav" class="w-4 h-4 animate-spin" />
+              <ChevronLeft v-else class="w-4 h-4" />
+            </button>
+          </UTooltip>
+
+          <!-- Navigasi pesan lebih lama (>) -->
+          <UTooltip text="Pesan lebih lama">
+            <button
+              @click="goToOlder"
+              :disabled="!navPrev || isLoadingNav"
+              class="p-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              :class="navPrev ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400' : 'text-gray-300 dark:text-gray-600'"
+            >
+              <ChevronRight class="w-4 h-4" />
+            </button>
+          </UTooltip>
+
+          <div class="w-px h-5 bg-gray-200 dark:border-gray-600 mx-1" />
+
+          <button v-if="naskah?.final_pdf_url || naskah?.file_url"
+            @click="openPreview(naskah.final_pdf_url || naskah.file_url)"
+            class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 transition-colors">
+            <Printer class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <!-- Meta -->
