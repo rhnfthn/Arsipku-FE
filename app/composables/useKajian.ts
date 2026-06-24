@@ -6,8 +6,7 @@ export const useKajian = () => {
 
   // 1. Get Recipients (Structure: ATASAN, BAWAHAN, REKAN)
   const getRecipients = async (positionId?: string | number) => {
-    // Endpoint: /KA/get-recipient/{{position_id}}
-    const url = positionId ? `/KA/get-recipient/${positionId}` : `/KA/get-recipient/`;
+    const url = positionId ? `/KA/get-recipient?pengirim=${positionId}` : `/KA/get-recipient`;
     const response = await get(url);
     return response;
   };

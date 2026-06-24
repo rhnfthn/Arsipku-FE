@@ -66,7 +66,7 @@ export const useDisposisi = () => {
   // --- API Actions ---
 
   const getRecipients = async (positionId?: string | number) => {
-    const url = positionId ? `/DI/get-recipient/${positionId}` : `/DI/get-recipient/`;
+    const url = positionId ? `/DI/get-recipient?pengirim=${positionId}` : `/DI/get-recipient`;
     const res = await apiGet<RecipientApiResponse>(url);
     return {
       sender: res?.data?.sender ?? null,

@@ -719,10 +719,13 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, internalRecRes, externalRecRes] = await Promise.all([
+    const [klasRes, recipientRes, tembusanRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
-      apiGet<{ success: boolean; data: { recipients: any } }>(
+      apiGet<{ success: boolean; data: { sender: any; recipients: any[] } }>(
         `/SDE/get-recipient?pengirim=${user.value?.position}`
+      ),
+      apiGet<any>(
+        `/SDE/get-tembusan?pengirim=${user.value?.position}`
       ),
       getExternalRecipients(),
     ]);
@@ -730,7 +733,7 @@ onMounted(async () => {
     klasifikasiList.value = klasRes;
     klasifikasiStatus.value = "success";
 
-    // Mapping external items (Tertuju)
+    // Mapping external items (Tertuju) — dari /persuratan/eksternal
     if (externalRecRes?.success && Array.isArray(externalRecRes.data)) {
       externalItems.value = externalRecRes.data.map((item: any) => ({
         label: item.nama,
@@ -740,15 +743,10 @@ onMounted(async () => {
       }));
     }
 
-    // Mapping internal items (Tembusan) — dari /SDE/get-recipient
-    const recipientsData = internalRecRes?.data?.recipients;
-    if (recipientsData) {
-      const flat = [
-        ...(recipientsData.ATASAN || []),
-        ...(recipientsData.REKAN || []),
-        ...(recipientsData.BAWAHAN || []),
-      ];
-      internalItems.value = flat.map((r: any) => ({
+    // Mapping internal items (Tembusan) — dari /SDE/get-tembusan
+    const tembusanData = tembusanRes?.data?.tembusan || tembusanRes?.tembusan || [];
+    if (Array.isArray(tembusanData)) {
+      internalItems.value = tembusanData.map((r: any) => ({
         label: `${r.persnum_person_text || r.persnum || '-'} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
         labelJob: r.position_text || r.positionText,
         value: String(r.position || r.position_id || r.id),
