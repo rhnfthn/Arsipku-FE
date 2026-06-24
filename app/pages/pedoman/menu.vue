@@ -103,8 +103,12 @@
               class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-lg dark:shadow-md dark:shadow-black/20 overflow-hidden transition-colors"
             >
               <div class="px-6 py-4">
-                <!-- Header row: badge + chevron -->
-                <div class="flex items-start justify-between gap-4">
+                <!-- Header row: clickable to toggle expand -->
+                <div
+                  class="flex items-start justify-between gap-4"
+                  :class="isTextLong(pedoman.deskripsi) ? 'cursor-pointer select-none' : ''"
+                  @click="isTextLong(pedoman.deskripsi) ? toggleExpand(pedoman.id) : null"
+                >
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-2">
                       <span
@@ -125,29 +129,27 @@
                       {{ pedoman.judul }}
                     </h3>
 
-                    <!-- Expandable Deskripsi (clamp 4 lines, toggle via chevron only) -->
-                    <p
-                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed"
-                      :class="{
-                        'line-clamp-4': !expandedCards[pedoman.id],
-                      }"
-                    >
-                      {{ pedoman.deskripsi }}
-                    </p>
+                    <!-- Collapsed Deskripsi preview (4-line clamp) -->
+                    <div
+                      v-if="!expandedCards[pedoman.id] && isTextLong(pedoman.deskripsi)"
+                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-4 pedoman-prose"
+                      v-html="pedoman.deskripsi"
+                    />
+
+                    <!-- Expanded Deskripsi -->
+                    <div
+                      v-if="expandedCards[pedoman.id]"
+                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed pedoman-prose"
+                      v-html="pedoman.deskripsi"
+                    />
                   </div>
 
-                  <!-- Chevron toggle (pojok kanan atas, no hover effect) -->
-                  <button
+                  <!-- Chevron indicator (pojok kanan atas) -->
+                  <ChevronDown
                     v-if="isTextLong(pedoman.deskripsi)"
-                    @click="toggleExpand(pedoman.id)"
-                    class="p-1 rounded shrink-0"
-                    :title="expandedCards[pedoman.id] ? 'Sembunyikan' : 'Tampilkan selengkapnya'"
-                  >
-                    <ChevronDown
-                      class="w-5 h-5 text-gray-400 transition-transform duration-200"
-                      :class="{ 'rotate-180': expandedCards[pedoman.id] }"
-                    />
-                  </button>
+                    class="w-5 h-5 text-gray-400 transition-transform duration-200 shrink-0 mt-1"
+                    :class="{ 'rotate-180': expandedCards[pedoman.id] }"
+                  />
                 </div>
 
                 <!-- Lampirans & Link (paling bawah, di atas tanggal, horizontal) -->
@@ -281,8 +283,11 @@ const toggleExpand = (id: string) => {
 };
 
 const isTextLong = (text: string): boolean => {
+  if (!text) return false;
+  // Strip HTML tags and count plain text length
+  const plain = text.replace(/\u003c[^\u003e]*\u003e/g, '');
   // More than 4 lines (~80 chars/line)
-  return text.length > 320;
+  return plain.length > 320;
 };
 
 // ── Lampiran helpers ────────────────────────────────────────────
@@ -366,11 +371,46 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .line-clamp-4 {
   display: -webkit-box;
   -webkit-line-clamp: 4;
   line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.pedoman-prose :deep(ul),
+.pedoman-prose :deep(ol) {
+  list-style-position: inside;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+}
+
+.pedoman-prose :deep(ul) {
+  list-style-type: disc;
+}
+
+.pedoman-prose :deep(ol) {
+  list-style-type: decimal;
+}
+
+.pedoman-prose :deep(li) {
+  margin: 0.25rem 0;
+}
+
+.pedoman-prose :deep(strong) {
+  font-weight: 700;
+}
+
+.pedoman-prose :deep(em) {
+  font-style: italic;
 }
 </style>
