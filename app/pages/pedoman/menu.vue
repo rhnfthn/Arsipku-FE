@@ -105,9 +105,8 @@
               <div class="px-6 py-4">
                 <!-- Header row: clickable to toggle expand -->
                 <div
-                  class="flex items-start justify-between gap-4"
-                  :class="isTextLong(pedoman.deskripsi) ? 'cursor-pointer select-none' : ''"
-                  @click="isTextLong(pedoman.deskripsi) ? toggleExpand(pedoman.id) : null"
+                  class="flex items-start justify-between gap-4 cursor-pointer select-none"
+                  @click="toggleExpand(pedoman.id)"
                 >
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-2">
@@ -129,26 +128,18 @@
                       {{ pedoman.judul }}
                     </h3>
 
-                    <!-- Collapsed Deskripsi preview (4-line clamp) -->
-                    <div
-                      v-if="!expandedCards[pedoman.id] && isTextLong(pedoman.deskripsi)"
-                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-4 pedoman-prose"
-                      v-html="pedoman.deskripsi"
-                    />
-
-                    <!-- Expanded Deskripsi -->
+                    <!-- Expanded Deskripsi (only visible when expanded) -->
                     <div
                       v-if="expandedCards[pedoman.id]"
-                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed pedoman-prose"
+                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed pedoman-prose mt-2"
                       v-html="pedoman.deskripsi"
                     />
                   </div>
 
-                  <!-- Chevron indicator (pojok kanan atas) -->
+                  <!-- Chevron indicator -->
                   <ChevronDown
-                    v-if="isTextLong(pedoman.deskripsi)"
-                    class="w-5 h-5 text-gray-400 transition-transform duration-200 shrink-0 mt-1"
-                    :class="{ 'rotate-180': expandedCards[pedoman.id] }"
+                    class="w-5 h-5 transition-transform duration-200 shrink-0 mt-1"
+                    :class="expandedCards[pedoman.id] ? 'rotate-180 text-primary dark:text-primary-300' : 'text-gray-400'"
                   />
                 </div>
 
@@ -169,7 +160,17 @@
                       <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
                     </button>
 
-                    <!-- Non-image lampiran (file icon kecil) -->
+                    <!-- PDF lampiran (klik buka PDF preview modal) -->
+                    <button
+                      v-else-if="isPdfFile(lampiran.name)"
+                      @click="openPdfPreview(getLampiranPreviewUrl(lampiran.url), lampiran.name)"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                    >
+                      <FileText class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                      <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
+                    </button>
+
+                    <!-- Other file types (open in new tab) -->
                     <a
                       v-else
                       :href="getLampiranPreviewUrl(lampiran.url)"
@@ -230,16 +231,6 @@
             <X class="w-6 h-6" />
           </button>
 
-          <!-- Download button -->
-          <a
-            :href="lightboxUrl"
-            download
-            class="absolute top-4 right-16 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
-            title="Download"
-          >
-            <Download class="w-6 h-6" />
-          </a>
-
           <!-- Image -->
           <img
             :src="lightboxUrl"
@@ -250,12 +241,49 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- PDF Preview Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="pdfPreviewOpen"
+          class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex items-center gap-2 min-w-0">
+              <FileText class="w-5 h-5 text-primary shrink-0" />
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                {{ pdfPreviewTitle }}
+              </span>
+            </div>
+            <button
+              @click="closePdfPreview"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+              title="Tutup"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- PDF iframe -->
+          <div class="flex-1 bg-gray-100 dark:bg-gray-950">
+            <iframe
+              v-if="pdfPreviewUrl"
+              :src="pdfPreviewUrl"
+              class="w-full h-full border-none"
+              :title="pdfPreviewTitle"
+            />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, reactive } from 'vue';
-import { Search, Calendar, Clock, ExternalLink, ChevronDown, ImageIcon, FileText, X, Download } from 'lucide-vue-next';
+import { Search, Calendar, Clock, ExternalLink, ChevronDown, ImageIcon, FileText, X } from 'lucide-vue-next';
 import { usePedoman, PEDOMAN_JENIS_OPTIONS } from '@/composables/usePedoman';
 import type { PedomanJenis } from '@/composables/usePedoman';
 
@@ -282,18 +310,15 @@ const toggleExpand = (id: string) => {
   expandedCards[id] = !expandedCards[id];
 };
 
-const isTextLong = (text: string): boolean => {
-  if (!text) return false;
-  // Strip HTML tags and count plain text length
-  const plain = text.replace(/\u003c[^\u003e]*\u003e/g, '');
-  // More than 4 lines (~80 chars/line)
-  return plain.length > 320;
-};
-
 // ── Lampiran helpers ────────────────────────────────────────────
 const isImageFile = (filename: string): boolean => {
   const ext = filename.split('.').pop()?.toLowerCase() || '';
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+};
+
+const isPdfFile = (filename: string): boolean => {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  return ext === 'pdf';
 };
 
 const getLampiranPreviewUrl = (lampiranUrl: string): string => {
@@ -301,11 +326,6 @@ const getLampiranPreviewUrl = (lampiranUrl: string): string => {
   if (lampiranUrl.startsWith('http')) return lampiranUrl;
   // Use query parameter format to avoid NestJS wildcard routing issues
   return `${config.public.apiBaseUrl}/pedoman/preview-lampiran?path=${encodeURIComponent(lampiranUrl)}`;
-};
-
-const handleImgError = (e: Event) => {
-  const img = e.target as HTMLImageElement;
-  img.style.display = 'none';
 };
 
 // ── Image Lightbox ──────────────────────────────────────────────
@@ -323,6 +343,23 @@ const closeLightbox = () => {
   lightboxOpen.value = false;
   lightboxUrl.value = '';
   lightboxTitle.value = '';
+};
+
+// ── PDF Preview ─────────────────────────────────────────────────
+const pdfPreviewOpen = ref(false);
+const pdfPreviewUrl = ref('');
+const pdfPreviewTitle = ref('');
+
+const openPdfPreview = (url: string, title: string) => {
+  pdfPreviewUrl.value = url;
+  pdfPreviewTitle.value = title;
+  pdfPreviewOpen.value = true;
+};
+
+const closePdfPreview = () => {
+  pdfPreviewOpen.value = false;
+  pdfPreviewUrl.value = '';
+  pdfPreviewTitle.value = '';
 };
 
 // ── Filtered ────────────────────────────────────────────────────
@@ -357,7 +394,7 @@ const formatDate = (dateString: string): string => {
 watch(searchQuery, (q) => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(async () => {
-    await fetchPedoman({ search: q.trim() || undefined });
+    await fetchPedoman({ search: q.trim() || undefined, jenis: selectedJenis.value || undefined });
   }, 350);
 });
 
@@ -371,22 +408,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.line-clamp-4 {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 .pedoman-prose :deep(ul),
 .pedoman-prose :deep(ol) {
   list-style-position: inside;

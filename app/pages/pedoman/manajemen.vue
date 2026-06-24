@@ -161,14 +161,13 @@
             <th class="px-4 py-3 font-semibold">No. Dokumen</th>
             <th class="px-4 py-3 font-semibold">Tanggal Berlaku</th>
             <th class="px-4 py-3 font-semibold">Lampiran</th>
-            <th class="px-4 py-3 font-semibold text-center">Status</th>
             <th class="px-4 py-3 font-semibold text-center">Aksi</th>
           </tr>
         </thead>
 
         <tbody>
+          <template v-if="!loading">
           <tr
-            v-if="!loading"
             v-for="pedoman in paginatedPedoman"
             :key="pedoman.id"
             class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800"
@@ -187,7 +186,7 @@
                 {{ pedoman.judul }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                {{ pedoman.deskripsi }}
+                {{ stripHtml(pedoman.deskripsi) }}
               </p>
             </td>
 
@@ -219,19 +218,6 @@
             </td>
 
             <td class="px-4 py-3 text-center">
-              <span
-                :class="[
-                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                  pedoman.isActive
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-                ]"
-              >
-                {{ pedoman.isActive ? 'Aktif' : 'Nonaktif' }}
-              </span>
-            </td>
-
-            <td class="px-4 py-3 text-center">
               <div class="flex justify-center gap-3">
                 <button
                   class="p-2 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors group"
@@ -253,9 +239,10 @@
               </div>
             </td>
           </tr>
+          </template>
 
           <tr v-if="loading">
-            <td colspan="8" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
+            <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
               <div class="flex justify-center">
                 <div
                   class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"
@@ -264,7 +251,7 @@
             </td>
           </tr>
           <tr v-else-if="paginatedPedoman.length === 0">
-            <td colspan="8" class="px-4 py-10">
+            <td colspan="7" class="px-4 py-10">
               <EmptyState
                 :icon="BookOpen"
                 title="Tidak ada data pedoman"
@@ -378,8 +365,8 @@
   </div>
 
   <!-- Modal Tambah / Edit -->
-  <Teleport to="body" size="xl">
-    <Modal v-model="showModal" :saving="isSaving" @save="savePedoman">
+  <Teleport to="body">
+    <Modal v-model="showModal" size="xl" :saving="isSaving" @save="savePedoman">
       <template #title>
         <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
           {{ isEditMode ? 'Edit Pedoman' : 'Tambah Pedoman' }}
@@ -405,8 +392,10 @@
         </label>
         <div
           :class="[
-            'border rounded-md overflow-hidden dark:bg-gray-700 dark:text-white',
-            errors.deskripsi ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+            'rounded-md overflow-hidden transition-all',
+            errors.deskripsi
+              ? 'ring-1 ring-red-500 border border-red-500'
+              : 'border border-gray-300 dark:border-gray-600 focus-within:border-primary dark:focus-within:border-primary-400 focus-within:ring-1 focus-within:ring-primary'
           ]"
         >
           <TinymceEditorAsync
@@ -550,13 +539,13 @@
               {{ isUploadingLampiran ? 'Mengunggah...' : 'Klik untuk Unggah Lampiran (bisa pilih multiple)' }}
             </p>
             <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-              JPG, PNG, GIF, WebP, PDF, DOC, DOCX, XLS, XLSX (Maks. 10MB per file)
+              PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, PNG (Maks. 10MB per file)
             </p>
           </div>
           <input
             type="file"
             class="hidden"
-            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             multiple
             @change="handleFileUpload"
             :disabled="isUploadingLampiran"
@@ -686,6 +675,7 @@ const paginationPages = computed(() => {
 
 watch([() => filters.value.search, rowsPerPage, selectedFilterJenis], () => {
   currentPage.value = 1;
+  selectedIds.value = [];
 });
 
 const config = useRuntimeConfig();
@@ -790,15 +780,18 @@ const openEdit = (pedoman: Pedoman) => {
 const tinyMceInit = {
   base_url: '/tinymce',
   suffix: '.min',
-  height: 200,
+  min_height: 120,
+  max_height: 240,
   menubar: false,
   promotion: false,
   branding: false,
   statusbar: false,
   placeholder: 'Masukkan deskripsi pedoman...',
   plugins: 'lists',
-  toolbar: 'bold italic bullist numlist',
-  content_style: `body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; padding: 8px 12px; margin: 0; }`,
+  toolbar: 'bold italic underline strikethrough | bullist numlist',
+  toolbar_mode: 'sliding',
+  invalid_elements: 'script,iframe,object,embed,form,input,style,link,meta',
+  content_style: `body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; padding: 8px 12px; margin: 0; color: #111827; } body.mce-content-readonly { color: #9ca3af; } p { margin: 0 0 8px 0; } p:last-child { margin-bottom: 0; } .mce-content-body[data-mce-placeholder]::before { left: 12px; }`,
 };
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -927,6 +920,11 @@ const bulkDeleteNow = async () => {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const stripHtml = (html: string): string => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+};
+
 const getJenisBadgeClass = (jenis: PedomanJenis): string => {
   switch (jenis) {
     case 'Peraturan Direksi':
