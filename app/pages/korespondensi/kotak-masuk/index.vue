@@ -228,6 +228,14 @@ const handleToggleFlag = async (
   mail: any,
   type: "favorit" | "arsip" | "note" | "tindak_lanjut" | "lock",
 ) => {
+  // Note: open modal instead of toggling directly
+  if (type === "note") {
+    noteModalMail.value = mail;
+    noteModalText.value = mail.noteText || mail.note_text || '';
+    showNoteModal.value = true;
+    return;
+  }
+
   try {
     const item = items.value.find((i) => i.id === mail.id);
     if (!item) return;
@@ -260,6 +268,39 @@ const handleToggleFlag = async (
     toast.add({ title: "Gagal", description: "Gagal memperbarui status.", color: "error" });
     refreshData();
   }
+};
+
+// ── Note Modal ────────────────────────────────────────────────────────────────
+const showNoteModal = ref(false);
+const noteModalMail = ref<any>(null);
+const noteModalText = ref('');
+const isSavingNote = ref(false);
+
+const saveNoteFromList = async () => {
+  const mail = noteModalMail.value;
+  if (!mail) return;
+  isSavingNote.value = true;
+  try {
+    const item = items.value.find((i) => i.id === mail.id);
+    const hasText = noteModalText.value && noteModalText.value.trim().length > 0;
+    if (item) {
+      item.isNote = hasText;
+      item.noteText = hasText ? noteModalText.value : '';
+    }
+    toast.add({ title: 'Berhasil', description: hasText ? 'Catatan disimpan' : 'Catatan dihapus', color: 'success' } as any);
+    await toggleFlag(item || mail, 'note', noteModalText.value);
+    showNoteModal.value = false;
+  } catch {
+    toast.add({ title: 'Gagal', description: 'Gagal menyimpan catatan.', color: 'error' });
+    refreshData();
+  } finally {
+    isSavingNote.value = false;
+  }
+};
+
+const removeNoteFromList = async () => {
+  noteModalText.value = '';
+  await saveNoteFromList();
 };
 
 // ── Bulk Archive ──────────────────────────────────────────────────────────────
@@ -929,6 +970,51 @@ onMounted(async () => {
                 :class="isUnarchiveMode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary-600'">
                 <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
                 {{ isDeleting ? 'Memproses...' : (isUnarchiveMode ? 'Keluarkan' : 'Arsipkan') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Note Modal -->
+    <Teleport to="body">
+      <div v-if="showNoteModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+              <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                <StickyNote class="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Catatan Surat</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Tambah atau edit catatan</p>
+              </div>
+            </div>
+            <button @click="showNoteModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-5">
+            <textarea v-model="noteModalText" rows="5"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
+              placeholder="Tulis catatan Anda di sini..."></textarea>
+          </div>
+          <div class="flex justify-between gap-3 px-5 py-4 border-t border-gray-100 dark:border-gray-700">
+            <button v-if="noteModalMail?.isNote" @click="removeNoteFromList"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 transition-colors">
+              Hapus Catatan
+            </button>
+            <div class="flex gap-3 ml-auto">
+              <button @click="showNoteModal = false"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Batal
+              </button>
+              <button @click="saveNoteFromList" :disabled="isSavingNote"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors">
+                <Loader2 v-if="isSavingNote" class="w-4 h-4 animate-spin" />
+                {{ isSavingNote ? 'Menyimpan...' : 'Simpan' }}
               </button>
             </div>
           </div>

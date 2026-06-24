@@ -439,6 +439,7 @@ const flagState = ref({
   isTinjut: false,
   isLocked: false,
   isNote: false,
+  noteText: '' as string,
 });
 
 const initFlagState = () => {
@@ -448,11 +449,13 @@ const initFlagState = () => {
     isTinjut: s?.isTinjut ?? s?.user_sirkulasi?.is_tindak_lanjut ?? false,
     isLocked: s?.isLocked ?? s?.user_sirkulasi?.is_locked ?? false,
     isNote: s?.isNote ?? s?.user_sirkulasi?.is_note ?? false,
+    noteText: s?.noteText ?? s?.user_sirkulasi?.note_text ?? '',
   };
 };
 
 const handleToggleFlag = async (
   type: "favorit" | "tindak_lanjut" | "lock" | "note",
+  noteText?: string,
 ) => {
   const s = selected.value;
   if (!s) return;
@@ -469,6 +472,30 @@ const handleToggleFlag = async (
     note: 'isNote',
   };
   const flagKey = flagKeyMap[type];
+
+  // For note: if noteText is empty string, remove flag; otherwise set it
+  if (type === 'note') {
+    const hasText = noteText && noteText.trim().length > 0;
+    (flagState.value as any)[flagKey] = hasText;
+    flagState.value.noteText = hasText ? noteText : '';
+    const isNowActive = hasText;
+    useToast().add({ title: 'Berhasil', description: isNowActive ? 'Catatan disimpan' : 'Catatan dihapus', color: 'success' });
+    try {
+      const mailObj = { sirkulasiId: idSirkulasi, ...flagState.value };
+      await toggleFlag(mailObj, type, noteText);
+      // Sync to selected.value so DetailNaskah picks up updated noteText
+      if (selected.value) {
+        selected.value.noteText = hasText ? noteText : '';
+        selected.value.isNote = hasText;
+      }
+    } catch {
+      (flagState.value as any)[flagKey] = !(flagState.value as any)[flagKey];
+      flagState.value.noteText = !hasText ? noteText : '';
+      useToast().add({ title: 'Gagal', description: 'Gagal memperbarui status.', color: 'error' });
+    }
+    return;
+  }
+
   (flagState.value as any)[flagKey] = !(flagState.value as any)[flagKey];
   const isNowActive = (flagState.value as any)[flagKey];
 
@@ -626,7 +653,7 @@ const konsepOptions = [
             @favorite="handleToggleFlag('favorit')"
             @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
             @lock="handleToggleFlag('lock')"
-            @catatan="handleToggleFlag('note')"
+            @catatan="(text) => handleToggleFlag('note', text)"
             @toggle-collapse="toggleCardCollapse(index)" />
         </div>
       </div>
