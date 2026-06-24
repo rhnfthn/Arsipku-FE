@@ -209,17 +209,11 @@
             </td>
 
             <td class="px-4 py-3 whitespace-nowrap">
-              <div v-if="pedoman.lampiranUrl" class="flex items-center gap-1.5">
+              <div v-if="pedoman.lampirans && pedoman.lampirans.length > 0" class="flex items-center gap-1.5">
                 <Paperclip class="w-3.5 h-3.5 text-primary shrink-0" />
-                <a
-                  :href="getLampiranPreviewUrl(pedoman.lampiranUrl)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-xs text-primary hover:underline font-medium truncate max-w-[120px]"
-                  :title="pedoman.lampiranName || 'Lihat Lampiran'"
-                >
-                  {{ pedoman.lampiranName || 'Lihat Lampiran' }}
-                </a>
+                <span class="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                  {{ pedoman.lampirans.length }} file
+                </span>
               </div>
               <span v-else class="text-xs text-gray-400">-</span>
             </td>
@@ -242,6 +236,7 @@
                 <button
                   class="p-2 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors group"
                   @click="openEdit(pedoman)"
+                  title="Edit Pedoman"
                 >
                   <Pencil
                     class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600"
@@ -251,6 +246,7 @@
                 <button
                   class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
                   @click="openDelete(pedoman)"
+                  title="Hapus Pedoman"
                 >
                   <Trash2 class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600" />
                 </button>
@@ -500,56 +496,61 @@
         />
       </div>
 
-      <!-- Lampiran (Image/File) -->
+      <!-- Lampiran (Multiple Files) -->
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Lampiran (Gambar/Dokumen)</label>
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Lampiran (Gambar/Dokumen) — Bisa multiple</label>
         
-        <!-- Jika sudah ada file yang diupload/dipilih -->
-        <div v-if="form.lampiranUrl" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
-          <div class="flex-shrink-0 w-8 h-8 rounded bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
-            <ImageIcon v-if="isImageFile(form.lampiranName || '')" class="w-4 h-4 text-primary dark:text-primary-300" />
-            <FileText v-else class="w-4 h-4 text-primary dark:text-primary-300" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
-              {{ form.lampiranName }}
-            </p>
-            <p class="text-[10px] text-gray-400">
-              Sudah diunggah
-            </p>
-          </div>
-          <button
-            type="button"
-            @click="removeLampiran"
-            class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-            title="Hapus Lampiran"
+        <!-- List of uploaded lampirans -->
+        <div v-if="form.lampirans && form.lampirans.length > 0" class="space-y-2">
+          <div
+            v-for="(lampiran, idx) in form.lampirans"
+            :key="idx"
+            class="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
           >
-            <X class="w-4 h-4" />
-          </button>
-        </div>
-
-        <!-- Upload file button -->
-        <div v-else>
-          <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary-500 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all">
-            <div class="flex flex-col items-center justify-center text-center">
-              <div v-if="isUploadingLampiran" class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-              <Upload v-else class="w-6 h-6 text-gray-400 mb-2" />
-              <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                {{ isUploadingLampiran ? 'Mengunggah...' : 'Klik untuk Unggah Lampiran' }}
+            <div class="flex-shrink-0 w-8 h-8 rounded bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
+              <ImageIcon v-if="isImageFile(lampiran.name)" class="w-4 h-4 text-primary dark:text-primary-300" />
+              <FileText v-else class="w-4 h-4 text-primary dark:text-primary-300" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
+                {{ lampiran.name }}
               </p>
-              <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                JPG, PNG, GIF, WebP, PDF, DOC, DOCX, XLS, XLSX (Maks. 10MB)
+              <p class="text-[10px] text-gray-400">
+                Sudah diunggah
               </p>
             </div>
-            <input
-              type="file"
-              class="hidden"
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              @change="handleFileUpload"
-              :disabled="isUploadingLampiran"
-            />
-          </label>
+            <button
+              type="button"
+              @click="removeLampiran(idx)"
+              class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+              title="Hapus Lampiran"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
         </div>
+
+        <!-- Upload file button (always visible, supports multiple) -->
+        <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary-500 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all">
+          <div class="flex flex-col items-center justify-center text-center">
+            <div v-if="isUploadingLampiran" class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+            <Upload v-else class="w-6 h-6 text-gray-400 mb-2" />
+            <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {{ isUploadingLampiran ? 'Mengunggah...' : 'Klik untuk Unggah Lampiran (bisa pilih multiple)' }}
+            </p>
+            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+              JPG, PNG, GIF, WebP, PDF, DOC, DOCX, XLS, XLSX (Maks. 10MB per file)
+            </p>
+          </div>
+          <input
+            type="file"
+            class="hidden"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+            multiple
+            @change="handleFileUpload"
+            :disabled="isUploadingLampiran"
+          />
+        </label>
       </div>
 
       <div class="flex items-center gap-2">
@@ -595,13 +596,13 @@ import { Trash2, RotateCcw, Search, Plus, Pencil, ChevronDown, BookOpen, Papercl
 import Modal from '@/components/Modal.vue';
 import EmptyState from '~/components/EmptyState.vue';
 import { usePedoman, PEDOMAN_JENIS_OPTIONS } from '@/composables/usePedoman';
-import type { Pedoman, PedomanJenis, PedomanPayload } from '@/composables/usePedoman';
+import type { Pedoman, PedomanJenis, PedomanPayload, LampiranItem } from '@/composables/usePedoman';
 import { formatDateSlash } from '~/utils/mail-helpers';
 
 definePageMeta({ middleware: 'auth' });
 
 const toast = useToast();
-const { pedomanList, loading, fetchPedoman, createPedoman, updatePedoman, deletePedoman, uploadLampiran } =
+const { pedomanList, loading, fetchPedoman, createPedoman, updatePedoman, deletePedoman, uploadLampirans } =
   usePedoman();
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
@@ -694,31 +695,48 @@ const isImageFile = (filename: string): boolean => {
 const getLampiranPreviewUrl = (lampiranUrl: string): string => {
   if (!lampiranUrl) return '';
   if (lampiranUrl.startsWith('http')) return lampiranUrl;
-  return `${config.public.apiBaseUrl}/pedoman/preview-lampiran/${encodeURIComponent(lampiranUrl)}`;
+  return `${config.public.apiBaseUrl}/pedoman/preview-lampiran?path=${encodeURIComponent(lampiranUrl)}`;
 };
 
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
+  const files = target.files;
+  if (!files || files.length === 0) return;
 
   isUploadingLampiran.value = true;
   try {
-    const result = await uploadLampiran(file);
-    form.value.lampiranUrl = result.lampiranUrl;
-    form.value.lampiranName = result.lampiranName;
-    toast.add({ title: 'Lampiran berhasil diunggah', color: 'green' });
+    const fileArray = Array.from(files);
+    const uploaded = await uploadLampirans(fileArray);
+    form.value.lampirans = [...(form.value.lampirans || []), ...uploaded];
+    toast.add({ title: `${uploaded.length} lampiran berhasil diunggah`, color: 'success' });
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Gagal mengunggah lampiran';
-    toast.add({ title: msg, color: 'red' });
+    const rawMsg = err?.response?.data?.message;
+    const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Gagal mengunggah lampiran');
+    toast.add({ title: msg, color: 'error' });
   } finally {
     isUploadingLampiran.value = false;
+    // Reset input so same files can be selected again
+    target.value = '';
   }
 };
 
-const removeLampiran = () => {
-  form.value.lampiranUrl = '';
-  form.value.lampiranName = '';
+const removeLampiran = (idx: number) => {
+  if (!form.value.lampirans) return;
+  form.value.lampirans = form.value.lampirans.filter((_, i) => i !== idx);
+};
+
+const normalizeDate = (dateString: string): string => {
+  if (!dateString) return '';
+  // Jika sudah YYYY-MM-DD, langsung return
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+  // Jika format DD/MM/YYYY, ubah ke YYYY-MM-DD
+  const parts = dateString.split('/');
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  // Jika ISO date, ambil bagian YYYY-MM-DD
+  return dateString.split('T')[0];
 };
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -734,8 +752,7 @@ const defaultForm = (): PedomanPayload & { isActive: boolean } => ({
   nomorDokumen: '',
   tanggalBerlaku: '',
   fileUrl: '',
-  lampiranUrl: '',
-  lampiranName: '',
+  lampirans: [],
   isActive: true,
 });
 
@@ -758,8 +775,7 @@ const openEdit = (pedoman: Pedoman) => {
     nomorDokumen: pedoman.nomorDokumen,
     tanggalBerlaku: pedoman.tanggalBerlaku ? pedoman.tanggalBerlaku.split('T')[0] : '',
     fileUrl: pedoman.fileUrl || '',
-    lampiranUrl: pedoman.lampiranUrl || '',
-    lampiranName: pedoman.lampiranName || '',
+    lampirans: pedoman.lampirans || [],
     isActive: pedoman.isActive,
   };
   showModal.value = true;
@@ -773,7 +789,7 @@ const savePedoman = async () => {
     !form.value.nomorDokumen?.trim() ||
     !form.value.tanggalBerlaku
   ) {
-    toast.add({ title: 'Mohon lengkapi semua field wajib (*)', color: 'red' });
+    toast.add({ title: 'Mohon lengkapi semua field wajib (*)', color: 'error' });
     return;
   }
 
@@ -784,26 +800,26 @@ const savePedoman = async () => {
       deskripsi: form.value.deskripsi.trim(),
       jenis: form.value.jenis,
       nomorDokumen: form.value.nomorDokumen.trim(),
-      tanggalBerlaku: form.value.tanggalBerlaku,
+      tanggalBerlaku: normalizeDate(form.value.tanggalBerlaku),
       fileUrl: form.value.fileUrl?.trim() || undefined,
-      lampiranUrl: form.value.lampiranUrl?.trim() || undefined,
-      lampiranName: form.value.lampiranName?.trim() || undefined,
+      lampirans: form.value.lampirans && form.value.lampirans.length > 0 ? form.value.lampirans : undefined,
       isActive: form.value.isActive,
     };
 
     if (isEditMode.value && editingId.value) {
       await updatePedoman(editingId.value, payload);
-      toast.add({ title: 'Pedoman berhasil diperbarui', color: 'green' });
+      toast.add({ title: 'Pedoman berhasil diperbarui', color: 'success' });
     } else {
       await createPedoman(payload);
-      toast.add({ title: 'Pedoman berhasil dibuat', color: 'green' });
+      toast.add({ title: 'Pedoman berhasil dibuat', color: 'success' });
     }
 
     showModal.value = false;
     await refreshData();
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Gagal menyimpan pedoman';
-    toast.add({ title: msg, color: 'red' });
+    const rawMsg = err?.response?.data?.message;
+    const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Gagal menyimpan pedoman');
+    toast.add({ title: msg, color: 'error' });
   } finally {
     isSaving.value = false;
   }
@@ -822,13 +838,14 @@ const deleteNow = async () => {
   if (!pendingDeleteId.value) return;
   try {
     await deletePedoman(pendingDeleteId.value);
-    toast.add({ title: 'Pedoman berhasil dihapus', color: 'green' });
+    toast.add({ title: 'Pedoman berhasil dihapus', color: 'success' });
     confirmDeleteOpen.value = false;
     pendingDeleteId.value = null;
     await refreshData();
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Gagal menghapus pedoman';
-    toast.add({ title: msg, color: 'red' });
+    const rawMsg = err?.response?.data?.message;
+    const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Gagal menghapus pedoman');
+    toast.add({ title: msg, color: 'error' });
   }
 };
 
@@ -843,13 +860,14 @@ const openBulkDelete = () => {
 const bulkDeleteNow = async () => {
   try {
     await Promise.all(selectedIds.value.map((id) => deletePedoman(id)));
-    toast.add({ title: `${selectedIds.value.length} pedoman berhasil dihapus`, color: 'green' });
+    toast.add({ title: `${selectedIds.value.length} pedoman berhasil dihapus`, color: 'success' });
     confirmBulkDeleteOpen.value = false;
     selectedIds.value = [];
     await refreshData();
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Gagal menghapus pedoman terpilih';
-    toast.add({ title: msg, color: 'red' });
+    const rawMsg = err?.response?.data?.message;
+    const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || 'Gagal menghapus pedoman terpilih');
+    toast.add({ title: msg, color: 'error' });
   }
 };
 

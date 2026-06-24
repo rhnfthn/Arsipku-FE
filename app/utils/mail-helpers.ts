@@ -142,3 +142,62 @@ export const formatDateWithTime = (dateString: string | null | undefined): strin
   const t = date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   return `${d}, ${t}`;
 };
+
+/**
+ * Build full URL untuk file dari backend.
+ * Jika url sudah absolute (http/https/blob), return apa adanya.
+ * Jika url adalah relative path (e.g. /preview-file/xxx), tambahkan apiBaseUrl.
+ */
+export const buildFileUrl = (url: string | null | undefined): string => {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) {
+    return url;
+  }
+  const config = useRuntimeConfig();
+  const baseUrl = config.public.apiBaseUrl as string;
+  return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
+/**
+ * Fetch file dari backend dengan Authorization header (JWT token).
+ * Mengembalikan Blob URL yang bisa langsung dipakai di <iframe> atau <img>.
+ *
+ * - Jika URL sudah absolute (presigned MinIO, blob, data URI), langsung return tanpa fetch.
+ * - Jika URL adalah relative path backend, fetch dengan token lalu buat Blob URL.
+ *
+ * @param url - URL file (bisa relative path atau absolute URL)
+ * @param contentType - MIME type untuk Blob (default: 'application/pdf')
+ * @returns Blob URL string, atau URL asli jika fetch gagal/bukan relative path
+ */
+export const fetchFileWithAuth = async (
+  url: string | null | undefined,
+  contentType: string = "application/pdf",
+): Promise<string> => {
+  if (!url) return "";
+
+  // Jika sudah absolute URL (http/https), blob, atau data URI → langsung pakai
+  if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) {
+    return url;
+  }
+
+  // Relative path → fetch dari backend dengan token
+  const fullUrl = buildFileUrl(url);
+  const token = process.client ? localStorage.getItem("token") : null;
+
+  try {
+    const response = await fetch(fullUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      console.warn(`[fetchFileWithAuth] HTTP ${response.status} for ${fullUrl}`);
+      return fullUrl;
+    }
+
+    const blob = new Blob([await response.arrayBuffer()], { type: contentType });
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("[fetchFileWithAuth] Error:", error);
+    return fullUrl;
+  }
+};
