@@ -103,6 +103,7 @@
               class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-lg dark:shadow-md dark:shadow-black/20 overflow-hidden transition-colors"
             >
               <div class="px-6 py-4">
+                <!-- Header row: badge + chevron -->
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-2">
@@ -124,94 +125,84 @@
                       {{ pedoman.judul }}
                     </h3>
 
-                    <!-- Expandable Deskripsi -->
-                    <div class="relative">
-                      <p
-                        class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed transition-all duration-300 ease-in-out"
-                        :class="{
-                          'line-clamp-3': !expandedCards[pedoman.id],
-                        }"
-                      >
-                        {{ pedoman.deskripsi }}
-                      </p>
-                      <button
-                        v-if="isTextLong(pedoman.deskripsi)"
-                        @click="toggleExpand(pedoman.id)"
-                        class="mt-1 text-xs font-medium text-primary hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1 transition-colors"
-                      >
-                        <span>{{ expandedCards[pedoman.id] ? 'Sembunyikan' : 'Lihat Selengkapnya' }}</span>
-                        <ChevronDown
-                          class="w-3.5 h-3.5 transition-transform duration-200"
-                          :class="{ 'rotate-180': expandedCards[pedoman.id] }"
-                        />
-                      </button>
-                    </div>
-
-                    <!-- Lampiran Preview -->
-                    <div
-                      v-if="pedoman.lampiranUrl && pedoman.lampiranName"
-                      class="mt-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+                    <!-- Expandable Deskripsi (clamp 4 lines, toggle via chevron only) -->
+                    <p
+                      class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed"
+                      :class="{
+                        'line-clamp-4': !expandedCards[pedoman.id],
+                      }"
                     >
-                      <!-- Image preview -->
-                      <div v-if="isImageFile(pedoman.lampiranName)" class="space-y-2">
-                        <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                          <ImageIcon class="w-3.5 h-3.5" />
-                          <span>{{ pedoman.lampiranName }}</span>
-                        </div>
-                        <img
-                          :src="getLampiranPreviewUrl(pedoman.lampiranUrl)"
-                          :alt="pedoman.lampiranName"
-                          class="max-h-48 rounded-lg object-contain border border-gray-200 dark:border-gray-600"
-                          @error="handleImgError"
-                        />
-                      </div>
-                      <!-- File preview (non-image) -->
-                      <div v-else class="flex items-center gap-3">
-                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
-                          <FileText class="w-5 h-5 text-primary dark:text-primary-300" />
-                        </div>
-                        <div class="flex-1 min-w-0">
-                          <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                            {{ pedoman.lampiranName }}
-                          </p>
-                          <p class="text-xs text-gray-400 dark:text-gray-500">
-                            {{ getFileExtension(pedoman.lampiranName).toUpperCase() }}
-                          </p>
-                        </div>
-                        <a
-                          :href="getLampiranPreviewUrl(pedoman.lampiranUrl)"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-primary hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
-                        >
-                          <ExternalLink class="w-3.5 h-3.5" />
-                          Buka
-                        </a>
-                      </div>
-                    </div>
-
-                    <div class="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">
-                      <span v-if="pedoman.tanggalBerlaku" class="flex items-center gap-1">
-                        <Calendar class="w-3.5 h-3.5" />
-                        Berlaku: {{ formatDate(pedoman.tanggalBerlaku) }}
-                      </span>
-                      <span class="flex items-center gap-1">
-                        <Clock class="w-3.5 h-3.5" />
-                        Diperbarui: {{ formatDate(pedoman.updated_at) }}
-                      </span>
-                    </div>
+                      {{ pedoman.deskripsi }}
+                    </p>
                   </div>
 
+                  <!-- Chevron toggle (pojok kanan atas, no hover effect) -->
+                  <button
+                    v-if="isTextLong(pedoman.deskripsi)"
+                    @click="toggleExpand(pedoman.id)"
+                    class="p-1 rounded shrink-0"
+                    :title="expandedCards[pedoman.id] ? 'Sembunyikan' : 'Tampilkan selengkapnya'"
+                  >
+                    <ChevronDown
+                      class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                      :class="{ 'rotate-180': expandedCards[pedoman.id] }"
+                    />
+                  </button>
+                </div>
+
+                <!-- Lampirans & Link (paling bawah, di atas tanggal, horizontal) -->
+                <div
+                  v-if="(pedoman.lampirans && pedoman.lampirans.length > 0) || pedoman.fileUrl"
+                  class="flex items-center gap-2 mt-3 flex-wrap"
+                >
+                  <!-- Multiple lampirans -->
+                  <template v-for="(lampiran, idx) in (pedoman.lampirans || [])" :key="idx">
+                    <!-- Image lampiran (nama file, klik buka lightbox) -->
+                    <button
+                      v-if="isImageFile(lampiran.name)"
+                      @click="openLightbox(getLampiranPreviewUrl(lampiran.url), lampiran.name)"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                    >
+                      <ImageIcon class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                      <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
+                    </button>
+
+                    <!-- Non-image lampiran (file icon kecil) -->
+                    <a
+                      v-else
+                      :href="getLampiranPreviewUrl(lampiran.url)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                    >
+                      <FileText class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                      <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
+                    </a>
+                  </template>
+
+                  <!-- Link dokumen eksternal -->
                   <a
                     v-if="pedoman.fileUrl"
                     :href="pedoman.fileUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm transition-colors shrink-0"
+                    class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
                   >
-                    <ExternalLink class="w-4 h-4" />
-                    Lihat Dokumen
+                    <ExternalLink class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                    <span class="truncate max-w-[150px]">{{ pedoman.fileUrl }}</span>
                   </a>
+                </div>
+
+                <!-- Tanggal (paling bawah) -->
+                <div class="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">
+                  <span v-if="pedoman.tanggalBerlaku" class="flex items-center gap-1">
+                    <Calendar class="w-3.5 h-3.5" />
+                    Berlaku: {{ formatDate(pedoman.tanggalBerlaku) }}
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <Clock class="w-3.5 h-3.5" />
+                    Diperbarui: {{ formatDate(pedoman.updated_at) }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -219,12 +210,50 @@
         </div>
       </div>
     </div>
+
+    <!-- Image Lightbox Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="lightboxOpen"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          @click.self="closeLightbox"
+        >
+          <!-- Close button -->
+          <button
+            @click="closeLightbox"
+            class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+            title="Tutup"
+          >
+            <X class="w-6 h-6" />
+          </button>
+
+          <!-- Download button -->
+          <a
+            :href="lightboxUrl"
+            download
+            class="absolute top-4 right-16 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+            title="Download"
+          >
+            <Download class="w-6 h-6" />
+          </a>
+
+          <!-- Image -->
+          <img
+            :src="lightboxUrl"
+            :alt="lightboxTitle"
+            class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            @click.stop
+          />
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, reactive } from 'vue';
-import { Search, Calendar, Clock, ExternalLink, ChevronDown, ImageIcon, FileText } from 'lucide-vue-next';
+import { Search, Calendar, Clock, ExternalLink, ChevronDown, ImageIcon, FileText, X, Download } from 'lucide-vue-next';
 import { usePedoman, PEDOMAN_JENIS_OPTIONS } from '@/composables/usePedoman';
 import type { PedomanJenis } from '@/composables/usePedoman';
 
@@ -236,7 +265,7 @@ const config = useRuntimeConfig();
 const items = [
   { label: 'Beranda', to: '/' },
   { label: 'Pedoman', to: '/pedoman/menu' }
-] satisfies BreadcrumbItem[];
+];
 
 const jenisOptions = PEDOMAN_JENIS_OPTIONS;
 
@@ -252,8 +281,8 @@ const toggleExpand = (id: string) => {
 };
 
 const isTextLong = (text: string): boolean => {
-  // Approximately 3 lines at ~80 chars/line
-  return text.length > 200;
+  // More than 4 lines (~80 chars/line)
+  return text.length > 320;
 };
 
 // ── Lampiran helpers ────────────────────────────────────────────
@@ -262,19 +291,33 @@ const isImageFile = (filename: string): boolean => {
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
 };
 
-const getFileExtension = (filename: string): string => {
-  return filename.split('.').pop()?.toLowerCase() || '';
-};
-
 const getLampiranPreviewUrl = (lampiranUrl: string): string => {
+  if (!lampiranUrl) return '';
   if (lampiranUrl.startsWith('http')) return lampiranUrl;
-  // Use preview-file endpoint or direct MinIO path
-  return `${config.public.apiBaseUrl}/pedoman/preview-lampiran/${encodeURIComponent(lampiranUrl)}`;
+  // Use query parameter format to avoid NestJS wildcard routing issues
+  return `${config.public.apiBaseUrl}/pedoman/preview-lampiran?path=${encodeURIComponent(lampiranUrl)}`;
 };
 
 const handleImgError = (e: Event) => {
   const img = e.target as HTMLImageElement;
   img.style.display = 'none';
+};
+
+// ── Image Lightbox ──────────────────────────────────────────────
+const lightboxOpen = ref(false);
+const lightboxUrl = ref('');
+const lightboxTitle = ref('');
+
+const openLightbox = (url: string, title: string) => {
+  lightboxUrl.value = url;
+  lightboxTitle.value = title;
+  lightboxOpen.value = true;
+};
+
+const closeLightbox = () => {
+  lightboxOpen.value = false;
+  lightboxUrl.value = '';
+  lightboxTitle.value = '';
 };
 
 // ── Filtered ────────────────────────────────────────────────────
@@ -323,9 +366,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.line-clamp-3 {
+.line-clamp-4 {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
