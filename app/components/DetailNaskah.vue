@@ -12,6 +12,7 @@ import {
   ChevronDown,
   CheckCircle,
   XCircle,
+  X,
   Edit3,
   Send,
   Users,
@@ -63,7 +64,7 @@ const emit = defineEmits<{
   (e: 'favorite'): void;
   (e: 'tindak-lanjut'): void;
   (e: 'lock'): void;
-  (e: 'catatan'): void;
+  (e: 'catatan', text: string): void;
 }>();
 
 const shouldShowFinalize = computed(() => {
@@ -205,6 +206,29 @@ const hasAccess = (codes: string[]) => {
 // Collapse state controlled by parent via prop
 const isCollapsed = computed(() => props.collapsed ?? false);
 
+// --- NOTE MODAL STATE ---
+const showNoteModal = ref(false);
+const noteText = ref('');
+const isSavingNote = ref(false);
+
+const openNoteModal = () => {
+  noteText.value = props.data?.noteText || props.data?.note_text || '';
+  showNoteModal.value = true;
+};
+
+const saveNote = async () => {
+  isSavingNote.value = true;
+  emit('catatan', noteText.value);
+  showNoteModal.value = false;
+  isSavingNote.value = false;
+};
+
+const removeNote = () => {
+  noteText.value = '';
+  emit('catatan', '');
+  showNoteModal.value = false;
+};
+
 </script>
 
 <template>
@@ -301,7 +325,7 @@ const isCollapsed = computed(() => props.collapsed ?? false);
 
           <!-- Catatan -->
           <UTooltip v-if="isHead" text="Catatan">
-            <button @click="emit('catatan')"
+            <button @click="openNoteModal"
               class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
               <StickyNote class="w-4 h-4 transition-colors cursor-pointer"
                 :class="data.isNote ? 'text-orange-600 fill-orange-100' : 'text-gray-400 dark:text-gray-500 hover:text-orange-500'" />
@@ -953,4 +977,53 @@ const isCollapsed = computed(() => props.collapsed ?? false);
     </div>
     </Motion>
   </div>
+
+  <!-- Note Modal -->
+  <UModal v-model:open="showNoteModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+    <template #header>
+      <div class="w-full flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-orange-100 rounded-full">
+            <StickyNote class="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Catatan Surat</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tambah atau edit catatan untuk surat ini</p>
+          </div>
+        </div>
+        <button @click="showNoteModal = false"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+    </template>
+    <template #body>
+      <div class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Isi Catatan</label>
+          <textarea v-model="noteText" rows="5"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
+            placeholder="Tulis catatan Anda di sini..."></textarea>
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <div class="flex justify-between gap-3 w-full">
+        <button v-if="data.isNote" @click="removeNote"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+          <XCircle class="w-4 h-4" /> Hapus Catatan
+        </button>
+        <div class="flex gap-3 ml-auto">
+          <button @click="showNoteModal = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700">Batal</button>
+          <button @click="saveNote" :disabled="isSavingNote"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50">
+            <CheckCircle v-if="!isSavingNote" class="w-4 h-4" />
+            <Loader2 v-else class="w-4 h-4 animate-spin" />
+            {{ isSavingNote ? 'Menyimpan...' : 'Simpan Catatan' }}
+          </button>
+        </div>
+      </div>
+    </template>
+  </UModal>
 </template>

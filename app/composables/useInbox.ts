@@ -106,6 +106,7 @@ export function useInbox() {
           isStarred: it.is_favorit,
           isArsip:   it.is_arsip,
           isNote:    it.is_note,
+          noteText:  it.note_text || '',
           isTinjut:  it.is_tindak_lanjut,
           isLocked:  it.is_locked,
           labels:    it.labels || [],
@@ -146,6 +147,7 @@ export function useInbox() {
   const toggleFlag = async (
     mail: any,
     flagType: "favorit" | "arsip" | "note" | "tindak_lanjut" | "lock",
+    noteText?: string,
   ) => {
     const oldValMap: Record<string, any> = {
       favorit: mail.isStarred, arsip: mail.isArsip,
@@ -156,7 +158,11 @@ export function useInbox() {
     try {
       const idToSend = mail.sirkulasiId || mail.raw?.id_sirkulasi;
       if (!idToSend) throw new Error("ID Sirkulasi tidak ditemukan");
-      await apiPatch("/naskah_sirkulasi/toggle-flag", { id_sirkulasi: idToSend, flag_type: flagType });
+      const payload: any = { id_sirkulasi: idToSend, flag_type: flagType };
+      if (flagType === "note" && noteText !== undefined) {
+        payload.note_text = noteText;
+      }
+      await apiPatch("/naskah_sirkulasi/toggle-flag", payload);
     } catch (err) {
       console.error("Gagal toggle flag:", flagType, err);
       if (flagType === "favorit")       mail.isStarred = oldVal;
@@ -249,6 +255,7 @@ export function useInbox() {
           isNote:         userSirkulasi?.is_note ?? false,
           isArsip:        userSirkulasi?.is_arsip ?? false,
           sirkulasiId:    userSirkulasi?.id_sirkulasi ?? null,
+          noteText:       userSirkulasi?.note_text ?? '',
         };
       });
 
