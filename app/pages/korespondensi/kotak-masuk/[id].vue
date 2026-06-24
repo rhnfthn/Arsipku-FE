@@ -844,7 +844,8 @@ const konsepOptions = computed(() => [
 
         <!-- Card content -->
         <div>
-          <DetailNaskah context="inbox" :data="index === 0 ? { ...detail, ...flagState } : detail" :is-head="index === 0"
+          <DetailNaskah context="inbox" :data="detail" :is-head="index === 0"
+            :is-starred="flagState.isStarred" :is-tinjut="flagState.isTinjut" :is-locked="flagState.isLocked" :is-note="flagState.isNote"
             :collapsed="isCardCollapsed(index)"
             :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
             :show-edit="isKonsepData && index === 0 && showEditAction" :is-pengirim-konsep="isPengirimKonsep"

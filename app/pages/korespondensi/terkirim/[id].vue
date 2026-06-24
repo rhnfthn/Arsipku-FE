@@ -640,7 +640,8 @@ const konsepOptions = [
         :class="{ 'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail) }">
 
         <div>
-          <DetailNaskah context="sent" :data="index === 0 ? { ...detail, ...flagState } : detail" :is-head="index === 0"
+          <DetailNaskah context="sent" :data="detail" :is-head="index === 0"
+            :is-starred="flagState.isStarred" :is-tinjut="flagState.isTinjut" :is-locked="flagState.isLocked" :is-note="flagState.isNote"
             :collapsed="isCardCollapsed(index)"
             :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
             :show-edit="isKonsepData && index === 0 && showEditAction"
