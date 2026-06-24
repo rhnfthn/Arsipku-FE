@@ -1,3 +1,8 @@
+export interface LampiranItem {
+  url: string
+  name: string
+}
+
 export interface Faq {
   id: string
   pertanyaan: string
@@ -7,12 +12,16 @@ export interface Faq {
   updatedAt: string
   puas: number
   tidakPuas: number
+  fileUrl?: string
+  lampirans?: LampiranItem[]
 }
 
 export interface FaqPayload {
   pertanyaan: string
   deskripsi: string
   kategoriId: string
+  fileUrl?: string
+  lampirans?: LampiranItem[]
 }
 
 export interface FaqKategori {
@@ -35,6 +44,9 @@ interface FaqRaw {
   puas?: number
   tidak_puas?: number
   tidakPuas?: number
+  fileUrl?: string
+  file_url?: string
+  lampirans?: LampiranItem[]
   created_at: string
   updated_at?: string
   updatedAt?: string
@@ -82,6 +94,8 @@ const mapFaq = (raw: FaqRaw): Faq => {
     kategoriId,
     puas: Number(raw.puas ?? (raw as any).puas_count ?? 0),
     tidakPuas: Number(raw.tidak_puas ?? raw.tidakPuas ?? (raw as any).tidak_puas_count ?? 0),
+    fileUrl: raw.fileUrl ?? raw.file_url,
+    lampirans: raw.lampirans ?? [],
     updatedAt: raw.updated_at ?? raw.updatedAt ?? '',
   }
 }
@@ -258,6 +272,14 @@ export const useFaq = () => {
     return mapFaq(raw)
   }
 
+  // ── UPLOAD LAMPIRAN ──────────────────────────────────────────
+  const uploadLampirans = async (files: File[]): Promise<LampiranItem[]> => {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('lampirans', file))
+    const res = await apiPost<{ success: boolean; data: { lampirans: LampiranItem[] } }>('/faq/upload-lampiran', formData)
+    return res?.data?.lampirans ?? []
+  }
+
   return {
     faqs,
     loading,
@@ -271,5 +293,6 @@ export const useFaq = () => {
     voteTidakPuas,
     createKategori,
     deleteKategori,
+    uploadLampirans,
   }
 }
