@@ -787,10 +787,10 @@ const tinyMceInit = {
   branding: false,
   statusbar: false,
   placeholder: 'Masukkan deskripsi pedoman...',
-  plugins: 'lists',
-  toolbar: 'bold italic underline strikethrough | bullist numlist',
+  plugins: 'lists link',
+  toolbar: 'bold italic underline strikethrough | bullist numlist | link',
   toolbar_mode: 'sliding',
-  invalid_elements: 'script,iframe,object,embed,form,input,style,link,meta',
+  invalid_elements: 'script,iframe,object,embed,form,input,style,meta',
   content_style: `body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; padding: 8px 12px; margin: 0; color: #111827; } body.mce-content-readonly { color: #9ca3af; } p { margin: 0 0 8px 0; } p:last-child { margin-bottom: 0; } .mce-content-body[data-mce-placeholder]::before { left: 12px; }`,
 };
 
@@ -809,7 +809,7 @@ const validateForm = (): boolean => {
     errors.value.judul = 'Judul harus diisi';
     firstErrorField = firstErrorField || 'judul';
   }
-  if (!form.value.deskripsi || form.value.deskripsi.replace(/\u003c[^\u003e]*\u003e/g, '').trim().length === 0) {
+  if (!form.value.deskripsi || form.value.deskripsi.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length === 0) {
     errors.value.deskripsi = 'Deskripsi harus diisi';
     firstErrorField = firstErrorField || 'deskripsi';
   }

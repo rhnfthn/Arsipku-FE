@@ -120,9 +120,52 @@
                   v-if="isOpen(index)"
                   class="px-6 pb-6 text-sm text-gray-600 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 transition-colors"
                 >
-                  <p class="mt-4 leading-relaxed">
-                    {{ faq.deskripsi }}
-                  </p>
+                  <div class="mt-4 leading-relaxed faq-prose" v-html="faq.deskripsi" />
+
+                  <!-- Lampirans & Link -->
+                  <div
+                    v-if="(faq.lampirans && faq.lampirans.length > 0) || faq.fileUrl"
+                    class="flex items-center gap-2 mt-4 flex-wrap"
+                  >
+                    <template v-for="(lampiran, idx) in (faq.lampirans || [])" :key="idx">
+                      <button
+                        v-if="isImageFile(lampiran.name)"
+                        @click="openLightbox(getLampiranPreviewUrl(lampiran.url), lampiran.name)"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                      >
+                        <ImageIcon class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                        <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
+                      </button>
+                      <button
+                        v-else-if="isPdfFile(lampiran.name)"
+                        @click="openPdfPreview(getLampiranPreviewUrl(lampiran.url), lampiran.name)"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                      >
+                        <FileText class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                        <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
+                      </button>
+                      <a
+                        v-else
+                        :href="getLampiranPreviewUrl(lampiran.url)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                      >
+                        <FileText class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                        <span class="truncate max-w-[100px]">{{ lampiran.name }}</span>
+                      </a>
+                    </template>
+                    <a
+                      v-if="faq.fileUrl"
+                      :href="faq.fileUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 transition-colors"
+                    >
+                      <ExternalLink class="w-3.5 h-3.5 text-primary dark:text-primary-300" />
+                      <span class="truncate max-w-[150px]">{{ faq.fileUrl }}</span>
+                    </a>
+                  </div>
 
                   <div class="flex gap-3 mt-5">
                     <button
@@ -160,18 +203,78 @@
         </div>
       </div>
     </div>
+
+    <!-- Image Lightbox Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="lightboxOpen"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          @click.self="closeLightbox"
+        >
+          <button
+            @click="closeLightbox"
+            class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+            title="Tutup"
+          >
+            <X class="w-6 h-6" />
+          </button>
+          <img
+            :src="lightboxUrl"
+            :alt="lightboxTitle"
+            class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            @click.stop
+          />
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- PDF Preview Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="pdfPreviewOpen"
+          class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900"
+        >
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex items-center gap-2 min-w-0">
+              <FileText class="w-5 h-5 text-primary shrink-0" />
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                {{ pdfPreviewTitle }}
+              </span>
+            </div>
+            <button
+              @click="closePdfPreview"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+              title="Tutup"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="flex-1 bg-gray-100 dark:bg-gray-950">
+            <iframe
+              v-if="pdfPreviewUrl"
+              :src="pdfPreviewUrl"
+              class="w-full h-full border-none"
+              :title="pdfPreviewTitle"
+            />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { Search, ChevronDown, ThumbsUp, ThumbsDown } from 'lucide-vue-next';
+import { Search, ChevronDown, ThumbsUp, ThumbsDown, ExternalLink, ImageIcon, FileText, X } from 'lucide-vue-next';
 import type { BreadcrumbItem } from '@nuxt/ui';
 import type { Faq, FaqKategori } from '@/composables/useFaq';
 
 definePageMeta({ middleware: 'auth' });
 
 const { faqs, loading, fetchFaqs, fetchCategories, votePuas, voteTidakPuas } = useFaq();
+const config = useRuntimeConfig();
 
 const items = [
   { label: 'Beranda', to: '/' },
@@ -308,6 +411,57 @@ const handleVote = async (faq: Faq, type: 'puas' | 'tidak-puas') => {
     votingId.value = null;
   }
 };
+
+// ── Lampiran helpers ────────────────────────────────────────────
+const isImageFile = (filename: string): boolean => {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+};
+
+const isPdfFile = (filename: string): boolean => {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  return ext === 'pdf';
+};
+
+const getLampiranPreviewUrl = (lampiranUrl: string): string => {
+  if (!lampiranUrl) return '';
+  if (lampiranUrl.startsWith('http')) return lampiranUrl;
+  return `${config.public.apiBaseUrl}/faq/preview-lampiran?path=${encodeURIComponent(lampiranUrl)}`;
+};
+
+// ── Image Lightbox ──────────────────────────────────────────────
+const lightboxOpen = ref(false);
+const lightboxUrl = ref('');
+const lightboxTitle = ref('');
+
+const openLightbox = (url: string, title: string) => {
+  lightboxUrl.value = url;
+  lightboxTitle.value = title;
+  lightboxOpen.value = true;
+};
+
+const closeLightbox = () => {
+  lightboxOpen.value = false;
+  lightboxUrl.value = '';
+  lightboxTitle.value = '';
+};
+
+// ── PDF Preview ─────────────────────────────────────────────────
+const pdfPreviewOpen = ref(false);
+const pdfPreviewUrl = ref('');
+const pdfPreviewTitle = ref('');
+
+const openPdfPreview = (url: string, title: string) => {
+  pdfPreviewUrl.value = url;
+  pdfPreviewTitle.value = title;
+  pdfPreviewOpen.value = true;
+};
+
+const closePdfPreview = () => {
+  pdfPreviewOpen.value = false;
+  pdfPreviewUrl.value = '';
+  pdfPreviewTitle.value = '';
+};
 </script>
 
 <style scoped>
@@ -319,5 +473,37 @@ const handleVote = async (faq: Faq, type: 'puas' | 'tidak-puas') => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-5px);
+}
+
+.faq-prose :deep(ul),
+.faq-prose :deep(ol) {
+  list-style-position: inside;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+}
+
+.faq-prose :deep(ul) {
+  list-style-type: disc;
+}
+
+.faq-prose :deep(ol) {
+  list-style-type: decimal;
+}
+
+.faq-prose :deep(li) {
+  margin: 0.25rem 0;
+}
+
+.faq-prose :deep(strong) {
+  font-weight: 700;
+}
+
+.faq-prose :deep(em) {
+  font-style: italic;
+}
+
+.faq-prose :deep(a) {
+  color: #2563eb;
+  text-decoration: underline;
 }
 </style>

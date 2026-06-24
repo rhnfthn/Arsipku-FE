@@ -434,4 +434,9 @@ onMounted(async () => {
 .pedoman-prose :deep(em) {
   font-style: italic;
 }
+
+.pedoman-prose :deep(a) {
+  color: #2563eb;
+  text-decoration: underline;
+}
 </style>

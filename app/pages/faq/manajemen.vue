@@ -208,7 +208,7 @@
                 {{ faq.pertanyaan }}
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                {{ faq.deskripsi }}
+                {{ stripHtml(faq.deskripsi) }}
               </p>
             </td>
 
@@ -375,44 +375,58 @@
   </div>
 
   <!-- Modal Tambah / Edit -->
-  <Teleport to="body" size="xl">
-    <Modal v-model="showModal" :saving="isSaving" @save="saveFaq">
+  <Teleport to="body">
+    <Modal v-model="showModal" size="xl" :saving="isSaving" @save="saveFaq">
       <template #title>
         <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
           {{ isEditMode ? 'Edit FAQ' : 'Tambah FAQ' }}
         </Heading>
       </template>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Pertanyaan</label>
+      <div class="flex flex-col gap-2" data-field="pertanyaan">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
+          Pertanyaan <span class="text-red-500">*</span>
+        </label>
         <input
           v-model="form.pertanyaan"
           type="text"
           placeholder="Masukkan pertanyaan..."
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+          :class="['border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400', errors.pertanyaan ? 'border-red-500' : 'border-gray-300 dark:border-gray-600']"
         />
+        <p v-if="errors.pertanyaan" class="text-xs text-red-500">{{ errors.pertanyaan }}</p>
       </div>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200"
-          >Deskripsi / Jawaban</label
+      <div class="flex flex-col gap-2" data-field="deskripsi">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
+          Deskripsi / Jawaban <span class="text-red-500">*</span>
+        </label>
+        <div
+          :class="[
+            'rounded-md overflow-hidden transition-all',
+            errors.deskripsi
+              ? 'ring-1 ring-red-500 border border-red-500'
+              : 'border border-gray-300 dark:border-gray-600 focus-within:border-primary dark:focus-within:border-primary-400 focus-within:ring-1 focus-within:ring-primary'
+          ]"
         >
-        <textarea
-          v-model="form.deskripsi"
-          rows="4"
-          placeholder="Masukkan jawaban atau deskripsi..."
-          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 resize-none"
-        />
+          <TinymceEditorAsync
+            v-model="form.deskripsi"
+            api-key="no-api-key"
+            :init="tinyMceInit"
+          />
+        </div>
+        <p v-if="errors.deskripsi" class="text-xs text-red-500">{{ errors.deskripsi }}</p>
       </div>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Kategori</label>
+      <div class="flex flex-col gap-2" data-field="kategoriId">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">
+          Kategori <span class="text-red-500">*</span>
+        </label>
         <!-- Custom fake select dropdown -->
         <div class="relative">
           <button
             type="button"
             @click="openKategoriDropdown = !openKategoriDropdown"
-            class="w-full h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-left rounded-md flex items-center justify-between hover:border-primary transition-all"
+            :class="['w-full h-9 px-3 text-sm bg-white dark:bg-gray-700 border text-left rounded-md flex items-center justify-between hover:border-primary transition-all', errors.kategoriId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600']"
           >
             <span
               :class="
@@ -484,6 +498,7 @@
             </div>
           </Transition>
         </div>
+        <p v-if="errors.kategoriId" class="text-xs text-red-500">{{ errors.kategoriId }}</p>
 
         <!-- New kategori input form (shown when Lainnya is selected) -->
         <div
@@ -525,6 +540,68 @@
           </div>
         </div>
       </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">URL File Dokumen</label>
+        <input
+          v-model="form.fileUrl"
+          type="url"
+          placeholder="https://example.com/dokumen.pdf (opsional)..."
+          class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+        />
+      </div>
+
+      <!-- Lampiran (Multiple Files) -->
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-semibold text-gray-700 dark:text-gray-200">Lampiran (Gambar/Dokumen) — Bisa multiple</label>
+        
+        <!-- List of uploaded lampirans -->
+        <div v-if="form.lampirans && form.lampirans.length > 0" class="space-y-2">
+          <div
+            v-for="(lampiran, idx) in form.lampirans"
+            :key="idx"
+            class="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+          >
+            <div class="flex-shrink-0 w-8 h-8 rounded bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
+              <ImageIcon v-if="isImageFile(lampiran.name)" class="w-4 h-4 text-primary dark:text-primary-300" />
+              <FileText v-else class="w-4 h-4 text-primary dark:text-primary-300" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">{{ lampiran.name }}</p>
+              <p class="text-[10px] text-gray-400">Sudah diunggah</p>
+            </div>
+            <button
+              type="button"
+              @click="removeLampiran(idx)"
+              class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+              title="Hapus Lampiran"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload file button -->
+        <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary-500 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all">
+          <div class="flex flex-col items-center justify-center text-center">
+            <div v-if="isUploadingLampiran" class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+            <Upload v-else class="w-6 h-6 text-gray-400 mb-2" />
+            <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {{ isUploadingLampiran ? 'Mengunggah...' : 'Klik untuk Unggah Lampiran (bisa pilih multiple)' }}
+            </p>
+            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+              PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, PNG (Maks. 10MB per file)
+            </p>
+          </div>
+          <input
+            type="file"
+            class="hidden"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+            multiple
+            @change="handleFileUpload"
+            :disabled="isUploadingLampiran"
+          />
+        </label>
+      </div>
     </Modal>
   </Teleport>
 
@@ -552,14 +629,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown, HelpCircle } from 'lucide-vue-next';
+import { ref, computed, watch, onMounted, nextTick, defineAsyncComponent } from 'vue';
+import { Trash2, RotateCcw, FileDown, Search, Plus, Pencil, ChevronDown, HelpCircle, Upload, X, ImageIcon, FileText } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Modal from '@/components/Modal.vue';
-import type { Faq, FaqKategori } from '@/composables/useFaq';
+import type { Faq, FaqKategori, LampiranItem } from '@/composables/useFaq';
 import { formatDateSlash } from '~/utils/mail-helpers';
 import EmptyState from '~/components/EmptyState.vue';
+
+const TinymceEditorAsync = defineAsyncComponent(() => import('~/components/TinymceEditorAsync.vue'));
 
 definePageMeta({ middleware: 'auth' });
 
@@ -573,7 +652,8 @@ const {
   updateFaq,
   deleteFaq,
   createKategori,
-  deleteKategori
+  deleteKategori,
+  uploadLampirans
 } = useFaq();
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
@@ -636,7 +716,7 @@ const filteredFaqs = computed(() => {
     : null;
   let list = faqs.value.filter((f) => {
     const matchSearch =
-      !q || `${f.pertanyaan} ${f.deskripsi} ${f.kategori}`.toLowerCase().includes(q);
+      !q || `${f.pertanyaan} ${stripHtml(f.deskripsi)} ${f.kategori}`.toLowerCase().includes(q);
     const matchKategori =
       !selectedKat || f.kategoriId === selectedKat.id || f.kategori === selectedKat.nama;
     return matchSearch && matchKategori;
@@ -678,7 +758,107 @@ const paginationPages = computed(() => {
 
 watch([() => filters.value.search, rowsPerPage, selectedFilterKategoriId], () => {
   currentPage.value = 1;
+  selectedIds.value = [];
 });
+
+// ─── TinyMCE Config ───────────────────────────────────────────────────────────
+const tinyMceInit = {
+  base_url: '/tinymce',
+  suffix: '.min',
+  min_height: 120,
+  max_height: 240,
+  menubar: false,
+  promotion: false,
+  branding: false,
+  statusbar: false,
+  placeholder: 'Masukkan jawaban atau deskripsi...',
+  plugins: 'lists link',
+  toolbar: 'bold italic underline strikethrough | bullist numlist | link',
+  toolbar_mode: 'sliding',
+  invalid_elements: 'script,iframe,object,embed,form,input,style,link,meta',
+  content_style: `body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; padding: 8px 12px; margin: 0; color: #111827; } body.mce-content-readonly { color: #9ca3af; } p { margin: 0 0 8px 0; } p:last-child { margin-bottom: 0; } .mce-content-body[data-mce-placeholder]::before { left: 12px; }`,
+};
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+const errors = ref<Record<string, string>>({});
+
+const clearErrors = () => {
+  errors.value = {};
+};
+
+const validateForm = (): boolean => {
+  clearErrors();
+  let firstErrorField: string | null = null;
+
+  if (!form.value.pertanyaan.trim()) {
+    errors.value.pertanyaan = 'Pertanyaan harus diisi';
+    firstErrorField = firstErrorField || 'pertanyaan';
+  }
+  if (!form.value.deskripsi || form.value.deskripsi.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length === 0) {
+    errors.value.deskripsi = 'Deskripsi / Jawaban harus diisi';
+    firstErrorField = firstErrorField || 'deskripsi';
+  }
+  if (!form.value.kategoriId) {
+    errors.value.kategoriId = 'Kategori harus dipilih';
+    firstErrorField = firstErrorField || 'kategoriId';
+  }
+
+  // Auto-scroll ke field pertama yang error
+  if (firstErrorField) {
+    nextTick(() => {
+      const el = document.querySelector(`[data-field="${firstErrorField}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return false;
+  }
+
+  return true;
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const stripHtml = (html: string): string => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+};
+
+const isImageFile = (filename: string): boolean => {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+};
+
+// ─── Lampiran Upload ──────────────────────────────────────────────────────────
+const config = useRuntimeConfig();
+const isUploadingLampiran = ref(false);
+
+const getLampiranPreviewUrl = (lampiranUrl: string): string => {
+  if (!lampiranUrl) return '';
+  if (lampiranUrl.startsWith('http')) return lampiranUrl;
+  return `${config.public.apiBaseUrl}/faq/preview-lampiran?path=${encodeURIComponent(lampiranUrl)}`;
+};
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
+
+  isUploadingLampiran.value = true;
+  try {
+    const fileArray = Array.from(files);
+    const uploaded = await uploadLampirans(fileArray);
+    form.value.lampirans = [...(form.value.lampirans || []), ...uploaded];
+    showToast('Berhasil', `${uploaded.length} lampiran berhasil diunggah.`, 'success');
+  } catch {
+    showToast('Gagal', 'Gagal mengunggah lampiran.', 'error');
+  } finally {
+    isUploadingLampiran.value = false;
+    target.value = '';
+  }
+};
+
+const removeLampiran = (idx: number) => {
+  if (!form.value.lampirans) return;
+  form.value.lampirans = form.value.lampirans.filter((_, i) => i !== idx);
+};
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const showModal = ref(false);
@@ -714,12 +894,13 @@ const saveNewKategori = async () => {
   }
 };
 
-const form = ref({ pertanyaan: '', deskripsi: '', kategoriId: '' });
+const form = ref({ pertanyaan: '', deskripsi: '', kategoriId: '', fileUrl: '', lampirans: [] as LampiranItem[] });
 
 const openAdd = () => {
   isEditMode.value = false;
   editingId.value = null;
-  form.value = { pertanyaan: '', deskripsi: '', kategoriId: '' };
+  form.value = { pertanyaan: '', deskripsi: '', kategoriId: '', fileUrl: '', lampirans: [] };
+  clearErrors();
   showModal.value = true;
 };
 
@@ -735,26 +916,27 @@ const openEdit = async (faq: Faq) => {
     : kategoriOptions.value.find((k) => k.nama.toLowerCase() === faq.kategori.toLowerCase());
   form.value = {
     pertanyaan: faq.pertanyaan,
-    deskripsi: faq.deskripsi,
-    kategoriId: matchingKat?.id ? String(matchingKat.id) : ''
+    deskripsi: faq.deskripsi || '',
+    kategoriId: matchingKat?.id ? String(matchingKat.id) : '',
+    fileUrl: faq.fileUrl || '',
+    lampirans: faq.lampirans || []
   };
+  clearErrors();
   showModal.value = true;
 };
 
 const saveFaq = async () => {
   if (isSaving.value) return;
-
-  if (!form.value.pertanyaan || !form.value.kategoriId) {
-    showToast('Validasi', 'Pertanyaan dan kategori wajib diisi.', 'warning');
-    return;
-  }
+  if (!validateForm()) return;
 
   isSaving.value = true;
   try {
     const payload = {
       pertanyaan: form.value.pertanyaan,
       deskripsi: form.value.deskripsi,
-      kategoriId: form.value.kategoriId
+      kategoriId: form.value.kategoriId,
+      fileUrl: form.value.fileUrl?.trim() || undefined,
+      lampirans: form.value.lampirans && form.value.lampirans.length > 0 ? form.value.lampirans : undefined,
     };
 
     if (isEditMode.value && editingId.value !== null) {
@@ -842,7 +1024,7 @@ const onExport = () => {
   const data = filteredFaqs.value.map((faq, idx) => ({
     No: idx + 1,
     Pertanyaan: faq.pertanyaan,
-    'Deskripsi/Jawaban': faq.deskripsi,
+    'Deskripsi/Jawaban': stripHtml(faq.deskripsi),
     Kategori: faq.kategori,
     'Terakhir Update': formatDateSlash(faq.updatedAt),
     Puas: faq.puas,
