@@ -6,6 +6,11 @@ export const PEDOMAN_JENIS_OPTIONS: { label: string; value: PedomanJenis }[] = [
   { label: 'SOP Kearsipan', value: 'SOP Kearsipan' },
 ]
 
+export interface LampiranItem {
+  url: string
+  name: string
+}
+
 export interface Pedoman {
   id: string
   judul: string
@@ -14,8 +19,7 @@ export interface Pedoman {
   nomorDokumen: string
   tanggalBerlaku: string
   fileUrl?: string
-  lampiranUrl?: string
-  lampiranName?: string
+  lampirans?: LampiranItem[]
   isActive: boolean
   created_at: string
   updated_at: string
@@ -28,8 +32,7 @@ export interface PedomanPayload {
   nomorDokumen: string
   tanggalBerlaku: string
   fileUrl?: string
-  lampiranUrl?: string
-  lampiranName?: string
+  lampirans?: LampiranItem[]
   isActive?: boolean
 }
 
@@ -45,10 +48,7 @@ interface PedomanRaw {
   tanggal_berlaku?: string
   fileUrl?: string
   file_url?: string
-  lampiranUrl?: string
-  lampiran_url?: string
-  lampiranName?: string
-  lampiran_name?: string
+  lampirans?: LampiranItem[]
   isActive?: boolean
   is_active?: boolean
   created_at: string
@@ -70,8 +70,7 @@ const mapPedoman = (raw: PedomanRaw): Pedoman => ({
   nomorDokumen: raw.nomorDokumen ?? raw.nomor_dokumen ?? '',
   tanggalBerlaku: raw.tanggalBerlaku ?? raw.tanggal_berlaku ?? '',
   fileUrl: raw.fileUrl ?? raw.file_url,
-  lampiranUrl: raw.lampiranUrl ?? raw.lampiran_url,
-  lampiranName: raw.lampiranName ?? raw.lampiran_name,
+  lampirans: raw.lampirans ?? [],
   isActive: raw.isActive ?? raw.is_active ?? true,
   created_at: raw.created_at,
   updated_at: raw.updated_at ?? raw.updatedAt ?? raw.created_at,
@@ -167,17 +166,13 @@ export const usePedoman = () => {
     }
   }
 
-  // ── UPLOAD LAMPIRAN ──────────────────────────────────────────
-  const uploadLampiran = async (file: File): Promise<{
-    lampiranUrl: string
-    lampiranName: string
-    previewUrl: string
-  }> => {
+  // ── UPLOAD LAMPIRAN (multiple files) ────────────────────────
+  const uploadLampirans = async (files: File[]): Promise<LampiranItem[]> => {
     const formData = new FormData()
-    formData.append('lampiran', file)
+    files.forEach((file) => formData.append('lampirans', file))
 
-    const res = await apiPost<{ success: boolean; data: any }>('/pedoman/upload-lampiran', formData)
-    return res.data
+    const res = await apiPost<{ success: boolean; data: { lampirans: LampiranItem[] } }>('/pedoman/upload-lampiran', formData)
+    return res.data.lampirans
   }
 
   return {
@@ -189,6 +184,6 @@ export const usePedoman = () => {
     createPedoman,
     updatePedoman,
     deletePedoman,
-    uploadLampiran,
+    uploadLampirans,
   }
 }
