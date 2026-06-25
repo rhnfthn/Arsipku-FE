@@ -9,12 +9,12 @@ export const useArea = () => {
   const { apiGet, apiPost, apiPut, apiDelete } = useApi();
   //area
   const getAreasByCompany = (companyId: string) => {
-    return apiGet<ApiResponse<any[]>>(`/area/company/${companyId}`);
+    return apiGet<ApiResponse<any[]>>(`/area/company/${companyId}`, {}, { skipCache: true });
   };
 
   const getSubAreasByCompanyAndArea = (companyId: string, areaCode: string) => {
     return apiGet<ApiResponse<any[]>>(
-      `/areasub/company/${companyId}/area/${areaCode}`,
+      `/areasub/company/${companyId}/area/${areaCode}`, {}, { skipCache: true }
     );
   };
 
@@ -33,7 +33,7 @@ export const useArea = () => {
 
   //subarea
   const getSubAreasByCompany = (companyId: string) => {
-    return apiGet<ApiResponse<any[]>>(`/areasub/company/${companyId}`);
+    return apiGet<ApiResponse<any[]>>(`/areasub/company/${companyId}`, {}, { skipCache: true });
   };
 
   const createSubAreaByCompany = (companyId: string, payload: any) =>

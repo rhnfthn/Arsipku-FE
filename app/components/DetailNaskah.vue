@@ -18,6 +18,7 @@ import {
   Send,
   Users,
   Building2,
+  Mail,
   ChevronLeft,
   ChevronRight,
   Star,
@@ -60,6 +61,7 @@ const emit = defineEmits<{
   (e: 'lanjut-sde'): void;
   (e: 'lanjut-disposisi'): void;
   (e: 'lanjut-konsep'): void;
+  (e: 'kirim-email'): void;
   (e: 'nav-newer'): void;
   (e: 'nav-older'): void;
   (e: 'toggle-collapse'): void;
@@ -1010,6 +1012,17 @@ const removeNote = () => {
             >
               <Edit3 class="w-4 h-4" />
               <span class="text-sm font-medium whitespace-nowrap">Lanjut Konsep</span>
+            </div>
+          </template>
+
+          <!-- ===== KIRIM VIA EMAIL (SDE terkirim, sudah final) ===== -->
+          <template v-if="isHead && context === 'sent' && (data.jenis === 'SDE' || data.jenis === 'sde') && (data.final_pdf_url || data.final_pdf)">
+            <div
+              @click="emit('kirim-email')"
+              class="flex bg-indigo-600 hover:bg-indigo-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+            >
+              <Mail class="w-4 h-4" />
+              <span class="text-sm font-medium whitespace-nowrap">Kirim via Email</span>
             </div>
           </template>
         </div>

@@ -9,7 +9,7 @@ export const useTemplateTulis = () => {
     positionId: string,
   ): Promise<TemplateSurat[]> => {
     try {
-      const res = await apiGet<any>(`/persuratan/template/position/${positionId}`);
+      const res = await apiGet<any>(`/persuratan/template/position/${positionId}`, {}, { skipCache: true });
       return Array.isArray(res) ? res : res.data || [];
     } catch (error) {
       console.error("Gagal mengambil template:", error);

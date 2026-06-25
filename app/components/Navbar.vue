@@ -1810,9 +1810,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   return [
     [mainAccountItem, ...delegasiItems],
     [
-      {
-        label: 'Pindah Perusahaan',
-        class: itemClass,
+      { label: 'Pindah Perusahaan', class: itemClass,
         onSelect: () => {
           navigateTo('/switch');
         }

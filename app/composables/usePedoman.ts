@@ -107,7 +107,7 @@ export const usePedoman = () => {
       if (options?.includeInactive) params.includeInactive = 'true'
 
       const res = await apiGet<PedomanApiResponse | any>('/pedoman',
-        Object.keys(params).length ? { params } : {}
+        Object.keys(params).length ? { params } : {}, { skipCache: true }
       )
       const list = extractArray(res)
       pedomanList.value = list.map(mapPedoman)
