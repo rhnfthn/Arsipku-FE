@@ -50,7 +50,7 @@ export const useKlasifikasi = () => {
 
     isLoadingKlasifikasi.value = true;
     try {
-      const data = await apiGet<Klasifikasi[]>("/persuratan/klasifikasi");
+      const data = await apiGet<Klasifikasi[]>("/persuratan/klasifikasi", {}, { skipCache: true });
       klasifikasi.value = data;
       return data;
     } catch (error) {

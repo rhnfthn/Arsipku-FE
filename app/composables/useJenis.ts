@@ -69,7 +69,7 @@ export const useJenis = () => {
 
     isLoadingJenis.value = true;
     try {
-      const response = await apiGet<JenisResponse>("/jenis", { params });
+      const response = await apiGet<JenisResponse>("/jenis", { params }, { skipCache: true });
       if (!params?.search) {
         jenis.value = response.data;
       }

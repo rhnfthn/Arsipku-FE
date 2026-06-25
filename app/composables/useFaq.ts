@@ -150,7 +150,7 @@ export const useFaq = () => {
       if (options?.kategoriId) query.kategoriId = options.kategoriId
       if (options?.search) query.search = options.search
       const res = await apiGet<FaqApiResponse | { data?: any[] } | any[]>('/faq',
-        Object.keys(query).length ? { params: query } : {}
+        Object.keys(query).length ? { params: query } : {}, { skipCache: true }
       )
       const list = extractArray(res)
       faqs.value = list.map(mapFaq)
@@ -165,7 +165,7 @@ export const useFaq = () => {
   // ── GET ALL CATEGORIES from dedicated endpoint ───────────────
   const fetchCategories = async (): Promise<FaqKategori[]> => {
     try {
-      const res = await apiGet<KategoriApiResponse | any[]>('/faq-kategori')
+      const res = await apiGet<KategoriApiResponse | any[]>('/faq-kategori', {}, { skipCache: true })
       const raw = pickCategoryRows(res)
       if (!Array.isArray(raw) || raw.length === 0) return []
       if (typeof raw[0] === 'string') {

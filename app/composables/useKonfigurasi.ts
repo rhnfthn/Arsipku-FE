@@ -28,7 +28,7 @@ export const useKonfigurasi = () => {
   const fetchDigsig = async () => {
     try {
       isLoading.value = true
-      const res = await apiGet<KonfigurasiDigsigResponse>('/admin/config/digsig')
+      const res = await apiGet<KonfigurasiDigsigResponse>('/admin/config/digsig', {}, { skipCache: true })
       if (res.success) {
         digsigList.value = res.data
       }
@@ -81,7 +81,7 @@ export const useKonfigurasi = () => {
     try {
       isLoadingMessage.value = true
       const endpoint = adminMode ? '/admin/config/message' : '/config/message'
-      const res = await apiGet<KonfigurasiMessageResponse>(endpoint)
+      const res = await apiGet<KonfigurasiMessageResponse>(endpoint, {}, { skipCache: true })
       if (res.success) {
         messageList.value = res.data
       }

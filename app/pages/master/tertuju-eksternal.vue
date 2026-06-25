@@ -112,6 +112,9 @@
               {{ $t('te_telepon') }}
             </th>
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Email
+            </th>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
               Status
             </th>
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
@@ -126,7 +129,7 @@
         <tbody>
           <!-- Loading - Skeleton -->
           <tr v-if="loading">
-            <td colspan="6" class="px-4 py-6">
+            <td colspan="7" class="px-4 py-6">
               <div class="space-y-4 animate-pulse">
                 <div
                   v-for="n in skeletonRows"
@@ -143,12 +146,12 @@
             v-for="(item, idx) in paginatedData"
             :key="item.id"
             :class="[
-              'hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700 capitalize',
+              'hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700',
               idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
             ]"
           >
             <td
-              class="px-4 py-3 font-medium text-gray-900 dark:text-white"
+              class="px-4 py-3 font-medium text-gray-900 dark:text-white capitalize"
               v-html="highlight(item.nama, filters.search)"
             ></td>
 
@@ -160,6 +163,11 @@
             <td
               class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300"
               v-html="highlight(item.telepon, filters.search)"
+            ></td>
+
+            <td
+              class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300"
+              v-html="highlight(item.email || '-', filters.search)"
             ></td>
 
             <td class="px-4 py-3">
@@ -391,6 +399,19 @@
           </p>
         </div>
 
+        <!-- FIELD EMAIL -->
+        <div class="flex flex-col gap-2">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+            Email
+          </Heading>
+          <input
+            v-model="form.email"
+            type="email"
+            placeholder="email@example.com"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+
         <!-- FIELD STATUS -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
@@ -507,6 +528,7 @@ const form = ref({
   nama: '',
   alamat: '',
   telephone: '',
+  email: '',
   aktif: '' as boolean | ''
 });
 
@@ -604,6 +626,7 @@ const handleSave = async () => {
         nama: form.value.nama,
         alamat: form.value.alamat,
         telepon: form.value.telephone,
+        email: form.value.email,
         aktif: form.value.aktif as boolean
       });
       showToast('Berhasil', 'Data berhasil diperbarui.', 'success');
@@ -615,6 +638,7 @@ const handleSave = async () => {
         nama: form.value.nama,
         alamat: form.value.alamat,
         telepon: form.value.telephone,
+        email: form.value.email,
         aktif: form.value.aktif as boolean
       });
       showToast('Berhasil', 'Data berhasil ditambahkan.', 'success');
@@ -629,6 +653,7 @@ const handleSave = async () => {
       nama: '',
       alamat: '',
       telephone: '',
+      email: '',
       aktif: ''
     };
   } catch (err: any) {
@@ -650,6 +675,7 @@ const resetForm = () => {
     nama: '',
     alamat: '',
     telephone: '',
+    email: '',
     aktif: ''
   };
   formErrors.value = {
@@ -692,6 +718,7 @@ const openEdit = (item: any) => {
     nama: item.nama,
     alamat: item.alamat,
     telephone: item.telepon,
+    email: item.email || '',
     aktif: item.aktif
   };
   showModal.value = true;
