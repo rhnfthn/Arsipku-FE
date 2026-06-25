@@ -19,8 +19,8 @@ const { user } = useAuth();
 const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag, markNaskahAsRead } = useInbox();
 const { rejectKonsep } = useKonsep();
 
-const id = route.params.id as string;
-const jenisQuery = route.query.jenis as string;
+const id = computed(() => route.params.id as string);
+const jenisQuery = computed(() => (route.query.jenis as string) || '');
 
 const targetHighlightId = computed(() => (route.query.highlight_id as string) || null);
 
@@ -31,7 +31,7 @@ const isHighlighted = (detail: any) => {
   const target = targetHighlightId.value;
   if (!target) return false;
   if (String(detail.id) === String(target) || String(detail.urutan) === String(target)) return true;
-  if (String(target) === String(id) && detail.aksi === 'create') return true;
+  if (String(target) === String(id.value) && detail.aksi === 'create') return true;
   return false;
 };
 
@@ -75,7 +75,7 @@ const handleLanjutKonsep = () => {
 
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
-  const jenis = (jenisQuery || '').toUpperCase();
+  const jenis = (jenisQuery.value || '').toUpperCase();
   return path.includes('terkirim') || path.includes('keluar') || jenis === 'SK';
 });
 
@@ -253,7 +253,7 @@ const processGrouping = (individuals: any[], groups: any[], senderPositionId?: s
 
 // --- DATA FETCHING ---
 const loadData = async () => {
-  if (!id) return;
+  if (!id.value) return;
   isLoading.value = true;
   details.value = [];
   selected.value = null;
@@ -262,21 +262,19 @@ const loadData = async () => {
   navNext.value = null;
 
   try {
-    if (jenisQuery !== 'K') {
-      isLoadingNav.value = true;
-      try {
-        const nav = await fetchInboxNavigation(id);
-        navPrev.value = nav.previous;
-        navNext.value = nav.next;
-      } catch (navErr) {
-        console.error('[Detail] fetchInboxNavigation failed:', navErr);
-      } finally {
-        isLoadingNav.value = false;
-      }
+    isLoadingNav.value = true;
+    try {
+      const nav = await fetchInboxNavigation(id.value, jenisQuery.value);
+      navPrev.value = nav.previous;
+      navNext.value = nav.next;
+    } catch (navErr) {
+      console.error('[Detail] fetchInboxNavigation failed:', navErr);
+    } finally {
+      isLoadingNav.value = false;
     }
-    if (jenisQuery === 'K') {
+    if (jenisQuery.value === 'K') {
       isKonsepData.value = true;
-      const response = await fetchKonsepDetail(id);
+      const response = await fetchKonsepDetail(id.value);
       const rawData: any = response;
       const konsepTo = rawData?.to_konsep || null;
 
@@ -403,7 +401,7 @@ const loadData = async () => {
 
     } else {
       isKonsepData.value = false;
-      const response = await fetchInboxDetail(id, jenisQuery);
+      const response = await fetchInboxDetail(id.value, jenisQuery.value);
       const rawData = response?.data || response;
 
       let rawFlows: any[] = [];
@@ -491,8 +489,8 @@ const loadData = async () => {
   } finally {
     isLoading.value = false;
     scrollToTarget();
-    if (id && user.value?.position && jenisQuery !== 'K') {
-      markNaskahAsRead(id, user.value.position);
+    if (id.value && user.value?.position && jenisQuery.value !== 'K') {
+      markNaskahAsRead(id.value, user.value.position);
     }
   }
 };
@@ -611,7 +609,7 @@ const handleToggleFlag = async (
 
 const goToNav = (target: any) => {
   if (!target?.id_naskah) return;
-  const targetJenis = target.jenis || jenisQuery || 'ND';
+  const targetJenis = target.jenis || jenisQuery.value || 'ND';
   router.push({
     path: `/korespondensi/kotak-masuk/${target.id_naskah}`,
     query: { jenis: targetJenis },
