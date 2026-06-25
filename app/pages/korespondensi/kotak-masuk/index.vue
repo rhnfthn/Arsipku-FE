@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { parseDate, today, getLocalTimeZone } from '@internationalized/date';
 import {
   Inbox, FileText, Send, Building, Building2, FilePen, Archive,
@@ -25,6 +25,8 @@ const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 const isLoading = ref(false);
+const isRefreshing = ref(false);
+const isUnmounted = ref(false);
 const selected = ref(null);
 const selectedIds = ref(new Set());
 const searchQuery = ref("");
@@ -108,7 +110,7 @@ const getTabCount = (tabValue: string) => {
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
 const refreshData = async () => {
-  if (isLoading.value && pending.value) return;
+  isRefreshing.value = true;
   isLoading.value = true;
   try {
     const params: Record<string, any> = {
@@ -160,7 +162,10 @@ const refreshData = async () => {
   } catch (err) {
     console.error("Gagal refresh data inbox:", err);
   } finally {
-    isLoading.value = false;
+    if (!isUnmounted.value) {
+      isLoading.value = false;
+      isRefreshing.value = false;
+    }
   }
 };
 
@@ -501,6 +506,11 @@ onMounted(async () => {
   applyQueryFilters();
   refreshData();
 });
+
+onUnmounted(() => {
+  isUnmounted.value = true;
+  clearTimeout(searchTimeout);
+});
 </script>
 
 <template>
@@ -551,7 +561,7 @@ onMounted(async () => {
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
           title="Muat Ulang">
-          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending || isLoading }" />
+          <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
 
         <!-- Bulk Actions (muncul saat ada item dipilih) -->

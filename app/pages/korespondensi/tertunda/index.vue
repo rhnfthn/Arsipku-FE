@@ -51,6 +51,7 @@ const {
 
 const searchQuery = ref("");
 const isLabelProcessing = ref(false);
+const isRefreshing = ref(false);
 
 // Filter & Pagination State
 const activeTab = ref("ALL");
@@ -113,6 +114,7 @@ const getSifatStyle = (sifat: string) => {
 
 // --- LOGIC ---
 const refreshData = async () => {
+  isRefreshing.value = true;
   try {
     const params: Record<string, any> = {
       page: currentPage.value,
@@ -148,6 +150,8 @@ const refreshData = async () => {
     await fetchTertunda(params);
   } catch (err) {
     console.error("Gagal refresh data tertunda:", err);
+  } finally {
+    isRefreshing.value = false;
   }
 };
 
@@ -246,7 +250,7 @@ onMounted(async () => {
       <div class="flex items-center gap-1 shrink-0 relative">
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
-          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending }" />
+          <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
       </div>
 
