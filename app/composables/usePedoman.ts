@@ -1,3 +1,5 @@
+import type { LampiranItem } from './useFaq'
+
 export type PedomanJenis = 'Peraturan Direksi' | 'Keputusan Direksi' | 'SOP Kearsipan'
 
 export const PEDOMAN_JENIS_OPTIONS: { label: string; value: PedomanJenis }[] = [
@@ -5,11 +7,6 @@ export const PEDOMAN_JENIS_OPTIONS: { label: string; value: PedomanJenis }[] = [
   { label: 'Keputusan Direksi', value: 'Keputusan Direksi' },
   { label: 'SOP Kearsipan', value: 'SOP Kearsipan' },
 ]
-
-export interface LampiranItem {
-  url: string
-  name: string
-}
 
 export interface Pedoman {
   id: string

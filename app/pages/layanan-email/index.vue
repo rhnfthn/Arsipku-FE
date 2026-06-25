@@ -8,13 +8,6 @@
         </Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
-      <NuxtLink
-        to="/layanan-email/log"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
-      >
-        <FileText class="w-4 h-4" />
-        Log Email
-      </NuxtLink>
     </div>
 
     <!-- MAIN CARD -->
@@ -125,11 +118,10 @@
           <label class="text-sm font-medium text-gray-700 dark:text-gray-200">
             Konten <span class="text-red-500">*</span>
           </label>
-          <textarea
+          <TinymceEditorAsync
+            api-key="no-api-key"
             v-model="form.konten"
-            rows="6"
-            placeholder="Isi pesan email"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 resize-y"
+            :init="tinyMceInit"
           />
         </div>
 
@@ -209,6 +201,8 @@
 <script setup lang="ts">
 import { X, Send, Loader2, FileText } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
+import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue'
+import type { Editor as TinyMCEEditor } from 'tinymce'
 import { useMailService, type SendMailPayload, type MailLampiran } from '~/composables/useMailService'
 import { Alert } from '~/composables/useAlert'
 import { useApi } from '~/composables/useApi'
@@ -290,6 +284,27 @@ const form = ref<SendMailPayload>({
   lampiran: [],
 })
 
+// --- TinyMCE Config ---
+const tinymceEditor = ref<TinyMCEEditor | null>(null)
+const tinyMceInit = {
+  base_url: '/tinymce',
+  suffix: '.min',
+  height: 300,
+  menubar: false,
+  promotion: false,
+  branding: false,
+  placeholder: 'Isi pesan email...',
+  plugins: 'lists advlist link image code table fullscreen',
+  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+  content_style: `body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; }`,
+  setup(editor: TinyMCEEditor) {
+    tinymceEditor.value = editor
+    editor.on('change keyup input', () => {
+      form.value.konten = editor.getContent()
+    })
+  },
+}
+
 const submitLabel = computed(() => {
   if (activeTab.value === 'draft') return 'Simpan Draft'
   return 'Kirim Email'
@@ -349,13 +364,13 @@ const handleSubmit = async () => {
       result = await sendMailBase64(payload)
     }
     response.value = result
-    Alert.confirm('Berhasil', 'Email berhasil diproses', 'OK', '', false)
+    Alert.warning('Berhasil', activeTab.value === 'draft' ? 'Draft email berhasil disimpan' : 'Email berhasil dikirim')
     setTimeout(() => {
       navigateTo('/layanan-email/log')
     }, 1500)
   } catch (err: any) {
     errorMsg.value = err?.response?.data?.message || err?.message || 'Terjadi kesalahan'
-    Alert.confirm('Gagal', errorMsg.value, 'OK', '', true)
+    Alert.error('Gagal', errorMsg.value)
   } finally {
     loading.value = false
   }

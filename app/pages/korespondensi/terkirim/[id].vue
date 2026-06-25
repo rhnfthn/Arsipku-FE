@@ -5,7 +5,7 @@ import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
   Users, FileText, Building2, ChevronRight, ArrowDown,
   PanelRightOpen, PanelRightClose, List, ArrowUpDown,
-  Mail, Send
+  Mail, Send, Save
 } from "lucide-vue-next";
 
 // Import Component Baru
@@ -720,7 +720,7 @@ const addEksternalToField = (email: string, field: 'to' | 'cc' | 'bcc') => {
   }
 };
 
-const submitKirimEmail = async () => {
+const submitKirimEmail = async (mode: 'send' | 'draft' = 'send') => {
   if (!kirimEmailTarget.value?.id) return;
   if (!kirimEmailForm.value.to) {
     kirimEmailError.value = 'Alamat email tujuan (To) wajib diisi';
@@ -731,20 +731,26 @@ const submitKirimEmail = async () => {
   kirimEmailError.value = '';
   kirimEmailSuccess.value = '';
 
+  const endpoint = mode === 'draft'
+    ? `/SDE/${kirimEmailTarget.value.id}/save-email-draft`
+    : `/SDE/${kirimEmailTarget.value.id}/send-email`;
+
   try {
-    const res = await apiPost(`/SDE/${kirimEmailTarget.value.id}/send-email`, {
+    const res = await apiPost(endpoint, {
       to: kirimEmailForm.value.to,
       cc: kirimEmailForm.value.cc || undefined,
       bcc: kirimEmailForm.value.bcc || undefined,
       from_as: kirimEmailForm.value.from_as || 'ARSIPKU',
     });
-    kirimEmailSuccess.value = res?.message || 'Email berhasil dikirim';
-    setTimeout(() => {
-      showKirimEmailModal.value = false;
-      navigateTo('/layanan-email/log');
-    }, 1500);
+    kirimEmailSuccess.value = res?.message || (mode === 'draft' ? 'Draft email berhasil disimpan' : 'Email berhasil dikirim');
+    if (mode === 'send') {
+      setTimeout(() => {
+        showKirimEmailModal.value = false;
+        navigateTo('/layanan-email/log');
+      }, 1500);
+    }
   } catch (err: any) {
-    kirimEmailError.value = err?.response?.data?.message || err?.message || 'Gagal mengirim email';
+    kirimEmailError.value = err?.response?.data?.message || err?.message || (mode === 'draft' ? 'Gagal menyimpan draft email' : 'Gagal mengirim email');
   } finally {
     kirimEmailLoading.value = false;
   }
@@ -815,12 +821,21 @@ const konsepOptions = [
     </template>
 
     <!-- KIRIM VIA EMAIL MODAL -->
-    <Teleport to="body">
+    <ClientOnly>
+      <Teleport to="body">
       <UModal v-model:open="showKirimEmailModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
         <template #header>
-          <div class="w-full flex items-center gap-2 px-1">
-            <Mail class="w-5 h-5 text-indigo-600" />
-            <span class="text-sm font-semibold text-gray-800 dark:text-white">Kirim via Email</span>
+          <div class="w-full flex justify-between items-center">
+            <div class="flex items-center gap-2 px-1">
+              <Mail class="w-5 h-5 text-indigo-600" />
+              <span class="text-sm font-semibold text-gray-800 dark:text-white">Kirim via Email</span>
+            </div>
+            <button
+              @click="showKirimEmailModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <X class="w-5 h-5" />
+            </button>
           </div>
         </template>
         <template #body>
@@ -925,13 +940,16 @@ const konsepOptions = [
         <template #footer>
           <div class="flex justify-end gap-2 w-full">
             <button
-              @click="showKirimEmailModal = false"
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              @click="submitKirimEmail('draft')"
+              :disabled="kirimEmailLoading"
+              class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              Batal
+              <Loader2 v-if="kirimEmailLoading" class="w-4 h-4 animate-spin" />
+              <Save v-else class="w-4 h-4" />
+              Simpan Draft
             </button>
             <button
-              @click="submitKirimEmail"
+              @click="submitKirimEmail('send')"
               :disabled="kirimEmailLoading"
               class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
@@ -942,7 +960,8 @@ const konsepOptions = [
           </div>
         </template>
       </UModal>
-    </Teleport>
+      </Teleport>
+    </ClientOnly>
 
     </div><!-- end main content -->
 

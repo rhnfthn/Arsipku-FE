@@ -32,11 +32,28 @@ const handleDrop = (event: DragEvent) => {
 const processFiles = (fileList: FileList) => {
   const files = Array.from(fileList)
 
-  // filter berdasarkan accept
-  const allowed = props.accept.split(',').map(a => a.trim())
+  // filter berdasarkan accept — support both MIME type and extension matching
+  const allowed = props.accept.split(',').map(a => a.trim().toLowerCase())
 
   const validFiles = files.filter(file => {
-    return allowed.includes(file.type) || allowed.some(a => file.name.endsWith(a))
+    const fileType = file.type.toLowerCase()
+    const fileName = file.name.toLowerCase()
+
+    return allowed.some(a => {
+      // MIME type match (e.g. "application/pdf", "image/*")
+      if (a.includes('/')) {
+        if (a.endsWith('/*')) {
+          const prefix = a.slice(0, -1) // "image/"
+          return fileType.startsWith(prefix)
+        }
+        return fileType === a
+      }
+      // Extension match (e.g. ".pdf")
+      if (a.startsWith('.')) {
+        return fileName.endsWith(a)
+      }
+      return false
+    })
   })
 
   const newFiles = props.multiple
