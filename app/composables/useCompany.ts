@@ -4,7 +4,7 @@ export const useCompany = () => {
   const { apiGet, apiPost, apiPut, apiDelete } = useApi();
 
   const getCompanies = () =>
-    apiGet<{ success: boolean; data: any[] }>("/company");
+    apiGet<{ success: boolean; data: any[] }>("/company", {}, { skipCache: true });
 
   const getCompanyByCode = async (companyCode: string) => {
     const res = await getCompanies();

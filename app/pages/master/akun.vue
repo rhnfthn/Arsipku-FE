@@ -611,6 +611,7 @@ const deleteNow = async () => {
     showToast(t('ma_tb_title'), t('ma_th_desc'), 'success');
     confirmDeleteOpen.value = false;
     itemToDelete.value = null;
+    await fetchAccounts();
   } catch {
     showToast(t('ma_err_title'), t('ma_err_del_desc'), 'error');
   }

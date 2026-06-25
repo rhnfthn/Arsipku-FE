@@ -23,7 +23,7 @@ export const useManajemenAkun = () => {
     error.value = null
 
     try {
-      const response = await apiGet('/superadmin/users')
+      const response = await apiGet('/superadmin/users', {}, { skipCache: true })
       const users = response.data.users || []
 
       accounts.value = users.map((u: any) => ({
@@ -80,6 +80,6 @@ const deleteAccount = async (persnum: number) => {
     error,
     fetchAccounts,
     addAccount  ,
-    deleteAccount   
+    deleteAccount
   }
 }

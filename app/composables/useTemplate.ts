@@ -26,7 +26,7 @@ export const useTemplate = () => {
   const getTemplates = async (): Promise<Template[]> => {
     isLoadingList.value = true;
     try {
-      const response = await apiGet<TemplateListResponse>("/templates");
+      const response = await apiGet<TemplateListResponse>("/templates", {}, { skipCache: true });
 
       if (!response.success || !Array.isArray(response.data)) {
         throw new Error("Invalid response format");

@@ -4,7 +4,8 @@ import { useRoute, useRouter } from 'vue-router';
 import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
   Users, FileText, Building2, ChevronRight, ArrowDown,
-  PanelRightOpen, PanelRightClose, List, ArrowUpDown
+  PanelRightOpen, PanelRightClose, List, ArrowUpDown,
+  Mail, Send
 } from "lucide-vue-next";
 
 // Import Component Baru
@@ -22,6 +23,7 @@ const positionId = computed(() => user.value?.position?.id || user.value?.positi
 const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
 const { rejectKonsep } = useKonsep();
 const { fetchSentNavigation } = useSirkulasi();
+const { apiPost, apiGet } = useApi();
 
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
@@ -108,6 +110,35 @@ const breadcrumbs = [
 const showEditAction = ref(false);
 const showFinalizeActions = ref(false);
 const isOpenKonsepModal = ref(false);
+
+// Kirim Email Modal State
+const showKirimEmailModal = ref(false);
+const kirimEmailTarget = ref<any>(null);
+const kirimEmailForm = ref({
+  to: '',
+  cc: '',
+  bcc: '',
+  from_as: 'ARSIPKU',
+});
+const kirimEmailLoading = ref(false);
+const kirimEmailError = ref('');
+const kirimEmailSuccess = ref('');
+const eksternalRecipients = ref<any[]>([]);
+const eksternalLoading = ref(false);
+const selectedEksternalTo = ref<any[]>([]);
+
+const eksternalOptions = computed(() =>
+  eksternalRecipients.value.map((e: any) => ({
+    label: e.nama,
+    value: e.id,
+    email: e.email,
+  }))
+);
+
+const onEksternalSelect = (field: 'to' | 'cc' | 'bcc', selected: any[]) => {
+  const emails = selected.map((s: any) => s.email).filter(Boolean);
+  kirimEmailForm.value[field] = emails.join(', ');
+};
 
 // Modals State
 const showFinalizeOptionsModal = ref(false);
@@ -649,6 +680,75 @@ const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/ko
 const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
 const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
+
+// === KIRIM VIA EMAIL ===
+const openKirimEmailModal = async (detail: any) => {
+  kirimEmailTarget.value = detail;
+  // Pre-fill 'to' dengan email penerima eksternal yang ada di naskah
+  const emails = (detail.penerima || [])
+    .map((p: any) => p.email)
+    .filter(Boolean);
+  kirimEmailForm.value = {
+    to: emails.join(', '),
+    cc: '',
+    bcc: '',
+    from_as: 'ARSIPKU',
+  };
+  kirimEmailError.value = '';
+  kirimEmailSuccess.value = '';
+  selectedEksternalTo.value = [];
+  showKirimEmailModal.value = true;
+
+  // Fetch daftar kontak eksternal untuk dropdown
+  eksternalLoading.value = true;
+  try {
+    const res = await apiGet('/persuratan/eksternal');
+    eksternalRecipients.value = (res?.data || []).filter((e: any) => e.email);
+  } catch (err) {
+    eksternalRecipients.value = [];
+  } finally {
+    eksternalLoading.value = false;
+  }
+};
+
+const addEksternalToField = (email: string, field: 'to' | 'cc' | 'bcc') => {
+  const current = kirimEmailForm.value[field].trim();
+  if (!current) {
+    kirimEmailForm.value[field] = email;
+  } else if (!current.split(',').map(s => s.trim()).includes(email)) {
+    kirimEmailForm.value[field] = `${current}, ${email}`;
+  }
+};
+
+const submitKirimEmail = async () => {
+  if (!kirimEmailTarget.value?.id) return;
+  if (!kirimEmailForm.value.to) {
+    kirimEmailError.value = 'Alamat email tujuan (To) wajib diisi';
+    return;
+  }
+
+  kirimEmailLoading.value = true;
+  kirimEmailError.value = '';
+  kirimEmailSuccess.value = '';
+
+  try {
+    const res = await apiPost(`/SDE/${kirimEmailTarget.value.id}/send-email`, {
+      to: kirimEmailForm.value.to,
+      cc: kirimEmailForm.value.cc || undefined,
+      bcc: kirimEmailForm.value.bcc || undefined,
+      from_as: kirimEmailForm.value.from_as || 'ARSIPKU',
+    });
+    kirimEmailSuccess.value = res?.message || 'Email berhasil dikirim';
+    setTimeout(() => {
+      showKirimEmailModal.value = false;
+      navigateTo('/layanan-email/log');
+    }, 1500);
+  } catch (err: any) {
+    kirimEmailError.value = err?.response?.data?.message || err?.message || 'Gagal mengirim email';
+  } finally {
+    kirimEmailLoading.value = false;
+  }
+};
 const openDocumentPreview = async (url: string, title = "Dokumen") => {
   if (!url) { alert("URL tidak valid."); return; }
   previewTitle.value = title; isPreviewOpen.value = true; isLocalPdfLoading.value = true; activePdfUrl.value = null;
@@ -702,6 +802,7 @@ const konsepOptions = [
             @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
             @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"
             @lanjut-konsep="isOpenKonsepModal = true"
+            @kirim-email="openKirimEmailModal(detail)"
             @nav-newer="goToNewer"
             @nav-older="goToOlder"
             @favorite="handleToggleFlag('favorit')"
@@ -712,6 +813,136 @@ const konsepOptions = [
         </div>
       </div>
     </template>
+
+    <!-- KIRIM VIA EMAIL MODAL -->
+    <Teleport to="body">
+      <UModal v-model:open="showKirimEmailModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+        <template #header>
+          <div class="w-full flex items-center gap-2 px-1">
+            <Mail class="w-5 h-5 text-indigo-600" />
+            <span class="text-sm font-semibold text-gray-800 dark:text-white">Kirim via Email</span>
+          </div>
+        </template>
+        <template #body>
+          <div class="flex flex-col gap-3 px-1">
+            <!-- Info surat -->
+            <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                <span class="font-medium">Surat:</span> {{ kirimEmailTarget?.nomor || '-' }}
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                <span class="font-medium">Perihal:</span> {{ kirimEmailTarget?.perihal || '-' }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                PDF final + lampiran akan dikirim sebagai attachment.
+              </p>
+            </div>
+
+            <!-- To -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-700 dark:text-gray-200">
+                To <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="kirimEmailForm.to"
+                type="text"
+                placeholder="email@example.com (pisahkan koma untuk multiple)"
+                class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <p v-if="kirimEmailTarget?.penerima?.length" class="text-xs text-gray-400">
+                Email penerima dari naskah: {{ kirimEmailTarget.penerima.map((p: any) => p.email).filter(Boolean).join(', ') || '(tidak ada email)' }}
+              </p>
+            </div>
+
+            <!-- Select dari kontak eksternal -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-700 dark:text-gray-200">
+                Pilih dari Kontak Eksternal
+              </label>
+              <USelectMenu
+                v-model="selectedEksternalTo"
+                :items="eksternalOptions"
+                multiple
+                placeholder="Pilih kontak eksternal..."
+                :loading="eksternalLoading"
+                class="w-full"
+                :ui="{ base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full' }"
+                @update:model-value="onEksternalSelect('to', $event)"
+              >
+                <template #item="{ item }">
+                  <div class="flex flex-col py-0.5">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ item.label }}</span>
+                    <span class="text-xs text-gray-400">{{ item.email }}</span>
+                  </div>
+                </template>
+              </USelectMenu>
+            </div>
+
+            <!-- CC -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-700 dark:text-gray-200">CC</label>
+              <input
+                v-model="kirimEmailForm.cc"
+                type="text"
+                placeholder="cc@example.com"
+                class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <!-- BCC -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-700 dark:text-gray-200">BCC</label>
+              <input
+                v-model="kirimEmailForm.bcc"
+                type="text"
+                placeholder="bcc@example.com"
+                class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <!-- From As -->
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-700 dark:text-gray-200">From As</label>
+              <input
+                v-model="kirimEmailForm.from_as"
+                type="text"
+                placeholder="ARSIPKU"
+                class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <!-- Error -->
+            <div v-if="kirimEmailError" class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <p class="text-xs text-red-600 dark:text-red-400">{{ kirimEmailError }}</p>
+            </div>
+
+            <!-- Success -->
+            <div v-if="kirimEmailSuccess" class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <p class="text-xs text-green-600 dark:text-green-400">{{ kirimEmailSuccess }}</p>
+            </div>
+          </div>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-2 w-full">
+            <button
+              @click="showKirimEmailModal = false"
+              class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            >
+              Batal
+            </button>
+            <button
+              @click="submitKirimEmail"
+              :disabled="kirimEmailLoading"
+              class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <Loader2 v-if="kirimEmailLoading" class="w-4 h-4 animate-spin" />
+              <Send v-else class="w-4 h-4" />
+              Kirim Email
+            </button>
+          </div>
+        </template>
+      </UModal>
+    </Teleport>
 
     </div><!-- end main content -->
 

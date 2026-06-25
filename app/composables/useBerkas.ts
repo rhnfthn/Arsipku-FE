@@ -12,7 +12,7 @@ export const useBerkas = () => {
    * Endpoint: GET /api/berkas
    */
   const getBerkasList = async (params?: any): Promise<Berkas[]> => {
-    return await apiGet<Berkas[]>("/berkas", params);
+    return await apiGet<Berkas[]>("/berkas", params, { skipCache: true });
   };
 
   /**
