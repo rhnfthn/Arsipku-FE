@@ -1771,6 +1771,12 @@ const changeLocale = (code: string) => {
   }
 };
 
+const syncLocaleFromStorage = (e: StorageEvent) => {
+  if (e.key === 'arsipku_locale' && e.newValue && ['id', 'en'].includes(e.newValue)) {
+    setLocale(e.newValue as 'id' | 'en');
+  }
+};
+
 // --- MENU ITEMS ---
 const itemClass = 'text-sm truncate transition-colors cursor-pointer';
 
@@ -1845,6 +1851,8 @@ onMounted(() => {
       setLocale(savedLocale as 'id' | 'en');
     }
 
+    window.addEventListener('storage', syncLocaleFromStorage);
+
     const successMsg = localStorage.getItem('switch_role_message');
     if (successMsg) {
       toast.add({
@@ -1857,6 +1865,12 @@ onMounted(() => {
     }
   }
   if (!user.value) getProfile();
+});
+
+onBeforeUnmount(() => {
+  if (process.client) {
+    window.removeEventListener('storage', syncLocaleFromStorage);
+  }
 });
 
 const openLogoutPopup = () => {
