@@ -26,21 +26,37 @@ export const formatShortDate = (dateString: string | null | undefined): string =
 
 export const getCategoryStyle = (cat: string): string => {
   const c = (cat || "").toUpperCase();
+  // Existing types
   if (["ND", "NOTA DINAS"].includes(c)) return "bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300";
   if (["DI", "DISPOSISI"].includes(c)) return "bg-purple-50 text-purple-500 dark:bg-purple-900/30 dark:text-purple-300";
   if (["SDI", "INTERNAL"].includes(c)) return "bg-green-50 text-green-500 dark:bg-green-900/30 dark:text-green-300";
   if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "bg-orange-50 text-orange-500 dark:bg-orange-900/30 dark:text-orange-300";
   if (["KAJIAN", "KA"].includes(c)) return "bg-cyan-50 text-cyan-500 dark:bg-cyan-900/30 dark:text-cyan-300";
+  // URS poin 6 - Pengaturan dan Penetapan
+  if (["PER"].includes(c)) return "bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-300";
+  if (["KEP"].includes(c)) return "bg-rose-50 text-rose-500 dark:bg-rose-900/30 dark:text-rose-300";
+  if (["INS"].includes(c)) return "bg-amber-50 text-amber-500 dark:bg-amber-900/30 dark:text-amber-300";
+  if (["SPR"].includes(c)) return "bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400";
+  if (["SOP"].includes(c)) return "bg-lime-50 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400";
+  if (["SE"].includes(c)) return "bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400";
+  // URS poin 6 - Khusus (Surat Perjanjian & lainnya)
+  if (["NK", "PKS", "LOA", "LOCA", "KTR", "PLN", "ADN", "SPK", "ASP", "SK"].includes(c))
+    return "bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30 dark:text-indigo-300";
+  if (["BA", "UND", "KET", "PGN", "RIS", "PUM", "SRT", "PGA", "LAP", "BVB"].includes(c))
+    return "bg-fuchsia-50 text-fuchsia-500 dark:bg-fuchsia-900/30 dark:text-fuchsia-300";
   return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
 };
 
 export const getCategoryLabel = (cat: string): string => {
   const c = (cat || "").toUpperCase();
+  // Existing types (preserve original short labels)
   if (["KA"].includes(c)) return "KA";
   if (["SDI", "INTERNAL"].includes(c)) return "SDI";
   if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "SDE";
   if (["ND", "NOTA DINAS"].includes(c)) return "ND";
   if (["DI", "DISPOSISI"].includes(c)) return "DI";
+  // URS poin 6 - new types: return code as-is
+  if (c) return c;
   return "K";
 };
 
