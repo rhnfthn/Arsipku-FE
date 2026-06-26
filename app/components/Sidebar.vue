@@ -394,7 +394,9 @@ const tulisChildrenByBod = computed(() => {
     { label: t('disposisi'), to: '/korespondensi/tulis/disposisi' },
     { label: t('surat_dinas_internal'), to: '/korespondensi/tulis/surat-dinas-internal' },
     { label: t('surat_dinas_eksternal'), to: '/korespondensi/tulis/surat-dinas-eksternal' },
-    { label: t('kajian'), to: '/korespondensi/tulis/kajian' }
+    { label: t('kajian'), to: '/korespondensi/tulis/kajian' },
+    // URS poin 6 - Naskah Dinas lainnya (Peraturan, Keputusan, Perjanjian, dll)
+    { label: 'Naskah Lainnya', to: '/korespondensi/tulis/naskah-umum' },
   ];
   if (tag === 'BOD' || tag === 'BOD-1') return all;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
@@ -402,7 +404,7 @@ const tulisChildrenByBod = computed(() => {
       (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
     );
   }
-  return all.filter((i) => i.label === t('kajian'));
+  return all.filter((i) => i.label === t('kajian') || i.label === 'Naskah Lainnya');
 });
 
 const tulisMenu = computed(() => ({
