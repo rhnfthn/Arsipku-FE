@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { parseDate, getLocalTimeZone, today } from '@internationalized/date';
 import {
   Inbox, FileText, Send, Building, Building2, FilePen, Archive, Trash2,
@@ -24,6 +24,8 @@ const { items, pagination, summary, isLoading: pending, fetchSentBox, bulkAction
 const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 
 // ── UI State ──────────────────────────────────────────────────────────────────
+const isRefreshing = ref(false);
+const isUnmounted = ref(false);
 const selected = ref(null);
 const selectedIds = ref(new Set<string>());
 const searchQuery = ref("");
@@ -130,6 +132,7 @@ const getTabCount = (tabValue: string) => {
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
 const refreshData = async () => {
+  isRefreshing.value = true;
   try {
     const params: Record<string, any> = {
       page: currentPage.value,
@@ -173,6 +176,8 @@ const refreshData = async () => {
     await fetchSentBox(params);
   } catch (err) {
     console.error("Gagal refresh data terkirim:", err);
+  } finally {
+    if (!isUnmounted.value) isRefreshing.value = false;
   }
 };
 
@@ -506,6 +511,11 @@ onMounted(async () => {
   /* log removed */
   /* log removed */
 });
+
+onUnmounted(() => {
+  isUnmounted.value = true;
+  clearTimeout(searchTimeout);
+});
 </script>
 
 <template>
@@ -556,7 +566,7 @@ onMounted(async () => {
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
           title="Muat Ulang">
-          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending }" />
+          <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
 
         <!-- Bulk Actions (muncul saat ada item dipilih) -->
@@ -799,7 +809,6 @@ onMounted(async () => {
             <!-- Mail Items -->
             <div v-else class="w-full">
               <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
-                v-memo="[mail.id, mail.isRead, mail.isStarred, mail.isTinjut, mail.is_priority, selectedIds.has(mail.id)]"
                 class="group flex flex-col md:flex-row gap-3 items-start py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors relative w-full min-h-[50px]"
                 :class="[
                   mail.is_priority
@@ -904,9 +913,10 @@ onMounted(async () => {
       @assign="assignLabelToSelected" @success="selectedIds.clear()" />
 
     <!-- Modal Status Pembaca -->
-    <Teleport to="body">
-      <div v-if="showReaderModal"
-        class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]">
+    <ClientOnly>
+      <Teleport to="body">
+        <div v-if="showReaderModal"
+          class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]">
         <div
           class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700">
           <div class="flex items-start justify-between p-5 pb-2">
@@ -1065,20 +1075,22 @@ onMounted(async () => {
 
           </div>
 
-          <div class="p-4 border-t border-gray-100 dark:border-gray-700">
-            <button @click="showReaderModal = false"
-              class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              Tutup
-            </button>
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+              <button @click="showReaderModal = false"
+                class="w-full py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </Teleport>
+      </Teleport>
+    </ClientOnly>
 
     <!-- Modal Konfirmasi Bulk Action -->
-    <Teleport to="body">
-      <div v-if="showDeleteModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <ClientOnly>
+      <Teleport to="body">
+        <div v-if="showDeleteModal"
+          class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
         <div
           class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700">
           <div class="p-5 text-center">
@@ -1100,24 +1112,25 @@ onMounted(async () => {
                 <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
               </div>
             </div>
-            <div class="flex gap-3 justify-center">
-              <button @click="showDeleteModal = false" :disabled="isDeleting"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
-                Batal
-              </button>
-              <button @click="handleBulkExecute" :disabled="isDeleting"
-                class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="currentBulkAction === 'delete'
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : isUnarchiveMode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary-600'">
-                <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
-                {{ isDeleting ? 'Memproses...' : actionLabel }}
-              </button>
+              <div class="flex gap-3 justify-center">
+                <button @click="showDeleteModal = false" :disabled="isDeleting"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+                  Batal
+                </button>
+                <button @click="handleBulkExecute" :disabled="isDeleting"
+                  class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :class="currentBulkAction === 'delete'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : isUnarchiveMode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary-600'">
+                  <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
+                  {{ isDeleting ? 'Memproses...' : actionLabel }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Teleport>
+      </Teleport>
+    </ClientOnly>
   </div>
 </template>
 

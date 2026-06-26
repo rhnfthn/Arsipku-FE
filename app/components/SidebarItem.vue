@@ -83,9 +83,10 @@ const isActivePath = (path) => {
   return route.path === path || route.path.startsWith(path + '/');
 };
 
-// Helper khusus untuk child agar active state lebih akurat
+// Helper khusus untuk child agar active state akurat (exact match, tidak startsWith)
+// Menghindari bug: /layanan-email ikut active saat di /layanan-email/log
 const isActiveChild = (path) => {
-  return route.path === path || route.path.startsWith(path + '/');
+  return route.path === path;
 };
 
 // Logic Active State
@@ -97,7 +98,8 @@ const isActive = computed(() => {
   }
 
   if (hasChildren.value) {
-    return props.item.children.some((child) => child?.to && isActivePath(child.to));
+    // Parent active jika salah satu child exact match dengan route saat ini
+    return props.item.children.some((child) => child?.to && isActiveChild(child.to));
   }
   return false;
 });

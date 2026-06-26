@@ -29,6 +29,7 @@ const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 const selectedIds = ref(new Set());
 const searchQuery = ref("");
 const isLabelProcessing = ref(false);
+const isRefreshing = ref(false);
 const showLabelAssignModal = ref(false);
 
 // ── Delete Modal ──────────────────────────────────────────────────────────────
@@ -130,6 +131,7 @@ const konsepRouteMap = {
 
 // ── Core: Fetch Data ──────────────────────────────────────────────────────────
 const refreshData = async () => {
+  isRefreshing.value = true;
   const params = {};
 
   // Pagination
@@ -166,6 +168,7 @@ const refreshData = async () => {
 
   await fetchDrafts(params);
   selectedIds.value.clear();
+  isRefreshing.value = false;
 };
 
 const handleEdit = (mail) => {
@@ -356,8 +359,8 @@ onMounted(() => {
 
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-          :disabled="pending">
-          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': pending }" />
+          :disabled="isRefreshing">
+          <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
 
         <template v-if="selectedIds.size > 0">

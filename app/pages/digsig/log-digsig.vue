@@ -189,7 +189,8 @@
             <!-- TBODY -->
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               <!-- SKELETON -->
-              <tr v-if="loading" v-for="i in rowsPerPage" :key="i">
+              <template v-if="loading">
+                <tr v-for="i in rowsPerPage" :key="i">
                 <td class="px-6 py-4">
                   <div class="space-y-2">
                     <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"></div>
@@ -218,7 +219,8 @@
                     class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse w-20"
                   ></div>
                 </td>
-              </tr>
+                </tr>
+              </template>
 
               <!-- EMPTY -->
               <tr v-else-if="sortedLogs.length === 0">

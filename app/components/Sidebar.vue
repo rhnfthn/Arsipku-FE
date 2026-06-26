@@ -433,7 +433,14 @@ const userMenuUtilitas = computed(() => {
   const menus = [
     { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
-    { label: t('mail_service'), to: '/layanan-email', icon: 'i-lucide-mail' },
+    {
+      label: t('mail_service'),
+      icon: 'i-lucide-mail',
+      children: [
+        { label: 'Kirim Email', to: '/layanan-email' },
+        { label: 'Log Email', to: '/layanan-email/log' }
+      ]
+    },
     { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
     { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' }
   ];
@@ -511,7 +518,14 @@ const adminMenuUtilitas = computed(() => {
       ]
     },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
-    { label: t('mail_service'), to: '/layanan-email', icon: 'i-lucide-mail' },
+    {
+      label: t('mail_service'),
+      icon: 'i-lucide-mail',
+      children: [
+        { label: 'Kirim Email', to: '/layanan-email' },
+        { label: 'Log Email', to: '/layanan-email/log' }
+      ]
+    },
     { label: t('template'), to: '/template', icon: 'i-lucide-copy' }
   ];
 
