@@ -123,21 +123,44 @@ const kirimEmailForm = ref({
 const kirimEmailLoading = ref(false);
 const kirimEmailError = ref('');
 const kirimEmailSuccess = ref('');
-const eksternalRecipients = ref<any[]>([]);
-const eksternalLoading = ref(false);
-const selectedEksternalTo = ref<any[]>([]);
 
-const eksternalOptions = computed(() =>
-  eksternalRecipients.value.map((e: any) => ({
-    label: e.nama,
-    value: e.id,
-    email: e.email,
-  }))
-);
+// --- EMAIL VALIDATION HELPERS ---
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const onEksternalSelect = (field: 'to' | 'cc' | 'bcc', selected: any[]) => {
-  const emails = selected.map((s: any) => s.email).filter(Boolean);
-  kirimEmailForm.value[field] = emails.join(', ');
+/** Parse comma-separated email string → trimmed array */
+const parseEmails = (raw: string): string[] =>
+  raw.split(',').map(s => s.trim()).filter(Boolean);
+
+/** Validasi format + duplikat antar To/CC/BCC */
+const validateEmailFields = (): string | null => {
+  const to = parseEmails(kirimEmailForm.value.to);
+  const cc = parseEmails(kirimEmailForm.value.cc);
+  const bcc = parseEmails(kirimEmailForm.value.bcc);
+
+  if (to.length === 0) return 'Alamat email tujuan (To) wajib diisi';
+
+  // Cek format semua email
+  const all = [...to, ...cc, ...bcc];
+  for (const email of all) {
+    if (!EMAIL_REGEX.test(email)) return `Format email tidak valid: ${email}`;
+  }
+
+  // Cek duplikat antar field (case-insensitive)
+  const seen = new Set<string>();
+  const dupes: string[] = [];
+  for (const email of all) {
+    const lower = email.toLowerCase();
+    if (seen.has(lower)) {
+      dupes.push(email);
+    } else {
+      seen.add(lower);
+    }
+  }
+  if (dupes.length > 0) {
+    return `Email duplikat tidak diperbolehkan: ${dupes.join(', ')}`;
+  }
+
+  return null;
 };
 
 // Modals State
@@ -682,10 +705,10 @@ const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path
 const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
 
 // === KIRIM VIA EMAIL ===
-const openKirimEmailModal = async (detail: any) => {
+const openKirimEmailModal = (detail: any) => {
   kirimEmailTarget.value = detail;
-  // Pre-fill 'to' dengan email penerima eksternal yang ada di naskah
-  const emails = (detail.penerima || [])
+  // Auto-fill 'to' dari email penerima (tertuju) surat SDE
+  const emails = (detail.penerima || detail.to || [])
     .map((p: any) => p.email)
     .filter(Boolean);
   kirimEmailForm.value = {
@@ -696,34 +719,16 @@ const openKirimEmailModal = async (detail: any) => {
   };
   kirimEmailError.value = '';
   kirimEmailSuccess.value = '';
-  selectedEksternalTo.value = [];
   showKirimEmailModal.value = true;
-
-  // Fetch daftar kontak eksternal untuk dropdown
-  eksternalLoading.value = true;
-  try {
-    const res = await apiGet('/persuratan/eksternal');
-    eksternalRecipients.value = (res?.data || []).filter((e: any) => e.email);
-  } catch (err) {
-    eksternalRecipients.value = [];
-  } finally {
-    eksternalLoading.value = false;
-  }
-};
-
-const addEksternalToField = (email: string, field: 'to' | 'cc' | 'bcc') => {
-  const current = kirimEmailForm.value[field].trim();
-  if (!current) {
-    kirimEmailForm.value[field] = email;
-  } else if (!current.split(',').map(s => s.trim()).includes(email)) {
-    kirimEmailForm.value[field] = `${current}, ${email}`;
-  }
 };
 
 const submitKirimEmail = async (mode: 'send' | 'draft' = 'send') => {
   if (!kirimEmailTarget.value?.id) return;
-  if (!kirimEmailForm.value.to) {
-    kirimEmailError.value = 'Alamat email tujuan (To) wajib diisi';
+
+  // Validasi format + duplikat To/CC/BCC
+  const validationError = validateEmailFields();
+  if (validationError) {
+    kirimEmailError.value = validationError;
     return;
   }
 
@@ -867,30 +872,6 @@ const konsepOptions = [
               <p v-if="kirimEmailTarget?.penerima?.length" class="text-xs text-gray-400">
                 Email penerima dari naskah: {{ kirimEmailTarget.penerima.map((p: any) => p.email).filter(Boolean).join(', ') || '(tidak ada email)' }}
               </p>
-            </div>
-
-            <!-- Select dari kontak eksternal -->
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-gray-700 dark:text-gray-200">
-                Pilih dari Kontak Eksternal
-              </label>
-              <USelectMenu
-                v-model="selectedEksternalTo"
-                :items="eksternalOptions"
-                multiple
-                placeholder="Pilih kontak eksternal..."
-                :loading="eksternalLoading"
-                class="w-full"
-                :ui="{ base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full' }"
-                @update:model-value="onEksternalSelect('to', $event)"
-              >
-                <template #item="{ item }">
-                  <div class="flex flex-col py-0.5">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ item.label }}</span>
-                    <span class="text-xs text-gray-400">{{ item.email }}</span>
-                  </div>
-                </template>
-              </USelectMenu>
             </div>
 
             <!-- CC -->
