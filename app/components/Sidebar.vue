@@ -264,7 +264,7 @@ import { usePollingSmart } from '~/composables/usePollingSmart';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasRole, hasPermission } = useAuth();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
@@ -286,7 +286,7 @@ const { t } = useI18n();
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
-const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
+const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
@@ -586,7 +586,7 @@ const adminMenuAdministrasi = computed(() => {
     { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-input' }
   ];
 
-  if (user.value?.role === 'superadmin') {
+  if (user.value?.role === 'superadmin' || hasRole('SUPERADMIN')) {
     base.push(
       {
         label: t('master_data'),
@@ -598,6 +598,12 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('klasifikasi'), to: '/master/klasifikasi' },
           { label: t('jenis'), to: '/master/jenis' }
         ]
+      },
+      {
+        // ⭐ Manajemen RBAC — icon shield, HANYA SUPERADMIN
+        label: 'Manajemen RBAC',
+        to: '/rbac',
+        icon: 'i-lucide-shield-check'
       },
       { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
     );

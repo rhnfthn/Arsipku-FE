@@ -5,7 +5,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const token = process.client ? localStorage.getItem('token') || tokenCookie.value : tokenCookie.value
   const path = to.path
 
-  const adminForbiddenPrefixes = ['/master', '/master-data', '/konfigurasi-sistem']
+  const adminForbiddenPrefixes = ['/master', '/master-data', '/konfigurasi-sistem', '/rbac']
 
   const isPathMatchPrefix = (prefixes: string[]) =>
     prefixes.some((prefix) => path === prefix || path.startsWith(prefix + '/'))
