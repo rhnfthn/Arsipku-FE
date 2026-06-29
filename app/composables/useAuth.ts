@@ -1,5 +1,5 @@
 // composables/useAuth.ts
-import type { UserProfile } from "~/types/auth";
+import type { UserProfile, ActivePermission } from "~/types/auth";
 
 export const useAuth = () => {
   const { apiGet, apiPost } = useApi();
@@ -145,6 +145,58 @@ export const useAuth = () => {
     return newAccessToken as string;
   };
 
+  // ============================================================
+  // RBAC helpers (permission-based)
+  // ============================================================
+
+  const hasPermission = (resource: string, action: string): boolean => {
+    const perms = user.value?.activePermissions || [];
+    return perms.some(
+      (p: ActivePermission) => p.resource === resource && p.actions.includes(action)
+    );
+  };
+
+  const hasAnyPermission = (resource: string, actions: string[]): boolean =>
+    actions.some((a) => hasPermission(resource, a));
+
+  const hasRole = (roleName: string): boolean => {
+    const active = user.value?.activeRole?.name;
+    if (active && active.toUpperCase() === roleName.toUpperCase()) return true;
+    const fallback = user.value?.role;
+    return !!fallback && fallback.toLowerCase() === roleName.toLowerCase();
+  };
+
+  const hasAnyRole = (roleNames: string[]): boolean => roleNames.some(hasRole);
+
+  const isSuperadmin = computed(() => hasRole("SUPERADMIN"));
+  const isAdmin = computed(() => hasRole("ADMIN"));
+
+  const switchRole = async (roleId: string) => {
+    if (!process.client) return;
+    const token = localStorage.getItem("token");
+    const res: any = await apiPost(
+      "/rbac/switch-role",
+      { roleId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = res?.data ?? res;
+    const newToken = data?.accessToken;
+    if (newToken) {
+      localStorage.setItem("token", newToken);
+      tokenCookie.value = newToken;
+    }
+    if (data?.activeRole) {
+      const updated: UserProfile = {
+        ...(user.value as UserProfile),
+        activeRole: data.activeRole,
+        activePermissions: data.activePermissions || user.value?.activePermissions,
+        role: (data.activeRole.name || "").toLowerCase() || user.value?.role || "user",
+      };
+      setUser(updated);
+      roleCookie.value = updated.role ?? null;
+    }
+  };
+
   return {
     user,
     setUser,
@@ -153,5 +205,12 @@ export const useAuth = () => {
     verifyToken,
     logout,
     refreshToken,
+    hasPermission,
+    hasAnyPermission,
+    hasRole,
+    hasAnyRole,
+    isSuperadmin,
+    isAdmin,
+    switchRole,
   };
 };
