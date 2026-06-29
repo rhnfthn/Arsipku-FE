@@ -1,4 +1,17 @@
 // types/auth.ts
+import type { Ref, ComputedRef } from 'vue';
+
+export type RoleName = 'SUPERADMIN' | 'ADMIN' | 'USER';
+
+export interface ActiveRoleInfo {
+  id: string;
+  name: RoleName;
+}
+
+export interface ActivePermission {
+  resource: string;
+  actions: string[];
+}
 
 export interface AlamatInfo {
   kantor: string;
@@ -67,6 +80,11 @@ export interface UserProfile {
   exp?: number;
   alamatInfo?: AlamatInfo;
 
+  // RBAC v2 (stateless di JWT)
+  activeRole?: ActiveRoleInfo | null;
+  activePermissions?: ActivePermission[];
+  roles?: ActiveRoleInfo[]; // semua role milik user (untuk switcher)
+
   // Opsional: Jika ingin menyimpan list delegasi di user profile
   delegations?: UserDelegation[];
 }
@@ -79,4 +97,11 @@ export interface AuthComposable {
   verifyToken: (token: string) => Promise<any>;
   logout: () => Promise<boolean>;
   refreshToken: () => Promise<string>;
+  hasPermission: (resource: string, action: string) => boolean;
+  hasAnyPermission: (resource: string, actions: string[]) => boolean;
+  hasRole: (roleName: string) => boolean;
+  hasAnyRole: (roleNames: string[]) => boolean;
+  isSuperadmin: ComputedRef<boolean>;
+  isAdmin: ComputedRef<boolean>;
+  switchRole: (roleId: string) => Promise<void>;
 }
