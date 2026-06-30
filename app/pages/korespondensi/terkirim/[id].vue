@@ -7,6 +7,7 @@ import {
   PanelRightOpen, PanelRightClose, List, ArrowUpDown,
   Mail, Send, Save
 } from "lucide-vue-next";
+import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 // Import Component Baru
 // Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
@@ -27,6 +28,17 @@ const { apiPost, apiGet } = useApi();
 
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
+const returnListQuery = computed(() => pickKorespondensiListQuery(route.query));
+const returnPath = computed(() => {
+  const value = route.query.return_path;
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')
+    ? raw
+    : '/korespondensi/terkirim';
+});
+const returnPathQuery = computed(() => ({
+  ...(returnPath.value !== '/korespondensi/terkirim' ? { return_path: returnPath.value } : {}),
+}));
 
 // --- DEFINISI VARIABEL YANG HILANG (FIX ERROR DISINI) ---
 const targetHighlightId = computed(() => {
@@ -528,7 +540,7 @@ const goToNav = (target: any) => {
   const targetJenis = target.jenis || jenisQuery || 'ND';
   router.push({
     path: `/korespondensi/terkirim/${target.id_naskah}`,
-    query: { jenis: targetJenis },
+    query: { ...returnListQuery.value, ...returnPathQuery.value, jenis: targetJenis },
   });
 };
 
@@ -536,7 +548,10 @@ const goToNewer = () => goToNav(navNext.value);
 const goToOlder = () => goToNav(navPrev.value);
 
 // --- ACTION HANDLERS (Sama seperti sebelumnya) ---
-const goBack = () => router.back();
+const goBack = () => router.push({
+  path: returnPath.value,
+  query: returnListQuery.value,
+});
 
 // --- FLAG TOGGLE (favorit, tindak_lanjut, lock, note) ---
 const flagState = ref({

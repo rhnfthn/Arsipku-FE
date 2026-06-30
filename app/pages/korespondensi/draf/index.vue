@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import { useDraft } from "@/composables/useDraft";
 import { useLabel } from "~/composables/useLabel";
 import { getCategoryStyle } from "~/utils/mail-helpers";
+import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 definePageMeta({ middleware: "auth" });
 
@@ -171,8 +172,20 @@ const refreshData = async () => {
   isRefreshing.value = false;
 };
 
-const handleEdit = (mail) => {
+const getListState = () => ({
+  activeTab: activeTab.value,
+  activeSortLabel: activeSortLabel.value,
+  activeDateLabel: activeDateLabel.value,
+  currentPage: currentPage.value,
+  itemsPerPage: itemsPerPage.value,
+  searchQuery: searchQuery.value,
+  startDateInput: startDateInput.value,
+  endDateInput: endDateInput.value,
+});
+
+const handleEdit = async (mail) => {
   const jenis = (mail.category || '').trim().toUpperCase();
+  const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
 
   if (mail.isDraftKonsep) {
     const konsepRouteMap = {
@@ -182,7 +195,7 @@ const handleEdit = (mail) => {
     };
     // jenisAsli dari field jenis API (ND/SDI/SDE), bukan category yg sudah jadi 'K'
     const konsepPath = konsepRouteMap[mail.jenisAsli] ?? '/korespondensi/tulis/konsep/nota-dinas';
-    router.push({ path: konsepPath, query: { draft_id: mail.id } });
+    router.push({ path: konsepPath, query: { ...listQuery, draft_id: mail.id } });
     return;
   }
 
@@ -196,7 +209,7 @@ const handleEdit = (mail) => {
   };
   router.push({
     path: routes[jenis] ?? '/korespondensi/tulis/nota-dinas',
-    query: { draft_id: mail.id },
+    query: { ...listQuery, draft_id: mail.id },
   });
 };
 
@@ -335,6 +348,21 @@ onMounted(() => {
   startDateCal.value = parseDate(today);
   endDateCal.value = parseDate(today);
 
+  applyKorespondensiListQuery(route.query, {
+    activeTab,
+    activeSortLabel,
+    activeDateLabel,
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    startDateInput,
+    endDateInput,
+  }, {
+    tabs: tabs.map((t) => t.value),
+    sorts: sortOptions,
+    dates: dateOptions,
+    pageSizes: pageOptions,
+  });
   refreshData();
 });
 </script>
