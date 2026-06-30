@@ -68,15 +68,16 @@ const toggleOpen = () => {
 
 // Hitung apakah label ini sedang dibuka berdasarkan URL
 const isActive = computed(() => {
-  return route.name === 'label-id' && route.params.id === props.item.id;
+  return route.name === 'label-id' && String(route.params.id) === String(props.item.id);
 });
 
 const count = computed(() => props.labelCounts[props.item.id] || 0);
 
 // Fungsi navigasi ke halaman detail label
 const navigateToLabel = () => {
-  router.push(`/label/${props.item.id}`);
   emit('click', props.item);
+  if (isActive.value) return;
+  router.push(`/label/${props.item.id}`);
 
   // Optional: Auto expand jika diklik (uncomment jika diinginkan)
   // if (props.item.children?.length) isOpen.value = true;

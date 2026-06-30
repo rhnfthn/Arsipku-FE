@@ -8,6 +8,7 @@ import {
 } from "lucide-vue-next";
 import { useTertunda } from "~/composables/useTertunda";
 import { formatShortDate, getInitials } from "~/utils/mail-helpers";
+import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 definePageMeta({ middleware: "auth" });
 
@@ -18,6 +19,7 @@ const { fetchTertundaDetail, fetchTertundaNavigation, validateTtdFile, finalizeP
 
 const id = route.params.id as string;
 const jenisQuery = (route.query.jenis as string) || "ND";
+const returnListQuery = computed(() => pickKorespondensiListQuery(route.query));
 
 // --- STATE ---
 const isLoading = ref(true);
@@ -34,11 +36,15 @@ const goToNav = (target: any) => {
   const targetJenis = target.jenis || jenisQuery || "ND";
   router.push({
     path: `/korespondensi/tertunda/${target.id_naskah}`,
-    query: { jenis: targetJenis },
+    query: { ...returnListQuery.value, jenis: targetJenis },
   });
 };
 const goToNewer = () => goToNav(navNext.value);
 const goToOlder = () => goToNav(navPrev.value);
+const goBack = () => router.push({
+  path: "/korespondensi/tertunda",
+  query: returnListQuery.value,
+});
 
 const uploadedFile = ref<File | null>(null);
 const isDragging = ref(false);
@@ -211,7 +217,7 @@ onMounted(loadData);
       <!-- Header -->
       <div class="h-14 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
         <div class="flex items-center gap-2">
-          <button @click="router.back()"
+          <button @click="goBack"
             class="p-1 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <ArrowLeft class="w-5 h-5" />
           </button>

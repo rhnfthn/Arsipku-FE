@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { parseDate } from '@internationalized/date';
 import {
   Inbox,
@@ -27,11 +28,14 @@ import {
 import * as XLSX from "xlsx";
 import { useTertunda } from "~/composables/useTertunda";
 import { useLabel } from "~/composables/useLabel";
+import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 definePageMeta({ middleware: "auth" });
 
 const { user, getProfile } = useAuth();
 const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 
 // --- STATE MANAGEMENT ---
 const {
@@ -184,8 +188,23 @@ const selectPageSize = (size: number) => {
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
-const selectMail = (mail: any) => {
-  navigateTo(`/korespondensi/tertunda/${mail.naskahId}?jenis=${mail.category}`);
+const getListState = () => ({
+  activeTab: activeTab.value,
+  activeSortLabel: activeSortLabel.value,
+  activeDateLabel: activeDateLabel.value,
+  currentPage: currentPage.value,
+  itemsPerPage: itemsPerPage.value,
+  searchQuery: searchQuery.value,
+  startDateInput: startDateInput.value,
+  endDateInput: endDateInput.value,
+});
+
+const selectMail = async (mail: any) => {
+  const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
+  navigateTo({
+    path: `/korespondensi/tertunda/${mail.naskahId}`,
+    query: { ...listQuery, jenis: mail.category },
+  });
 };
 
 const downloadExcel = () => {
@@ -235,6 +254,21 @@ onMounted(async () => {
 
   if (!user.value) await getProfile();
   await fetchLabels();
+  applyKorespondensiListQuery(route.query, {
+    activeTab,
+    activeSortLabel,
+    activeDateLabel,
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    startDateInput,
+    endDateInput,
+  }, {
+    tabs: tabs.map((t) => t.value),
+    sorts: sortOptions,
+    dates: dateOptions,
+    pageSizes: pageOptions,
+  });
   refreshData();
 });
 </script>
