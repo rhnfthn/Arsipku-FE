@@ -249,6 +249,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
+import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
@@ -292,6 +293,7 @@ const { getRecipientGroups } = useRecipients();
 
 const route = useRoute();
 const router = useRouter();
+const draftListQuery = computed(() => pickKorespondensiListQuery(route.query));
 const toast = useToast();
 const alertState = useAlertState();
 
@@ -803,7 +805,7 @@ const handleSaveDraft = async () => {
       await createDraft(fd);
     }
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
+    router.push({ path: "/korespondensi/draf", query: draftListQuery.value });
   } catch (e: any) {
     throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
   } finally {

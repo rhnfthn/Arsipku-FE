@@ -17,6 +17,24 @@ interface NaskahByLabelResponse {
   };
 }
 
+const normalizeNaskahByLabelResponse = (payload: any): NaskahByLabelResponse | null => {
+  if (!payload) return null;
+
+  const data = payload.data && !Array.isArray(payload.data) ? payload.data : payload;
+
+  return {
+    namaLabel: data.namaLabel || '',
+    items: Array.isArray(data.items) ? data.items : [],
+    pagination: payload.pagination || data.pagination || {
+      total: Array.isArray(data.items) ? data.items.length : 0,
+      totalPages: 0,
+      page: 1,
+      limit: 10,
+    },
+    summary: data.summary,
+  };
+};
+
 export const useLabel = () => {
   const { get, post, patch, del } = useApi();
 
@@ -91,8 +109,7 @@ export const useLabel = () => {
       const qs = query.toString();
       const res = await get(`/labels/${labelId}/naskah${qs ? `?${qs}` : ''}`);
 
-      // FIX: Simpan res.data sebagai object, bukan array
-      naskahByLabel.value = res?.data ?? null;
+      naskahByLabel.value = normalizeNaskahByLabelResponse(res);
     } catch (err) {
       naskahError.value = err;
       naskahByLabel.value = null;

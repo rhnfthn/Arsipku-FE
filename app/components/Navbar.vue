@@ -142,6 +142,9 @@
         <UIcon name="i-heroicons-magnifying-glass" class="w-6 h-6" />
       </button>
 
+      <!-- NOTIFICATION BELL -->
+      <NotificationBell />
+
       <UDropdownMenu
         :items="menuItems"
         :content="{ align: 'end' }"
