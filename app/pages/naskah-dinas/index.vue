@@ -125,12 +125,21 @@
               <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
                 {{ $t('pembuat') }}
               </th>
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700">
+                Progress Verifikator
+              </th>
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 text-center">
+                Jumlah Verifikator
+              </th>
+              <th class="px-4 py-3 border-b-2 border-b-gray-100 dark:border-b-gray-700 text-center">
+                {{ $t('aksi') }}
+              </th>
             </tr>
           </thead>
 
           <tbody>
             <tr v-if="pending">
-              <td colspan="5" class="px-4 py-6">
+              <td colspan="8" class="px-4 py-6">
                 <div class="space-y-4 animate-pulse">
                   <div
                     v-for="n in skeletonRows"
@@ -229,12 +238,59 @@
                   v-html="highlight(item.pembuat?.nama || '-', search)"
                 />
               </td>
+
+              <!-- PROGRESS VERIFIKATOR -->
+              <td class="px-4 py-3 text-black dark:text-gray-200 min-w-[180px]">
+                <div class="flex items-center gap-3">
+                  <div class="h-2 w-24 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      :class="getProgressBarClass(item)"
+                      :style="{ width: `${getProgressPercent(item)}%` }"
+                    />
+                  </div>
+                  <span class="text-xs font-medium">
+                    {{ getProgressLabel(item) }}
+                  </span>
+                </div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                  {{ getProgressStatusLabel(item) }}
+                </div>
+              </td>
+
+              <!-- JUMLAH VERIFIKATOR -->
+              <td class="px-4 py-3 text-center text-black dark:text-gray-200">
+                {{ item.totalVerifikator || 0 }}
+              </td>
+
+              <!-- AKSI -->
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    title="Lihat"
+                    @click="handleViewNaskah(item)"
+                  >
+                    <Eye class="w-4 h-4" />
+                  </button>
+                  <button
+                    v-if="canEditNaskah(item)"
+                    type="button"
+                    class="p-2 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    title="Edit"
+                    @click="openEditModal(item)"
+                  >
+                    <Pencil class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
             </tr>
 
             <!-- EMPTY STATE -->
             <tr v-if="!pending && paginatedData.length === 0">
               <td
-                colspan="5"
+                colspan="8"
                 class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500"
               >
                 {{ $t('tidak_ditemukan') }}
@@ -379,7 +435,7 @@
     >
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
-          {{ $t('nm_modal_title') }}
+          {{ isEditMode ? 'Edit Naskah Masuk' : $t('nm_modal_title') }}
         </Heading>
       </template>
 
@@ -704,10 +760,109 @@
             </p>
           </div>
 
+          <!-- VERIFIKATOR -->
+          <div class="flex flex-col gap-2">
+            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+              <input
+                v-model="newDelegasi.useVerifikator"
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                @change="handleToggleVerifikator"
+              />
+              <span class="font-medium">Verifikator</span>
+            </label>
+
+            <div
+              v-if="newDelegasi.useVerifikator"
+              class="relative mt-1 dropdown-input"
+              data-custom-dropdown
+            >
+              <div
+                :class="[
+                  'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2',
+                  modalErrors.verifikator
+                    ? 'border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
+                ]"
+                @click.stop="openNewVerifikator = true"
+              >
+                <div v-if="newDelegasi.verifikator.length > 0" class="flex flex-wrap gap-2">
+                  <span
+                    v-for="verifikator in newDelegasi.verifikator"
+                    :key="verifikator.persnum"
+                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
+                  >
+                    <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
+                      {{ verifikator.nama || '-' }}
+                    </span>
+                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
+                      {{ verifikator.jabatan || '-' }}
+                    </span>
+                    <button
+                      type="button"
+                      class="text-red-500 text-[10px] self-end"
+                      @click.stop="removeVerifikator(verifikator.persnum)"
+                    >
+                      x
+                    </button>
+                  </span>
+                </div>
+
+                <input
+                  v-model="searchVerifikator"
+                  @focus="openNewVerifikator = true"
+                  placeholder="Cari verifikator"
+                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                />
+              </div>
+
+              <div
+                v-if="openNewVerifikator"
+                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-auto"
+              >
+                <div
+                  v-if="loadingVerifikator"
+                  class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  {{ $t('memuat_data') }}
+                </div>
+
+                <div
+                  v-if="!loadingVerifikator && filteredVerifikatorList.length === 0"
+                  class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  {{ $t('tidak_ditemukan') }}
+                </div>
+
+                <button
+                  v-for="verifikator in filteredVerifikatorList"
+                  :key="verifikator.persnum"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
+                  @click.prevent="selectVerifikator(verifikator)"
+                >
+                  <div class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
+                    {{ verifikator.nama || '-' }}
+                  </div>
+                  <div class="text-[10px] text-gray-800 dark:text-gray-300">
+                    {{ verifikator.jabatan || '-' }}
+                  </div>
+                  <div class="text-[9px] text-gray-400 dark:text-gray-500">
+                    {{ verifikator.lokasi || verifikator.areaText || '-' }}
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <p v-if="modalErrors.verifikator" class="text-xs text-red-500 mt-1">
+              Pilih minimal satu verifikator
+            </p>
+          </div>
+
           <!-- FILE UPLOAD -->
           <div class="flex flex-col gap-2">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_file') }} <span class="text-red-500">*</span>
+              {{ $t('nm_file') }}
+              <span v-if="!isEditMode" class="text-red-500">*</span>
             </Heading>
 
             <!-- Upload Box -->
@@ -738,6 +893,25 @@
             </label>
 
             <!-- File List -->
+            <div
+              v-if="isEditMode && selectedNaskah?.final_pdf_url && filesRef.length === 0"
+              class="mt-2 flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2"
+            >
+              <div class="flex items-center gap-2">
+                <FileText class="w-4 h-4 text-primary-400" />
+                <span class="text-xs font-medium dark:text-gray-200">
+                  File saat ini
+                </span>
+              </div>
+              <button
+                type="button"
+                class="text-xs text-primary-500 hover:text-primary-700"
+                @click="openFinalPdf(selectedNaskah.final_pdf_url, 'edit')"
+              >
+                Lihat
+              </button>
+            </div>
+
             <div v-if="filesRef.length" class="mt-2 space-y-2">
               <div
                 v-for="(file, index) in filesRef"
@@ -773,6 +947,124 @@
       </div>
     </Modal>
   </Teleport>
+
+  <!-- MODAL DETAIL -->
+  <Teleport to="body">
+    <Modal v-model="showDetailModal" :hideDefaultFooter="true" size="xl">
+      <template #title>
+        <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
+          Detail Naskah Masuk
+        </Heading>
+      </template>
+
+      <div v-if="loadingDetail" class="p-10 text-center">
+        <div class="inline-flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+          <div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          {{ $t('memuat_data') }}
+        </div>
+      </div>
+
+      <div v-else-if="selectedDetail" class="px-5 pb-5 space-y-5 max-h-[75vh] overflow-y-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('nm_noasal') }}</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ selectedDetail.nomor || '-' }}</p>
+          </div>
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('tanggal') }}</p>
+            <p class="font-medium text-gray-900 dark:text-white">
+              {{ formatTanggalJamIndonesia(selectedDetail.tanggal, selectedDetail.jam).tanggal }}
+            </p>
+          </div>
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('asal_naskah') }}</p>
+            <p class="font-medium text-gray-900 dark:text-white">
+              {{ selectedDetail.pengirim?.nama || '-' }}
+            </p>
+          </div>
+          <div>
+            <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('pembuat') }}</p>
+            <p class="font-medium text-gray-900 dark:text-white">
+              {{ selectedDetail.pembuat?.position_text || '-' }}
+            </p>
+          </div>
+          <div class="md:col-span-2">
+            <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('perihal') }}</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ selectedDetail.perihal || '-' }}</p>
+          </div>
+          <div class="md:col-span-2">
+            <p class="text-gray-500 dark:text-gray-400 mb-2">{{ $t('Tertuju') }}</p>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="penerima in selectedDetail.penerima || []"
+                :key="penerima.position"
+                class="px-2 py-1 text-xs rounded bg-blue-50 dark:bg-blue-900/40 text-primary-600 dark:text-blue-300"
+              >
+                {{ penerima.position_text }}
+              </span>
+              <span
+                v-if="!selectedDetail.penerima?.length"
+                class="text-sm text-gray-400 dark:text-gray-500"
+              >
+                -
+              </span>
+            </div>
+          </div>
+          <div class="md:col-span-2">
+            <button
+              v-if="selectedDetail.final_pdf_url"
+              type="button"
+              class="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-primary dark:text-blue-300 px-4 py-2 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition"
+              @click="openFinalPdf(selectedDetail.final_pdf_url, 'detail')"
+            >
+              <FileText class="w-4 h-4" />
+              {{ $t('nm_pratinjau_dokumen') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+          <div class="px-4 py-3 bg-primary-400 dark:bg-primary-700 text-white text-sm font-semibold">
+            Verifikator
+          </div>
+          <table class="w-full text-sm">
+            <tbody>
+              <tr v-if="!selectedDetail.verifikators?.length">
+                <td class="p-4 text-center text-gray-400 dark:text-gray-500">
+                  Tidak ada verifikator
+                </td>
+              </tr>
+              <tr
+                v-for="verifikator in selectedDetail.verifikators || []"
+                :key="verifikator.id"
+                class="border-b border-gray-100 dark:border-gray-700 last:border-0"
+              >
+                <td class="p-3 w-12 text-gray-900 dark:text-white">
+                  {{ verifikator.urutan }}
+                </td>
+                <td class="p-3">
+                  <div class="font-semibold text-gray-900 dark:text-white">
+                    {{ verifikator.nama || '-' }}
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ verifikator.jabatan || '-' }}
+                  </div>
+                </td>
+                <td class="p-3 text-right">
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-semibold inline-block"
+                    :class="getVerifierStatusClass(verifikator.status)"
+                  >
+                    {{ getVerifierStatusLabel(verifikator.status) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Modal>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -786,7 +1078,9 @@ import {
   FileDown,
   Upload,
   FileText,
-  X
+  X,
+  Eye,
+  Pencil
 } from 'lucide-vue-next';
 
 import Modal from '~/components/Modal.vue';
@@ -811,9 +1105,14 @@ const toast = useToast();
 const search = ref('');
 const sortDirection = ref<'asc' | 'desc' | null>('desc');
 const showAddModal = ref(false);
+const showDetailModal = ref(false);
+const isEditMode = ref(false);
+const selectedNaskah = ref<any | null>(null);
+const selectedDetail = ref<any | null>(null);
 const isSavingDelegasi = ref(false);
 const searchTertuju = ref('');
 const searchAsalNaskah = ref('');
+const searchVerifikator = ref('');
 const skeletonRows = computed(() => {
   if (perPage.value === 'all') return 10;
   return Number(perPage.value);
@@ -834,7 +1133,13 @@ const {
   recipients: tertujuList,
   loadingRecipients: loadingTertuju,
   fetchRecipients,
-  sendNaskahDinas
+  verifikatorList,
+  loadingVerifikator,
+  fetchVerifikator,
+  loadingDetail,
+  fetchNaskahDinasDetail,
+  sendNaskahDinas,
+  updateNaskahDinas
 } = useNaskahDinas();
 
 const {
@@ -865,6 +1170,20 @@ const filteredAsalNaskahList = computed(() => {
   const keyword = searchAsalNaskah.value.toLowerCase();
   if (!keyword) return asalNaskahList.value;
   return asalNaskahList.value.filter((item) => item.nama?.toLowerCase().includes(keyword));
+});
+
+const filteredVerifikatorList = computed(() => {
+  const selectedPersnums = new Set(newDelegasi.value.verifikator.map((item: any) => item.persnum));
+  const keyword = searchVerifikator.value.toLowerCase();
+  const available = verifikatorList.value.filter((item: any) => !selectedPersnums.has(item.persnum));
+
+  if (!keyword) return available;
+
+  return available.filter((item: any) =>
+    `${item.nama || ''} ${item.jabatan || ''} ${item.lokasi || ''}`
+      .toLowerCase()
+      .includes(keyword)
+  );
 });
 
 // ==============================
@@ -927,6 +1246,10 @@ const filteredData = computed(() => {
       // Kolom Pembuat
       const pembuat =
         `${item.pembuat?.position_text || ''} ${item.pembuat?.nama || ''}`.toLowerCase();
+      const verifikatorText = (item.verifikators || [])
+        .map((verifikator: any) => `${verifikator.nama || ''} ${verifikator.jabatan || ''}`)
+        .join(' ')
+        .toLowerCase();
 
       return (
         tanggalFormatted.includes(keyword) ||
@@ -936,7 +1259,8 @@ const filteredData = computed(() => {
         nomor.includes(keyword) ||
         tertujuText.includes(keyword) ||
         perihal.includes(keyword) ||
-        pembuat.includes(keyword)
+        pembuat.includes(keyword) ||
+        verifikatorText.includes(keyword)
       );
     });
   }
@@ -1011,6 +1335,7 @@ const modalErrors = ref({
   asal_naskah: false,
   perihal: false,
   tertuju: false,
+  verifikator: false,
   file: false
 });
 
@@ -1021,6 +1346,9 @@ const filesRef = ref<File[]>([]);
 
 const lampiranText = computed(() => {
   const total = filesRef.value.length;
+  if (isEditMode.value && total === 0 && selectedNaskah.value?.lampiran) {
+    return selectedNaskah.value.lampiran;
+  }
   return `${total} lampiran`;
 });
 
@@ -1030,10 +1358,12 @@ const newDelegasi = ref({
   nomor_asal: '',
   sifat_naskah: '',
   perihal: '',
-  asal_naskah: null as number | null,
+  asal_naskah: null as string | null,
   asal_naskah_label: '',
   tertuju: [] as any[],
-  tertuju_label: ''
+  tertuju_label: '',
+  useVerifikator: false,
+  verifikator: [] as any[]
 });
 
 const saveDelegasi = async () => {
@@ -1046,7 +1376,9 @@ const saveDelegasi = async () => {
   modalErrors.value.asal_naskah = !newDelegasi.value.asal_naskah;
   modalErrors.value.perihal = !newDelegasi.value.perihal.trim();
   modalErrors.value.tertuju = newDelegasi.value.tertuju.length === 0;
-  modalErrors.value.file = filesRef.value.length === 0;
+  modalErrors.value.verifikator =
+    newDelegasi.value.useVerifikator && newDelegasi.value.verifikator.length === 0;
+  modalErrors.value.file = !isEditMode.value && filesRef.value.length === 0;
 
   const emptyFields: string[] = [];
   if (modalErrors.value.jenisnaskah) emptyFields.push('Jenis Naskah');
@@ -1056,6 +1388,7 @@ const saveDelegasi = async () => {
   if (modalErrors.value.asal_naskah) emptyFields.push('Asal Naskah');
   if (modalErrors.value.perihal) emptyFields.push('Perihal');
   if (modalErrors.value.tertuju) emptyFields.push('Tertuju Eksternal');
+  if (modalErrors.value.verifikator) emptyFields.push('Verifikator');
   if (modalErrors.value.file) emptyFields.push('File');
 
   if (emptyFields.length > 0) {
@@ -1071,7 +1404,7 @@ const saveDelegasi = async () => {
   isSavingDelegasi.value = true;
 
   try {
-    await sendNaskahDinas({
+    const payload = {
       asal_naskah: String(newDelegasi.value.asal_naskah),
       tertuju: newDelegasi.value.tertuju.map((t) => t.position),
       tanggal_surat: newDelegasi.value.tanggal_surat,
@@ -1080,12 +1413,21 @@ const saveDelegasi = async () => {
       perihal: newDelegasi.value.perihal,
       lampiran: lampiranText.value,
       file: filesRef.value,
-      pembuat_id: Number(user.value?.position)
-    });
+      pembuat_id: Number(user.value?.position),
+      verifikator: newDelegasi.value.useVerifikator
+        ? newDelegasi.value.verifikator.map((verifikator: any) => Number(verifikator.persnum))
+        : []
+    };
+
+    if (isEditMode.value && selectedNaskah.value?.id) {
+      await updateNaskahDinas(selectedNaskah.value.id, payload);
+    } else {
+      await sendNaskahDinas(payload);
+    }
 
     toast.add({
       title: t('berhasil'),
-      description: t('nm_berhasil_tambah'),
+      description: isEditMode.value ? 'Naskah dinas berhasil diperbarui' : t('nm_berhasil_tambah'),
       color: 'success',
       icon: 'i-lucide-check-circle'
     });
@@ -1129,9 +1471,26 @@ const openNewJenisNaskah = ref(false);
 const openNewSifatNaskah = ref(false);
 const openNewAsalNaskah = ref(false);
 const openNewTertuju = ref(false);
+const openNewVerifikator = ref(false);
 
 const isOpenPreviewFile = ref(false);
 const previewFileUrl = ref<string | null>(null);
+const previewReturnTo = ref<'detail' | 'edit' | null>(null);
+
+watch(isOpenPreviewFile, (isOpen) => {
+  if (isOpen) return;
+  previewFileUrl.value = null;
+
+  if (previewReturnTo.value === 'detail') {
+    showDetailModal.value = true;
+  }
+
+  if (previewReturnTo.value === 'edit') {
+    showAddModal.value = true;
+  }
+
+  previewReturnTo.value = null;
+});
 
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -1144,8 +1503,10 @@ function handleDocumentClick(e: MouseEvent) {
   openNewSifatNaskah.value = false;
   openNewAsalNaskah.value = false;
   openNewTertuju.value = false;
+  openNewVerifikator.value = false;
   searchTertuju.value = '';
   searchAsalNaskah.value = '';
+  searchVerifikator.value = '';
 }
 
 onBeforeUnmount(() => {
@@ -1165,7 +1526,7 @@ function selectNewSifatNaskah(val: string) {
 }
 
 function selectNewAsalNaskah(item: { id: number | string; nama: string }) {
-  newDelegasi.value.asal_naskah = Number(item.id);
+  newDelegasi.value.asal_naskah = String(item.id);
   newDelegasi.value.asal_naskah_label = item.nama;
   modalErrors.value.asal_naskah = false;
   openNewAsalNaskah.value = false;
@@ -1184,6 +1545,40 @@ function selectNewTertuju(item: any) {
 
 function removeTertuju(position: number) {
   newDelegasi.value.tertuju = newDelegasi.value.tertuju.filter((t) => t.position !== position);
+}
+
+async function handleToggleVerifikator() {
+  modalErrors.value.verifikator = false;
+  if (!newDelegasi.value.useVerifikator) {
+    newDelegasi.value.verifikator = [];
+    openNewVerifikator.value = false;
+    searchVerifikator.value = '';
+    return;
+  }
+
+  if (verifikatorList.value.length === 0) {
+    await fetchVerifikator();
+  }
+}
+
+function selectVerifikator(verifikator: any) {
+  const exists = newDelegasi.value.verifikator.some(
+    (item: any) => Number(item.persnum) === Number(verifikator.persnum)
+  );
+
+  if (!exists) {
+    newDelegasi.value.verifikator.push(verifikator);
+    modalErrors.value.verifikator = false;
+  }
+
+  searchVerifikator.value = '';
+  openNewVerifikator.value = false;
+}
+
+function removeVerifikator(persnum: number) {
+  newDelegasi.value.verifikator = newDelegasi.value.verifikator.filter(
+    (item: any) => Number(item.persnum) !== Number(persnum)
+  );
 }
 
 function handleFileChange(e: Event) {
@@ -1236,15 +1631,21 @@ function resetNewDelegasi() {
     asal_naskah: null,
     asal_naskah_label: '',
     tertuju: [],
-    tertuju_label: ''
+    tertuju_label: '',
+    useVerifikator: false,
+    verifikator: []
   };
   filesRef.value = [];
   searchTertuju.value = '';
   searchAsalNaskah.value = '';
+  searchVerifikator.value = '';
   openNewJenisNaskah.value = false;
   openNewSifatNaskah.value = false;
   openNewAsalNaskah.value = false;
   openNewTertuju.value = false;
+  openNewVerifikator.value = false;
+  selectedNaskah.value = null;
+  isEditMode.value = false;
 
   modalErrors.value = {
     jenisnaskah: false,
@@ -1254,6 +1655,7 @@ function resetNewDelegasi() {
     asal_naskah: false,
     perihal: false,
     tertuju: false,
+    verifikator: false,
     file: false
   };
 }
@@ -1263,8 +1665,164 @@ function openAddModal() {
   showAddModal.value = true;
 }
 
-function openFinalPdf(url?: string) {
+function populateFormFromNaskah(data: any) {
+  selectedNaskah.value = data;
+  newDelegasi.value = {
+    jenisnaskah: data.jenis === 'SDE' ? 'Surat Dinas Eksternal' : data.jenis || '',
+    tanggal_surat: data.tanggal || '',
+    nomor_asal: data.nomor || '',
+    sifat_naskah: data.sifat || data.sifat_naskah || 'Biasa',
+    perihal: data.perihal || '',
+    asal_naskah: data.pengirim?.id ? String(data.pengirim.id) : null,
+    asal_naskah_label: data.pengirim?.nama || '',
+    tertuju: data.penerima || [],
+    tertuju_label: '',
+    useVerifikator: (data.verifikators || []).length > 0,
+    verifikator: (data.verifikators || []).map((verifikator: any) => ({
+      persnum: verifikator.persnum,
+      nama: verifikator.nama,
+      jabatan: verifikator.jabatan,
+      lokasi: verifikator.lokasi,
+      positionId: verifikator.positionId
+    }))
+  };
+  filesRef.value = [];
+}
+
+async function openEditModal(item: any) {
+  if (!canEditNaskah(item)) {
+    toast.add({
+      title: 'Tidak bisa diedit',
+      description: 'Naskah sudah masuk tahap verifikator',
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
+    });
+    return;
+  }
+
+  resetNewDelegasi();
+  isEditMode.value = true;
+  selectedNaskah.value = item;
+  showAddModal.value = true;
+
+  try {
+    const detailData = await fetchNaskahDinasDetail(item.id);
+    populateFormFromNaskah(detailData || item);
+    if (newDelegasi.value.useVerifikator && verifikatorList.value.length === 0) {
+      await fetchVerifikator();
+    }
+  } catch (error) {
+    populateFormFromNaskah(item);
+    toast.add({
+      title: t('gagal'),
+      description: 'Gagal memuat detail edit, menggunakan data tabel',
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
+    });
+  }
+}
+
+async function handleViewNaskah(item: any) {
+  selectedDetail.value = null;
+  showDetailModal.value = true;
+
+  try {
+    selectedDetail.value = await fetchNaskahDinasDetail(item.id);
+  } catch (error) {
+    showDetailModal.value = false;
+    toast.add({
+      title: t('gagal'),
+      description: 'Gagal memuat detail naskah',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+  }
+}
+
+function getProgress(item: any) {
+  return item.verifikatorProgress || {
+    verified: 0,
+    total: item.totalVerifikator || 0,
+    rejected: 0,
+    currentOrder: null,
+    status: (item.totalVerifikator || 0) > 0 ? 'on_progress' : 'none'
+  };
+}
+
+function isInVerifikatorStage(item: any) {
+  const progress = getProgress(item);
+  const totalVerifikator = Number(
+    progress.total || item.totalVerifikator || item.verifikators?.length || 0
+  );
+  const progressStatus = progress.status || item.status_verifikasi || item.statusVerifikasi;
+
+  return totalVerifikator > 0 || (progressStatus && progressStatus !== 'none');
+}
+
+function canEditNaskah(item: any) {
+  return !isInVerifikatorStage(item);
+}
+
+function getProgressPercent(item: any) {
+  const progress = getProgress(item);
+  if (!progress.total) return 0;
+  if (progress.status === 'rejected') return 100;
+  return Math.round((progress.verified / progress.total) * 100);
+}
+
+function getProgressLabel(item: any) {
+  const progress = getProgress(item);
+  return `${progress.verified || 0}/${progress.total || 0}`;
+}
+
+function getProgressStatusLabel(item: any) {
+  const progress = getProgress(item);
+  const map: Record<string, string> = {
+    none: 'Tanpa verifikator',
+    on_progress: 'Berjalan',
+    completed: 'Selesai',
+    rejected: 'Ditolak'
+  };
+  return map[progress.status] || '-';
+}
+
+function getProgressBarClass(item: any) {
+  const progress = getProgress(item);
+  if (progress.status === 'rejected') return 'bg-red-500';
+  if (progress.status === 'completed') return 'bg-green-500';
+  return 'bg-primary-500';
+}
+
+function getVerifierStatusClass(status: string) {
+  const map: Record<string, string> = {
+    waiting: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    pending: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+    verified: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    rejected: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+  };
+  return map[status] || map.pending;
+}
+
+function getVerifierStatusLabel(status: string) {
+  const map: Record<string, string> = {
+    waiting: 'Menunggu',
+    pending: 'Pending',
+    verified: 'Terverifikasi',
+    rejected: 'Ditolak'
+  };
+  return map[status] || status;
+}
+
+function openFinalPdf(url?: string, source?: 'detail' | 'edit') {
   if (!url) return;
+  if (source === 'detail' && showDetailModal.value) {
+    previewReturnTo.value = 'detail';
+    showDetailModal.value = false;
+  }
+  if (source === 'edit' && showAddModal.value) {
+    previewReturnTo.value = 'edit';
+    showAddModal.value = false;
+  }
   previewFileUrl.value = url;
   isOpenPreviewFile.value = true;
 }
@@ -1316,6 +1874,9 @@ function exportExcel() {
       Perihal: item.perihal || '-',
       Pembuat: item.pembuat?.nama || '-',
       'Jabatan Pembuat': item.pembuat?.position_text || '-',
+      'Progress Verifikator': getProgressLabel(item),
+      'Jumlah Verifikator': item.totalVerifikator || 0,
+      Verifikator: item.verifikators?.map((v: any) => v.nama).join(', ') || '-',
       'Final PDF URL': item.final_pdf_url || '-'
     };
   });
