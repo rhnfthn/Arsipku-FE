@@ -11,7 +11,7 @@ export function useInboxCount() {
     if (loading.value) return;
     try {
       loading.value = true;
-      const res = await apiGet(`/naskah_sirkulasi/inbox-count/`);
+      const res = await apiGet(`/naskah_sirkulasi/inbox-count/`, {}, { skipCache: true });
       unreadCount.value = res?.data?.count ?? 0;
     } finally {
       loading.value = false;

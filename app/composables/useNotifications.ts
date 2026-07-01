@@ -30,6 +30,14 @@ let inflightNotifications: Promise<NotificationItem[]> | null = null;
 let inflightUnreadCount: Promise<number> | null = null;
 let lastNotificationsFetchAt = 0;
 let lastUnreadCountFetchAt = 0;
+let activeToken: string | null = null;
+
+const resetFetchGuards = () => {
+  inflightNotifications = null;
+  inflightUnreadCount = null;
+  lastNotificationsFetchAt = 0;
+  lastUnreadCountFetchAt = 0;
+};
 const FETCH_DEDUP_MS = 3_000; // 3 detik — jangan fetch ulang jika baru saja fetch
 
 const getSocketUrl = (): string => {
@@ -89,6 +97,7 @@ export const useNotifications = () => {
   const fetchNotifications = async (
     pageOrOptions: number | NotificationFetchOptions = 1,
     limit = 20,
+    force = false,
   ): Promise<NotificationItem[]> => {
     const options: NotificationFetchOptions =
       typeof pageOrOptions === 'number'
@@ -96,12 +105,12 @@ export const useNotifications = () => {
         : pageOrOptions;
 
     // Inflight guard — jika fetch yang sama sedang berjalan, tunggu itu saja
-    if (inflightNotifications) return inflightNotifications;
+    if (inflightNotifications && !force) return inflightNotifications;
 
     // Stale guard — jika fetch page 1 limit 20 baru saja dilakukan (<3s), skip
     const isDefaultFetch =
       (options.page ?? 1) === 1 && (options.limit ?? 20) === 20 && options.isRead == null && !options.type;
-    if (isDefaultFetch && Date.now() - lastNotificationsFetchAt < FETCH_DEDUP_MS) {
+    if (!force && isDefaultFetch && Date.now() - lastNotificationsFetchAt < FETCH_DEDUP_MS) {
       return notifications.value;
     }
 
@@ -144,18 +153,18 @@ export const useNotifications = () => {
     return inflightNotifications;
   };
 
-  const fetchUnreadCount = async (): Promise<number> => {
+  const fetchUnreadCount = async (force = false): Promise<number> => {
     // Inflight guard
-    if (inflightUnreadCount) return inflightUnreadCount;
+    if (inflightUnreadCount && !force) return inflightUnreadCount;
 
     // Stale guard — jika baru saja fetch (<3s), skip
-    if (Date.now() - lastUnreadCountFetchAt < FETCH_DEDUP_MS) {
+    if (!force && Date.now() - lastUnreadCountFetchAt < FETCH_DEDUP_MS) {
       return unreadCount.value;
     }
 
     inflightUnreadCount = (async () => {
       try {
-        const res = (await apiGet('/notifications/unread-count')) as UnreadCountResponse;
+        const res = (await apiGet('/notifications/unread-count', {}, { skipCache: true })) as UnreadCountResponse;
         const count = res?.data?.count ?? 0;
         unreadCount.value = count;
         lastUnreadCountFetchAt = Date.now();
@@ -300,7 +309,7 @@ export const useNotifications = () => {
         // Saat reconnect/sync, refresh dari REST — tapi hanya jika data sudah stale.
         // Inflight/stale guard di fetchUnreadCount/fetchNotifications akan skip
         // jika data baru saja dimuat oleh init().
-        await Promise.all([fetchUnreadCount(), fetchNotifications(1, 20)]);
+        await Promise.all([fetchUnreadCount(true), fetchNotifications(1, 20, true)]);
       });
 
       resolve();
@@ -323,12 +332,19 @@ export const useNotifications = () => {
   // Init (dipanggil saat user authenticated)
   // ============================================================
 
-  const init = async () => {
+  const init = async (force = false) => {
     if (!process.client) return;
     const token = getToken();
     if (!token) return;
 
-    await Promise.all([fetchUnreadCount(), fetchNotifications(1, 20)]);
+    if (token !== activeToken) {
+      activeToken = token;
+      resetFetchGuards();
+      disconnectSocket();
+      force = true;
+    }
+
+    await Promise.all([fetchUnreadCount(force), fetchNotifications(1, 20, force)]);
     await connectSocket();
   };
 
@@ -338,6 +354,8 @@ export const useNotifications = () => {
 
   const destroy = () => {
     disconnectSocket();
+    activeToken = null;
+    resetFetchGuards();
     notifications.value = [];
     unreadCount.value = 0;
     notificationMeta.value = {
