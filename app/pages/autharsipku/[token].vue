@@ -47,7 +47,7 @@
 <script setup>
 import { useRoute, navigateTo } from '#imports'
 
-const { verifyToken } = useAuth()
+const { verifyToken, getProfile, setUser } = useAuth()
 const route = useRoute()
 const tokenCookie = useCookie('token', { sameSite: 'lax', path: '/' })
 const sessionCookie = useCookie('sessionId', { sameSite: 'lax', path: '/' })
@@ -89,8 +89,15 @@ onMounted(async () => {
       sessionCookie.value = sessionId
       roleCookie.value = role || null
 
+      const profile = await getProfile(true)
+      if (!profile && result?.data?.user) {
+        setUser(result.data.user)
+      }
+
+      const resolvedRole = profile?.role || role
+
       // Routing Dinamis
-      if (['admin', 'superadmin', 'user'].includes(role)) {
+      if (['admin', 'superadmin', 'user'].includes(resolvedRole)) {
         return navigateTo('/beranda')
       }
 
