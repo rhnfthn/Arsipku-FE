@@ -259,15 +259,17 @@ import { useAuth } from '~/composables/useAuth';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
+import { useApi } from '~/composables/useApi';
 import { useRealtimeSummary } from '~/composables/useRealtimeSummary';
 import { usePollingSmart } from '~/composables/usePollingSmart';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasRole, hasPermission } = useAuth();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+const { apiGet } = useApi();
 const {
   labels,
   labelCounts,
@@ -286,7 +288,7 @@ const { t } = useI18n();
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
-const isAdminOrSuperadmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
+const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
@@ -327,6 +329,28 @@ const fetchCounts = async () => {
   }
 };
 
+const naskahVerifikatorWaitingCount = ref(0);
+
+const fetchNaskahVerifikatorWaitingCount = async () => {
+  try {
+    if (!user.value) {
+      naskahVerifikatorWaitingCount.value = 0;
+      return;
+    }
+
+    const res = await apiGet(
+      '/naskah-dinas/verifikator?page=1&limit=1&status=waiting',
+      {},
+      { skipCache: true }
+    );
+    naskahVerifikatorWaitingCount.value = Number(
+      res?.total ?? res?.summary?.totalWaiting ?? 0
+    );
+  } catch (error) {
+    console.error('Error fetching naskah verifikator count:', error);
+  }
+};
+
 // Sinkronkan state global dari endpoint /dashboard/realtime ke composable lama
 // agar UI lain (yang masih baca unreadCount / labelCounts) tetap up-to-date.
 const syncFromRealtime = () => {
@@ -357,7 +381,11 @@ watch(
 // usePollingSmart juga eksekusi initial fetch saat mount → satu sumber of truth untuk fetching count.
 usePollingSmart(async () => {
   if (!user.value) return;
-  await Promise.allSettled([fetchSummary(), fetchCounts()]);
+  await Promise.allSettled([
+    fetchSummary(),
+    fetchCounts(),
+    fetchNaskahVerifikatorWaitingCount()
+  ]);
 }, 30_000);
 
 onMounted(async () => {
@@ -583,10 +611,24 @@ const adminMenuAdministrasi = computed(() => {
       icon: 'i-lucide-hash',
       children: penomoranChildren
     },
-    { label: t('naskah_masuk'), to: '/naskah-dinas', icon: 'i-lucide-file-input' }
+    {
+     label: t('naskah_masuk'),
+      icon: 'i-lucide-file-input',
+      children: [
+        { label: 'Verifikasi Naskah', to: '/naskah-dinas' },
+        {
+          label: 'Verifikator',
+          to: '/naskah-dinas/verifikator',
+          badge:
+            naskahVerifikatorWaitingCount.value > 0
+              ? naskahVerifikatorWaitingCount.value
+              : null
+        }
+      ]
+    }
   ];
 
-  if (user.value?.role === 'superadmin') {
+  if (user.value?.role === 'superadmin' || hasRole('SUPERADMIN')) {
     base.push(
       {
         label: t('master_data'),
@@ -598,6 +640,12 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('klasifikasi'), to: '/master/klasifikasi' },
           { label: t('jenis'), to: '/master/jenis' }
         ]
+      },
+      {
+        // ⭐ Manajemen RBAC — icon shield, HANYA SUPERADMIN
+        label: 'Manajemen RBAC',
+        to: '/rbac',
+        icon: 'i-lucide-shield-check'
       },
       { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
     );
@@ -619,7 +667,8 @@ const adminMenuLaporan = computed(() => [
 const hasAdministrasiNotification = computed(
   () =>
     adminCounts.value.menunggu_verifikasi > 0 ||
-    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
+    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0) ||
+    naskahVerifikatorWaitingCount.value > 0
 );
 const hasUtilitasNotification = computed(() => {
   if (isAdminOrSuperadmin.value) return false;

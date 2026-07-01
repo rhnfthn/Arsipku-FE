@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { parseDate, getLocalTimeZone, today } from '@internationalized/date';
 import {
   Inbox, FileText, Send, Building, Building2, FilePen, Archive, Trash2,
@@ -11,6 +12,7 @@ import * as XLSX from "xlsx";
 import { useSirkulasi } from "~/composables/useTerkirim";
 import { useLabel } from "~/composables/useLabel";
 import { getCategoryStyle, getCategoryLabel } from "~/utils/mail-helpers";
+import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 import EmptyState from "~/components/EmptyState.vue";
 
 definePageMeta({ middleware: "auth" });
@@ -18,6 +20,8 @@ definePageMeta({ middleware: "auth" });
 // ── Auth & Toast ──────────────────────────────────────────────────────────────
 const { user, getProfile } = useAuth();
 const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 
 // ── Composables ───────────────────────────────────────────────────────────────
 const { items, pagination, summary, isLoading: pending, fetchSentBox, bulkActionSent, toggleFlag } = useSirkulasi();
@@ -282,9 +286,25 @@ const toggleSelection = (id: string) => {
   else selectedIds.value.add(id);
 };
 
-const selectMail = (mail: any) => {
+const getListState = () => ({
+  activeTab: activeTab.value,
+  activeFilterType: activeFilterType.value,
+  activeSortLabel: activeSortLabel.value,
+  activeDateLabel: activeDateLabel.value,
+  currentPage: currentPage.value,
+  itemsPerPage: itemsPerPage.value,
+  searchQuery: searchQuery.value,
+  startDateInput: startDateInput.value,
+  endDateInput: endDateInput.value,
+});
+
+const selectMail = async (mail: any) => {
   selected.value = mail;
-  navigateTo(`/korespondensi/terkirim/${mail.naskahId}?jenis=${mail.category}`);
+  const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
+  navigateTo({
+    path: `/korespondensi/terkirim/${mail.naskahId}`,
+    query: { ...listQuery, jenis: mail.category },
+  });
 };
 
 // ── Bulk Action ───────────────────────────────────────────────────────────────
@@ -506,6 +526,23 @@ onMounted(async () => {
   endDateCal.value = parseDate(today);
 
   if (!user.value) await getProfile();
+  applyKorespondensiListQuery(route.query, {
+    activeTab,
+    activeFilterType,
+    activeSortLabel,
+    activeDateLabel,
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    startDateInput,
+    endDateInput,
+  }, {
+    tabs: tabs.map((t) => t.value),
+    filters: filterMenuOptions.map((f) => f.value),
+    sorts: sortOptions,
+    dates: dateOptions,
+    pageSizes: pageOptions,
+  });
   await refreshData();
   /* log removed */
   /* log removed */

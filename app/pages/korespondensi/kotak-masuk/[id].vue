@@ -7,6 +7,7 @@ import {
   ArrowDown, ArrowUpDown,
   PanelRightOpen, PanelRightClose, List
 } from "lucide-vue-next";
+import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
 
@@ -21,6 +22,17 @@ const { rejectKonsep } = useKonsep();
 
 const id = computed(() => route.params.id as string);
 const jenisQuery = computed(() => (route.query.jenis as string) || '');
+const returnListQuery = computed(() => pickKorespondensiListQuery(route.query));
+const returnPath = computed(() => {
+  const value = route.query.return_path;
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')
+    ? raw
+    : '/korespondensi/kotak-masuk';
+});
+const returnPathQuery = computed(() => ({
+  ...(returnPath.value !== '/korespondensi/kotak-masuk' ? { return_path: returnPath.value } : {}),
+}));
 
 const targetHighlightId = computed(() => (route.query.highlight_id as string) || null);
 
@@ -522,7 +534,10 @@ watch(
 );
 
 // --- ACTIONS HANDLERS ---
-const goBack = () => router.push('/korespondensi/kotak-masuk');
+const goBack = () => router.push({
+  path: returnPath.value,
+  query: returnListQuery.value,
+});
 
 // --- FLAG TOGGLE (favorit, tindak_lanjut, lock, note) ---
 const flagState = ref({
@@ -612,7 +627,7 @@ const goToNav = (target: any) => {
   const targetJenis = target.jenis || jenisQuery.value || 'ND';
   router.push({
     path: `/korespondensi/kotak-masuk/${target.id_naskah}`,
-    query: { jenis: targetJenis },
+    query: { ...returnListQuery.value, ...returnPathQuery.value, jenis: targetJenis },
   });
 };
 

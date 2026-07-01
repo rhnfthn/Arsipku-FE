@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/composables/useAuth';
 import { useLabel } from '~/composables/useLabel';
 import { getInitials, getCategoryStyle, formatDateWithTime as formatDate, formatTimeShort as formatTime } from '~/utils/mail-helpers';
+import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } from '~/utils/korespondensi-list-state';
 import EmptyState from '~/components/EmptyState.vue';
 
 // --- TYPE DEFINITIONS ---
@@ -95,6 +96,16 @@ const sourceOptions = [
   { label: "Inbox", value: "inbox", icon: Inbox },
   { label: "Draft", value: "draft", icon: FileText },
   { label: "Sent", value: "sent", icon: Send },
+];
+
+const tabs = [
+  { label: "Semua", value: "ALL", icon: Inbox },
+  { label: "Nota Dinas", value: "ND", icon: FileText },
+  { label: "Disposisi", value: "DI", icon: Send },
+  { label: "Internal", value: "SDI", icon: Building },
+  { label: "Eksternal", value: "SDE", icon: Building2 },
+  { label: "Konsep", value: "K", icon: FilePen },
+  { label: "Kajian", value: "KA", icon: BookOpen },
 ];
 
 // Pagination State
@@ -297,6 +308,43 @@ const isAllSelected = computed(() =>
   paginatedEmails.value.length > 0 && selectedIds.value.size === paginatedEmails.value.length
 );
 
+const getListState = () => ({
+  activeTab: activeTab.value,
+  activeSourceValue: activeSourceValue.value,
+  activeSortLabel: activeSortLabel.value,
+  activeDateLabel: activeDateLabel.value,
+  currentPage: currentPage.value,
+  itemsPerPage: itemsPerPage.value,
+  searchQuery: searchQuery.value,
+  startDateInput: startDateInput.value,
+  endDateInput: endDateInput.value,
+});
+
+const syncSourceLabel = () => {
+  activeSourceLabel.value = sourceOptions.find((item) => item.value === activeSourceValue.value)?.label || "Semua";
+};
+
+const applyQueryFilters = () => {
+  applyKorespondensiListQuery(route.query, {
+    activeTab,
+    activeSourceValue,
+    activeSortLabel,
+    activeDateLabel,
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    startDateInput,
+    endDateInput,
+  }, {
+    tabs: tabs.map((item) => item.value),
+    sources: sourceOptions.map((item) => item.value),
+    sorts: sortOptions,
+    dates: dateOptions,
+    pageSizes: pageOptions,
+  });
+  syncSourceLabel();
+};
+
 // --- WATCHERS ---
 watch([activeTab, activeSourceValue, activeSortLabel, itemsPerPage], () => {
   currentPage.value = 1;
@@ -316,7 +364,7 @@ watch(searchQuery, () => {
 
 watch([() => user.value, labelId], ([newUser, newLabelId]) => {
   if (newUser && newLabelId) loadData();
-}, { immediate: true });
+});
 
 // Inisialisasi tanggal di client (hindari hydration mismatch dari new Date()).
 onMounted(() => {
@@ -325,6 +373,8 @@ onMounted(() => {
   endDateInput.value = todayStr;
   startDateCal.value = parseDate(todayStr);
   endDateCal.value = parseDate(todayStr);
+  applyQueryFilters();
+  if (user.value && labelId.value) loadData();
 });
 
 // --- UI EVENT HANDLERS ---
@@ -374,19 +424,28 @@ const applyCustomDate = () => {
   loadData();
 };
 
-const navigateToDetail = (mail: UIMailItem) => {
+const navigateToDetail = async (mail: UIMailItem) => {
   const source = (mail.sourceType || '').toLowerCase();
   if (source === 'draft' || source === 'konsep') {
-    handleEdit(mail);
+    await handleEdit(mail);
   } else if (source === 'sent' || source === 'terkirim') {
-    router.push({ path: `/korespondensi/terkirim/${mail.id}`, query: { jenis: mail.category } });
+    const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
+    await router.push({
+      path: `/korespondensi/terkirim/${mail.id}`,
+      query: { ...listQuery, return_path: route.path, jenis: mail.category },
+    });
   } else {
-    router.push({ path: `/korespondensi/kotak-masuk/${mail.id}`, query: { jenis: mail.category } });
+    const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
+    await router.push({
+      path: `/korespondensi/kotak-masuk/${mail.id}`,
+      query: { ...listQuery, return_path: route.path, jenis: mail.category },
+    });
   }
 };
 
-const handleEdit = (mail: UIMailItem) => {
+const handleEdit = async (mail: UIMailItem) => {
   const jenis = (mail.category || '').trim().toUpperCase();
+  const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
   const isDraftKonsep = mail.isDraftKonsep || ['K', 'KO', 'KONSEP'].includes(jenis);
   const jenisAsli = (mail.jenisAsli || jenis).toUpperCase();
 
@@ -396,9 +455,9 @@ const handleEdit = (mail: UIMailItem) => {
       SDI: '/korespondensi/tulis/konsep/surat-dinas-internal',
       SDE: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
     };
-    router.push({
+    await router.push({
       path: konsepRouteMap[jenisAsli] ?? '/korespondensi/tulis/konsep/nota-dinas',
-      query: { draft_id: mail.id },
+      query: { ...listQuery, return_path: route.path, draft_id: mail.id },
     });
     return;
   }
@@ -410,9 +469,9 @@ const handleEdit = (mail: UIMailItem) => {
     SDE: '/korespondensi/tulis/surat-dinas-eksternal',
     KA: '/korespondensi/tulis/kajian',
   };
-  router.push({
+  await router.push({
     path: routes[jenis] ?? '/korespondensi/tulis/nota-dinas',
-    query: { draft_id: mail.id },
+    query: { ...listQuery, return_path: route.path, draft_id: mail.id },
   });
 };
 
@@ -489,15 +548,6 @@ const openReaderModal = (mail: UIMailItem) => {
   showReaderModal.value = true;
 };
 
-const tabs = [
-  { label: "Semua", value: "ALL", icon: Inbox },
-  { label: "Nota Dinas", value: "ND", icon: FileText },
-  { label: "Disposisi", value: "DI", icon: Send },
-  { label: "Internal", value: "SDI", icon: Building },
-  { label: "Eksternal", value: "SDE", icon: Building2 },
-  { label: "Konsep", value: "K", icon: FilePen },
-  { label: "Kajian", value: "KA", icon: BookOpen },
-];
 </script>
 
 <template>
@@ -772,10 +822,10 @@ const tabs = [
           />
 
           <!-- Mail Rows -->
-          <div v-else v-for="mail in paginatedEmails" :key="mail.id" @click="navigateToDetail(mail)"
-            v-memo="[mail.id, mail.isRead, mail.isStarred, selectedIds.has(mail.id)]"
-            class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 relative w-full"
-            :class="!mail.isRead ? 'bg-blue-50/10' : ''">
+          <template v-else>
+            <div v-for="mail in paginatedEmails" :key="`${mail.sourceType}-${mail.id}`" @click="navigateToDetail(mail)"
+              class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer border-b border-gray-100 dark:border-gray-800 relative w-full"
+              :class="!mail.isRead ? 'bg-blue-50/10' : ''">
 
             <div class="flex flex-col md:flex-row items-start gap-3 md:gap-4 px-6 py-4">
 
@@ -882,7 +932,8 @@ const tabs = [
                 </span>
               </div>
             </div>
-          </div>
+            </div>
+          </template>
 
         </div>
       </div>

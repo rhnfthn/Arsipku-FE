@@ -446,7 +446,7 @@ import type { PersonSuggestion } from '@/composables/usePerson';
 import { useToast } from '#imports';
 import { getInitials } from '~/utils/mail-helpers';
 
-const { user: authUser } = useAuth();
+const { user: authUser, hasRole } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -543,7 +543,7 @@ const openRowsDropdown = ref(false);
 const selectedPersonJabatan = ref('');
 
 const isSelfSuperAdmin = (row: any) =>
-  authUser.value?.role === 'superadmin' && authUser.value?.persnum === row.persnum;
+  hasRole('SUPERADMIN') && authUser.value?.persnum === row.persnum;
 
 // ── Edit ─────────────────────────────────────────────────────────
 const isEditMode = ref(false);

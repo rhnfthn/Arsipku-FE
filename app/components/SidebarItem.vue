@@ -12,7 +12,7 @@
       </span>
 
       <div
-        v-else-if="hasChildrenWithBadges && item.label !== 'Penomoran'"
+        v-else-if="hasChildrenWithBadges"
         class="w-2 h-2 bg-red-600 rounded-full shadow-sm animate-pulse"
       ></div>
 

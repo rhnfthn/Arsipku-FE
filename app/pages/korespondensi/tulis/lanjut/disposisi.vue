@@ -273,6 +273,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
+import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 import { validateDisposisiPayload, type DisposisiPayload } from "~/types/disposisi";
 import { Alert } from "@/composables/useAlert";
 import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
@@ -283,6 +284,7 @@ definePageMeta({ middleware: "auth" });
 const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
 const router = useRouter();
+const draftListQuery = computed(() => pickKorespondensiListQuery(route.query));
 const toast = useToast();
 
 const { user, getProfile } = useAuth();
@@ -651,7 +653,7 @@ const handleSaveDraft = async () => {
       await saveDraft(fd);
     }
     toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' });
-    router.push("/korespondensi/draf");
+    router.push({ path: "/korespondensi/draf", query: draftListQuery.value });
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
     throw new Error(e.response?.data?.message || 'Gagal memperbarui draft');
