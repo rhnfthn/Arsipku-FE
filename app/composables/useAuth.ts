@@ -7,7 +7,7 @@ let lastProfileFetchAt = 0;
 const PROFILE_DEDUP_MS = 5_000; // 5 detik — jangan fetch ulang jika baru saja
 
 export const useAuth = () => {
-  const { apiGet, apiPost } = useApi();
+  const { apiGet, apiPost, clearApiCache } = useApi();
   const tokenCookie = useCookie<string | null>("token", {
     sameSite: "lax",
     path: "/",
@@ -27,22 +27,34 @@ export const useAuth = () => {
 
   const getProfile = async (force = false): Promise<UserProfile | null> => {
     // Inflight guard — jika getProfile sedang berjalan, tunggu itu saja
-    if (inflightProfile) return inflightProfile;
+    if (inflightProfile && !force) return inflightProfile;
 
     // Stale guard — jika profile sudah ada dan baru saja fetch, return cached
     if (!force && user.value && Date.now() - lastProfileFetchAt < PROFILE_DEDUP_MS) {
       return user.value;
     }
 
-    inflightProfile = (async () => {
+    const token = process.client ? localStorage.getItem("token") : tokenCookie.value;
+    if (!token) {
+      if (force) {
+        setUser(null);
+        roleCookie.value = null;
+        lastProfileFetchAt = 0;
+      }
+      return null;
+    }
+
+    const request = (async () => {
       try {
-        const token = process.client ? localStorage.getItem("token") : null;
-        if (!token) return null;
         tokenCookie.value = token;
 
-        const res: any = await apiGet("/auth/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res: any = await apiGet(
+          "/auth/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+          { skipCache: true }
+        );
 
         // 1. Ambil data User utama
         let profileData = res?.data?.user || res?.user || res || null;
@@ -74,12 +86,18 @@ export const useAuth = () => {
       } catch (error) {
         console.error("[AUTH] getProfile error:", error);
         return null;
-      } finally {
-        inflightProfile = null;
       }
     })();
 
-    return inflightProfile;
+    inflightProfile = request;
+
+    try {
+      return await request;
+    } finally {
+      if (inflightProfile === request) {
+        inflightProfile = null;
+      }
+    }
   };
 
   const getSSORedirectUrl = async () => {
@@ -131,6 +149,8 @@ export const useAuth = () => {
     sessionCookie.value = null;
     roleCookie.value = null;
     user.value = null;
+    lastProfileFetchAt = 0;
+    clearApiCache();
 
     // 3️⃣ Redirect ke SSO AirNav
     if (process.client) {
@@ -159,6 +179,7 @@ export const useAuth = () => {
 
     localStorage.setItem("token", newAccessToken);
     tokenCookie.value = newAccessToken;
+    clearApiCache();
     return newAccessToken as string;
   };
 
@@ -201,6 +222,7 @@ export const useAuth = () => {
     if (newToken) {
       localStorage.setItem("token", newToken);
       tokenCookie.value = newToken;
+      clearApiCache();
     }
     if (data?.activeRole) {
       const updated: UserProfile = {

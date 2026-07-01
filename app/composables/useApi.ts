@@ -12,9 +12,48 @@ const cache = new Map<string, CacheEntry>();
 const MAX_CACHE_SIZE = 100;
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 menit
 
-const buildCacheKey = (url: string, config?: AxiosRequestConfig): string => {
+let lastAuthCacheScope = "anonymous";
+
+const hashString = (value: string): string => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+};
+
+const getHeaderValue = (
+  headers: AxiosRequestConfig["headers"] | undefined,
+  name: string
+): string | undefined => {
+  const rawHeaders = headers as any;
+  if (!rawHeaders) return undefined;
+  return rawHeaders[name] || rawHeaders[name.toLowerCase()] || rawHeaders.get?.(name);
+};
+
+const getAuthCacheScope = (config?: AxiosRequestConfig): string => {
+  const authHeader = getHeaderValue(config?.headers, "Authorization");
+  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+  const storedToken = process.client ? localStorage.getItem("token") : null;
+  const token = headerToken || storedToken;
+  const scope = token ? `auth:${hashString(token)}` : "anonymous";
+
+  if (scope !== lastAuthCacheScope) {
+    cache.clear();
+    lastAuthCacheScope = scope;
+  }
+
+  return scope;
+};
+
+const buildCacheKey = (
+  url: string,
+  config?: AxiosRequestConfig,
+  authScope = "anonymous"
+): string => {
   const params = config?.params ? JSON.stringify(config.params) : "";
-  return `${url}?${params}`;
+  return `${authScope}:${url}?${params}`;
 };
 
 const getCached = <T>(key: string): T | undefined => {
@@ -37,7 +76,7 @@ const setCached = (key: string, data: any, ttlMs = DEFAULT_TTL_MS): void => {
 
 const invalidateCache = (urlPrefix: string): void => {
   for (const key of cache.keys()) {
-    if (key.startsWith(urlPrefix)) cache.delete(key);
+    if (key.includes(`:${urlPrefix}`)) cache.delete(key);
   }
 };
 
@@ -48,14 +87,14 @@ export const useApi = () => {
   });
 
   api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
+    const token = process.client ? localStorage.getItem("token") : null;
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     // JIKA FormData → JANGAN SET CONTENT-TYPE
-    if (config.data instanceof FormData) {
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
       delete config.headers?.["Content-Type"];
     }
 
@@ -69,7 +108,7 @@ export const useApi = () => {
   ): Promise<T> => {
       const baseUrl = api.defaults.baseURL || "";
       const fullUrl = `${baseUrl}${url}`;
-      const cacheKey = buildCacheKey(url, axiosConfig);
+      const cacheKey = buildCacheKey(url, axiosConfig, getAuthCacheScope(axiosConfig));
 
       if (!options.skipCache) {
         const cached = getCached<T>(cacheKey);
@@ -83,7 +122,7 @@ export const useApi = () => {
         if (isDev) console.log("[api] GET ->", fullUrl, axiosConfig);
       const res = await api.get(url, axiosConfig);
       if (isDev) console.log("[api] GET response <-", fullUrl, res.status);
-      setCached(cacheKey, res.data, options.ttlMs);
+      if (!options.skipCache) setCached(cacheKey, res.data, options.ttlMs);
       return res.data;
     } catch (err) {
       if (isDev) console.error("[api] GET error ->", url, err);
