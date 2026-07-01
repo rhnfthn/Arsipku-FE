@@ -253,11 +253,7 @@ export const usePenomoran = () => {
         color: 'success'
       });
 
-      const { user } = useAuth();
-      if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id);
-      }
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return response.data ?? response;
     } finally {
       isLoadingPenomoran.value = false;
@@ -314,14 +310,7 @@ export const usePenomoran = () => {
         color: 'success'
       });
 
-      // Refresh count sesuai role
-      const { user } = useAuth();
-      if (isAdmin || user.value?.role === 'admin' || user.value?.role === 'superadmin') {
-        await getNomorRequestCountAdmin();
-      } else if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id);
-      }
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return response.data;
     } catch (error: any) {
       console.error('❌ Error submit booking:', error);
@@ -377,11 +366,7 @@ export const usePenomoran = () => {
         color: 'success'
       });
 
-      const { user } = useAuth();
-      if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id);
-      }
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return response.data;
     } catch (error: any) {
       console.error('❌ Error submit single-file booking:', error);
@@ -785,11 +770,7 @@ export const usePenomoran = () => {
         color: 'error'
       });
 
-      const { user } = useAuth();
-      if (user.value?.position?.id) {
-        await getNomorRequestCountUser(user.value.position.id);
-      }
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return res.data ?? res;
     } catch (e: any) {
       console.error('❌ Error delete usulan:', e);
@@ -825,8 +806,7 @@ export const usePenomoran = () => {
         color: 'error'
       });
 
-      await getNomorRequestCountAdmin();
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return res.data ?? res;
     } catch (e: any) {
       console.error('❌ Error delete usulan:', e);
@@ -901,8 +881,7 @@ export const usePenomoran = () => {
         detail_ids: validIds
       });
 
-      await getNomorRequestCountAdmin();
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return response;
     } catch (e: any) {
       console.error('❌ Error approve bulk:', e);
@@ -955,8 +934,7 @@ export const usePenomoran = () => {
         color: 'error'
       });
 
-      await getNomorRequestCountAdmin();
-
+      // Count diupdate via WebSocket event 'nomor:count'
       return response;
     } catch (e: any) {
       console.error('❌ Error reject nomor:', e);

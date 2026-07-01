@@ -11,6 +11,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@fontsource/montserrat": "^5.2.8",
     "@internationalized/date": "^3.10.0",
     "@nuxt/content": "^3.8.2",
     "@nuxt/icon": "^2.1.0",

@@ -28,8 +28,21 @@
       :error="error"
       @mark-read="onMarkRead"
       @mark-all-read="onMarkAllRead"
+      @refresh="init"
       @view-all="onViewAll"
       @click-item="onItemClick"
+    />
+
+    <ConfirmModal
+      v-model="showMarkAllConfirm"
+      title="Tandai semua notifikasi dibaca?"
+      description="Semua notifikasi yang belum dibaca akan ditandai sebagai sudah dibaca."
+      confirm-text="Ya, tandai dibaca"
+      cancel-text="Batal"
+      loading-text="Menandai..."
+      variant="warning"
+      :loading="isMarkingAllRead"
+      @confirm="confirmMarkAllRead"
     />
   </div>
 </template>
@@ -56,6 +69,8 @@ const {
 const router = useRouter();
 const bellRef = ref<HTMLElement | null>(null);
 const showPanel = ref(false);
+const showMarkAllConfirm = ref(false);
+const isMarkingAllRead = ref(false);
 
 const togglePanel = () => {
   showPanel.value = !showPanel.value;
@@ -71,7 +86,20 @@ const closePanel = (e: MouseEvent) => {
 };
 
 const onMarkRead = (id: string) => markAsRead(id);
-const onMarkAllRead = () => markAllAsRead();
+const onMarkAllRead = () => {
+  showMarkAllConfirm.value = true;
+};
+
+const confirmMarkAllRead = async () => {
+  if (isMarkingAllRead.value) return;
+  isMarkingAllRead.value = true;
+  try {
+    await markAllAsRead();
+    showMarkAllConfirm.value = false;
+  } finally {
+    isMarkingAllRead.value = false;
+  }
+};
 const onViewAll = () => {
   showPanel.value = false;
   router.push('/notifikasi');
