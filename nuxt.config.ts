@@ -20,6 +20,30 @@ export default defineNuxtConfig({
 
   modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n", "motion-v/nuxt"],
 
+  icon: {
+    // SPA mode (ssr: false): default provider 'iconify' fetch ke api.iconify.design.
+    // Ganti ke 'server' — Nuxt dev/prod server serve icon dari @iconify-json/* lokal.
+    // Tidak ada fetch ke Iconify API CDN saat runtime.
+    serverBundle: 'local',
+    provider: 'server',
+    clientBundle: {
+      // Pre-bundle icon yang ter-scan dari source code untuk first render cepat.
+      // Icon dinamis akan di-fetch dari server endpoint lokal.
+      scan: true,
+    },
+  },
+
+  fonts: {
+    // Gunakan npm provider untuk font lokal (@fontsource/* packages).
+    // Disable google provider agar tidak fetch dari Google Fonts CDN.
+    providers: {
+      google: false,
+    },
+    families: [
+      { name: 'Montserrat', provider: 'npm' },
+    ],
+  },
+
   motionV: {
     components: true,
     utilities: true,

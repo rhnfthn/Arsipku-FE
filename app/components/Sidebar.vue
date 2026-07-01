@@ -252,7 +252,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, reactive } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted, nextTick, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useAuth } from '~/composables/useAuth';
@@ -260,16 +260,16 @@ import { usePenomoran } from '~/composables/usePenomoran';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
-import { useRealtimeSummary } from '~/composables/useRealtimeSummary';
-import { usePollingSmart } from '~/composables/usePollingSmart';
+import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
+import { useDigsig } from '~/composables/useDigsig';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
 const { user, getProfile, hasRole, hasPermission } = useAuth();
-const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
-  usePenomoran();
+const { adminCounts, userCounts } = usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
 const { apiGet } = useApi();
+const { bsreAlert } = useDigsig();
 const {
   labels,
   labelCounts,
@@ -280,7 +280,18 @@ const {
   updateLabel,
   deleteLabel
 } = useLabel();
-const { summary: realtimeSummary, fetchSummary } = useRealtimeSummary();
+
+// ── Realtime WebSocket (menggantikan polling 30 detik) ──
+const {
+  inboxCount: rtInboxCount,
+  labelCounts: rtLabelCounts,
+  bsreAlert: rtBsreAlert,
+  nomorCounts: rtNomorCounts,
+  naskahDinasVerifikatorWaitingCount: rtVerifikatorCount,
+  isConnected: rtConnected,
+  init: rtInit,
+  destroy: rtDestroy,
+} = useRealtimeSocket();
 
 const labelTree = computed(() => labels.value);
 const route = useRoute();
@@ -292,79 +303,33 @@ const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADM
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
-// ─── Position ID helper ───────────────────────────────────────────────────────
-
-const getPositionId = (userValue) => {
-  if (!userValue) return null;
-  if (userValue.position && typeof userValue.position === 'object') {
-    const id = userValue.position.id;
-    return typeof id === 'number' ? id : typeof id === 'string' ? Number(id) : null;
-  }
-  if (typeof userValue.position === 'number') return userValue.position;
-  if (typeof userValue.position === 'string' && !isNaN(Number(userValue.position)))
-    return Number(userValue.position);
-  return null;
-};
-
 // ─── Count fetching ───────────────────────────────────────────────────────────
+// Nomor count sekarang sepenuhnya dari WebSocket (realtime:summary + nomor:count event).
+// Tidak ada lagi REST fallback ke /admin/nomor-request-count atau /nomor-request-count.
 
-// fetchCounts khusus penomoran (admin/user nomor request) — tetap dipanggil
-// dari watcher user awal & saat realtime tick, namun tidak terlalu sensitif
-// jadi cukup tiap 60s atau saat user kembali ke tab.
-const fetchCounts = async () => {
-  try {
-    if (!user.value) return;
-    const isAdmin = user.value.role === 'admin' || user.value.role === 'superadmin';
-    const positionId = getPositionId(user.value);
-    if (isAdmin) {
-      await getNomorRequestCountAdmin();
-      if (user.value.bodTag?.trim() && positionId && !isNaN(positionId)) {
-        await getNomorRequestCountUser(positionId);
-      }
-    } else if (positionId && !isNaN(positionId)) {
-      await getNomorRequestCountUser(positionId);
-    }
-  } catch (error) {
-    console.error('❌ Error fetching counts:', error);
-  }
-};
+// Sinkronkan state global dari WebSocket realtime ke composable lama
+// agar UI lain (yang masih baca unreadCount / labelCounts / bsreAlert) tetap up-to-date.
+watch(rtInboxCount, (val) => {
+  if (typeof val === 'number') unreadCount.value = val;
+}, { immediate: true });
 
-const naskahVerifikatorWaitingCount = ref(0);
+watch(rtLabelCounts, (val) => {
+  if (val && typeof val === 'object') labelCounts.value = val;
+}, { immediate: true });
 
-const fetchNaskahVerifikatorWaitingCount = async () => {
-  try {
-    if (!user.value) {
-      naskahVerifikatorWaitingCount.value = 0;
-      return;
-    }
+watch(rtBsreAlert, (val) => {
+  if (val) bsreAlert.value = val;
+}, { deep: true, immediate: true });
 
-    const res = await apiGet(
-      '/naskah-dinas/verifikator?page=1&limit=1&status=waiting',
-      {},
-      { skipCache: true }
-    );
-    naskahVerifikatorWaitingCount.value = Number(
-      res?.total ?? res?.summary?.totalWaiting ?? 0
-    );
-  } catch (error) {
-    console.error('Error fetching naskah verifikator count:', error);
-  }
-};
+// Saat nomor count event datang dari WebSocket, langsung update adminCounts/userCounts
+// dari payload event (backend sudah kirim data lengkap, bukan { refresh: true }).
+watch(rtNomorCounts, (val) => {
+  if (val?.admin) adminCounts.value = { ...adminCounts.value, ...val.admin };
+  if (val?.user) userCounts.value = { ...userCounts.value, ...val.user };
+}, { deep: true, immediate: true });
 
-// Sinkronkan state global dari endpoint /dashboard/realtime ke composable lama
-// agar UI lain (yang masih baca unreadCount / labelCounts) tetap up-to-date.
-const syncFromRealtime = () => {
-  const data = realtimeSummary.value;
-  if (!data) return;
-  if (data.inboxCount && typeof data.inboxCount.count === 'number') {
-    unreadCount.value = data.inboxCount.count;
-  }
-  if (data.labelCounts && typeof data.labelCounts === 'object') {
-    labelCounts.value = data.labelCounts;
-  }
-};
-
-watch(realtimeSummary, syncFromRealtime, { deep: true });
+// Verifikator count event sudah membawa payload lengkap (waiting number),
+// UI langsung baca dari rtVerifikatorCount — tidak perlu REST fallback.
 
 // Watch user — hanya fetch label tree (tidak ada count fetch di sini, biar tidak overlap dengan polling).
 watch(
@@ -372,21 +337,19 @@ watch(
   (newUser) => {
     if (newUser) {
       fetchLabels();
+      // Connect WebSocket realtime — initial summary akan kirim semua count
+      // (inbox, label, bsre, verifikator, nomor admin + user)
+      rtInit();
     }
   },
   { immediate: true }
 );
 
-// Polling smart: 30s, auto-pause saat tab tidak aktif, refetch saat tab kembali.
-// usePollingSmart juga eksekusi initial fetch saat mount → satu sumber of truth untuk fetching count.
-usePollingSmart(async () => {
-  if (!user.value) return;
-  await Promise.allSettled([
-    fetchSummary(),
-    fetchCounts(),
-    fetchNaskahVerifikatorWaitingCount()
-  ]);
-}, 30_000);
+// Cleanup socket saat user logout
+watch(
+  () => (process.client ? localStorage.getItem('token') : null),
+  (token) => { if (!token) rtDestroy(); }
+);
 
 onMounted(async () => {
   try {
@@ -394,11 +357,19 @@ onMounted(async () => {
     await nextTick();
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    // fetchLabels sudah dipanggil dari watch(user, immediate); tidak perlu di sini.
-    // fetchCounts/fetchSummary di-handle oleh usePollingSmart (initial run di onMounted internal-nya).
+    // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', checkScreenSize);
+  }
+  // Socket cleanup di-handle oleh watch(token) saat logout.
+  // Jangan rtDestroy() di sini karena Sidebar bisa unmount/remount
+  // saat route change tanpa user logout.
 });
 
 // ─── Props / emits ────────────────────────────────────────────────────────────
@@ -620,8 +591,8 @@ const adminMenuAdministrasi = computed(() => {
           label: 'Verifikator',
           to: '/naskah-dinas/verifikator',
           badge:
-            naskahVerifikatorWaitingCount.value > 0
-              ? naskahVerifikatorWaitingCount.value
+            rtVerifikatorCount.value > 0
+              ? rtVerifikatorCount.value
               : null
         }
       ]
@@ -668,7 +639,7 @@ const hasAdministrasiNotification = computed(
   () =>
     adminCounts.value.menunggu_verifikasi > 0 ||
     (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0) ||
-    naskahVerifikatorWaitingCount.value > 0
+    rtVerifikatorCount.value > 0
 );
 const hasUtilitasNotification = computed(() => {
   if (isAdminOrSuperadmin.value) return false;
