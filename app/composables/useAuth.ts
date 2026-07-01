@@ -1,6 +1,11 @@
 // composables/useAuth.ts
 import type { UserProfile, ActivePermission } from "~/types/auth";
 
+// ── Inflight guard untuk getProfile — mencegah duplicate /auth/profile calls ──
+let inflightProfile: Promise<UserProfile | null> | null = null;
+let lastProfileFetchAt = 0;
+const PROFILE_DEDUP_MS = 5_000; // 5 detik — jangan fetch ulang jika baru saja
+
 export const useAuth = () => {
   const { apiGet, apiPost } = useApi();
   const tokenCookie = useCookie<string | null>("token", {
@@ -20,49 +25,61 @@ export const useAuth = () => {
     user.value = data;
   };
 
-  const getProfile = async (): Promise<UserProfile | null> => {
-    try {
-      const token = process.client ? localStorage.getItem("token") : null;
-      if (!token) return null;
-      tokenCookie.value = token;
+  const getProfile = async (force = false): Promise<UserProfile | null> => {
+    // Inflight guard — jika getProfile sedang berjalan, tunggu itu saja
+    if (inflightProfile) return inflightProfile;
 
-      const res: any = await apiGet("/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // 1. Ambil data User utama
-      let profileData = res?.data?.user || res?.user || res || null;
-
-      // 2. Ambil data tambahan dari root response
-      const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
-      const delegationsData = res?.data?.delegations || res?.delegations || null;
-
-      if (profileData) {
-        // 3. GABUNGKAN: Masukkan alamatInfo dan delegations ke dalam profileData
-        profileData = {
-          ...profileData,
-          alamatInfo: alamatData || profileData.alamatInfo,
-          delegations: delegationsData || profileData.delegations
-        };
-
-        // Casting ke UserProfile
-        const normalizedProfile = profileData as UserProfile;
-
-        // Debug: Pastikan position_status terbaca jika dikirim backend
-        // console.log("Position Status:", normalizedProfile.position_status);
-
-        // Simpan ke state global
-        setUser(normalizedProfile);
-        roleCookie.value = normalizedProfile.role ?? null;
-
-        return normalizedProfile;
-      }
-
-      return null;
-    } catch (error) {
-      console.error("[AUTH] getProfile error:", error);
-      return null;
+    // Stale guard — jika profile sudah ada dan baru saja fetch, return cached
+    if (!force && user.value && Date.now() - lastProfileFetchAt < PROFILE_DEDUP_MS) {
+      return user.value;
     }
+
+    inflightProfile = (async () => {
+      try {
+        const token = process.client ? localStorage.getItem("token") : null;
+        if (!token) return null;
+        tokenCookie.value = token;
+
+        const res: any = await apiGet("/auth/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // 1. Ambil data User utama
+        let profileData = res?.data?.user || res?.user || res || null;
+
+        // 2. Ambil data tambahan dari root response
+        const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
+        const delegationsData = res?.data?.delegations || res?.delegations || null;
+
+        if (profileData) {
+          // 3. GABUNGKAN: Masukkan alamatInfo dan delegations ke dalam profileData
+          profileData = {
+            ...profileData,
+            alamatInfo: alamatData || profileData.alamatInfo,
+            delegations: delegationsData || profileData.delegations
+          };
+
+          // Casting ke UserProfile
+          const normalizedProfile = profileData as UserProfile;
+
+          // Simpan ke state global
+          setUser(normalizedProfile);
+          roleCookie.value = normalizedProfile.role ?? null;
+          lastProfileFetchAt = Date.now();
+
+          return normalizedProfile;
+        }
+
+        return null;
+      } catch (error) {
+        console.error("[AUTH] getProfile error:", error);
+        return null;
+      } finally {
+        inflightProfile = null;
+      }
+    })();
+
+    return inflightProfile;
   };
 
   const getSSORedirectUrl = async () => {

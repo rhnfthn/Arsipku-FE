@@ -43,10 +43,10 @@
 <script setup lang="ts">
 import { AlertTriangle, X } from "lucide-vue-next";
 import { useDigsig } from "~/composables/useDigsig";
-import { useRealtimeSummary } from "~/composables/useRealtimeSummary";
+import { useRealtimeSocket } from "~/composables/useRealtimeSocket";
 
 const { bsreAlert } = useDigsig();
-const { summary: realtimeSummary, fetchSummary } = useRealtimeSummary();
+const { bsreAlert: rtBsreAlert } = useRealtimeSocket();
 
 // Local state untuk dismiss
 const isDismissed = ref(false);
@@ -75,24 +75,17 @@ watch(
   },
 );
 
-// Sinkronkan bsreAlert dari endpoint agregat (cached) — tidak polling sendiri.
-// Sidebar sudah polling /dashboard/realtime tiap 60s (visibility-aware).
+// Sinkronkan bsreAlert dari WebSocket realtime event (bsre:alert / realtime:summary).
+// Tidak lagi memanggil /dashboard/realtime — data berasal dari socket langsung.
 watch(
-  realtimeSummary,
+  rtBsreAlert,
   (val) => {
-    if (val?.bsreAlert) {
-      bsreAlert.value = val.bsreAlert;
+    if (val) {
+      bsreAlert.value = val;
     }
   },
   { deep: true, immediate: true },
 );
-
-// Initial fetch sekali saat mount (jaga-jaga kalau Sidebar belum mount duluan)
-onMounted(async () => {
-  if (!realtimeSummary.value) {
-    await fetchSummary();
-  }
-});
 </script>
 
 <style scoped>
