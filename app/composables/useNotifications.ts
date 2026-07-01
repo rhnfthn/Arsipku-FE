@@ -309,7 +309,7 @@ export const useNotifications = () => {
         // Saat reconnect/sync, refresh dari REST — tapi hanya jika data sudah stale.
         // Inflight/stale guard di fetchUnreadCount/fetchNotifications akan skip
         // jika data baru saja dimuat oleh init().
-        await Promise.all([fetchUnreadCount(), fetchNotifications(1, 20)]);
+        await Promise.all([fetchUnreadCount(true), fetchNotifications(1, 20, true)]);
       });
 
       resolve();

@@ -132,7 +132,7 @@ export const useTertunda = () => {
       if (params.start_date) query.start_date = params.start_date;
       if (params.end_date) query.end_date = params.end_date;
 
-      const res = await apiGet("/naskah_sirkulasi/tertunda", { params: query });
+      const res = await apiGet("/naskah_sirkulasi/tertunda", { params: query }, { skipCache: true });
 
       if (res?.success) {
         items.value = (res.data || []).map(mapToTertundaItem);
