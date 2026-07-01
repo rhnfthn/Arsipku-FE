@@ -58,15 +58,24 @@ export interface NotificationItem {
 export interface NotificationListResponse {
   success: boolean;
   data: NotificationItem[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  meta: NotificationListMeta;
 }
 
 export interface UnreadCountResponse {
   success: boolean;
   data: { count: number };
+}
+
+export interface NotificationListMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface NotificationFetchOptions {
+  page?: number;
+  limit?: number;
+  isRead?: boolean;
+  type?: string;
 }

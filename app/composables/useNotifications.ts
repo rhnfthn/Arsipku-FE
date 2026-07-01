@@ -1,7 +1,13 @@
 // fe/app/composables/useNotifications.ts
 import { ref, readonly, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
-import type { NotificationItem, NotificationListResponse, UnreadCountResponse } from '~/types/notification';
+import type {
+  NotificationFetchOptions,
+  NotificationItem,
+  NotificationListMeta,
+  NotificationListResponse,
+  UnreadCountResponse,
+} from '~/types/notification';
 
 // Singleton state global (Nuxt auto-import composable, tapi state harus shared)
 const notifications = ref<NotificationItem[]>([]);
@@ -9,6 +15,12 @@ const unreadCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const error = ref<any>(null);
+const notificationMeta = ref<NotificationListMeta>({
+  page: 1,
+  limit: 20,
+  total: 0,
+  totalPages: 0,
+});
 
 let socket: Socket | null = null;
 let connectPromise: Promise<void> | null = null;
@@ -67,15 +79,37 @@ export const useNotifications = () => {
   // REST
   // ============================================================
 
-  const fetchNotifications = async (page = 1, limit = 20): Promise<NotificationItem[]> => {
+  const fetchNotifications = async (
+    pageOrOptions: number | NotificationFetchOptions = 1,
+    limit = 20,
+  ): Promise<NotificationItem[]> => {
+    const options: NotificationFetchOptions =
+      typeof pageOrOptions === 'number'
+        ? { page: pageOrOptions, limit }
+        : pageOrOptions;
+
+    const params: Record<string, string | number | boolean> = {
+      page: options.page ?? 1,
+      limit: options.limit ?? 20,
+    };
+
+    if (typeof options.isRead === 'boolean') params.isRead = options.isRead;
+    if (options.type) params.type = options.type;
+
     isLoading.value = true;
     error.value = null;
     try {
       const res = (await apiGet('/notifications', {
-        params: { page, limit },
-      })) as NotificationListResponse;
+        params,
+      }, { skipCache: true })) as NotificationListResponse;
       const list = res?.data ?? [];
       notifications.value = list;
+      notificationMeta.value = res?.meta ?? {
+        page: Number(params.page) || 1,
+        limit: Number(params.limit) || 20,
+        total: list.length,
+        totalPages: list.length > 0 ? 1 : 0,
+      };
       return list;
     } catch (err) {
       error.value = err;
@@ -265,6 +299,12 @@ export const useNotifications = () => {
     disconnectSocket();
     notifications.value = [];
     unreadCount.value = 0;
+    notificationMeta.value = {
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+    };
     error.value = null;
   };
 
@@ -272,6 +312,7 @@ export const useNotifications = () => {
     // state (readonly)
     notifications: readonly(notifications),
     unreadCount: readonly(unreadCount),
+    notificationMeta: readonly(notificationMeta),
     isConnected: readonly(isConnected),
     isLoading: readonly(isLoading),
     error: readonly(error),
