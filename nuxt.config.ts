@@ -33,17 +33,6 @@ export default defineNuxtConfig({
     },
   },
 
-  fonts: {
-    // Gunakan npm provider untuk font lokal (@fontsource/* packages).
-    // Disable google provider agar tidak fetch dari Google Fonts CDN.
-    providers: {
-      google: false,
-    },
-    families: [
-      { name: 'Montserrat', provider: 'npm' },
-    ],
-  },
-
   motionV: {
     components: true,
     utilities: true,
@@ -106,7 +95,7 @@ export default defineNuxtConfig({
   },
 
   ui: {
-    fonts: true,
+    fonts: false,
     colorMode: false,
     theme: {
       colors: [
