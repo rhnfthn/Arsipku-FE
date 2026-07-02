@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen pt-5 bg-gray-50 dark:bg-gray-900">
-    <div class="max-w-7xl mx-auto">
+    <EmptyState
+      v-if="!canViewMaster"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat master data. Hubungi administrator."
+    />
+    <div v-else class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
@@ -597,7 +603,7 @@
           </div>
         </div>
       </div>
-    </div>
+      </div>
 
     <!-- Add/Edit Modal -->
     <Teleport to="body">
@@ -824,6 +830,10 @@ import { useToast } from '#imports';
 const { t, locale } = useI18n();
 const route = useRoute();
 const companyId = computed(() => route.params.kode as string);
+
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 
 const {
   getAreasByCompany,

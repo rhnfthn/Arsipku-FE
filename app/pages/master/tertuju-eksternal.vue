@@ -1,9 +1,17 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
+    <EmptyState
+      v-if="!canViewMaster"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat master data. Hubungi administrator."
+    />
+    <div v-else>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
       <button
+        v-if="isSuperadmin || hasPermission('master-data', 'create')"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -190,6 +198,7 @@
 
             <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
+                v-if="isSuperadmin || hasPermission('master-data', 'update')"
                 @click="openEdit(item)"
                 class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
               >
@@ -199,6 +208,7 @@
               </button>
 
               <button
+                v-if="isSuperadmin || hasPermission('master-data', 'delete')"
                 class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
@@ -447,6 +457,7 @@
       @confirm="confirmDelete"
       @cancel="showConfirmDelete = false"
     />
+    </div>
   </div>
 </template>
 
@@ -504,6 +515,9 @@ const items = computed(() => [
 
 const auth = useAuth();
 const user = auth.user;
+const { hasPermission, isSuperadmin } = auth;
+
+const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 
 const {
   data,

@@ -14,7 +14,7 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 const route = useRoute();
 const toast = useToast();
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
 const { getJenisList } = useJenis();
 
 // ── Shared composable ────────────────────────────────────────────────────────
@@ -522,12 +522,12 @@ onMounted(async () => {
             <Icon name="i-lucide-eye" class="w-4 h-4 mr-2" />
             Pratinjau
           </UButton>
-          <UButton color="gray" variant="soft" size="lg" block
+          <UButton v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')" color="gray" variant="soft" size="lg" block
             @click="handleSaveDraft" :disabled="!currentJenis">
             <Icon name="i-lucide-save" class="w-4 h-4 mr-2" />
             Simpan Draft
           </UButton>
-          <UButton color="primary" size="lg" block
+          <UButton v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')" color="primary" size="lg" block
             @click="handleKirim" :disabled="!currentJenis">
             <Icon name="i-lucide-send" class="w-4 h-4 mr-2" />
             Kirim

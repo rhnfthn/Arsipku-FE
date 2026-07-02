@@ -156,6 +156,29 @@ export const useApi = () => {
     return config;
   });
 
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error?.response?.status === 403) {
+        try {
+          const toast = useToast();
+          const msg =
+            error.response?.data?.message ||
+            "Anda tidak punya akses ke fitur ini";
+          toast.add({
+            title: "Akses Ditolak",
+            description: msg,
+            color: "error",
+            icon: "i-lucide-shield-x",
+          });
+        } catch (e) {
+          // useToast mungkin tidak tersedia di context tertentu — ignore
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+
   const apiGet = async <T = any>(
     url: string,
     axiosConfig: AxiosRequestConfig = {},

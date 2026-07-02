@@ -1,11 +1,17 @@
 <template>
   <div class="space-y-6 pt-5 dark:bg-gray-900 min-h-screen transition-colors">
-    <!-- HEADER -->
-    <div class="min-h-screen">
+    <EmptyState
+      v-if="!canViewMaster"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat master data. Hubungi administrator."
+    />
+    <div v-else class="min-h-screen">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
         <!-- Left Section - Title & Breadcrumb -->
         <PageHeader :title="t('ka_title')" :items="items" />
         <button
+          v-if="isSuperadmin || hasPermission('master-data', 'create')"
           @click="openAddModal"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white space-y-6 px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
         >
@@ -167,6 +173,7 @@
                 <td class="px-4 py-3">
                   <div class="flex justify-center gap-3">
                     <button
+                      v-if="isSuperadmin || hasPermission('master-data', 'update')"
                       class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                       title="Edit"
                       @click="onEdit(row)"
@@ -175,6 +182,7 @@
                     </button>
 
                     <button
+                      v-if="isSuperadmin || hasPermission('master-data', 'delete')"
                       class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
                       title="Delete"
                       @click="onDelete(row)"
@@ -541,7 +549,6 @@
           </p>
         </Modal>
       </Teleport>
-    </div>
 
     <ConfirmDialog
       v-model="showDeletePopup"
@@ -554,6 +561,7 @@
       @confirm="confirmDelete"
       @cancel="cancelDelete"
     />
+  </div>
   </div>
 </template>
 
@@ -584,6 +592,10 @@ import ConfirmDialog from '@/components/ConfirmPopup.vue';
 definePageMeta({
   middleware: 'auth'
 });
+
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 
 // ─────────────────────────────────────────────
 // i18n — pakai useI18n() yang sudah diatur Navbar

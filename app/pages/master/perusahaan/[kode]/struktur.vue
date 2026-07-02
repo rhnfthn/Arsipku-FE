@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <EmptyState
+      v-if="!canViewMaster"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat master data. Hubungi administrator."
+    />
+    <div v-else class="max-w-7xl mx-auto px-4 py-6">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -317,7 +323,7 @@
           />
         </div>
       </div>
-    </div>
+      </div>
 
     <!-- ==================== ADD UNIT MODAL ==================== -->
     <Teleport to="body">
@@ -995,6 +1001,10 @@ import { formatDate2Digit as formatDate } from '~/utils/mail-helpers'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const { t } = useI18n()
+
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 
 // ─── Composables ─────────────────────────────────────────────────────────────
 const { searchPersons } = usePerson()

@@ -5,19 +5,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const token = process.client ? localStorage.getItem('token') || tokenCookie.value : tokenCookie.value
   const path = to.path
 
-  const adminForbiddenPrefixes = ['/master', '/master-data', '/konfigurasi-sistem', '/rbac']
+  const superadminOnlyPrefixes = ['/rbac', '/konfigurasi-sistem']
 
   const isPathMatchPrefix = (prefixes: string[]) =>
     prefixes.some((prefix) => path === prefix || path.startsWith(prefix + '/'))
 
-  const isAdminOnlyPath = isPathMatchPrefix(adminForbiddenPrefixes)
+  const isSuperadminOnlyPath = isPathMatchPrefix(superadminOnlyPrefixes)
 
   // Redirect as early as possible using cached role to avoid unauthorized page flashes.
-  if (isAdminOnlyPath && roleCookie.value && roleCookie.value !== 'superadmin') {
+  if (isSuperadminOnlyPath && roleCookie.value && roleCookie.value !== 'superadmin') {
     return navigateTo('/beranda', { replace: true })
   }
 
-  if (process.server && isAdminOnlyPath && roleCookie.value !== 'superadmin') {
+  if (process.server && isSuperadminOnlyPath && roleCookie.value !== 'superadmin') {
     return navigateTo('/beranda', { replace: true })
   }
 
@@ -52,7 +52,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (role === 'superadmin') return
 
   if (role === 'admin') {
-    if (isAdminOnlyPath) {
+    // Admin boleh akses /master/* (read-only), tapi tidak /rbac dan /konfigurasi-sistem
+    if (isSuperadminOnlyPath) {
       return navigateTo('/beranda', { replace: true })
     }
     return

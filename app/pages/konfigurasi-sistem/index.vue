@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen pt-5 bg-gray-50 dark:bg-gray-900">
-    <div class="max-w-7xl mx-auto">
+    <EmptyState
+      v-if="!canViewKonfigurasi"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat konfigurasi sistem. Hubungi administrator."
+    />
+    <div v-else class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-10">
         <Heading variant="heading6b" class="text-mobile-md">
@@ -156,7 +162,7 @@
               </div>
               <!-- Submit -->
               <div class="flex justify-end pt-1">
-                <button @click="handleCreateAnnouncement" :disabled="!announcementForm.judul ||
+                <button v-if="isSuperadmin || hasPermission('konfigurasi', 'update')" @click="handleCreateAnnouncement" :disabled="!announcementForm.judul ||
                   !announcementForm.pesan ||
                   isCreatingMessage
                   "
@@ -235,7 +241,7 @@
                       </p>
                     </div>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div v-if="isSuperadmin || hasPermission('konfigurasi', 'update')" class="flex items-center gap-1">
                     <button @click="openEditModal(item)"
                       class="p-1.5 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950 rounded-md transition-colors">
                       <UIcon name="i-lucide-pencil" class="w-4 h-4" />
@@ -371,6 +377,10 @@ import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
 definePageMeta({ middleware: "auth" });
 
 const { t } = useI18n();
+
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewKonfigurasi = computed(() => hasPermission('konfigurasi', 'read'));
 
 // ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────
 const breadcrumbs = computed(() => [
