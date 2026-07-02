@@ -1,4 +1,11 @@
 <template>
+  <EmptyState
+    v-if="!canViewLaporan"
+    icon="i-lucide-lock"
+    title="Akses Ditolak"
+    description="Anda tidak punya izin melihat laporan. Hubungi administrator."
+  />
+  <div v-else>
   <div class="flex items-center justify-between pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md dark:text-white">
@@ -8,6 +15,7 @@
     </div>
     <!-- EXPORT BUTTON -->
     <button
+      v-if="isSuperadmin || hasPermission('laporan', 'export')"
       @click="exportExcel"
       class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
     >
@@ -556,8 +564,9 @@
         >
           {{ $t('selanjutnya') }}
         </button>
-      </div>
     </div>
+  </div>
+  </div>
   </div>
 </template>
 
@@ -576,9 +585,11 @@ import * as XLSX from 'xlsx';
 
 //COMPOSABLE
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
 const toast = useToast();
 const { t, locale, availableLocales, setLocale } = useI18n();
+
+const canViewLaporan = computed(() => hasPermission('laporan', 'read'));
 
 //CONST UTIL
 const breadcrumbs = computed(() => [

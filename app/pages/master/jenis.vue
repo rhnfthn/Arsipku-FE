@@ -1,5 +1,12 @@
 <template>
-  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
+  <div v-if="!canViewMaster" class="min-h-screen pt-5 dark:bg-gray-900 transition-colors flex items-center justify-center">
+    <EmptyState
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat master data. Hubungi administrator."
+    />
+  </div>
+  <div v-else class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <div>
@@ -7,6 +14,7 @@
       </div>
 
       <button
+        v-if="isSuperadmin || hasPermission('master-data', 'create')"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -202,6 +210,7 @@
                   </button>
 
                   <button
+                    v-if="isSuperadmin || hasPermission('master-data', 'update')"
                     class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                     :title="t('je_modal_edit')"
                     @click="onEdit(row)"
@@ -210,6 +219,7 @@
                   </button>
 
                   <button
+                    v-if="isSuperadmin || hasPermission('master-data', 'delete')"
                     class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
                     :title="t('popup_hapus')"
                     @click="onDelete(row)"
@@ -793,7 +803,6 @@
       @confirm="confirmDelete"
       @cancel="showDeleteModal = false"
     />
-  </div>
 
   <!-- FILE PREVIEW SLIDEOVER -->
   <USlideover
@@ -808,6 +817,7 @@
       <iframe v-if="previewFileUrl" :src="previewFileUrl" class="w-full h-full"></iframe>
     </template>
   </USlideover>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -845,6 +855,10 @@ definePageMeta({
 // i18n — pakai useI18n() yang sudah diatur Navbar
 // ─────────────────────────────────────────────
 const { t, locale } = useI18n();
+
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 
 // ─────────────────────────────────────────────
 // BREADCRUMB (reaktif terhadap bahasa)

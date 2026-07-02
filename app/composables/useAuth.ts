@@ -236,6 +236,35 @@ export const useAuth = () => {
     }
   };
 
+  const refreshPermissions = async (): Promise<void> => {
+    try {
+      const token = process.client ? localStorage.getItem("token") : null;
+      if (!token) return;
+
+      const res: any = await apiGet("/auth/refresh-permissions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = res?.data ?? res;
+      const newToken = data?.accessToken;
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+        tokenCookie.value = newToken;
+      }
+      if (data?.activePermissions) {
+        const updated: UserProfile = {
+          ...(user.value as UserProfile),
+          activePermissions: data.activePermissions,
+          activeRole: data.activeRole ?? user.value?.activeRole,
+          role: data.role ?? user.value?.role,
+        };
+        setUser(updated);
+        roleCookie.value = updated.role ?? null;
+      }
+    } catch (error) {
+      console.error("[AUTH] refreshPermissions error:", error);
+    }
+  };
+
   return {
     user,
     setUser,
@@ -244,6 +273,7 @@ export const useAuth = () => {
     verifyToken,
     logout,
     refreshToken,
+    refreshPermissions,
     hasPermission,
     hasAnyPermission,
     hasRole,

@@ -1,6 +1,12 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="">
+    <EmptyState
+      v-if="!canViewDigsig"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat dokumen. Hubungi administrator."
+    />
+    <div v-else class="">
       <!-- HEADER -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
@@ -800,6 +806,9 @@ import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 
 const { t } = useI18n();
 const toast = useToast();
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
 
 const {
   penandatanganDocuments,

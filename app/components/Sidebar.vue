@@ -265,8 +265,9 @@ import { useDigsig } from '~/composables/useDigsig';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
-const { user, getProfile, hasRole, hasPermission } = useAuth();
-const { adminCounts, userCounts } = usePenomoran();
+const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
+const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
+  usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
@@ -410,44 +411,83 @@ const tulisMenu = computed(() => ({
   label: t('tulis'),
   to: '/korespondensi/tulis',
   icon: 'i-lucide-edit',
+  permission: { resource: 'naskah-dinas', action: 'read' },
   children: tulisChildrenByBod.value
 }));
 
 const userMenuUtama = computed(() => [
-  { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
+  {
+    label: t('beranda'),
+    to: '/beranda',
+    icon: 'i-lucide-layout-dashboard',
+    permission: { resource: 'dashboard', action: 'read' }
+  },
   tulisMenu.value,
   {
     label: t('kotak_masuk'),
     to: '/korespondensi/kotak-masuk',
     icon: 'i-lucide-inbox',
+    permission: { resource: 'naskah-dinas', action: 'read' },
     badge: unreadCount.value > 0 ? unreadCount.value : null
   },
-  { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
-  { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-lucide-file-clock' },
-  { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
+  {
+    label: t('terkirim'),
+    to: '/korespondensi/terkirim',
+    icon: 'i-lucide-send',
+    permission: { resource: 'naskah-dinas', action: 'read' }
+  },
+  {
+    label: t('tertunda'),
+    to: '/korespondensi/tertunda',
+    icon: 'i-lucide-file-clock',
+    permission: { resource: 'naskah-dinas', action: 'read' }
+  },
+  {
+    label: t('draft'),
+    to: '/korespondensi/draf',
+    icon: 'i-lucide-file-text',
+    permission: { resource: 'naskah-dinas', action: 'read' }
+  }
 ]);
 
 const userMenuUtilitas = computed(() => {
   const badgeCount = userCounts.value.belum_diajukan || 0;
   const menus = [
-    { label: t('digsig'), to: '/penandatangan', icon: 'i-lucide-signature' },
+    {
+      label: t('digsig'),
+      to: '/penandatangan',
+      icon: 'i-lucide-signature',
+      permission: { resource: 'naskah-dinas', action: 'read-detail' }
+    },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     {
       label: t('mail_service'),
       icon: 'i-lucide-mail',
+      permission: { resource: 'naskah-dinas', action: 'read' },
       children: [
         { label: 'Kirim Email', to: '/layanan-email' },
         { label: 'Log Email', to: '/layanan-email/log' }
       ]
     },
-    { label: t('template'), to: '/template', icon: 'i-lucide-copy' },
-    { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' }
+    {
+      label: t('template'),
+      to: '/template',
+      icon: 'i-lucide-copy',
+      permission: { resource: 'naskah-dinas', action: 'read' }
+    },
+    {
+      label: t('titelatur_inggris'),
+      to: '/titelatur',
+      icon: 'i-lucide-languages',
+      permission: { resource: 'naskah-dinas', action: 'read' }
+    }
   ];
 
   if (hasBodTag.value) {
     menus.push({
       label: t('penomoran') || 'Penomoran',
       icon: 'i-lucide-hash',
+      permission: { resource: 'penomoran', action: 'read' },
       children: [
         {
           label: t('usulan') || 'Usulan',
@@ -457,6 +497,7 @@ const userMenuUtilitas = computed(() => {
         {
           label: t('Persetujuan') || 'Persetujuan',
           to: '/persetujuan-penomoran',
+          permission: { resource: 'penomoran', action: 'verify' },
           badge:
             (userCounts.value.menunggu_persetujuan ?? 0) > 0
               ? userCounts.value.menunggu_persetujuan
@@ -469,6 +510,7 @@ const userMenuUtilitas = computed(() => {
       label: t('usulan-penomoran') || 'Usulan Penomoran',
       to: '/usulan-penomoran',
       icon: 'i-lucide-hash',
+      permission: { resource: 'penomoran', action: 'read' },
       badge: userCounts.value.draft > 0 ? userCounts.value.draft : null
     });
   }
@@ -477,31 +519,82 @@ const userMenuUtilitas = computed(() => {
 });
 
 const faqMenuUser = computed(() => [
-  { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' },
-  { label: 'Pedoman', to: '/pedoman/menu', icon: 'i-lucide-book-open' }
+  {
+    label: 'FAQ',
+    to: '/faq/menu',
+    icon: 'i-lucide-circle-help',
+    permission: { resource: 'helpdesk', action: 'read' }
+  },
+  {
+    label: 'Pedoman',
+    to: '/pedoman/menu',
+    icon: 'i-lucide-book-open',
+    permission: { resource: 'pedoman', action: 'read' }
+  }
 ]);
 
 const faqMenuAdmin = computed(() => [
-  { label: 'FAQ', to: '/faq/menu', icon: 'i-lucide-circle-help' },
-  { label: 'Manajemen FAQ', to: '/faq/manajemen', icon: 'i-lucide-file-question' },
-  { label: 'Pedoman', to: '/pedoman/menu', icon: 'i-lucide-book-open' },
-  { label: 'Manajemen Pedoman', to: '/pedoman/manajemen', icon: 'i-lucide-file-text' }
+  {
+    label: 'FAQ',
+    to: '/faq/menu',
+    icon: 'i-lucide-circle-help',
+    permission: { resource: 'helpdesk', action: 'read' }
+  },
+  {
+    label: 'Manajemen FAQ',
+    to: '/faq/manajemen',
+    icon: 'i-lucide-file-question',
+    permission: { resource: 'helpdesk', action: 'manage' }
+  },
+  {
+    label: 'Pedoman',
+    to: '/pedoman/menu',
+    icon: 'i-lucide-book-open',
+    permission: { resource: 'pedoman', action: 'read' }
+  },
+  {
+    label: 'Manajemen Pedoman',
+    to: '/pedoman/manajemen',
+    icon: 'i-lucide-file-text',
+    permission: { resource: 'pedoman', action: 'read' }
+  }
 ]);
 
 // ─── Admin menus ──────────────────────────────────────────────────────────────
 
 const adminMenuUtama = computed(() => [
-  { label: t('beranda'), to: '/beranda', icon: 'i-lucide-layout-dashboard' },
+  {
+    label: t('beranda'),
+    to: '/beranda',
+    icon: 'i-lucide-layout-dashboard',
+    permission: { resource: 'dashboard', action: 'read' }
+  },
   tulisMenu.value,
   {
     label: t('kotak_masuk'),
     to: '/korespondensi/kotak-masuk',
     icon: 'i-lucide-inbox',
+    permission: { resource: 'naskah-dinas', action: 'read' },
     badge: unreadCount.value > 0 ? unreadCount.value : null
   },
-  { label: t('terkirim'), to: '/korespondensi/terkirim', icon: 'i-lucide-send' },
-  { label: t('tertunda'), to: '/korespondensi/tertunda', icon: 'i-lucide-file-clock' },
-  { label: t('draft'), to: '/korespondensi/draf', icon: 'i-lucide-file-text' }
+  {
+    label: t('terkirim'),
+    to: '/korespondensi/terkirim',
+    icon: 'i-lucide-send',
+    permission: { resource: 'naskah-dinas', action: 'read' }
+  },
+  {
+    label: t('tertunda'),
+    to: '/korespondensi/tertunda',
+    icon: 'i-lucide-file-clock',
+    permission: { resource: 'naskah-dinas', action: 'read' }
+  },
+  {
+    label: t('draft'),
+    to: '/korespondensi/draf',
+    icon: 'i-lucide-file-text',
+    permission: { resource: 'naskah-dinas', action: 'read' }
+  }
 ]);
 
 const adminMenuUtilitas = computed(() => {
@@ -509,6 +602,7 @@ const adminMenuUtilitas = computed(() => {
     {
       label: t('digsig'),
       icon: 'i-lucide-signature',
+      permission: { resource: 'naskah-dinas', action: 'read-detail' },
       children: [
         { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen' },
         { label: t('sign'), to: '/digsig/penandatanganan' },
@@ -520,12 +614,18 @@ const adminMenuUtilitas = computed(() => {
     {
       label: t('mail_service'),
       icon: 'i-lucide-mail',
+      permission: { resource: 'naskah-dinas', action: 'read' },
       children: [
         { label: 'Kirim Email', to: '/layanan-email' },
         { label: 'Log Email', to: '/layanan-email/log' }
       ]
     },
-    { label: t('template'), to: '/template', icon: 'i-lucide-copy' }
+    {
+      label: t('template'),
+      to: '/template',
+      icon: 'i-lucide-copy',
+      permission: { resource: 'naskah-dinas', action: 'read' }
+    }
   ];
 
   // if (hasBodTag.value) {
@@ -557,6 +657,7 @@ const adminMenuAdministrasi = computed(() => {
     penomoranChildren.push({
       label: t('Persetujuan') || 'Persetujuan',
       to: '/persetujuan-penomoran',
+      permission: { resource: 'penomoran', action: 'verify' },
       badge:
         (userCounts.value.menunggu_persetujuan ?? 0) > 0
           ? userCounts.value.menunggu_persetujuan
@@ -575,16 +676,28 @@ const adminMenuAdministrasi = computed(() => {
   );
 
   const base = [
-    { label: t('delegasi'), to: '/delegasi', icon: 'i-lucide-users' },
-    { label: t('titelatur_inggris'), to: '/titelatur', icon: 'i-lucide-languages' },
+    {
+      label: t('delegasi'),
+      to: '/delegasi',
+      icon: 'i-lucide-users',
+      permission: { resource: 'delegasi', action: 'read' }
+    },
+    {
+      label: t('titelatur_inggris'),
+      to: '/titelatur',
+      icon: 'i-lucide-languages',
+      permission: { resource: 'naskah-dinas', action: 'read' }
+    },
     {
       label: t('penomoran'),
       icon: 'i-lucide-hash',
+      permission: { resource: 'penomoran', action: 'read' },
       children: penomoranChildren
     },
     {
-     label: t('naskah_masuk'),
+      label: t('naskah_masuk'),
       icon: 'i-lucide-file-input',
+      permission: { resource: 'naskah-dinas', action: 'read' },
       children: [
         { label: 'Verifikasi Naskah', to: '/naskah-dinas' },
         {
@@ -604,8 +717,8 @@ const adminMenuAdministrasi = computed(() => {
       {
         label: t('master_data'),
         icon: 'i-lucide-database',
+        permission: { resource: 'master-data', action: 'read' },
         children: [
-          { label: t('akun'), to: '/master/akun', icon: 'i-lucide-user-round' },
           { label: t('tertuju'), to: '/master/tertuju-eksternal' },
           { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
           { label: t('klasifikasi'), to: '/master/klasifikasi' },
@@ -613,12 +726,36 @@ const adminMenuAdministrasi = computed(() => {
         ]
       },
       {
-        // ⭐ Manajemen RBAC — icon shield, HANYA SUPERADMIN
-        label: 'Manajemen RBAC',
-        to: '/rbac',
-        icon: 'i-lucide-shield-check'
+        label: t('rbac_management'),
+        icon: 'i-lucide-shield-check',
+        permission: { resource: 'role', action: 'read' },
+        children: [
+          { label: t('rbac_roles'), to: '/rbac/roles', icon: 'i-lucide-shield' },
+          { label: t('rbac_permissions'), to: '/rbac/permissions', icon: 'i-lucide-key-round' },
+          { label: t('rbac_resources'), to: '/rbac/resources', icon: 'i-lucide-box' },
+          { label: t('rbac_users'), to: '/rbac/users', icon: 'i-lucide-user-cog' }
+        ]
       },
-      { label: t('konfigurasi'), to: '/konfigurasi-sistem', icon: 'i-lucide-settings-2' }
+      {
+        label: t('konfigurasi'),
+        to: '/konfigurasi-sistem',
+        icon: 'i-lucide-settings-2',
+        permission: { resource: 'konfigurasi', action: 'read' }
+      }
+    );
+  } else if (hasRole('ADMIN')) {
+    base.push(
+      {
+        label: t('master_data'),
+        icon: 'i-lucide-database',
+        permission: { resource: 'master-data', action: 'read' },
+        children: [
+          { label: t('tertuju'), to: '/master/tertuju-eksternal' },
+          { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
+          { label: t('klasifikasi'), to: '/master/klasifikasi' },
+          { label: t('jenis'), to: '/master/jenis' }
+        ]
+      }
     );
   }
 
@@ -626,11 +763,24 @@ const adminMenuAdministrasi = computed(() => {
 });
 
 const adminMenuLaporan = computed(() => [
-  // FIX: All three had correct icons already, but the issue was the app-level
-  // icon for Laporan tab was not stable. Defined explicitly below in apps computed.
-  { label: t('rekap'), to: '/laporan/rekap-naskah', icon: 'i-lucide-file-bar-chart-2' },
-  { label: t('detail'), to: '/laporan/detail-naskah', icon: 'i-lucide-file-search' },
-  { label: t('naskah'), to: '/laporan/naskah-masuk', icon: 'i-lucide-folder-input' }
+  {
+    label: t('rekap'),
+    to: '/laporan/rekap-naskah',
+    icon: 'i-lucide-file-bar-chart-2',
+    permission: { resource: 'laporan', action: 'read' }
+  },
+  {
+    label: t('detail'),
+    to: '/laporan/detail-naskah',
+    icon: 'i-lucide-file-search',
+    permission: { resource: 'laporan', action: 'read' }
+  },
+  {
+    label: t('naskah'),
+    to: '/laporan/naskah-masuk',
+    icon: 'i-lucide-folder-input',
+    permission: { resource: 'laporan', action: 'read' }
+  }
 ]);
 
 // ─── Notification flags ───────────────────────────────────────────────────────
@@ -648,6 +798,13 @@ const hasUtilitasNotification = computed(() => {
     (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
   );
 });
+
+const filterMenuByPermission = (items) => {
+  return items.filter((item) => {
+    if (!item.permission) return true;
+    return isSuperadmin.value || hasPermission(item.permission.resource, item.permission.action);
+  });
+};
 
 // ─── Apps ─────────────────────────────────────────────────────────────────────
 
@@ -672,14 +829,14 @@ const apps = computed(() => {
         // FIX: Use 'i-heroicons-home' consistently — this is the correct icon
         // shown in img 1/2. Never use a computed/dynamic value here.
         icon: 'i-heroicons-home',
-        menus: adminMenuUtama.value,
+        menus: filterMenuByPermission(adminMenuUtama.value),
         hasNotification: hasInboxUnread.value
       },
       {
         id: 'admin-utilitas',
         label: t('utilitas'),
         icon: 'i-heroicons-squares-plus',
-        menus: adminMenuUtilitas.value,
+        menus: filterMenuByPermission(adminMenuUtilitas.value),
         hasNotification: hasUtilitasNotification.value // ← UBAH dari false
       },
       {
@@ -688,7 +845,7 @@ const apps = computed(() => {
         // FIX: Was 'i-lucide-settings' in original. This is correct per img 1/2.
         // Must be a hardcoded string literal — never a variable or t() call.
         icon: 'i-lucide-settings',
-        menus: adminMenuAdministrasi.value,
+        menus: filterMenuByPermission(adminMenuAdministrasi.value),
         hasNotification: hasAdministrasiNotification.value
       },
       {
@@ -696,14 +853,14 @@ const apps = computed(() => {
         label: t('laporan'),
         // FIX: Was 'i-heroicons-presentation-chart-line'. Correct per img 1/2.
         icon: 'i-heroicons-presentation-chart-line',
-        menus: adminMenuLaporan.value,
+        menus: filterMenuByPermission(adminMenuLaporan.value),
         hasNotification: false
       },
       {
         id: 'admin-faq',
         label: 'FAQ',
         icon: 'i-lucide-circle-help',
-        menus: faqMenuAdmin.value,
+        menus: filterMenuByPermission(faqMenuAdmin.value),
         hasNotification: false
       }
     ];
@@ -714,21 +871,21 @@ const apps = computed(() => {
       id: 'user-utama',
       label: t('utama'),
       icon: 'i-heroicons-home',
-      menus: userMenuUtama.value,
+      menus: filterMenuByPermission(userMenuUtama.value),
       hasNotification: hasInboxUnread.value
     },
     {
       id: 'user-utilitas',
       label: t('utilitas'),
       icon: 'i-heroicons-squares-plus',
-      menus: userMenuUtilitas.value,
+      menus: filterMenuByPermission(userMenuUtilitas.value),
       hasNotification: hasUtilitasNotification.value
     },
     {
       id: 'user-faq',
       label: 'FAQ',
       icon: 'i-lucide-circle-help',
-      menus: faqMenuUser.value,
+      menus: filterMenuByPermission(faqMenuUser.value),
       hasNotification: false
     }
   ];

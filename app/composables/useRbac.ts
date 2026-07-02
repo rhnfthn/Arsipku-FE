@@ -34,6 +34,21 @@ export interface RbacUserRoleRow {
   createdAt?: string;
 }
 
+/**
+ * Bug B6: item list user dengan role (dari GET /rbac/users).
+ */
+export interface UserRoleListItem {
+  id: string;
+  persnum: number;
+  name: string;
+  roleId: string;
+  roleName: string;
+  unitKerja: string | null;
+  active: boolean;
+  positionText: string | null;
+  createdAt: string;
+}
+
 export const useRbac = () => {
   const { apiGet, apiPost, apiPut, apiDelete } = useApi();
 
@@ -101,6 +116,32 @@ export const useRbac = () => {
     return (res?.data ?? []) as RbacUserRoleRow[];
   };
 
+  /**
+   * Bug B7 fix: ambil profile user by persnum exact (bukan LIKE query).
+   */
+  const fetchUserProfile = async (persnum: number | string): Promise<{ persnum: number; name: string; positionText: string | null } | null> => {
+    const res: any = await apiGet(`/rbac/users/${persnum}/profile`, {}, { skipCache: true });
+    return (res?.data ?? null) as any;
+  };
+
+  /**
+   * Bug B6 fix: list semua user dengan role (pagination, search, filter).
+   */
+  const fetchAllUserRoles = async (params: { search?: string; roleName?: string; page?: number; limit?: number } = {}) => {
+    const query: any = {};
+    if (params.search) query.search = params.search;
+    if (params.roleName) query.roleName = params.roleName;
+    if (params.page) query.page = params.page;
+    if (params.limit) query.limit = params.limit;
+    const res: any = await apiGet('/rbac/users', { params: query }, { skipCache: true });
+    return {
+      data: (res?.data ?? []) as UserRoleListItem[],
+      total: res?.total ?? 0,
+      page: res?.page ?? 1,
+      limit: res?.limit ?? 10,
+    };
+  };
+
   const assignRoleToUser = async (persnum: number | string, roleId: string, unitKerja?: string | null) => {
     return apiPost(`/rbac/users/${persnum}/roles`, { roleId, unitKerja: unitKerja ?? null });
   };
@@ -138,6 +179,8 @@ export const useRbac = () => {
     deleteRole,
     assignPermissions,
     fetchUserRoles,
+    fetchUserProfile,
+    fetchAllUserRoles,
     assignRoleToUser,
     removeRoleFromUser,
     getRolesBatch,
