@@ -14,6 +14,44 @@ const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 menit
 
 let lastAuthCacheScope = "anonymous";
 
+interface ApiGetOptions {
+  ttlMs?: number;
+  skipCache?: boolean;
+}
+
+const FRESH_GET_URL_PATTERNS: RegExp[] = [
+  /^\/auth\/profile(?:[/?#]|$)/,
+  /^\/dashboard(?:[/?#]|$)/,
+  /^\/notifications(?:[/?#]|$)/,
+  /^\/naskah_sirkulasi\/(?:inbox-count|inbox|sent|tertunda)(?:[/?#]|$)/,
+  /^\/draft\/list(?:[/?#]|$)/,
+  /^\/labels\/(?:counts|[^/]+\/naskah)(?:[/?#]|$)/,
+  /^\/(?:admin\/)?nomor-request(?:[/?#-]|$)/,
+  /^\/digsig(?:[/?#]|$)/,
+  /^\/naskah-dinas(?:[/?#]|$)/,
+  /^\/search\/v3(?:[/?#]|$)/,
+  /^\/mail-service\/logs(?:[/?#]|$)/,
+];
+
+const normalizeApiUrl = (url: string): string => {
+  try {
+    if (/^https?:\/\//i.test(url)) {
+      const parsed = new URL(url);
+      return `${parsed.pathname}${parsed.search}`;
+    }
+  } catch {
+    // Keep original URL if parsing fails.
+  }
+
+  return url.startsWith("/") ? url : `/${url}`;
+};
+
+const shouldBypassCache = (url: string, options: ApiGetOptions = {}): boolean => {
+  if (options.skipCache) return true;
+  const normalizedUrl = normalizeApiUrl(url);
+  return FRESH_GET_URL_PATTERNS.some((pattern) => pattern.test(normalizedUrl));
+};
+
 const hashString = (value: string): string => {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
@@ -74,9 +112,26 @@ const setCached = (key: string, data: any, ttlMs = DEFAULT_TTL_MS): void => {
   cache.set(key, { data, expiresAt: Date.now() + ttlMs });
 };
 
+const buildInvalidationPrefixes = (url: string): string[] => {
+  const normalizedUrl = normalizeApiUrl(url).split("?")[0] || "/";
+  const segments = normalizedUrl.split("/").filter(Boolean);
+  const prefixes = new Set<string>([normalizedUrl]);
+
+  if (segments.length > 0) {
+    prefixes.add(`/${segments[0]}`);
+  }
+
+  if (segments.length > 1) {
+    prefixes.add(`/${segments[0]}/${segments[1]}`);
+  }
+
+  return Array.from(prefixes);
+};
+
 const invalidateCache = (urlPrefix: string): void => {
+  const prefixes = buildInvalidationPrefixes(urlPrefix);
   for (const key of cache.keys()) {
-    if (key.includes(`:${urlPrefix}`)) cache.delete(key);
+    if (prefixes.some((prefix) => key.includes(`:${prefix}`))) cache.delete(key);
   }
 };
 
@@ -101,34 +156,63 @@ export const useApi = () => {
     return config;
   });
 
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error?.response?.status === 403) {
+        try {
+          const toast = useToast();
+          const msg =
+            error.response?.data?.message ||
+            "Anda tidak punya akses ke fitur ini";
+          toast.add({
+            title: "Akses Ditolak",
+            description: msg,
+            color: "error",
+            icon: "i-lucide-shield-x",
+          });
+        } catch (e) {
+          // useToast mungkin tidak tersedia di context tertentu — ignore
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+
   const apiGet = async <T = any>(
     url: string,
     axiosConfig: AxiosRequestConfig = {},
-    options: { ttlMs?: number; skipCache?: boolean } = {}
+    options: ApiGetOptions = {}
   ): Promise<T> => {
-      const baseUrl = api.defaults.baseURL || "";
-      const fullUrl = `${baseUrl}${url}`;
-      const cacheKey = buildCacheKey(url, axiosConfig, getAuthCacheScope(axiosConfig));
+    const baseUrl = api.defaults.baseURL || "";
+    const fullUrl = `${baseUrl}${url}`;
+    const cacheKey = buildCacheKey(url, axiosConfig, getAuthCacheScope(axiosConfig));
+    const skipCache = shouldBypassCache(url, options);
 
-      if (!options.skipCache) {
-        const cached = getCached<T>(cacheKey);
-        if (cached !== undefined) {
-          if (isDev) console.log("[api] GET cache hit ->", fullUrl);
-          return cached;
-        }
+    if (!skipCache) {
+      const cached = getCached<T>(cacheKey);
+      if (cached !== undefined) {
+        if (isDev) console.log("[api] GET cache hit ->", fullUrl);
+        return cached;
       }
+    }
 
-      try {
-        if (isDev) console.log("[api] GET ->", fullUrl, axiosConfig);
+    try {
+      if (isDev) console.log("[api] GET ->", fullUrl, axiosConfig);
       const res = await api.get(url, axiosConfig);
       if (isDev) console.log("[api] GET response <-", fullUrl, res.status);
-      if (!options.skipCache) setCached(cacheKey, res.data, options.ttlMs);
+      if (!skipCache) setCached(cacheKey, res.data, options.ttlMs);
       return res.data;
     } catch (err) {
       if (isDev) console.error("[api] GET error ->", url, err);
       throw err;
     }
   };
+
+  const apiGetFresh = async <T = any>(
+    url: string,
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<T> => apiGet<T>(url, axiosConfig, { skipCache: true });
 
   const apiPost = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
@@ -189,6 +273,8 @@ export const useApi = () => {
     apiPatch,
     apiDelete,
     get: apiGet,
+    getFresh: apiGetFresh,
+    apiGetFresh,
     post: apiPost,
     put: apiPut,
     patch: apiPatch,

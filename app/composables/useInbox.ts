@@ -42,6 +42,7 @@ export interface InboxParams {
 
 export function useInbox() {
   const { apiGet, apiPut, apiPatch, clearApiCache } = useApi();
+  const { markNaskahNotificationsAsRead } = useNotifications();
 
   // State dipindahkan ke dalam fungsi agar setiap consumer punya instance sendiri
   const items = ref<any[]>([]);
@@ -149,6 +150,7 @@ export function useInbox() {
         mail.raw.read_time = new Date().toISOString();
       }
       if (summary.value.total_belum_dibaca > 0) summary.value.total_belum_dibaca--;
+      await markNaskahNotificationsAsRead(mail.naskahId);
     } catch (err) {
       console.error("Gagal update status baca:", err);
     }
@@ -163,6 +165,7 @@ export function useInbox() {
       });
       if (summary.value.total_belum_dibaca > 0) summary.value.total_belum_dibaca--;
       clearApiCache();
+      await markNaskahNotificationsAsRead(idNaskah);
     } catch (err) {
       console.error("Gagal update status baca (nav):", err);
     }

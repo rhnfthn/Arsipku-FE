@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="max-w-[1400px] mx-auto space-y-8">
+    <EmptyState
+      v-if="!canViewLaporan"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat laporan. Hubungi administrator."
+    />
+    <div v-else class="max-w-[1400px] mx-auto space-y-8">
       <!-- Header -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -258,6 +264,7 @@
           </div>
 
           <button
+            v-if="isSuperadmin || hasPermission('laporan', 'export')"
             class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
             @click="exportTable1"
           >
@@ -712,6 +719,7 @@
             </div>
 
             <button
+              v-if="isSuperadmin || hasPermission('laporan', 'export')"
               class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
               @click="exportTable2"
             >
@@ -911,7 +919,9 @@ import { formatDateNumeric as formatTanggal } from '~/utils/mail-helpers';
 
 const toast = useToast();
 const { t } = useI18n();
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
+
+const canViewLaporan = computed(() => hasPermission('laporan', 'read'));
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },

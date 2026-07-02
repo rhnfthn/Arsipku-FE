@@ -65,6 +65,8 @@ const {
   markAllAsRead,
   resolveNotificationRoute,
 } = useNotifications();
+const { user } = useAuth();
+const tokenCookie = useCookie<string | null>('token', { sameSite: 'lax', path: '/' });
 
 const router = useRouter();
 const bellRef = ref<HTMLElement | null>(null);
@@ -112,9 +114,24 @@ const onItemClick = (item: NotificationItem) => {
   if (route) router.push(route);
 };
 
+const getAuthToken = () => {
+  if (!process.client) return tokenCookie.value;
+  return localStorage.getItem('token') || tokenCookie.value;
+};
+
+const initWhenAuthenticated = (force = false) => {
+  if (!process.client) return;
+  const token = getAuthToken();
+  if (!token) {
+    destroy();
+    return;
+  }
+  void init(force);
+};
+
 onMounted(() => {
   if (process.client) {
-    init();
+    initWhenAuthenticated();
     document.addEventListener('click', closePanel, true);
   }
 });
@@ -125,13 +142,14 @@ onBeforeUnmount(() => {
   }
 });
 
-// Disconnect socket saat user logout (token hilang)
 watch(
-  () => (process.client ? localStorage.getItem('token') : null),
-  (token) => {
+  () => [tokenCookie.value, user.value?.persnum, user.value?.position],
+  ([token]) => {
     if (!token) {
       destroy();
+      return;
     }
+    initWhenAuthenticated(true);
   },
 );
 </script>

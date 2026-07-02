@@ -1,5 +1,12 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-900 pt-5">
+    <EmptyState
+      v-if="!canViewDigsig"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat dokumen. Hubungi administrator."
+    />
+    <div v-else>
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full">
       <div>
@@ -1047,6 +1054,7 @@
         </div>
       </template>
     </USlideover>
+    </div>
   </div>
 </template>
 
@@ -1072,6 +1080,9 @@ definePageMeta({
 });
 
 const { t } = useI18n();
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
 const {
   documents,
   documentDetail,

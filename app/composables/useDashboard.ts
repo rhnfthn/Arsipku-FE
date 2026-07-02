@@ -22,7 +22,7 @@ export const useDashboard = () => {
     try {
       console.log("🔍 Fetching dashboard data from /dashboard/");
 
-      const response = await apiGet<DashboardResponse>("/dashboard/");
+      const response = await apiGet<DashboardResponse>("/dashboard/", {}, { skipCache: true });
 
       console.log("📦 Raw API Response:", response);
 

@@ -30,6 +30,14 @@ let inflightNotifications: Promise<NotificationItem[]> | null = null;
 let inflightUnreadCount: Promise<number> | null = null;
 let lastNotificationsFetchAt = 0;
 let lastUnreadCountFetchAt = 0;
+let activeToken: string | null = null;
+
+const resetFetchGuards = () => {
+  inflightNotifications = null;
+  inflightUnreadCount = null;
+  lastNotificationsFetchAt = 0;
+  lastUnreadCountFetchAt = 0;
+};
 const FETCH_DEDUP_MS = 3_000; // 3 detik — jangan fetch ulang jika baru saja fetch
 
 const getSocketUrl = (): string => {
@@ -48,17 +56,57 @@ const getToken = (): string | null => {
 export const resolveNotificationRoute = (notification: NotificationItem) => {
   const data = notification.data || ({} as any);
   const action = data.action as string | undefined;
+  const type = String(notification.type || '');
+
+  const getString = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = data[key];
+      if (value !== undefined && value !== null && value !== '') return String(value);
+    }
+    return '';
+  };
+
+  const naskahId = getString('naskahId', 'idNaskah', 'id_naskah', 'naskah_id');
+  const jenis = getString('jenis', 'jenisNaskah', 'jenis_naskah');
+  const sirkulasiId = getString('sirkulasiId', 'idSirkulasi', 'id_sirkulasi', 'sirkulasi_id');
+  const disposisiId = getString('disposisiId', 'idDisposisi', 'id_disposisi', 'disposisi_id');
+  const verifierId = getString('verifierId', 'idVerifier', 'id_verifier', 'verifier_id');
+  const nomor = getString('nomor', 'nomorSurat', 'nomor_surat');
+  const requestId = getString('requestId', 'idRequest', 'id_request', 'id_usulan', 'idUsulan');
+
+  const detailQuery: Record<string, string> = {};
+  if (jenis) detailQuery.jenis = jenis;
+  if (sirkulasiId) detailQuery.sirkulasiId = sirkulasiId;
+  if (disposisiId) detailQuery.disposisiId = disposisiId;
+  if (verifierId) detailQuery.verifierId = verifierId;
+  if (nomor) detailQuery.nomor = nomor;
+  if (requestId) detailQuery.requestId = requestId;
+
+  const shouldOpenInboxDetail =
+    action === 'OPEN_INBOX_DETAIL' ||
+    action === 'OPEN_DISPOSISI_DETAIL' ||
+    ['NASKAH_MASUK', 'NASKAH_TEMBUSAN', 'DISPOSISI', 'DISPOSISI_SELESAI'].includes(type);
+
+  if (shouldOpenInboxDetail && naskahId) {
+    return {
+      path: `/korespondensi/kotak-masuk/${encodeURIComponent(naskahId)}`,
+      query: {
+        ...detailQuery,
+        jenis: detailQuery.jenis || (action === 'OPEN_DISPOSISI_DETAIL' || type.startsWith('DISPOSISI') ? 'DI' : 'ND'),
+      },
+    };
+  }
 
   const baseRoutes: Record<string, string> = {
     OPEN_INBOX_DETAIL: '/korespondensi/kotak-masuk',
-    OPEN_DISPOSISI_DETAIL: '/disposisi',
+    OPEN_DISPOSISI_DETAIL: '/korespondensi/kotak-masuk',
     OPEN_USULAN_PENOMORAN: '/usulan-penomoran',
     OPEN_PERSETUJUAN_PENOMORAN: '/persetujuan-penomoran',
     OPEN_VERIFIKASI_PENOMORAN: '/penomoran/verifikasi',
-    OPEN_DETAIL_PENOMORAN: '/penomoran',
-    OPEN_DIGSIG_VERIFIKASI: '/digsig/verifikasi',
+    OPEN_DETAIL_PENOMORAN: '/penomoran/nomor',
+    OPEN_DIGSIG_VERIFIKASI: '/digsig/verifikasi-dokumen',
     OPEN_DIGSIG_PENANDATANGANAN: '/digsig/penandatanganan',
-    OPEN_DIGSIG_DETAIL: '/digsig',
+    OPEN_DIGSIG_DETAIL: '/digsig/penandatanganan',
     OPEN_NASKAH_DINAS_VERIFIKATOR: '/naskah-dinas/verifikator',
     OPEN_NASKAH_DINAS_DETAIL: '/naskah-dinas',
     OPEN_DELEGASI: '/delegasi',
@@ -69,12 +117,8 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
   if (!base) return null;
 
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
-  const query: Record<string, string> = {};
-  if (data.naskahId) query.naskahId = String(data.naskahId);
-  if (data.sirkulasiId) query.sirkulasiId = String(data.sirkulasiId);
-  if (data.disposisiId) query.disposisiId = String(data.disposisiId);
-  if (data.verifierId) query.verifierId = String(data.verifierId);
-  if (data.nomor) query.nomor = String(data.nomor);
+  const query: Record<string, string> = { ...detailQuery };
+  if (naskahId) query.naskahId = naskahId;
 
   return { path: base, query };
 };
@@ -89,6 +133,7 @@ export const useNotifications = () => {
   const fetchNotifications = async (
     pageOrOptions: number | NotificationFetchOptions = 1,
     limit = 20,
+    force = false,
   ): Promise<NotificationItem[]> => {
     const options: NotificationFetchOptions =
       typeof pageOrOptions === 'number'
@@ -96,12 +141,12 @@ export const useNotifications = () => {
         : pageOrOptions;
 
     // Inflight guard — jika fetch yang sama sedang berjalan, tunggu itu saja
-    if (inflightNotifications) return inflightNotifications;
+    if (inflightNotifications && !force) return inflightNotifications;
 
     // Stale guard — jika fetch page 1 limit 20 baru saja dilakukan (<3s), skip
     const isDefaultFetch =
       (options.page ?? 1) === 1 && (options.limit ?? 20) === 20 && options.isRead == null && !options.type;
-    if (isDefaultFetch && Date.now() - lastNotificationsFetchAt < FETCH_DEDUP_MS) {
+    if (!force && isDefaultFetch && Date.now() - lastNotificationsFetchAt < FETCH_DEDUP_MS) {
       return notifications.value;
     }
 
@@ -144,18 +189,18 @@ export const useNotifications = () => {
     return inflightNotifications;
   };
 
-  const fetchUnreadCount = async (): Promise<number> => {
+  const fetchUnreadCount = async (force = false): Promise<number> => {
     // Inflight guard
-    if (inflightUnreadCount) return inflightUnreadCount;
+    if (inflightUnreadCount && !force) return inflightUnreadCount;
 
     // Stale guard — jika baru saja fetch (<3s), skip
-    if (Date.now() - lastUnreadCountFetchAt < FETCH_DEDUP_MS) {
+    if (!force && Date.now() - lastUnreadCountFetchAt < FETCH_DEDUP_MS) {
       return unreadCount.value;
     }
 
     inflightUnreadCount = (async () => {
       try {
-        const res = (await apiGet('/notifications/unread-count')) as UnreadCountResponse;
+        const res = (await apiGet('/notifications/unread-count', {}, { skipCache: true })) as UnreadCountResponse;
         const count = res?.data?.count ?? 0;
         unreadCount.value = count;
         lastUnreadCountFetchAt = Date.now();
@@ -183,6 +228,32 @@ export const useNotifications = () => {
       }
     } catch (err) {
       console.error('[useNotifications] markAsRead error:', err);
+    }
+  };
+
+  const markNaskahNotificationsAsRead = async (naskahId: string): Promise<void> => {
+    if (!naskahId) return;
+
+    try {
+      await apiPatch(`/notifications/naskah/${encodeURIComponent(naskahId)}/read`);
+      let changed = 0;
+      notifications.value.forEach((n) => {
+        const data = n.data || {};
+        const relatedNaskahId =
+          data.naskahId || data.idNaskah || data.id_naskah || data.naskah_id;
+        if (String(relatedNaskahId || '') === String(naskahId) && !n.isRead) {
+          n.isRead = true;
+          n.readAt = new Date().toISOString();
+          changed += 1;
+        }
+      });
+
+      if (changed > 0) {
+        unreadCount.value = Math.max(0, unreadCount.value - changed);
+      }
+      await fetchUnreadCount(true);
+    } catch (err) {
+      console.error('[useNotifications] markNaskahNotificationsAsRead error:', err);
     }
   };
 
@@ -300,7 +371,7 @@ export const useNotifications = () => {
         // Saat reconnect/sync, refresh dari REST — tapi hanya jika data sudah stale.
         // Inflight/stale guard di fetchUnreadCount/fetchNotifications akan skip
         // jika data baru saja dimuat oleh init().
-        await Promise.all([fetchUnreadCount(), fetchNotifications(1, 20)]);
+        await Promise.all([fetchUnreadCount(true), fetchNotifications(1, 20, true)]);
       });
 
       resolve();
@@ -323,12 +394,19 @@ export const useNotifications = () => {
   // Init (dipanggil saat user authenticated)
   // ============================================================
 
-  const init = async () => {
+  const init = async (force = false) => {
     if (!process.client) return;
     const token = getToken();
     if (!token) return;
 
-    await Promise.all([fetchUnreadCount(), fetchNotifications(1, 20)]);
+    if (token !== activeToken) {
+      activeToken = token;
+      resetFetchGuards();
+      disconnectSocket();
+      force = true;
+    }
+
+    await Promise.all([fetchUnreadCount(force), fetchNotifications(1, 20, force)]);
     await connectSocket();
   };
 
@@ -338,6 +416,8 @@ export const useNotifications = () => {
 
   const destroy = () => {
     disconnectSocket();
+    activeToken = null;
+    resetFetchGuards();
     notifications.value = [];
     unreadCount.value = 0;
     notificationMeta.value = {
@@ -365,6 +445,7 @@ export const useNotifications = () => {
     fetchNotifications,
     fetchUnreadCount,
     markAsRead,
+    markNaskahNotificationsAsRead,
     markAllAsRead,
     deleteNotification,
     connectSocket,

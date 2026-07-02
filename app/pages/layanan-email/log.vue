@@ -1,6 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="w-full">
+    <EmptyState
+      v-if="!canViewLog"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat log email. Hubungi administrator."
+    />
+    <div v-else class="w-full">
       <!-- HEADER -->
       <div class="mb-2">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
@@ -428,6 +434,9 @@ import { useApi } from '~/composables/useApi'
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const { apiGet } = useApi()
+const { hasPermission, isSuperadmin } = useAuth()
+
+const canViewLog = computed(() => hasPermission('naskah-dinas', 'read'))
 
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },

@@ -1,13 +1,11 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
-      <div>
-        <PageHeader title="Manajemen RBAC" :items="items" />
-        <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3">
-          Kelola Role, Permission, dan Assign Role ke User. Hanya Superadmin yang dapat mengakses halaman ini.
-        </p>
-      </div>
+    <div class="mb-5">
+      <PageHeader :title="t('rbac_title')" :items="items" />
+      <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3">
+        {{ t('rbac_subtitle') }}
+      </p>
     </div>
 
     <!-- Summary cards -->
@@ -21,7 +19,7 @@
             <UIcon name="i-lucide-shield" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Total Role</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('rbac_total_role') }}</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ roles.length }}</p>
           </div>
         </div>
@@ -36,8 +34,8 @@
             <UIcon name="i-lucide-key-round" class="w-6 h-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Total Permission</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ permissions.length }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('rbac_total_permission') }}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ permissionsCount }}</p>
           </div>
         </div>
       </NuxtLink>
@@ -51,8 +49,8 @@
             <UIcon name="i-lucide-users" class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Assign Role User</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">Kelola</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('rbac_assign_role_user') }}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('rbac_kelola') }}</p>
           </div>
         </div>
       </NuxtLink>
@@ -86,19 +84,38 @@ const { t } = useI18n();
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
-  { label: 'Administrasi' },
-  { label: 'Manajemen RBAC', to: '/rbac' },
+  { label: t('administrasi') || 'Administrasi' },
+  { label: t('rbac_title') || 'Manajemen RBAC', to: '/rbac' },
 ]);
 
-const { roles, permissions, fetchRoles, fetchPermissions } = useRbac();
+const { roles, resources, fetchRoles, fetchResources } = useRbac();
 
-const quickLinks = [
-  { to: '/rbac/roles', label: 'Daftar Role', desc: 'Lihat & edit role', icon: 'i-lucide-shield-check' },
-  { to: '/rbac/permissions', label: 'Daftar Permission', desc: 'Resource & aksi', icon: 'i-lucide-key-round' },
-  { to: '/rbac/users', label: 'Assign Role User', desc: 'Tetapkan role ke user', icon: 'i-lucide-user-cog' },
-];
+const permissionsCount = computed(() =>
+  resources.value.reduce((sum, r) => sum + (r.permissions?.length ?? 0), 0)
+);
+
+const quickLinks = computed(() => [
+  {
+    to: '/rbac/roles',
+    label: t('rbac_roles') || 'Daftar Role',
+    desc: t('rbac_roles_desc') || 'Lihat & edit role',
+    icon: 'i-lucide-shield-check',
+  },
+  {
+    to: '/rbac/permissions',
+    label: t('rbac_permissions') || 'Daftar Permission',
+    desc: t('rbac_permissions_desc') || 'Resource & aksi',
+    icon: 'i-lucide-key-round',
+  },
+  {
+    to: '/rbac/users',
+    label: t('rbac_users') || 'Assign Role User',
+    desc: t('rbac_users_desc') || 'Tetapkan role ke user',
+    icon: 'i-lucide-user-cog',
+  },
+]);
 
 onMounted(async () => {
-  await Promise.all([fetchRoles(), fetchPermissions()]);
+  await Promise.all([fetchRoles(), fetchResources()]);
 });
 </script>

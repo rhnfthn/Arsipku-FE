@@ -14,6 +14,10 @@ import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/dele
 
 const toast = useToast()
 
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewDelegasi = computed(() => hasPermission('delegasi', 'read'));
+
 const {
   getDelegasiList,
   getPersonilList,
@@ -680,12 +684,20 @@ const exportData = async () => {
 
 <template>
   <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+    <EmptyState
+      v-if="!canViewDelegasi"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat delegasi. Hubungi administrator."
+    />
+    <div v-else class="space-y-6">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">Delegasi</Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
+        v-if="isSuperadmin || hasPermission('delegasi', 'create')"
         @click="openAdd"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
@@ -1061,6 +1073,7 @@ const exportData = async () => {
                 <td class="px-4 py-2">
                   <div class="flex justify-center gap-3">
                     <button
+                      v-if="isSuperadmin || hasPermission('delegasi', 'update')"
                       @click="openEdit(item)"
                       :disabled="item.status === 'Aktif' || item.status === 'Kedaluwarsa'"
                       :class="[
@@ -1078,6 +1091,7 @@ const exportData = async () => {
                       <Pencil class="w-4 h-4" />
                     </button>
                     <button
+                      v-if="isSuperadmin || hasPermission('delegasi', 'delete')"
                       @click="openDelete(item)"
                       class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
                       title="Hapus"
@@ -1176,6 +1190,7 @@ const exportData = async () => {
           </button>
         </div>
       </div>
+    </div>
     </div>
 
     <!-- MODAL TAMBAH -->

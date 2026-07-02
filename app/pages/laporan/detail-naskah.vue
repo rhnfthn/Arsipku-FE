@@ -1,5 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+    <EmptyState
+      v-if="!canViewLaporan"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat laporan. Hubungi administrator."
+    />
+    <div v-else>
     <div class="flex items-center justify-between">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
@@ -9,6 +16,7 @@
       </div>
 
       <button
+        v-if="isSuperadmin || hasPermission('laporan', 'export')"
         @click="exportExcel"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
       >
@@ -531,6 +539,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -553,7 +562,9 @@ import { formatDateNumeric as formatTanggal } from '~/utils/mail-helpers';
 const toast = useToast();
 const { t } = useI18n();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
+
+const canViewLaporan = computed(() => hasPermission('laporan', 'read'));
 
 //SORT
 const sortKey = ref('');

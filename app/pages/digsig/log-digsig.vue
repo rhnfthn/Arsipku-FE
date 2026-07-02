@@ -1,7 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <!-- MAIN CONTENT -->
-    <div class="w-full">
+    <EmptyState
+      v-if="!canViewDigsig"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat log digsig. Hubungi administrator."
+    />
+    <div v-else class="w-full">
       <!-- HEADER -->
       <div class="mb-2">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
@@ -517,6 +522,10 @@ import { formatDate2Digit as formatDate, formatTimeShort as formatTime } from '~
 definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
+
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
 
 // ─── Refs ──────────────────────────────────────
 const rowsRef = ref<HTMLElement | null>(null);
