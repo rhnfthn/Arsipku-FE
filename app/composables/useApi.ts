@@ -1,4 +1,4 @@
-import axios from "axios";
+  import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig } from "axios";
 
 const isDev = process.dev;

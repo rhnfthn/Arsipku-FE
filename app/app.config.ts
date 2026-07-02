@@ -9,6 +9,11 @@ export default defineAppConfig({
       neutral: "neutral",
     },
 
+    // Default page title (overridden per-page via useHead)
+    defaults: {
+      title: 'ArsipKu',
+    },
+
     typography: {
       base: "font-montserrat ",
 
