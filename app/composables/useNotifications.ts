@@ -56,17 +56,57 @@ const getToken = (): string | null => {
 export const resolveNotificationRoute = (notification: NotificationItem) => {
   const data = notification.data || ({} as any);
   const action = data.action as string | undefined;
+  const type = String(notification.type || '');
+
+  const getString = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = data[key];
+      if (value !== undefined && value !== null && value !== '') return String(value);
+    }
+    return '';
+  };
+
+  const naskahId = getString('naskahId', 'idNaskah', 'id_naskah', 'naskah_id');
+  const jenis = getString('jenis', 'jenisNaskah', 'jenis_naskah');
+  const sirkulasiId = getString('sirkulasiId', 'idSirkulasi', 'id_sirkulasi', 'sirkulasi_id');
+  const disposisiId = getString('disposisiId', 'idDisposisi', 'id_disposisi', 'disposisi_id');
+  const verifierId = getString('verifierId', 'idVerifier', 'id_verifier', 'verifier_id');
+  const nomor = getString('nomor', 'nomorSurat', 'nomor_surat');
+  const requestId = getString('requestId', 'idRequest', 'id_request', 'id_usulan', 'idUsulan');
+
+  const detailQuery: Record<string, string> = {};
+  if (jenis) detailQuery.jenis = jenis;
+  if (sirkulasiId) detailQuery.sirkulasiId = sirkulasiId;
+  if (disposisiId) detailQuery.disposisiId = disposisiId;
+  if (verifierId) detailQuery.verifierId = verifierId;
+  if (nomor) detailQuery.nomor = nomor;
+  if (requestId) detailQuery.requestId = requestId;
+
+  const shouldOpenInboxDetail =
+    action === 'OPEN_INBOX_DETAIL' ||
+    action === 'OPEN_DISPOSISI_DETAIL' ||
+    ['NASKAH_MASUK', 'NASKAH_TEMBUSAN', 'DISPOSISI', 'DISPOSISI_SELESAI'].includes(type);
+
+  if (shouldOpenInboxDetail && naskahId) {
+    return {
+      path: `/korespondensi/kotak-masuk/${encodeURIComponent(naskahId)}`,
+      query: {
+        ...detailQuery,
+        jenis: detailQuery.jenis || (action === 'OPEN_DISPOSISI_DETAIL' || type.startsWith('DISPOSISI') ? 'DI' : 'ND'),
+      },
+    };
+  }
 
   const baseRoutes: Record<string, string> = {
     OPEN_INBOX_DETAIL: '/korespondensi/kotak-masuk',
-    OPEN_DISPOSISI_DETAIL: '/disposisi',
+    OPEN_DISPOSISI_DETAIL: '/korespondensi/kotak-masuk',
     OPEN_USULAN_PENOMORAN: '/usulan-penomoran',
     OPEN_PERSETUJUAN_PENOMORAN: '/persetujuan-penomoran',
     OPEN_VERIFIKASI_PENOMORAN: '/penomoran/verifikasi',
-    OPEN_DETAIL_PENOMORAN: '/penomoran',
-    OPEN_DIGSIG_VERIFIKASI: '/digsig/verifikasi',
+    OPEN_DETAIL_PENOMORAN: '/penomoran/nomor',
+    OPEN_DIGSIG_VERIFIKASI: '/digsig/verifikasi-dokumen',
     OPEN_DIGSIG_PENANDATANGANAN: '/digsig/penandatanganan',
-    OPEN_DIGSIG_DETAIL: '/digsig',
+    OPEN_DIGSIG_DETAIL: '/digsig/penandatanganan',
     OPEN_NASKAH_DINAS_VERIFIKATOR: '/naskah-dinas/verifikator',
     OPEN_NASKAH_DINAS_DETAIL: '/naskah-dinas',
     OPEN_DELEGASI: '/delegasi',
@@ -77,12 +117,8 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
   if (!base) return null;
 
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
-  const query: Record<string, string> = {};
-  if (data.naskahId) query.naskahId = String(data.naskahId);
-  if (data.sirkulasiId) query.sirkulasiId = String(data.sirkulasiId);
-  if (data.disposisiId) query.disposisiId = String(data.disposisiId);
-  if (data.verifierId) query.verifierId = String(data.verifierId);
-  if (data.nomor) query.nomor = String(data.nomor);
+  const query: Record<string, string> = { ...detailQuery };
+  if (naskahId) query.naskahId = naskahId;
 
   return { path: base, query };
 };
@@ -192,6 +228,32 @@ export const useNotifications = () => {
       }
     } catch (err) {
       console.error('[useNotifications] markAsRead error:', err);
+    }
+  };
+
+  const markNaskahNotificationsAsRead = async (naskahId: string): Promise<void> => {
+    if (!naskahId) return;
+
+    try {
+      await apiPatch(`/notifications/naskah/${encodeURIComponent(naskahId)}/read`);
+      let changed = 0;
+      notifications.value.forEach((n) => {
+        const data = n.data || {};
+        const relatedNaskahId =
+          data.naskahId || data.idNaskah || data.id_naskah || data.naskah_id;
+        if (String(relatedNaskahId || '') === String(naskahId) && !n.isRead) {
+          n.isRead = true;
+          n.readAt = new Date().toISOString();
+          changed += 1;
+        }
+      });
+
+      if (changed > 0) {
+        unreadCount.value = Math.max(0, unreadCount.value - changed);
+      }
+      await fetchUnreadCount(true);
+    } catch (err) {
+      console.error('[useNotifications] markNaskahNotificationsAsRead error:', err);
     }
   };
 
@@ -383,6 +445,7 @@ export const useNotifications = () => {
     fetchNotifications,
     fetchUnreadCount,
     markAsRead,
+    markNaskahNotificationsAsRead,
     markAllAsRead,
     deleteNotification,
     connectSocket,
