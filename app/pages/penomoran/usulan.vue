@@ -9,6 +9,7 @@
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
+        v-if="isSuperadmin || hasPermission('penomoran', 'request')"
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
@@ -750,7 +751,7 @@ import * as XLSX from 'xlsx'
 definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
-const { user, getProfile } = useAuth()
+const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
 const { getListUsulan, getDetailUsulan, getKlasifikasi } = usePenomoran()
 const toast = useToast()
 

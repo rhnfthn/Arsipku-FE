@@ -1,5 +1,12 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
+    <EmptyState
+      v-if="!canViewFaq"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin mengelola FAQ. Hubungi administrator."
+    />
+    <div v-else>
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <div>
@@ -372,7 +379,6 @@
         </div>
       </div>
     </div>
-  </div>
 
   <!-- Modal Tambah / Edit -->
   <Teleport to="body">
@@ -626,6 +632,8 @@
     cancel-text="Batal"
     @confirm="bulkDeleteNow"
   />
+  </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -643,6 +651,9 @@ const TinymceEditorAsync = defineAsyncComponent(() => import('~/components/Tinym
 definePageMeta({ middleware: 'auth' });
 
 const toast = useToast();
+const { hasPermission, isSuperadmin } = useAuth();
+
+const canViewFaq = computed(() => hasPermission('helpdesk', 'manage'));
 const {
   faqs,
   loading,

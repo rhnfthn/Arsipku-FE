@@ -6,6 +6,7 @@
         <PageHeader title="Berkas" :items="items" />
       </div>
       <button
+        v-if="isSuperadmin || hasPermission('arsip-aktif', 'create')"
         @click="
           showModal = true;
           resetForm();
@@ -76,11 +77,11 @@
             </td>
             <td class="px-4 py-3" v-html="highlight(item.tanggal, filters.search)"></td>
             <td class="px-4 py-3 text-center flex justify-center gap-5">
-              <button class="text-yellow-500" @click="editData(item)">
+              <button v-if="isSuperadmin || hasPermission('arsip-aktif', 'update')" class="text-yellow-500" @click="editData(item)">
                 <Pencil class="w-4 h-4" />
               </button>
 
-              <button class="text-red-500" @click="deleteData(item.id)">
+              <button v-if="isSuperadmin || hasPermission('arsip-aktif', 'delete')" class="text-red-500" @click="deleteData(item.id)">
                 <Trash2 class="w-4 h-4" />
               </button>
             </td>
@@ -207,6 +208,8 @@ import ConfirmPopup from '~/components/ConfirmPopup.vue';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useBerkas } from '~/composables/useBerkas';
 const { getBerkasList, createBerkas, deleteBerkas, updateBerkas, getBerkasById } = useBerkas();
+
+const { hasPermission, isSuperadmin } = useAuth();
 
 const { getKlasifikasiList } = useKlasifikasi();
 

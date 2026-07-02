@@ -925,6 +925,7 @@
       <template #footer>
         <div class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
           <button
+            v-if="isSuperadmin || hasPermission('penomoran', 'verify')"
             @click="confirmApproval"
             :disabled="isProcessing || !hasAnyChecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
@@ -953,6 +954,7 @@
             {{ isProcessing ? $t('ver_btn_memproses') : $t('ver_btn_setujui') }}
           </button>
           <button
+            v-if="isSuperadmin || hasPermission('penomoran', 'verify')"
             @click="confirmRejection"
             :disabled="isProcessing || !allUnchecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
@@ -1041,6 +1043,8 @@ import { Modal } from '#components'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
 import { usePenomoran } from '~/composables/usePenomoran'
 import * as XLSX from 'xlsx'
+
+const { hasPermission, isSuperadmin } = useAuth();
 
 definePageMeta({ middleware: 'auth' })
 
