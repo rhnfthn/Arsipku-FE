@@ -74,7 +74,7 @@
           <RotateCcw class="w-4 h-4" />
         </button>
 
-        <!-- Filter Jenis -->
+        <!-- Filter Jenis Naskah -->
         <div class="relative">
           <button
             type="button"
