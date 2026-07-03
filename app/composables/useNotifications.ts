@@ -374,6 +374,24 @@ export const useNotifications = () => {
         await Promise.all([fetchUnreadCount(true), fetchNotifications(1, 20, true)]);
       });
 
+      socket.on('rbac:role-changed', async (payload: { persnum: number; action: string; roleName?: string }) => {
+        const authUser = useState<any>('user');
+        if (authUser.value?.persnum === payload.persnum) {
+          const { getProfile } = useAuth();
+          await getProfile(true).catch(() => {});
+        }
+      });
+
+      socket.on('rbac:permission-changed', async (payload: { roleName: string; roleId: string }) => {
+        const authUser = useState<any>('user');
+        const currentRole = authUser.value?.activeRole?.name || authUser.value?.role;
+        if (currentRole && currentRole.toUpperCase() === payload.roleName.toUpperCase()) {
+          const { refreshPermissions, getProfile } = useAuth();
+          await refreshPermissions().catch(() => {});
+          await getProfile(true).catch(() => {});
+        }
+      });
+
       resolve();
     });
 

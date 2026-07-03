@@ -432,7 +432,7 @@
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800"
         >
           <UButton
-            v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')"
+            v-if="hasPermission('naskah-dinas', 'create')"
             label="Simpan Draft"
             color="neutral"
             variant="outline"
@@ -443,7 +443,7 @@
             @click="handleSaveDraft"
           />
           <UButton
-            v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')"
+            v-if="hasPermission('naskah-dinas', 'create')"
             label="Kirim Dokumen"
             color="primary"
             size="lg"
@@ -762,7 +762,7 @@ import type { DraftPayload } from "~/types/drafts";
 const { saveDraft, isLoadingDraft } = useDraft();
 const { getBerkasList } = useBerkas();
 const { getRecipients } = useRecipients();
-const { user, getProfile, hasPermission, isSuperadmin } = useAuth(); // <--- INIT USEAUTH
+const { user, getProfile, hasPermission } = useAuth(); // <--- INIT USEAUTH
 
 /* -------------------------------------------------------------------------- */
 /* STATE & REFS                                                               */

@@ -523,7 +523,7 @@ const faqMenuUser = computed(() => [
     label: 'FAQ',
     to: '/faq/menu',
     icon: 'i-lucide-circle-help',
-    permission: { resource: 'helpdesk', action: 'read' }
+    permission: { resource: 'faq', action: 'read' }
   },
   {
     label: 'Pedoman',
@@ -538,13 +538,13 @@ const faqMenuAdmin = computed(() => [
     label: 'FAQ',
     to: '/faq/menu',
     icon: 'i-lucide-circle-help',
-    permission: { resource: 'helpdesk', action: 'read' }
+    permission: { resource: 'faq', action: 'read' }
   },
   {
     label: 'Manajemen FAQ',
     to: '/faq/manajemen',
     icon: 'i-lucide-file-question',
-    permission: { resource: 'helpdesk', action: 'manage' }
+    permission: { resource: 'faq', action: 'manage' }
   },
   {
     label: 'Pedoman',

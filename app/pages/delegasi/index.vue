@@ -14,7 +14,7 @@ import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/dele
 
 const toast = useToast()
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
 
 const canViewDelegasi = computed(() => hasPermission('delegasi', 'read'));
 
@@ -697,7 +697,7 @@ const exportData = async () => {
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
-        v-if="isSuperadmin || hasPermission('delegasi', 'create')"
+        v-if="hasPermission('delegasi', 'create')"
         @click="openAdd"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
@@ -1073,7 +1073,7 @@ const exportData = async () => {
                 <td class="px-4 py-2">
                   <div class="flex justify-center gap-3">
                     <button
-                      v-if="isSuperadmin || hasPermission('delegasi', 'update')"
+                      v-if="hasPermission('delegasi', 'update')"
                       @click="openEdit(item)"
                       :disabled="item.status === 'Aktif' || item.status === 'Kedaluwarsa'"
                       :class="[
@@ -1091,7 +1091,7 @@ const exportData = async () => {
                       <Pencil class="w-4 h-4" />
                     </button>
                     <button
-                      v-if="isSuperadmin || hasPermission('delegasi', 'delete')"
+                      v-if="hasPermission('delegasi', 'delete')"
                       @click="openDelete(item)"
                       class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
                       title="Hapus"
