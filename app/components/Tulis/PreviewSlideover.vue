@@ -18,7 +18,7 @@
     <template #footer>
       <div class="flex gap-4 w-full">
         <UButton
-          v-if="showSaveDraft && (isSuperadmin || hasPermission('naskah-dinas', 'create'))"
+          v-if="showSaveDraft && (hasPermission('naskah-dinas', 'create'))"
           label="Draft"
           color="neutral"
           variant="outline"
@@ -28,7 +28,7 @@
           @click="emit('save-draft')"
         />
         <UButton
-          v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')"
+          v-if="hasPermission('naskah-dinas', 'create')"
           label="Kirim"
           color="primary"
           size="lg"
@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
 
 // --- PROPS ---
 const props = withDefaults(defineProps<{

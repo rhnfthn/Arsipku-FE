@@ -6,7 +6,7 @@
         <PageHeader title="Berkas" :items="items" />
       </div>
       <button
-        v-if="isSuperadmin || hasPermission('arsip-aktif', 'create')"
+        v-if="hasPermission('arsip-aktif', 'create')"
         @click="
           showModal = true;
           resetForm();
@@ -77,11 +77,11 @@
             </td>
             <td class="px-4 py-3" v-html="highlight(item.tanggal, filters.search)"></td>
             <td class="px-4 py-3 text-center flex justify-center gap-5">
-              <button v-if="isSuperadmin || hasPermission('arsip-aktif', 'update')" class="text-yellow-500" @click="editData(item)">
+              <button v-if="hasPermission('arsip-aktif', 'update')" class="text-yellow-500" @click="editData(item)">
                 <Pencil class="w-4 h-4" />
               </button>
 
-              <button v-if="isSuperadmin || hasPermission('arsip-aktif', 'delete')" class="text-red-500" @click="deleteData(item.id)">
+              <button v-if="hasPermission('arsip-aktif', 'delete')" class="text-red-500" @click="deleteData(item.id)">
                 <Trash2 class="w-4 h-4" />
               </button>
             </td>
@@ -100,7 +100,7 @@
         @cancel="showDeletePopup = false"
       />
 
-      <Modal :model-value="showModal" @update:modelValue="showModal = $event" @save="saveData">
+      <Modal :model-value="showModal" @update:modelValue="showModal = $event" @save="saveData" size="sm">
         <template #title>
           <Heading variant="heading9b" class="font-semibold text-sm mt-5 ml-5">
             {{ isEdit ? 'Edit Berkas' : 'Tambah Berkas' }}
@@ -188,7 +188,7 @@
             <textarea
               v-model="form.isi"
               required
-              rows="4"
+              rows="2"
               class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
               placeholder="Tulis isi ringkas (opsional)"
             >
@@ -209,7 +209,7 @@ import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useBerkas } from '~/composables/useBerkas';
 const { getBerkasList, createBerkas, deleteBerkas, updateBerkas, getBerkasById } = useBerkas();
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
 
 const { getKlasifikasiList } = useKlasifikasi();
 

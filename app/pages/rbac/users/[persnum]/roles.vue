@@ -9,7 +9,7 @@
           class="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors"
         >
           <UIcon name="i-lucide-arrow-left" class="w-4 h-4" />
-          {{ t('rbac_back') || 'Kembali' }}
+          {{  }}
         </NuxtLink>
       </div>
     </div>
@@ -39,20 +39,20 @@
       <!-- Add role form -->
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-5 mb-6">
         <h3 class="text-sm font-bold text-gray-800 dark:text-white mb-4">
-          {{ t('rbac_add_role_to_user') || 'Tambah Role ke User' }}
+          {{ t('rbac_add_role_to_user') }}
         </h3>
         <div class="flex flex-wrap items-center gap-3">
           <select
             v-model="selectedRoleId"
             class="border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
           >
-            <option value="" disabled>{{ t('rbac_roles_name_placeholder') || 'Pilih Role' }}</option>
+            <option value="" disabled>{{ t('rbac_roles_name_placeholder') }}</option>
             <option v-for="r in availableRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
           </select>
           <input
             v-model="unitKerja"
             type="text"
-            :placeholder="t('rbac_unit_kerja_placeholder') || 'Unit Kerja (opsional)'"
+            :placeholder="t('rbac_unit_kerja_placeholder')"
             class="border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 w-48"
           />
           <button
@@ -60,7 +60,7 @@
             :disabled="!selectedRoleId || assigning"
             class="flex items-center gap-2 px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-50 transition-colors"
           >
-            {{ assigning ? t('rbac_saving') || 'Menyimpan...' : (t('rbac_add') || 'Tambah') }}
+            {{ assigning ? t('rbac_saving') : t('rbac_add') }}
           </button>
         </div>
       </div>
@@ -69,24 +69,24 @@
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-sm font-bold text-gray-800 dark:text-white">
-            {{ t('rbac_current_roles') || 'Role Saat Ini' }}
+            {{ t('rbac_current_roles') }}
           </h3>
           <span class="text-xs text-gray-500 dark:text-gray-400">
-            {{ userRoles.length }} {{ t('rbac_role_count_suffix') || 'role' }}
+            {{ userRoles.length }} {{ t('rbac_role_count_suffix') }}
           </span>
         </div>
 
         <div v-if="userRoles.length === 0" class="p-10 text-center text-sm text-gray-400">
-          {{ t('rbac_no_role') || 'Belum punya role (default USER)' }}
+          {{ t('rbac_no_role') }}
         </div>
 
         <table v-else class="min-w-full border-collapse text-sm">
           <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
             <tr>
-              <th class="px-7 py-3 font-semibold">{{ t('rbac_roles') || 'Role' }}</th>
-              <th class="px-4 py-3 font-semibold">{{ t('rbac_unit_kerja') || 'Unit Kerja' }}</th>
-              <th class="px-4 py-3 font-semibold text-center">{{ t('rbac_status') || 'Status' }}</th>
-              <th class="px-4 py-3 font-semibold text-center">{{ t('rbac_col_aksi') || 'Aksi' }}</th>
+              <th class="px-7 py-3 font-semibold">{{ t('rbac_roles') }}</th>
+              <th class="px-4 py-3 font-semibold">{{ t('rbac_unit_kerja') }}</th>
+              <th class="px-4 py-3 font-semibold text-center">{{ t('rbac_status') }}</th>
+              <th class="px-4 py-3 font-semibold text-center">{{ t('rbac_col_aksi') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +109,7 @@
                   v-if="canRemove(ur)"
                   @click="removeRole(ur)"
                   class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
-                  :title="t('rbac_delete') || 'Hapus'"
+                  :title="t('rbac_delete')"
                 >
                   <UIcon name="i-lucide-trash-2" class="w-4 h-4 text-red-600 group-hover:text-red-700" />
                 </button>
@@ -121,7 +121,7 @@
     </template>
 
     <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
-      {{ t('rbac_user_not_found') || 'User tidak ditemukan.' }}
+      {{ t('rbac_user_not_found') }}
     </div>
   </div>
 </template>
@@ -130,7 +130,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRbac, type RbacUserRoleRow } from '~/composables/useRbac';
 import { useToast } from '#imports';
-import { Alert } from '~/composables/useAlert';
+import { Alert, useAlertState } from '~/composables/useAlert';
 
 definePageMeta({ middleware: ['auth', 'rbac-admin'] });
 
@@ -149,19 +149,23 @@ const assigning = ref(false);
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
-  { label: t('rbac_title') || 'Manajemen RBAC', to: '/rbac' },
-  { label: t('rbac_users') || 'User Role', to: '/rbac/users' },
-  { label: person.value?.name || 'Detail', to: `/rbac/users/${route.params.persnum}/roles` },
+  { label: t('rbac_title'), to: '/rbac/roles' },
+  { label: t('rbac_users'), to: '/rbac/users' },
+  { label: person.value?.name || t('rbac_detail_label'), to: `/rbac/users/${route.params.persnum}/roles` },
 ]);
 
 const detailTitle = computed(() =>
-  `${t('rbac_role_detail') || 'Role'}: ${person.value?.name ?? ''} (${person.value?.persnum ?? ''})`
+  `${t('rbac_role_detail')}: ${person.value?.name ?? ''} (${person.value?.persnum ?? ''})`
 );
 
 const availableRoles = computed(() => roles.value);
 
 const canRemove = (ur: RbacUserRoleRow) => {
-  if (ur.roleName === 'SUPERADMIN' && authUser.value?.persnum === person.value?.persnum) {
+  // Badge USER adalah role default — tidak bisa dihapus, hanya SUPERADMIN & ADMIN yang bisa dihapus.
+  const name = (ur.roleName || '').toUpperCase();
+  if (name === 'USER') return false;
+  // Superadmin tidak boleh menghapus role SUPERADMIN milik dirinya sendiri.
+  if (name === 'SUPERADMIN' && authUser.value?.persnum === person.value?.persnum) {
     return false;
   }
   return true;
@@ -181,11 +185,8 @@ const assignRole = async () => {
   try {
     await assignRoleToUser(person.value.persnum, selectedRoleId.value, unitKerja.value || null);
     toast.add({
-      title: t('rbac_success') || 'Sukses',
-      description:
-        (t('rbac_role_assigned_notice') ||
-          'Role berhasil di-assign. Perubahan berlaku segera (maks ~30 detik) untuk user ini.') +
-        ` (${person.value.name})`,
+      title: t('rbac_success'),
+      description: `${t('rbac_role_assigned_notice')} (${person.value.name})`,
       color: 'success',
       icon: 'i-lucide-check-circle',
     });
@@ -194,8 +195,8 @@ const assignRole = async () => {
     unitKerja.value = '';
   } catch (e: any) {
     toast.add({
-      title: t('rbac_fail') || 'Gagal',
-      description: e?.message || (t('rbac_role_assign_fail') || 'Gagal assign role'),
+      title: t('rbac_fail'),
+      description: e?.message || t('rbac_role_assign_fail'),
       color: 'error',
       icon: 'i-lucide-x-circle',
     });
@@ -209,36 +210,36 @@ const removeRole = async (ur: RbacUserRoleRow) => {
   // B9: confirm dialog khusus untuk SUPERADMIN
   const isSuperadmin = ur.roleName === 'SUPERADMIN';
   const title = isSuperadmin
-    ? (t('rbac_remove_superadmin_title') || 'Hapus Role SUPERADMIN?')
-    : (t('rbac_remove_role_title') || 'Hapus Role?');
+    ? t('rbac_remove_superadmin_title')
+    : t('rbac_remove_role_title');
   const message = isSuperadmin
-    ? (t('rbac_remove_superadmin_desc') ||
-      `Anda akan menghapus role SUPERADMIN dari "${person.value.name}". User ini akan kehilangan semua akses superadmin. Yakin?`)
-    : (t('rbac_remove_role_desc') || `Hapus role "${ur.roleName}" dari user ini?`);
+    ? t('rbac_remove_superadmin_desc')
+    : t('rbac_remove_role_desc');
   const ok = await Alert.confirm(
     title,
     message,
-    t('rbac_delete') || 'Hapus',
-    t('rbac_cancel') || 'Batal',
+    t('rbac_delete'),
+    t('rbac_cancel'),
     true
   );
   if (!ok) return;
+  const alertState = useAlertState();
+  alertState.isLoading = true;
   try {
     await removeRoleFromUser(person.value.persnum, ur.roleId);
+    Alert.close();
     toast.add({
-      title: t('rbac_success') || 'Sukses',
-      description:
-        (t('rbac_role_removed_notice') ||
-          'Role dihapus. Perubahan berlaku segera (maks ~30 detik) untuk user ini.') +
-        ` (${person.value.name})`,
+      title: t('rbac_success'),
+      description: `${t('rbac_role_removed_notice')} (${person.value.name})`,
       color: 'success',
       icon: 'i-lucide-check-circle',
     });
     await loadUserRoles(person.value.persnum);
   } catch (e: any) {
+    Alert.close();
     toast.add({
-      title: t('rbac_fail') || 'Gagal',
-      description: e?.message || (t('rbac_role_remove_fail') || 'Gagal hapus role'),
+      title: t('rbac_fail'),
+      description: e?.message || t('rbac_role_remove_fail'),
       color: 'error',
       icon: 'i-lucide-x-circle',
     });
