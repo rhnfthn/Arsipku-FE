@@ -9,14 +9,14 @@
           class="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors"
         >
           <UIcon name="i-lucide-arrow-left" class="w-4 h-4" />
-          {{ t('rbac_back') || 'Kembali' }}
+          {{  }}
         </NuxtLink>
         <NuxtLink
           :to="`/rbac/roles/${route.params.id}/permissions`"
           class="flex items-center gap-2 px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-lg transition-colors"
         >
           <UIcon name="i-lucide-pencil" class="w-4 h-4" />
-          {{ t('rbac_edit_permission') || 'Edit Permission' }}
+          {{ t('rbac_edit_permission') }}
         </NuxtLink>
       </div>
     </div>
@@ -35,11 +35,11 @@
         <div class="flex flex-wrap items-center gap-4">
           <RoleBadge :role="role.name" />
           <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('rbac_roles_col_description') || 'Deskripsi' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{  }}</p>
             <p class="text-sm text-gray-800 dark:text-white">{{ role.description || '-' }}</p>
           </div>
           <div class="ml-auto text-right">
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('rbac_roles_col_permission_count') || 'Jumlah Permission' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{  }}</p>
             <p class="text-2xl font-bold text-primary">{{ role.permissions?.length ?? 0 }}</p>
           </div>
         </div>
@@ -49,28 +49,28 @@
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-sm font-bold text-gray-800 dark:text-white">
-            {{ t('rbac_permission_matrix') || 'Permission Matrix' }}
+            {{  }}
           </h3>
           <span class="text-xs text-gray-500 dark:text-gray-400">
-            {{ role.permissions?.length ?? 0 }} / {{ totalPermissions }} {{ t('rbac_assigned') || 'assigned' }}
+            {{ role.permissions?.length ?? 0 }} / {{ totalPermissions }} {{  }}
           </span>
         </div>
 
         <div v-if="resources.length === 0" class="p-10 text-center text-sm text-gray-400">
-          {{ t('rbac_resources_empty') || 'Belum ada resource.' }}
+          {{  }}
         </div>
 
-        <div v-else class="overflow-x-auto">
+        <div v-else class="overflow-x-auto overflow-y-auto max-h-[60vh]">
           <table class="min-w-full border-collapse text-sm">
-            <thead class="bg-primary-400 dark:bg-primary-700 text-white">
+            <thead class="bg-primary-400 dark:bg-primary-700 text-white sticky top-0 z-30">
               <tr>
-                <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-primary-400 dark:bg-primary-700">
-                  {{ t('rbac_resource') || 'Resource' }}
+                <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-primary-400 dark:bg-primary-700 z-30 min-w-[180px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.4)]">
+                  {{  }}
                 </th>
                 <th
                   v-for="action in allActions"
                   :key="action"
-                  class="px-4 py-3 text-center font-semibold min-w-24"
+                  class="px-4 py-3 text-center font-semibold min-w-[100px] whitespace-nowrap"
                 >
                   {{ action }}
                 </th>
@@ -82,14 +82,14 @@
                 :key="resource.id"
                 class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700"
               >
-                <td class="px-4 py-3 font-medium text-gray-800 dark:text-white sticky left-0 bg-white dark:bg-gray-800">
+                <td class="px-4 py-3 font-medium text-gray-800 dark:text-white sticky left-0 bg-white dark:bg-gray-800 z-20 min-w-[180px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.15)]">
                   <UIcon name="i-lucide-box" class="w-4 h-4 text-primary inline mr-2" />
                   {{ resource.name }}
                 </td>
                 <td
                   v-for="action in allActions"
                   :key="action"
-                  class="px-4 py-3 text-center"
+                  class="px-4 py-3 text-center min-w-[100px]"
                 >
                   <span v-if="hasPermission(resource, action)" class="inline-flex">
                     <UIcon name="i-lucide-check" class="w-5 h-5 text-emerald-500" />
@@ -104,9 +104,9 @@
     </template>
 
     <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
-      {{ t('rbac_roles_not_found') || 'Role tidak ditemukan.' }}
+      {{  }}
       <NuxtLink to="/rbac/roles" class="block mt-4 text-primary hover:underline">
-        {{ t('rbac_back_to_roles') || 'Kembali ke daftar role' }}
+        {{  }}
       </NuxtLink>
     </div>
   </div>
@@ -127,12 +127,12 @@ const role = ref<RbacRole | null>(null);
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
-  { label: t('rbac_title') || 'Manajemen RBAC', to: '/rbac' },
-  { label: t('rbac_roles') || 'Role', to: '/rbac/roles' },
-  { label: role.value?.name || 'Detail', to: `/rbac/roles/${route.params.id}` },
+  { label: t('rbac_title'), to: '/rbac/roles' },
+  { label: t('rbac_roles'), to: '/rbac/roles' },
+  { label: role.value?.name || t('rbac_detail_label'), to: `/rbac/roles/${route.params.id}` },
 ]);
 
-const detailTitle = computed(() => `${t('rbac_detail_role') || 'Detail Role'}: ${role.value?.name ?? ''}`);
+const detailTitle = computed(() => `${t('rbac_detail_role')}: ${role.value?.name ?? ''}`);
 
 const allActions = computed(() => {
   const actions = new Set<string>();

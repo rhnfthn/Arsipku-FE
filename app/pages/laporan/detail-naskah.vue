@@ -16,7 +16,6 @@
       </div>
 
       <button
-        v-if="isSuperadmin || hasPermission('laporan', 'export')"
         @click="exportExcel"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
       >
@@ -562,7 +561,7 @@ import { formatDateNumeric as formatTanggal } from '~/utils/mail-helpers';
 const toast = useToast();
 const { t } = useI18n();
 const { getRekapNaskahDetail, getAreaList, getJenisList } = useLaporan();
-const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
 
 const canViewLaporan = computed(() => hasPermission('laporan', 'read'));
 
@@ -783,6 +782,15 @@ const formatStatusLabel = (status: string) => {
 
 //EXCEL
 const exportExcel = () => {
+  if (!hasPermission('laporan', 'export')) {
+    toast.add({
+      title: t('akses_ditolak') || 'Akses Ditolak',
+      description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
   if (!filteredData.value.length) {
     toast.add({
       title: t('export_dibatalkan'),

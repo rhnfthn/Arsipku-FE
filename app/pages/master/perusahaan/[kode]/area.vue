@@ -831,7 +831,7 @@ const { t, locale } = useI18n();
 const route = useRoute();
 const companyId = computed(() => route.params.kode as string);
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
 
 const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 

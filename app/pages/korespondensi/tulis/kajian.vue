@@ -228,10 +228,10 @@
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
 
-          <UButton v-if="isSuperadmin || hasPermission('naskah-dinas', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
+          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="handleConfirmKirim" />
         </div>
       </template>
@@ -281,7 +281,7 @@ const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
 const { getConfigDigsig } = useDigsig();
 
-const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const {
   getRecipients,

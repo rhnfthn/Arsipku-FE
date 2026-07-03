@@ -806,7 +806,7 @@ import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 
 const { t } = useI18n();
 const toast = useToast();
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
 
 const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
 
@@ -1060,6 +1060,15 @@ const handleViewDetail = async (doc: PenandatangananDocument) => {
 
 // ─── Sign ─────────────────────────────────────
 const handleOpenSign = (doc: PenandatangananDocument) => {
+  if (!hasPermission('naskah-dinas', 'sign')) {
+    toast.add({
+      title: t('akses_ditolak') || 'Akses Ditolak',
+      description: t('akses_sign_ditolak') || 'Anda tidak memiliki izin untuk menandatangani dokumen.',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
   selectedDoc.value = doc;
   openSign.value = true;
   passphrase.value = '';
@@ -1092,6 +1101,15 @@ const handleSign = async () => {
 
 // ─── Reject ───────────────────────────────────
 const handleReject = (doc: PenandatangananDocument) => {
+  if (!hasPermission('naskah-dinas', 'reject')) {
+    toast.add({
+      title: t('akses_ditolak') || 'Akses Ditolak',
+      description: t('akses_reject_ditolak') || 'Anda tidak memiliki izin untuk menolak dokumen.',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
   itemToReject.value = doc;
   rejectReason.value = '';
   confirmRejectOpen.value = true;
