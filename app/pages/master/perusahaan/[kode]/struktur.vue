@@ -1002,7 +1002,7 @@ import { formatDate2Digit as formatDate } from '~/utils/mail-helpers'
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const { t } = useI18n()
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
 
 const canViewMaster = computed(() => hasPermission('master-data', 'read'));
 

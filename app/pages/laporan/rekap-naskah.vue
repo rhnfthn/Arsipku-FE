@@ -15,7 +15,6 @@
     </div>
     <!-- EXPORT BUTTON -->
     <button
-      v-if="isSuperadmin || hasPermission('laporan', 'export')"
       @click="exportExcel"
       class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
     >
@@ -585,7 +584,7 @@ import * as XLSX from 'xlsx';
 
 //COMPOSABLE
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
-const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
 const toast = useToast();
 const { t, locale, availableLocales, setLocale } = useI18n();
 
@@ -840,6 +839,15 @@ const selectYear = (val: number) => {
 
 //EXPORT
 const exportExcel = () => {
+  if (!hasPermission('laporan', 'export')) {
+    toast.add({
+      title: t('akses_ditolak') || 'Akses Ditolak',
+      description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
   if (!filteredTableData.value.length) {
     toast.add({
       title: t('export_dibatalkan'),

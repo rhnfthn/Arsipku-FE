@@ -14,11 +14,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // Redirect as early as possible using cached role to avoid unauthorized page flashes.
   if (isSuperadminOnlyPath && roleCookie.value && roleCookie.value !== 'superadmin') {
-    return navigateTo('/beranda', { replace: true })
+    throw createError({ statusCode: 403, statusMessage: 'Akses Ditolak', fatal: true })
   }
 
   if (process.server && isSuperadminOnlyPath && roleCookie.value !== 'superadmin') {
-    return navigateTo('/beranda', { replace: true })
+    throw createError({ statusCode: 403, statusMessage: 'Akses Ditolak', fatal: true })
   }
 
   if (!token) {
