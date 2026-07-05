@@ -944,7 +944,7 @@ import { useDark } from '@vueuse/core';
 import type { DropdownMenuItem } from '#ui/types';
 
 // --- INIT COMPOSABLES ---
-const { user, getProfile, logout } = useAuth();
+const { user, getProfile, logout, hasPermission } = useAuth();
 const { getAvailableRoles, switchRole } = useDelegasi();
 const toast = useToast();
 const route = useRoute();
@@ -1687,7 +1687,7 @@ const confirmLogout = async () => {
 
 // --- SEARCH ---
 const searchConfig = computed(() => ({
-  show: true,
+  show: hasPermission('smart-search', 'search'),
   placeholder: 'Cari surat...',
   key: ''
 }));

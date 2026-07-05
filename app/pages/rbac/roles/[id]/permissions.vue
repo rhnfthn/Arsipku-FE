@@ -66,7 +66,7 @@
             {{ t('rbac_resources_empty') }}
           </div>
 
-          <div v-for="resource in resources" :key="resource.id" class="mb-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div v-for="resource in visibleResources" :key="resource.id" class="mb-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div class="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-700/40">
               <button
                 type="button"
@@ -83,7 +83,7 @@
               <h4 class="text-sm font-bold text-gray-800 dark:text-white">{{ resource.name }}</h4>
               <span class="text-xs text-gray-400">{{ resource.description }}</span>
               <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                ({{ countChecked(resource) }}/{{ resource.permissions?.length ?? 0 }})
+                ({{ countChecked(resource) }}/{{ visiblePermissions(resource).length }})
               </span>
               <button
                 type="button"
@@ -95,7 +95,7 @@
             </div>
             <div v-show="!isCollapsed(resource.id)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4">
               <label
-                v-for="perm in resource.permissions"
+                v-for="perm in visiblePermissions(resource)"
                 :key="perm.id"
                 class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded px-2 py-1"
               >
@@ -187,8 +187,6 @@ const toggleCheckAll = () => {
     selectedPermIds.value = resources.value.flatMap((r) => (r.permissions ?? []).map((p) => p.id));
   }
 };
-const countChecked = (resource: RbacResource) =>
-  (resource.permissions ?? []).filter((p) => selectedPermIds.value.includes(p.id)).length;
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
@@ -199,6 +197,30 @@ const items = computed(() => [
 ]);
 
 const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.name ?? ''}`);
+
+// Permission yang disembunyikan dari tampilan matrix (tetap aktif default, tidak bisa di-uncheck)
+// Format: { resource: action }
+const hiddenPermissions = [
+  { resource: 'role', action: 'read' },
+  { resource: 'role', action: 'assign-permission' },
+  { resource: 'user', action: 'read' },
+  { resource: 'user', action: 'assign-role' },
+];
+
+// Resource yang seluruhnya disembunyikan dari matrix
+const hiddenResources = ['user'];
+
+const visibleResources = computed(() =>
+  resources.value.filter((r) => !hiddenResources.includes(r.name))
+);
+
+const visiblePermissions = (resource: RbacResource) =>
+  (resource.permissions ?? []).filter(
+    (p) => !hiddenPermissions.some((h) => h.resource === resource.name && h.action === p.action)
+  );
+
+const countChecked = (resource: RbacResource) =>
+  visiblePermissions(resource).filter((p) => selectedPermIds.value.includes(p.id)).length;
 
 // Flat list semua permission untuk lookup proteksi SUPERADMIN
 const allPermissionsFlat = computed(() => {
