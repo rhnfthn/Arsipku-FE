@@ -1132,5 +1132,8 @@
   "rbac_reset_to_user": "Reset ke User",
   "rbac_reset_to_user_title": "Reset ke User?",
   "rbac_reset_to_user_desc": "User \"{name}\" akan direset menjadi User biasa. Role {role} akan dihapus. Yakin?",
-  "rbac_reset_success": "Role dihapus. {name} sekarang User biasa."
+  "rbac_reset_success": "Role dihapus. {name} sekarang User biasa.",
+  "akses_edit_ditolak": "Anda tidak memiliki izin untuk mengedit.",
+  "akses_hapus_ditolak": "Anda tidak memiliki izin untuk menghapus.",
+  "akses_kirim_ditolak": "Anda tidak memiliki izin untuk mengirim."
 }

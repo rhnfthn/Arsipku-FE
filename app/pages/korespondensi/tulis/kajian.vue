@@ -1,5 +1,9 @@
 <template>
-  <div class="relative">
+  <div v-if="!canWrite" class="flex flex-col items-center justify-center py-20 text-center">
+    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+  </div>
+  <div v-else class="relative">
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
         class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
@@ -206,7 +210,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -282,6 +286,7 @@ const signMethodModalRef = ref<any>(null);
 const { getConfigDigsig } = useDigsig();
 
 const { user, getProfile, hasPermission } = useAuth();
+const canWrite = computed(() => hasPermission('naskah-dinas', 'read'))
 const { getKlasifikasi } = useKlasifikasi();
 const {
   getRecipients,

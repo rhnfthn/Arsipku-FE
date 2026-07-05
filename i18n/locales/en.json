@@ -1127,6 +1127,9 @@
   "rbac_reset_to_user_title": "Reset to User?",
   "rbac_reset_to_user_desc": "User \"{name}\" will be reset to regular User. Role {role} will be removed. Are you sure?",
   "rbac_reset_success": "Role removed. {name} is now a regular User.",
+  "akses_edit_ditolak": "You do not have permission to edit.",
+  "akses_hapus_ditolak": "You do not have permission to delete.",
+  "akses_kirim_ditolak": "You do not have permission to send.",
 
   "del_cari_placeholder": "Search Data"
 }

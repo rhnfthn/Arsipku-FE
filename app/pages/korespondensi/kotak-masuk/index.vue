@@ -16,7 +16,8 @@ import EmptyState from "~/components/EmptyState.vue";
 definePageMeta({ middleware: "auth" });
 
 // ── Auth & Toast ──────────────────────────────────────────────────────────────
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const canView = computed(() => hasPermission('naskah-dinas', 'read'))
 const toast = useToast();
 
 // ── Composables ───────────────────────────────────────────────────────────────
@@ -514,6 +515,11 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div v-if="!canView" class="flex flex-col items-center justify-center py-20 text-center">
+    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+  </div>
+  <template v-else>
   <PageHeader title="Kotak Masuk" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors">
@@ -1032,6 +1038,7 @@ onUnmounted(() => {
       </div>
     </Teleport>
   </div>
+  </template>
 </template>
 
 <style scoped>

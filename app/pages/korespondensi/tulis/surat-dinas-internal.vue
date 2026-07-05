@@ -21,7 +21,8 @@ const route = useRoute();
 const toast = useToast();
 const alertState = useAlertState();
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const canWrite = computed(() => hasPermission('naskah-dinas', 'read'))
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, updateDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
@@ -390,7 +391,11 @@ watch(
 </script>
 
 <template>
-  <div class="relative">
+  <div v-if="!canWrite" class="flex flex-col items-center justify-center py-20 text-center">
+    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+  </div>
+  <div v-else class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader title="Tulis Surat Dinas Internal" :items="breadcrumbs" />
 
@@ -591,7 +596,7 @@ watch(
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
