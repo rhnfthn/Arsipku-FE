@@ -1,6 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50/50 dark:bg-gray-900">
-    <div class="mx-auto space-y-6">
+    <!-- AKSES DITOLAK -->
+    <div v-if="!canSearch" class="flex flex-col items-center justify-center py-20 text-center">
+      <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+      <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+    </div>
+    <div v-else class="mx-auto space-y-6">
       <div class="flex flex-col gap-1 mb-5">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
           Hasil Pencarian
@@ -204,6 +209,9 @@ import { formatShortDate, getCategoryStyle, getCategoryLabel } from '~/utils/mai
 const route = useRoute();
 const router = useRouter();
 const { fetchSearch, results, pagination, isLoading } = useSearch();
+const { hasPermission } = useAuth();
+
+const canSearch = computed(() => hasPermission('smart-search', 'search'));
 
 definePageMeta({
   middleware: 'auth'
