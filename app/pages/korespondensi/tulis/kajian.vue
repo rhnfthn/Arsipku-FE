@@ -154,6 +154,10 @@
                   </table>
                 </div>
 
+                <div class="mb-3">
+                  <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                </div>
+
                 <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
                 <div
@@ -241,6 +245,8 @@
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
+    <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="kajian" :editor="tinymceEditor" />
+
   </div>
 </template>
 
@@ -321,6 +327,7 @@ const subject = ref("");
 const lampiranText = ref("");
 const editorContent = ref("");
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
+const isAiDraftOpen = ref(false);
 
 const today = new Date();
 const date = ref<CalendarDate | null>(

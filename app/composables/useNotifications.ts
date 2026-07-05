@@ -125,6 +125,7 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
 
 export const useNotifications = () => {
   const { apiGet, apiPatch, apiDelete } = useApi();
+  const toast = useToast();
 
   // ============================================================
   // REST
@@ -336,8 +337,14 @@ export const useNotifications = () => {
         const exists = notifications.value.some((n) => n.id === payload.id);
         if (!exists) {
           notifications.value.unshift(payload);
+          toast.add({
+            title: payload.title || 'Notifikasi baru',
+            description: payload.body || undefined,
+            color: 'neutral',
+            icon: 'i-lucide-bell',
+          });
+          unreadCount.value += 1;
         }
-        unreadCount.value += 1;
       });
 
       socket.on('notification:count', (payload: { positionId: string; count: number }) => {

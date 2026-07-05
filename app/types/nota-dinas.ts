@@ -35,10 +35,6 @@ export const NotaDinasSchema = z
   .refine((data) => data.penerima.length > 0 || data.penerima_grup.length > 0, {
     message: 'Minimal pilih satu tertuju (individu atau grup)',
     path: ['penerima']
-  })
-  .refine((data) => data.tembusan.length > 0 || data.tembusan_grup.length > 0, {
-    message: 'Minimal pilih satu tembusan (individu atau grup)',
-    path: ['tembusan']
   });
 
 export type DraftPayload = z.infer<typeof NotaDinasSchema>;

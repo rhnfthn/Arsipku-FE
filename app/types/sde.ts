@@ -32,10 +32,6 @@ export const SDEPayloadSchema = z
     nama_lengkap: z.string().optional(),
 
     lampiran_temp_ids: z.array(z.string()).default([])
-  })
-  .refine((data) => data.tembusan.length > 0, {
-    message: 'Minimal pilih satu tembusan',
-    path: ['tembusan']
   });
 
 export type SDEPayload = z.infer<typeof SDEPayloadSchema>;
