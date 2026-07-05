@@ -45,10 +45,6 @@ export const SDIPayloadSchema = z
     message: 'Minimal pilih satu tertuju (individu atau grup)',
     path: ['tertuju'],
   })
-  .refine((data) => data.tembusan.length > 0 || data.tembusan_grup.length > 0, {
-    message: 'Minimal pilih satu tembusan (individu atau grup)',
-    path: ['tembusan'],
-  })
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
