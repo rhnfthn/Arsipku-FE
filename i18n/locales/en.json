@@ -1123,6 +1123,10 @@
   "akses_export_ditolak": "You do not have permission to export reports.",
   "akses_sign_ditolak": "You do not have permission to sign documents.",
   "akses_reject_ditolak": "You do not have permission to reject documents.",
+  "rbac_reset_to_user": "Reset to User",
+  "rbac_reset_to_user_title": "Reset to User?",
+  "rbac_reset_to_user_desc": "User \"{name}\" will be reset to regular User. Role {role} will be removed. Are you sure?",
+  "rbac_reset_success": "Role removed. {name} is now a regular User.",
 
   "del_cari_placeholder": "Search Data"
 }

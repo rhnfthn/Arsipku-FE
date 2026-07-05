@@ -1128,5 +1128,9 @@
   "akses_ditolak": "Akses Ditolak",
   "akses_export_ditolak": "Anda tidak memiliki izin untuk export laporan.",
   "akses_sign_ditolak": "Anda tidak memiliki izin untuk menandatangani dokumen.",
-  "akses_reject_ditolak": "Anda tidak memiliki izin untuk menolak dokumen."
+  "akses_reject_ditolak": "Anda tidak memiliki izin untuk menolak dokumen.",
+  "rbac_reset_to_user": "Reset ke User",
+  "rbac_reset_to_user_title": "Reset ke User?",
+  "rbac_reset_to_user_desc": "User \"{name}\" akan direset menjadi User biasa. Role {role} akan dihapus. Yakin?",
+  "rbac_reset_success": "Role dihapus. {name} sekarang User biasa."
 }

@@ -1,5 +1,12 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+    <!-- AKSES DITOLAK -->
+    <div v-if="!canViewPenomoran" class="flex flex-col items-center justify-center py-20 text-center">
+      <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+      <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+    </div>
+    <!-- KONTEN -->
+    <div v-else>
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -9,7 +16,7 @@
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
-        v-if="isSuperadmin || hasPermission('penomoran', 'request')"
+        v-if="hasPermission('penomoran', 'request')"
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
@@ -734,6 +741,7 @@
       {{ tooltip.text }}
     </div>
   </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -751,7 +759,8 @@ import * as XLSX from 'xlsx'
 definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
-const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
+const { user, getProfile, hasPermission } = useAuth()
+const canViewPenomoran = computed(() => hasPermission('penomoran', 'read'))
 const { getListUsulan, getDetailUsulan, getKlasifikasi } = usePenomoran()
 const toast = useToast()
 
@@ -868,6 +877,15 @@ const statusTabs = computed(() => [
 const isExporting = ref(false)
 
 const handleExport = async () => {
+  if (!hasPermission('penomoran', 'report')) {
+    toast.add({
+      title: t('akses_ditolak') || 'Akses Ditolak',
+      description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
   if (isExporting.value || rows.value.length === 0) return
   isExporting.value = true
 
