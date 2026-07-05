@@ -9,6 +9,7 @@
         </p>
       </div>
       <button
+        v-if="hasPermission('role', 'create')"
         @click="openAddRoleModal"
         class="flex items-center gap-2 px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-lg transition-colors"
       >
@@ -71,12 +72,21 @@
         <template #cell-aksi="{ row }">
           <div class="flex justify-center gap-2">
             <NuxtLink
+              v-if="hasPermission('role', 'update')"
               :to="`/rbac/users/${row.persnum}/roles`"
               class="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors group"
               :title="t('rbac_detail')"
             >
               <UIcon name="i-lucide-eye" class="w-4 h-4 text-primary group-hover:text-primary-700" />
             </NuxtLink>
+            <button
+              v-if="hasPermission('role', 'delete') && (row.roleName === 'SUPERADMIN' || row.roleName === 'ADMIN')"
+              @click="resetToUser(row)"
+              class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
+              :title="t('rbac_reset_to_user') || 'Reset ke User'"
+            >
+              <UIcon name="i-lucide-trash-2" class="w-4 h-4 text-red-600 group-hover:text-red-700" />
+            </button>
           </div>
         </template>
       </DataTable>
@@ -156,10 +166,10 @@
             <div class="flex items-center gap-2 mb-4 flex-wrap">
               <select v-model="modalSelectedRoleId" class="border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 flex-1 min-w-[140px]">
                 <option value="" disabled>{{ t('rbac_roles_name_placeholder') }}</option>
-                <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
+                <option v-for="r in assignableRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
               </select>
-              <input v-model="modalUnitKerja" type="text" :placeholder="t('rbac_unit_kerja_placeholder')" class="border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 w-40" />
               <button
+                v-if="hasPermission('user', 'assign-role')"
                 @click="modalAssignRole"
                 :disabled="!modalSelectedRoleId || modalAssigning"
                 class="px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-50 transition-colors whitespace-nowrap"
@@ -178,7 +188,6 @@
                   :class="roleBadgeClass(ur.roleName)">
                   <UIcon name="i-lucide-shield" class="w-3 h-3" />
                   {{ ur.roleName }}
-                  <span v-if="ur.unitKerja" class="text-xs opacity-70">({{ ur.unitKerja }})</span>
                   <StatusBadge :active="ur.active" />
                   <button
                     v-if="modalCanRemove(ur)"
@@ -222,7 +231,10 @@ const { t } = useI18n();
 const toast = useToast();
 const { roles, fetchRoles, fetchUserRoles, fetchAllUserRoles, assignRoleToUser, removeRoleFromUser, getRolesBatch } = useRbac();
 const { searchPersons } = usePerson();
-const { user: authUser } = useAuth();
+const { user: authUser, hasPermission } = useAuth();
+
+// Hanya SUPERADMIN & ADMIN yang bisa di-assign (USER adalah default, tidak perlu dipilih)
+const assignableRoles = computed(() => roles.value.filter((r) => r.name !== 'USER'));
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
@@ -283,7 +295,6 @@ const modalShowSuggestions = ref(false);
 const modalIsSearching = ref(false);
 const modalSelectedPerson = ref<PersonSuggestion | null>(null);
 const modalSelectedRoleId = ref('');
-const modalUnitKerja = ref('');
 const modalUserRoles = ref<RbacUserRoleRow[]>([]);
 const modalAssigning = ref(false);
 const modalRoleMap = ref<Map<number, string>>(new Map());
@@ -296,7 +307,6 @@ const openAddRoleModal = () => {
   modalShowSuggestions.value = false;
   modalSelectedPerson.value = null;
   modalSelectedRoleId.value = '';
-  modalUnitKerja.value = '';
   modalUserRoles.value = [];
 };
 
@@ -356,13 +366,13 @@ const modalAssignRole = async () => {
     id: 'temp-' + Date.now(),
     roleId: modalSelectedRoleId.value,
     roleName: roles.value.find((r) => r.id === modalSelectedRoleId.value)?.name || '',
-    unitKerja: modalUnitKerja.value || null,
+    unitKerja: null,
     active: true,
     createdAt: new Date().toISOString() as any,
   };
   modalUserRoles.value = [...modalUserRoles.value, tempRole];
   try {
-    await assignRoleToUser(modalSelectedPerson.value.persnum, modalSelectedRoleId.value, modalUnitKerja.value || null);
+    await assignRoleToUser(modalSelectedPerson.value.persnum, modalSelectedRoleId.value, null);
     toast.add({
       title: t('rbac_success'),
       description: t('rbac_role_assigned_to', { name: modalSelectedPerson.value.name }),
@@ -371,7 +381,6 @@ const modalAssignRole = async () => {
     });
     modalUserRoles.value = await fetchUserRoles(modalSelectedPerson.value.persnum);
     modalSelectedRoleId.value = '';
-    modalUnitKerja.value = '';
     await fetchList();
   } catch (e: any) {
     // Rollback optimistic update
@@ -448,6 +457,39 @@ const roleBadgeClass = (name?: string) => {
     return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
   if (n === 'ADMIN') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
   return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+};
+
+// Reset role user ke default USER (hapus role SUPERADMIN/ADMIN)
+const resetToUser = async (row: UserRoleListItem) => {
+  const ok = await Alert.confirm(
+    t('rbac_reset_to_user_title') || 'Reset ke User?',
+    t('rbac_reset_to_user_desc', { name: row.name, role: row.roleName }) || `User "${row.name}" akan direset menjadi User biasa. Role ${row.roleName} akan dihapus. Yakin?`,
+    t('rbac_delete') || 'Hapus',
+    t('rbac_cancel') || 'Batal',
+    true
+  );
+  if (!ok) return;
+  const alertState = useAlertState();
+  alertState.isLoading = true;
+  try {
+    await removeRoleFromUser(row.persnum, row.roleId);
+    Alert.close();
+    toast.add({
+      title: t('rbac_success'),
+      description: t('rbac_reset_success', { name: row.name }) || `Role ${row.roleName} dihapus. ${row.name} sekarang User biasa.`,
+      color: 'success',
+      icon: 'i-lucide-check-circle',
+    });
+    await fetchList();
+  } catch (e: any) {
+    Alert.close();
+    toast.add({
+      title: t('rbac_fail'),
+      description: e?.message || (t('rbac_role_remove_fail') || 'Gagal reset role'),
+      color: 'error',
+      icon: 'i-lucide-x-circle',
+    });
+  }
 };
 
 onMounted(() => {

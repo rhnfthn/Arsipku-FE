@@ -1,5 +1,12 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+    <!-- AKSES DITOLAK -->
+    <div v-if="!canViewPenomoran" class="flex flex-col items-center justify-center py-20 text-center">
+      <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+      <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+    </div>
+    <!-- KONTEN -->
+    <div v-else>
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -925,7 +932,7 @@
       <template #footer>
         <div class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
           <button
-            v-if="isSuperadmin || hasPermission('penomoran', 'verify')"
+            v-if="hasPermission('penomoran', 'verify')"
             @click="confirmApproval"
             :disabled="isProcessing || !hasAnyChecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
@@ -954,7 +961,7 @@
             {{ isProcessing ? $t('ver_btn_memproses') : $t('ver_btn_setujui') }}
           </button>
           <button
-            v-if="isSuperadmin || hasPermission('penomoran', 'verify')"
+            v-if="hasPermission('penomoran', 'verify')"
             @click="confirmRejection"
             :disabled="isProcessing || !allUnchecked"
             class="flex-1 px-5 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
@@ -1031,6 +1038,7 @@
       {{ tooltip.text }}
     </div>
   </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -1044,7 +1052,8 @@ import ConfirmPopup from '~/components/ConfirmPopup.vue'
 import { usePenomoran } from '~/composables/usePenomoran'
 import * as XLSX from 'xlsx'
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission } = useAuth();
+const canViewPenomoran = computed(() => hasPermission('penomoran', 'read'));
 
 definePageMeta({ middleware: 'auth' })
 
@@ -1119,6 +1128,15 @@ const highlight = (text: string | number | null | undefined, keyword: string) =>
 const isExporting = ref(false)
 
 const handleExport = async () => {
+  if (!hasPermission('penomoran', 'report')) {
+    toast.add({
+      title: t('akses_ditolak') || 'Akses Ditolak',
+      description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
   if (isExporting.value || sortedRows.value.length === 0) return
   isExporting.value = true
 
