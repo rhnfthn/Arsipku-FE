@@ -22,6 +22,8 @@ const toast = useToast();
 // ── Composables ───────────────────────────────────────────────────────────────
 const { items, pagination, summary, pending, fetchInbox, markAsRead, toggleFlag } = useInbox();
 const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
+const { inboxCount, init: initRealtimeSocket } = useRealtimeSocket();
+const { notifications, init: initNotifications } = useNotifications();
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 const isLoading = ref(false);
@@ -472,10 +474,40 @@ watch(currentPage, () => refreshData());
 
 // Search dengan debounce 500ms
 let searchTimeout: ReturnType<typeof setTimeout>;
+let realtimeRefreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const scheduleRealtimeRefresh = () => {
+  if (isUnmounted.value) return;
+  if (realtimeRefreshTimeout) clearTimeout(realtimeRefreshTimeout);
+  realtimeRefreshTimeout = setTimeout(() => {
+    if (!isUnmounted.value) refreshData();
+  }, 350);
+};
+
 watch(searchQuery, () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => { currentPage.value = 1; refreshData(); }, 500);
 });
+
+watch(inboxCount, (_newValue, oldValue) => {
+  if (oldValue === undefined) return;
+  scheduleRealtimeRefresh();
+});
+
+watch(
+  () => notifications.value[0]?.id,
+  (newValue, oldValue) => {
+    if (!newValue || !oldValue || newValue === oldValue) return;
+    const latest = notifications.value[0];
+    const action = String(latest?.data?.action || '');
+    const type = String(latest?.type || '');
+    const shouldRefresh =
+      action === 'OPEN_INBOX_DETAIL' ||
+      action === 'OPEN_DISPOSISI_DETAIL' ||
+      ['NASKAH_MASUK', 'NASKAH_TEMBUSAN', 'DISPOSISI', 'DISPOSISI_SELESAI', 'KONSEP_DISETUJUI', 'KONSEP_DITOLAK'].includes(type);
+    if (shouldRefresh) scheduleRealtimeRefresh();
+  },
+);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 const route = useRoute();
@@ -503,6 +535,7 @@ onMounted(async () => {
   endDateCal.value = parseDate(today);
 
   if (!user.value) await getProfile();
+  await Promise.all([initRealtimeSocket(), initNotifications()]);
   applyQueryFilters();
   refreshData();
 });
@@ -510,6 +543,7 @@ onMounted(async () => {
 onUnmounted(() => {
   isUnmounted.value = true;
   clearTimeout(searchTimeout);
+  if (realtimeRefreshTimeout) clearTimeout(realtimeRefreshTimeout);
 });
 </script>
 

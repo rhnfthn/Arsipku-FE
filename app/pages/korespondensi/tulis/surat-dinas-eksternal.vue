@@ -159,6 +159,10 @@
                   </div>
                 </div>
 
+                <div class="mb-3">
+                  <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                </div>
+
                 <div class="min-h-[300px] relative group">
                   <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   <div v-if="!editorContent"
@@ -254,6 +258,8 @@
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
+    <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="SDE" :editor="tinymceEditor" />
+
   </div>
 </template>
 
@@ -310,6 +316,8 @@ const {
   setPdfBlob, revokePdfUrl, confirmSaveDraft, confirmKirim,
   toastError, toastSuccess, redirectTerkirim, redirectDraf,
 } = useTulis();
+
+const isAiDraftOpen = ref(false);
 
 const alertState = useAlertState();
 
