@@ -95,6 +95,8 @@ const konsepRouteMap: Record<string, string> = {
 };
 
 const handleLanjutKonsep = () => {
+  if (!ensureCanCreateFollowUpAction()) return;
+
   if (isKonsepData.value && selected.value?.id) {
     router.push({
       path: '/korespondensi/tulis/konsep/nota-dinas',
@@ -191,6 +193,25 @@ const konsepNaskahDetail = computed(() => {
   if (!isKonsepData.value) return null;
   return details.value.find((d: any) => String(d?.jenis || '').toUpperCase() === 'KN') ?? null;
 });
+
+const resolveKonsepFlowJenis = (flow: any, aksi: string) => {
+  const rawJenis = String(flow?.jenis || flow?.jenis_kode || '').toUpperCase();
+  const rawLabel = String(flow?.jenis_label || '').toUpperCase();
+
+  if (rawJenis === 'DI' || aksi === 'disposisi' || rawLabel.includes('DISPOSISI')) {
+    return 'DI';
+  }
+  if (rawJenis === 'KN') return 'KN';
+  if (['ND', 'SDI', 'SDE', 'KA'].includes(rawJenis)) return rawJenis;
+  return rawJenis || 'K';
+};
+
+const resolveKonsepFlowLabel = (flow: any, jenis: string) => {
+  if (jenis === 'DI') return 'DISPOSISI';
+  if (jenis === 'KN') return 'KONSEP NASKAH';
+  if (jenis === 'K') return flow?.jenis_label || 'Konsep';
+  return flow?.jenis_label || jenis;
+};
 
 // --- NAVIGATION (previous/next dari kotak masuk) ---
 const navPrev = ref<any>(null);
@@ -388,6 +409,14 @@ const loadData = async () => {
 
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
+          const jenis = resolveKonsepFlowJenis(flow, aksi);
+          const jenisLabel = resolveKonsepFlowLabel(flow, jenis);
+          const jenisNaskahKonsep = ['K', 'KO', 'KN'].includes(jenis)
+            ? flow.jenis_naskah_konsep ||
+              flow.detail?.jenis_naskah_konsep ||
+              (jenis === 'K' ? flow.jenis_label : '') ||
+              ''
+            : '';
 
           const senderPosId = String(
             flow.detail?.naskah_pengirim?.position_id || flow.pengirim?.position_id || ''
@@ -413,17 +442,26 @@ const loadData = async () => {
             urutan: sortedFlows.length - index,
             sifat: flow.sifat,
             aksi,
-            jenis: flow.jenis || 'K',
-            jenis_label: flow.jenis_label || 'Konsep',
-            jenis_naskah_konsep:
-              flow.jenis_naskah_konsep ||
-              flow.detail?.jenis_naskah_konsep ||
-              flow.jenis_label ||
-              '',
+            jenis,
+            jenis_label: jenisLabel,
+            jenis_naskah_konsep: jenisNaskahKonsep,
             perihal: flow.perihal || '-',
             nomor: flow.nomor || '-',
             tanggal: flow.tanggal || flow.created_at,
             created_at: flow.created_at,
+            sirkulasiId:
+              flow.sirkulasiId ||
+              flow.id_sirkulasi ||
+              flow.user_sirkulasi?.id_sirkulasi ||
+              flow.raw?.user_sirkulasi?.id_sirkulasi ||
+              null,
+            user_sirkulasi: flow.user_sirkulasi || flow.raw?.user_sirkulasi || null,
+            isTinjut:
+              flow.isTinjut ??
+              flow.is_tindak_lanjut ??
+              flow.user_sirkulasi?.is_tindak_lanjut ??
+              flow.raw?.user_sirkulasi?.is_tindak_lanjut ??
+              false,
             from: flow.pengirim || {},
             pengirim: flow.detail?.naskah_pengirim || flow.pengirim || {},
             to_konsep: flow.penerima[0] || {},
@@ -524,6 +562,19 @@ const loadData = async () => {
             nomor: item.nomor || inboxData.nomor || '-',
             tanggal: item.tanggal || inboxData.tanggal,
             created_at: item.created_at || inboxData.created_at || item.tanggal,
+            sirkulasiId:
+              item.sirkulasiId ||
+              item.id_sirkulasi ||
+              item.user_sirkulasi?.id_sirkulasi ||
+              item.raw?.user_sirkulasi?.id_sirkulasi ||
+              null,
+            user_sirkulasi: item.user_sirkulasi || item.raw?.user_sirkulasi || null,
+            isTinjut:
+              item.isTinjut ??
+              item.is_tindak_lanjut ??
+              item.user_sirkulasi?.is_tindak_lanjut ??
+              item.raw?.user_sirkulasi?.is_tindak_lanjut ??
+              false,
             pengirim: item.pengirim || item.from || inboxData.pengirim,
             to: listPenerima,
             cc: listTembusan,
@@ -612,6 +663,34 @@ const initFlagState = () => {
     isLocked: s?.isLocked ?? s?.user_sirkulasi?.is_locked ?? false,
     isNote: s?.isNote ?? s?.user_sirkulasi?.is_note ?? false,
     noteText: s?.noteText ?? s?.user_sirkulasi?.note_text ?? '',
+  };
+};
+
+const canCreateFollowUpAction = computed(() => !flagState.value.isTinjut);
+
+const ensureCanCreateFollowUpAction = () => {
+  if (isKonsepData.value || canCreateFollowUpAction.value) return true;
+
+  useToast().add({
+    title: 'Tidak bisa membuat tindak lanjut',
+    description: 'Naskah ini sudah ditindaklanjuti.',
+    color: 'warning',
+  });
+  return false;
+};
+
+const getDetailFlagState = (detail: any, index: number) => {
+  if (index === 0) {
+    return flagState.value;
+  }
+
+  const sirkulasi = detail?.user_sirkulasi || detail?.raw?.user_sirkulasi || {};
+  return {
+    isStarred: detail?.isStarred ?? detail?.is_favorit ?? sirkulasi?.is_favorit ?? false,
+    isTinjut: detail?.isTinjut ?? detail?.is_tindak_lanjut ?? sirkulasi?.is_tindak_lanjut ?? false,
+    isLocked: detail?.isLocked ?? detail?.is_locked ?? sirkulasi?.is_locked ?? false,
+    isNote: detail?.isNote ?? detail?.is_note ?? sirkulasi?.is_note ?? false,
+    noteText: detail?.noteText ?? detail?.note_text ?? sirkulasi?.note_text ?? '',
   };
 };
 
@@ -865,6 +944,8 @@ const handleEditKonsep = () => {
 };
 
 const handleLanjutNotaDinas = () => {
+  if (!ensureCanCreateFollowUpAction()) return;
+
   if (selected.value?.id)
     router.push({
       path: '/korespondensi/tulis/lanjut/nota-dinas',
@@ -876,6 +957,8 @@ const handleLanjutNotaDinas = () => {
     });
 };
 const handleLanjutSDI = () => {
+  if (!ensureCanCreateFollowUpAction()) return;
+
   if (selected.value?.id)
     router.push({
       path: '/korespondensi/tulis/lanjut/surat-dinas-internal',
@@ -887,6 +970,8 @@ const handleLanjutSDI = () => {
     });
 };
 const handleLanjutSDE = () => {
+  if (!ensureCanCreateFollowUpAction()) return;
+
   if (selected.value?.id)
     router.push({
       path: '/korespondensi/tulis/lanjut/surat-dinas-eksternal',
@@ -898,6 +983,8 @@ const handleLanjutSDE = () => {
     });
 };
 const handleLanjutDisposisi = () => {
+  if (!ensureCanCreateFollowUpAction()) return;
+
   if (selected.value?.id)
     router.push({
       path: '/korespondensi/tulis/lanjut/disposisi',
@@ -905,6 +992,8 @@ const handleLanjutDisposisi = () => {
     });
 };
 const selectKonsep = (opt: any) => {
+  if (!ensureCanCreateFollowUpAction()) return;
+
   if (draftItem.value && opt.type !== draftItem.value.jenis) return;
 
   isOpenKonsepModal.value = false;
@@ -1016,15 +1105,17 @@ const konsepOptions = computed(() => [
               context="inbox"
               :data="detail"
               :is-head="index === 0"
-              :is-starred="flagState.isStarred"
-              :is-tinjut="flagState.isTinjut"
-              :is-locked="flagState.isLocked"
-              :is-note="flagState.isNote"
+              :is-starred="getDetailFlagState(detail, index).isStarred"
+              :is-tinjut="getDetailFlagState(detail, index).isTinjut"
+              :is-locked="getDetailFlagState(detail, index).isLocked"
+              :is-note="getDetailFlagState(detail, index).isNote"
               :collapsed="isCardCollapsed(index)"
               :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
               :show-edit="isKonsepData && index === 0 && showEditAction"
               :is-pengirim-konsep="isPengirimKonsep"
-              :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim"
+              :show-footer-actions="
+                !isKonsepData && index === 0 && !isTerkirim && canCreateFollowUpAction
+              "
               :allowed-actions="allowedActions"
               :konsep-naskah="isKonsepData && index === 0 ? konsepNaskahDetail : null"
               :user-position-id="user?.position"
