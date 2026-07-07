@@ -19,7 +19,7 @@ definePageMeta({ middleware: "auth" });
 const route = useRoute();
 const router = useRouter();
 const { user, hasPermission } = useAuth();
-const canView = computed(() => hasPermission('naskah-dinas', 'read'))
+const { canAccessPage } = useFeatureAccess();
 const positionId = computed(() => user.value?.position?.id || user.value?.position_id);
 
 const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
@@ -792,10 +792,7 @@ const konsepOptions = [
 </script>
 
 <template>
-  <div v-if="!canView" class="flex flex-col items-center justify-center py-20 text-center">
-    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
-  </div>
+  <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
@@ -940,7 +937,7 @@ const konsepOptions = [
           </div>
         </template>
         <template #footer>
-          <div v-if="hasPermission('naskah-dinas', 'create')" class="flex justify-end gap-2 w-full">
+          <div v-if="hasPermission('utama.terkirim', 'read')" class="flex justify-end gap-2 w-full">
             <button
               @click="submitKirimEmail('draft')"
               :disabled="kirimEmailLoading"

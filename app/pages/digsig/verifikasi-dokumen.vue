@@ -1,11 +1,6 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-900 pt-5">
-    <EmptyState
-      v-if="!canViewDigsig"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat dokumen. Hubungi administrator."
-    />
+    <AccessDenied v-if="!canAccessPage()" />
     <div v-else>
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full">
@@ -17,6 +12,7 @@
       </div>
 
       <button
+        v-if="hasPermission('utilitas.ttd-digital.verifikasi-dokumen', 'create')"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
@@ -251,6 +247,7 @@
               </td>
               <td class="p-4 text-center">
                 <button
+                  v-if="hasPermission('utilitas.ttd-digital.verifikasi-dokumen', 'read-lihat')"
                   @click="viewDocument(doc)"
                   class="flex items-center gap-2 mx-auto bg-blue-100 dark:bg-blue-900 text-primary-600 dark:text-blue-300 px-3 py-1 text-xs font-medium rounded-lg hover:bg-primary-300 dark:hover:bg-primary transition"
                 >
@@ -269,6 +266,7 @@
               <td class="p-4">
                 <div class="flex items-center justify-center gap-3">
                   <button
+                    v-if="hasPermission('utilitas.ttd-digital.verifikasi-dokumen', 'read-detail')"
                     @click="openDetailModal(doc.id)"
                     class="p-1 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat Detail"
@@ -276,9 +274,10 @@
                     <Eye class="w-4.5 h-4.5" />
                   </button>
                   <button
+                    v-if="hasPermission('utilitas.ttd-digital.verifikasi-dokumen', 'update')"
                     @click="openEditModal(doc.id)"
                     class="p-1 text-yellow-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
-                    title="Lihat Detail"
+                    title="Edit Dokumen"
                   >
                     <Pencil class="w-4.5 h-4.5" />
                   </button>
@@ -1082,7 +1081,7 @@ definePageMeta({
 const { t } = useI18n();
 const { hasPermission, isSuperadmin } = useAuth();
 
-const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
+const { canAccessPage } = useFeatureAccess();
 const {
   documents,
   documentDetail,

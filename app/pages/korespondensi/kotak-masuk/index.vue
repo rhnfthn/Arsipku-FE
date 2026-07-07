@@ -17,7 +17,7 @@ definePageMeta({ middleware: "auth" });
 
 // ── Auth & Toast ──────────────────────────────────────────────────────────────
 const { user, getProfile, hasPermission } = useAuth();
-const canView = computed(() => hasPermission('naskah-dinas', 'read'))
+const { canAccessPage } = useFeatureAccess()
 const toast = useToast();
 
 // ── Composables ───────────────────────────────────────────────────────────────
@@ -549,10 +549,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="!canView" class="flex flex-col items-center justify-center py-20 text-center">
-    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
-  </div>
+  <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
   <PageHeader title="Kotak Masuk" :items="breadcrumbs" />
   <div

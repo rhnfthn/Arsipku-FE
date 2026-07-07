@@ -820,7 +820,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts">const { canAccessPage } = useFeatureAccess()
+
 import { ref, computed, onMounted, watch } from 'vue';
 import {
   Plus,
@@ -857,8 +858,7 @@ definePageMeta({
 const { t, locale } = useI18n();
 
 const { hasPermission } = useAuth();
-
-const canViewMaster = computed(() => hasPermission('master-data', 'read'));
+
 
 // ─────────────────────────────────────────────
 // BREADCRUMB (reaktif terhadap bahasa)
