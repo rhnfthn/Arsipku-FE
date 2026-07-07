@@ -9,7 +9,7 @@
     class="h-full z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
     :class="[
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-      collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]'
+      collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
     ]"
   >
     <div
@@ -252,7 +252,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted, nextTick, reactive } from 'vue';
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  onUnmounted,
+  nextTick,
+  reactive,
+} from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useAuth } from '~/composables/useAuth';
@@ -279,7 +288,7 @@ const {
   fetchLabelCounts,
   createLabel,
   updateLabel,
-  deleteLabel
+  deleteLabel,
 } = useLabel();
 
 // ── Realtime WebSocket (menggantikan polling 30 detik) ──
@@ -310,24 +319,40 @@ const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
 // Sinkronkan state global dari WebSocket realtime ke composable lama
 // agar UI lain (yang masih baca unreadCount / labelCounts / bsreAlert) tetap up-to-date.
-watch(rtInboxCount, (val) => {
-  if (typeof val === 'number') unreadCount.value = val;
-}, { immediate: true });
+watch(
+  rtInboxCount,
+  (val) => {
+    if (typeof val === 'number') unreadCount.value = val;
+  },
+  { immediate: true }
+);
 
-watch(rtLabelCounts, (val) => {
-  if (val && typeof val === 'object') labelCounts.value = val;
-}, { immediate: true });
+watch(
+  rtLabelCounts,
+  (val) => {
+    if (val && typeof val === 'object') labelCounts.value = val;
+  },
+  { immediate: true }
+);
 
-watch(rtBsreAlert, (val) => {
-  if (val) bsreAlert.value = val;
-}, { deep: true, immediate: true });
+watch(
+  rtBsreAlert,
+  (val) => {
+    if (val) bsreAlert.value = val;
+  },
+  { deep: true, immediate: true }
+);
 
 // Saat nomor count event datang dari WebSocket, langsung update adminCounts/userCounts
 // dari payload event (backend sudah kirim data lengkap, bukan { refresh: true }).
-watch(rtNomorCounts, (val) => {
-  if (val?.admin) adminCounts.value = { ...adminCounts.value, ...val.admin };
-  if (val?.user) userCounts.value = { ...userCounts.value, ...val.user };
-}, { deep: true, immediate: true });
+watch(
+  rtNomorCounts,
+  (val) => {
+    if (val?.admin) adminCounts.value = { ...adminCounts.value, ...val.admin };
+    if (val?.user) userCounts.value = { ...userCounts.value, ...val.user };
+  },
+  { deep: true, immediate: true }
+);
 
 // Verifikator count event sudah membawa payload lengkap (waiting number),
 // UI langsung baca dari rtVerifikatorCount — tidak perlu REST fallback.
@@ -349,7 +374,9 @@ watch(
 // Cleanup socket saat user logout
 watch(
   () => (process.client ? localStorage.getItem('token') : null),
-  (token) => { if (!token) rtDestroy(); }
+  (token) => {
+    if (!token) rtDestroy();
+  }
 );
 
 onMounted(async () => {
@@ -412,7 +439,15 @@ const tulisMenu = computed(() => ({
   to: '/korespondensi/tulis',
   icon: 'i-lucide-edit',
   permission: { resource: 'naskah-dinas', action: 'read' },
-  children: tulisChildrenByBod.value
+  children: tulisChildrenByBod.value,
+}));
+
+const verifikatorMenu = computed(() => ({
+  label: 'Verifikasi Naskah',
+  to: '/naskah-dinas/verifikator',
+  icon: 'i-lucide-file-check-2',
+  permission: { resource: 'naskah-dinas', action: 'read' },
+  badge: rtVerifikatorCount.value > 0 ? rtVerifikatorCount.value : null,
 }));
 
 const userMenuUtama = computed(() => [
@@ -420,7 +455,7 @@ const userMenuUtama = computed(() => [
     label: t('beranda'),
     to: '/beranda',
     icon: 'i-lucide-layout-dashboard',
-    permission: { resource: 'dashboard', action: 'read' }
+    permission: { resource: 'dashboard', action: 'read' },
   },
   tulisMenu.value,
   {
@@ -428,26 +463,26 @@ const userMenuUtama = computed(() => [
     to: '/korespondensi/kotak-masuk',
     icon: 'i-lucide-inbox',
     permission: { resource: 'naskah-dinas', action: 'read' },
-    badge: unreadCount.value > 0 ? unreadCount.value : null
+    badge: unreadCount.value > 0 ? unreadCount.value : null,
   },
   {
     label: t('terkirim'),
     to: '/korespondensi/terkirim',
     icon: 'i-lucide-send',
-    permission: { resource: 'naskah-dinas', action: 'read' }
+    permission: { resource: 'naskah-dinas', action: 'read' },
   },
   {
     label: t('tertunda'),
     to: '/korespondensi/tertunda',
     icon: 'i-lucide-file-clock',
-    permission: { resource: 'naskah-dinas', action: 'read' }
+    permission: { resource: 'naskah-dinas', action: 'read' },
   },
   {
     label: t('draft'),
     to: '/korespondensi/draf',
     icon: 'i-lucide-file-text',
-    permission: { resource: 'naskah-dinas', action: 'read' }
-  }
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
 ]);
 
 const userMenuUtilitas = computed(() => {
@@ -457,7 +492,7 @@ const userMenuUtilitas = computed(() => {
       label: t('digsig'),
       to: '/penandatangan',
       icon: 'i-lucide-signature',
-      permission: { resource: 'naskah-dinas', action: 'read-detail' }
+      permission: { resource: 'naskah-dinas', action: 'read-detail' },
     },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     {
@@ -466,21 +501,22 @@ const userMenuUtilitas = computed(() => {
       permission: { resource: 'naskah-dinas', action: 'read' },
       children: [
         { label: 'Kirim Email', to: '/layanan-email' },
-        { label: 'Log Email', to: '/layanan-email/log' }
-      ]
+        { label: 'Log Email', to: '/layanan-email/log' },
+      ],
     },
     {
       label: t('template'),
       to: '/template',
       icon: 'i-lucide-copy',
-      permission: { resource: 'naskah-dinas', action: 'read' }
+      permission: { resource: 'naskah-dinas', action: 'read' },
     },
+    verifikatorMenu.value,
     {
       label: t('titelatur_inggris'),
       to: '/titelatur',
       icon: 'i-lucide-languages',
-      permission: { resource: 'naskah-dinas', action: 'read' }
-    }
+      permission: { resource: 'naskah-dinas', action: 'read' },
+    },
   ];
 
   if (hasBodTag.value) {
@@ -492,7 +528,7 @@ const userMenuUtilitas = computed(() => {
         {
           label: t('usulan') || 'Usulan',
           to: '/usulan-penomoran',
-          badge: userCounts.value.draft > 0 ? userCounts.value.draft : null
+          badge: userCounts.value.draft > 0 ? userCounts.value.draft : null,
         },
         {
           label: t('Persetujuan') || 'Persetujuan',
@@ -501,9 +537,9 @@ const userMenuUtilitas = computed(() => {
           badge:
             (userCounts.value.menunggu_persetujuan ?? 0) > 0
               ? userCounts.value.menunggu_persetujuan
-              : null
-        }
-      ]
+              : null,
+        },
+      ],
     });
   } else {
     menus.push({
@@ -511,7 +547,7 @@ const userMenuUtilitas = computed(() => {
       to: '/usulan-penomoran',
       icon: 'i-lucide-hash',
       permission: { resource: 'penomoran', action: 'read' },
-      badge: userCounts.value.draft > 0 ? userCounts.value.draft : null
+      badge: userCounts.value.draft > 0 ? userCounts.value.draft : null,
     });
   }
 
@@ -523,14 +559,14 @@ const faqMenuUser = computed(() => [
     label: 'FAQ',
     to: '/faq/menu',
     icon: 'i-lucide-circle-help',
-    permission: { resource: 'faq', action: 'read' }
+    permission: { resource: 'faq', action: 'read' },
   },
   {
     label: 'Pedoman',
     to: '/pedoman/menu',
     icon: 'i-lucide-book-open',
-    permission: { resource: 'pedoman', action: 'read' }
-  }
+    permission: { resource: 'pedoman', action: 'read' },
+  },
 ]);
 
 const faqMenuAdmin = computed(() => [
@@ -538,26 +574,26 @@ const faqMenuAdmin = computed(() => [
     label: 'FAQ',
     to: '/faq/menu',
     icon: 'i-lucide-circle-help',
-    permission: { resource: 'faq', action: 'read' }
+    permission: { resource: 'faq', action: 'read' },
   },
   {
     label: 'Manajemen FAQ',
     to: '/faq/manajemen',
     icon: 'i-lucide-file-question',
-    permission: { resource: 'faq', action: 'manage' }
+    permission: { resource: 'faq', action: 'manage' },
   },
   {
     label: 'Pedoman',
     to: '/pedoman/menu',
     icon: 'i-lucide-book-open',
-    permission: { resource: 'pedoman', action: 'read' }
+    permission: { resource: 'pedoman', action: 'read' },
   },
   {
     label: 'Manajemen Pedoman',
     to: '/pedoman/manajemen',
     icon: 'i-lucide-file-text',
-    permission: { resource: 'pedoman', action: 'read' }
-  }
+    permission: { resource: 'pedoman', action: 'read' },
+  },
 ]);
 
 // ─── Admin menus ──────────────────────────────────────────────────────────────
@@ -567,7 +603,7 @@ const adminMenuUtama = computed(() => [
     label: t('beranda'),
     to: '/beranda',
     icon: 'i-lucide-layout-dashboard',
-    permission: { resource: 'dashboard', action: 'read' }
+    permission: { resource: 'dashboard', action: 'read' },
   },
   tulisMenu.value,
   {
@@ -575,26 +611,26 @@ const adminMenuUtama = computed(() => [
     to: '/korespondensi/kotak-masuk',
     icon: 'i-lucide-inbox',
     permission: { resource: 'naskah-dinas', action: 'read' },
-    badge: unreadCount.value > 0 ? unreadCount.value : null
+    badge: unreadCount.value > 0 ? unreadCount.value : null,
   },
   {
     label: t('terkirim'),
     to: '/korespondensi/terkirim',
     icon: 'i-lucide-send',
-    permission: { resource: 'naskah-dinas', action: 'read' }
+    permission: { resource: 'naskah-dinas', action: 'read' },
   },
   {
     label: t('tertunda'),
     to: '/korespondensi/tertunda',
     icon: 'i-lucide-file-clock',
-    permission: { resource: 'naskah-dinas', action: 'read' }
+    permission: { resource: 'naskah-dinas', action: 'read' },
   },
   {
     label: t('draft'),
     to: '/korespondensi/draf',
     icon: 'i-lucide-file-text',
-    permission: { resource: 'naskah-dinas', action: 'read' }
-  }
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
 ]);
 
 const adminMenuUtilitas = computed(() => {
@@ -607,8 +643,8 @@ const adminMenuUtilitas = computed(() => {
         { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen' },
         { label: t('sign'), to: '/digsig/penandatanganan' },
         { label: t('check_dokumen'), to: '/digsig/cek-dokumen' },
-        { label: 'Log Digsig', to: '/digsig/log-digsig' }
-      ]
+        { label: 'Log Digsig', to: '/digsig/log-digsig' },
+      ],
     },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     {
@@ -617,15 +653,16 @@ const adminMenuUtilitas = computed(() => {
       permission: { resource: 'naskah-dinas', action: 'read' },
       children: [
         { label: 'Kirim Email', to: '/layanan-email' },
-        { label: 'Log Email', to: '/layanan-email/log' }
-      ]
+        { label: 'Log Email', to: '/layanan-email/log' },
+      ],
     },
     {
       label: t('template'),
       to: '/template',
       icon: 'i-lucide-copy',
-      permission: { resource: 'naskah-dinas', action: 'read' }
-    }
+      permission: { resource: 'naskah-dinas', action: 'read' },
+    },
+    verifikatorMenu.value,
   ];
 
   // if (hasBodTag.value) {
@@ -648,8 +685,8 @@ const adminMenuAdministrasi = computed(() => {
     {
       label: t('usulan'),
       to: '/penomoran/usulan',
-      badge: adminCounts.value.draft > 0 ? adminCounts.value.draft : null
-    }
+      badge: adminCounts.value.draft > 0 ? adminCounts.value.draft : null,
+    },
   ];
 
   // Persetujuan di urutan ke-2, hanya kalau ada bodTag
@@ -661,7 +698,7 @@ const adminMenuAdministrasi = computed(() => {
       badge:
         (userCounts.value.menunggu_persetujuan ?? 0) > 0
           ? userCounts.value.menunggu_persetujuan
-          : null
+          : null,
     });
   }
 
@@ -670,7 +707,7 @@ const adminMenuAdministrasi = computed(() => {
       label: t('ver'),
       to: '/penomoran/verifikasi',
       badge:
-        adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null
+        adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null,
     },
     { label: t('penomoran'), to: '/penomoran/nomor' }
   );
@@ -680,36 +717,26 @@ const adminMenuAdministrasi = computed(() => {
       label: t('delegasi'),
       to: '/delegasi',
       icon: 'i-lucide-users',
-      permission: { resource: 'delegasi', action: 'read' }
+      permission: { resource: 'delegasi', action: 'read' },
     },
     {
       label: t('titelatur_inggris'),
       to: '/titelatur',
       icon: 'i-lucide-languages',
-      permission: { resource: 'naskah-dinas', action: 'read' }
+      permission: { resource: 'naskah-dinas', action: 'read' },
     },
     {
       label: t('penomoran'),
       icon: 'i-lucide-hash',
       permission: { resource: 'penomoran', action: 'read' },
-      children: penomoranChildren
+      children: penomoranChildren,
     },
     {
       label: t('naskah_masuk'),
+      to: '/naskah-dinas',
       icon: 'i-lucide-file-input',
       permission: { resource: 'naskah-dinas', action: 'read' },
-      children: [
-        { label: 'Verifikasi Naskah', to: '/naskah-dinas' },
-        {
-          label: 'Verifikator',
-          to: '/naskah-dinas/verifikator',
-          badge:
-            rtVerifikatorCount.value > 0
-              ? rtVerifikatorCount.value
-              : null
-        }
-      ]
-    }
+    },
   ];
 
   if (user.value?.role === 'superadmin' || hasRole('SUPERADMIN')) {
@@ -722,8 +749,8 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('tertuju'), to: '/master/tertuju-eksternal' },
           { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
           { label: t('klasifikasi'), to: '/master/klasifikasi' },
-          { label: t('jenis'), to: '/master/jenis' }
-        ]
+          { label: t('jenis'), to: '/master/jenis' },
+        ],
       },
       {
         label: t('rbac_management'),
@@ -733,30 +760,28 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('rbac_roles'), to: '/rbac/roles', icon: 'i-lucide-shield' },
           { label: t('rbac_permissions'), to: '/rbac/permissions', icon: 'i-lucide-key-round' },
           { label: t('rbac_resources'), to: '/rbac/resources', icon: 'i-lucide-box' },
-          { label: t('rbac_users'), to: '/rbac/users', icon: 'i-lucide-user-cog' }
-        ]
+          { label: t('rbac_users'), to: '/rbac/users', icon: 'i-lucide-user-cog' },
+        ],
       },
       {
         label: t('konfigurasi'),
         to: '/konfigurasi-sistem',
         icon: 'i-lucide-settings-2',
-        permission: { resource: 'konfigurasi', action: 'read' }
+        permission: { resource: 'konfigurasi', action: 'read' },
       }
     );
   } else if (hasRole('ADMIN')) {
-    base.push(
-      {
-        label: t('master_data'),
-        icon: 'i-lucide-database',
-        permission: { resource: 'master-data', action: 'read' },
-        children: [
-          { label: t('tertuju'), to: '/master/tertuju-eksternal' },
-          { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
-          { label: t('klasifikasi'), to: '/master/klasifikasi' },
-          { label: t('jenis'), to: '/master/jenis' }
-        ]
-      }
-    );
+    base.push({
+      label: t('master_data'),
+      icon: 'i-lucide-database',
+      permission: { resource: 'master-data', action: 'read' },
+      children: [
+        { label: t('tertuju'), to: '/master/tertuju-eksternal' },
+        { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
+        { label: t('klasifikasi'), to: '/master/klasifikasi' },
+        { label: t('jenis'), to: '/master/jenis' },
+      ],
+    });
   }
 
   return base;
@@ -767,20 +792,20 @@ const adminMenuLaporan = computed(() => [
     label: t('rekap'),
     to: '/laporan/rekap-naskah',
     icon: 'i-lucide-file-bar-chart-2',
-    permission: { resource: 'laporan', action: 'read' }
+    permission: { resource: 'laporan', action: 'read' },
   },
   {
     label: t('detail'),
     to: '/laporan/detail-naskah',
     icon: 'i-lucide-file-search',
-    permission: { resource: 'laporan', action: 'read' }
+    permission: { resource: 'laporan', action: 'read' },
   },
   {
     label: t('naskah'),
     to: '/laporan/naskah-masuk',
     icon: 'i-lucide-folder-input',
-    permission: { resource: 'laporan', action: 'read' }
-  }
+    permission: { resource: 'laporan', action: 'read' },
+  },
 ]);
 
 // ─── Notification flags ───────────────────────────────────────────────────────
@@ -788,10 +813,10 @@ const adminMenuLaporan = computed(() => [
 const hasAdministrasiNotification = computed(
   () =>
     adminCounts.value.menunggu_verifikasi > 0 ||
-    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0) ||
-    rtVerifikatorCount.value > 0
+    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
 );
 const hasUtilitasNotification = computed(() => {
+  if (rtVerifikatorCount.value > 0) return true;
   if (isAdminOrSuperadmin.value) return false;
   return (
     userCounts.value.menunggu_verifikasi > 0 ||
@@ -830,14 +855,14 @@ const apps = computed(() => {
         // shown in img 1/2. Never use a computed/dynamic value here.
         icon: 'i-heroicons-home',
         menus: filterMenuByPermission(adminMenuUtama.value),
-        hasNotification: hasInboxUnread.value
+        hasNotification: hasInboxUnread.value,
       },
       {
         id: 'admin-utilitas',
         label: t('utilitas'),
         icon: 'i-heroicons-squares-plus',
         menus: filterMenuByPermission(adminMenuUtilitas.value),
-        hasNotification: hasUtilitasNotification.value // ← UBAH dari false
+        hasNotification: hasUtilitasNotification.value, // ← UBAH dari false
       },
       {
         id: 'admin-administrasi',
@@ -846,7 +871,7 @@ const apps = computed(() => {
         // Must be a hardcoded string literal — never a variable or t() call.
         icon: 'i-lucide-settings',
         menus: filterMenuByPermission(adminMenuAdministrasi.value),
-        hasNotification: hasAdministrasiNotification.value
+        hasNotification: hasAdministrasiNotification.value,
       },
       {
         id: 'admin-laporan',
@@ -854,15 +879,15 @@ const apps = computed(() => {
         // FIX: Was 'i-heroicons-presentation-chart-line'. Correct per img 1/2.
         icon: 'i-heroicons-presentation-chart-line',
         menus: filterMenuByPermission(adminMenuLaporan.value),
-        hasNotification: false
+        hasNotification: false,
       },
       {
         id: 'admin-faq',
         label: 'FAQ',
         icon: 'i-lucide-circle-help',
         menus: filterMenuByPermission(faqMenuAdmin.value),
-        hasNotification: false
-      }
+        hasNotification: false,
+      },
     ];
   }
 
@@ -872,22 +897,22 @@ const apps = computed(() => {
       label: t('utama'),
       icon: 'i-heroicons-home',
       menus: filterMenuByPermission(userMenuUtama.value),
-      hasNotification: hasInboxUnread.value
+      hasNotification: hasInboxUnread.value,
     },
     {
       id: 'user-utilitas',
       label: t('utilitas'),
       icon: 'i-heroicons-squares-plus',
       menus: filterMenuByPermission(userMenuUtilitas.value),
-      hasNotification: hasUtilitasNotification.value
+      hasNotification: hasUtilitasNotification.value,
     },
     {
       id: 'user-faq',
       label: 'FAQ',
       icon: 'i-lucide-circle-help',
       menus: filterMenuByPermission(faqMenuUser.value),
-      hasNotification: false
-    }
+      hasNotification: false,
+    },
   ];
 });
 
@@ -1014,7 +1039,7 @@ const labelForm = reactive({
   id: null,
   name: '',
   isNested: false,
-  parentId: ''
+  parentId: '',
 });
 
 const availableParents = computed(() => {
@@ -1050,7 +1075,7 @@ const saveLabel = async () => {
   isProcessing.value = true;
   const payload = {
     nama: labelForm.nama,
-    idParent: labelForm.isNested && labelForm.parentId ? labelForm.parentId : null
+    idParent: labelForm.isNested && labelForm.parentId ? labelForm.parentId : null,
   };
   try {
     if (isEditing.value) {
