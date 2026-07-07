@@ -17,7 +17,8 @@ import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } fro
 definePageMeta({ middleware: "auth" });
 
 // ── Auth & Toast ──────────────────────────────────────────────────────────────
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const canView = computed(() => hasPermission('naskah-dinas', 'read'))
 const toast = useToast();
 const router = useRouter();
 const route = useRoute();
@@ -368,6 +369,11 @@ onMounted(() => {
 </script>
 
 <template>
+  <div v-if="!canView" class="flex flex-col items-center justify-center py-20 text-center">
+    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
+  </div>
+  <template v-else>
   <PageHeader title="Draf" :items="breadcrumbs" />
   <div class="w-full flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-lg shadow-sm glass-blue">
 
@@ -394,7 +400,7 @@ onMounted(() => {
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button @click="confirmBulkDelete"
+            <button v-if="hasPermission('naskah-dinas', 'delete')" @click="confirmBulkDelete"
               class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
               title="Hapus">
               <Trash2 class="w-4 h-4" />
@@ -666,12 +672,12 @@ onMounted(() => {
               <div class="pl-2 shrink-0 flex justify-end gap-1">
                 <button
                   class="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg text-orange-500 dark:text-orange-400 transition-colors"
-                  @click.stop="handleEdit(mail)" title="Edit">
+                  @click.stop="hasPermission('naskah-dinas', 'update') ? handleEdit(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_edit_ditolak') || 'Anda tidak memiliki izin untuk mengedit.', color: 'error', icon: 'i-lucide-x-circle' })" title="Edit">
                   <Pencil class="w-4 h-4" />
                 </button>
                 <button
                   class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 transition-colors"
-                  @click.stop="confirmDeleteModal(mail)">
+                  @click.stop="hasPermission('naskah-dinas', 'delete') ? confirmDeleteModal(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_hapus_ditolak') || 'Anda tidak memiliki izin untuk menghapus.', color: 'error', icon: 'i-lucide-x-circle' })">
                   <Trash2 class="w-4 h-4" />
                 </button>
               </div>
@@ -710,6 +716,7 @@ onMounted(() => {
       </div>
     </Teleport>
   </div>
+  </template>
 </template>
 
 <style scoped>
