@@ -356,7 +356,10 @@ const openReaderModal = (mail: any) => {
       id: log.id_naskah || `${index}`,
       title: log.perihal || item.perihal || item.subject || '-',
       nomor: log.nomor || '-',
-      label: totalLogs > 1 ? `Log ${index + 1}` : getCategoryLabel(log.jenis || mail.category),
+      label:
+        totalLogs > 1
+          ? `${getCategoryLabel(log.jenis || mail.category)} ${index + 1}`
+          : getCategoryLabel(log.jenis || mail.category),
       sentAt: log.created_at
         ? `${new Date(log.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ${new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
         : '-',
