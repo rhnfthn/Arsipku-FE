@@ -53,13 +53,13 @@
             </div>
           </div>
 
-          <!-- Tabs Utama / Utilitas -->
-          <div class="flex border-b border-gray-200 dark:border-gray-700 px-5 gap-1">
+          <!-- Tabs: Utama / Utilitas / Administrasi / Laporan / FAQ -->
+          <div class="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-5 gap-1">
             <button
               v-for="tab in tabs"
               :key="tab.key"
               @click="activeTab = tab.key"
-              class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+              class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
               :class="activeTab === tab.key
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
@@ -189,7 +189,7 @@ definePageMeta({ middleware: ['auth', 'rbac-admin'] });
 const route = useRoute();
 const { t } = useI18n();
 const toast = useToast();
-const { roles, fetchRoles, fetchMatrixUtama, fetchMatrixUtilitas, assignPermissions } = useRbac();
+const { roles, fetchRoles, fetchMatrixUtama, fetchMatrixUtilitas, fetchMatrixAdministrasi, fetchMatrixLaporan, fetchMatrixFaq, assignPermissions } = useRbac();
 const { getProfile, refreshPermissions } = useAuth();
 
 const loading = ref(true);
@@ -197,17 +197,30 @@ const saving = ref(false);
 const role = ref<RbacRole | null>(null);
 const utamaTree = ref<any>(null);
 const utilitasTree = ref<any>(null);
+const administrasiTree = ref<any>(null);
+const laporanTree = ref<any>(null);
+const faqTree = ref<any>(null);
 const selectedIds = ref<Set<string>>(new Set());
 const initialIds = ref<Set<string>>(new Set());
 const openKeys = ref<Set<string>>(new Set());
-const activeTab = ref<'utama' | 'utilitas'>('utama');
+const activeTab = ref<'utama' | 'utilitas' | 'administrasi' | 'laporan' | 'faq'>('utama');
 
 const tabs = [
   { key: 'utama' as const, label: 'Utama' },
   { key: 'utilitas' as const, label: 'Utilitas' },
+  { key: 'administrasi' as const, label: 'Administrasi' },
+  { key: 'laporan' as const, label: 'Laporan' },
+  { key: 'faq' as const, label: 'FAQ & Pedoman' },
 ];
 
-const currentTree = computed(() => (activeTab.value === 'utama' ? utamaTree.value : utilitasTree.value));
+const treeMap: Record<string, Ref<any>> = {
+  utama: utamaTree,
+  utilitas: utilitasTree,
+  administrasi: administrasiTree,
+  laporan: laporanTree,
+  faq: faqTree,
+};
+const currentTree = computed(() => treeMap[activeTab.value]?.value ?? null);
 
 const selectedPermIds = computed(() => Array.from(selectedIds.value));
 
@@ -223,7 +236,7 @@ const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.na
 
 const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
-  for (const tree of [utamaTree.value, utilitasTree.value]) {
+  for (const tree of [utamaTree.value, utilitasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
     for (const menu of tree.menus ?? []) {
       for (const sub of menu.subMenus ?? []) {
@@ -311,15 +324,24 @@ onMounted(async () => {
     await fetchRoles();
     role.value = roles.value.find((r) => r.id === route.params.id) ?? null;
     if (role.value) {
-      const [utama, utilitas] = await Promise.all([
+      const [utama, utilitas, administrasi, laporan, faq] = await Promise.all([
         fetchMatrixUtama(role.value.id),
         fetchMatrixUtilitas(role.value.id),
+        fetchMatrixAdministrasi(role.value.id),
+        fetchMatrixLaporan(role.value.id),
+        fetchMatrixFaq(role.value.id),
       ]);
       utamaTree.value = utama.tree;
       utilitasTree.value = utilitas.tree;
-      // Merge assigned permission IDs from both (they're the same — role's full set)
+      administrasiTree.value = administrasi.tree;
+      laporanTree.value = laporan.tree;
+      faqTree.value = faq.tree;
+      // Merge assigned permission IDs from all (they're the same — role's full set)
       const ids = new Set<string>((utama.assignedPermissionIds ?? []).filter(Boolean));
       (utilitas.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
+      (administrasi.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
+      (laporan.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
+      (faq.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       selectedIds.value = ids;
       initialIds.value = new Set(ids);
       expandAll();
