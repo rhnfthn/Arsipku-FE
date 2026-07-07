@@ -14,12 +14,34 @@ export interface Penerima {
   nama: string;
   status_baca: 'terbaca' | 'belum_terbaca';
   read_time: string | null;
+  is_tindak_lanjut?: boolean;
 }
 
 export interface SummaryBaca {
   total: number;
   terbaca: number;
   belum_terbaca: number;
+}
+
+export interface SummaryTindakLanjut {
+  total: number;
+  sudah: number;
+  belum: number;
+}
+
+export interface TrackingLog {
+  id_sirkulasi: string;
+  id_naskah: string;
+  jenis: string;
+  jenis_label: string;
+  nomor: string | null;
+  perihal: string | null;
+  created_at: string;
+  pengirim: Pengirim;
+  penerima: Penerima[];
+  tembusan: Penerima[];
+  summary_baca: SummaryBaca;
+  summary_tindak_lanjut: SummaryTindakLanjut;
 }
 
 export interface NaskahItem {
@@ -34,6 +56,8 @@ export interface NaskahItem {
   lampiran: number;
   pengirim: Pengirim;
   penerima: Penerima[];
+  tembusan?: Penerima[];
+  tracking_logs?: TrackingLog[];
   summary_baca: SummaryBaca;
 }
 

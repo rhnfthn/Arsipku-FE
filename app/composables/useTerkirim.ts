@@ -61,7 +61,7 @@ export const useSirkulasi = () => {
       if (params.page) query.append('page', params.page.toString());
       if (params.limit) query.append('limit', params.limit.toString());
       if (params.jenis && !['ALL', 'Semua'].includes(params.jenis))
-        query.append('jenis', params.jenis);
+        query.append('jenis', params.jenis === 'KO' ? 'K' : params.jenis);
       if (params.status_baca && params.status_baca !== 'Semua')
         query.append('status_baca', params.status_baca);
       if (params.search) query.append('search', params.search);
@@ -72,7 +72,11 @@ export const useSirkulasi = () => {
       if (params.favorite) query.append('favorite', 'true');
       if (params.priority) query.append('priority', 'true');
 
-      const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`, {}, { skipCache: params.search ? true : false });
+      const res = await apiGet(
+        `/naskah_sirkulasi/sent/?${query.toString()}`,
+        {},
+        { skipCache: params.search ? true : false }
+      );
 
       // Samakan normalisasi dengan useInbox agar pagination & summary selalu terbaca
       const responseBody = res?.data?.pagination ? res.data : res;
@@ -131,7 +135,7 @@ export const useSirkulasi = () => {
           is_priority: item.is_priority,
           recipient: listPenerima.map((p: any) => p.position_text || p.nama).join(', '),
           labels: item.labels || [],
-          originalData: item
+          originalData: item,
         };
       });
     } catch (err: any) {
@@ -151,7 +155,7 @@ export const useSirkulasi = () => {
       if (!idToSend) throw new Error('ID tidak ditemukan');
       await apiPatch('/naskah_sirkulasi/toggle-flag', {
         id_sirkulasi: idToSend,
-        flag_type: flagType
+        flag_type: flagType,
       });
     } catch (err) {
       console.error('Gagal toggle flag:', flagType, err);
@@ -177,11 +181,12 @@ export const useSirkulasi = () => {
   const fetchSentNavigation = async (idNaskah: string, jenis?: string) => {
     try {
       const query = new URLSearchParams();
-      if (jenis && !['ALL', 'Semua'].includes(jenis)) query.append('jenis', jenis);
+      if (jenis && !['ALL', 'Semua'].includes(jenis))
+        query.append('jenis', jenis === 'KO' ? 'K' : jenis);
       const res: any = await apiGet(
         `/naskah_sirkulasi/sent/${encodeURIComponent(idNaskah)}/navigation${query.toString() ? `?${query.toString()}` : ''}`,
         {},
-        { skipCache: true },
+        { skipCache: true }
       );
 
       const navData = res?.data ?? res;
@@ -196,5 +201,15 @@ export const useSirkulasi = () => {
     }
   };
 
-  return { items, pagination, summary, isLoading, error, fetchSentBox, bulkActionSent, toggleFlag, fetchSentNavigation };
+  return {
+    items,
+    pagination,
+    summary,
+    isLoading,
+    error,
+    fetchSentBox,
+    bulkActionSent,
+    toggleFlag,
+    fetchSentNavigation,
+  };
 };

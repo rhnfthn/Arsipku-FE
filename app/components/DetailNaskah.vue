@@ -207,6 +207,17 @@ const konsepNaskahStatus = computed(() => {
   };
 });
 
+const isKonsepNaskahTerkirim = computed(() => {
+  if (!props.isHead) return false;
+
+  const nomor = String(konsepNaskahInfo.value?.nomor || '').trim();
+  return props.data?.aksi === 'finish' || (nomor !== '' && nomor !== '-');
+});
+
+const konsepRecipientLabel = computed(() =>
+  isKonsepNaskahTerkirim.value ? 'Penerima Naskah' : 'Penerima Konsep'
+);
+
 const headerRecipients = computed(() => {
   const src = props.data?.to || props.data?.kepada || props.data?.penerima || [];
   const list = Array.isArray(src) ? src : src ? [src] : [];
@@ -633,7 +644,7 @@ const removeNote = () => {
             <span
               class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 block"
             >
-              Penerima Konsep
+              {{ konsepRecipientLabel }}
             </span>
             <span class="text-sm font-semibold block text-gray-900 dark:text-white">
               {{ data.to_konsep.position_text || data.to_konsep.positionText || '-' }}
