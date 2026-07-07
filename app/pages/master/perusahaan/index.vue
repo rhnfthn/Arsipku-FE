@@ -1,12 +1,7 @@
 <template>
   <div class="min-h-screen dark:bg-gray-900 transition-colors pt-5">
-    <EmptyState
-      v-if="!canViewMaster"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat master data. Hubungi administrator."
-    />
-    <div v-else class="max-w-7xl mx-auto">
+    <AccessDenied v-if="!canAccessPage()" />
+<div v-else class="max-w-7xl mx-auto">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-3">
         <div>
           <Heading variant="heading6b" class="text-mobile-md dark:text-white">
@@ -374,7 +369,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts">const { canAccessPage } = useFeatureAccess()
+
 import { ref, computed, onMounted } from 'vue';
 import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown } from 'lucide-vue-next';
 import { useCompany } from '~/composables/useCompany';
@@ -387,8 +383,7 @@ definePageMeta({
 const { t, locale } = useI18n();
 
 const { hasPermission } = useAuth();
-
-const canViewMaster = computed(() => hasPermission('master-data', 'read'));
+
 
 // ─────────────────────────────────────────────
 // BREADCRUMB (reaktif terhadap bahasa)

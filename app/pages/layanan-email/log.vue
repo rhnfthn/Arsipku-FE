@@ -1,11 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <EmptyState
-      v-if="!canViewLog"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat log email. Hubungi administrator."
-    />
+    <AccessDenied v-if="!canAccessPage()" />
     <div v-else class="w-full">
       <!-- HEADER -->
       <div class="mb-2">
@@ -436,7 +431,7 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 const { apiGet } = useApi()
 const { hasPermission, isSuperadmin } = useAuth()
 
-const canViewLog = computed(() => hasPermission('naskah-dinas', 'read'))
+const { canAccessPage } = useFeatureAccess()
 
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },

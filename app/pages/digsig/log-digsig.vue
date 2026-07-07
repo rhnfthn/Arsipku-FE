@@ -1,11 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <EmptyState
-      v-if="!canViewDigsig"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat log digsig. Hubungi administrator."
-    />
+    <AccessDenied v-if="!canAccessPage()" />
     <div v-else class="w-full">
       <!-- HEADER -->
       <div class="mb-2">
@@ -82,6 +77,7 @@
 
           <!-- BSRE ALERT BUTTON -->
           <button
+            v-if="hasPermission('utilitas.ttd-digital.log-disdig', 'create')"
             :class="[
               'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
               bsreAlert?.isActive
@@ -525,7 +521,7 @@ const { t } = useI18n();
 
 const { hasPermission, isSuperadmin } = useAuth();
 
-const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
+const { canAccessPage } = useFeatureAccess()
 
 // ─── Refs ──────────────────────────────────────
 const rowsRef = ref<HTMLElement | null>(null);

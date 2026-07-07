@@ -1,10 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <EmptyState
-      v-if="!canViewDashboard"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat dashboard. Hubungi administrator."
+    <AccessDenied
+      v-if="!canAccessPage()"
+      permission-key="utama.beranda:read"
     />
     <div v-else class="space-y-6">
       <UAlert
@@ -290,10 +288,11 @@ definePageMeta({
 })
 
 const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
+const { canAccessPage } = useFeatureAccess()
 const { isLoading, error, stats, recentMails, chartData, fetchDashboardData, dashboardData } =
   useDashboard()
 
-const canViewDashboard = computed(() => hasPermission('dashboard', 'read'))
+const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
 
 const { t } = useI18n()
 

@@ -1,8 +1,5 @@
 <template>
-  <div v-if="!canWrite" class="flex flex-col items-center justify-center py-20 text-center">
-    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
-  </div>
+  <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="relative">
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
@@ -214,7 +211,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -236,10 +233,10 @@
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
 
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="handleConfirmKirim" />
         </div>
       </template>
@@ -292,7 +289,7 @@ const signMethodModalRef = ref<any>(null);
 const { getConfigDigsig } = useDigsig();
 
 const { user, getProfile, hasPermission } = useAuth();
-const canWrite = computed(() => hasPermission('naskah-dinas', 'read'))
+const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const {
   getRecipients,
