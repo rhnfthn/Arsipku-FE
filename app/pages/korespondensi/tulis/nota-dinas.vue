@@ -50,6 +50,8 @@ const {
   redirectTerkirim, redirectDraf,
 } = useTulis();
 
+const isAiDraftOpen = ref(false);
+
 // ── ND-specific state ─────────────────────────────────────────────────────────
 const english = ref(false);
 const items = ref<any[]>([]);
@@ -448,6 +450,9 @@ onMounted(async () => {
                   </table>
                 </div>
 
+                <div class="mb-3">
+                  <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                </div>
                 <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
                 <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
@@ -527,6 +532,8 @@ onMounted(async () => {
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+
+    <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="ND" :editor="tinymceEditor" />
 
   </div>
 </template>

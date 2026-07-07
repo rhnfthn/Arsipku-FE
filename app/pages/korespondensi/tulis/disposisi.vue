@@ -182,6 +182,9 @@
                 <div class="p-0 min-h-[300px] relative group">
                   <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
+                    <div class="mb-3">
+                      <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                    </div>
                     <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
                   <div class="absolute bottom-4 left-4 z-10 pointer-events-none">
@@ -227,6 +230,8 @@
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
+    <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="disposisi" :editor="tinymceEditor" />
+
   </div>
 </template>
 
@@ -261,6 +266,8 @@ const {
   setPdfBlob, revokePdfUrl, confirmSaveDraft, confirmKirim,
   toastError, toastSuccess, redirectTerkirim, redirectDraf
 } = useTulis();
+
+const isAiDraftOpen = ref(false);
 
 // ── Disposisi-specific state ──────────────────────────────────────────────────
 const editorContainerRef = ref<HTMLElement | null>(null);

@@ -65,6 +65,8 @@ const {
   redirectTerkirim, redirectDraf,
 } = useTulis();
 
+const isAiDraftOpen = ref(false);
+
 // ── SDI-specific state ────────────────────────────────────────────────────────
 const lampiranText = ref("");
 const tertujuItems = ref<any[]>([]);
@@ -527,6 +529,9 @@ watch(
                 </div>
 
                 <div class="min-h-[300px] relative group">
+                  <div class="mb-3">
+                    <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                  </div>
                   <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
 
@@ -609,6 +614,8 @@ watch(
       :signer-info="{ name: user?.nama || 'Nama Lengkap', role: user?.positionText || 'Jabatan', label: 'Ditandatangani secara digital oleh' }"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+
+    <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="SDI" :editor="tinymceEditor" />
 
   </div>
 </template>
