@@ -304,20 +304,31 @@ const removeNote = () => {
           </h1>
         </template>
         <template v-else>
-          <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-            {{
-              data.subject ||
-              (data.aksi === 'create'
-                ? 'Konsep Awal'
-                : data.aksi === 'reject'
-                  ? 'Konsep Ditolak'
-                  : data.aksi === 'forward'
-                    ? 'Revisi Konsep'
-                    : isKonsepNaskahJenis
-                      ? 'Konsep Naskah'
-                      : 'Riwayat')
-            }}
-          </h2>
+          <div class="flex items-center gap-2 min-w-0">
+            <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+              {{
+                data.subject ||
+                (data.aksi === 'create'
+                  ? 'Konsep Awal'
+                  : data.aksi === 'reject'
+                    ? 'Konsep Ditolak'
+                    : data.aksi === 'forward'
+                      ? 'Revisi Konsep'
+                      : data.jenis === 'DI'
+                        ? 'Disposisi'
+                        : isKonsepNaskahJenis
+                          ? 'Konsep Naskah'
+                          : 'Riwayat')
+              }}
+            </h2>
+            <span
+              v-if="aksiBadge"
+              class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white"
+              :class="aksiBadge.color"
+            >
+              {{ aksiBadge.label }}
+            </span>
+          </div>
         </template>
       </div>
       <!-- {{ data }} -->
@@ -375,8 +386,14 @@ const removeNote = () => {
         </UTooltip>
 
         <!-- Tindak Lanjut (display only, tidak bisa di-toggle manual) -->
-        <UTooltip v-if="isHead && context !== 'sent'" text="Tindak Lanjut">
-          <div class="p-1.5 rounded-lg">
+        <UTooltip
+          v-if="context !== 'sent'"
+          :text="isTinjut ? 'Sudah tindak lanjut' : 'Belum tindak lanjut'"
+        >
+          <div
+            class="p-1.5 rounded-lg"
+            :class="!isHead ? 'bg-gray-50 dark:bg-gray-900/40' : ''"
+          >
             <Tag
               class="w-4 h-4 -rotate-45 transition-colors"
               :class="
@@ -486,6 +503,8 @@ const removeNote = () => {
               {{
                 data.aksi === 'kirim_disposisi'
                   ? 'DISPOSISI'
+                  : data.jenis === 'DI'
+                    ? 'DISPOSISI'
                   : data.aksi === 'create' ||
                       (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep)
                     ? data.jenis_naskah_konsep
@@ -561,6 +580,8 @@ const removeNote = () => {
           {{
             data.aksi === 'kirim_disposisi'
               ? 'DISPOSISI'
+              : data.jenis === 'DI'
+                ? 'DISPOSISI'
               : data.aksi === 'create' ||
                   (['K', 'KO'].includes(data.jenis) && data.jenis_naskah_konsep)
                 ? data.jenis_naskah_konsep
