@@ -1,12 +1,7 @@
 <template>
   <div class="space-y-6 pt-5 dark:bg-gray-900 min-h-screen transition-colors">
-    <EmptyState
-      v-if="!canViewMaster"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat master data. Hubungi administrator."
-    />
-    <div v-else class="min-h-screen">
+    <AccessDenied v-if="!canAccessPage()" />
+<div v-else class="min-h-screen">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
         <!-- Left Section - Title & Breadcrumb -->
         <PageHeader :title="t('ka_title')" :items="items" />
@@ -565,7 +560,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts">const { canAccessPage } = useFeatureAccess()
+
 import { ref, onMounted, computed, watch } from 'vue';
 import {
   Eye,
@@ -594,8 +590,7 @@ definePageMeta({
 });
 
 const { hasPermission } = useAuth();
-
-const canViewMaster = computed(() => hasPermission('master-data', 'read'));
+
 
 // ─────────────────────────────────────────────
 // i18n — pakai useI18n() yang sudah diatur Navbar

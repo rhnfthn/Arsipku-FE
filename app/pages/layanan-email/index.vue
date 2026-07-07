@@ -1,5 +1,6 @@
 <template>
-  <div class="pt-5 bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="pt-5 bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
     <!-- HEADER -->
     <div class="flex items-center justify-between w-full mb-4">
       <div>
@@ -167,6 +168,7 @@
         <!-- Submit -->
         <div class="flex items-center gap-3 pt-2">
           <button
+            v-if="hasPermission('utilitas.layanan-email', 'create')"
             @click="handleSubmit"
             :disabled="loading"
             class="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition"
@@ -199,6 +201,8 @@
 </template>
 
 <script setup lang="ts">
+const { canAccessPage } = useFeatureAccess();
+const { hasPermission } = useAuth();
 import { X, Send, Loader2, FileText } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue'

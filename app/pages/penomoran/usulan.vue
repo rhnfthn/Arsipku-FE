@@ -1,10 +1,7 @@
 <template>
   <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- AKSES DITOLAK -->
-    <div v-if="!canViewPenomoran" class="flex flex-col items-center justify-center py-20 text-center">
-      <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-      <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
-    </div>
+    <AccessDenied v-if="!canAccessPage()" />
     <!-- KONTEN -->
     <div v-else>
     <!-- TITLE -->
@@ -760,7 +757,7 @@ definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
 const { user, getProfile, hasPermission } = useAuth()
-const canViewPenomoran = computed(() => hasPermission('penomoran', 'read'))
+const { canAccessPage } = useFeatureAccess()
 const { getListUsulan, getDetailUsulan, getKlasifikasi } = usePenomoran()
 const toast = useToast()
 

@@ -1,11 +1,6 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-900 pt-5">
-    <EmptyState
-      v-if="!canViewDigsig"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat dokumen. Hubungi administrator."
-    />
+    <AccessDenied v-if="!canAccessPage()" />
     <div v-else class="">
       <!-- HEADER -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -260,6 +255,7 @@
                 <!-- KOLOM DOKUMEN -->
                 <td class="px-4 py-3 text-center">
                   <button
+                    v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'read-lihat')"
                     @click="viewDocumentFromTable(row)"
                     :disabled="!row.filePreviewUrl && !row.signedFilePreviewUrl"
                     class="flex items-center gap-2 mx-auto px-3 py-1 text-xs font-medium rounded-lg transition"
@@ -303,6 +299,7 @@
                 <td class="px-4 py-3">
                   <div class="flex items-center justify-center gap-2">
                     <button
+                      v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'read-detail')"
                       @click="handleViewDetail(row)"
                       class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                       :title="$t('sign_lihat_detail')"
@@ -310,6 +307,7 @@
                       <Eye class="w-4.5 h-4.5" />
                     </button>
                     <button
+                      v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'create-ttd')"
                       @click="row.canSign ? handleOpenSign(row) : null"
                       :disabled="!row.canSign"
                       :class="[
@@ -323,6 +321,7 @@
                       <Signature class="w-4.5 h-4.5" />
                     </button>
                     <button
+                      v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'create-tolak')"
                       @click="row.canReject ? handleReject(row) : null"
                       :disabled="!row.canReject"
                       :class="[
@@ -807,8 +806,7 @@ import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 const { t } = useI18n();
 const toast = useToast();
 const { hasPermission } = useAuth();
-
-const canViewDigsig = computed(() => hasPermission('naskah-dinas', 'read-detail'));
+const { canAccessPage } = useFeatureAccess();
 
 const {
   penandatanganDocuments,
@@ -1060,7 +1058,7 @@ const handleViewDetail = async (doc: PenandatangananDocument) => {
 
 // ─── Sign ─────────────────────────────────────
 const handleOpenSign = (doc: PenandatangananDocument) => {
-  if (!hasPermission('naskah-dinas', 'sign')) {
+  if (!hasPermission('utilitas.ttd-digital.penandatanganan', 'create-ttd')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_sign_ditolak') || 'Anda tidak memiliki izin untuk menandatangani dokumen.',
@@ -1101,7 +1099,7 @@ const handleSign = async () => {
 
 // ─── Reject ───────────────────────────────────
 const handleReject = (doc: PenandatangananDocument) => {
-  if (!hasPermission('naskah-dinas', 'reject')) {
+  if (!hasPermission('utilitas.ttd-digital.penandatanganan', 'create-tolak')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_reject_ditolak') || 'Anda tidak memiliki izin untuk menolak dokumen.',

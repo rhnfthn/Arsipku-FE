@@ -15,7 +15,7 @@ const route = useRoute();
 const toast = useToast();
 
 const { user, getProfile, hasPermission } = useAuth();
-const canWrite = computed(() => hasPermission('naskah-dinas', 'read'))
+const { canAccessPage } = useFeatureAccess();
 const { getJenisList } = useJenis();
 
 // ── Shared composable ────────────────────────────────────────────────────────
@@ -269,10 +269,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="!canWrite" class="flex flex-col items-center justify-center py-20 text-center">
-    <UIcon name="i-lucide-lock" class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-    <p class="text-sm text-gray-400">{{ $t('akses_ditolak') }}</p>
-  </div>
+  <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader :title="`Tulis ${currentJenisLabel}`" :items="breadcrumbs" />
@@ -522,17 +519,17 @@ onMounted(async () => {
 
         <!-- Action Buttons -->
         <div class="pt-6 border-t border-gray-100 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" color="primary" variant="soft" size="lg" block
+          <UButton v-if="hasPermission('utama.tulis.naskah-lainnya', 'create')" color="primary" variant="soft" size="lg" block
             @click="handlePreview" :disabled="!currentJenis">
             <Icon name="i-lucide-eye" class="w-4 h-4 mr-2" />
             Pratinjau
           </UButton>
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" color="gray" variant="soft" size="lg" block
+          <UButton v-if="hasPermission('utama.tulis.naskah-lainnya', 'create')" color="gray" variant="soft" size="lg" block
             @click="handleSaveDraft" :disabled="!currentJenis">
             <Icon name="i-lucide-save" class="w-4 h-4 mr-2" />
             Simpan Draft
           </UButton>
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" color="primary" size="lg" block
+          <UButton v-if="hasPermission('utama.tulis.naskah-lainnya', 'create')" color="primary" size="lg" block
             @click="handleKirim" :disabled="!currentJenis">
             <Icon name="i-lucide-send" class="w-4 h-4 mr-2" />
             Kirim

@@ -432,7 +432,7 @@
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800"
         >
           <UButton
-            v-if="hasPermission('naskah-dinas', 'create')"
+            v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
             label="Simpan Draft"
             color="neutral"
             variant="outline"
@@ -443,7 +443,7 @@
             @click="handleSaveDraft"
           />
           <UButton
-            v-if="hasPermission('naskah-dinas', 'create')"
+            v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
             label="Kirim Dokumen"
             color="primary"
             size="lg"

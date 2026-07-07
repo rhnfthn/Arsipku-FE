@@ -1131,5 +1131,25 @@
   "akses_hapus_ditolak": "You do not have permission to delete.",
   "akses_kirim_ditolak": "You do not have permission to send.",
 
+  "access_denied_title": "Access Denied",
+  "access_denied_description": "You do not have permission to access this page or feature. Contact admin if you need access.",
+  "access_denied_back": "Go Back",
+  "access_denied_home": "Go Home",
+  "rbac_matrix_title": "Permission Management",
+  "rbac_matrix_subtitle": "Configure role permissions by page, menu, sub menu, and feature.",
+  "rbac_matrix_role": "Role",
+  "rbac_matrix_save": "Save Changes",
+  "rbac_matrix_saved": "Permissions saved successfully",
+  "rbac_matrix_expand_all": "Expand All",
+  "rbac_matrix_collapse_all": "Collapse All",
+  "rbac_matrix_read": "Read",
+  "rbac_matrix_create": "Create",
+  "rbac_matrix_update": "Update",
+  "rbac_matrix_delete": "Delete",
+  "rbac_matrix_export": "Export",
+  "rbac_matrix_download": "Download",
+  "rbac_matrix_select_all": "Select All",
+  "rbac_matrix_deselect_all": "Deselect All",
+
   "del_cari_placeholder": "Search Data"
 }
