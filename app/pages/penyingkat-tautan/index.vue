@@ -11,7 +11,7 @@
       </div>
 
       <button
-        v-if="hasPermission('utilitas.penyingkatan-tautan', 'create')"
+        v-if="hasPermission('penyingkat-tautan', 'create')"
         @click="openAdd"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
@@ -297,7 +297,7 @@
                   <div class="flex items-center justify-center gap-2">
                     <!-- EDIT -->
                     <button
-                      v-if="hasPermission('utilitas.penyingkatan-tautan', 'update')"
+                      v-if="hasPermission('penyingkat-tautan', 'update')"
                       class="p-2 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition"
                       @click="openEdit(row, index)"
                       :title="t('tit_tooltip_edit')"
@@ -307,7 +307,7 @@
 
                     <!-- DELETE -->
                     <button
-                      v-if="hasPermission('utilitas.penyingkatan-tautan', 'delete')"
+                      v-if="hasPermission('penyingkat-tautan', 'delete')"
                       class="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       @click="openDeleteConfirm(index)"
                       :title="t('popup_hapus')"

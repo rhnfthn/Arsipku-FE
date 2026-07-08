@@ -883,10 +883,10 @@ const hasUtilitasNotification = computed(() => {
 });
 
 const filterMenuByPermission = (items) => {
-  return items.filter((item) => {
-    if (!item.permission) return true;
-    return isSuperadmin.value || hasPermission(item.permission.resource, item.permission.action);
-  });
+  // Menu selalu tampil untuk semua role.
+  // RBAC hanya menentukan apakah halaman bisa diakses (via rbac.global.ts middleware).
+  // Jika user tidak punya permission, halaman akan menampilkan <AccessDenied>.
+  return items;
 };
 
 // ─── Apps ─────────────────────────────────────────────────────────────────────
