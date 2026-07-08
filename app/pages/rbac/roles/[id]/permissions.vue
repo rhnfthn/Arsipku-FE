@@ -210,7 +210,7 @@ const tabs = [
   { key: 'utilitas' as const, label: 'Utilitas' },
   { key: 'administrasi' as const, label: 'Administrasi' },
   { key: 'laporan' as const, label: 'Laporan' },
-  { key: 'faq' as const, label: 'FAQ & Pedoman' },
+  { key: 'faq' as const, label: 'FAQ' },
 ];
 
 const treeMap: Record<string, Ref<any>> = {
