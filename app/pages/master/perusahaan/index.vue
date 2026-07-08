@@ -10,7 +10,7 @@
           <PageHeader :items="breadcrumbs" />
         </div>
         <button
-          v-if="hasPermission('master-data', 'create')"
+          v-if="hasPermission('master-data', 'create-perusahaan')"
           @click="openAddCompany = true"
           class="flex items-center gap-2 bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
@@ -111,7 +111,7 @@
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
                     <button
-                      v-if="hasPermission('master-data', 'update')"
+                      v-if="hasPermission('master-data', 'update-perusahaan')"
                       @click="openEditModal(row)"
                       class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
                     >
@@ -120,7 +120,7 @@
                       />
                     </button>
                     <button
-                      v-if="hasPermission('master-data', 'delete')"
+                      v-if="hasPermission('master-data', 'delete-perusahaan')"
                       @click="openDeleteConfirm(row)"
                       class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                     >
@@ -383,7 +383,7 @@ definePageMeta({
 const { t, locale } = useI18n();
 
 const { hasPermission } = useAuth();
-
+
 
 // ─────────────────────────────────────────────
 // BREADCRUMB (reaktif terhadap bahasa)

@@ -6,7 +6,7 @@
         <!-- Left Section - Title & Breadcrumb -->
         <PageHeader :title="t('ka_title')" :items="items" />
         <button
-          v-if="hasPermission('master-data', 'create')"
+          v-if="hasPermission('master-data', 'create-klasifikasi')"
           @click="openAddModal"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white space-y-6 px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
         >
@@ -86,6 +86,7 @@
 
           <!-- Export -->
           <button
+            v-if="hasPermission('master-data', 'export-klasifikasi')"
             class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-500 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
             @click="onExport"
           >
@@ -168,7 +169,7 @@
                 <td class="px-4 py-3">
                   <div class="flex justify-center gap-3">
                     <button
-                      v-if="hasPermission('master-data', 'update')"
+                      v-if="hasPermission('master-data', 'update-klasifikasi')"
                       class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                       title="Edit"
                       @click="onEdit(row)"
@@ -177,7 +178,7 @@
                     </button>
 
                     <button
-                      v-if="hasPermission('master-data', 'delete')"
+                      v-if="hasPermission('master-data', 'delete-klasifikasi')"
                       class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
                       title="Delete"
                       @click="onDelete(row)"
@@ -590,7 +591,7 @@ definePageMeta({
 });
 
 const { hasPermission } = useAuth();
-
+
 
 // ─────────────────────────────────────────────
 // i18n — pakai useI18n() yang sudah diatur Navbar
