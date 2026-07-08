@@ -168,7 +168,7 @@
         <!-- Submit -->
         <div class="flex items-center gap-3 pt-2">
           <button
-            v-if="hasPermission('utilitas.layanan-email', 'create')"
+            v-if="hasPermission('layanan-email', 'create')"
             @click="handleSubmit"
             :disabled="loading"
             class="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition"
