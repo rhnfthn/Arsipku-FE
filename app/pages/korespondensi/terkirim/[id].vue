@@ -18,7 +18,8 @@ definePageMeta({ middleware: "auth" });
 // --- SETUP & COMPOSABLES ---
 const route = useRoute();
 const router = useRouter();
-const { user } = useAuth();
+const { user, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const positionId = computed(() => user.value?.position?.id || user.value?.position_id);
 
 const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
@@ -791,6 +792,8 @@ const konsepOptions = [
 </script>
 
 <template>
+  <AccessDenied v-if="!canAccessPage()" />
+  <template v-else>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
   <div class="w-full flex gap-4 pt-4 relative">
@@ -934,7 +937,7 @@ const konsepOptions = [
           </div>
         </template>
         <template #footer>
-          <div class="flex justify-end gap-2 w-full">
+          <div v-if="hasPermission('utama.terkirim', 'read')" class="flex justify-end gap-2 w-full">
             <button
               @click="submitKirimEmail('draft')"
               :disabled="kirimEmailLoading"
@@ -1148,4 +1151,5 @@ const konsepOptions = [
     </USlideover>
 
   </div>
+  </template>
 </template>

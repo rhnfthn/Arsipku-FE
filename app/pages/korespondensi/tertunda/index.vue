@@ -32,7 +32,8 @@ import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } fro
 
 definePageMeta({ middleware: "auth" });
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess()
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
@@ -274,6 +275,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <AccessDenied v-if="!canAccessPage()" />
+  <template v-else>
   <PageHeader title="Tertunda" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
@@ -565,6 +568,7 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  </template>
 </template>
 
 <style scoped>

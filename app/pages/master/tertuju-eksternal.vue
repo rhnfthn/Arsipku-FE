@@ -1,12 +1,7 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <EmptyState
-      v-if="!canViewMaster"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat master data. Hubungi administrator."
-    />
-    <div v-else>
+    <AccessDenied v-if="!canAccessPage()" />
+<div v-else>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
@@ -461,7 +456,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts">const { canAccessPage } = useFeatureAccess()
+
 import { onMounted, ref, computed, watch } from 'vue';
 import {
   Search,
@@ -516,8 +512,7 @@ const items = computed(() => [
 const auth = useAuth();
 const user = auth.user;
 const { hasPermission } = auth;
-
-const canViewMaster = computed(() => hasPermission('master-data', 'read'));
+
 
 const {
   data,

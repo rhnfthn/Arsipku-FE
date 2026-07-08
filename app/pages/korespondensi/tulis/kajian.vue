@@ -1,5 +1,6 @@
 <template>
-  <div class="relative">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="relative">
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
         class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
@@ -210,7 +211,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -232,10 +233,10 @@
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
 
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="handleConfirmKirim" />
         </div>
       </template>
@@ -288,6 +289,7 @@ const signMethodModalRef = ref<any>(null);
 const { getConfigDigsig } = useDigsig();
 
 const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const {
   getRecipients,
@@ -638,6 +640,7 @@ const handleApplyTemplate = (content: string) => {
 
 // --- LIFECYCLE ---
 onMounted(async () => {
+  if (!canAccessPage()) return;
   isLoadingData.value = true;
 
   // 1. Pastikan User Profile sudah ada
@@ -757,7 +760,6 @@ onMounted(async () => {
 
   } catch (e) {
     console.error("Init Error", e);
-    toast.add({ title: 'Gagal memuat data awal', color: 'error' });
   } finally {
     isLoadingData.value = false;
   }

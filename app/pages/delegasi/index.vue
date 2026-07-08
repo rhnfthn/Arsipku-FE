@@ -16,8 +16,6 @@ const toast = useToast()
 
 const { hasPermission } = useAuth();
 
-const canViewDelegasi = computed(() => hasPermission('delegasi', 'read'));
-
 const {
   getDelegasiList,
   getPersonilList,
@@ -683,14 +681,9 @@ const exportData = async () => {
 </script>
 
 <template>
-  <div class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <EmptyState
-      v-if="!canViewDelegasi"
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat delegasi. Hubungi administrator."
-    />
-    <div v-else class="space-y-6">
+  <AccessDenied v-if="!hasPermission('delegasi', 'read')" />
+  <div v-else class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
+    <div class="space-y-6">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">Delegasi</Heading>

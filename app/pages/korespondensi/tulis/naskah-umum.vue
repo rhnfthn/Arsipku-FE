@@ -10,6 +10,7 @@ const route = useRoute();
 const toast = useToast();
 
 const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const { getJenisList } = useJenis();
 const { apiGet, apiPost, api } = useApi();
 const { initEditor, destroyEditor, isReady, error: editorError } = useOnlyOffice();
@@ -335,6 +336,7 @@ const handleKirim = async () => {
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -365,7 +367,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="relative">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader :title="`Tulis ${currentJenisLabel}`" :items="breadcrumbs" />
 
@@ -614,7 +617,7 @@ onUnmounted(() => {
 
         <!-- Action Buttons -->
         <div class="pt-6 border-t border-gray-100 dark:border-gray-800 grid grid-cols-1 gap-3">
-          <UButton v-if="hasPermission('naskah-dinas', 'create')" color="primary" size="lg" block
+          <UButton v-if="hasPermission('utama.tulis.naskah-lainnya', 'create')" color="primary" size="lg" block
             @click="handleKirim" :disabled="!currentJenis || !isSavingFromEditor || isLoadingData">
             <Icon name="i-lucide-send" class="w-4 h-4 mr-2" />
             Kirim

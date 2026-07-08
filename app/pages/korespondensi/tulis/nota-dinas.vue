@@ -15,7 +15,8 @@ const route = useRoute();
 const toast = useToast();
 const alertState = useAlertState();
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
 const { getDraftDetail } = useDraft();
@@ -243,6 +244,7 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -336,7 +338,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="relative">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
 
@@ -515,7 +518,7 @@ onMounted(async () => {
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.nota-dinas', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>

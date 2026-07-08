@@ -1,5 +1,6 @@
 <template>
-  <div class="relative">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
     <PageHeader title="Tulis Disposisi" :items="breadcrumbs" />
 
@@ -213,7 +214,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.disposisi', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -245,7 +246,8 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 const route = useRoute();
 const alertState = useAlertState();
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const { getRecipients, sendDisposisi, saveDraft: saveDI, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 
 const { getConfigDigsig } = useDigsig();
@@ -521,6 +523,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -558,7 +561,7 @@ onMounted(async () => {
       }
     }
   } catch (e) {
-    toastError("Gagal memuat data", "Terjadi kesalahan saat memuat data dari server.");
+    // Silent: toast removed — AccessDenied handles no-access case
   } finally {
     isLoadingData.value = false;
   }

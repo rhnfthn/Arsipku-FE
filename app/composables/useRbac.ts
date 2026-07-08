@@ -164,6 +164,49 @@ export const useRbac = () => {
     return map;
   };
 
+  /**
+   * Fetch matrix tree (Halaman > Menu > Sub Menu > Fitur) + assigned permission IDs.
+   */
+  const fetchMatrixUtama = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/utama?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
+  const fetchMatrixUtilitas = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/utilitas?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
+  const fetchMatrixAdministrasi = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/administrasi?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
+  const fetchMatrixLaporan = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/laporan?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
+  const fetchMatrixFaq = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/faq?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
   return {
     roles,
     resources,
@@ -184,5 +227,10 @@ export const useRbac = () => {
     assignRoleToUser,
     removeRoleFromUser,
     getRolesBatch,
+    fetchMatrixUtama,
+    fetchMatrixUtilitas,
+    fetchMatrixAdministrasi,
+    fetchMatrixLaporan,
+    fetchMatrixFaq,
   };
 };

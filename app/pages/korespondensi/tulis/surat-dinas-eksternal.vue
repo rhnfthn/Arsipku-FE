@@ -1,5 +1,6 @@
 <template>
-  <div class="relative">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="relative">
     <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
 
     <PageHeader title="Tulis Surat Dinas Eksternal" :items="breadcrumbs" />
@@ -245,7 +246,7 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.surat-dinas-eksternal', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -289,7 +290,8 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 const route = useRoute();
 const router = useRouter();
 
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getConfigDigsig } = useDigsig();
 const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
@@ -550,6 +552,7 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 
 // --- LIFECYCLE ---
 onMounted(async () => {
+  if (!canAccessPage()) return;
   isLoadingData.value = true;
   loadingMessage.value = "Memuat...";
   if (!user.value) await getProfile();
@@ -654,7 +657,7 @@ onMounted(async () => {
     }
 
   } catch (e) {
-    toastError('Gagal memuat data awal');
+    // Silent: toast removed — AccessDenied handles no-access case
   } finally {
     isLoadingData.value = false;
   }

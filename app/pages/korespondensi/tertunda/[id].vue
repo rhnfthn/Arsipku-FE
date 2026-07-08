@@ -12,10 +12,14 @@ import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 definePageMeta({ middleware: "auth" });
 
+const { hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
+
 // --- SETUP ---
 const route = useRoute();
 const router = useRouter();
 const { fetchTertundaDetail, fetchTertundaNavigation, validateTtdFile, finalizePending, MAX_FILE_SIZE_MB } = useTertunda();
+const toast = useToast();
 
 const id = route.params.id as string;
 const jenisQuery = (route.query.jenis as string) || "ND";
@@ -193,6 +197,8 @@ onMounted(loadData);
 </script>
 
 <template>
+  <AccessDenied v-if="!canAccessPage()" />
+  <template v-else>
   <PageHeader title="Surat Tertunda" :items="breadcrumbs" />
 
   <div class="w-full flex flex-col gap-6 pt-4">
@@ -450,7 +456,7 @@ onMounted(loadData);
 
         <!-- Tombol Kirim -->
         <div class="pt-2">
-          <button @click="handleKirim" :disabled="!uploadedFile || isSending"
+          <button @click="hasPermission('utama.tertunda', 'read') ? handleKirim() : toast.add({ title: $t('akses_ditolak'), description: $t('akses_kirim_ditolak') || 'Anda tidak memiliki izin untuk mengirim.', color: 'error', icon: 'i-lucide-x-circle' })" :disabled="!uploadedFile || isSending"
             class="flex items-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-primary-600 hover:bg-primary-700 active:scale-[0.98] shadow-sm">
             <Loader2 v-if="isSending" class="w-4 h-4 animate-spin" />
             <Send v-else class="w-4 h-4" />
@@ -482,4 +488,5 @@ onMounted(loadData);
     </USlideover>
 
   </div>
+  </template>
 </template>

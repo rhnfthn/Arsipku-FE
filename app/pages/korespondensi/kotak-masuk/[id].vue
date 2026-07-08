@@ -28,7 +28,8 @@ definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const router = useRouter();
-const { user } = useAuth();
+const { user, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 
 const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag, markNaskahAsRead } =
   useInbox();
@@ -1063,6 +1064,8 @@ const konsepOptions = computed(() => [
 </script>
 
 <template>
+  <AccessDenied v-if="!canAccessPage()" />
+  <template v-else>
   <PageHeader title="Detail Surat" :items="breadcrumbs" />
 
   <div class="w-full flex gap-4 pt-4 relative">
@@ -1476,4 +1479,5 @@ const konsepOptions = computed(() => [
       </template>
     </USlideover>
   </div>
+  </template>
 </template>
