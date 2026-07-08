@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -931,6 +932,7 @@ import { formatDateSlash as formatTanggalWIB, formatTimeShort as formatWaktuWIB 
 definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
+const { canAccessPage } = useFeatureAccess()
 const config = useRuntimeConfig()
 
 const {
@@ -1520,6 +1522,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 onMounted(async () => {
+  if (!canAccessPage()) return;
   document.addEventListener('click', handleClickOutside)
   loading.value = true
   sortBy.value = 'waktu'

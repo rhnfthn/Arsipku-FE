@@ -36,6 +36,7 @@ const routePermissions: Record<string, string> = {
   '/delegasi': 'delegasi:read',
   '/titelatur': 'titelatur:read',
   '/penomoran/usulan': 'penomoran:read-usulan',
+  '/usulan-penomoran': 'penomoran:read-usulan',
   '/penomoran/verifikasi': 'penomoran:read-verifikasi',
   '/penomoran/nomor': 'penomoran:read-penomoran',
   '/persetujuan-penomoran': 'penomoran:read-persetujuan',

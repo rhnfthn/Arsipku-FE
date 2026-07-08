@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">{{
