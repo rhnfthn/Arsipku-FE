@@ -160,19 +160,24 @@ export const useApi = () => {
     (response) => response,
     (error) => {
       if (error?.response?.status === 403) {
-        try {
-          const toast = useToast();
-          const msg =
-            error.response?.data?.message ||
-            "Anda tidak punya akses ke fitur ini";
-          toast.add({
-            title: "Akses Ditolak",
-            description: msg,
-            color: "error",
-            icon: "i-lucide-shield-x",
-          });
-        } catch (e) {
-          // useToast mungkin tidak tersedia di context tertentu — ignore
+        // Skip toast untuk endpoint RBAC matrix (halaman permission editor handle sendiri)
+        const url = error?.config?.url || '';
+        const isRbacMatrix = url.includes('/rbac/matrix') || url.includes('/rbac/roles');
+        if (!isRbacMatrix) {
+          try {
+            const toast = useToast();
+            const msg =
+              error.response?.data?.message ||
+              "Anda tidak punya akses ke fitur ini";
+            toast.add({
+              title: "Akses Ditolak",
+              description: msg,
+              color: "error",
+              icon: "i-lucide-shield-x",
+            });
+          } catch (e) {
+            // useToast mungkin tidak tersedia di context tertentu — ignore
+          }
         }
       }
       return Promise.reject(error);

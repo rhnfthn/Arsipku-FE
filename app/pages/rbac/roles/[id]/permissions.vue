@@ -349,6 +349,13 @@ onMounted(async () => {
       initialIds.value = new Set(ids);
       expandAll();
     }
+  } catch (e: any) {
+    // Silent: jika 403 (no access) jangan tampilkan toast error
+    // User tanpa permission akan melihat AccessDenied component
+    const status = e?.response?.status || e?.statusCode;
+    if (status !== 403) {
+      console.warn('[RBAC permissions] Failed to load:', e?.message || e);
+    }
   } finally {
     loading.value = false;
   }
