@@ -77,7 +77,7 @@
 
           <!-- BSRE ALERT BUTTON -->
           <button
-            v-if="hasPermission('utilitas.ttd-digital.log-disdig', 'create')"
+            v-if="hasPermission('digsig', 'create-log-disdig-alert')"
             :class="[
               'flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md transition-all',
               bsreAlert?.isActive
