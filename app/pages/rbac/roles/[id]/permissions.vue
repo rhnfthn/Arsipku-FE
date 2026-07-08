@@ -302,7 +302,7 @@ const savePermissions = async () => {
   if (!role.value) return;
   saving.value = true;
   try {
-    await assignPermissions(role.value.id, selectedIds.value.slice());
+    await assignPermissions(role.value.id, selectedIds.value.slice(), allPermissionIds.value);
     toast.add({
       title: t('rbac_success'),
       description: t('rbac_permission_saved_notice'),

@@ -106,8 +106,8 @@ export const useRbac = () => {
     return apiDelete(`/rbac/roles/${id}`);
   };
 
-  const assignPermissions = async (roleId: string, permissionIds: string[]) => {
-    return apiPut(`/rbac/roles/${roleId}/permissions`, { permissionIds });
+  const assignPermissions = async (roleId: string, permissionIds: string[], matrixPermissionIds?: string[]) => {
+    return apiPut(`/rbac/roles/${roleId}/permissions`, { permissionIds, matrixPermissionIds });
   };
 
   // User-role
