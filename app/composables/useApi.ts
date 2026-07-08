@@ -159,27 +159,8 @@ export const useApi = () => {
   api.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error?.response?.status === 403) {
-        // Skip toast untuk endpoint RBAC matrix (halaman permission editor handle sendiri)
-        const url = error?.config?.url || '';
-        const isRbacMatrix = url.includes('/rbac/matrix') || url.includes('/rbac/roles');
-        if (!isRbacMatrix) {
-          try {
-            const toast = useToast();
-            const msg =
-              error.response?.data?.message ||
-              "Anda tidak punya akses ke fitur ini";
-            toast.add({
-              title: "Akses Ditolak",
-              description: msg,
-              color: "error",
-              icon: "i-lucide-shield-x",
-            });
-          } catch (e) {
-            // useToast mungkin tidak tersedia di context tertentu — ignore
-          }
-        }
-      }
+      // Silent: tidak ada toast untuk 403 (AccessDenied component handle di page)
+      // dan tidak ada toast untuk 404 (endpoint tidak ditemukan)
       return Promise.reject(error);
     }
   );
