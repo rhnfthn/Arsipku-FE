@@ -244,6 +244,7 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 

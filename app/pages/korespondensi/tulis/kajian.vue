@@ -640,6 +640,7 @@ const handleApplyTemplate = (content: string) => {
 
 // --- LIFECYCLE ---
 onMounted(async () => {
+  if (!canAccessPage()) return;
   isLoadingData.value = true;
 
   // 1. Pastikan User Profile sudah ada
@@ -759,7 +760,6 @@ onMounted(async () => {
 
   } catch (e) {
     console.error("Init Error", e);
-    toast.add({ title: 'Gagal memuat data awal', color: 'error' });
   } finally {
     isLoadingData.value = false;
   }

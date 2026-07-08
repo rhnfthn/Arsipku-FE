@@ -127,7 +127,7 @@
                               >
                                 <input
                                   type="checkbox"
-                                  :checked="selectedIds.has(perm.permissionId)"
+                                  :checked="selectedIds.includes(perm.permissionId)"
                                   :disabled="!perm.permissionId"
                                   class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                                   @change="togglePermission(perm.permissionId, $event.target.checked)"
@@ -200,8 +200,8 @@ const utilitasTree = ref<any>(null);
 const administrasiTree = ref<any>(null);
 const laporanTree = ref<any>(null);
 const faqTree = ref<any>(null);
-const selectedIds = ref<Set<string>>(new Set());
-const initialIds = ref<Set<string>>(new Set());
+const selectedIds = ref<string[]>([]);
+const initialIds = ref<string[]>(new Set<string>());
 const openKeys = ref<Set<string>>(new Set());
 const activeTab = ref<'utama' | 'utilitas' | 'administrasi' | 'laporan' | 'faq'>('utama');
 
@@ -222,7 +222,7 @@ const treeMap: Record<string, Ref<any>> = {
 };
 const currentTree = computed(() => treeMap[activeTab.value]?.value ?? null);
 
-const selectedPermIds = computed(() => Array.from(selectedIds.value));
+const selectedPermIds = computed(() => selectedIds.value.slice());
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
@@ -252,7 +252,7 @@ const allPermissionIds = computed<string[]>(() => {
 });
 
 const allChecked = computed(
-  () => allPermissionIds.value.length > 0 && allPermissionIds.value.every((id) => selectedIds.value.has(id)),
+  () => allPermissionIds.value.length > 0 && allPermissionIds.value.every((id) => selectedIds.value.includes(id)),
 );
 
 function isOpen(key: string): boolean {
@@ -278,24 +278,27 @@ function collapseAll() {
 }
 function toggleCheckAll() {
   if (allChecked.value) {
-    selectedIds.value = new Set();
+    selectedIds.value = [];
   } else {
-    selectedIds.value = new Set(allPermissionIds.value);
+    selectedIds.value = [...allPermissionIds.value];
   }
 }
 function togglePermission(id: string | null | undefined, checked: boolean) {
   if (!id) return;
-  const set = new Set(selectedIds.value);
-  if (checked) set.add(id);
-  else set.delete(id);
-  selectedIds.value = set;
+  if (checked) {
+    if (!selectedIds.value.includes(id)) {
+      selectedIds.value = [...selectedIds.value, id];
+    }
+  } else {
+    selectedIds.value = selectedIds.value.filter((x) => x !== id);
+  }
 }
 
 const savePermissions = async () => {
   if (!role.value) return;
   saving.value = true;
   try {
-    await assignPermissions(role.value.id, Array.from(selectedIds.value));
+    await assignPermissions(role.value.id, selectedIds.value.slice());
     toast.add({
       title: t('rbac_success'),
       description: t('rbac_permission_saved_notice'),
@@ -342,9 +345,16 @@ onMounted(async () => {
       (administrasi.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       (laporan.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       (faq.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
-      selectedIds.value = ids;
+      selectedIds.value = Array.from(ids);
       initialIds.value = new Set(ids);
       expandAll();
+    }
+  } catch (e: any) {
+    // Silent: jika 403 (no access) jangan tampilkan toast error
+    // User tanpa permission akan melihat AccessDenied component
+    const status = e?.response?.status || e?.statusCode;
+    if (status !== 403) {
+      console.warn('[RBAC permissions] Failed to load:', e?.message || e);
     }
   } finally {
     loading.value = false;

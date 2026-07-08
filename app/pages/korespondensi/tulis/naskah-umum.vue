@@ -247,6 +247,7 @@ const handleKirim = () => {
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
