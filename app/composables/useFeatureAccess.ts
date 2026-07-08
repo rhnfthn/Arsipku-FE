@@ -10,6 +10,7 @@ export interface FeaturePermission {
  * Sesuai matrix Utama Super Admin.
  */
 const routePermissions: Record<string, string> = {
+  // Utama
   '/beranda': 'utama.beranda:read',
   '/korespondensi/draf': 'utama.draft:read',
   '/korespondensi/kotak-masuk': 'utama.kotak-masuk:read',
@@ -30,6 +31,31 @@ const routePermissions: Record<string, string> = {
   '/layanan-email': 'utilitas.layanan-email:read',
   '/layanan-email/log': 'utilitas.layanan-email.log:read',
   '/template': 'utilitas.template:read',
+  '/naskah-dinas/verifikator': 'utilitas.verifikasi-naskah:read',
+  // Administrasi
+  '/delegasi': 'delegasi:read',
+  '/titelatur': 'titelatur:read',
+  '/penomoran/usulan': 'penomoran:read-usulan',
+  '/usulan-penomoran': 'penomoran:read-usulan',
+  '/penomoran/verifikasi': 'penomoran:read-verifikasi',
+  '/penomoran/nomor': 'penomoran:read-penomoran',
+  '/persetujuan-penomoran': 'penomoran:read-persetujuan',
+  '/naskah-dinas': 'naskah-masuk:read-verifikasi',
+  '/master/tertuju-eksternal': 'master-data:read-tertuju',
+  '/master/perusahaan': 'master-data:read-perusahaan',
+  '/master/klasifikasi': 'master-data:read-klasifikasi',
+  '/master/jenis': 'master-data:read-jenis',
+  // Laporan
+  '/laporan/rekap-naskah': 'laporan:read-rekap-naskah',
+  '/laporan/detail-naskah': 'laporan:read-detail-naskah',
+  '/laporan/naskah-masuk': 'laporan:read-naskah-masuk',
+  // FAQ & Pedoman
+  '/faq/menu': 'faq:read',
+  '/faq/manajemen': 'faq:read',
+  '/pedoman/menu': 'pedoman:read',
+  '/pedoman/manajemen': 'pedoman:read',
+  // Konfigurasi
+  '/konfigurasi-sistem': 'konfigurasi:read',
 };
 
 // Regex matchers for dynamic routes (detail pages)
@@ -38,6 +64,20 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   { pattern: /^\/korespondensi\/terkirim\/[^/]+$/, perm: 'utama.terkirim:read-detail' },
   { pattern: /^\/korespondensi\/tertunda\/[^/]+$/, perm: 'utama.tertunda:read-detail' },
   { pattern: /^\/korespondensi\/draf\/[^/]+$/, perm: 'utama.draft:read-detail' },
+  // Konsep & Finalisasi & Lanjut — inherit dari parent tulis permission
+  { pattern: /^\/korespondensi\/tulis\/konsep\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
+  { pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
+  { pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
+  { pattern: /^\/korespondensi\/tulis\/finalisasi\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
+  { pattern: /^\/korespondensi\/tulis\/finalisasi\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
+  { pattern: /^\/korespondensi\/tulis\/finalisasi\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
+  { pattern: /^\/korespondensi\/tulis\/lanjut\/disposisi/, perm: 'utama.tulis.disposisi:read' },
+  { pattern: /^\/korespondensi\/tulis\/lanjut\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
+  { pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
+  { pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
+  // Master data — sub-pages inherit parent permission
+  { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
+  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
 ];
 
 export function useFeatureAccess() {

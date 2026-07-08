@@ -15,6 +15,7 @@
     </div>
     <!-- EXPORT BUTTON -->
     <button
+      v-if="hasPermission('laporan', 'export-rekap-naskah')"
       @click="exportExcel"
       class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
     >
@@ -580,15 +581,17 @@ import { FileDown, RotateCcw, ChevronDown } from 'lucide-vue-next';
 import { useToast } from '#imports';
 import { useLaporan } from '~/composables/useLaporan';
 import { useAuth } from '~/composables/useAuth';
+import { useFeatureAccess } from '~/composables/useFeatureAccess';
 import * as XLSX from 'xlsx';
 
 //COMPOSABLE
 const { getRekapNaskah, getAreaList, getJenisList } = useLaporan();
 const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const toast = useToast();
 const { t, locale, availableLocales, setLocale } = useI18n();
 
-const canViewLaporan = computed(() => hasPermission('laporan', 'read'));
+const canViewLaporan = computed(() => canAccessPage());
 
 //CONST UTIL
 const breadcrumbs = computed(() => [
@@ -839,7 +842,7 @@ const selectYear = (val: number) => {
 
 //EXPORT
 const exportExcel = () => {
-  if (!hasPermission('laporan', 'export')) {
+  if (!hasPermission('laporan', 'export-rekap-naskah')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',

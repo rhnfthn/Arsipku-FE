@@ -13,7 +13,7 @@
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
-        v-if="hasPermission('penomoran', 'request')"
+        v-if="hasPermission('penomoran', 'create-usulan')"
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
       >
@@ -116,6 +116,7 @@
         </div>
         <!-- EXPORT BUTTON -->
         <button
+          v-if="hasPermission('penomoran', 'export-usulan')"
           type="button"
           @click="handleExport"
           :disabled="isExporting || sortedRows.length === 0"
@@ -874,7 +875,7 @@ const statusTabs = computed(() => [
 const isExporting = ref(false)
 
 const handleExport = async () => {
-  if (!hasPermission('penomoran', 'report')) {
+  if (!hasPermission('penomoran', 'export-usulan')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',

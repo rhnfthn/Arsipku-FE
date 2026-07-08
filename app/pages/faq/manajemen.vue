@@ -147,6 +147,7 @@
 
         <!-- Export -->
         <button
+          v-if="hasPermission('faq', 'export')"
           @click="onExport"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
@@ -655,8 +656,9 @@ definePageMeta({ middleware: 'auth' });
 
 const toast = useToast();
 const { hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 
-const canViewFaq = computed(() => hasPermission('faq', 'manage'));
+const canViewFaq = computed(() => canAccessPage());
 const {
   faqs,
   loading,

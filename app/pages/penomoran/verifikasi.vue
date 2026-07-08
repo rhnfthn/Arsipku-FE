@@ -109,6 +109,7 @@
 
         <!-- EXPORT BUTTON -->
         <button
+          v-if="hasPermission('penomoran', 'export-verifikasi')"
           type="button"
           @click="handleExport"
           :disabled="isExporting || sortedRows.length === 0"
@@ -1591,6 +1592,7 @@ const onRowMouseLeave = () => {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!canAccessPage()) return;
   await fetchData()
   document.addEventListener('click', handleDocumentClick)
 })

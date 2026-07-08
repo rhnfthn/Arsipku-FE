@@ -1,5 +1,12 @@
 <template>
   <div class="space-y-6 pt-5">
+    <EmptyState
+      v-if="!canAccessPage()"
+      icon="i-lucide-lock"
+      title="Akses Ditolak"
+      description="Anda tidak punya izin melihat halaman ini. Hubungi administrator."
+    />
+    <template v-else>
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       <PageHeader title="Pedoman" :items="items" />
@@ -278,6 +285,7 @@
         </div>
       </Transition>
     </Teleport>
+    </template>
   </div>
 </template>
 
@@ -289,6 +297,7 @@ import type { PedomanJenis } from '@/composables/usePedoman';
 
 definePageMeta({ middleware: 'auth' });
 
+const { canAccessPage } = useFeatureAccess();
 const { pedomanList, loading, fetchPedoman } = usePedoman();
 const config = useRuntimeConfig();
 
