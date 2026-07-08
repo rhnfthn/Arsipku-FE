@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <!-- TITLE -->
     <div class="flex items-center justify-between w-full mb-5">
       <div>
@@ -1012,6 +1013,7 @@ definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
 const { user, getProfile } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 const { getListUsulanByPosition, getDetailUsulan, getKlasifikasi, updateNomorFile, userCounts } =
   usePenomoran();
 const toast = useToast();
@@ -1770,6 +1772,7 @@ const onMouseLeave = () => {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!canAccessPage()) return;
   if (!user.value) await getProfile();
   await fetchKlasifikasiMap();
   await fetchData();

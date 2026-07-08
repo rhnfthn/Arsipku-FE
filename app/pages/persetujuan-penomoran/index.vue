@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="min-h-screen overflow-x-auto bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex items-center justify-between w-full mb-5">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-gray-100">{{
@@ -102,6 +103,7 @@
             />
           </div>
           <button
+            v-if="hasPermission('penomoran', 'export-persetujuan')"
             type="button"
             @click="handleExport"
             :disabled="isExporting || filteredRows.length === 0"
@@ -928,7 +930,8 @@ import ConfirmPopup from '~/components/ConfirmPopup.vue';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
 
-const { user } = useAuth();
+const { user, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 definePageMeta({ middleware: 'auth' });
 const { t } = useI18n();
 const {
@@ -1449,6 +1452,7 @@ watch(isOpenPreview, (open) => {
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!canAccessPage()) return;
   if (!user.value) {
     const { getProfile } = useAuth();
     await getProfile();

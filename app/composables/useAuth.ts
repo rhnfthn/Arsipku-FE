@@ -241,9 +241,12 @@ export const useAuth = () => {
       const token = process.client ? localStorage.getItem("token") : null;
       if (!token) return;
 
-      const res: any = await apiGet("/auth/refresh-permissions", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      clearApiCache();
+      const res: any = await apiGet(
+        "/auth/refresh-permissions",
+        { headers: { Authorization: `Bearer ${token}` } },
+        { skipCache: true },
+      );
       const data = res?.data ?? res;
       const newToken = data?.accessToken;
       if (newToken) {
@@ -253,7 +256,7 @@ export const useAuth = () => {
       if (data?.activePermissions) {
         const updated: UserProfile = {
           ...(user.value as UserProfile),
-          activePermissions: data.activePermissions,
+          activePermissions: Array.isArray(data.activePermissions) ? [...data.activePermissions] : [],
           activeRole: data.activeRole ?? user.value?.activeRole,
           role: data.role ?? user.value?.role,
         };

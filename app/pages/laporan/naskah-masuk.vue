@@ -264,6 +264,7 @@
           </div>
 
           <button
+            v-if="hasPermission('laporan', 'export-naskah-masuk')"
             class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
             @click="exportTable1"
           >
@@ -718,6 +719,7 @@
             </div>
 
             <button
+              v-if="hasPermission('laporan', 'export-naskah-masuk')"
               class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
               @click="exportTable2"
             >
@@ -918,8 +920,9 @@ import { formatDateNumeric as formatTanggal } from '~/utils/mail-helpers';
 const toast = useToast();
 const { t } = useI18n();
 const { user, getProfile, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 
-const canViewLaporan = computed(() => hasPermission('laporan', 'read'));
+const canViewLaporan = computed(() => canAccessPage());
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -1359,7 +1362,7 @@ const refreshData = () => {
 };
 
 const exportTable1 = () => {
-  if (!hasPermission('laporan', 'export')) {
+  if (!hasPermission('laporan', 'export-naskah-masuk')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
@@ -1417,7 +1420,7 @@ const exportTable1 = () => {
 };
 
 const exportTable2 = () => {
-  if (!hasPermission('laporan', 'export')) {
+  if (!hasPermission('laporan', 'export-naskah-masuk')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
