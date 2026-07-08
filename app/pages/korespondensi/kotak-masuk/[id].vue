@@ -152,6 +152,15 @@ const getPermissions = (bodTag: string | null | undefined, surat: string) => {
 
 const allowedActions = computed(() => {
   if (isTerkirim.value) return [];
+  // Disable all lanjut actions if the user already did a tindak lanjut from this
+  // naskah (prevents double-send / creating a second follow-up naskah).
+  const firstFlow = details.value[0];
+  const sudahLanjut =
+    firstFlow?.is_tindak_lanjut ??
+    firstFlow?.user_sirkulasi?.is_tindak_lanjut ??
+    firstFlow?.raw?.user_sirkulasi?.is_tindak_lanjut ??
+    false;
+  if (sudahLanjut) return [];
   const tag = user.value?.bodTag;
   const surat = selected.value?.jenis;
   if (!isKonsepData.value) {
