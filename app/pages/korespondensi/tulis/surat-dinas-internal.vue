@@ -264,6 +264,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
