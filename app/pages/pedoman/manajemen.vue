@@ -14,6 +14,7 @@
       </div>
 
       <button
+        v-if="hasPermission('pedoman', 'create')"
         @click="openAdd"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -154,7 +155,7 @@
                   class="rounded border-gray-300"
                 />
                 <button
-                  v-if="selectedIds.length > 0"
+                  v-if="selectedIds.length > 0 && hasPermission('pedoman', 'delete')"
                   @click="openBulkDelete"
                   class="text-red-200 hover:text-red-400 transition-colors"
                   title="Hapus yang dipilih"
@@ -227,6 +228,7 @@
             <td class="px-4 py-3 text-center">
               <div class="flex justify-center gap-3">
                 <button
+                  v-if="hasPermission('pedoman', 'update')"
                   class="p-2 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors group"
                   @click="openEdit(pedoman)"
                   title="Edit Pedoman"
@@ -237,6 +239,7 @@
                 </button>
 
                 <button
+                  v-if="hasPermission('pedoman', 'delete')"
                   class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
                   @click="openDelete(pedoman)"
                   title="Hapus Pedoman"
@@ -604,8 +607,9 @@ definePageMeta({ middleware: 'auth' });
 
 const toast = useToast();
 const { hasPermission, isSuperadmin } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 
-const canViewPedoman = computed(() => hasPermission('pedoman', 'read'));
+const canViewPedoman = computed(() => canAccessPage());
 const { pedomanList, loading, fetchPedoman, createPedoman, updatePedoman, deletePedoman, uploadLampirans } =
   usePedoman();
 

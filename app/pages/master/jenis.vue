@@ -1,11 +1,5 @@
 <template>
-  <div v-if="!canViewMaster" class="min-h-screen pt-5 dark:bg-gray-900 transition-colors flex items-center justify-center">
-    <EmptyState
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat master data. Hubungi administrator."
-    />
-  </div>
+  <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
@@ -203,6 +197,7 @@
               <td class="px-4 py-3">
                 <div class="flex justify-center gap-2">
                   <button
+                    v-if="hasPermission('master-data', 'read-jenis-detail')"
                     class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
                     :title="t('je_modal_detail')"
                     @click="onView(row)"

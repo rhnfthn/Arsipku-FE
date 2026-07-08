@@ -833,7 +833,7 @@ const companyId = computed(() => route.params.kode as string);
 
 const { hasPermission } = useAuth();
 
-const canViewMaster = computed(() => hasPermission('master-data', 'read'));
+const canViewMaster = computed(() => hasPermission('master-data', 'read-perusahaan-area'));
 
 const {
   getAreasByCompany,

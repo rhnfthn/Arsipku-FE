@@ -51,9 +51,9 @@ const routePermissions: Record<string, string> = {
   '/laporan/naskah-masuk': 'laporan:read-naskah-masuk',
   // FAQ & Pedoman
   '/faq/menu': 'faq:read',
-  '/faq/manajemen': 'faq:manage',
+  '/faq/manajemen': 'faq:read',
   '/pedoman/menu': 'pedoman:read',
-  '/pedoman/manajemen': 'pedoman:create',
+  '/pedoman/manajemen': 'pedoman:read',
   // Konfigurasi
   '/konfigurasi-sistem': 'konfigurasi:read',
 };
@@ -75,6 +75,9 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   { pattern: /^\/korespondensi\/tulis\/lanjut\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
   { pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
   { pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
+  // Master data — sub-pages inherit parent permission
+  { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
+  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
 ];
 
 export function useFeatureAccess() {

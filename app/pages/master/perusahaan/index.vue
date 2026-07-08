@@ -129,6 +129,7 @@
                       />
                     </button>
                     <NuxtLink
+                      v-if="hasPermission('master-data', 'read-perusahaan-area')"
                       :to="`/master/perusahaan/${row.kode}/area`"
                       class="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors group"
                     >
