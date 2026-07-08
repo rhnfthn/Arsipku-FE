@@ -109,6 +109,7 @@
 
         <!-- EXPORT BUTTON -->
         <button
+          v-if="hasPermission('penomoran', 'export-verifikasi')"
           type="button"
           @click="handleExport"
           :disabled="isExporting || sortedRows.length === 0"

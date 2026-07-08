@@ -10,6 +10,7 @@
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
+        v-if="hasPermission('penomoran', 'create-penomoran')"
         @click="openAdd = true"
         class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
@@ -73,6 +74,7 @@
           </div>
           <!-- EXPORT BUTTON -->
           <button
+            v-if="hasPermission('penomoran', 'export-penomoran')"
             type="button"
             @click="handleExport"
             :disabled="isExporting || rows.length === 0"
@@ -933,6 +935,7 @@ definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
 const { canAccessPage } = useFeatureAccess()
+const { hasPermission } = useAuth()
 const config = useRuntimeConfig()
 
 const {

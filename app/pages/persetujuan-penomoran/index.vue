@@ -103,6 +103,7 @@
             />
           </div>
           <button
+            v-if="hasPermission('penomoran', 'export-persetujuan')"
             type="button"
             @click="handleExport"
             :disabled="isExporting || filteredRows.length === 0"
@@ -929,7 +930,7 @@ import ConfirmPopup from '~/components/ConfirmPopup.vue';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
 
-const { user } = useAuth();
+const { user, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 definePageMeta({ middleware: 'auth' });
 const { t } = useI18n();
