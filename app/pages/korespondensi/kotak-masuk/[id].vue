@@ -184,13 +184,21 @@ const breadcrumbs = [
   { label: 'Detail Surat', to: '#' },
 ];
 
-const visibleDetails = computed(() =>
-  details.value.filter(
+const visibleDetails = computed(() => {
+  const myPosId = String(
+    user.value?.position?.id || user.value?.position_id || user.value?.position || ''
+  );
+  return details.value.filter(
     (d: any) =>
       d._rawStatus !== 'draf' &&
-      !(isKonsepData.value && String(d?.jenis || '').toUpperCase() === 'KN')
-  )
-);
+      !(isKonsepData.value && String(d?.jenis || '').toUpperCase() === 'KN') &&
+      // kotak-masuk: exclude nodes where the current user is the pengirim (sender) —
+      // those are "sent" items (belong in terkirim), not received. terkirim keeps all.
+      (isTerkirim.value ||
+        myPosId === '' ||
+        String(d?.pengirim?.position_id || '') !== myPosId)
+  );
+});
 
 // --- STATE ---
 const details = ref<any[]>([]);
