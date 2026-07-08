@@ -168,6 +168,7 @@
               </td>
               <td class="px-4 py-3 text-center">
                 <button
+                  v-if="hasPermission('verifikasi-naskah', 'read-lihat')"
                   @click="viewDocument(row)"
                   :disabled="!row.final_pdf_url"
                   class="inline-flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-lg transition"
@@ -192,6 +193,7 @@
               <td class="px-4 py-3">
                 <div class="flex items-center justify-center gap-2">
                   <button
+                    v-if="hasPermission('verifikasi-naskah', 'read-detail')"
                     @click="handleViewDetail(row)"
                     class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat Detail"
@@ -199,6 +201,7 @@
                     <Eye class="w-4 h-4" />
                   </button>
                   <button
+                    v-if="hasPermission('verifikasi-naskah', 'confirm')"
                     @click="row.canVerify ? openVerifyModal(row) : null"
                     :disabled="!row.canVerify"
                     :class="[
@@ -212,6 +215,7 @@
                     <Check class="w-4 h-4" />
                   </button>
                   <button
+                    v-if="hasPermission('verifikasi-naskah', 'reject')"
                     @click="row.canReject ? openRejectModal(row) : null"
                     :disabled="!row.canReject"
                     :class="[
@@ -478,6 +482,7 @@ definePageMeta({ middleware: 'auth' });
 const { t } = useI18n();
 const toast = useToast();
 const { canAccessPage } = useFeatureAccess();
+const { hasPermission } = useAuth();
 
 const {
   verifikatorDocuments,

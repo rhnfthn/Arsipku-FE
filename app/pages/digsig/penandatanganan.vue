@@ -255,7 +255,7 @@
                 <!-- KOLOM DOKUMEN -->
                 <td class="px-4 py-3 text-center">
                   <button
-                    v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'read-lihat')"
+                    v-if="hasPermission('digsig', 'read-penandatanganan-lihat')"
                     @click="viewDocumentFromTable(row)"
                     :disabled="!row.filePreviewUrl && !row.signedFilePreviewUrl"
                     class="flex items-center gap-2 mx-auto px-3 py-1 text-xs font-medium rounded-lg transition"
@@ -299,7 +299,7 @@
                 <td class="px-4 py-3">
                   <div class="flex items-center justify-center gap-2">
                     <button
-                      v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'read-detail')"
+                      v-if="hasPermission('digsig', 'read-penandatanganan-detail')"
                       @click="handleViewDetail(row)"
                       class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                       :title="$t('sign_lihat_detail')"
@@ -307,7 +307,7 @@
                       <Eye class="w-4.5 h-4.5" />
                     </button>
                     <button
-                      v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'create-ttd')"
+                      v-if="hasPermission('digsig', 'create-penandatanganan-ttd')"
                       @click="row.canSign ? handleOpenSign(row) : null"
                       :disabled="!row.canSign"
                       :class="[
@@ -321,7 +321,7 @@
                       <Signature class="w-4.5 h-4.5" />
                     </button>
                     <button
-                      v-if="hasPermission('utilitas.ttd-digital.penandatanganan', 'create-tolak')"
+                      v-if="hasPermission('digsig', 'create-penandatanganan-tolak')"
                       @click="row.canReject ? handleReject(row) : null"
                       :disabled="!row.canReject"
                       :class="[
@@ -1058,7 +1058,7 @@ const handleViewDetail = async (doc: PenandatangananDocument) => {
 
 // ─── Sign ─────────────────────────────────────
 const handleOpenSign = (doc: PenandatangananDocument) => {
-  if (!hasPermission('utilitas.ttd-digital.penandatanganan', 'create-ttd')) {
+  if (!hasPermission('digsig', 'create-penandatanganan-ttd')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_sign_ditolak') || 'Anda tidak memiliki izin untuk menandatangani dokumen.',
@@ -1099,7 +1099,7 @@ const handleSign = async () => {
 
 // ─── Reject ───────────────────────────────────
 const handleReject = (doc: PenandatangananDocument) => {
-  if (!hasPermission('utilitas.ttd-digital.penandatanganan', 'create-tolak')) {
+  if (!hasPermission('digsig', 'create-penandatanganan-tolak')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_reject_ditolak') || 'Anda tidak memiliki izin untuk menolak dokumen.',
