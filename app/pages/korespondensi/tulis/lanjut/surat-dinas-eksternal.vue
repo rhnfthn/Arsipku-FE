@@ -679,7 +679,7 @@ onMounted(async () => {
     }
 
   } catch (e) {
-    toastError('Gagal memuat data awal');
+    
   } finally {
     isLoadingData.value = false;
   }

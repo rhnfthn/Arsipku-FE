@@ -481,7 +481,7 @@ onMounted(async () => {
         toast.add({ title: "Info", description: "Data referensi tidak ditemukan", color: "neutral" });
       }
     } catch {
-      toast.add({ title: "Error", description: "Gagal memuat data referensi", color: "error" });
+      
     }
   }
 
@@ -562,7 +562,7 @@ onMounted(async () => {
         if (d.tanggal) setDateFromString(d.tanggal);
       }
     } catch {
-      toastError("Gagal memuat data draft");
+      
     }
   }
 

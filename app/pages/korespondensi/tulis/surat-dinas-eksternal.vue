@@ -552,6 +552,7 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 
 // --- LIFECYCLE ---
 onMounted(async () => {
+  if (!canAccessPage()) return;
   isLoadingData.value = true;
   loadingMessage.value = "Memuat...";
   if (!user.value) await getProfile();
@@ -656,7 +657,7 @@ onMounted(async () => {
     }
 
   } catch (e) {
-    toastError('Gagal memuat data awal');
+    // Silent: toast removed — AccessDenied handles no-access case
   } finally {
     isLoadingData.value = false;
   }

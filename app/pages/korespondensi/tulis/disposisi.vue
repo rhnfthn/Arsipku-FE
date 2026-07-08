@@ -523,6 +523,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 // ── onMounted ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   loadingMessage.value = "Memuat...";
   isLoadingData.value = true;
 
@@ -560,7 +561,7 @@ onMounted(async () => {
       }
     }
   } catch (e) {
-    toastError("Gagal memuat data", "Terjadi kesalahan saat memuat data dari server.");
+    // Silent: toast removed — AccessDenied handles no-access case
   } finally {
     isLoadingData.value = false;
   }

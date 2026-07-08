@@ -773,7 +773,7 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error(e);
-    toast.add({ title: 'Gagal memuat data', color: 'error' });
+    
   } finally {
     isLoadingData.value = false;
   }
