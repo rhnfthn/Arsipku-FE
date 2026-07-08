@@ -87,6 +87,27 @@
           </div>
         </div>
       </div>
+
+      <!-- Helpdesk button (bottom of icon bar) -->
+      <div class="mt-auto pt-4 w-full flex flex-col items-center gap-1">
+        <button
+          @click="showHelpdeskConfirm = true"
+          class="group flex flex-col items-center gap-1 cursor-pointer relative w-full"
+          title="Helpdesk AirNav"
+        >
+          <div
+            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200 hover:bg-white/50 bg-transparent"
+          >
+            <UIcon
+              name="i-lucide-headset"
+              class="w-6 h-6 transition-colors text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-blue-400"
+            />
+          </div>
+          <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+            Helpdesk
+          </span>
+        </button>
+      </div>
     </div>
 
     <div
@@ -249,6 +270,43 @@
       </div>
     </div>
   </div>
+
+  <!-- Helpdesk Confirmation Dialog -->
+  <Transition
+    enter-active-class="transition-opacity duration-200"
+    leave-active-class="transition-opacity duration-150"
+  >
+    <div
+      v-if="showHelpdeskConfirm"
+      class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+    >
+      <div class="fixed inset-0 bg-black/40" @click="showHelpdeskConfirm = false"></div>
+
+      <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-8 text-center">
+        <div class="w-14 h-14 mx-auto rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mb-4">
+          <UIcon name="i-lucide-headset" class="w-7 h-7 text-primary-600 dark:text-primary-400" />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Buka Helpdesk?</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Anda akan diarahkan ke portal Helpdesk AirNav di tab baru.
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="showHelpdeskConfirm = false"
+            class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            @click="openHelpdesk"
+            class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+          >
+            Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup>
@@ -1031,9 +1089,15 @@ const openMobile = () => (isMobileOpen.value = true);
 
 const showLabelModal = ref(false);
 const showDeleteModal = ref(false);
+const showHelpdeskConfirm = ref(false);
 const isEditing = ref(false);
 const isProcessing = ref(false);
 const labelToDelete = ref(null);
+
+const openHelpdesk = () => {
+  showHelpdeskConfirm.value = false;
+  window.open('http://172.20.16.116:3014/', '_blank', 'noopener,noreferrer');
+};
 
 const labelForm = reactive({
   id: null,
