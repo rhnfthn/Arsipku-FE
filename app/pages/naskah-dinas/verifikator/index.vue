@@ -1,5 +1,6 @@
 <template>
-  <div class="bg-gray-50 dark:bg-gray-900 pt-5">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       <div>
         <Heading variant="heading6b" class="text-mobile-md dark:text-white">
@@ -476,6 +477,7 @@ definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
 const toast = useToast();
+const { canAccessPage } = useFeatureAccess();
 
 const {
   verifikatorDocuments,
@@ -756,6 +758,7 @@ function handleClickOutside(e: MouseEvent) {
 }
 
 onMounted(async () => {
+  if (!canAccessPage()) return;
   document.addEventListener('click', handleClickOutside);
   await fetchVerifikatorDocuments({ page: 1, limit: 10000 });
 });
