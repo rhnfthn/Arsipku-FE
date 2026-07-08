@@ -21,6 +21,7 @@ interface ApiGetOptions {
 
 const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/auth\/profile(?:[/?#]|$)/,
+  /^\/auth\/refresh-permissions(?:[/?#]|$)/,
   /^\/dashboard(?:[/?#]|$)/,
   /^\/notifications(?:[/?#]|$)/,
   /^\/naskah_sirkulasi\/(?:inbox-count|inbox|sent|tertunda)(?:[/?#]|$)/,

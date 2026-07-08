@@ -1004,7 +1004,7 @@ const { t } = useI18n()
 
 const { hasPermission } = useAuth();
 
-const canViewMaster = computed(() => hasPermission('master-data', 'read'));
+const canViewMaster = computed(() => hasPermission('master-data', 'read-perusahaan'));
 
 // ─── Composables ─────────────────────────────────────────────────────────────
 const { searchPersons } = usePerson()

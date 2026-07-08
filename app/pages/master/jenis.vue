@@ -1,11 +1,5 @@
 <template>
-  <div v-if="!canViewMaster" class="min-h-screen pt-5 dark:bg-gray-900 transition-colors flex items-center justify-center">
-    <EmptyState
-      icon="i-lucide-lock"
-      title="Akses Ditolak"
-      description="Anda tidak punya izin melihat master data. Hubungi administrator."
-    />
-  </div>
+  <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
@@ -14,7 +8,7 @@
       </div>
 
       <button
-        v-if="hasPermission('master-data', 'create')"
+        v-if="hasPermission('master-data', 'create-jenis')"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -92,6 +86,7 @@
 
         <!-- Export -->
         <button
+          v-if="hasPermission('master-data', 'export-jenis')"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
           @click="onExport"
         >
@@ -202,6 +197,7 @@
               <td class="px-4 py-3">
                 <div class="flex justify-center gap-2">
                   <button
+                    v-if="hasPermission('master-data', 'read-jenis-detail')"
                     class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
                     :title="t('je_modal_detail')"
                     @click="onView(row)"
@@ -210,7 +206,7 @@
                   </button>
 
                   <button
-                    v-if="hasPermission('master-data', 'update')"
+                    v-if="hasPermission('master-data', 'update-jenis')"
                     class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                     :title="t('je_modal_edit')"
                     @click="onEdit(row)"
@@ -219,7 +215,7 @@
                   </button>
 
                   <button
-                    v-if="hasPermission('master-data', 'delete')"
+                    v-if="hasPermission('master-data', 'delete-jenis')"
                     class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
                     :title="t('popup_hapus')"
                     @click="onDelete(row)"
@@ -858,7 +854,7 @@ definePageMeta({
 const { t, locale } = useI18n();
 
 const { hasPermission } = useAuth();
-
+
 
 // ─────────────────────────────────────────────
 // BREADCRUMB (reaktif terhadap bahasa)

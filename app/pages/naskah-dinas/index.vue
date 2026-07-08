@@ -1,4 +1,6 @@
 <template>
+  <AccessDenied v-if="!canAccessPage()" />
+  <template v-else>
   <div class="flex items-center justify-between w-full pt-5">
     <div>
       <Heading variant="heading6b" class="text-mobile-md dark:text-white">
@@ -8,6 +10,7 @@
     </div>
     <!-- ADD BUTTON -->
     <button
+      v-if="hasPermission('naskah-masuk', 'create')"
       @click="openAddModal"
       class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
     >
@@ -98,6 +101,7 @@
         </div>
 
         <button
+          v-if="hasPermission('naskah-masuk', 'export')"
           @click="exportExcel"
           class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
         >
@@ -267,6 +271,7 @@
               <td class="px-4 py-3">
                 <div class="flex items-center justify-center gap-2">
                   <button
+                    v-if="hasPermission('naskah-masuk', 'read-verifikasi-detail')"
                     type="button"
                     class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat"
@@ -275,7 +280,7 @@
                     <Eye class="w-4 h-4" />
                   </button>
                   <button
-                    v-if="canEditNaskah(item)"
+                    v-if="canEditNaskah(item) && hasPermission('naskah-masuk', 'update-verifikasi')"
                     type="button"
                     class="p-2 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Edit"
@@ -1065,6 +1070,7 @@
       </div>
     </Modal>
   </Teleport>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -1123,7 +1129,8 @@ const items = [
   { label: t('naskah_masuk'), to: '/naskah-dinas' }
 ] satisfies BreadcrumbItem[];
 
-const { user } = useAuth();
+const { user, hasPermission } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 
 const {
   items: listDelegasi,
@@ -1149,6 +1156,7 @@ const {
 } = useTertujuEksternal();
 
 onMounted(() => {
+  if (!canAccessPage()) return;
   fetchNaskahDinas();
   fetchTertujuEksternal();
   fetchRecipients();

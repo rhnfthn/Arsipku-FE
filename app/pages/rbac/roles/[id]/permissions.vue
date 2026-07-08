@@ -35,13 +35,9 @@
               </p>
             </div>
             <div class="flex items-center gap-2">
-              <button type="button" @click="expandAll"
+              <button type="button" @click="allExpanded ? collapseAll() : expandAll()"
                 class="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                {{ t('rbac_expand_all') }}
-              </button>
-              <button type="button" @click="collapseAll"
-                class="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                {{ t('rbac_collapse_all') }}
+                {{ allExpanded ? t('rbac_collapse_all') : t('rbac_expand_all') }}
               </button>
               <button type="button" @click="toggleCheckAll"
                 class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
@@ -276,6 +272,14 @@ function expandAll() {
 function collapseAll() {
   openKeys.value = new Set();
 }
+const allExpanded = computed(() => {
+  if (!currentTree.value) return false;
+  if (!openKeys.value.has(currentTree.value.key)) return false;
+  for (const menu of currentTree.value.menus ?? []) {
+    if (!openKeys.value.has(`${currentTree.value.key}-${menu.key}`)) return false;
+  }
+  return true;
+});
 function toggleCheckAll() {
   if (allChecked.value) {
     selectedIds.value = [];

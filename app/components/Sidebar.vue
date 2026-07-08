@@ -580,7 +580,7 @@ const faqMenuAdmin = computed(() => [
     label: 'Manajemen FAQ',
     to: '/faq/manajemen',
     icon: 'i-lucide-file-question',
-    permission: { resource: 'faq', action: 'manage' },
+    permission: { resource: 'faq', action: 'read' },
   },
   {
     label: 'Pedoman',

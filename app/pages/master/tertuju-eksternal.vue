@@ -6,7 +6,7 @@
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
       <button
-        v-if="hasPermission('master-data', 'create')"
+        v-if="hasPermission('master-data', 'create-tertuju')"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -81,6 +81,7 @@
 
         <!-- Export -->
         <button
+          v-if="hasPermission('master-data', 'export-tertuju')"
           @click="onExport"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
@@ -193,7 +194,7 @@
 
             <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
-                v-if="hasPermission('master-data', 'update')"
+                v-if="hasPermission('master-data', 'update-tertuju')"
                 @click="openEdit(item)"
                 class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
               >
@@ -203,7 +204,7 @@
               </button>
 
               <button
-                v-if="hasPermission('master-data', 'delete')"
+                v-if="hasPermission('master-data', 'delete-tertuju')"
                 class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
@@ -512,7 +513,7 @@ const items = computed(() => [
 const auth = useAuth();
 const user = auth.user;
 const { hasPermission } = auth;
-
+
 
 const {
   data,
