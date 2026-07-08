@@ -681,7 +681,7 @@ const exportData = async () => {
 </script>
 
 <template>
-  <AccessDenied v-if="!canAccessPage()" />
+  <AccessDenied v-if="!hasPermission('delegasi', 'read')" />
   <div v-else class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="space-y-6">
     <div class="flex items-center justify-between w-full mb-5">
