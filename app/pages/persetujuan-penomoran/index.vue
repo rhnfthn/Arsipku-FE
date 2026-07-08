@@ -930,6 +930,7 @@ import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
 
 const { user } = useAuth();
+const { canAccessPage } = useFeatureAccess();
 definePageMeta({ middleware: 'auth' });
 const { t } = useI18n();
 const {
@@ -1450,6 +1451,7 @@ watch(isOpenPreview, (open) => {
 
 // ─── Lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!canAccessPage()) return;
   if (!user.value) {
     const { getProfile } = useAuth();
     await getProfile();

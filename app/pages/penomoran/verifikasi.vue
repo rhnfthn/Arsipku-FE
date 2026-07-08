@@ -1591,6 +1591,7 @@ const onRowMouseLeave = () => {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!canAccessPage()) return;
   await fetchData()
   document.addEventListener('click', handleDocumentClick)
 })
