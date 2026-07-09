@@ -77,8 +77,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/lampiran',
     '/switch',
     '/faq/menu',
+    '/faq/manajemen',
     '/pedoman/menu',
+    '/pedoman/manajemen',
     '/persetujuan-penomoran',
+    '/digsig',
+    '/layanan-email',
+    '/naskah-dinas/verifikator',
   ];
 
   if (role === 'user') {

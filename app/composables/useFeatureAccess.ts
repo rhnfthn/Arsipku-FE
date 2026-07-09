@@ -25,6 +25,7 @@ const routePermissions: Record<string, string> = {
   // Utilitas (resource names sesuai seed-rbac.ts)
   '/digsig/verifikasi-dokumen': 'digsig:read-verifikasi-dokumen',
   '/digsig/penandatanganan': 'digsig:read-penandatanganan',
+  '/penandatangan': 'digsig:read-penandatanganan',
   '/digsig/cek-dokumen': 'digsig:read-cek-dokumen',
   '/digsig/log-digsig': 'digsig:read-log-disdig',
   '/penyingkat-tautan': 'penyingkat-tautan:read',
