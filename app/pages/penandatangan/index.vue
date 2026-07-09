@@ -1,6 +1,7 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-900 pt-5">
-    <div class="">
+    <AccessDenied v-if="!canAccessPage()" />
+    <div v-else class="">
       <!-- HEADER -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
@@ -796,6 +797,9 @@ import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 
 const { t } = useI18n();
 const toast = useToast();
+const { canAccessPage } = useFeatureAccess();
+
+definePageMeta({ middleware: 'auth' });
 
 const {
   penandatanganDocuments,
