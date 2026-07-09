@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { canAccessPage } = useFeatureAccess()
+const { hasPermission } = useAuth()
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown } from 'lucide-vue-next'
@@ -285,6 +286,7 @@ const deleteNow = async () => {
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
+        v-if="hasPermission('titelatur', 'create')"
         @click="openAdd()"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
