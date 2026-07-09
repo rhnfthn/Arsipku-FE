@@ -545,7 +545,7 @@ const userMenuUtama = computed(() => {
   ];
   // BOD kosong / STAFF: hanya Beranda
   if (!hasBodTag.value) {
-    return allMenus.filter((m: any) => m.to === '/beranda');
+    return allMenus.filter((m) => m.to === '/beranda');
   }
   return allMenus;
 });
@@ -700,7 +700,7 @@ const adminMenuUtama = computed(() => {
   ];
   // BOD kosong / STAFF: hanya Beranda
   if (!hasBodTag.value) {
-    return allMenus.filter((m: any) => m.to === '/beranda');
+    return allMenus.filter((m) => m.to === '/beranda');
   }
   return allMenus;
 });
