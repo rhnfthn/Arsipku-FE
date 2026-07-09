@@ -54,8 +54,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (role === 'superadmin') return;
 
   if (role === 'admin') {
-    // Admin boleh akses /master/* (read-only), tapi tidak /rbac dan /konfigurasi-sistem
-    if (isSuperadminOnlyPath) {
+    // Admin TIDAK boleh akses /master/*, /rbac, /konfigurasi-sistem
+    if (isSuperadminOnlyPath || path === '/master' || path.startsWith('/master/')) {
       return navigateTo('/beranda', { replace: true });
     }
     return;
