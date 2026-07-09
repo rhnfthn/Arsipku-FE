@@ -71,6 +71,7 @@ export default defineNuxtConfig({
       socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || "http://localhost:3011",
       pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || "http://172.20.16.115:3011",
       previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || "http://172.20.16.115:3011",
+      onlyofficeUrl: process.env.NUXT_PUBLIC_ONLYOFFICE_URL || "http://localhost:80",
     },
   },
 
