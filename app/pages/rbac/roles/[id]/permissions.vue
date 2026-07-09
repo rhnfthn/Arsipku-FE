@@ -210,9 +210,9 @@ const tabs = computed(() => {
     { key: 'faq' as const, label: 'FAQ' },
   ];
   const roleName = (role.value?.name || '').toUpperCase();
-  // USER: tampilkan Utama, Utilitas, Administrasi ( Titelatur & Penomoran only), FAQ
+  // USER: hanya Utama, Utilitas (dengan Titelatur & Penomoran digabung), FAQ
   if (roleName === 'USER') {
-    return all.filter(t => ['utama', 'utilitas', 'administrasi', 'faq'].includes(t.key));
+    return all.filter(t => ['utama', 'utilitas', 'faq'].includes(t.key));
   }
   return all;
 });
@@ -228,14 +228,15 @@ const treeMap: Record<string, Ref<any>> = {
     const raw = treeMap[activeTab.value]?.value ?? null;
     if (!raw) return null;
     const roleName = (role.value?.name || '').toUpperCase();
+    // USER: gabung Titelatur & Penomoran dari Administrasi ke Utilitas
+    if (roleName === 'USER' && raw.key === 'utilitas' && administrasiTree.value) {
+      const extraMenus = (administrasiTree.value.menus ?? []).filter((m: any) =>
+        ['titelatur', 'penomoran'].includes(m.key)
+      );
+      return { ...raw, menus: [...(raw.menus ?? []), ...extraMenus] };
+    }
     if (raw.key === 'administrasi') {
-      if (roleName === 'USER') {
-        // USER: hanya Titelatur & Penomoran
-        const userAllowed = ['titelatur', 'penomoran'];
-        return { ...raw, menus: raw.menus.filter((m: any) => userAllowed.includes(m.key)) };
-      }
       if (roleName !== 'SUPERADMIN') {
-        // ADMIN: hide Data Master & Konfigurasi
         const adminHidden = ['data-master', 'konfigurasi'];
         return { ...raw, menus: raw.menus.filter((m: any) => !adminHidden.includes(m.key)) };
       }
@@ -258,20 +259,22 @@ const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.na
 const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
   const roleName = (role.value?.name || '').toUpperCase();
-  // USER: skip Laporan tree entirely; Administrasi di-filter di bawah
-  const skipKeys = roleName === 'USER' ? ['laporan'] : [];
+  // USER: skip Administrasi & Laporan tree (Titelatur & Penomoran sudah digabung ke Utilitas)
+  const skipKeys = roleName === 'USER' ? ['administrasi', 'laporan'] : [];
   for (const tree of [utamaTree.value, utilitasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
     if (skipKeys.includes(tree.key)) continue;
     let menus = tree.menus ?? [];
-    if (tree.key === 'administrasi') {
-      if (roleName === 'USER') {
-        const userAllowed = ['titelatur', 'penomoran'];
-        menus = menus.filter((m: any) => userAllowed.includes(m.key));
-      } else if (roleName !== 'SUPERADMIN') {
-        const adminHidden = ['data-master', 'konfigurasi'];
-        menus = menus.filter((m: any) => !adminHidden.includes(m.key));
-      }
+    if (tree.key === 'administrasi' && roleName !== 'SUPERADMIN' && roleName !== 'USER') {
+      const adminHidden = ['data-master', 'konfigurasi'];
+      menus = menus.filter((m: any) => !adminHidden.includes(m.key));
+    }
+    // USER: tambah Titelatur & Penomoran dari administrasiTree ke utilitas
+    if (tree.key === 'utilitas' && roleName === 'USER' && administrasiTree.value) {
+      const extraMenus = (administrasiTree.value.menus ?? []).filter((m: any) =>
+        ['titelatur', 'penomoran'].includes(m.key)
+      );
+      menus = [...menus, ...extraMenus];
     }
     for (const menu of menus) {
       for (const sub of menu.subMenus ?? []) {
