@@ -216,7 +216,7 @@ const treeMap: Record<string, Ref<any>> = {
   laporan: laporanTree,
   faq: faqTree,
 };
-const currentTree = computed(() => treeMap[activeTab.value]?.value ?? null);
+  const currentTree = computed(() => treeMap[activeTab.value]?.value ?? null);
 
 const selectedPermIds = computed(() => selectedIds.value.slice());
 
