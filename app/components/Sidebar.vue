@@ -828,18 +828,6 @@ const adminMenuAdministrasi = computed(() => {
         permission: { resource: 'konfigurasi', action: 'read' },
       }
     );
-  } else if (hasRole('ADMIN')) {
-    base.push({
-      label: t('master_data'),
-      icon: 'i-lucide-database',
-      permission: { resource: 'master-data', action: 'read' },
-      children: [
-        { label: t('tertuju'), to: '/master/tertuju-eksternal' },
-        { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
-        { label: t('klasifikasi'), to: '/master/klasifikasi' },
-        { label: t('jenis'), to: '/master/jenis' },
-      ],
-    });
   }
 
   return base;
