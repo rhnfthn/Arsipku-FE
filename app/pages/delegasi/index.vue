@@ -916,6 +916,7 @@ const exportData = async () => {
         </div>
 
         <button
+          v-if="hasPermission('delegasi', 'export')"
           @click="exportData"
           :disabled="isExporting"
           class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"

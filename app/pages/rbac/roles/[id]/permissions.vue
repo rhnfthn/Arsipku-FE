@@ -186,7 +186,7 @@ const route = useRoute();
 const { t } = useI18n();
 const toast = useToast();
 const { roles, fetchRoles, fetchMatrixUtama, fetchMatrixUtilitas, fetchMatrixAdministrasi, fetchMatrixLaporan, fetchMatrixFaq, assignPermissions } = useRbac();
-const { getProfile, refreshPermissions } = useAuth();
+const { refreshPermissions } = useAuth();
 
 const loading = ref(true);
 const saving = ref(false);
@@ -311,7 +311,6 @@ const savePermissions = async () => {
     });
     await fetchRoles();
     await refreshPermissions();
-    await getProfile().catch(() => {});
     initialIds.value = new Set(selectedIds.value);
   } catch (e: any) {
     toast.add({
