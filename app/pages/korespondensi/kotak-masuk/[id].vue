@@ -152,6 +152,15 @@ const getPermissions = (bodTag: string | null | undefined, surat: string) => {
 
 const allowedActions = computed(() => {
   if (isTerkirim.value) return [];
+  // Disable all lanjut actions if the user already did a tindak lanjut from this
+  // naskah (prevents double-send / creating a second follow-up naskah).
+  const firstFlow = details.value[0];
+  const sudahLanjut =
+    firstFlow?.is_tindak_lanjut ??
+    firstFlow?.user_sirkulasi?.is_tindak_lanjut ??
+    firstFlow?.raw?.user_sirkulasi?.is_tindak_lanjut ??
+    false;
+  if (sudahLanjut) return [];
   const tag = user.value?.bodTag;
   const surat = selected.value?.jenis;
   if (!isKonsepData.value) {
@@ -175,13 +184,21 @@ const breadcrumbs = [
   { label: 'Detail Surat', to: '#' },
 ];
 
-const visibleDetails = computed(() =>
-  details.value.filter(
+const visibleDetails = computed(() => {
+  const myPosId = String(
+    user.value?.position?.id || user.value?.position_id || user.value?.position || ''
+  );
+  return details.value.filter(
     (d: any) =>
       d._rawStatus !== 'draf' &&
-      !(isKonsepData.value && String(d?.jenis || '').toUpperCase() === 'KN')
-  )
-);
+      !(isKonsepData.value && String(d?.jenis || '').toUpperCase() === 'KN') &&
+      // kotak-masuk: exclude nodes where the current user is the pengirim (sender) —
+      // those are "sent" items (belong in terkirim), not received. terkirim keeps all.
+      (isTerkirim.value ||
+        myPosId === '' ||
+        String(d?.pengirim?.position_id || '') !== myPosId)
+  );
+});
 
 // --- STATE ---
 const details = ref<any[]>([]);
