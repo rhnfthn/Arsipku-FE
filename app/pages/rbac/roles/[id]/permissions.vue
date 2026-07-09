@@ -201,13 +201,21 @@ const initialIds = ref<string[]>(new Set<string>());
 const openKeys = ref<Set<string>>(new Set());
 const activeTab = ref<'utama' | 'utilitas' | 'administrasi' | 'laporan' | 'faq'>('utama');
 
-const tabs = [
-  { key: 'utama' as const, label: 'Utama' },
-  { key: 'utilitas' as const, label: 'Utilitas' },
-  { key: 'administrasi' as const, label: 'Administrasi' },
-  { key: 'laporan' as const, label: 'Laporan' },
-  { key: 'faq' as const, label: 'FAQ' },
-];
+const tabs = computed(() => {
+  const all = [
+    { key: 'utama' as const, label: 'Utama' },
+    { key: 'utilitas' as const, label: 'Utilitas' },
+    { key: 'administrasi' as const, label: 'Administrasi' },
+    { key: 'laporan' as const, label: 'Laporan' },
+    { key: 'faq' as const, label: 'FAQ' },
+  ];
+  const roleName = (role.value?.name || '').toUpperCase();
+  // USER hanya boleh lihat Utama, Utilitas, FAQ — tidak ada Administrasi & Laporan
+  if (roleName === 'USER') {
+    return all.filter(t => ['utama', 'utilitas', 'faq'].includes(t.key));
+  }
+  return all;
+});
 
 const treeMap: Record<string, Ref<any>> = {
   utama: utamaTree,
@@ -244,8 +252,11 @@ const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
   const adminHiddenMenus = ['data-master', 'konfigurasi'];
   const roleName = (role.value?.name || '').toUpperCase();
+  // USER: skip Administrasi & Laporan tree entirely
+  const skipKeys = roleName === 'USER' ? ['administrasi', 'laporan'] : [];
   for (const tree of [utamaTree.value, utilitasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
+    if (skipKeys.includes(tree.key)) continue;
     const menus = (roleName !== 'SUPERADMIN' && tree.key === 'administrasi')
       ? (tree.menus ?? []).filter((m: any) => !adminHiddenMenus.includes(m.key))
       : (tree.menus ?? []);
