@@ -380,6 +380,7 @@ onMounted(() => {
       <div class="flex items-center gap-1 shrink-0 relative">
 
         <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
+          title="Pilih Semua"
           @click="toggleSelectAll">
           <div
             class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
@@ -390,6 +391,7 @@ onMounted(() => {
 
         <button @click="refreshData"
           class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+          title="Muat Ulang"
           :disabled="isRefreshing">
           <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
@@ -521,7 +523,8 @@ onMounted(() => {
         <div class="flex items-center gap-1">
           <div class="relative">
             <button @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+              title="Item per Halaman">
               <Layers class="w-4 h-4" />
             </button>
             <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent" />
@@ -543,11 +546,13 @@ onMounted(() => {
           </span>
           <button
             class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
+            title="Sebelumnya"
             @click="prevPage" :disabled="currentPage === 1">
             <ChevronLeft class="w-4 h-4" />
           </button>
           <button
             class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
+            title="Berikutnya"
             @click="nextPage" :disabled="currentPage >= pagination.totalPages">
             <ChevronRight class="w-4 h-4" />
           </button>
@@ -674,6 +679,7 @@ onMounted(() => {
                 </button>
                 <button
                   class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 transition-colors"
+                  title="Hapus"
                   @click.stop="hasPermission('utama.draft', 'delete') ? confirmDeleteModal(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_hapus_ditolak') || 'Anda tidak memiliki izin untuk menghapus.', color: 'error', icon: 'i-lucide-x-circle' })">
                   <Trash2 class="w-4 h-4" />
                 </button>

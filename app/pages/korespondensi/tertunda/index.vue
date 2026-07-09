@@ -286,7 +286,8 @@ onMounted(async () => {
       <!-- Left actions -->
       <div class="flex items-center gap-1 shrink-0 relative">
         <button @click="refreshData"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
+          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+          title="Muat Ulang">
           <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
       </div>
@@ -376,7 +377,8 @@ onMounted(async () => {
         <!-- Sort -->
         <div class="relative">
           <button @click="showSortMenu = !showSortMenu"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+            title="Urutkan">
             <ArrowUpDown class="w-4 h-4" />
           </button>
           <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
@@ -396,7 +398,8 @@ onMounted(async () => {
         <div class="flex items-center gap-1">
           <div class="relative">
             <button @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1">
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1"
+              title="Item per Halaman">
               <Layers class="w-4 h-4" />
             </button>
             <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
@@ -416,11 +419,13 @@ onMounted(async () => {
             </span>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Sebelumnya"
               @click="prevPage" :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Berikutnya"
               @click="nextPage" :disabled="currentPage === totalPages">
               <ChevronRight class="w-4 h-4" />
             </button>
