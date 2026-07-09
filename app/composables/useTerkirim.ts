@@ -40,6 +40,8 @@ export interface SentParams {
   arsip?: boolean;
   favorite?: boolean;
   priority?: boolean;
+  note?: boolean;
+  lock?: boolean;
 }
 
 export const useSirkulasi = () => {
@@ -71,6 +73,8 @@ export const useSirkulasi = () => {
       if (params.arsip) query.append('arsip', 'true');
       if (params.favorite) query.append('favorite', 'true');
       if (params.priority) query.append('priority', 'true');
+      if (params.note) query.append('note', 'true');
+      if (params.lock) query.append('lock', 'true');
 
       const res = await apiGet(
         `/naskah_sirkulasi/sent/?${query.toString()}`,
@@ -132,6 +136,8 @@ export const useSirkulasi = () => {
           isLocked: item.is_locked,
           isArchived: item.arsip, // field dari API (bukan is_arsip)
           isStarred: item.favorit, // field dari API (bukan is_favorit)
+          isNote: item.note,
+          noteText: item.note_text || '',
           is_priority: item.is_priority,
           recipient: listPenerima.map((p: any) => p.position_text || p.nama).join(', '),
           labels: item.labels || [],
@@ -147,20 +153,31 @@ export const useSirkulasi = () => {
     }
   };
 
-  const toggleFlag = async (mail: any, flagType: 'favorit' | 'arsip') => {
-    const oldVal = flagType === 'favorit' ? mail.isStarred : mail.isArchived;
+  const toggleFlag = async (
+    mail: any,
+    flagType: 'favorit' | 'arsip' | 'lock' | 'note',
+    noteText?: string,
+  ) => {
+    const oldValMap: Record<string, any> = {
+      favorit: mail.isStarred,
+      arsip: mail.isArchived,
+      lock: mail.isLocked,
+      note: mail.isNote,
+    };
+    const oldVal = oldValMap[flagType];
     try {
       const idToSend =
         mail.id_sirkulasi || mail.originalData?.id_sirkulasi || mail.naskahId || mail.id;
       if (!idToSend) throw new Error('ID tidak ditemukan');
-      await apiPatch('/naskah_sirkulasi/toggle-flag', {
-        id_sirkulasi: idToSend,
-        flag_type: flagType,
-      });
+      const payload: any = { id_sirkulasi: idToSend, flag_type: flagType };
+      if (flagType === 'note' && noteText !== undefined) payload.note_text = noteText;
+      await apiPatch('/naskah_sirkulasi/toggle-flag', payload);
     } catch (err) {
       console.error('Gagal toggle flag:', flagType, err);
       if (flagType === 'favorit') mail.isStarred = oldVal;
-      else mail.isArchived = oldVal;
+      else if (flagType === 'arsip') mail.isArchived = oldVal;
+      else if (flagType === 'lock') mail.isLocked = oldVal;
+      else if (flagType === 'note') mail.isNote = oldVal;
       throw err;
     }
   };
