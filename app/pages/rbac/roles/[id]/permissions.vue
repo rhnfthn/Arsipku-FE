@@ -235,6 +235,11 @@ const treeMap: Record<string, Ref<any>> = {
       );
       return { ...raw, menus: [...(raw.menus ?? []), ...extraMenus] };
     }
+    // USER: hide Manajemen FAQ & Manajemen Pedoman di tab FAQ
+    if (roleName === 'USER' && raw.key === 'faq') {
+      const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
+      return { ...raw, menus: raw.menus.filter((m: any) => !userHidden.includes(m.key)) };
+    }
     if (raw.key === 'administrasi') {
       if (roleName !== 'SUPERADMIN') {
         const adminHidden = ['data-master', 'konfigurasi'];
@@ -275,6 +280,11 @@ const allPermissionIds = computed<string[]>(() => {
         ['titelatur', 'penomoran'].includes(m.key)
       );
       menus = [...menus, ...extraMenus];
+    }
+    // USER: hide Manajemen FAQ & Manajemen Pedoman di tab FAQ
+    if (tree.key === 'faq' && roleName === 'USER') {
+      const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
+      menus = menus.filter((m: any) => !userHidden.includes(m.key));
     }
     for (const menu of menus) {
       for (const sub of menu.subMenus ?? []) {
