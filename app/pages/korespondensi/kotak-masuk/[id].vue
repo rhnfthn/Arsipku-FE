@@ -94,12 +94,25 @@ const konsepRouteMap: Record<string, string> = {
   KA: 'kajian',
 };
 
+// ponytail: route edit/revisi konsep existing ke halaman sesuai jenis-asli (ND/SDI/SDE),
+// bukan hardcoded nota-dinas. Jenis-asli dari field jenis_naskah_konsep flow.
+const resolveKonsepEditPath = (sel: any): string => {
+  const rawKind = String(
+    sel?.jenis_naskah_konsep ||
+    sel?.detail?.jenis_naskah_konsep ||
+    sel?.jenis ||
+    'ND',
+  ).trim().toUpperCase();
+  const seg = konsepRouteMap[rawKind] ?? 'nota-dinas';
+  return `/korespondensi/tulis/konsep/${seg}`;
+};
+
 const handleLanjutKonsep = () => {
   if (!ensureCanCreateFollowUpAction()) return;
 
   if (isKonsepData.value && selected.value?.id) {
     router.push({
-      path: '/korespondensi/tulis/konsep/nota-dinas',
+      path: resolveKonsepEditPath(selected.value),
       query: { ref_id: selected.value.id, action: 'edit' },
     });
     return;
@@ -194,9 +207,19 @@ const visibleDetails = computed(() => {
       !(isKonsepData.value && String(d?.jenis || '').toUpperCase() === 'KN') &&
       // kotak-masuk: exclude nodes where the current user is the pengirim (sender) —
       // those are "sent" items (belong in terkirim), not received. terkirim keeps all.
+      // Pengecualian untuk konsep (isKonsepData): node pengirim sendiri TETAP masuk
+      // jika bukan aksi approval review (forward/reject/finalize) — supaya genealogi
+      // root (disposisi) tetap utuh. Aksi approval/forward sendiri di-cut (milik
+      // terkirim), chain di-cut sampai konseptor terakhir sebelum approval/reject.
+      // Catatan: `d.from` = forwarder aktual (flow.pengirim); `d.pengirim` di node
+      // konsep = naskah_pengirim (signer), bukan forwarder — jadi cek `from` dulu.
       (isTerkirim.value ||
         myPosId === '' ||
-        String(d?.pengirim?.position_id || '') !== myPosId)
+        String(d?.from?.position_id || d?.pengirim?.position_id || '') !== myPosId ||
+        (isKonsepData.value &&
+          !['forward', 'reject', 'finalize'].includes(
+            String(d?.aksi || '').toLowerCase(),
+          )))
   );
 });
 
@@ -954,7 +977,7 @@ const handleConfirmReject = async () => {
 const handleEditKonsep = () => {
   if (selected.value?.id) {
     router.push({
-      path: '/korespondensi/tulis/konsep/nota-dinas',
+      path: resolveKonsepEditPath(selected.value),
       query: { ref_id: selected.value.id, action: 'edit' },
     });
   }
