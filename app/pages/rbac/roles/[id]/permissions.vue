@@ -201,13 +201,21 @@ const initialIds = ref<string[]>(new Set<string>());
 const openKeys = ref<Set<string>>(new Set());
 const activeTab = ref<'utama' | 'utilitas' | 'administrasi' | 'laporan' | 'faq'>('utama');
 
-const tabs = [
-  { key: 'utama' as const, label: 'Utama' },
-  { key: 'utilitas' as const, label: 'Utilitas' },
-  { key: 'administrasi' as const, label: 'Administrasi' },
-  { key: 'laporan' as const, label: 'Laporan' },
-  { key: 'faq' as const, label: 'FAQ' },
-];
+const tabs = computed(() => {
+  const all = [
+    { key: 'utama' as const, label: 'Utama' },
+    { key: 'utilitas' as const, label: 'Utilitas' },
+    { key: 'administrasi' as const, label: 'Administrasi' },
+    { key: 'laporan' as const, label: 'Laporan' },
+    { key: 'faq' as const, label: 'FAQ' },
+  ];
+  const roleName = (role.value?.name || '').toUpperCase();
+  // USER: hanya Utama, Utilitas (dengan Titelatur & Penomoran digabung), FAQ
+  if (roleName === 'USER') {
+    return all.filter(t => ['utama', 'utilitas', 'faq'].includes(t.key));
+  }
+  return all;
+});
 
 const treeMap: Record<string, Ref<any>> = {
   utama: utamaTree,
@@ -219,11 +227,24 @@ const treeMap: Record<string, Ref<any>> = {
   const currentTree = computed(() => {
     const raw = treeMap[activeTab.value]?.value ?? null;
     if (!raw) return null;
-    // Sembunyikan Data Master & Konfigurasi Sistem untuk semua role KECUALI SUPERADMIN
-    const adminHiddenMenus = ['data-master', 'konfigurasi'];
     const roleName = (role.value?.name || '').toUpperCase();
-    if (roleName !== 'SUPERADMIN' && raw.key === 'administrasi') {
-      return { ...raw, menus: raw.menus.filter((m: any) => !adminHiddenMenus.includes(m.key)) };
+    // USER: gabung Titelatur & Penomoran dari Administrasi ke Utilitas
+    if (roleName === 'USER' && raw.key === 'utilitas' && administrasiTree.value) {
+      const extraMenus = (administrasiTree.value.menus ?? []).filter((m: any) =>
+        ['titelatur', 'penomoran'].includes(m.key)
+      );
+      return { ...raw, menus: [...(raw.menus ?? []), ...extraMenus] };
+    }
+    // USER: hide Manajemen FAQ & Manajemen Pedoman di tab FAQ
+    if (roleName === 'USER' && raw.key === 'faq') {
+      const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
+      return { ...raw, menus: raw.menus.filter((m: any) => !userHidden.includes(m.key)) };
+    }
+    if (raw.key === 'administrasi') {
+      if (roleName !== 'SUPERADMIN') {
+        const adminHidden = ['data-master', 'konfigurasi'];
+        return { ...raw, menus: raw.menus.filter((m: any) => !adminHidden.includes(m.key)) };
+      }
     }
     return raw;
   });
@@ -242,13 +263,29 @@ const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.na
 
 const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
-  const adminHiddenMenus = ['data-master', 'konfigurasi'];
   const roleName = (role.value?.name || '').toUpperCase();
+  // USER: skip Administrasi & Laporan tree (Titelatur & Penomoran sudah digabung ke Utilitas)
+  const skipKeys = roleName === 'USER' ? ['administrasi', 'laporan'] : [];
   for (const tree of [utamaTree.value, utilitasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
-    const menus = (roleName !== 'SUPERADMIN' && tree.key === 'administrasi')
-      ? (tree.menus ?? []).filter((m: any) => !adminHiddenMenus.includes(m.key))
-      : (tree.menus ?? []);
+    if (skipKeys.includes(tree.key)) continue;
+    let menus = tree.menus ?? [];
+    if (tree.key === 'administrasi' && roleName !== 'SUPERADMIN' && roleName !== 'USER') {
+      const adminHidden = ['data-master', 'konfigurasi'];
+      menus = menus.filter((m: any) => !adminHidden.includes(m.key));
+    }
+    // USER: tambah Titelatur & Penomoran dari administrasiTree ke utilitas
+    if (tree.key === 'utilitas' && roleName === 'USER' && administrasiTree.value) {
+      const extraMenus = (administrasiTree.value.menus ?? []).filter((m: any) =>
+        ['titelatur', 'penomoran'].includes(m.key)
+      );
+      menus = [...menus, ...extraMenus];
+    }
+    // USER: hide Manajemen FAQ & Manajemen Pedoman di tab FAQ
+    if (tree.key === 'faq' && roleName === 'USER') {
+      const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
+      menus = menus.filter((m: any) => !userHidden.includes(m.key));
+    }
     for (const menu of menus) {
       for (const sub of menu.subMenus ?? []) {
         for (const fitur of sub.fiturs ?? []) {

@@ -1,9 +1,19 @@
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   // Skip public routes
   const publicRoutes = ['/login', '/autharsipku', '/access-denied', '/error', '/'];
   if (publicRoutes.some((r) => to.path.startsWith(r))) return;
 
-  // Tidak redirect — biarkan halaman sendiri yang tampilkan <AccessDenied>.
-  // Setiap halaman sudah punya: <AccessDenied v-if="!canAccessPage()" />
-  // Menu sidebar selalu tampil, yang berubah hanya konten halaman.
+  // Pastikan user.value sudah terisi sebelum cek permission
+  const { user, getProfile } = useAuth();
+  if (!user.value) {
+    await getProfile().catch(() => {});
+  }
+  // Jika masih null (no token / error), skip — auth.ts akan handle
+  if (!user.value) return;
+
+  // Cek page permission — jika tidak ada akses, redirect ke /access-denied
+  const { canAccessPage } = useFeatureAccess();
+  if (!canAccessPage(to.path)) {
+    return navigateTo(`/access-denied?from=${encodeURIComponent(to.fullPath)}`);
+  }
 });
