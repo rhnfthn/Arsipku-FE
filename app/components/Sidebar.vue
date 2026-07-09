@@ -489,7 +489,7 @@ const tulisChildrenByBod = computed(() => {
       (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
     );
   }
-  return all.filter((i) => i.label === t('kajian') || i.label === 'Naskah Lainnya');
+  return all.filter((i) => i.label === t('kajian'));
 });
 
 const tulisMenu = computed(() => ({
