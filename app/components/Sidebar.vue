@@ -1084,7 +1084,7 @@ const labelToDelete = ref(null);
 
 const openHelpdesk = () => {
   showHelpdeskConfirm.value = false;
-  window.open('http://172.20.16.116:3014/', '_blank', 'noopener,noreferrer');
+  window.open('https://itsupport.airnavindonesia.co.id/', '_blank', 'noopener,noreferrer');
 };
 
 const labelForm = reactive({
