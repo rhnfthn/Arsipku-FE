@@ -50,6 +50,28 @@
       </div>
     </div>
 
+    <div v-if="forwardTargetInfo" class="mb-4">
+      <div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3">
+        <div class="flex items-start gap-2">
+          <UIcon name="i-lucide-user-round-check" class="w-4 h-4 text-primary-500 mt-0.5" />
+          <div class="min-w-0">
+            <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Konsep Akan Diteruskan Ke</p>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-0.5 break-words leading-5">
+              <div class="font-semibold text-primary-600 dark:text-primary-400">{{ forwardTargetInfo.positionText || '-' }}</div>
+              <div>{{ forwardTargetInfo.nama || '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="isRejectAction"
+      class="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+    >
+      Mode revisi: konsep ini dikembalikan dan perlu diperbaiki.
+    </div>
+
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
@@ -398,6 +420,40 @@ const formatDisposisiInline = (val: any) => {
 // --- Computed ---
 const isSenderSelected = computed(() => !!selectedSender.value);
 
+// ponytail: replikasi pola ND — konsep harus turun dulu ke previous disposer
+// (pengirim disposisi acuan) sebelum ke penandatangan. Saat reject, kembali ke
+// previous konseptor (detail.from_position_id). Fallback atasan langsung.
+const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
+const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
+const isNewKonsepFromReference = computed(() =>
+  String(route.query.workflow || '').toLowerCase() === 'konsep' &&
+  String(route.query.action || '').toLowerCase() !== 'edit'
+);
+const forwardTargetInfo = computed(() => {
+  if (isRejectAction.value) {
+    const fromPositionId = detail.value?.from_position_id;
+    const fromPositionText = detail.value?.from_position_text;
+    const fromNama = detail.value?.from_nama;
+    if (fromPositionId || fromPositionText || fromNama) {
+      return {
+        position: fromPositionId || '',
+        positionText: fromPositionText || '',
+        nama: fromNama || '',
+      };
+    }
+  }
+  if (isNewKonsepFromReference.value && refData.value?.pengirim) {
+    const p = refData.value.pengirim;
+    return {
+      position: p.position_id || p.position || '',
+      positionText: p.position_text || p.positionText || '',
+      nama: p.nama || p.persnum_person_text || '',
+    };
+  }
+  return atasanLangsungInfo.value;
+});
+const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
+
 // excludeTertujuList = yang sudah dipilih di TEMBUSAN → di-disable di Tertuju
 const excludeTertujuList = computed(() => selectedTembusan.value);
 // excludeTembusanList = yang sudah dipilih di TERTUJU → di-disable di Tembusan
@@ -659,7 +715,7 @@ const prepareKonsepFormData = () => {
   formData.append('jenis', 'SDI');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', signerInfo.value || '');
+  formData.append('to_position_id', forwardTargetPositionId.value || String(signerInfo.value || ''));
   formData.append('pengirim_position_id', signerInfo.value || '');
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
@@ -747,7 +803,7 @@ const handleKirimDokumen = async () => {
 
       formData.append('jenis', 'SDI');
       formData.append('from_position_id', user.value?.position || '');
-      formData.append('to_position_id', currentSender.value || '');
+      formData.append('to_position_id', forwardTargetPositionId.value || String(currentSender.value || ''));
       formData.append('pengirim_position_id', currentSender.value || '');
       formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
       formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
@@ -912,7 +968,15 @@ onMounted(async () => {
           return;
         }
 
-        detail.value = { ...latestKonsep, catatan_reject: result.catatan_reject };
+        detail.value = {
+          ...latestKonsep,
+          aksi: latestKonsep.detail?.aksi || latestKonsep.aksi || '',
+          from_position_id: latestKonsep?.from_position_id || latestKonsep?.detail?.from_position_id || latestKonsep?.pengirim?.position_id || '',
+          from_position_text: latestKonsep?.from_position_text || latestKonsep?.detail?.from_position_text || latestKonsep?.pengirim?.position_text || '',
+          from_nama: latestKonsep?.from_nama || latestKonsep?.detail?.from_nama || latestKonsep?.pengirim?.nama || '',
+          catatan_reject: latestKonsep.detail?.catatan || result.catatan_reject || '',
+          data: { catatan_reject: latestKonsep.detail?.catatan || result.catatan_reject || '' },
+        };
         editDraftId.value = latestKonsep.id;
         subject.value = latestKonsep.perihal || "";
         editorContent.value = latestKonsep.konten || "";
@@ -937,12 +1001,16 @@ onMounted(async () => {
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-        // Pengirim
-        if (latestKonsep.pengirim) {
-          const senderObj = mapPersonToUI(latestKonsep.pengirim);
-          selectedSender.value = senderObj;
+        // Pengirim (signer/penandatangan naskah final, bukan pengirim flow reject)
+        const pengirimDraft = latestKonsep.detail?.naskah_pengirim || latestKonsep.pengirim;
+        if (pengirimDraft?.position_id || pengirimDraft?.position) {
+          const senderObj = mapPersonToUI(pengirimDraft);
           await fetchSenderList(senderObj.value);
-          await fetchRecipientsBySender(senderObj.value);
+          const selectedFromList = senderItems.value.find(
+            (s) => String(s.value) === String(senderObj.value),
+          );
+          selectedSender.value = selectedFromList || senderObj;
+          await fetchRecipientsBySender(String(selectedSender.value?.value || senderObj.value));
         }
 
         // Penerima & Tembusan — ambil dari detail.naskah_penerima atau root penerima
@@ -1030,6 +1098,7 @@ onMounted(async () => {
             perihal: refDisposisi.perihal || refDisposisi.konten || '-',
             jenis: refDisposisi.jenis,
             jenis_label: 'DISPOSISI',
+            pengirim: refDisposisi.pengirim || null,
             pengirim_nama: refDisposisi.pengirim?.nama || '-',
             pengirim_jabatan: refDisposisi.pengirim?.position_text || '-',
             catatan: refDisposisi.detail?.catatan || refDisposisi.konten || '',
@@ -1063,6 +1132,7 @@ onMounted(async () => {
           perihal: rawFlow.perihal,
           jenis: rawFlow.jenis,
           jenis_label: rawFlow.jenis === 'DI' ? 'DISPOSISI' : (rawFlow.jenis || 'SURAT'),
+          pengirim: rawFlow.pengirim || null,
           pengirim_nama: rawFlow.pengirim?.nama || rawFlow.pengirim?.name || '-',
           pengirim_jabatan: rawFlow.pengirim?.positionText || rawFlow.pengirim?.position_text || '-',
           kepada: rawFlow.penerima || [],

@@ -713,7 +713,14 @@ const handleConfirmReject = async () => {
     isRejecting.value = false;
   }
 };
-const handleEditKonsep = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/nota-dinas', query: { ref_id: selected.value.id, action: 'edit' } }); };
+// ponytail: route edit/revisi konsep existing ke halaman sesuai jenis-asli (ND/SDI/SDE),
+// bukan hardcoded nota-dinas. Jenis-asli dari field jenis_naskah_konsep flow.
+const konsepEditSegMap: Record<string, string> = { ND: 'nota-dinas', SDI: 'surat-dinas-internal', SDE: 'surat-dinas-eksternal' };
+const resolveKonsepEditPath = (sel: any): string => {
+  const rawKind = String(sel?.jenis_naskah_konsep || sel?.detail?.jenis_naskah_konsep || sel?.jenis || 'ND').trim().toUpperCase();
+  return `/korespondensi/tulis/konsep/${konsepEditSegMap[rawKind] ?? 'nota-dinas'}`;
+};
+const handleEditKonsep = () => { if (selected.value?.id) router.push({ path: resolveKonsepEditPath(selected.value), query: { ref_id: selected.value.id, action: 'edit' } }); };
 const handleLanjutNotaDinas = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/lanjut/nota-dinas', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
