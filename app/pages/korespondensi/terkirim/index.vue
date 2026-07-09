@@ -872,6 +872,22 @@ onUnmounted(() => {
             >
           </div>
         </template>
+
+        <!-- Badge filter aktif -->
+        <div
+          v-if="activeFilterType !== 'Semua' && selectedIds.size === 0"
+          class="flex items-center"
+        >
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
+          <span
+            class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200"
+          >
+            {{ activeFilterType }}
+            <button @click="applyFilter('Semua')" class="hover:text-primary-800 ml-0.5">
+              <X class="w-3 h-3" />
+            </button>
+          </span>
+        </div>
       </div>
 
       <!-- RIGHT: Date + Sort + Download + Pagination -->
