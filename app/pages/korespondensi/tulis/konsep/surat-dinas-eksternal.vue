@@ -50,6 +50,28 @@
       </div>
     </div>
 
+    <div v-if="forwardTargetInfo" class="mb-4">
+      <div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3">
+        <div class="flex items-start gap-2">
+          <UIcon name="i-lucide-user-round-check" class="w-4 h-4 text-primary-500 mt-0.5" />
+          <div class="min-w-0">
+            <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Konsep Akan Diteruskan Ke</p>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-0.5 break-words leading-5">
+              <div class="font-semibold text-primary-600 dark:text-primary-400">{{ forwardTargetInfo.positionText || '-' }}</div>
+              <div>{{ forwardTargetInfo.nama || '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="isRejectAction"
+      class="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+    >
+      Mode revisi: konsep ini dikembalikan dan perlu diperbaiki.
+    </div>
+
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
@@ -375,6 +397,40 @@ const formatDisposisiInline = (val: any) => {
 // --- Computed ---
 const isSenderSelected = computed(() => !!selectedSender.value);
 
+// ponytail: replikasi pola ND — konsep harus turun dulu ke previous disposer
+// (pengirim disposisi acuan) sebelum ke penandatangan. Saat reject, kembali ke
+// previous konseptor (detail.from_position_id). Fallback atasan langsung.
+const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
+const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
+const isNewKonsepFromReference = computed(() =>
+  String(route.query.workflow || '').toLowerCase() === 'konsep' &&
+  String(route.query.action || '').toLowerCase() !== 'edit'
+);
+const forwardTargetInfo = computed(() => {
+  if (isRejectAction.value) {
+    const fromPositionId = detail.value?.from_position_id;
+    const fromPositionText = detail.value?.from_position_text;
+    const fromNama = detail.value?.from_nama;
+    if (fromPositionId || fromPositionText || fromNama) {
+      return {
+        position: fromPositionId || '',
+        positionText: fromPositionText || '',
+        nama: fromNama || '',
+      };
+    }
+  }
+  if (isNewKonsepFromReference.value && refData.value?.pengirim) {
+    const p = refData.value.pengirim;
+    return {
+      position: p.position_id || p.position || '',
+      positionText: p.position_text || p.positionText || '',
+      nama: p.nama || p.persnum_person_text || '',
+    };
+  }
+  return atasanLangsungInfo.value;
+});
+const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
+
 const refSenderInitials = computed(() => {
   if (!refData.value) return "?";
   const name = refData.value.pengirim_nama || refData.value.pengirim?.nama;
@@ -521,7 +577,7 @@ const prepareKonsepFormData = () => {
   formData.append('jenis', 'SDE');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', signerInfo.value || '');
+  formData.append('to_position_id', forwardTargetPositionId.value || String(signerInfo.value || ''));
   formData.append('pengirim_position_id', signerInfo.value || '');
   // SDE: penerima = eksternal (by id), tembusan = internal (by position id)
   formData.append('penerima_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
@@ -606,7 +662,7 @@ const handleKirimDokumen = async () => {
 
       formData.append('jenis', 'SDE');
       formData.append('from_position_id', user.value?.position || '');
-      formData.append('to_position_id', currentSender.value || '');
+      formData.append('to_position_id', forwardTargetPositionId.value || String(currentSender.value || ''));
       formData.append('pengirim_position_id', currentSender.value || '');
       formData.append('penerima_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
       formData.append('tembusan_position_ids', JSON.stringify(selectedTembusan.value.map(i => i.value)));
@@ -770,7 +826,36 @@ onMounted(async () => {
       const result = await fetchKonsepDetail(refId);
       if (result) {
         const unwrappedData: any = (result as any).data || result;
-        detail.value = unwrappedData;
+        // ponytail: augment detail dengan aksi/from_position_id dari flow terbaru
+        // (reject routing) — unwrappedData (naskah detail) tak punya field itu top-level.
+        const _flows = Array.isArray(unwrappedData.flow) ? unwrappedData.flow : [];
+        const _latestFlow = [..._flows]
+          .filter((f: any) => f?.aksi || f?.detail?.aksi)
+          .sort((a: any, b: any) =>
+            new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime(),
+          )[0];
+        detail.value = {
+          ...unwrappedData,
+          aksi: _latestFlow?.detail?.aksi || _latestFlow?.aksi || unwrappedData.aksi || '',
+          from_position_id:
+            _latestFlow?.from_position_id ||
+            _latestFlow?.detail?.from_position_id ||
+            _latestFlow?.pengirim?.position_id ||
+            unwrappedData.from_position_id ||
+            '',
+          from_position_text:
+            _latestFlow?.from_position_text ||
+            _latestFlow?.detail?.from_position_text ||
+            _latestFlow?.pengirim?.position_text ||
+            '',
+          from_nama:
+            _latestFlow?.from_nama ||
+            _latestFlow?.detail?.from_nama ||
+            _latestFlow?.pengirim?.nama ||
+            '',
+          catatan_reject: _latestFlow?.detail?.catatan || unwrappedData.catatan_reject || '',
+          data: { catatan_reject: _latestFlow?.detail?.catatan || unwrappedData.catatan_reject || '' },
+        };
         editDraftId.value = unwrappedData.id || unwrappedData.konsep?.id;
         subject.value = unwrappedData.perihal || unwrappedData.konsep?.perihal || "";
         lampiranText.value = unwrappedData.lampiran || "";
@@ -850,6 +935,7 @@ onMounted(async () => {
               perihal: originFlow.naskah?.perihal || '',
               jenis: originFlow.naskah?.jenis || 'Naskah',
               jenis_label: originFlow.naskah?.jenis || 'Naskah',
+              pengirim: originFlow.naskah?.pengirim || null,
               pengirim_nama: originFlow.naskah?.pengirim?.nama || '-',
               pengirim_jabatan: originFlow.naskah?.pengirim?.position_text || '-',
               kepada: originFlow.naskah?.penerima || [],
@@ -887,6 +973,7 @@ onMounted(async () => {
           perihal: rawFlow.perihal,
           jenis: rawFlow.jenis,
           jenis_label: rawFlow.jenis === 'DI' ? 'DISPOSISI' : (rawFlow.jenis || 'SURAT'),
+          pengirim: rawFlow.pengirim || null,
           pengirim_nama: rawFlow.pengirim?.nama || rawFlow.pengirim?.name || '-',
           pengirim_jabatan: rawFlow.pengirim?.positionText || rawFlow.pengirim?.position_text || '-',
           kepada: rawFlow.penerima || [],
