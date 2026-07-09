@@ -208,7 +208,7 @@
                     :init="tinyMceInit" />
                 </div>
 
-                <div class="flex justify-end mt-12 text-black px-10">
+                <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}

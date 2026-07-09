@@ -1133,7 +1133,7 @@ const konsepOptions = computed(() => [
           :id="`card-${detail.id || detail.urutan}`"
           class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
           :class="{
-            'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail),
+            'ring-2 ring-primary-200 rounded-xl': (details.length > 1 && isHighlighted(detail)) || (isKonsepData && index === 0),
           }"
         >
           <!-- Card content -->
