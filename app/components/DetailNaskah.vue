@@ -185,6 +185,12 @@ const aksiBadge = computed(() => {
   return aksiConfig[aksi] ?? null; // null = badge tidak ditampilkan
 });
 
+const jenisBadgeClass = computed(() => {
+  const isKonsep = props.data?.aksi === 'create' ||
+    (['K', 'KO'].includes(String(props.data?.jenis || '').toUpperCase()) && props.data?.jenis_naskah_konsep);
+  return isKonsep ? 'bg-indigo-500 dark:bg-indigo-600' : 'bg-primary-500 dark:bg-primary-600';
+});
+
 const isKonsepJenis = computed(() => {
   const jenis = String(props.data?.jenis || '').toUpperCase();
   const jenisLabel = String(props.data?.jenis_label || '').toLowerCase();
@@ -321,13 +327,6 @@ const removeNote = () => {
                           : 'Riwayat')
               }}
             </h2>
-            <span
-              v-if="aksiBadge"
-              class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white"
-              :class="aksiBadge.color"
-            >
-              {{ aksiBadge.label }}
-            </span>
           </div>
         </template>
       </div>
@@ -575,7 +574,8 @@ const removeNote = () => {
         </div>
         <span class="opacity-40">•</span>
         <div
-          class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white bg-primary-500 dark:bg-primary-600"
+          class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white"
+          :class="jenisBadgeClass"
         >
           {{
             data.aksi === 'kirim_disposisi'
@@ -737,7 +737,7 @@ const removeNote = () => {
 
         <div
           v-if="
-            !isKonsepJenis &&
+            (!isKonsepJenis || !konsepNaskahInfo) &&
             (data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'reject')
           "
           class="mb-4 flex flex-col md:flex-row gap-2"
@@ -757,7 +757,7 @@ const removeNote = () => {
           </div>
         </div>
 
-        <div v-if="!isKonsepJenis" class="mb-4 flex flex-col md:flex-row gap-2">
+        <div v-if="!isKonsepJenis || !konsepNaskahInfo" class="mb-4 flex flex-col md:flex-row gap-2">
           <div
             class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5"
           >
@@ -828,7 +828,7 @@ const removeNote = () => {
         <!-- debug {{ data }} -->
         <div
           v-if="
-            !isKonsepJenis && (data.cc || data.tembusan) && (data.cc || data.tembusan).length > 0
+            (!isKonsepJenis || !konsepNaskahInfo) && (data.cc || data.tembusan) && (data.cc || data.tembusan).length > 0
           "
           class="mb-6 flex flex-col md:flex-row gap-2"
         >
@@ -921,11 +921,17 @@ const removeNote = () => {
         <div
           class="bg-gray-50 dark:bg-gray-900 rounded-lg mt-5 p-5 border border-gray-100 dark:border-gray-700 relative"
         >
-          <!-- Jika ini card riwayat (bukan head/terbaru) dengan aksi create → sembunyikan konten -->
+          <!-- Riwayat konsep (non-head): catatan inline + hint pratinjau, konten full di preview ikon -->
           <template v-if="!isHead && ['K', 'KO'].includes(data.jenis)">
-            <p class="text-sm text-gray-400 dark:text-gray-500 italic flex items-center gap-2">
-              Untuk melihat riwayat isi dokumen, klik ikon pratinjau di pojok kanan atas.
-            </p>
+            <div class="space-y-3">
+              <div v-if="data.catatan && data.catatan !== '-'">
+                <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mb-1">Catatan</span>
+                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ data.catatan }}</p>
+              </div>
+              <p class="text-xs text-gray-400 dark:text-gray-500 italic">
+                Klik ikon pratinjau di pojok kanan atas untuk melihat isi dokumen.
+              </p>
+            </div>
           </template>
 
           <template

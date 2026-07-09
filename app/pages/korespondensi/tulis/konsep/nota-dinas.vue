@@ -63,11 +63,6 @@
         </div>
       </div>
     </div>
-    <div class="mb-4">
-      <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-        Debug `to_position_id`: <span class="font-mono font-semibold">{{ refPengirimPositionId || '-' }}</span>
-      </div>
-    </div>
 
     <div
       v-if="isRejectAction"
@@ -749,7 +744,7 @@ const handleKirimDokumen = async () => {
     'Ya, Kirim', 'Batal', false
   );
   if (!isConfirmed) return;
-  
+
 
   loadingMessage.value = isRevision ? "Mengirim Perbaikan..." : "Membuat Konsep Nota Dinas...";
   isLoadingData.value = true;

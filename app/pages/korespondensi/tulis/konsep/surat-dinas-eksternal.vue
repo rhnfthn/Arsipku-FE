@@ -214,7 +214,7 @@
                   <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :initial-value="editorContent" :init="tinyMceInit" />
                 </div>
 
-                <div class="flex justify-end mt-12 text-black px-10">
+                <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}</div>
@@ -268,6 +268,15 @@
           </ClientOnly>
 
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
+
+          <div class="flex items-center py-3 mt-2 gap-2">
+            <input type="checkbox" id="check_english" v-model="english"
+              class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
+            <label for="check_english"
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+              Aktifkan Format Bahasa Inggris
+            </label>
+          </div>
         </div>
 
         <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
@@ -755,11 +764,38 @@ watch(editorContent, (newVal) => {
   }
 });
 
+const fetchTembusanBySender = async (senderPositionId: string) => {
+  if (!senderPositionId) {
+    internalItems.value = [];
+    return;
+  }
+  try {
+    const tembusanRes = await apiGet<any>(
+      `/SDE/get-tembusan?pengirim=${senderPositionId}`,
+    );
+    const tembusanData = tembusanRes?.data?.tembusan || tembusanRes?.tembusan || [];
+    if (Array.isArray(tembusanData)) {
+      internalItems.value = tembusanData.map((r: any) => ({
+        label: `${r.persnum_person_text || r.persnum || '-'} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
+        labelJob: r.position_text || r.positionText,
+        value: String(r.position || r.position_id || r.id),
+        raw: r,
+      }));
+    }
+  } catch (e) {
+    console.error('Gagal memuat tembusan:', e);
+    internalItems.value = [];
+  }
+};
+
 watch(selectedSender, async (newVal, oldVal) => {
   if (newVal?.value !== oldVal?.value) {
     selectedTertuju.value = [];
     selectedTembusan.value = [];
   }
+  // ponytail: tembusan internal pakai position_id pengirim (managerial chief), bukan user login.
+  // Fix 403 "bukan managerial" — fetch ulang tiap ganti pengirim.
+  await fetchTembusanBySender(String(newVal?.value || ''));
 }, { deep: true });
 
 watch(existingFiles, (files) => {
@@ -777,14 +813,11 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, recipientRes, tembusanRes, externalRecRes] = await Promise.all([
+    // ponytail: klasifikasi + tertuju(eksternal) tidak bergantung pengirim — fetch independent.
+    // Tembusan(internal) bergantung position_id PENGIRIM (managerial chief), fetch di watch(selectedSender)
+    // agar pakai signer, bukan user login (fix 403 "bukan managerial").
+    const [klasRes, externalRecRes] = await Promise.all([
       getKlasifikasi(),
-      apiGet<{ success: boolean; data: { sender: any; recipients: any[] } }>(
-        `/SDE/get-recipient?pengirim=${user.value?.position}`
-      ),
-      apiGet<any>(
-        `/SDE/get-tembusan?pengirim=${user.value?.position}`
-      ),
       getExternalRecipients(),
     ]);
 
@@ -798,17 +831,6 @@ onMounted(async () => {
         labelJob: item.nama,
         value: item.id,
         raw: item,
-      }));
-    }
-
-    // Mapping internal items (Tembusan) — dari /SDE/get-tembusan
-    const tembusanData = tembusanRes?.data?.tembusan || tembusanRes?.tembusan || [];
-    if (Array.isArray(tembusanData)) {
-      internalItems.value = tembusanData.map((r: any) => ({
-        label: `${r.persnum_person_text || r.persnum || '-'} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
-        labelJob: r.position_text || r.positionText,
-        value: String(r.position || r.position_id || r.id),
-        raw: r,
       }));
     }
   } catch {
