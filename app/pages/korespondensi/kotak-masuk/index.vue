@@ -687,6 +687,7 @@ onUnmounted(() => {
         <!-- Select All -->
         <div
           class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
+          title="Pilih Semua"
           @click="toggleSelectAll"
         >
           <div
@@ -983,6 +984,7 @@ onUnmounted(() => {
             <button
               @click="showPageMenu = !showPageMenu"
               class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+              title="Item per Halaman"
             >
               <Layers class="w-4 h-4" />
             </button>
@@ -1019,6 +1021,7 @@ onUnmounted(() => {
             </span>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Sebelumnya"
               @click="prevPage"
               :disabled="currentPage === 1"
             >
@@ -1026,6 +1029,7 @@ onUnmounted(() => {
             </button>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Berikutnya"
               @click="nextPage"
               :disabled="currentPage === totalPages"
             >
@@ -1193,6 +1197,7 @@ onUnmounted(() => {
                         ? 'text-yellow-400 fill-yellow-400'
                         : 'text-neutral-300 dark:text-gray-600'
                     "
+                    :title="mail.isStarred ? 'Favorit (aktif)' : 'Favorit'"
                     @click.stop="handleToggleFlag(mail, 'favorit')"
                   />
                   <Tag
@@ -1202,6 +1207,7 @@ onUnmounted(() => {
                         ? 'text-primary-500 fill-primary-500'
                         : 'text-neutral-300 dark:text-gray-600'
                     "
+                    :title="mail.isTinjut ? 'Tindak Lanjut: Sudah' : 'Tindak Lanjut: Belum'"
                   />
                   <!-- Badge kategori (mobile) -->
                   <span
@@ -1301,16 +1307,19 @@ onUnmounted(() => {
                           ? 'text-orange-600 fill-orange-100'
                           : 'text-neutral-300 dark:text-gray-600'
                       "
+                      :title="mail.isNote ? 'Catatan (ada)' : 'Catatan'"
                       @click.stop="handleToggleFlag(mail, 'note')"
                     />
                     <Lock
                       v-if="mail.isLocked"
                       class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 cursor-pointer"
+                      title="Kunci (aktif)"
                       @click.stop="handleToggleFlag(mail, 'lock')"
                     />
                     <LockOpen
                       v-else
                       class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 cursor-pointer"
+                      title="Kunci"
                       @click.stop="handleToggleFlag(mail, 'lock')"
                     />
                     <Archive
@@ -1320,6 +1329,7 @@ onUnmounted(() => {
                           ? 'text-green-700 fill-green-100'
                           : 'text-neutral-300 dark:text-gray-600'
                       "
+                      :title="mail.isArsip ? 'Arsip (aktif)' : 'Arsip'"
                       @click.stop="handleToggleFlag(mail, 'arsip')"
                     />
                   </div>

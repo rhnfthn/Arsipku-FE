@@ -368,7 +368,7 @@ const removeNote = () => {
         <div v-if="isHead" class="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1" />
 
         <!-- Favorite -->
-        <UTooltip v-if="isHead" text="Favorit">
+        <UTooltip v-if="isHead" :text="isStarred ? 'Favorit (aktif)' : 'Favorit'">
           <button
             @click="emit('favorite')"
             class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -403,7 +403,7 @@ const removeNote = () => {
         </UTooltip>
 
         <!-- Lock (hanya untuk inbox, tidak ada di terkirim) -->
-        <UTooltip v-if="isHead && context !== 'sent'" text="Kunci">
+        <UTooltip v-if="isHead && context !== 'sent'" :text="isLocked ? 'Kunci (aktif)' : 'Kunci'">
           <button
             @click="emit('lock')"
             class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -420,7 +420,7 @@ const removeNote = () => {
         </UTooltip>
 
         <!-- Catatan -->
-        <UTooltip v-if="isHead" text="Catatan">
+        <UTooltip v-if="isHead" :text="isNote ? 'Catatan (ada)' : 'Catatan'">
           <button
             @click="openNoteModal"
             class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

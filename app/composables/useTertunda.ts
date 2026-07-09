@@ -16,6 +16,7 @@ export interface PenerimaTertunda {
 
 export interface NaskahTertunda {
   id_naskah: string;
+  id_sirkulasi: string;
   jenis: string;
   jenis_label: string;
   nomor: string;
@@ -24,6 +25,12 @@ export interface NaskahTertunda {
   sifat: string;
   status: string;
   lampiran: number;
+  favorit: boolean;
+  note: boolean;
+  note_text: string | null;
+  arsip: boolean;
+  is_locked: boolean;
+  is_tindak_lanjut: boolean;
   pengirim: PengirimTertunda;
   penerima: PenerimaTertunda[];
   created_at: string;
@@ -33,6 +40,7 @@ export interface NaskahTertunda {
 export interface TertundaItem {
   id: string;
   naskahId: string;
+  id_sirkulasi: string;
   category: string;
   category_label: string;
   nomor: string;
@@ -46,6 +54,10 @@ export interface TertundaItem {
   penerima: PenerimaTertunda[];
   fullRecipients: string;
   isStarred: boolean;
+  isArsip: boolean;
+  isLocked: boolean;
+  isNote: boolean;
+  noteText: string;
   labels: string[];
   originalData: NaskahTertunda;
 }
@@ -69,6 +81,11 @@ export interface FetchTertundaParams {
   search?: string;
   start_date?: string;
   end_date?: string;
+  arsip?: boolean;
+  favorite?: boolean;
+  note?: boolean;
+  lock?: boolean;
+  priority?: boolean;
 }
 
 const MAX_FILE_SIZE_MB = 10;
@@ -82,6 +99,7 @@ const mapToTertundaItem = (raw: NaskahTertunda): TertundaItem => {
   return {
     id: raw.id_naskah,
     naskahId: raw.id_naskah,
+    id_sirkulasi: raw.id_sirkulasi,
     category: raw.jenis,
     category_label: raw.jenis_label,
     nomor: raw.nomor,
@@ -94,14 +112,18 @@ const mapToTertundaItem = (raw: NaskahTertunda): TertundaItem => {
     lampiran: raw.lampiran,
     penerima: raw.penerima || [],
     fullRecipients: recipientNames,
-    isStarred: false,
+    isStarred: raw.favorit,
+    isArsip: raw.arsip,
+    isLocked: raw.is_locked,
+    isNote: raw.note,
+    noteText: raw.note_text || "",
     labels: [],
     originalData: raw,
   };
 };
 
 export const useTertunda = () => {
-  const { apiGet, apiPost } = useApi();
+  const { apiGet, apiPost, apiPatch } = useApi();
   const { fetchInboxDetail } = useInbox();
 
   const items = ref<TertundaItem[]>([]);
@@ -131,6 +153,11 @@ export const useTertunda = () => {
       if (params.search) query.search = params.search;
       if (params.start_date) query.start_date = params.start_date;
       if (params.end_date) query.end_date = params.end_date;
+      if (params.arsip) query.arsip = true;
+      if (params.favorite) query.favorite = true;
+      if (params.note) query.note = true;
+      if (params.lock) query.lock = true;
+      if (params.priority) query.priority = true;
 
       const res = await apiGet("/naskah_sirkulasi/tertunda", { params: query }, { skipCache: true });
 
@@ -193,6 +220,35 @@ export const useTertunda = () => {
     return await apiPost(`/persuratan/naskah/${id}/finalize-pending`, fd);
   };
 
+  // ── TOGGLE FLAG (favorit/arsip/lock/note) ─────────────────────────────────
+  const toggleFlag = async (
+    mail: any,
+    flagType: 'favorit' | 'arsip' | 'lock' | 'note',
+    noteText?: string,
+  ) => {
+    const oldValMap: Record<string, any> = {
+      favorit: mail.isStarred,
+      arsip: mail.isArsip,
+      lock: mail.isLocked,
+      note: mail.isNote,
+    };
+    const oldVal = oldValMap[flagType];
+    try {
+      const idToSend = mail.id_sirkulasi || mail.originalData?.id_sirkulasi || mail.naskahId || mail.id;
+      if (!idToSend) throw new Error('ID sirkulasi tidak ditemukan');
+      const payload: any = { id_sirkulasi: idToSend, flag_type: flagType };
+      if (flagType === 'note' && noteText !== undefined) payload.note_text = noteText;
+      await apiPatch('/naskah_sirkulasi/toggle-flag', payload);
+    } catch (err) {
+      console.error('Gagal toggle flag:', flagType, err);
+      if (flagType === 'favorit') mail.isStarred = oldVal;
+      else if (flagType === 'arsip') mail.isArsip = oldVal;
+      else if (flagType === 'lock') mail.isLocked = oldVal;
+      else if (flagType === 'note') mail.isNote = oldVal;
+      throw err;
+    }
+  };
+
   return {
     items,
     pagination,
@@ -205,5 +261,6 @@ export const useTertunda = () => {
     fetchTertundaNavigation,
     validateTtdFile,
     finalizePending,
+    toggleFlag,
   };
 };
