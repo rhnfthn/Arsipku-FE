@@ -219,10 +219,10 @@ const treeMap: Record<string, Ref<any>> = {
   const currentTree = computed(() => {
     const raw = treeMap[activeTab.value]?.value ?? null;
     if (!raw) return null;
-    // Sembunyikan menu Data Master & Konfigurasi Sistem untuk ADMIN di tab Administrasi
+    // Sembunyikan Data Master & Konfigurasi Sistem untuk semua role KECUALI SUPERADMIN
     const adminHiddenMenus = ['data-master', 'konfigurasi'];
-    const isSuperadminTarget = (role.value?.name || '').toUpperCase() === 'SUPERADMIN';
-    if (!isSuperadminTarget && raw.key === 'administrasi') {
+    const roleName = (role.value?.name || '').toUpperCase();
+    if (roleName !== 'SUPERADMIN' && raw.key === 'administrasi') {
       return { ...raw, menus: raw.menus.filter((m: any) => !adminHiddenMenus.includes(m.key)) };
     }
     return raw;
@@ -243,10 +243,10 @@ const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.na
 const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
   const adminHiddenMenus = ['data-master', 'konfigurasi'];
-  const isSuperadminTarget = (role.value?.name || '').toUpperCase() === 'SUPERADMIN';
+  const roleName = (role.value?.name || '').toUpperCase();
   for (const tree of [utamaTree.value, utilitasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
-    const menus = (!isSuperadminTarget && tree.key === 'administrasi')
+    const menus = (roleName !== 'SUPERADMIN' && tree.key === 'administrasi')
       ? (tree.menus ?? []).filter((m: any) => !adminHiddenMenus.includes(m.key))
       : (tree.menus ?? []);
     for (const menu of menus) {
