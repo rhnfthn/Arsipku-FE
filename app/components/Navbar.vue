@@ -1824,13 +1824,11 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
           navigateTo('/switch');
         }
       },
-      { label: 'Setting Notif Email', class: itemClass },
       {
         label: 'Visualisasi Digsig (Visible)',
         class: itemClass,
         onSelect: () => openDigsigVisual()
       },
-      { label: 'Setting Temporary File', class: itemClass }
     ],
     [{ slot: 'theme-label', type: 'label' }],
     [{ slot: 'lang-label', type: 'label' }],

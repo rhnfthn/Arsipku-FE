@@ -24,6 +24,12 @@ import {
   Download,
   Search,
   X,
+  Star,
+  StickyNote,
+  Lock,
+  LockOpen,
+  Archive,
+  MoreVertical,
 } from "lucide-vue-next";
 import * as XLSX from "xlsx";
 import { useTertunda } from "~/composables/useTertunda";
@@ -45,6 +51,7 @@ const {
   summary,
   isLoading: pending,
   fetchTertunda,
+  toggleFlag,
 } = useTertunda();
 
 const {
@@ -57,6 +64,134 @@ const {
 const searchQuery = ref("");
 const isLabelProcessing = ref(false);
 const isRefreshing = ref(false);
+const activeFilterType = ref("Semua");
+const showFilterMenu = ref(false);
+const filterMenuOptions = [
+  { label: "Semua", value: "Semua" },
+  { label: "Favorit", value: "Favorit" },
+  { label: "Prioritas", value: "Prioritas" },
+  { label: "Catatan", value: "Catatan" },
+  { label: "Lock", value: "Lock" },
+  { label: "Arsip", value: "Arsip" },
+];
+const selectedIds = ref(new Set<string>());
+
+// --- FLAG TOGGLE (favorit, arsip, lock, note) ---
+const handleToggleFlag = async (
+  mail: any,
+  type: 'favorit' | 'arsip' | 'lock' | 'note',
+) => {
+  if (type === 'note') {
+    noteModalMail.value = mail;
+    noteModalText.value = mail.noteText || '';
+    showNoteModal.value = true;
+    return;
+  }
+  try {
+    const item = items.value.find((i) => i.id === mail.id);
+    if (!item) return;
+    if (type === 'favorit') item.isStarred = !item.isStarred;
+    if (type === 'arsip') item.isArsip = !item.isArsip;
+    if (type === 'lock') item.isLocked = !item.isLocked;
+    const isNowActive =
+      type === 'favorit' ? item.isStarred : type === 'arsip' ? item.isArsip : item.isLocked;
+    const descMap: Record<string, [string, string]> = {
+      favorit: ['Ditambahkan ke Favorit', 'Dihapus dari Favorit'],
+      arsip: ['Pesan diarsipkan', 'Pesan dikembalikan dari arsip'],
+      lock: ['Pesan dikunci', 'Kunci pesan dibuka'],
+    };
+    toast.add({
+      title: 'Berhasil',
+      description: descMap[type][isNowActive ? 0 : 1],
+      color: 'success',
+    } as any);
+    if (type === 'arsip' && isNowActive) {
+      items.value = items.value.filter((i) => i.id !== mail.id);
+    }
+    await toggleFlag(item, type);
+  } catch {
+    toast.add({ title: 'Gagal', description: 'Gagal memperbarui status.', color: 'error' });
+    refreshData();
+  }
+};
+
+// --- NOTE MODAL ---
+const showNoteModal = ref(false);
+const noteModalMail = ref<any>(null);
+const noteModalText = ref('');
+const isSavingNote = ref(false);
+
+const saveNoteFromList = async () => {
+  const mail = noteModalMail.value;
+  if (!mail) return;
+  isSavingNote.value = true;
+  try {
+    const item = items.value.find((i) => i.id === mail.id);
+    const hasText = noteModalText.value && noteModalText.value.trim().length > 0;
+    if (item) {
+      item.isNote = hasText;
+      item.noteText = hasText ? noteModalText.value : '';
+    }
+    toast.add({
+      title: 'Berhasil',
+      description: hasText ? 'Catatan disimpan' : 'Catatan dihapus',
+      color: 'success',
+    } as any);
+    await toggleFlag(item || mail, 'note', noteModalText.value);
+    showNoteModal.value = false;
+  } catch {
+    toast.add({ title: 'Gagal', description: 'Gagal menyimpan catatan.', color: 'error' });
+    refreshData();
+  } finally {
+    isSavingNote.value = false;
+  }
+};
+
+const removeNoteFromList = async () => {
+  noteModalText.value = '';
+  await saveNoteFromList();
+};
+
+// --- BULK ARCHIVE ---
+const showArchiveModal = ref(false);
+const isArchiving = ref(false);
+
+const handleBulkArchive = async () => {
+  isArchiving.value = true;
+  try {
+    const mailItems = Array.from(selectedIds.value)
+      .map((id) => items.value.find((e) => e.id === id))
+      .filter((m): m is NonNullable<typeof m> => !!m);
+    mailItems.forEach((m) => { m.isArsip = true; });
+    await Promise.all(mailItems.map((m) => toggleFlag(m, 'arsip')));
+    toast.add({
+      title: 'Berhasil',
+      description: `${mailItems.length} item berhasil diarsipkan.`,
+      color: 'success',
+    });
+    selectedIds.value.clear();
+    showArchiveModal.value = false;
+    await refreshData();
+  } catch {
+    toast.add({ title: 'Gagal', description: 'Terjadi kesalahan saat mengarsipkan.', color: 'error' });
+    await refreshData();
+  } finally {
+    isArchiving.value = false;
+  }
+};
+
+// --- SELECTION ---
+const toggleSelection = (id: string) => {
+  if (selectedIds.value.has(id)) selectedIds.value.delete(id);
+  else selectedIds.value.add(id);
+};
+const toggleSelectAll = () => {
+  if (isAllSelected.value) selectedIds.value.clear();
+  else items.value.forEach((m) => selectedIds.value.add(m.id));
+};
+const isAllSelected = computed(
+  () => items.value.length > 0 && selectedIds.value.size === items.value.length,
+);
 
 // Filter & Pagination State
 const activeTab = ref("ALL");
@@ -152,12 +287,29 @@ const refreshData = async () => {
       }
     }
 
+    // Filter type → API param
+    const filterMap: Record<string, Record<string, any>> = {
+      Favorit: { favorite: true },
+      Prioritas: { priority: true },
+      Catatan: { note: true },
+      Lock: { lock: true },
+      Arsip: { arsip: true },
+    };
+    Object.assign(params, filterMap[activeFilterType.value] || {});
+
     await fetchTertunda(params);
   } catch (err) {
     console.error("Gagal refresh data tertunda:", err);
   } finally {
     isRefreshing.value = false;
   }
+};
+
+const applyFilter = (v: string) => {
+  activeFilterType.value = v;
+  showFilterMenu.value = false;
+  currentPage.value = 1;
+  refreshData();
 };
 
 const selectSortOption = (opt: string) => {
@@ -237,6 +389,7 @@ const paginationInfo = computed(() => {
 });
 
 watch([activeTab, itemsPerPage], () => { currentPage.value = 1; refreshData(); });
+watch(activeFilterType, () => { currentPage.value = 1; refreshData(); });
 watch(currentPage, () => refreshData());
 
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -285,8 +438,70 @@ onMounted(async () => {
       class="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 transition-colors">
       <!-- Left actions -->
       <div class="flex items-center gap-1 shrink-0 relative">
+        <!-- Select All -->
+        <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
+          title="Pilih Semua"
+          @click="toggleSelectAll">
+          <div
+            class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
+            :class="{ 'bg-primary border-primary': isAllSelected, 'group-hover:border-gray-600 dark:group-hover:border-gray-300': !isAllSelected }">
+            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
+          </div>
+        </div>
+
+        <!-- Filter Dropdown -->
+        <div class="relative">
+          <button @click="showFilterMenu = !showFilterMenu"
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
+            :class="{ 'bg-gray-100 dark:bg-gray-800 text-neutral-900 dark:text-gray-200': showFilterMenu }"
+            title="Opsi Filter">
+            <MoreVertical class="w-4 h-4" />
+            <span v-if="activeFilterType !== 'Semua'"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900" />
+          </button>
+          <div v-if="showFilterMenu" @click="showFilterMenu = false" class="fixed inset-0 z-40 bg-transparent" />
+          <div v-if="showFilterMenu"
+            class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+            <button v-for="opt in filterMenuOptions" :key="opt.value" @click="applyFilter(opt.value)"
+              class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between transition-colors">
+              <span :class="activeFilterType === opt.value ? 'font-semibold text-primary' : ''">{{ opt.label }}</span>
+              <Check v-if="activeFilterType === opt.value" class="w-3.5 h-3.5 text-primary" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Archive (muncul saat ada item dipilih) -->
+        <template v-if="selectedIds.size > 0">
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
+          <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
+            <button @click="showArchiveModal = true"
+              class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+              title="Arsipkan">
+              <Archive class="w-4 h-4" />
+            </button>
+            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} dipilih</span>
+          </div>
+        </template>
+
+        <!-- Badge filter aktif -->
+        <div
+          v-if="activeFilterType !== 'Semua' && selectedIds.size === 0"
+          class="flex items-center"
+        >
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
+          <span
+            class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200"
+          >
+            {{ activeFilterType }}
+            <button @click="applyFilter('Semua')" class="hover:text-primary-800 ml-0.5">
+              <X class="w-3 h-3" />
+            </button>
+          </span>
+        </div>
+
         <button @click="refreshData"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
+          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+          title="Muat Ulang">
           <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
         </button>
       </div>
@@ -376,7 +591,8 @@ onMounted(async () => {
         <!-- Sort -->
         <div class="relative">
           <button @click="showSortMenu = !showSortMenu"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+            title="Urutkan">
             <ArrowUpDown class="w-4 h-4" />
           </button>
           <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
@@ -396,7 +612,8 @@ onMounted(async () => {
         <div class="flex items-center gap-1">
           <div class="relative">
             <button @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1">
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1"
+              title="Item per Halaman">
               <Layers class="w-4 h-4" />
             </button>
             <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent"></div>
@@ -416,11 +633,13 @@ onMounted(async () => {
             </span>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Sebelumnya"
               @click="prevPage" :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Berikutnya"
               @click="nextPage" :disabled="currentPage === totalPages">
               <ChevronRight class="w-4 h-4" />
             </button>
@@ -493,9 +712,21 @@ onMounted(async () => {
               <div v-for="mail in items" :key="mail.id" @click="selectMail(mail)"
                 class="group flex flex-col md:flex-row gap-3 items-start px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:shadow-sm cursor-pointer transition-colors relative w-full min-h-[50px] hover:bg-gray-50 dark:hover:bg-gray-800/50">
 
-                <!-- Mobile category badge -->
-                <div class="flex items-center w-full md:hidden">
-                  <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                <!-- Left Controls -->
+                <div class="flex items-center shrink-0 pt-1 gap-2 w-full md:w-auto" @click.stop>
+                  <div
+                    class="w-3.5 h-3.5 border-[1.5px] border-neutral-300 dark:border-gray-600 rounded-sm flex items-center justify-center transition-colors"
+                    :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white dark:bg-gray-800'"
+                    @click="toggleSelection(mail.id)">
+                    <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
+                  </div>
+                  <Star
+                    class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
+                    :class="mail.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-gray-600'"
+                    :title="mail.isStarred ? 'Favorit (aktif)' : 'Favorit'"
+                    @click.stop="handleToggleFlag(mail, 'favorit')"
+                  />
+                  <span class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
                     :class="getCategoryStyle(mail.category)">
                     {{ getCategoryLabel(mail.category) }}
                   </span>
@@ -560,12 +791,153 @@ onMounted(async () => {
                     </span>
                   </div>
                 </div>
+
+                <!-- Hover Quick Actions -->
+                <div
+                  class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
+                >
+                  <div class="flex items-center gap-2 p-1">
+                    <StickyNote
+                      class="w-4 h-4 transition-colors hover:text-orange-500 cursor-pointer"
+                      :class="mail.isNote ? 'text-orange-600 fill-orange-100' : 'text-neutral-300 dark:text-gray-600'"
+                      :title="mail.isNote ? 'Catatan (ada)' : 'Catatan'"
+                      @click.stop="handleToggleFlag(mail, 'note')"
+                    />
+                    <Lock
+                      v-if="mail.isLocked"
+                      class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 cursor-pointer"
+                      title="Kunci (aktif)"
+                      @click.stop="handleToggleFlag(mail, 'lock')"
+                    />
+                    <LockOpen
+                      v-else
+                      class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 cursor-pointer"
+                      title="Kunci"
+                      @click.stop="handleToggleFlag(mail, 'lock')"
+                    />
+                    <Archive
+                      class="w-4 h-4 transition-colors hover:text-green-600 cursor-pointer"
+                      :class="mail.isArsip ? 'text-green-700 fill-green-100' : 'text-neutral-300 dark:text-gray-600'"
+                      :title="mail.isArsip ? 'Arsip (aktif)' : 'Arsip'"
+                      @click.stop="handleToggleFlag(mail, 'arsip')"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
           </div>
         </div>
       </div>
+    <!-- Note Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showNoteModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800"
+        >
+          <div
+            class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                <StickyNote class="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Catatan Surat</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Tambah atau edit catatan</p>
+              </div>
+            </div>
+            <button
+              @click="showNoteModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-5">
+            <textarea
+              v-model="noteModalText"
+              rows="5"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
+              placeholder="Tulis catatan Anda di sini..."
+            ></textarea>
+          </div>
+          <div
+            class="flex justify-between gap-3 px-5 py-4 border-t border-gray-100 dark:border-gray-700"
+          >
+            <button
+              v-if="noteModalMail?.isNote"
+              @click="removeNoteFromList"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 transition-colors"
+            >
+              Hapus Catatan
+            </button>
+            <div class="flex gap-3 ml-auto">
+              <button
+                @click="showNoteModal = false"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                @click="saveNoteFromList"
+                :disabled="isSavingNote"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
+              >
+                <Loader2 v-if="isSavingNote" class="w-4 h-4 animate-spin" />
+                {{ isSavingNote ? 'Menyimpan...' : 'Simpan' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Archive Confirm Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showArchiveModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800"
+        >
+          <div class="p-5 text-center">
+            <div
+              class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30"
+            >
+              <Archive class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Arsipkan Surat?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Apakah Anda yakin ingin mengarsipkan <br />
+              <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
+            </p>
+            <div class="flex gap-3 justify-center">
+              <button
+                @click="showArchiveModal = false"
+                :disabled="isArchiving"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                @click="handleBulkArchive"
+                :disabled="isArchiving"
+                class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 bg-primary hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Loader2 v-if="isArchiving" class="w-4 h-4 animate-spin" />
+                {{ isArchiving ? 'Memproses...' : 'Arsipkan' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     </div>
   </div>
   </template>
