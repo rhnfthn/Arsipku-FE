@@ -489,7 +489,7 @@ const tulisChildrenByBod = computed(() => {
       (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
     );
   }
-  return all.filter((i) => i.label === t('kajian') || i.label === 'Naskah Lainnya');
+  return all.filter((i) => i.label === t('kajian'));
 });
 
 const tulisMenu = computed(() => ({
@@ -508,47 +508,40 @@ const verifikatorMenu = computed(() => ({
   badge: rtVerifikatorCount.value > 0 ? rtVerifikatorCount.value : null,
 }));
 
-const userMenuUtama = computed(() => {
-  const allMenus = [
-    {
-      label: t('beranda'),
-      to: '/beranda',
-      icon: 'i-lucide-layout-dashboard',
-      permission: { resource: 'dashboard', action: 'read' },
-    },
-    tulisMenu.value,
-    {
-      label: t('kotak_masuk'),
-      to: '/korespondensi/kotak-masuk',
-      icon: 'i-lucide-inbox',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-      badge: unreadCount.value > 0 ? unreadCount.value : null,
-    },
-    {
-      label: t('terkirim'),
-      to: '/korespondensi/terkirim',
-      icon: 'i-lucide-send',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-    },
-    {
-      label: t('tertunda'),
-      to: '/korespondensi/tertunda',
-      icon: 'i-lucide-file-clock',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-    },
-    {
-      label: t('draft'),
-      to: '/korespondensi/draf',
-      icon: 'i-lucide-file-text',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-    },
-  ];
-  // BOD kosong / STAFF: hanya Beranda
-  if (!hasBodTag.value) {
-    return allMenus.filter((m) => m.to === '/beranda');
-  }
-  return allMenus;
-});
+const userMenuUtama = computed(() => [
+  {
+    label: t('beranda'),
+    to: '/beranda',
+    icon: 'i-lucide-layout-dashboard',
+    permission: { resource: 'dashboard', action: 'read' },
+  },
+  tulisMenu.value,
+  {
+    label: t('kotak_masuk'),
+    to: '/korespondensi/kotak-masuk',
+    icon: 'i-lucide-inbox',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+    badge: unreadCount.value > 0 ? unreadCount.value : null,
+  },
+  {
+    label: t('terkirim'),
+    to: '/korespondensi/terkirim',
+    icon: 'i-lucide-send',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
+  {
+    label: t('tertunda'),
+    to: '/korespondensi/tertunda',
+    icon: 'i-lucide-file-clock',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
+  {
+    label: t('draft'),
+    to: '/korespondensi/draf',
+    icon: 'i-lucide-file-text',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
+]);
 
 const userMenuUtilitas = computed(() => {
   const badgeCount = userCounts.value.belum_diajukan || 0;
@@ -663,47 +656,40 @@ const faqMenuAdmin = computed(() => [
 
 // ─── Admin menus ──────────────────────────────────────────────────────────────
 
-const adminMenuUtama = computed(() => {
-  const allMenus = [
-    {
-      label: t('beranda'),
-      to: '/beranda',
-      icon: 'i-lucide-layout-dashboard',
-      permission: { resource: 'dashboard', action: 'read' },
-    },
-    tulisMenu.value,
-    {
-      label: t('kotak_masuk'),
-      to: '/korespondensi/kotak-masuk',
-      icon: 'i-lucide-inbox',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-      badge: unreadCount.value > 0 ? unreadCount.value : null,
-    },
-    {
-      label: t('terkirim'),
-      to: '/korespondensi/terkirim',
-      icon: 'i-lucide-send',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-    },
-    {
-      label: t('tertunda'),
-      to: '/korespondensi/tertunda',
-      icon: 'i-lucide-file-clock',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-    },
-    {
-      label: t('draft'),
-      to: '/korespondensi/draf',
-      icon: 'i-lucide-file-text',
-      permission: { resource: 'naskah-dinas', action: 'read' },
-    },
-  ];
-  // BOD kosong / STAFF: hanya Beranda
-  if (!hasBodTag.value) {
-    return allMenus.filter((m) => m.to === '/beranda');
-  }
-  return allMenus;
-});
+const adminMenuUtama = computed(() => [
+  {
+    label: t('beranda'),
+    to: '/beranda',
+    icon: 'i-lucide-layout-dashboard',
+    permission: { resource: 'dashboard', action: 'read' },
+  },
+  tulisMenu.value,
+  {
+    label: t('kotak_masuk'),
+    to: '/korespondensi/kotak-masuk',
+    icon: 'i-lucide-inbox',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+    badge: unreadCount.value > 0 ? unreadCount.value : null,
+  },
+  {
+    label: t('terkirim'),
+    to: '/korespondensi/terkirim',
+    icon: 'i-lucide-send',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
+  {
+    label: t('tertunda'),
+    to: '/korespondensi/tertunda',
+    icon: 'i-lucide-file-clock',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
+  {
+    label: t('draft'),
+    to: '/korespondensi/draf',
+    icon: 'i-lucide-file-text',
+    permission: { resource: 'naskah-dinas', action: 'read' },
+  },
+]);
 
 const adminMenuUtilitas = computed(() => {
   const menus = [
