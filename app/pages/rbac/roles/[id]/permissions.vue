@@ -210,9 +210,9 @@ const tabs = computed(() => {
     { key: 'faq' as const, label: 'FAQ' },
   ];
   const roleName = (role.value?.name || '').toUpperCase();
-  // USER hanya boleh lihat Utama, Utilitas, FAQ — tidak ada Administrasi & Laporan
+  // USER: tampilkan Utama, Utilitas, Administrasi ( Titelatur & Penomoran only), FAQ
   if (roleName === 'USER') {
-    return all.filter(t => ['utama', 'utilitas', 'faq'].includes(t.key));
+    return all.filter(t => ['utama', 'utilitas', 'administrasi', 'faq'].includes(t.key));
   }
   return all;
 });
@@ -227,11 +227,18 @@ const treeMap: Record<string, Ref<any>> = {
   const currentTree = computed(() => {
     const raw = treeMap[activeTab.value]?.value ?? null;
     if (!raw) return null;
-    // Sembunyikan Data Master & Konfigurasi Sistem untuk semua role KECUALI SUPERADMIN
-    const adminHiddenMenus = ['data-master', 'konfigurasi'];
     const roleName = (role.value?.name || '').toUpperCase();
-    if (roleName !== 'SUPERADMIN' && raw.key === 'administrasi') {
-      return { ...raw, menus: raw.menus.filter((m: any) => !adminHiddenMenus.includes(m.key)) };
+    if (raw.key === 'administrasi') {
+      if (roleName === 'USER') {
+        // USER: hanya Titelatur & Penomoran
+        const userAllowed = ['titelatur', 'penomoran'];
+        return { ...raw, menus: raw.menus.filter((m: any) => userAllowed.includes(m.key)) };
+      }
+      if (roleName !== 'SUPERADMIN') {
+        // ADMIN: hide Data Master & Konfigurasi
+        const adminHidden = ['data-master', 'konfigurasi'];
+        return { ...raw, menus: raw.menus.filter((m: any) => !adminHidden.includes(m.key)) };
+      }
     }
     return raw;
   });
@@ -250,16 +257,22 @@ const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.na
 
 const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
-  const adminHiddenMenus = ['data-master', 'konfigurasi'];
   const roleName = (role.value?.name || '').toUpperCase();
-  // USER: skip Administrasi & Laporan tree entirely
-  const skipKeys = roleName === 'USER' ? ['administrasi', 'laporan'] : [];
+  // USER: skip Laporan tree entirely; Administrasi di-filter di bawah
+  const skipKeys = roleName === 'USER' ? ['laporan'] : [];
   for (const tree of [utamaTree.value, utilitasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
     if (skipKeys.includes(tree.key)) continue;
-    const menus = (roleName !== 'SUPERADMIN' && tree.key === 'administrasi')
-      ? (tree.menus ?? []).filter((m: any) => !adminHiddenMenus.includes(m.key))
-      : (tree.menus ?? []);
+    let menus = tree.menus ?? [];
+    if (tree.key === 'administrasi') {
+      if (roleName === 'USER') {
+        const userAllowed = ['titelatur', 'penomoran'];
+        menus = menus.filter((m: any) => userAllowed.includes(m.key));
+      } else if (roleName !== 'SUPERADMIN') {
+        const adminHidden = ['data-master', 'konfigurasi'];
+        menus = menus.filter((m: any) => !adminHidden.includes(m.key));
+      }
+    }
     for (const menu of menus) {
       for (const sub of menu.subMenus ?? []) {
         for (const fitur of sub.fiturs ?? []) {
