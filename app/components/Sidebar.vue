@@ -548,9 +548,13 @@ const userMenuUtilitas = computed(() => {
   const menus = [
     {
       label: t('digsig'),
-      to: '/penandatangan',
       icon: 'i-lucide-signature',
       permission: { resource: 'naskah-dinas', action: 'read-detail' },
+      children: [
+        { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen' },
+        { label: t('sign'), to: '/digsig/penandatanganan' },
+        { label: t('check_dokumen'), to: '/digsig/cek-dokumen' },
+      ],
     },
     { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link' },
     {
