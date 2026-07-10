@@ -14,7 +14,7 @@
       </div>
 
       <button
-        v-if="hasPermission('template', 'create')"
+        v-if="!isUser && hasPermission('template', 'create')"
         @click="openAdd"
         :disabled="isLoadingCreate"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
@@ -195,7 +195,7 @@
                     <Download class="w-4 h-4" />
                   </button>
                   <button
-                    v-if="hasPermission('template', 'update')"
+                    v-if="!isUser && hasPermission('template', 'update')"
                     class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 dark:text-yellow-500 transition-colors"
                     @click="openEdit(template)"
                     :title="$t('tmpl_tooltip_edit')"
@@ -204,7 +204,7 @@
                     <Pencil class="w-4 h-4" />
                   </button>
                   <button
-                    v-if="hasPermission('template', 'delete')"
+                    v-if="!isUser && hasPermission('template', 'delete')"
                     @click="openDelete(template)"
                     class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
                     :title="$t('tmpl_tooltip_hapus')"
@@ -530,7 +530,8 @@
 
 <script setup lang="ts">
 const { canAccessPage } = useFeatureAccess();
-const { hasPermission } = useAuth();
+const { hasPermission, isSuperadmin, user } = useAuth();
+const isUser = computed(() => (user.value?.role || '').toUpperCase() === 'USER');
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
