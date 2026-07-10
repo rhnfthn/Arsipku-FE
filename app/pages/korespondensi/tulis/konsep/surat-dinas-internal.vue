@@ -1124,7 +1124,10 @@ onMounted(async () => {
       const result = await fetchInboxDetail(refId, refJenis);
       if (result) {
         const rawData = result.data || result;
-        const rawFlow = rawData.raw?.flow?.length > 0 ? rawData.raw.flow[0] : rawData;
+        // When chain has multiple items, rawData is an array.
+        // Find the item matching refId to get correct pengirim (the person who sent it to current user).
+        const dataArray = Array.isArray(rawData) ? rawData : (rawData.raw?.flow?.length > 0 ? rawData.raw.flow : [rawData]);
+        const rawFlow = dataArray.find((item: any) => item.id === refId) || dataArray[0] || rawData;
         refData.value = {
           id: rawFlow.id,
           nomor: rawFlow.nomor || '-',
