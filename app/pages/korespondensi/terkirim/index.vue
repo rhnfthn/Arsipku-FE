@@ -783,6 +783,64 @@ onMounted(async () => {
   endDateCal.value = parseDate(today);
 
   if (!user.value) await getProfile();
+
+  // Connect realtime socket for tracking updates
+  const rtSocket = useRealtimeSocket();
+  await rtSocket.connectSocket();
+  if (rtSocket.socket.value) {
+    rtSocket.socket.value.on('tracking:update', (payload: any) => {
+      if (!payload?.naskahId) return;
+
+      // Find the item in the list
+      const item = items.value.find((i: any) =>
+        i.naskahId === payload.naskahId || i.id === payload.naskahId
+      );
+      if (!item) return;
+
+      // Update viewCount if newly read
+      if (payload.status_baca === 'terbaca' && payload.read_time) {
+        item.viewCount = (item.viewCount || 0) + 1;
+      }
+
+      // Update raw penerima/tembusan data so modal rebuilds correctly
+      const rawData = item.originalData || item;
+      const updateRecipient = (list: any[]) => {
+        const recipient = list?.find((p: any) =>
+          String(p.position) === String(payload.positionId) ||
+          String(p.position_id) === String(payload.positionId)
+        );
+        if (recipient) {
+          if (payload.status_baca === 'terbaca') {
+            recipient.status_baca = 'terbaca';
+            recipient.read_time = payload.read_time;
+          }
+          if (payload.is_tindak_lanjut) {
+            recipient.is_tindak_lanjut = true;
+            recipient.tindak_lanjut = 1;
+          }
+        }
+      };
+      if (rawData.penerima) updateRecipient(rawData.penerima);
+      if (rawData.tembusan) updateRecipient(rawData.tembusan);
+
+      // Also update tracking_logs if present
+      if (Array.isArray(rawData.tracking_logs)) {
+        for (const log of rawData.tracking_logs) {
+          if (log.penerima) updateRecipient(log.penerima);
+          if (log.tembusan) updateRecipient(log.tembusan);
+        }
+      }
+
+      // Rebuild modal if it's open for this naskah
+      if (showReaderModal.value) {
+        const currentNaskahId = currentReaderData.value.trackingLogs[0]?.id;
+        if (currentNaskahId === payload.naskahId || currentNaskahId === item.naskahId) {
+          openReaderModal(item);
+        }
+      }
+    });
+  }
+
   applyKorespondensiListQuery(
     route.query,
     {
@@ -813,6 +871,11 @@ onMounted(async () => {
 onUnmounted(() => {
   isUnmounted.value = true;
   clearTimeout(searchTimeout);
+  // Cleanup tracking:update listener
+  const rtSocket = useRealtimeSocket();
+  if (rtSocket.socket.value) {
+    rtSocket.socket.value.off('tracking:update');
+  }
 });
 </script>
 
