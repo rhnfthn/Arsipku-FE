@@ -156,37 +156,37 @@
                     <table class="w-full align-top">
                       <tbody>
                         <tr>
-                          <td class="w-[80px] align-top">Nomor</td>
+                          <td class="w-[80px] align-top">{{ isEnglish ? 'Number' : 'Nomor' }}</td>
                           <td class="w-[10px] align-top">:</td>
                           <td class="align-top">................................................</td>
                         </tr>
                         <tr>
-                          <td class="align-top">Sifat</td>
+                          <td class="align-top">{{ isEnglish ? 'Classification' : 'Sifat' }}</td>
                           <td class="align-top">:</td>
-                          <td class="align-top capitalize">{{ selectedSifat?.label || 'Biasa' }}</td>
+                          <td class="align-top capitalize">{{ selectedSifat?.label || (isEnglish ? 'Regular' : 'Biasa') }}</td>
                         </tr>
                         <tr>
-                          <td class="align-top">Lampiran</td>
+                          <td class="align-top">{{ isEnglish ? 'Attachment' : 'Lampiran' }}</td>
                           <td class="align-top">:</td>
                           <td class="align-top">{{ lampiranText || '-' }}</td>
                         </tr>
                         <tr>
-                          <td class="align-top">Perihal</td>
+                          <td class="align-top">{{ isEnglish ? 'Subject' : 'Perihal' }}</td>
                           <td class="align-top">:</td>
                           <td class="align-top font-bold text-justify">{{ subject ||
                             "................................................" }}</td>
                         </tr>
                       </tbody>
                     </table>
-                    <div class="mt-5">Kepada Yth.</div>
+                    <div class="mt-5">{{ isEnglish ? 'Dear,' : 'Kepada Yth.' }}</div>
                     <div class="font-bold mb-1">
-                      <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
+                      <div v-if="selectedTertuju.length > 5">{{ isEnglish ? 'Please See Attached Address List' : 'Periksa Alamat Terlampir' }}</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</div>
                       </div>
                       <div v-else>................................................</div>
                     </div>
-                    <div class="mb-1">Di Tempat</div>
+                    <div v-if="!isEnglish" class="mb-1">Di Tempat</div>
                   </div>
                 </div>
 
@@ -199,13 +199,13 @@
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">Tembusan :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
+                  <div class="font-bold underline mb-1">{{ isEnglish ? 'Copy to:' : 'Tembusan :' }}</div>
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ isEnglish ? 'Please See Attached Address List' : 'Periksa Alamat Terlampir' }}</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + (t.raw?.area_text ? " - " +
                       t.raw.area_text : "") }}</li>
@@ -220,14 +220,14 @@
                       <table class="w-full">
                         <tbody>
                           <tr>
-                            <td class="align-top pr-2">Lampiran Surat</td>
+                            <td class="align-top pr-2">{{ isEnglish ? 'Letter Attachment' : 'Lampiran Surat' }}</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Nomor Surat :</td>
+                            <td class="align-top pr-2">{{ isEnglish ? 'Letter Number :' : 'Nomor Surat :' }}</td>
                             <td>.....................................</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Tanggal Surat :</td>
+                            <td class="align-top pr-2">{{ isEnglish ? 'Letter Date :' : 'Tanggal Surat :' }}</td>
                             <td>{{ formattedDate }}</td>
                           </tr>
                         </tbody>
@@ -235,13 +235,13 @@
                     </div>
                   </div>
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
-                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ isEnglish ? 'TO :' : 'KEPADA YTH :' }}</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTertuju" :key="item.value">{{ item.label }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
-                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ isEnglish ? 'COPY TO :' : 'TEMBUSAN :' }}</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">
                         {{ item.labelJob + (item.raw?.area_text ? " - " + item.raw.area_text : "") }}
@@ -364,7 +364,7 @@ const breadcrumbs = computed(() => {
 });
 
 const signerInfo = computed(() => ({
-  name: user.value?.nama || 'Nama Lengkap',
+  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
   role: user.value?.positionText || 'Jabatan',
   label: 'Ditandatangani secara digital oleh'
 }));
@@ -679,7 +679,7 @@ onMounted(async () => {
     }
 
   } catch (e) {
-    
+
   } finally {
     isLoadingData.value = false;
   }
