@@ -219,7 +219,7 @@
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ selectedSender?.raw?.persnum_person_text || user?.nama || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(selectedSender?.raw?.persnum_person_text || user?.nama) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 

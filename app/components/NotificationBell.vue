@@ -65,7 +65,6 @@ const {
   markAllAsRead,
   resolveNotificationRoute,
 } = useNotifications();
-const { user } = useAuth();
 const tokenCookie = useCookie<string | null>('token', { sameSite: 'lax', path: '/' });
 
 const router = useRouter();
@@ -131,8 +130,9 @@ const initWhenAuthenticated = (force = false) => {
 
 onMounted(() => {
   if (process.client) {
-    initWhenAuthenticated();
     document.addEventListener('click', closePanel, true);
+    // Init if token already exists (page refresh / direct navigation)
+    if (getAuthToken()) initWhenAuthenticated(true);
   }
 });
 
@@ -142,14 +142,11 @@ onBeforeUnmount(() => {
   }
 });
 
+// Re-init when auth state changes (e.g. logout → login via cookie)
 watch(
-  () => [tokenCookie.value, user.value?.persnum, user.value?.position],
-  ([token]) => {
-    if (!token) {
-      destroy();
-      return;
-    }
-    initWhenAuthenticated(true);
+  () => tokenCookie.value,
+  (token) => {
+    if (token) initWhenAuthenticated(true);
   },
 );
 </script>

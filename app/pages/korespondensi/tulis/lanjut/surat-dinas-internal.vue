@@ -75,7 +75,7 @@ const breadcrumbs = computed(() => {
 });
 
 const signerInfo = computed(() => ({
-  name: user.value?.nama || "Nama Lengkap",
+  name: toTitleCase(user.value?.nama) || "Nama Lengkap",
   role: user.value?.positionText || "Jabatan",
   label: "Ditandatangani secara digital oleh",
 }));
@@ -355,7 +355,7 @@ onMounted(async () => {
         if (d.tgl) setDateFromString(d.tgl);
       }
     } catch {
-      
+
     }
   }
 
@@ -543,7 +543,7 @@ watch(
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 

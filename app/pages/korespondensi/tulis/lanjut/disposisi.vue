@@ -341,7 +341,7 @@ const { getConfigDigsig } = useDigsig()
 const alertState = useAlertState();
 
 const signerInfo = computed(() => ({
-  name: user.value?.nama || 'Nama Lengkap',
+  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
   role: user.value?.positionText || 'Jabatan',
   label: 'Ditandatangani secara digital oleh'
 }));
@@ -773,7 +773,7 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error(e);
-    
+
   } finally {
     isLoadingData.value = false;
   }

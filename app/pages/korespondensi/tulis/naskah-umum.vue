@@ -529,7 +529,7 @@ onUnmounted(() => {
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
                     </div>
                   </div>
                 </div>
