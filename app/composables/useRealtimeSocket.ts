@@ -122,7 +122,7 @@ const connectSocket = async (): Promise<void> => {
         const count =
           typeof payload.inboxCount === 'number'
             ? payload.inboxCount
-            : payload.inboxCount?.count ?? 0;
+            : payload.inboxCount?.data?.count ?? payload.inboxCount?.count ?? 0;
         inboxCount.value = count;
       }
       if (payload.labelCounts && typeof payload.labelCounts === 'object') {
@@ -223,6 +223,8 @@ export function useRealtimeSocket() {
     naskahDinasVerifikatorWaitingCount,
     isConnected,
     hasBsreAlert,
+    // Socket reference (for custom event listeners)
+    socket: computed(() => socket),
     // Actions
     init,
     destroy,
