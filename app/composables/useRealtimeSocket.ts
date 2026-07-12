@@ -223,6 +223,8 @@ export function useRealtimeSocket() {
     naskahDinasVerifikatorWaitingCount,
     isConnected,
     hasBsreAlert,
+    // Socket reference (for custom event listeners)
+    socket: computed(() => socket),
     // Actions
     init,
     destroy,
