@@ -299,13 +299,18 @@ export const useNotifications = () => {
     if (connectPromise) return connectPromise;
 
     connectPromise = new Promise<void>((resolve) => {
+      let settled = false;
+      const done = () => { if (!settled) { settled = true; connectPromise = null; resolve(); } };
+
       const token = getToken();
       if (!token) {
         console.warn('[useNotifications] No token, skip socket connect');
-        connectPromise = null;
-        resolve();
+        done();
         return;
       }
+
+      // Safety timeout — don't block init() forever
+      const timeout = setTimeout(done, 5000);
 
       const url = getSocketUrl();
       socket = io(`${url}/notifications`, {
@@ -317,8 +322,10 @@ export const useNotifications = () => {
       });
 
       socket.on('connect', () => {
+        clearTimeout(timeout);
         isConnected.value = true;
         console.log('[useNotifications] Socket connected');
+        done();
       });
 
       socket.on('disconnect', () => {
@@ -327,8 +334,10 @@ export const useNotifications = () => {
       });
 
       socket.on('connect_error', (err: any) => {
+        clearTimeout(timeout);
         isConnected.value = false;
         console.warn('[useNotifications] Socket connect_error:', err?.message);
+        done(); // Don't block init() forever on connection error
       });
 
       // Realtime events
@@ -398,7 +407,7 @@ export const useNotifications = () => {
         }
       });
 
-      resolve();
+      // Don't resolve here — resolved on 'connect' or 'connect_error' events above
     });
 
     return connectPromise;
