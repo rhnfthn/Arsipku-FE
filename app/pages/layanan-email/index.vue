@@ -124,10 +124,17 @@
 
           <FileUpload
             v-model="selectedFiles"
+            @update:model-value="handleFileSelection"
+            @invalid-files="handleInvalidFiles"
             accept="application/pdf,image/*"
+            :max-size="MAX_ATTACHMENT_SIZE"
             :multiple="true"
             description="Klik atau drag & drop untuk upload file (Maks 10MB)"
           />
+
+          <p v-if="attachmentError" class="text-xs text-red-500 mt-1">
+            {{ attachmentError }}
+          </p>
 
           <!-- List file yang dipilih -->
           <div v-if="selectedFiles.length > 0" class="mt-2 space-y-2">
@@ -261,6 +268,9 @@ onMounted(() => {
   fetchEksternal()
 })
 
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
+const attachmentError = ref('')
+
 const form = ref<SendMailPayload>({
   subjek: '',
   from_as: '',
@@ -270,6 +280,25 @@ const form = ref<SendMailPayload>({
   bcc: '',
   lampiran: [],
 })
+
+const handleFileSelection = (files: File[]) => {
+  selectedFiles.value = files
+  attachmentError.value = ''
+}
+
+const handleInvalidFiles = (invalidFiles: string[]) => {
+  attachmentError.value = `File ${invalidFiles.join(', ')} melebihi batas 10MB dan tidak ditambahkan.`
+}
+
+const validateAttachments = (): boolean => {
+  if (selectedFiles.value.some((file) => file.size > MAX_ATTACHMENT_SIZE)) {
+    attachmentError.value = 'Semua file lampiran harus berukuran di bawah 10MB.'
+    return false
+  }
+
+  attachmentError.value = ''
+  return true
+}
 
 // --- TinyMCE Config ---
 const tinymceEditor = ref<TinyMCEEditor | null>(null)
@@ -334,6 +363,7 @@ const handleSubmit = async () => {
   errorMsg.value = ''
 
   if (!validate()) return
+  if (!validateAttachments()) return
 
   loading.value = true
   try {
@@ -389,6 +419,7 @@ const resetForm = async () => {
     lampiran: [],
   }
   selectedFiles.value = []
+  attachmentError.value = ''
   selectedEksternalTo.value = []
   response.value = null
   errorMsg.value = ''
