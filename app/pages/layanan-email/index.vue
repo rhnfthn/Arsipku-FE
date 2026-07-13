@@ -290,6 +290,24 @@ const handleInvalidFiles = (invalidFiles: string[]) => {
   attachmentError.value = `File ${invalidFiles.join(', ')} melebihi batas 10MB dan tidak ditambahkan.`
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const parseEmails = (raw: string): string[] =>
+  raw
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean)
+
+const validateEmailList = (raw: string, fieldLabel: string): string | null => {
+  const emails = parseEmails(raw)
+  for (const email of emails) {
+    if (!EMAIL_REGEX.test(email)) {
+      return `Format email tidak valid: ${email}`
+    }
+  }
+  return null
+}
+
 const validateAttachments = (): boolean => {
   if (selectedFiles.value.some((file) => file.size > MAX_ATTACHMENT_SIZE)) {
     attachmentError.value = 'Semua file lampiran harus berukuran di bawah 10MB.'
@@ -353,6 +371,16 @@ const validate = (): boolean => {
   if (!form.value.subjek) { errorMsg.value = 'Subjek wajib diisi'; return false }
   if (!form.value.from_as) { errorMsg.value = 'From As wajib diisi'; return false }
   if (!form.value.to) { errorMsg.value = 'To wajib diisi'; return false }
+
+  const toError = validateEmailList(form.value.to, 'To')
+  if (toError) { errorMsg.value = toError; return false }
+
+  const ccError = validateEmailList(form.value.cc || '', 'CC')
+  if (ccError) { errorMsg.value = ccError; return false }
+
+  const bccError = validateEmailList(form.value.bcc || '', 'BCC')
+  if (bccError) { errorMsg.value = bccError; return false }
+
   if (!form.value.konten) { errorMsg.value = 'Konten wajib diisi'; return false }
   errorMsg.value = ''
   return true
