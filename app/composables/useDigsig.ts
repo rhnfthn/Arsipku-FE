@@ -108,6 +108,7 @@ export const useDigsig = () => {
       if (params?.search) queryParams.append('search', params.search);
       if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+      if (params?.status) queryParams.append('status', params.status);
 
       const url = `/digsig/log${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const res = await apiGet<DigsigLogResponse>(url);

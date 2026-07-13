@@ -13,21 +13,11 @@
 
     <!-- MAIN CARD -->
     <div class="w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <!-- TABS -->
+      <!-- HEADER -->
       <div class="flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          @click="activeTab = tab.key"
-          :class="[
-            'px-5 py-3 text-sm font-medium transition-colors',
-            activeTab === tab.key
-              ? 'text-primary border-b-2 border-primary dark:text-primary-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
-          ]"
-        >
-          {{ tab.label }}
-        </button>
+        <div class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary dark:text-primary-400">
+          Kirim Email
+        </div>
       </div>
 
       <!-- FORM -->
@@ -134,10 +124,17 @@
 
           <FileUpload
             v-model="selectedFiles"
+            @update:model-value="handleFileSelection"
+            @invalid-files="handleInvalidFiles"
             accept="application/pdf,image/*"
+            :max-size="MAX_ATTACHMENT_SIZE"
             :multiple="true"
             description="Klik atau drag & drop untuk upload file (Maks 10MB)"
           />
+
+          <p v-if="attachmentError" class="text-xs text-red-500 mt-1">
+            {{ attachmentError }}
+          </p>
 
           <!-- List file yang dipilih -->
           <div v-if="selectedFiles.length > 0" class="mt-2 space-y-2">
@@ -214,7 +211,7 @@ import { useApi } from '~/composables/useApi'
 definePageMeta({ layout: 'default' })
 
 const { t } = useI18n()
-const { sendMailBase64, saveDraft } = useMailService()
+const { sendMailBase64 } = useMailService()
 const { apiGet } = useApi()
 
 const breadcrumbs = [
@@ -222,14 +219,7 @@ const breadcrumbs = [
   { label: 'Layanan Email', to: '/layanan-email' },
 ]
 
-const tabs = [
-  { key: 'send', label: 'Kirim Email' },
-  { key: 'draft', label: 'Simpan Draft' },
-] as const
-
-type TabKey = (typeof tabs)[number]['key']
-
-const activeTab = ref<TabKey>('send')
+const activeTab = ref<'send'>('send')
 const loading = ref(false)
 const response = ref<any>(null)
 const errorMsg = ref('')
@@ -278,6 +268,9 @@ onMounted(() => {
   fetchEksternal()
 })
 
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
+const attachmentError = ref('')
+
 const form = ref<SendMailPayload>({
   subjek: '',
   from_as: '',
@@ -287,6 +280,43 @@ const form = ref<SendMailPayload>({
   bcc: '',
   lampiran: [],
 })
+
+const handleFileSelection = (files: File[]) => {
+  selectedFiles.value = files
+  attachmentError.value = ''
+}
+
+const handleInvalidFiles = (invalidFiles: string[]) => {
+  attachmentError.value = `File ${invalidFiles.join(', ')} melebihi batas 10MB dan tidak ditambahkan.`
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const parseEmails = (raw: string): string[] =>
+  raw
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean)
+
+const validateEmailList = (raw: string, fieldLabel: string): string | null => {
+  const emails = parseEmails(raw)
+  for (const email of emails) {
+    if (!EMAIL_REGEX.test(email)) {
+      return `Format email tidak valid: ${email}`
+    }
+  }
+  return null
+}
+
+const validateAttachments = (): boolean => {
+  if (selectedFiles.value.some((file) => file.size > MAX_ATTACHMENT_SIZE)) {
+    attachmentError.value = 'Semua file lampiran harus berukuran di bawah 10MB.'
+    return false
+  }
+
+  attachmentError.value = ''
+  return true
+}
 
 // --- TinyMCE Config ---
 const tinymceEditor = ref<TinyMCEEditor | null>(null)
@@ -309,10 +339,7 @@ const tinyMceInit = {
   },
 }
 
-const submitLabel = computed(() => {
-  if (activeTab.value === 'draft') return 'Simpan Draft'
-  return 'Kirim Email'
-})
+const submitLabel = computed(() => 'Kirim Email')
 
 const removeFile = (idx: number) => {
   selectedFiles.value.splice(idx, 1)
@@ -344,6 +371,16 @@ const validate = (): boolean => {
   if (!form.value.subjek) { errorMsg.value = 'Subjek wajib diisi'; return false }
   if (!form.value.from_as) { errorMsg.value = 'From As wajib diisi'; return false }
   if (!form.value.to) { errorMsg.value = 'To wajib diisi'; return false }
+
+  const toError = validateEmailList(form.value.to, 'To')
+  if (toError) { errorMsg.value = toError; return false }
+
+  const ccError = validateEmailList(form.value.cc || '', 'CC')
+  if (ccError) { errorMsg.value = ccError; return false }
+
+  const bccError = validateEmailList(form.value.bcc || '', 'BCC')
+  if (bccError) { errorMsg.value = bccError; return false }
+
   if (!form.value.konten) { errorMsg.value = 'Konten wajib diisi'; return false }
   errorMsg.value = ''
   return true
@@ -354,6 +391,7 @@ const handleSubmit = async () => {
   errorMsg.value = ''
 
   if (!validate()) return
+  if (!validateAttachments()) return
 
   loading.value = true
   try {
@@ -361,14 +399,9 @@ const handleSubmit = async () => {
     const lampiran = await filesToBase64()
     const payload = { ...form.value, lampiran }
 
-    let result: any
-    if (activeTab.value === 'draft') {
-      result = await saveDraft(payload)
-    } else {
-      result = await sendMailBase64(payload)
-    }
+    const result = await sendMailBase64(payload)
     response.value = result
-    Alert.warning('Berhasil', activeTab.value === 'draft' ? 'Draft email berhasil disimpan' : 'Email berhasil dikirim')
+    Alert.warning('Berhasil', 'Email berhasil dikirim')
     setTimeout(() => {
       navigateTo('/layanan-email/log')
     }, 1500)
@@ -380,7 +413,30 @@ const handleSubmit = async () => {
   }
 }
 
-const resetForm = () => {
+const resetForm = async () => {
+  // Cek apakah form ada isinya
+  const hasContent =
+    form.value.subjek ||
+    form.value.from_as ||
+    form.value.to ||
+    form.value.konten ||
+    form.value.cc ||
+    form.value.bcc ||
+    selectedFiles.value.length > 0 ||
+    selectedEksternalTo.value.length > 0
+
+  if (hasContent) {
+    const confirmed = await Alert.confirm(
+      'Reset Form?',
+      'Semua data yang telah diisi akan dihapus. Lanjutkan?',
+      'Ya, Reset',
+      'Batal',
+      false,
+    )
+    Alert.close()
+    if (!confirmed) return
+  }
+
   form.value = {
     subjek: '',
     from_as: '',
@@ -391,8 +447,10 @@ const resetForm = () => {
     lampiran: [],
   }
   selectedFiles.value = []
+  attachmentError.value = ''
   selectedEksternalTo.value = []
   response.value = null
   errorMsg.value = ''
+  tinymceEditor.value?.setContent('')
 }
 </script>
