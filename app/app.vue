@@ -9,6 +9,7 @@
 </template>
 
 <script setup lang="ts">
+// commit check: small code comment for local change
 const toaster = { position: 'top-right' } as const
 </script>
 
