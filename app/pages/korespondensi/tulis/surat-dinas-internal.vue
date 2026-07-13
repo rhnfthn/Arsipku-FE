@@ -278,13 +278,35 @@ onMounted(async () => {
     klasifikasiStatus.value = "success";
 
     const resRec = await getRecipients();
-    tertujuItems.value = (resRec.recipients || (resRec as any).data || []).map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
-      organization: r.organization_text,
-      value: String(r.position || r.position_id || r.id),
-      raw: r,
-    }));
+    const rawRecipients = resRec.recipients || (resRec as any).data || [];
+
+    // Sort by org hierarchy: Direktur > GM > VP > Manager > lainnya
+    const hierarchyOrder: Record<string, number> = {
+      'direktur utama': 1, 'president director': 1,
+      'direktur': 2, 'director': 2,
+      'general manager': 3, 'gm': 3,
+      'vice president': 4, 'vp': 4,
+      'evp': 3, 'senior vice president': 3, 'svp': 3,
+    };
+    const getHierarchyRank = (r: any) => {
+      const text = (r.position_text || r.positionText || '').toLowerCase();
+      for (const [keyword, rank] of Object.entries(hierarchyOrder)) {
+        if (text.includes(keyword)) return rank;
+      }
+      // bod_tag fallback: lower number = higher rank
+      if (r.bod_tag) return 5;
+      return 10;
+    };
+
+    tertujuItems.value = rawRecipients
+      .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
+      .map((r: any) => ({
+        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+        labelJob: r.position_text || r.positionText,
+        organization: r.organization_text,
+        value: String(r.position || r.position_id || r.id),
+        raw: r,
+      }));
     tembusanItems.value = tertujuItems.value;
 
     const groups = await getRecipientGroups("SDI");
