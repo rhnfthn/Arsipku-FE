@@ -3,31 +3,31 @@
   <div v-else class="relative">
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 dark:from-gray-900/75 dark:to-gray-800/75 backdrop-blur-[2px] transition-all duration-500">
 
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
+          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent dark:from-gray-900/95 dark:via-gray-800/60">
           </div>
         </div>
 
         <div class="relative flex flex-col items-center gap-6 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
             <div
-              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] dark:border-t-primary-400 dark:border-r-primary-600 animate-spin"
               style="animation-duration: 1.5s;">
             </div>
-            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
+            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-lg relative z-10">
               <div class="plane-float">
-                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] dark:text-primary-400 -rotate-45" />
               </div>
             </div>
           </div>
 
           <div class="flex flex-col items-center gap-2">
-            <span class="text-gray-900 font-semibold text-lg">
+            <span class="text-gray-900 dark:text-white font-semibold text-lg">
               {{ loadingMessage || 'Memproses Data' }}
             </span>
-            <span class="text-sm text-gray-600">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
               Mohon tunggu sebentar
             </span>
           </div>
@@ -84,18 +84,18 @@
 
           <ClientOnly>
             <div
-              class="flex flex-col bg-gray-100 dark:bg-gray-800 transition-all duration-300 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
 
               <div
-                class="bg-white dark:bg-gray-900 pt-10 pb-10 border-b border-gray-100 dark:border-gray-700 select-none text-black dark:text-white min-h-[800px]">
+                class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[800px]">
 
                 <div
-                  class="bg-white dark:bg-gray-900 px-8 pt-8 pb-4 border-b border-gray-100 dark:border-gray-700 select-none">
+                  class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <div class="flex items-center pb-2 mb-6">
                     <div class="flex items-end gap-4">
                       <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
                       <div class="flex flex-col mb-1">
-                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black dark:text-white">AirNav
+                        <span class="text-2xl font-bold tracking-wide text-[18px] text-black">AirNav
                           Indonesia</span>
                       </div>
                     </div>
@@ -111,14 +111,14 @@
                     </div>
                   </div>
 
-                  <div class="text-center mb-6 text-black dark:text-white">
+                  <div class="text-center mb-6 text-black">
                     <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
                       KAJIAN
                     </h1>
                     <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
                   </div>
 
-                  <table class="w-[60%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black dark:text-white">
+                  <table class="w-[60%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
                         <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
@@ -162,8 +162,8 @@
                 <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
                 <div
-                  class="bg-white dark:bg-gray-900 px-8 pt-4 pb-8 border-t border-gray-100 dark:border-gray-700 select-none">
-                  <div class="flex justify-end mb-4 text-black dark:text-white">
+                  class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
+                  <div class="flex justify-end mb-4 text-black">
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
                         <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
@@ -175,7 +175,7 @@
                 </div>
 
                 <div v-if="selectedPenerima.length > 5"
-                  class="bg-white dark:bg-gray-900 px-12 py-12 border-t-4 border-gray-200 dark:border-gray-700 text-black dark:text-white break-before-page">
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">

@@ -85,9 +85,9 @@ export const useDashboard = () => {
           value: "0",
           subtitle: "",
           icon: "i-heroicons-clock",
-          bgSolid: "bg-orange-100",
+          bgSolid: "bg-orange-100 dark:bg-orange-900/30",
           borderColor: "bg-orange-500",
-          iconColor: "text-orange-600",
+          iconColor: "text-orange-600 dark:text-orange-400",
           link: "/korespondensi/kotak-masuk",
         },
         {
@@ -95,9 +95,9 @@ export const useDashboard = () => {
           value: "0",
           subtitle: "",
           icon: "i-heroicons-eye-slash",
-          bgSolid: "bg-purple-100",
+          bgSolid: "bg-purple-100 dark:bg-purple-900/30",
           borderColor: "bg-purple-500",
-          iconColor: "text-purple-600",
+          iconColor: "text-purple-600 dark:text-purple-400",
           link: "/korespondensi/kotak-masuk",
         },
         {
@@ -105,9 +105,9 @@ export const useDashboard = () => {
           value: "0",
           subtitle: "",
           icon: "i-lucide-signature",
-          bgSolid: "bg-blue-100",
+          bgSolid: "bg-blue-100 dark:bg-blue-900/30",
           borderColor: "bg-blue-500",
-          iconColor: "text-blue-600",
+          iconColor: "text-blue-600 dark:text-blue-400",
           link: "/korespondensi/kotak-masuk",
         },
         {
@@ -115,9 +115,9 @@ export const useDashboard = () => {
           value: "0",
           subtitle: "",
           icon: "i-heroicons-document-check",
-          bgSolid: "bg-green-100",
+          bgSolid: "bg-green-100 dark:bg-green-900/30",
           borderColor: "bg-green-500",
-          iconColor: "text-green-600",
+          iconColor: "text-green-600 dark:text-green-400",
           link: "/digsig/penandatanganan",
         },
       ];
@@ -130,9 +130,9 @@ export const useDashboard = () => {
         value: summary.perlu_tindak_lanjut || 0,
         subtitle: "",
         icon: "i-heroicons-clock",
-        bgSolid: "bg-orange-100",
+        bgSolid: "bg-orange-100 dark:bg-orange-900/30",
         borderColor: "bg-orange-500",
-        iconColor: "text-orange-600",
+        iconColor: "text-orange-600 dark:text-orange-400",
         link: "/korespondensi/kotak-masuk?filter=Belum+Tinjut",
       },
       {
@@ -140,9 +140,9 @@ export const useDashboard = () => {
         value: summary.disposisi_belum_dibaca || 0,
         subtitle: `dari ${summary.disposisi_masuk || 0} total`,
         icon: "i-heroicons-eye-slash",
-        bgSolid: "bg-purple-100",
+        bgSolid: "bg-purple-100 dark:bg-purple-900/30",
         borderColor: "bg-purple-500",
-        iconColor: "text-purple-600",
+        iconColor: "text-purple-600 dark:text-purple-400",
         link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Dibaca",
       },
       {
@@ -150,9 +150,9 @@ export const useDashboard = () => {
         value: summary.disposisi_belum_tinjut || 0,
         subtitle: "",
         icon: "i-heroicons-document-check",
-        bgSolid: "bg-blue-100",
+        bgSolid: "bg-blue-100 dark:bg-blue-900/30",
         borderColor: "bg-blue-500",
-        iconColor: "text-blue-600",
+        iconColor: "text-blue-600 dark:text-blue-400",
         link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Tinjut",
       },
       {
@@ -160,9 +160,9 @@ export const useDashboard = () => {
         value: summary.digsig_menunggu_ttd || 0,
         subtitle: "",
         icon: "i-lucide-signature",
-        bgSolid: "bg-green-100",
+        bgSolid: "bg-green-100 dark:bg-green-900/30",
         borderColor: "bg-green-500",
-        iconColor: "text-green-600",
+        iconColor: "text-green-600 dark:text-green-400",
         link: "/digsig/penandatanganan",
       },
     ];
@@ -176,32 +176,6 @@ export const useDashboard = () => {
     return dashboardData.value.surat_masuk_terbaru.slice(0, 10);
   });
 
-  /**
-   * Get chart data for statistics - Updated with surat_sudah_ditinjut
-   */
-  const chartData = computed(() => {
-    if (!dashboardData.value?.statistik_bulanan) {
-      return {
-        labels: [],
-        suratMasuk: [],
-        suratTerkirim: [],
-        suratDitinjut: [],
-      };
-    }
-
-    return {
-      labels: dashboardData.value.statistik_bulanan.map((item) => item.bulan),
-      suratMasuk: dashboardData.value.statistik_bulanan.map(
-        (item) => item.surat_masuk,
-      ),
-      suratTerkirim: dashboardData.value.statistik_bulanan.map(
-        (item) => item.surat_terkirim,
-      ),
-      suratDitinjut: dashboardData.value.statistik_bulanan.map(
-        (item) => item.surat_sudah_ditinjut || 0,
-      ),
-    };
-  });
 
   /**
    * Get accent color based on mail type
@@ -237,7 +211,6 @@ export const useDashboard = () => {
     // Computed
     stats,
     recentMails,
-    chartData,
 
     // Methods
     fetchDashboardData,

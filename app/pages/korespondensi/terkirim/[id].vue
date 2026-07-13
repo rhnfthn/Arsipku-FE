@@ -792,9 +792,9 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
 };
 const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
 const konsepOptions = [
-  { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600' },
-  { type: 'SDI', label: 'Surat Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600' },
-  { type: 'SDE', label: 'Surat Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600' }
+  { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
+  { type: 'SDI', label: 'Surat Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
+  { type: 'SDE', label: 'Surat Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' }
 ];
 </script>
 
@@ -1101,8 +1101,8 @@ const konsepOptions = [
       <template #header>
         <div class="w-full flex justify-between items-center">
           <div class="flex items-center gap-2">
-            <div class="p-2 bg-red-100 rounded-full">
-              <AlertCircle class="w-5 h-5 text-red-600" />
+            <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+              <AlertCircle class="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
               <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Tolak Konsep</h3>
@@ -1145,7 +1145,7 @@ const konsepOptions = [
         <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
           <div v-if="isLocalPdfLoading"
             class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90 z-20">
-            <Loader2 class="w-10 h-10 animate-spin text-blue-600 mb-2" /><span class="text-xs text-gray-500">Memuat
+            <Loader2 class="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400 mb-2" /><span class="text-xs text-gray-500 dark:text-gray-400">Memuat
               Dokumen...</span>
           </div>
           <iframe v-if="activePdfUrl" :src="activePdfUrl" class="w-full h-full border-none flex-1" />

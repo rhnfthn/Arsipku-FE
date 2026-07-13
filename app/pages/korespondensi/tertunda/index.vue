@@ -667,7 +667,7 @@ onMounted(async () => {
               {{ tab.label }}
               <span v-if="getTabCount(tab.value) > 0" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold"
                 :class="activeTab === tab.value
-                    ? 'bg-white text-primary'
+                    ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-400'
                     : 'bg-primary-50 dark:bg-primary-900/50 text-primary dark:text-primary-300'
                   ">
                 {{ getTabCount(tab.value) }}
@@ -798,26 +798,26 @@ onMounted(async () => {
                 >
                   <div class="flex items-center gap-2 p-1">
                     <StickyNote
-                      class="w-4 h-4 transition-colors hover:text-orange-500 cursor-pointer"
-                      :class="mail.isNote ? 'text-orange-600 fill-orange-100' : 'text-neutral-300 dark:text-gray-600'"
+                      class="w-4 h-4 transition-colors hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer"
+                      :class="mail.isNote ? 'text-orange-600 fill-orange-100 dark:text-orange-400 dark:fill-orange-900/40' : 'text-neutral-300 dark:text-gray-600'"
                       :title="mail.isNote ? 'Catatan (ada)' : 'Catatan'"
                       @click.stop="handleToggleFlag(mail, 'note')"
                     />
                     <Lock
                       v-if="mail.isLocked"
-                      class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 cursor-pointer"
+                      class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 dark:text-red-400 dark:fill-red-900/40 dark:hover:text-red-400 cursor-pointer"
                       title="Kunci (aktif)"
                       @click.stop="handleToggleFlag(mail, 'lock')"
                     />
                     <LockOpen
                       v-else
-                      class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 cursor-pointer"
+                      class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 cursor-pointer"
                       title="Kunci"
                       @click.stop="handleToggleFlag(mail, 'lock')"
                     />
                     <Archive
-                      class="w-4 h-4 transition-colors hover:text-green-600 cursor-pointer"
-                      :class="mail.isArsip ? 'text-green-700 fill-green-100' : 'text-neutral-300 dark:text-gray-600'"
+                      class="w-4 h-4 transition-colors hover:text-green-600 dark:hover:text-green-400 cursor-pointer"
+                      :class="mail.isArsip ? 'text-green-700 fill-green-100 dark:text-green-400 dark:fill-green-900/40' : 'text-neutral-300 dark:text-gray-600'"
                       :title="mail.isArsip ? 'Arsip (aktif)' : 'Arsip'"
                       @click.stop="handleToggleFlag(mail, 'arsip')"
                     />
