@@ -352,6 +352,7 @@ export interface DigsigLogParams {
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  status?: 'sukses' | 'gagal' | 'pending'
 }
 
 export interface DigsigConfigResponse {

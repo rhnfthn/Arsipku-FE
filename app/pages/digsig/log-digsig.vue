@@ -60,6 +60,44 @@
               </div>
             </div>
 
+            <!-- STATUS FILTER -->
+            <div class="relative" ref="statusRef">
+              <button
+                type="button"
+                @click.stop="showStatusDropdown = !showStatusDropdown"
+                class="h-9 flex items-center justify-between gap-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white text-sm px-3 rounded-lg min-w-[140px] hover:border-primary transition-all"
+              >
+                <span>{{ filterStatusLabel }}</span>
+                <ChevronDown
+                  :class="[
+                    'w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200',
+                    showStatusDropdown ? 'rotate-180' : ''
+                  ]"
+                />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="showStatusDropdown"
+                  class="absolute left-0 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden"
+                >
+                  <button
+                    v-for="item in statusOptions"
+                    :key="item.value"
+                    type="button"
+                    @click.stop="selectStatusOption(item.value)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                      filterStatus.value === item.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ]"
+                  >
+                    {{ item.label }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
+
             <!-- SEARCH — only jenisNaskah -->
             <div class="relative flex-1">
               <input
@@ -525,6 +563,7 @@ const { canAccessPage } = useFeatureAccess()
 
 // ─── Refs ──────────────────────────────────────
 const rowsRef = ref<HTMLElement | null>(null);
+const statusRef = ref<HTMLElement | null>(null);
 
 /**
  * Single source of truth for rows per page.
@@ -534,6 +573,18 @@ const rowsRef = ref<HTMLElement | null>(null);
 const rowsPerPage = ref(10);
 const rowsChoices = [10, 25, 50, 100];
 const showRowsDropdown = ref(false);
+
+const filterStatus = ref('Semua');
+const showStatusDropdown = ref(false);
+const statusOptions = [
+  { label: 'Semua', value: 'Semua' },
+  { label: 'Sukses', value: 'sukses' },
+  { label: 'Gagal', value: 'gagal' },
+  { label: 'Pending', value: 'pending' }
+];
+const filterStatusLabel = computed(() => {
+  return statusOptions.find((item) => item.value === filterStatus.value)?.label || 'Semua';
+});
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -662,7 +713,8 @@ const loadLogs = async () => {
   await fetchLogs({
     page: currentPage.value,
     limit: rowsPerPage.value, // always use the single ref
-    search: searchQuery.value // backend filters userName & jenisNaskah only
+    search: searchQuery.value,
+    status: filterStatus.value === 'Semua' ? undefined : filterStatus.value
   });
 };
 
@@ -705,11 +757,24 @@ const debounceSearch = () => {
   }, 500);
 };
 
-// Click-outside for rows dropdown
+// Click-outside for dropdowns
 const handleClickOutside = (e: MouseEvent) => {
-  if (rowsRef.value && !rowsRef.value.contains(e.target as HTMLElement)) {
+  const target = e.target as HTMLElement;
+
+  if (rowsRef.value && !rowsRef.value.contains(target)) {
     showRowsDropdown.value = false;
   }
+
+  if (statusRef.value && !statusRef.value.contains(target)) {
+    showStatusDropdown.value = false;
+  }
+};
+
+const selectStatusOption = (value: string) => {
+  filterStatus.value = value;
+  showStatusDropdown.value = false;
+  currentPage.value = 1;
+  loadLogs();
 };
 
 const openActivateModal = () => {
