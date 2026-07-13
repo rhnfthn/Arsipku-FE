@@ -18,7 +18,7 @@
 
       <UIcon
         name="i-heroicons-chevron-down"
-        :class="['w-3 h-3 transition-transform duration-200 text-gray-500', isOpen && 'rotate-180']"
+        :class="['w-3 h-3 transition-transform duration-200 text-gray-500 dark:text-gray-400', isOpen && 'rotate-180']"
       />
     </div>
 

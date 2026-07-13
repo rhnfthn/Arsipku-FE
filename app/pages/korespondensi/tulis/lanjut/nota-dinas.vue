@@ -2,25 +2,25 @@
   <div class="relative">
     <Teleport to="body">
       <div v-if="isLoadingData && loadingMessage !== 'Memuat...'"
-        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 backdrop-blur-[2px] transition-all duration-500">
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-gradient-to-br from-white/75 to-[#e8eff6]/75 dark:from-gray-900/75 dark:to-gray-800/75 backdrop-blur-[2px] transition-all duration-500">
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent">
+          <div class="w-[400px] h-[400px] rounded-full bg-gradient-radial from-white/95 via-white/60 to-transparent dark:from-gray-900/95 dark:via-gray-800/60">
           </div>
         </div>
         <div class="relative flex flex-col items-center gap-6 z-10">
           <div class="relative flex items-center justify-center w-24 h-24">
             <div
-              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] animate-spin"
+              class="absolute inset-0 rounded-full border-4 border-transparent border-t-[#457fb6] border-r-[#749fc8] dark:border-t-primary-400 dark:border-r-primary-600 animate-spin"
               style="animation-duration: 1.5s;"></div>
-            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg relative z-10">
+            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-lg relative z-10">
               <div class="plane-float">
-                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] -rotate-45" />
+                <UIcon name="i-lucide-plane" class="w-8 h-8 text-[#457fb6] dark:text-primary-400 -rotate-45" />
               </div>
             </div>
           </div>
           <div class="flex flex-col items-center gap-2">
-            <span class="text-gray-900 font-semibold text-lg">{{ loadingMessage || 'Memproses Data' }}</span>
-            <span class="text-sm text-gray-600">Mohon tunggu sebentar</span>
+            <span class="text-gray-900 dark:text-white font-semibold text-lg">{{ loadingMessage || 'Memproses Data' }}</span>
+            <span class="text-sm text-gray-600 dark:text-gray-400">Mohon tunggu sebentar</span>
           </div>
         </div>
       </div>
@@ -491,12 +491,33 @@ onMounted(async () => {
     klasifikasiStatus.value = "success";
 
     const resRec = await getRecipients();
-    items.value = (resRec.recipients || (resRec as any).data || []).map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
-      value: String(r.position || r.position_id || r.id),
-      raw: r,
-    }));
+    const rawRecipients = resRec.recipients || (resRec as any).data || [];
+
+    // Sort by org hierarchy: Direktur > GM > VP > Manager > lainnya
+    const hierarchyOrder: Record<string, number> = {
+      'direktur utama': 1, 'president director': 1,
+      'direktur': 2, 'director': 2,
+      'general manager': 3, 'gm': 3,
+      'vice president': 4, 'vp': 4,
+      'evp': 3, 'senior vice president': 3, 'svp': 3,
+    };
+    const getHierarchyRank = (r: any) => {
+      const text = (r.position_text || r.positionText || '').toLowerCase();
+      for (const [keyword, rank] of Object.entries(hierarchyOrder)) {
+        if (text.includes(keyword)) return rank;
+      }
+      if (r.bod_tag) return 5;
+      return 10;
+    };
+
+    items.value = rawRecipients
+      .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
+      .map((r: any) => ({
+        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+        labelJob: r.position_text || r.positionText,
+        value: String(r.position || r.position_id || r.id),
+        raw: r,
+      }));
 
     const groups = await getRecipientGroups("ND");
     recipientGroups.value = groups.filter((g: any) => g.aktif);

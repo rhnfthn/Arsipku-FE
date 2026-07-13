@@ -1084,21 +1084,21 @@ const konsepOptions = computed(() => [
     label: 'Nota Dinas',
     path: '/korespondensi/tulis/konsep/nota-dinas',
     icon: FileText,
-    colorClass: 'bg-blue-100 text-blue-600',
+    colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
   },
   {
     type: 'SDI',
     label: 'Surat Dinas Internal',
     path: '/korespondensi/tulis/konsep/surat-dinas-internal',
     icon: Users,
-    colorClass: 'bg-green-100 text-green-600',
+    colorClass: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
   },
   {
     type: 'SDE',
     label: 'Surat Dinas Eksternal',
     path: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
     icon: Building2,
-    colorClass: 'bg-orange-100 text-orange-600',
+    colorClass: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
   },
 ]);
 </script>
@@ -1497,8 +1497,8 @@ const konsepOptions = computed(() => [
             v-if="isLocalPdfLoading"
             class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90 z-20"
           >
-            <Loader2 class="w-10 h-10 animate-spin text-blue-600 mb-2" /><span
-              class="text-xs text-gray-500"
+            <Loader2 class="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400 mb-2" /><span
+              class="text-xs text-gray-500 dark:text-gray-400"
               >Memuat Dokumen...</span
             >
           </div>

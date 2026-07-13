@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, nextTick } from 'vue';
 import {
   Hash,
   Calendar,
@@ -197,6 +197,8 @@ const isKonsepJenis = computed(() => {
   return jenis === 'K' || jenisLabel.includes('konsep');
 });
 
+
+
 const isKonsepNaskahJenis = computed(() => String(props.data?.jenis || '').toUpperCase() === 'KN');
 const konsepNaskahInfo = computed(
   () => props.konsepNaskah || (isKonsepNaskahJenis.value ? props.data : null)
@@ -253,7 +255,14 @@ const handleFlowIframeLoad = (e: Event, flow: any) => {
 
 const toggleFlowContent = (flow: any) => {
   flow.isExpanded = !flow.isExpanded;
-  flow.iframeHeight = flow.isExpanded ? `${flow.realHeight}px` : `${MAX_FLOW_HEIGHT}px`;
+};
+
+/** After content renders, check if it overflows to show "read more" */
+const checkContentOverflow = (el: HTMLElement | null, flow: any) => {
+  if (!el) return;
+  nextTick(() => {
+    flow.showReadMore = el.scrollHeight > MAX_FLOW_HEIGHT;
+  });
 };
 
 // Helper permission
@@ -941,25 +950,31 @@ const removeNote = () => {
             "
           >
             <div class="relative w-full">
-              <div class="relative overflow-hidden transition-all duration-300 ease-in-out">
-                <iframe
-                  :srcdoc="
-                    '<!DOCTYPE html><html><head><style>html,body{background-color:transparent !important;margin:0;padding:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;color:#374151;line-height:1.5;} @media (prefers-color-scheme: dark) { body { color: #d1d5db; } }</style></head><body>' +
-                    (data.jenis === 'DI'
+              <div
+                class="relative overflow-hidden transition-all duration-300 ease-in-out content-html-container"
+                :class="{ 'max-h-[200px]': data.showReadMore && !data.isExpanded }"
+              >
+                <div
+                  :ref="(el) => checkContentOverflow(el as HTMLElement, data)"
+                  class="prose prose-sm max-w-none dark:prose-invert
+                    prose-headings:text-gray-900 dark:prose-headings:text-gray-100
+                    prose-p:text-gray-700 dark:prose-p:text-gray-300
+                    prose-a:text-blue-600 dark:prose-a:text-blue-400
+                    prose-strong:text-gray-900 dark:prose-strong:text-gray-100
+                    prose-table:border-gray-300 dark:prose-table:border-gray-600
+                    prose-th:bg-gray-100 dark:prose-th:bg-gray-800
+                    prose-td:border-gray-200 dark:prose-td:border-gray-700
+                    prose-hr:border-gray-300 dark:prose-hr:border-gray-600
+                    prose-blockquote:border-gray-300 dark:prose-blockquote:border-gray-600
+                    prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400
+                    prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800
+                    prose-code:text-gray-800 dark:prose-code:text-gray-200"
+                  v-html="
+                    data.jenis === 'DI'
                       ? data.catatan || '-'
-                      : data.rich_content || data.mainDisplayContentHtml) +
-                    '</body></html>'
+                      : data.rich_content || data.mainDisplayContentHtml || ''
                   "
-                  class="w-full bg-transparent block"
-                  style="border: none"
-                  :style="{
-                    height: data.iframeHeight,
-                    overflowY: data.isExpanded ? 'auto' : 'hidden',
-                  }"
-                  :scrolling="data.isExpanded ? 'auto' : 'no'"
-                  @load="handleFlowIframeLoad($event, data)"
-                >
-                </iframe>
+                ></div>
                 <div
                   v-if="data.showReadMore && !data.isExpanded"
                   class="absolute bottom-0 left-0 w-full h-24 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 pointer-events-none"
@@ -1281,3 +1296,48 @@ const removeNote = () => {
     </template>
   </UModal>
 </template>
+
+<style scoped>
+/* Override inline styles from rich text editor in dark mode */
+:deep(.dark) .content-html-container :is(p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, strong, em, b, i, u, label, a, blockquote, pre, code, figcaption, caption, small, dt, dd) {
+  color: #e5e7eb !important;
+}
+:deep(.dark) .content-html-container :is(table, thead, tbody, tfoot, tr, td, th) {
+  border-color: #4b5563 !important;
+}
+:deep(.dark) .content-html-container th {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+:deep(.dark) .content-html-container a {
+  color: #60a5fa !important;
+}
+:deep(.dark) .content-html-container :is(pre, code, kbd, samp) {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+:deep(.dark) .content-html-container blockquote {
+  border-left-color: #4b5563 !important;
+  background-color: #1f2937 !important;
+}
+:deep(.dark) .content-html-container hr {
+  border-color: #4b5563 !important;
+  background-color: #4b5563 !important;
+}
+:deep(.dark) .content-html-container img {
+  opacity: 0.9;
+}
+:deep(.dark) .content-html-container mark {
+  background-color: #854d0e !important;
+  color: #fef3c7 !important;
+}
+:deep(.dark) .content-html-container [style*="background-color"] {
+  background-color: transparent !important;
+}
+:deep(.dark) .content-html-container table [style*="background-color"],
+:deep(.dark) .content-html-container th [style*="background-color"],
+:deep(.dark) .content-html-container pre [style*="background-color"],
+:deep(.dark) .content-html-container code [style*="background-color"] {
+  background-color: inherit !important;
+}
+</style>
