@@ -37,19 +37,38 @@
             <Heading variant="body2m" class="dark:text-gray-200">
               {{ t('pt_label_long_url') }}<span class="text-red-500">*</span>
             </Heading>
-            <input
-              v-model="addForm.LUrl"
-              type="text"
-              :placeholder="t('pt_placeholder_long_url')"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-                formErrors.LUrl
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500',
-              ]"
-              @input="formErrors.LUrl = false"
-            />
-            <p v-if="formErrors.LUrl" class="text-xs text-red-500 mt-1">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                v-model="addForm.LUrl"
+                type="text"
+                :placeholder="t('pt_placeholder_long_url')"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                  formErrors.LUrl
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500',
+                ]"
+                @input="() => {
+                  formErrors.LUrl = false;
+                  resetUrlTest();
+                }"
+              />
+              <button
+                type="button"
+                @click="testLongUrl"
+                :disabled="isTestingUrl"
+                class="mt-1 h-10 inline-flex items-center justify-center rounded-lg bg-primary text-white px-4 text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {{ isTestingUrl ? 'Menguji...' : 'Test' }}
+              </button>
+            </div>
+            <p v-if="urlTestMessage" :class="[
+              'text-xs mt-1',
+              urlTestResult === 'success' ? 'text-green-500' : 'text-red-500'
+            ]">
+              {{ urlTestMessage }}
+            </p>
+            <p v-if="formErrors.LUrl && !urlTestMessage" class="text-xs text-red-500 mt-1">
               {{ t('pt_label_long_url') }}
             </p>
           </div>
@@ -513,6 +532,55 @@ const formErrors = ref({
   LUrl: false,
   SUrl: false,
 });
+
+const isTestingUrl = ref(false);
+const urlTestResult = ref<'success' | 'error' | null>(null);
+const urlTestMessage = ref('');
+
+const resetUrlTest = () => {
+  urlTestResult.value = null;
+  urlTestMessage.value = '';
+};
+
+const testLongUrl = async () => {
+  const rawUrl = addForm.value.LUrl?.trim() || '';
+  if (!rawUrl) {
+    formErrors.value.LUrl = true;
+    urlTestResult.value = 'error';
+    urlTestMessage.value = 'Masukkan tautan panjang terlebih dahulu.';
+    return;
+  }
+
+  const normalized = normalizeUrl(rawUrl);
+  if (!isValidUrl(normalized)) {
+    formErrors.value.LUrl = true;
+    urlTestResult.value = 'error';
+    urlTestMessage.value = 'Link tidak valid. Pastikan format URL benar.';
+    return;
+  }
+
+  isTestingUrl.value = true;
+  formErrors.value.LUrl = false;
+  urlTestResult.value = null;
+  urlTestMessage.value = '';
+
+  try {
+    await fetch(normalized, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+      redirect: 'follow',
+    });
+
+    urlTestResult.value = 'success';
+    urlTestMessage.value = 'Tautan valid dan dapat diakses.';
+  } catch (error) {
+    urlTestResult.value = 'error';
+    urlTestMessage.value = 'Tautan tidak dapat dibuka. Cek kembali URL atau aksesnya.';
+  } finally {
+    isTestingUrl.value = false;
+  }
+};
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const currentPage = ref(1);
