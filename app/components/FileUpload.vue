@@ -4,10 +4,11 @@ const props = defineProps({
   accept: { type: String, default: 'application/pdf' },
   multiple: { type: Boolean, default: false },
   label: { type: String, default: 'Upload file' },
-  description: { type: String, default: 'Drag & drop atau klik untuk memilih file' }
+  description: { type: String, default: 'Drag & drop atau klik untuk memilih file' },
+  maxSize: { type: Number, default: null },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'invalid-files'])
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
@@ -35,11 +36,13 @@ const processFiles = (fileList: FileList) => {
   // filter berdasarkan accept — support both MIME type and extension matching
   const allowed = props.accept.split(',').map(a => a.trim().toLowerCase())
 
-  const validFiles = files.filter(file => {
+  const validFiles: File[] = []
+  const invalidFiles: string[] = []
+
+  files.forEach(file => {
     const fileType = file.type.toLowerCase()
     const fileName = file.name.toLowerCase()
-
-    return allowed.some(a => {
+    const isAllowed = allowed.some(a => {
       // MIME type match (e.g. "application/pdf", "image/*")
       if (a.includes('/')) {
         if (a.endsWith('/*')) {
@@ -54,13 +57,30 @@ const processFiles = (fileList: FileList) => {
       }
       return false
     })
+
+    if (!isAllowed) {
+      return
+    }
+
+    if (props.maxSize && file.size > props.maxSize) {
+      invalidFiles.push(file.name)
+      return
+    }
+
+    validFiles.push(file)
   })
 
   const newFiles = props.multiple
     ? [...props.modelValue, ...validFiles]
     : validFiles.slice(0, 1)
 
-  emit('update:modelValue', newFiles)
+  if (invalidFiles.length > 0) {
+    emit('invalid-files', invalidFiles)
+  }
+
+  if (validFiles.length > 0) {
+    emit('update:modelValue', newFiles)
+  }
 }
 
 const removeFile = (i: number) => {

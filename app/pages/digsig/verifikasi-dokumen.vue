@@ -1401,6 +1401,11 @@ watch(search, () => {
   loadDocuments();
 });
 
+watch(statusFilter, () => {
+  currentPage.value = 1;
+  loadDocuments();
+});
+
 const handleSearch = () => {
   currentPage.value = 1;
 };
