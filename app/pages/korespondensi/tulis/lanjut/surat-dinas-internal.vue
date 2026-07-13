@@ -304,14 +304,34 @@ onMounted(async () => {
       : [];
 
     const rawRec: any[] = recRes?.recipients ?? recRes?.data ?? [];
-    const allMapped = rawRec.map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
-      organization: r.organization_text,
-      value: String(r.position || r.position_id || r.id),
-      group: r.group,
-      raw: r,
-    }));
+
+    // Sort by org hierarchy: Direktur > GM > VP > Manager > lainnya
+    const hierarchyOrder: Record<string, number> = {
+      'direktur utama': 1, 'president director': 1,
+      'direktur': 2, 'director': 2,
+      'general manager': 3, 'gm': 3,
+      'vice president': 4, 'vp': 4,
+      'evp': 3, 'senior vice president': 3, 'svp': 3,
+    };
+    const getHierarchyRank = (r: any) => {
+      const text = (r.position_text || r.positionText || '').toLowerCase();
+      for (const [keyword, rank] of Object.entries(hierarchyOrder)) {
+        if (text.includes(keyword)) return rank;
+      }
+      if (r.bod_tag) return 5;
+      return 10;
+    };
+
+    const allMapped = rawRec
+      .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
+      .map((r: any) => ({
+        label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+        labelJob: r.position_text || r.positionText,
+        organization: r.organization_text,
+        value: String(r.position || r.position_id || r.id),
+        group: r.group,
+        raw: r,
+      }));
 
     tertujuItems.value = allMapped.filter((i) => i.group === "REKAN");
     tembusanItems.value = allMapped.filter((i) => i.group === "REKAN" || i.group === "TEMBUSAN");

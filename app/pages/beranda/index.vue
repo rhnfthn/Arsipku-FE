@@ -133,7 +133,7 @@
                     </p> -->
                   </div>
                   <div
-                    :class="`mt-7 p-2 rounded-lg flex items-center ${stat.bgSolid} dark:bg-gray-700 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 flex-shrink-0 ml-3`"
+                    :class="`mt-7 p-2 rounded-lg flex items-center ${stat.bgSolid} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 flex-shrink-0 ml-3`"
                   >
                     <UIcon :name="stat.icon" :class="`w-6 h-6 ${stat.iconColor}`" />
                   </div>
@@ -143,33 +143,6 @@
           </NuxtLink>
         </div>
 
-        <!-- <div class="flex flex-col gap-6">
-          <UCard :ui="cardUI" class="w-full">
-            <template #header>
-              <div class="flex flex-col gap-3">
-                <Heading variant="heading9sb" class="font-semibold">{{ $t('statstitle') }}</Heading>
-                <div class="flex items-center gap-4 text-sm flex-wrap">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400">{{ $t('stats1') }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400">{{ $t('stats2') }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-purple-500"></div>
-                    <span class="text-gray-600 dark:text-gray-400">{{ $t('stats3') }}</span>
-                  </div>
-                </div>
-              </div>
-            </template>
-            <div class="mb-5">
-              <canvas id="chart" height="250"></canvas>
-            </div>
-          </UCard> -->
-
-        <!-- <UCard :ui="cardUI" class="w-full lg:flex-1"> -->
         <div class="flex flex-col gap-6">
           <UCard :ui="cardUI" class="w-full">
             <template #header>
@@ -191,7 +164,7 @@
 
             <div
               v-if="recentMails.length === 0"
-              class="flex flex-col items-center justify-center h-72 text-gray-400"
+              class="flex flex-col items-center justify-center h-72 text-gray-400 dark:text-gray-500"
             >
               <UIcon name="i-heroicons-inbox" class="w-16 h-16 mb-2" />
               <p>Tidak ada surat masuk</p>
@@ -278,7 +251,7 @@
 
 <script setup lang="ts">
 import { formatShortDate } from "~/utils/mail-helpers";
-import { onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { useDashboard } from '@/composables/useDashboard'
@@ -289,7 +262,7 @@ definePageMeta({
 
 const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
 const { canAccessPage } = useFeatureAccess()
-const { isLoading, error, stats, recentMails, chartData, fetchDashboardData, dashboardData } =
+const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
   useDashboard()
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
@@ -310,108 +283,9 @@ const formatName = (name: string | undefined) => {
 
 /* digantikan formatShortDate dari ~/utils/mail-helpers */
 
-let chartInstance: any = null
-
-const initChart = async () => {
-  const data = chartData.value
-  if (!data.labels.length) return
-
-  try {
-    const chartJs = await import('chart.js/auto')
-    const Chart = chartJs.default
-    const ctx = document.getElementById('chart') as HTMLCanvasElement
-    if (!ctx) return
-    if (chartInstance) chartInstance.destroy()
-
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.labels,
-        datasets: [
-          {
-            label: 'Surat Masuk',
-            data: data.suratMasuk,
-            borderWidth: 2,
-            tension: 0.4,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            borderColor: '#3B82F6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            fill: true
-          },
-          {
-            label: 'Surat Terkirim',
-            data: data.suratTerkirim,
-            borderWidth: 2,
-            tension: 0.4,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            borderColor: '#10B981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            fill: true
-          },
-          {
-            label: 'Surat Ditindaklanjuti',
-            data: data.suratDitinjut,
-            borderWidth: 2,
-            tension: 0.4,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            borderColor: '#A855F7',
-            backgroundColor: 'rgba(168, 85, 247, 0.1)',
-            fill: true
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            padding: 12,
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
-            displayColors: true,
-            callbacks: {
-              title: function (context: any) {
-                return `Bulan: ${context[0].label}`
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { stepSize: 1, color: '#9CA3AF' },
-            grid: { color: 'rgba(0, 0, 0, 0.05)' }
-          },
-          x: {
-            ticks: { color: '#9CA3AF' },
-            grid: { display: false }
-          }
-        }
-      }
-    })
-  } catch (err) {
-    console.error('Error initializing chart:', err)
-  }
-}
-
-watch(dashboardData, async (newData) => {
-  if (newData?.statistik_bulanan) {
-    await initChart()
-  }
-})
-
 onMounted(async () => {
   if (!user.value) await getProfile()
   await fetchDashboardData()
-  if (dashboardData.value?.statistik_bulanan) await initChart()
 
   // Ensure notification badge is fetched on first login
   const { init: initNotifications } = useNotifications()
