@@ -412,6 +412,10 @@ onMounted(async () => {
   if (!user.value) await getProfile()
   await fetchDashboardData()
   if (dashboardData.value?.statistik_bulanan) await initChart()
+
+  // Ensure notification badge is fetched on first login
+  const { init: initNotifications } = useNotifications()
+  await initNotifications(true)
 })
 </script>
 

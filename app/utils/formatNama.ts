@@ -20,3 +20,15 @@ export const formatNama = (nama: string | null | undefined): string => {
 
   return `${firstTwo} ${initials}`;
 };
+
+/**
+ * Convert string to Title Case (huruf pertama setiap kata kapital).
+ * Contoh: "HERMANA SOEGIJANTORO" → "Hermana Soegijantoro"
+ */
+export const toTitleCase = (text: string | null | undefined): string => {
+  if (!text) return "";
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+};

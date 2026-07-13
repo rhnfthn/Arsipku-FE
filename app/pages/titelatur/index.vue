@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { canAccessPage } = useFeatureAccess()
-const { hasPermission } = useAuth()
+const { hasPermission, user } = useAuth()
+const isUser = computed(() => (user.value?.role || '').toUpperCase() === 'USER')
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown } from 'lucide-vue-next'
@@ -286,7 +287,7 @@ const deleteNow = async () => {
         <PageHeader :items="breadcrumbs" />
       </div>
       <button
-        v-if="hasPermission('titelatur', 'create')"
+        v-if="!isUser && hasPermission('titelatur', 'create')"
         @click="openAdd()"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
       >
@@ -429,6 +430,7 @@ const deleteNow = async () => {
                 </td>
                 <td class="px-4 py-3 text-center flex justify-center gap-1">
                   <button
+                    v-if="!isUser"
                     @click="openEdit(it)"
                     class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg dark:hover:text-yellow-300 dark:hover:bg-yellow-50 transition"
                     :title="$t('tit_tooltip_edit')"
@@ -436,6 +438,7 @@ const deleteNow = async () => {
                     <Pencil class="w-4 h-4" />
                   </button>
                   <button
+                    v-if="!isUser"
                     @click="openDelete(it)"
                     class="text-red-500 dark:text-red-400 hover:text-red-600 dark:bg-red-100 hover:bg-red-100 p-2 rounded-lg dark:hover:text-red-300 transition"
                     :title="$t('tit_tooltip_hapus')"

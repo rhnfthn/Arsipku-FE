@@ -538,7 +538,7 @@ watch(
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ user?.nama || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 
@@ -609,7 +609,7 @@ watch(
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen"
-      :signer-info="{ name: user?.nama || 'Nama Lengkap', role: user?.positionText || 'Jabatan', label: 'Ditandatangani secara digital oleh' }"
+      :signer-info="{ name: toTitleCase(user?.nama) || 'Nama Lengkap', role: user?.positionText || 'Jabatan', label: 'Ditandatangani secara digital oleh' }"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 

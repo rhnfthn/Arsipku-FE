@@ -166,7 +166,7 @@
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ user?.nama || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
                     </div>
                   </div>
                   <div class="text-[12px] mt-2 w-full text-left text-black">
@@ -276,7 +276,7 @@ const breadcrumbs = computed(() => {
 });
 
 const signerInfo = computed(() => ({
-  name: user.value?.nama || "Nama Lengkap",
+  name: toTitleCase(user.value?.nama) || "Nama Lengkap",
   role: user.value?.positionText || "Jabatan",
   label: "Ditandatangani secara digital oleh",
 }));
@@ -481,7 +481,7 @@ onMounted(async () => {
         toast.add({ title: "Info", description: "Data referensi tidak ditemukan", color: "neutral" });
       }
     } catch {
-      
+
     }
   }
 
@@ -562,7 +562,7 @@ onMounted(async () => {
         if (d.tanggal) setDateFromString(d.tanggal);
       }
     } catch {
-      
+
     }
   }
 

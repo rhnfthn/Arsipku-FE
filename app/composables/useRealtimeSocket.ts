@@ -70,11 +70,17 @@ const connectSocket = async (): Promise<void> => {
   if (connectPromise) return connectPromise;
 
   connectPromise = new Promise<void>((resolve) => {
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; connectPromise = null; resolve(); } };
+
     const token = getToken();
     if (!token) {
-      resolve();
+      done();
       return;
     }
+
+    // Safety timeout — don't block init() forever
+    const timeout = setTimeout(done, 5000);
 
     const url = getSocketUrl();
     socket = io(`${url}/realtime`, {
@@ -86,13 +92,24 @@ const connectSocket = async (): Promise<void> => {
     });
 
     socket.on('connect', () => {
+      clearTimeout(timeout);
       isConnected.value = true;
+      console.log('[useRealtimeSocket] Socket connected');
       // Request initial summary dari server
       socket?.emit('realtime:subscribe');
+      done();
     });
 
     socket.on('disconnect', () => {
       isConnected.value = false;
+      console.log('[useRealtimeSocket] Socket disconnected');
+    });
+
+    socket.on('connect_error', (err: any) => {
+      clearTimeout(timeout);
+      isConnected.value = false;
+      console.warn('[useRealtimeSocket] Socket connect_error:', err?.message);
+      done();
     });
 
     // ── Event handlers ──
@@ -105,7 +122,7 @@ const connectSocket = async (): Promise<void> => {
         const count =
           typeof payload.inboxCount === 'number'
             ? payload.inboxCount
-            : payload.inboxCount?.count ?? 0;
+            : payload.inboxCount?.data?.count ?? payload.inboxCount?.count ?? 0;
         inboxCount.value = count;
       }
       if (payload.labelCounts && typeof payload.labelCounts === 'object') {
@@ -159,7 +176,7 @@ const connectSocket = async (): Promise<void> => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
 
-    resolve();
+    // Don't resolve here — resolved on 'connect' or 'connect_error' events above
   });
 
   return connectPromise;
@@ -206,6 +223,8 @@ export function useRealtimeSocket() {
     naskahDinasVerifikatorWaitingCount,
     isConnected,
     hasBsreAlert,
+    // Socket reference (for custom event listeners)
+    socket: computed(() => socket),
     // Actions
     init,
     destroy,
