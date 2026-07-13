@@ -60,20 +60,6 @@
               </div>
             </div>
 
-            <!-- SEARCH -->
-            <div class="relative flex-1">
-              <input
-                v-model="searchQuery"
-                @input="debounceSearch"
-                type="text"
-                placeholder="Cari pengirim, subjek, atau penerima..."
-                class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-              />
-              <Search
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
-              />
-            </div>
-
             <!-- STATUS FILTER -->
             <div class="relative" ref="statusRef">
               <button
@@ -108,6 +94,20 @@
                   </button>
                 </div>
               </Transition>
+            </div>
+
+            <!-- SEARCH -->
+            <div class="relative flex-1">
+              <input
+                v-model="searchQuery"
+                @input="debounceSearch"
+                type="text"
+                placeholder="Cari pengirim, subjek, atau penerima..."
+                class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              />
+              <Search
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500"
+              />
             </div>
           </div>
 
@@ -330,7 +330,6 @@
           </table>
         </div>
 
-        <!-- PAGINATION -->
         <div
           v-if="pagination.totalPages > 0 && sortedLogs.length > 0"
           class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
@@ -422,7 +421,7 @@
 </template>
 
 <script setup lang="ts">
-import { RotateCcw, Search, ArrowUpDown, ChevronDown } from 'lucide-vue-next'
+import { RotateCcw, Search, ArrowUpDown, ChevronDown, X } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import { useApi } from '~/composables/useApi'
 

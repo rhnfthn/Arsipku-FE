@@ -1,29 +1,44 @@
 <template>
   <!-- Global Alert Banner - Hanya muncul jika isActive = true -->
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-full"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-full"
+  <Transition
+    enter-active-class="transition duration-300 ease-out"
+    enter-from-class="opacity-0 -translate-y-full"
+    enter-to-class="opacity-100 translate-y-0"
+    leave-active-class="transition duration-200 ease-in"
+    leave-from-class="opacity-100 translate-y-0"
+    leave-to-class="opacity-0 -translate-y-full"
+  >
+    <div
+      v-if="showAlert"
+      class="relative top-0 left-0 right-0 bg-red-600 dark:bg-red-700 text-white px-6 py-3 shadow-lg flex items-center gap-4 z-[94]"
     >
-      <div
-        v-if="showAlert"
-        class="sticky top-0 left-0 right-10 bg-red-600 dark:bg-red-700 text-white px-6 py-3 shadow-lg flex items-center gap-4 z-[50]"
-      >
         <!-- ICON -->
         <AlertTriangle class="w-5 h-5 flex-shrink-0" />
 
         <!-- MARQUEE CONTAINER -->
-        <div class="relative overflow-hidden flex-1">
-          <div class="animate-marquee whitespace-nowrap text-sm font-medium">
-            <strong class="mr-2">PERHATIAN!</strong>
-            {{
-              bsreAlert?.message ||
-              "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
-            }}
+        <div class="relative overflow-hidden flex-1 h-5">
+          <div class="animate-marquee whitespace-nowrap text-sm font-medium absolute left-0 top-0 h-full flex items-center">
+            <span class="inline-flex items-center min-w-full justify-center px-12">
+              <strong class="mr-2">PERHATIAN!</strong>
+              {{
+                bsreAlert?.message ||
+                "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
+              }}
+            </span>
+            <span class="inline-flex items-center min-w-full justify-center px-12">
+              <strong class="mr-2">PERHATIAN!</strong>
+              {{
+                bsreAlert?.message ||
+                "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
+              }}
+            </span>
+            <span class="inline-flex items-center min-w-full justify-center px-12">
+              <strong class="mr-2">PERHATIAN!</strong>
+              {{
+                bsreAlert?.message ||
+                "Sedang terjadi gangguan pada sistem BsrE (Balai Sertifikasi Elektronik)"
+              }}
+            </span>
           </div>
         </div>
 
@@ -37,7 +52,6 @@
         </button>
       </div>
     </Transition>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -91,15 +105,15 @@ watch(
 <style scoped>
 @keyframes marquee {
   0% {
-    transform: translateX(100%);
+    transform: translateX(0%);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(-66.666%);
   }
 }
 
 .animate-marquee {
-  display: inline-block;
-  animation: marquee 15s linear infinite;
+  display: inline-flex;
+  animation: marquee 25s linear infinite;
 }
 </style>
