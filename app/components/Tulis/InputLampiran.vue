@@ -16,15 +16,15 @@
       description="Klik atau drag & drop untuk upload file PDF (Maks 10MB)" />
 
     <div v-if="existingFiles && existingFiles.length > 0" class="mt-3 space-y-2">
-      <p class="text-sm font-medium text-gray-700">Lampiran Tersimpan</p>
+      <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Lampiran Tersimpan</p>
 
       <div v-for="(file, idx) in existingFiles" :key="file.id || idx"
-        class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md transition-colors hover:bg-gray-50">
+        class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
 
         <div class="flex items-center gap-2 overflow-hidden cursor-pointer group flex-1" @click="handlePreview(file)">
           <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500 shrink-0" />
           <div class="flex flex-col min-w-0">
-            <span class="text-sm text-gray-700 truncate font-medium group-hover:text-primary group-hover:underline">
+            <span class="text-sm text-gray-700 dark:text-gray-200 truncate font-medium group-hover:text-primary group-hover:underline">
               {{ file.fileName || file.name }}
             </span>
           </div>
@@ -47,7 +47,7 @@
 
           <div v-else class="flex flex-col items-center gap-2">
             <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
+            <span class="text-gray-500 dark:text-gray-400">Memuat Pratinjau...</span>
           </div>
 
         </div>
