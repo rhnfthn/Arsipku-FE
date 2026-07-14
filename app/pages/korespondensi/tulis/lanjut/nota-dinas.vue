@@ -32,7 +32,7 @@
       <div
         class="rounded-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm overflow-hidden">
         <div @click="isRefExpanded = !isRefExpanded"
-          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50">
+          class="flex items-center align-center justify-between px-5 py-3 cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-primary-900/30 transition-colors border-b border-primary-100 dark:border-primary-800/50">
           <div class="flex items-center py-2 gap-3">
             <div class="p-0.5 rounded-md bg-primary-500 text-white shadow-sm w-9 h-9 flex items-center justify-center">
               <UIcon name="i-lucide-mail" class="w-5 h-5" />
@@ -45,7 +45,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200"
+            <UIcon name="i-heroicons-chevron-down" class="w-5 h-5 text-gray-400 dark:text-gray-300 transition-transform duration-200"
               :class="{ 'rotate-180': isRefExpanded }" />
           </div>
         </div>
@@ -55,7 +55,7 @@
             <iframe :src="`${refPdfUrl}#toolbar=0&navpanes=0`" class="w-full h-[500px] border-none"
               title="Preview Surat Referensi"></iframe>
           </div>
-          <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 gap-2">
+          <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500 dark:text-gray-400 gap-2">
             <UIcon name="i-lucide-file-x" class="w-12 h-12 opacity-30" />
             <span class="text-sm font-medium">Dokumen PDF tidak tersedia untuk ditampilkan.</span>
           </div>

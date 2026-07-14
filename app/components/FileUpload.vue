@@ -95,14 +95,14 @@ const removeFile = (i: number) => {
     <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop"
       @click="triggerFileInput"
       class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-gray-50 dark:bg-gray-900"
-      :class="isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-white dark:hover:bg-gray-800'">
-      <UIcon name="i-lucide-cloud-upload" class="w-8 h-8 text-gray-400 mb-2" />
+      :class="isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 hover:bg-white dark:hover:bg-gray-800'">
+      <UIcon name="i-lucide-cloud-upload" class="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
 
-      <p class="text-sm text-gray-500 text-center">
-        <span class="font-semibold text-primary-600">{{ label }}</span>
+      <p class="text-sm text-gray-500 dark:text-gray-300 text-center">
+        <span class="font-semibold text-primary-600 dark:text-primary-400">{{ label }}</span>
       </p>
 
-      <p class="text-xs text-gray-400 mt-1">{{ description }}</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ description }}</p>
 
       <input ref="fileInputRef" type="file" :accept="accept" :multiple="multiple" class="hidden"
         @change="handleFileChange" />
@@ -111,16 +111,16 @@ const removeFile = (i: number) => {
     <!-- PREVIEW FILES -->
     <div v-if="modelValue.length > 0" class="flex flex-col gap-2 mt-2">
       <div v-for="(file, index) in modelValue" :key="index"
-        class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-md">
+        class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
         <div class="flex items-center gap-2 overflow-hidden">
           <UIcon name="i-lucide-file-text" class="size-4 text-red-500 shrink-0" />
           <div class="flex flex-col">
-            <span class="text-sm text-gray-700 truncate font-medium">{{ file.name }}</span>
-            <span class="text-xs text-gray-400">{{ (file.size / 1024).toFixed(1) }} KB</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200 truncate font-medium">{{ file.name }}</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">{{ (file.size / 1024).toFixed(1) }} KB</span>
           </div>
         </div>
         <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" :padded="false"
-          class="w-6 h-6 hover:bg-red-50 rounded shrink-0" @click.stop="removeFile(index)" />
+          class="w-6 h-6 hover:bg-red-50 dark:hover:bg-red-900/30 rounded shrink-0" @click.stop="removeFile(index)" />
       </div>
     </div>
   </div>
