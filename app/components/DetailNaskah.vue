@@ -1298,6 +1298,40 @@ const removeNote = () => {
 </template>
 
 <style scoped>
+/* Restore list markers — Tailwind preflight strips them, rich-text needs them.
+   No !important: lets editor inline styles (list-style-type: lower-alpha etc.) win.
+   Nested rules have higher specificity so lower-alpha/roman survive under a decimal ol. */
+:deep(.content-html-container) ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+:deep(.content-html-container) ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+:deep(.content-html-container) ol ol { list-style-type: lower-alpha; }
+:deep(.content-html-container) ol ol ol { list-style-type: lower-roman; }
+:deep(.content-html-container) ul ul { list-style-type: circle; }
+:deep(.content-html-container) ul ul ul { list-style-type: square; }
+:deep(.content-html-container) ol[type="a"] { list-style-type: lower-latin; }
+:deep(.content-html-container) ol[type="A"] { list-style-type: upper-latin; }
+:deep(.content-html-container) ol[type="i"] { list-style-type: lower-roman; }
+:deep(.content-html-container) ol[type="I"] { list-style-type: upper-roman; }
+:deep(.content-html-container) li {
+  margin: 0.25rem 0;
+}
+/* Force visible table borders on rich-text content (editor output has none) */
+:deep(.content-html-container) table {
+  border-collapse: collapse !important;
+  border: 1px solid #d1d5db !important;
+  width: 100% !important;
+}
+:deep(.content-html-container) :is(td, th) {
+  border: 1px solid #d1d5db !important;
+  padding: 6px 10px !important;
+}
 /* Override inline styles from rich text editor in dark mode */
 :deep(.dark) .content-html-container :is(p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, strong, em, b, i, u, label, a, blockquote, pre, code, figcaption, caption, small, dt, dd) {
   color: #e5e7eb !important;
