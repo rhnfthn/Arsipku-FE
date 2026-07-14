@@ -1819,6 +1819,12 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   return [
     [mainAccountItem, ...delegasiItems],
     [
+      {
+        label: 'Profil & Pengaturan AI',
+        icon: 'i-lucide-user-cog',
+        class: itemClass,
+        onSelect: () => navigateTo('/profil')
+      },
       { label: 'Pindah Perusahaan', class: itemClass,
         onSelect: () => {
           navigateTo('/switch');
