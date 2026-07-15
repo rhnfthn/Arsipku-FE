@@ -217,7 +217,7 @@
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau" side="bottom" :dismissible="!alertState.isOpen" :ui="{
+    <USlideover v-model:open="isOpenPreview" title="Pratinjau" description="Pratinjau dokumen" side="bottom" :dismissible="!alertState.isOpen" :ui="{
       content: 'h-screen max-h-screen',
       body: 'p-0',
       footer: 'p-4 border-t border-gray-200 dark:border-gray-800',

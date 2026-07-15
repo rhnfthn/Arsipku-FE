@@ -1209,5 +1209,11 @@
   "k_perlu_tindak_lanjut": "Perlu Tindak Lanjut",
   "k_disposisi_belum_dibaca": "Disposisi Belum Dibaca",
   "k_disposisi_belum_tinjut": "Disposisi Belum Tindak Lanjut",
-  "k_menunggu_ttd": "Menunggu Tanda Tangan"
+  "k_menunggu_ttd": "Menunggu Tanda Tangan",
+
+  "km_pagination_zero": "Tidak ada data",
+  "km_pagination_range": "{start}-{end} dari {total}",
+  "tk_pagination_zero": "Tidak ada data",
+  "tk_pagination_range": "{start}-{end} dari {total}",
+  "df_dari": "dari"
 }
