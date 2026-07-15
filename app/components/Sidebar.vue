@@ -114,10 +114,10 @@
       v-show="!collapsed || isMobile"
       class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900"
     >
-      <div class="h-20 flex items-center px-4 gap-3 flex-shrink-0">
+      <NuxtLink to="/beranda" class="h-20 flex items-center px-4 gap-3 flex-shrink-0 hover:opacity-80 transition-opacity">
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
         <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
-      </div>
+      </NuxtLink>
 
       <div class="flex-1 overflow-y-auto hover:overflow-y-scroll custom-scrollbar">
         <SidebarItem

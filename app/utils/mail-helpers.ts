@@ -60,6 +60,19 @@ export const getCategoryLabel = (cat: string): string => {
   return "K";
 };
 
+/** Nama lengkap jenis surat untuk tooltip/keterangan */
+export const getCategoryFullName = (cat: string): string => {
+  const c = (cat || "").toUpperCase();
+  if (["KA"].includes(c)) return "Kajian";
+  if (["SDI", "INTERNAL"].includes(c)) return "Surat Dinas Internal";
+  if (["SDE", "EXTERNAL", "EKSTERNAL"].includes(c)) return "Surat Dinas Eksternal";
+  if (["ND", "NOTA DINAS"].includes(c)) return "Nota Dinas";
+  if (["DI", "DISPOSISI"].includes(c)) return "Disposisi";
+  if (["K", "KONSEP"].includes(c)) return "Konsep";
+  if (c) return c;
+  return "Konsep";
+};
+
 export const getInitials = (name: string): string => {
   if (!name) return "";
   const parts = name.trim().split(" ");

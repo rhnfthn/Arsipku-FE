@@ -16,11 +16,11 @@
     </div>
 
     <!-- Card -->
-    <div class="bg-white rounded-xl shadow border border-gray-200">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700">
       <!-- Table -->
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
-          <thead class="bg-primary-400 text-white">
+          <thead class="bg-primary-400 dark:bg-primary-600 text-white">
             <tr>
               <th class="px-6 py-4 text-left font-semibold">Perusahaan</th>
               <th class="px-6 py-4 text-left font-semibold">Kode</th>
@@ -33,20 +33,20 @@
             <tr
               v-for="item in companies"
               :key="item.relationSpId"
-              class="border-b border-b-gray-200 last:border-b-0 hover:bg-gray-50"
+              class="border-b border-b-gray-200 dark:border-b-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               <!-- Company Text -->
-              <td class="px-6 py-4 font-medium">
+              <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
                 {{ item.companyText }}
               </td>
 
               <!-- Company Code -->
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
                 {{ item.company }}
               </td>
 
               <!-- Masa Berlaku -->
-              <td class="px-6 py-4 text-gray-600">
+              <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
                 {{ formatDate(item.startDate) }} –
                 {{ formatDate(item.endDate) }}
               </td>
@@ -54,7 +54,7 @@
               <!-- Aksi -->
               <td class="px-6 py-4 text-center">
                 <button
-                  class="px-4 py-2 rounded-lg text-white bg-primary-400 hover:bg-primary-500 transition disabled:opacity-50"
+                  class="px-4 py-2 rounded-lg text-white bg-primary-400 dark:bg-primary-600 hover:bg-primary-500 dark:hover:bg-primary-700 transition disabled:opacity-50"
                   :disabled="item.isCurrentCompany || switchingId === item.relationSpId"
                   @click="onSwitch(item)"
                 >
@@ -68,7 +68,7 @@
 
             <!-- Empty State -->
             <tr v-if="!loading && companies.length === 0">
-              <td colspan="4" class="px-6 py-10 text-center text-gray-500">
+              <td colspan="4" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                 Tidak ada perusahaan tersedia
               </td>
             </tr>
@@ -77,7 +77,7 @@
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="p-6 text-center text-gray-500">Memuat data...</div>
+      <div v-if="loading" class="p-6 text-center text-gray-500 dark:text-gray-400">Memuat data...</div>
     </div>
   </div>
 </template>
