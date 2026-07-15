@@ -1825,13 +1825,14 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
         class: itemClass,
         onSelect: () => navigateTo('/profil')
       },
-      { label: 'Pindah Perusahaan', class: itemClass,
+      { label: 'Pindah Perusahaan', icon: 'i-lucide-building-2', class: itemClass,
         onSelect: () => {
           navigateTo('/switch');
         }
       },
       {
         label: 'Visualisasi Digsig (Visible)',
+        icon: 'i-lucide-signature',
         class: itemClass,
         onSelect: () => openDigsigVisual()
       },
@@ -1841,6 +1842,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     [
       {
         label: 'Keluar',
+        icon: 'i-lucide-log-out',
         class: 'text-sm text-error',
         onSelect: () => openLogoutPopup()
       }
