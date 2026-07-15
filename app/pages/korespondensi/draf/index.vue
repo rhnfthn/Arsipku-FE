@@ -22,6 +22,7 @@ const { canAccessPage } = useFeatureAccess()
 const toast = useToast();
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 
 // ── Composables ───────────────────────────────────────────────────────────────
 const { items, pagination, pending, summary, fetchDrafts, deleteDraft, bulkDeleteDrafts } = useDraft();
@@ -65,23 +66,28 @@ watch(endDateCal, (val) => { if (val) endDateInput.value = val.toString(); });
 
 // ── Static Config ─────────────────────────────────────────────────────────────
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Draf", to: "#" },
+  { label: t('beranda'), to: "/beranda" },
+  { label: t('draft'), to: "#" },
 ];
 
 const tabs = [
-  { label: "Semua", value: "ALL", icon: Inbox },
-  { label: "Nota Dinas", value: "ND", icon: FileText },
-  { label: "Disposisi", value: "DI", icon: Send },
-  { label: "Internal", value: "SDI", icon: Building },
-  { label: "Eksternal", value: "SDE", icon: Building2 },
-  { label: "Konsep", value: "K", icon: FilePen },
-  { label: "Kajian", value: "KA", icon: BookOpen },
+  { label: t('k_semua'), value: "ALL", icon: Inbox },
+  { label: t('k_nota_dinas'), value: "ND", icon: FileText },
+  { label: t('k_disposisi'), value: "DI", icon: Send },
+  { label: t('k_internal'), value: "SDI", icon: Building },
+  { label: t('k_eksternal'), value: "SDE", icon: Building2 },
+  { label: t('k_konsep'), value: "K", icon: FilePen },
+  { label: t('k_kajian'), value: "KA", icon: BookOpen },
 ];
 
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
+
+// Map nilai logika (string) → i18n key untuk tampilan (array dipakai juga
+// sebagai comparison key, jadi nilainya tetap, hanya label diterjemahkan).
+const dateOptKey = { "7 Hari": "k_7_hari", "30 Hari": "k_30_hari", "60 Hari": "k_60_hari", "1 Tahun": "k_1_tahun", "Semua": "k_semua" };
+const sortOptKey = { "Terbaru": "k_terbaru", "Terlama": "k_terlama" };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatDateForApi = (date) => {
@@ -257,13 +263,13 @@ const assignLabelToSelected = async (labelId, labelName) => {
       return addNaskahToLabel(item?.naskahId || id, labelId);
     });
     await Promise.all(promises);
-    toast.add({ title: "Berhasil", description: `Label "${labelName}" ditambahkan ke draf.`, color: "success" });
+    toast.add({ title: t('berhasil'), description: t('df_label_ditambahkan', { label: labelName }), color: "success" });
     showLabelAssignModal.value = false;
     selectedIds.value.clear();
     await refreshData();
   } catch (error) {
     console.error("Gagal assign label:", error);
-    toast.add({ title: "Gagal", description: "Gagal menambahkan label.", color: "error" });
+    toast.add({ title: t('gagal'), description: t('df_gagal_menambahkan_label'), color: "error" });
   } finally {
     isLabelProcessing.value = false;
   }
@@ -371,7 +377,7 @@ onMounted(() => {
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
-  <PageHeader title="Draf" :items="breadcrumbs" />
+  <PageHeader :title="$t('draft')" :items="breadcrumbs" />
   <div class="w-full flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-lg shadow-sm glass-blue">
 
     <div
@@ -379,7 +385,7 @@ onMounted(() => {
 
       <div class="flex items-center gap-1 shrink-0 relative">
 
-        <UTooltip text="Pilih Semua">
+        <UTooltip :text="$t('k_pilih_semua')">
           <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
             @click="toggleSelectAll">
             <div
@@ -390,7 +396,7 @@ onMounted(() => {
           </div>
         </UTooltip>
 
-        <UTooltip text="Muat Ulang">
+        <UTooltip :text="$t('k_muat_ulang')">
           <button @click="refreshData"
             class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
             :disabled="isRefreshing">
@@ -401,19 +407,19 @@ onMounted(() => {
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
-            <UTooltip v-if="hasPermission('utama.draft', 'delete')" text="Hapus">
+            <UTooltip v-if="hasPermission('utama.draft', 'delete')" :text="$t('k_hapus')">
               <button @click="confirmBulkDelete"
                 class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">
                 <Trash2 class="w-4 h-4" />
               </button>
             </UTooltip>
-            <UTooltip text="Beri Label">
+            <UTooltip :text="$t('k_beri_label')">
               <button @click="openLabelAssignModal"
                 class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors">
                 <Tag class="w-4 h-4" />
               </button>
             </UTooltip>
-            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} dipilih</span>
+            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} {{ $t('df_dipilih') }}</span>
           </div>
         </template>
       </div>
@@ -421,7 +427,7 @@ onMounted(() => {
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
 
         <div class="relative">
-          <UTooltip text="Periode Data">
+          <UTooltip :text="$t('k_periode_data')">
             <button @click="showDateMenu = !showDateMenu"
               class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
               <History class="w-4 h-4 shrink-0" />
@@ -437,13 +443,13 @@ onMounted(() => {
             <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
               <div
                 class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between">
-                <span>Rentang Tanggal</span>
+                <span>{{ $t('df_rentang_tanggal') }}</span>
                 <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
               <div class="space-y-4">
                 <!-- Mulai -->
                 <div>
-                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">{{ $t('df_mulai') }}</label>
                   <ClientOnly>
                     <UPopover v-model:open="openStartDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
                       <div
@@ -462,7 +468,7 @@ onMounted(() => {
                 </div>
                 <!-- Sampai -->
                 <div>
-                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">{{ $t('df_sampai') }}</label>
                   <ClientOnly>
                     <UPopover v-model:open="openEndDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
                       <div
@@ -481,7 +487,7 @@ onMounted(() => {
                 </div>
                 <button @click="applyCustomDate"
                   class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]">
-                  Terapkan Filter
+                  {{ $t('df_terapkan_filter') }}
                 </button>
               </div>
             </div>
@@ -489,11 +495,11 @@ onMounted(() => {
             <!-- Preset -->
             <div class="w-5/12 py-2 bg-white dark:bg-gray-800">
               <div class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                Preset
+                {{ $t('df_preset') }}
               </div>
               <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
                 class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between transition-colors">
-                <span>{{ opt }}</span>
+                <span>{{ $t(dateOptKey[opt]) }}</span>
                 <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
@@ -501,7 +507,7 @@ onMounted(() => {
         </div>
 
         <div class="relative">
-          <UTooltip text="Urutkan">
+          <UTooltip :text="$t('k_urutkan')">
             <button @click="showSortMenu = !showSortMenu"
               class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
               <ArrowUpDown class="w-4 h-4" />
@@ -513,7 +519,7 @@ onMounted(() => {
             <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
               class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
               :class="{ 'text-primary font-semibold': activeSortLabel === opt }">
-              {{ opt }}
+              {{ $t(sortOptKey[opt]) }}
               <Check v-if="activeSortLabel === opt" class="w-3 h-3 text-primary" />
             </button>
           </div>
@@ -529,7 +535,7 @@ onMounted(() => {
 
         <div class="flex items-center gap-1">
           <div class="relative">
-            <UTooltip text="Item per Halaman">
+            <UTooltip :text="$t('k_item_per_halaman')">
               <button @click="showPageMenu = !showPageMenu"
                 class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
                 <Layers class="w-4 h-4" />
@@ -541,7 +547,7 @@ onMounted(() => {
               <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
                 class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary transition-colors"
                 :class="{ 'text-primary font-semibold bg-gray-50 dark:bg-gray-700': itemsPerPage === size }">
-                {{ size }} Item
+                {{ size }} {{ $t('df_item') }}
               </button>
             </div>
           </div>
@@ -550,16 +556,16 @@ onMounted(() => {
         <div class="flex items-center gap-1 text-caption1 text-neutral-600 dark:text-gray-400 shrink-0 h-[34px]">
           <span
             class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400">
-            {{ pagination.total === 0 ? "0-0" : `${pagination.from}-${pagination.to}` }} Dari {{ pagination.total }}
+            {{ pagination.total === 0 ? "0-0" : `${pagination.from}-${pagination.to}` }} {{ $t('df_dari') }} {{ pagination.total }}
           </span>
-          <UTooltip text="Sebelumnya">
+          <UTooltip :text="$t('sebelumnya')">
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
               @click="prevPage" :disabled="currentPage === 1">
               <ChevronLeft class="w-4 h-4" />
             </button>
           </UTooltip>
-          <UTooltip text="Berikutnya">
+          <UTooltip :text="$t('k_berikutnya')">
             <button
               class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
               @click="nextPage" :disabled="currentPage >= pagination.totalPages">
@@ -595,7 +601,7 @@ onMounted(() => {
         <div class="lg:hidden px-3 py-2 border-b border-gray-100 dark:border-gray-700 shrink-0">
           <div class="relative flex items-center">
             <Search class="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            <input v-model="searchQuery" type="text" placeholder="Cari perihal, nomor..."
+            <input v-model="searchQuery" type="text" :placeholder="$t('df_cari_placeholder')"
               class="w-full pl-8 pr-8 py-1.5 text-[13px] bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-all" />
             <button v-if="searchQuery" @click="searchQuery = ''"
               class="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
@@ -614,7 +620,7 @@ onMounted(() => {
           <div v-else-if="items.length === 0"
             class="flex flex-col items-center justify-center h-full text-neutral-400 dark:text-gray-500 mt-10">
             <Inbox class="w-12 h-12 mb-2 opacity-50" />
-            <span class="text-sm">Tidak ada draft ditemukan</span>
+            <span class="text-sm">{{ $t('df_tidak_ada_draft') }}</span>
           </div>
 
           <div v-else>
@@ -671,7 +677,7 @@ onMounted(() => {
                       {{ mail.category }}
                     </span>
                   </UTooltip>
-                  <UTooltip v-if="mail.isDraftKonsep" text="Draft Konsep">
+                  <UTooltip v-if="mail.isDraftKonsep" :text="$t('k_draft_konsep')">
                     <span
                       class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 border border-violet-200 dark:border-violet-700">
                       K
@@ -687,14 +693,14 @@ onMounted(() => {
               </div>
 
               <div class="pl-2 shrink-0 flex justify-end gap-1">
-                <UTooltip text="Edit">
+                <UTooltip :text="$t('k_edit')">
                   <button
                     class="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg text-orange-500 dark:text-orange-400 transition-colors"
                     @click.stop="hasPermission('utama.draft', 'update') ? handleEdit(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_edit_ditolak') || 'Anda tidak memiliki izin untuk mengedit.', color: 'error', icon: 'i-lucide-x-circle' })">
                     <Pencil class="w-4 h-4" />
                   </button>
                 </UTooltip>
-                <UTooltip text="Hapus">
+                <UTooltip :text="$t('k_hapus')">
                   <button
                     class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 transition-colors"
                     @click.stop="hasPermission('utama.draft', 'delete') ? confirmDeleteModal(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_hapus_ditolak') || 'Anda tidak memiliki izin untuk menghapus.', color: 'error', icon: 'i-lucide-x-circle' })">
@@ -720,17 +726,17 @@ onMounted(() => {
             class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle class="w-6 h-6 text-red-600 dark:text-red-400" />
           </div>
-          <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Hapus Draf?</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Apakah Anda yakin ingin menghapus data ini?</p>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{{ $t('df_hapus_draf') }}</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">{{ $t('df_konfirmasi_hapus') }}</p>
           <div class="flex gap-3 justify-center">
             <button @click="showDeleteModal = false" :disabled="isDeleting"
               class="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors">
-              Batal
+              {{ $t('k_batal') }}
             </button>
             <button @click="handleDelete" :disabled="isDeleting"
               class="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-700 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 flex items-center gap-2 transition-colors">
               <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
-              {{ isDeleting ? "Menghapus..." : "Hapus" }}
+              {{ isDeleting ? $t('df_menghapus') : $t('k_hapus') }}
             </button>
           </div>
         </div>

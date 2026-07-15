@@ -1,7 +1,7 @@
 import { useApi } from './useApi';
 
 export const useNotaDinas = () => {
-  const { api, get } = useApi();
+  const { api, get, apiPost, apiPatch, apiPut } = useApi();
 
   // 1. Preview PDF (POST Multipart)
   const generatePdf = async (formData: FormData) => {
@@ -13,15 +13,15 @@ export const useNotaDinas = () => {
 
   // 2. Send Nota Dinas (POST Multipart + Final PDF)
   const sendNotaDinas = async (formData: FormData) => {
-    return await api.post('/ND/send-message', formData);
+    return await apiPost('/ND/send-message', formData);
   };
 
   // 3. Save/Update Draft (POST Multipart Tanpa Final PDF)
   const saveDraft = async (formData: FormData, id?: string | null) => {
     if (id) {
-      return await api.patch(`/ND/update-draft/${id}`, formData);
+      return await apiPatch(`/ND/update-draft/${id}`, formData);
     } else {
-      return await api.post('/ND/save-draft', formData);
+      return await apiPost('/ND/save-draft', formData);
     }
   };
 
@@ -32,7 +32,7 @@ export const useNotaDinas = () => {
 
   // 5. Send dari Draft yang sudah ada
   const sendDraft = async (formData: FormData, id: string) => {
-    return await api.put(`/ND/send-draft/${id}`, formData);
+    return await apiPut(`/ND/send-draft/${id}`, formData);
   };
 
   return { generatePdf, sendNotaDinas, saveDraft, getNotaDinasDetail, sendDraft };

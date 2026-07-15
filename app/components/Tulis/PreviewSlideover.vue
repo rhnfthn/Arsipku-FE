@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model:open="internalIsOpen" title="Pratinjau" side="bottom" :dismissible="!alertIsOpen" :ui="{
+  <USlideover v-model:open="internalIsOpen" title="Pratinjau" description="Pratinjau dokumen" side="bottom" :dismissible="!alertIsOpen" :ui="{
     content: 'h-screen max-h-screen',
     body: 'p-0',
     footer: 'p-4 border-t border-gray-200 dark:border-gray-800',

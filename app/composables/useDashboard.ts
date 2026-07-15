@@ -8,6 +8,7 @@ import type {
 
 export const useDashboard = () => {
   const { apiGet } = useApi();
+  const { t } = useI18n();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const dashboardData = ref<DashboardData | null>(null);
@@ -81,7 +82,7 @@ export const useDashboard = () => {
     if (!dashboardData.value?.summary) {
       return [
         {
-          label: "Perlu Tindak Lanjut",
+          label: t('stat_perlu_tindak_lanjut'),
           value: "0",
           subtitle: "",
           icon: "i-heroicons-clock",
@@ -91,7 +92,7 @@ export const useDashboard = () => {
           link: "/korespondensi/kotak-masuk",
         },
         {
-          label: "Disposisi Belum Dibaca",
+          label: t('stat_disposisi_belum_dibaca'),
           value: "0",
           subtitle: "",
           icon: "i-heroicons-eye-slash",
@@ -101,7 +102,7 @@ export const useDashboard = () => {
           link: "/korespondensi/kotak-masuk",
         },
         {
-          label: "Disposisi Belum Tindak Lanjut",
+          label: t('stat_disposisi_belum_tinjut'),
           value: "0",
           subtitle: "",
           icon: "i-lucide-signature",
@@ -111,7 +112,7 @@ export const useDashboard = () => {
           link: "/korespondensi/kotak-masuk",
         },
         {
-          label: "Menunggu Tanda Tangan",
+          label: t('stat_menunggu_ttd'),
           value: "0",
           subtitle: "",
           icon: "i-heroicons-document-check",
@@ -126,7 +127,7 @@ export const useDashboard = () => {
     const summary = dashboardData.value.summary;
     return [
       {
-        label: "Perlu Tindak Lanjut",
+        label: t('stat_perlu_tindak_lanjut'),
         value: summary.perlu_tindak_lanjut || 0,
         subtitle: "",
         icon: "i-heroicons-clock",
@@ -136,9 +137,9 @@ export const useDashboard = () => {
         link: "/korespondensi/kotak-masuk?filter=Belum+Tinjut",
       },
       {
-        label: "Disposisi Belum Dibaca",
+        label: t('stat_disposisi_belum_dibaca'),
         value: summary.disposisi_belum_dibaca || 0,
-        subtitle: `dari ${summary.disposisi_masuk || 0} total`,
+        subtitle: t('stat_dari_total', { total: summary.disposisi_masuk || 0 }),
         icon: "i-heroicons-eye-slash",
         bgSolid: "bg-purple-100 dark:bg-purple-900/30",
         borderColor: "bg-purple-500",
@@ -146,7 +147,7 @@ export const useDashboard = () => {
         link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Dibaca",
       },
       {
-        label: "Disposisi Belum Tindak Lanjut",
+        label: t('stat_disposisi_belum_tinjut'),
         value: summary.disposisi_belum_tinjut || 0,
         subtitle: "",
         icon: "i-heroicons-document-check",
@@ -156,7 +157,7 @@ export const useDashboard = () => {
         link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Tinjut",
       },
       {
-        label: "Menunggu Tanda Tangan",
+        label: t('stat_menunggu_ttd'),
         value: summary.digsig_menunggu_ttd || 0,
         subtitle: "",
         icon: "i-lucide-signature",
