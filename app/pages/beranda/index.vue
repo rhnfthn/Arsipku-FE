@@ -10,7 +10,7 @@
         icon="i-heroicons-exclamation-triangle"
         color="error"
         variant="solid"
-        title="Terjadi Kesalahan"
+        :title="$t('error_title')"
         :description="error"
         :close-button="{
           icon: 'i-heroicons-x-mark-20-solid',
@@ -167,7 +167,7 @@
               class="flex flex-col items-center justify-center h-72 text-gray-400 dark:text-gray-500"
             >
               <UIcon name="i-heroicons-inbox" class="w-16 h-16 mb-2" />
-              <p>Tidak ada surat masuk</p>
+              <p>{{ $t('no_inbox') }}</p>
             </div>
 
             <div
@@ -200,7 +200,7 @@
                           : 'text-gray-900 dark:text-gray-100'
                       "
                     >
-                      {{ mail.pengirim_nama || 'Pengirim Tidak Diketahui' }}
+                      {{ mail.pengirim_nama || $t('unknown_sender') }}
                     </h4>
 
                     <div class="flex items-center gap-2">
@@ -212,7 +212,7 @@
                         <span
                           class="text-[9px] font-bold uppercase tracking-wide leading-none mt-[1px]"
                         >
-                          Prioritas
+                          {{ $t('priority') }}
                         </span>
                       </div>
 
@@ -237,7 +237,7 @@
                         : 'text-gray-500 dark:text-gray-400'
                     "
                   >
-                    {{ mail.perihal || '(Tanpa Perihal)' }}
+                    {{ mail.perihal || $t('no_subject') }}
                   </p>
                 </div>
               </NuxtLink>
@@ -277,7 +277,7 @@ const cardUI: Record<string, any> = {
 }
 
 const formatName = (name: string | undefined) => {
-  if (!name) return 'User'
+  if (!name) return t('default_user')
   return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
 

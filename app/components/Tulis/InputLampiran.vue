@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <USlideover v-model:open="showPdfModal" :title="previewTitle" side="bottom" :ui="{
+    <USlideover v-model:open="showPdfModal" :title="previewTitle" :description="previewTitle" side="bottom" :ui="{
       content: 'h-screen max-h-screen',
       body: 'p-0',
       footer: 'p-4 border-t border-gray-200 dark:border-gray-800',

@@ -53,7 +53,7 @@ export interface DraftParams {
 }
 
 export const useDraft = () => {
-  const { get, post, del, api } = useApi();
+  const { get, post, del, api, apiPatch, apiPost } = useApi();
 
   const isLoadingDraft = ref(false);
   const items = ref<any[]>([]);
@@ -187,11 +187,11 @@ export const useDraft = () => {
     try {
       let response;
       if (id_draft) {
-        response = await api.patch(`/ND/update-draft/${id_draft}`, formData, multipartConfig);
+        response = await apiPatch(`/ND/update-draft/${id_draft}`, formData, multipartConfig);
       } else {
-        response = await api.post(`/ND/save-draft`, formData, multipartConfig);
+        response = await apiPost(`/ND/save-draft`, formData, multipartConfig);
       }
-      return response.data;
+      return response;
     } catch (error: any) {
       console.error('Save Draft Error:', error);
       throw error;
@@ -203,8 +203,8 @@ export const useDraft = () => {
   const sendMessage = async (formData: FormData) => {
     isLoadingDraft.value = true;
     try {
-      const response = await api.post(`/ND/send-message`, formData, multipartConfig);
-      return response.data;
+      const response = await apiPost(`/ND/send-message`, formData, multipartConfig);
+      return response;
     } catch (error: any) {
       console.error('Send Message Error:', error);
       throw error;

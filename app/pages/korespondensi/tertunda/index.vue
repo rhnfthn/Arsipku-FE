@@ -43,6 +43,7 @@ const { canAccessPage } = useFeatureAccess()
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 // --- STATE MANAGEMENT ---
 const {
@@ -67,12 +68,12 @@ const isRefreshing = ref(false);
 const activeFilterType = ref("Semua");
 const showFilterMenu = ref(false);
 const filterMenuOptions = [
-  { label: "Semua", value: "Semua" },
-  { label: "Favorit", value: "Favorit" },
-  { label: "Prioritas", value: "Prioritas" },
-  { label: "Catatan", value: "Catatan" },
-  { label: "Lock", value: "Lock" },
-  { label: "Arsip", value: "Arsip" },
+  { label: t('k_semua'), value: "Semua" },
+  { label: t('k_favorit'), value: "Favorit" },
+  { label: t('k_prioritas'), value: "Prioritas" },
+  { label: t('k_catatan'), value: "Catatan" },
+  { label: t('k_lock'), value: "Lock" },
+  { label: t('k_arsip'), value: "Arsip" },
 ];
 const selectedIds = ref(new Set<string>());
 
@@ -96,12 +97,12 @@ const handleToggleFlag = async (
     const isNowActive =
       type === 'favorit' ? item.isStarred : type === 'arsip' ? item.isArsip : item.isLocked;
     const descMap: Record<string, [string, string]> = {
-      favorit: ['Ditambahkan ke Favorit', 'Dihapus dari Favorit'],
-      arsip: ['Pesan diarsipkan', 'Pesan dikembalikan dari arsip'],
-      lock: ['Pesan dikunci', 'Kunci pesan dibuka'],
+      favorit: [t('td_ditambahkan_favorit'), t('td_dihapus_favorit')],
+      arsip: [t('td_diarsipkan'), t('td_dikembalikan_arsip')],
+      lock: [t('td_dikunci'), t('td_kunci_dibuka')],
     };
     toast.add({
-      title: 'Berhasil',
+      title: t('berhasil'),
       description: descMap[type][isNowActive ? 0 : 1],
       color: 'success',
     } as any);
@@ -110,7 +111,7 @@ const handleToggleFlag = async (
     }
     await toggleFlag(item, type);
   } catch {
-    toast.add({ title: 'Gagal', description: 'Gagal memperbarui status.', color: 'error' });
+    toast.add({ title: t('gagal'), description: t('td_gagal_memperbarui_status'), color: 'error' });
     refreshData();
   }
 };
@@ -133,14 +134,14 @@ const saveNoteFromList = async () => {
       item.noteText = hasText ? noteModalText.value : '';
     }
     toast.add({
-      title: 'Berhasil',
-      description: hasText ? 'Catatan disimpan' : 'Catatan dihapus',
+      title: t('berhasil'),
+      description: hasText ? t('td_catatan_disimpan') : t('td_catatan_dihapus'),
       color: 'success',
     } as any);
     await toggleFlag(item || mail, 'note', noteModalText.value);
     showNoteModal.value = false;
   } catch {
-    toast.add({ title: 'Gagal', description: 'Gagal menyimpan catatan.', color: 'error' });
+    toast.add({ title: t('gagal'), description: t('td_gagal_menyimpan_catatan'), color: 'error' });
     refreshData();
   } finally {
     isSavingNote.value = false;
@@ -165,15 +166,15 @@ const handleBulkArchive = async () => {
     mailItems.forEach((m) => { m.isArsip = true; });
     await Promise.all(mailItems.map((m) => toggleFlag(m, 'arsip')));
     toast.add({
-      title: 'Berhasil',
-      description: `${mailItems.length} item berhasil diarsipkan.`,
+      title: t('berhasil'),
+      description: t('td_item_berhasil_diarsipkan', { n: mailItems.length }),
       color: 'success',
     });
     selectedIds.value.clear();
     showArchiveModal.value = false;
     await refreshData();
   } catch {
-    toast.add({ title: 'Gagal', description: 'Terjadi kesalahan saat mengarsipkan.', color: 'error' });
+    toast.add({ title: t('gagal'), description: t('td_gagal_mengarsipkan'), color: 'error' });
     await refreshData();
   } finally {
     isArchiving.value = false;
@@ -218,23 +219,49 @@ watch(startDateCal, (val) => { if (val) startDateInput.value = val.toString(); }
 watch(endDateCal, (val) => { if (val) endDateInput.value = val.toString(); });
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tertunda", to: "#" },
+  { label: t('beranda'), to: "/beranda" },
+  { label: t('tertunda'), to: "#" },
 ];
 
 // --- CONFIGURATION ---
 
 const tabs = [
-  { label: "Semua", value: "ALL", icon: Inbox },
-  { label: "Nota Dinas", value: "ND", icon: FileText },
-  { label: "Disposisi", value: "DI", icon: Send },
-  { label: "Internal", value: "SDI", icon: Building },
-  { label: "Eksternal", value: "SDE", icon: Building2 },
-  { label: "Kajian", value: "KA", icon: BookOpen },
+  { label: t('k_semua'), value: "ALL", icon: Inbox },
+  { label: t('k_nota_dinas'), value: "ND", icon: FileText },
+  { label: t('k_disposisi'), value: "DI", icon: Send },
+  { label: t('k_internal'), value: "SDI", icon: Building },
+  { label: t('k_eksternal'), value: "SDE", icon: Building2 },
+  { label: t('k_kajian'), value: "KA", icon: BookOpen },
 ];
+// Raw string identifiers (used by shared applyKorespondensiListQuery util for
+// === 'Semua' / === 'Custom' / === 'Terbaru' checks & URL validation). Translate at display.
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
 const sortOptions = ["Terbaru", "Terlama"];
 const pageOptions = [10, 25, 50, 100];
+
+const dateOptLabel = (opt: string) => {
+  const map: Record<string, string> = {
+    '7 Hari': t('k_7_hari'),
+    '30 Hari': t('k_30_hari'),
+    '60 Hari': t('k_60_hari'),
+    '1 Tahun': t('k_1_tahun'),
+    Semua: t('k_semua'),
+    Custom: t('k_custom'),
+  };
+  return map[opt] || opt;
+};
+const sortOptLabel = (opt: string) => (opt === 'Terbaru' ? t('k_terbaru') : t('k_terlama'));
+const filterTypeLabel = (v: string) => {
+  const map: Record<string, string> = {
+    Semua: t('k_semua'),
+    Favorit: t('k_favorit'),
+    Prioritas: t('k_prioritas'),
+    Catatan: t('k_catatan'),
+    Lock: t('k_lock'),
+    Arsip: t('k_arsip'),
+  };
+  return map[v] || v;
+};
 
 // --- HELPERS UI ---
 import { formatShortDate, getCategoryStyle, getCategoryLabel, getCategoryFullName } from "~/utils/mail-helpers";
@@ -430,7 +457,7 @@ onMounted(async () => {
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
-  <PageHeader title="Tertunda" :items="breadcrumbs" />
+  <PageHeader :title="$t('tertunda')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue">
     <!-- Toolbar -->
@@ -439,7 +466,7 @@ onMounted(async () => {
       <!-- Left actions -->
       <div class="flex items-center gap-1 shrink-0 relative">
         <!-- Select All -->
-        <UTooltip text="Pilih Semua">
+        <UTooltip :text="$t('k_pilih_semua')">
           <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
             @click="toggleSelectAll">
             <div
@@ -452,7 +479,7 @@ onMounted(async () => {
 
         <!-- Filter Dropdown -->
         <div class="relative">
-          <UTooltip text="Opsi Filter">
+          <UTooltip :text="$t('k_opsi_filter')">
             <button @click="showFilterMenu = !showFilterMenu"
               class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
               :class="{ 'bg-gray-100 dark:bg-gray-800 text-neutral-900 dark:text-gray-200': showFilterMenu }">
@@ -476,13 +503,13 @@ onMounted(async () => {
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
-            <UTooltip text="Arsipkan">
+            <UTooltip :text="$t('k_arsipkan')">
               <button @click="showArchiveModal = true"
                 class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">
                 <Archive class="w-4 h-4" />
               </button>
             </UTooltip>
-            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} dipilih</span>
+            <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} {{ $t('td_dipilih') }}</span>
           </div>
         </template>
 
@@ -495,14 +522,14 @@ onMounted(async () => {
           <span
             class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200"
           >
-            {{ activeFilterType }}
+            {{ filterTypeLabel(activeFilterType) }}
             <button @click="applyFilter('Semua')" class="hover:text-primary-800 ml-0.5">
               <X class="w-3 h-3" />
             </button>
           </span>
         </div>
 
-        <UTooltip text="Muat Ulang">
+        <UTooltip :text="$t('k_muat_ulang')">
           <button @click="refreshData"
             class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
             <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
@@ -514,7 +541,7 @@ onMounted(async () => {
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <!-- Date filter -->
         <div class="relative">
-          <UTooltip text="Periode Data">
+          <UTooltip :text="$t('k_periode_data')">
             <button @click="showDateMenu = !showDateMenu"
               class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
               <History class="w-4 h-4 shrink-0" />
@@ -531,13 +558,13 @@ onMounted(async () => {
             <div class="w-7/12 p-4 border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
               <div
                 class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between">
-                <span>Rentang Tanggal</span>
+                <span>{{ $t('td_rentang_tanggal') }}</span>
                 <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
               <div class="space-y-4">
                 <!-- Mulai -->
                 <div>
-                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Mulai</label>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">{{ $t('del_label_mulai') }}</label>
                   <ClientOnly>
                     <UPopover v-model:open="openStartDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
                       <div
@@ -556,7 +583,7 @@ onMounted(async () => {
                 </div>
                 <!-- Sampai -->
                 <div>
-                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sampai</label>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">{{ $t('del_label_sampai') }}</label>
                   <ClientOnly>
                     <UPopover v-model:open="openEndDate" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
                       <div
@@ -575,7 +602,7 @@ onMounted(async () => {
                 </div>
                 <button @click="applyCustomDate"
                   class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]">
-                  Terapkan Filter
+                  {{ $t('td_terapkan_filter') }}
                 </button>
               </div>
             </div>
@@ -583,11 +610,11 @@ onMounted(async () => {
             <!-- Preset -->
             <div class="w-5/12 py-2 bg-white dark:bg-gray-800">
               <div class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                Preset
+                {{ $t('td_preset') }}
               </div>
               <button v-for="opt in dateOptions" :key="opt" @click="selectDateFilter(opt)"
                 class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between transition-colors">
-                <span>{{ opt }}</span>
+                <span>{{ dateOptLabel(opt) }}</span>
                 <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
@@ -596,7 +623,7 @@ onMounted(async () => {
 
         <!-- Sort -->
         <div class="relative">
-          <UTooltip text="Urutkan">
+          <UTooltip :text="$t('k_urutkan')">
             <button @click="showSortMenu = !showSortMenu"
               class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
               <ArrowUpDown class="w-4 h-4" />
@@ -607,7 +634,7 @@ onMounted(async () => {
             class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
             <button v-for="opt in sortOptions" :key="opt" @click="selectSortOption(opt)"
               class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between">
-              <span>{{ opt }}</span>
+              <span>{{ sortOptLabel(opt) }}</span>
               <Check v-if="activeSortLabel === opt" class="w-3 h-3 text-primary" />
             </button>
           </div>
@@ -618,7 +645,7 @@ onMounted(async () => {
         <!-- Page size + pagination -->
         <div class="flex items-center gap-1">
           <div class="relative">
-            <UTooltip text="Item per Halaman">
+            <UTooltip :text="$t('k_item_per_halaman')">
               <button @click="showPageMenu = !showPageMenu"
                 class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors flex items-center gap-1">
                 <Layers class="w-4 h-4" />
@@ -630,7 +657,7 @@ onMounted(async () => {
               <button v-for="size in pageOptions" :key="size" @click="selectPageSize(size)"
                 class="w-full text-left px-3 py-1.5 text-xs text-neutral-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary transition-colors"
                 :class="{ 'text-primary font-semibold bg-gray-50 dark:bg-gray-700': itemsPerPage === size }">
-                {{ size }} Item
+                {{ size }} {{ $t('td_item') }}
               </button>
             </div>
           </div>
@@ -639,14 +666,14 @@ onMounted(async () => {
               class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400">
               {{ paginationInfo }}
             </span>
-            <UTooltip text="Sebelumnya">
+            <UTooltip :text="$t('sebelumnya')">
               <button
                 class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                 @click="prevPage" :disabled="currentPage === 1">
                 <ChevronLeft class="w-4 h-4" />
               </button>
             </UTooltip>
-            <UTooltip text="Berikutnya">
+            <UTooltip :text="$t('k_berikutnya')">
               <button
                 class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                 @click="nextPage" :disabled="currentPage === totalPages">
@@ -694,7 +721,7 @@ onMounted(async () => {
             <div v-if="items.length === 0 && !pending"
               class="flex flex-col items-center justify-center py-10 text-neutral-400 dark:text-gray-500 w-full">
               <Inbox class="w-12 h-12 mb-2 opacity-50" />
-              <span class="text-sm">Tidak ada surat tertunda</span>
+              <span class="text-sm">{{ $t('td_tidak_ada_surat_tertunda') }}</span>
             </div>
 
             <!-- Skeleton -->
@@ -730,7 +757,7 @@ onMounted(async () => {
                     @click="toggleSelection(mail.id)">
                     <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
-                  <UTooltip :text="mail.isStarred ? 'Favorit (aktif) — naskah ditandai penting' : 'Favorit — tandai naskah penting'">
+                  <UTooltip :text="mail.isStarred ? $t('td_favorit_aktif') : $t('td_favorit_tandai')">
                     <Star
                       class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
                       :class="mail.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-gray-600'"
@@ -814,14 +841,14 @@ onMounted(async () => {
                   class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
                 >
                   <div class="flex items-center gap-2 p-1">
-                    <UTooltip :text="mail.isNote ? 'Catatan (ada) — naskah punya catatan' : 'Catatan — tambah catatan'">
+                    <UTooltip :text="mail.isNote ? $t('td_catatan_ada') : $t('td_catatan_tambah')">
                       <StickyNote
                         class="w-4 h-4 transition-colors hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer"
                         :class="mail.isNote ? 'text-orange-600 fill-orange-100 dark:text-orange-400 dark:fill-orange-900/40' : 'text-neutral-300 dark:text-gray-600'"
                         @click.stop="handleToggleFlag(mail, 'note')"
                       />
                     </UTooltip>
-                    <UTooltip :text="mail.isLocked ? 'Kunci (aktif) — naskah dikunci' : 'Kunci — kunci naskah'">
+                    <UTooltip :text="mail.isLocked ? $t('td_kunci_aktif') : $t('td_kunci_tandai')">
                       <Lock
                         v-if="mail.isLocked"
                         class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 dark:text-red-400 dark:fill-red-900/40 dark:hover:text-red-400 cursor-pointer"
@@ -833,7 +860,7 @@ onMounted(async () => {
                         @click.stop="handleToggleFlag(mail, 'lock')"
                       />
                     </UTooltip>
-                    <UTooltip :text="mail.isArsip ? 'Arsip (aktif) — naskah diarsipkan' : 'Arsip — arsipkan naskah'">
+                    <UTooltip :text="mail.isArsip ? $t('td_arsip_aktif') : $t('td_arsip_tandai')">
                       <Archive
                         class="w-4 h-4 transition-colors hover:text-green-600 dark:hover:text-green-400 cursor-pointer"
                         :class="mail.isArsip ? 'text-green-700 fill-green-100 dark:text-green-400 dark:fill-green-900/40' : 'text-neutral-300 dark:text-gray-600'"
@@ -865,8 +892,8 @@ onMounted(async () => {
                 <StickyNote class="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <h3 class="text-base font-bold text-gray-900 dark:text-white">Catatan Surat</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Tambah atau edit catatan</p>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ $t('td_catatan_surat') }}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('td_tambah_edit_catatan') }}</p>
               </div>
             </div>
             <button
@@ -881,7 +908,7 @@ onMounted(async () => {
               v-model="noteModalText"
               rows="5"
               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
-              placeholder="Tulis catatan Anda di sini..."
+              :placeholder="$t('td_tulis_catatan_placeholder')"
             ></textarea>
           </div>
           <div
@@ -892,14 +919,14 @@ onMounted(async () => {
               @click="removeNoteFromList"
               class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 transition-colors"
             >
-              Hapus Catatan
+              {{ $t('td_hapus_catatan') }}
             </button>
             <div class="flex gap-3 ml-auto">
               <button
                 @click="showNoteModal = false"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Batal
+                {{ $t('k_batal') }}
               </button>
               <button
                 @click="saveNoteFromList"
@@ -907,7 +934,7 @@ onMounted(async () => {
                 class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
               >
                 <Loader2 v-if="isSavingNote" class="w-4 h-4 animate-spin" />
-                {{ isSavingNote ? 'Menyimpan...' : 'Simpan' }}
+                {{ isSavingNote ? $t('menyimpan') : $t('k_simpan') }}
               </button>
             </div>
           </div>
@@ -930,10 +957,10 @@ onMounted(async () => {
             >
               <Archive class="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Arsipkan Surat?</h3>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{{ $t('td_arsipkan_surat') }}</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Apakah Anda yakin ingin mengarsipkan <br />
-              <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} item terpilih</span>?
+              {{ $t('td_yakin_mengarsipkan') }} <br />
+              <span class="font-bold text-gray-800 dark:text-gray-200">{{ selectedIds.size }} {{ $t('td_item_terpilih') }}</span>?
             </p>
             <div class="flex gap-3 justify-center">
               <button
@@ -941,7 +968,7 @@ onMounted(async () => {
                 :disabled="isArchiving"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
-                Batal
+                {{ $t('k_batal') }}
               </button>
               <button
                 @click="handleBulkArchive"
@@ -949,7 +976,7 @@ onMounted(async () => {
                 class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 bg-primary hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Loader2 v-if="isArchiving" class="w-4 h-4 animate-spin" />
-                {{ isArchiving ? 'Memproses...' : 'Arsipkan' }}
+                {{ isArchiving ? $t('td_memproses') : $t('k_arsipkan') }}
               </button>
             </div>
           </div>
