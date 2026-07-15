@@ -1206,5 +1206,11 @@
   "k_perlu_tindak_lanjut": "Need Follow-up",
   "k_disposisi_belum_dibaca": "Unread Dispositions",
   "k_disposisi_belum_tinjut": "Unfollowed Dispositions",
-  "k_menunggu_ttd": "Awaiting Signature"
+  "k_menunggu_ttd": "Awaiting Signature",
+
+  "km_pagination_zero": "No data",
+  "km_pagination_range": "{start}-{end} of {total}",
+  "tk_pagination_zero": "No data",
+  "tk_pagination_range": "{start}-{end} of {total}",
+  "df_dari": "of"
 }
