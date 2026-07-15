@@ -11,7 +11,7 @@ import {
 import * as XLSX from "xlsx";
 import { useDraft } from "@/composables/useDraft";
 import { useLabel } from "~/composables/useLabel";
-import { getCategoryStyle } from "~/utils/mail-helpers";
+import { getCategoryStyle, getCategoryFullName } from "~/utils/mail-helpers";
 import { applyKorespondensiListQuery, replaceCurrentKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 definePageMeta({ middleware: "auth" });
@@ -379,36 +379,40 @@ onMounted(() => {
 
       <div class="flex items-center gap-1 shrink-0 relative">
 
-        <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
-          title="Pilih Semua"
-          @click="toggleSelectAll">
-          <div
-            class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
-            :class="{ 'bg-primary border-primary': isAllSelected, 'group-hover:border-gray-600 dark:group-hover:border-gray-300': !isAllSelected }">
-            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
+        <UTooltip text="Pilih Semua">
+          <div class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
+            @click="toggleSelectAll">
+            <div
+              class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
+              :class="{ 'bg-primary border-primary': isAllSelected, 'group-hover:border-gray-600 dark:group-hover:border-gray-300': !isAllSelected }">
+              <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
+            </div>
           </div>
-        </div>
+        </UTooltip>
 
-        <button @click="refreshData"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-          title="Muat Ulang"
-          :disabled="isRefreshing">
-          <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
-        </button>
+        <UTooltip text="Muat Ulang">
+          <button @click="refreshData"
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+            :disabled="isRefreshing">
+            <RotateCw class="w-4 h-4 transition-transform duration-300" :class="{ 'animate-spin': isRefreshing }" />
+          </button>
+        </UTooltip>
 
         <template v-if="selectedIds.size > 0">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button v-if="hasPermission('utama.draft', 'delete')" @click="confirmBulkDelete"
-              class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-              title="Hapus">
-              <Trash2 class="w-4 h-4" />
-            </button>
-            <button @click="openLabelAssignModal"
-              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors"
-              title="Beri Label">
-              <Tag class="w-4 h-4" />
-            </button>
+            <UTooltip v-if="hasPermission('utama.draft', 'delete')" text="Hapus">
+              <button @click="confirmBulkDelete"
+                class="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </UTooltip>
+            <UTooltip text="Beri Label">
+              <button @click="openLabelAssignModal"
+                class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors">
+                <Tag class="w-4 h-4" />
+              </button>
+            </UTooltip>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2">{{ selectedIds.size }} dipilih</span>
           </div>
         </template>
@@ -417,12 +421,14 @@ onMounted(() => {
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
 
         <div class="relative">
-          <button @click="showDateMenu = !showDateMenu" title="Periode Data"
-            class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
-            <History class="w-4 h-4 shrink-0" />
-            <span v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900" />
-          </button>
+          <UTooltip text="Periode Data">
+            <button @click="showDateMenu = !showDateMenu"
+              class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative">
+              <History class="w-4 h-4 shrink-0" />
+              <span v-if="activeDateLabel !== 'Semua'"
+                class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900" />
+            </button>
+          </UTooltip>
           <div v-if="showDateMenu" @click="showDateMenu = false" class="fixed inset-0 z-40 bg-transparent" />
           <div v-if="showDateMenu"
             class="absolute top-full right-0 mt-2 w-[480px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden flex animate-in fade-in slide-in-from-top-2 duration-150">
@@ -495,11 +501,12 @@ onMounted(() => {
         </div>
 
         <div class="relative">
-          <button @click="showSortMenu = !showSortMenu"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-            title="Urutkan">
-            <ArrowUpDown class="w-4 h-4" />
-          </button>
+          <UTooltip text="Urutkan">
+            <button @click="showSortMenu = !showSortMenu"
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
+              <ArrowUpDown class="w-4 h-4" />
+            </button>
+          </UTooltip>
           <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent" />
           <div v-if="showSortMenu"
             class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50">
@@ -522,11 +529,12 @@ onMounted(() => {
 
         <div class="flex items-center gap-1">
           <div class="relative">
-            <button @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-              title="Item per Halaman">
-              <Layers class="w-4 h-4" />
-            </button>
+            <UTooltip text="Item per Halaman">
+              <button @click="showPageMenu = !showPageMenu"
+                class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors">
+                <Layers class="w-4 h-4" />
+              </button>
+            </UTooltip>
             <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent" />
             <div v-if="showPageMenu"
               class="absolute top-full right-0 mt-1 w-24 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
@@ -544,18 +552,20 @@ onMounted(() => {
             class="mx-1 font-medium hidden sm:inline whitespace-nowrap text-[12px] text-neutral-500 dark:text-gray-400">
             {{ pagination.total === 0 ? "0-0" : `${pagination.from}-${pagination.to}` }} Dari {{ pagination.total }}
           </span>
-          <button
-            class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
-            title="Sebelumnya"
-            @click="prevPage" :disabled="currentPage === 1">
-            <ChevronLeft class="w-4 h-4" />
-          </button>
-          <button
-            class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
-            title="Berikutnya"
-            @click="nextPage" :disabled="currentPage >= pagination.totalPages">
-            <ChevronRight class="w-4 h-4" />
-          </button>
+          <UTooltip text="Sebelumnya">
+            <button
+              class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
+              @click="prevPage" :disabled="currentPage === 1">
+              <ChevronLeft class="w-4 h-4" />
+            </button>
+          </UTooltip>
+          <UTooltip text="Berikutnya">
+            <button
+              class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 transition-colors"
+              @click="nextPage" :disabled="currentPage >= pagination.totalPages">
+              <ChevronRight class="w-4 h-4" />
+            </button>
+          </UTooltip>
         </div>
       </div>
     </div>
@@ -642,10 +652,12 @@ onMounted(() => {
                 <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
                   <div v-if="mail.category_label && mail.category_label.length > 0"
                     class="flex flex-wrap gap-1 shrink-0">
-                    <span v-for="lbl in mail.category_label" :key="lbl" :title="lbl"
-                      class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
-                      {{ lbl }}
-                    </span>
+                    <UTooltip v-for="lbl in mail.category_label" :key="lbl" :text="lbl">
+                      <span
+                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help">
+                        {{ lbl }}
+                      </span>
+                    </UTooltip>
                   </div>
                   <div class="text-[13px] text-neutral-900 dark:text-gray-100 truncate flex-1 min-w-[120px]">
                     {{ mail.subject }}
@@ -653,15 +665,18 @@ onMounted(() => {
                 </div>
 
                 <div class="hidden xl:flex shrink-0 items-center gap-1.5">
-                  <span class="px-2 py-0.5 rounded-full text-[11px] font-medium truncate"
-                    :class="getCategoryStyle(mail.category)">
-                    {{ mail.category }}
-                  </span>
-                  <span v-if="mail.isDraftKonsep"
-                    class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 border border-violet-200 dark:border-violet-700"
-                    title="Draft Konsep">
-                    K
-                  </span>
+                  <UTooltip :text="getCategoryFullName(mail.category)">
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-medium truncate"
+                      :class="getCategoryStyle(mail.category)">
+                      {{ mail.category }}
+                    </span>
+                  </UTooltip>
+                  <UTooltip v-if="mail.isDraftKonsep" text="Draft Konsep">
+                    <span
+                      class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 border border-violet-200 dark:border-violet-700">
+                      K
+                    </span>
+                  </UTooltip>
                 </div>
               </div>
 
@@ -672,17 +687,20 @@ onMounted(() => {
               </div>
 
               <div class="pl-2 shrink-0 flex justify-end gap-1">
-                <button
-                  class="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg text-orange-500 dark:text-orange-400 transition-colors"
-                  @click.stop="hasPermission('utama.draft', 'update') ? handleEdit(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_edit_ditolak') || 'Anda tidak memiliki izin untuk mengedit.', color: 'error', icon: 'i-lucide-x-circle' })" title="Edit">
-                  <Pencil class="w-4 h-4" />
-                </button>
-                <button
-                  class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 transition-colors"
-                  title="Hapus"
-                  @click.stop="hasPermission('utama.draft', 'delete') ? confirmDeleteModal(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_hapus_ditolak') || 'Anda tidak memiliki izin untuk menghapus.', color: 'error', icon: 'i-lucide-x-circle' })">
-                  <Trash2 class="w-4 h-4" />
-                </button>
+                <UTooltip text="Edit">
+                  <button
+                    class="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg text-orange-500 dark:text-orange-400 transition-colors"
+                    @click.stop="hasPermission('utama.draft', 'update') ? handleEdit(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_edit_ditolak') || 'Anda tidak memiliki izin untuk mengedit.', color: 'error', icon: 'i-lucide-x-circle' })">
+                    <Pencil class="w-4 h-4" />
+                  </button>
+                </UTooltip>
+                <UTooltip text="Hapus">
+                  <button
+                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 transition-colors"
+                    @click.stop="hasPermission('utama.draft', 'delete') ? confirmDeleteModal(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_hapus_ditolak') || 'Anda tidak memiliki izin untuk menghapus.', color: 'error', icon: 'i-lucide-x-circle' })">
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </UTooltip>
               </div>
             </div>
           </div>

@@ -136,7 +136,7 @@ const sortOptions = ['Terbaru', 'Terlama'];
 const pageOptions = [10, 25, 50, 100];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-import { formatShortDate, getCategoryStyle, getCategoryLabel } from '~/utils/mail-helpers';
+import { formatShortDate, getCategoryStyle, getCategoryLabel, getCategoryFullName } from '~/utils/mail-helpers';
 
 const getTabCount = (tabValue: string) => {
   if (!summary.value?.total_per_jenis) return 0;
@@ -685,39 +685,41 @@ onUnmounted(() => {
       <!-- LEFT: Checkbox + Filter + Refresh + Bulk Actions -->
       <div class="flex items-center gap-1 shrink-0 relative">
         <!-- Select All -->
-        <div
-          class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
-          title="Pilih Semua"
-          @click="toggleSelectAll"
-        >
+        <UTooltip text="Pilih Semua">
           <div
-            class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
-            :class="{
-              'bg-primary border-primary': isAllSelected,
-              'group-hover:border-gray-600 dark:group-hover:border-gray-300': !isAllSelected,
-            }"
+            class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
+            @click="toggleSelectAll"
           >
-            <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
+            <div
+              class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors"
+              :class="{
+                'bg-primary border-primary': isAllSelected,
+                'group-hover:border-gray-600 dark:group-hover:border-gray-300': !isAllSelected,
+              }"
+            >
+              <Check v-if="isAllSelected" class="w-3 h-3 text-white" stroke-width="3" />
+            </div>
           </div>
-        </div>
+        </UTooltip>
 
         <!-- Filter Dropdown -->
         <div class="relative">
-          <button
-            @click="showFilterMenu = !showFilterMenu"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
-            :class="{
-              'bg-gray-100 dark:bg-gray-700 text-neutral-900 dark:text-gray-200': showFilterMenu,
-            }"
-            title="Opsi Filter"
-          >
-            <MoreVertical class="w-4 h-4" />
-            <!-- Dot indikator filter aktif -->
-            <span
-              v-if="activeFilterType !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800"
-            />
-          </button>
+          <UTooltip text="Opsi Filter">
+            <button
+              @click="showFilterMenu = !showFilterMenu"
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
+              :class="{
+                'bg-gray-100 dark:bg-gray-700 text-neutral-900 dark:text-gray-200': showFilterMenu,
+              }"
+            >
+              <MoreVertical class="w-4 h-4" />
+              <!-- Dot indikator filter aktif -->
+              <span
+                v-if="activeFilterType !== 'Semua'"
+                class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800"
+              />
+            </button>
+          </UTooltip>
           <div
             v-if="showFilterMenu"
             @click="showFilterMenu = false"
@@ -742,35 +744,38 @@ onUnmounted(() => {
         </div>
 
         <!-- Refresh -->
-        <button
-          @click="refreshData"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-          title="Muat Ulang"
-        >
-          <RotateCw
-            class="w-4 h-4 transition-transform duration-300"
-            :class="{ 'animate-spin': isRefreshing }"
-          />
-        </button>
+        <UTooltip text="Muat Ulang">
+          <button
+            @click="refreshData"
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+          >
+            <RotateCw
+              class="w-4 h-4 transition-transform duration-300"
+              :class="{ 'animate-spin': isRefreshing }"
+            />
+          </button>
+        </UTooltip>
 
         <!-- Bulk Actions (muncul saat ada item dipilih) -->
         <div v-if="selectedIds.size > 0" class="flex items-center">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button
-              @click="showDeleteModal = true"
-              class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
-              title="Arsipkan"
-            >
-              <Archive class="w-4 h-4" />
-            </button>
-            <button
-              @click="openLabelAssignModal"
-              class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary rounded transition-colors"
-              title="Label"
-            >
-              <Tag class="w-4 h-4" />
-            </button>
+            <UTooltip text="Arsipkan">
+              <button
+                @click="showDeleteModal = true"
+                class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
+              >
+                <Archive class="w-4 h-4" />
+              </button>
+            </UTooltip>
+            <UTooltip text="Label">
+              <button
+                @click="openLabelAssignModal"
+                class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary rounded transition-colors"
+              >
+                <Tag class="w-4 h-4" />
+              </button>
+            </UTooltip>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2"
               >{{ selectedIds.size }} dipilih</span
             >
@@ -798,17 +803,18 @@ onUnmounted(() => {
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <!-- Date Filter -->
         <div class="relative">
-          <button
-            @click="showDateMenu = !showDateMenu"
-            title="Periode Data"
-            class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
-          >
-            <History class="w-4 h-4 shrink-0" />
-            <span
-              v-if="activeDateLabel !== 'Semua'"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800"
-            />
-          </button>
+          <UTooltip text="Periode Data">
+            <button
+              @click="showDateMenu = !showDateMenu"
+              class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
+            >
+              <History class="w-4 h-4 shrink-0" />
+              <span
+                v-if="activeDateLabel !== 'Semua'"
+                class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-800"
+              />
+            </button>
+          </UTooltip>
           <div
             v-if="showDateMenu"
             @click="showDateMenu = false"
@@ -937,13 +943,14 @@ onUnmounted(() => {
 
         <!-- Sort -->
         <div class="relative">
-          <button
-            @click="showSortMenu = !showSortMenu"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-            title="Urutkan"
-          >
-            <ArrowUpDown class="w-4 h-4" />
-          </button>
+          <UTooltip text="Urutkan">
+            <button
+              @click="showSortMenu = !showSortMenu"
+              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+            >
+              <ArrowUpDown class="w-4 h-4" />
+            </button>
+          </UTooltip>
           <div
             v-if="showSortMenu"
             @click="showSortMenu = false"
@@ -966,28 +973,30 @@ onUnmounted(() => {
         </div>
 
         <!-- Download Excel -->
-        <button
-          @click="downloadExcel"
-          :disabled="isExporting"
-          class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors disabled:opacity-50"
-          title="Download Excel"
-        >
-          <Loader2 v-if="isExporting" class="w-3.5 h-3.5 animate-spin" />
-          <Download v-else class="w-3.5 h-3.5" />
-        </button>
+        <UTooltip text="Download Excel">
+          <button
+            @click="downloadExcel"
+            :disabled="isExporting"
+            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors disabled:opacity-50"
+          >
+            <Loader2 v-if="isExporting" class="w-3.5 h-3.5 animate-spin" />
+            <Download v-else class="w-3.5 h-3.5" />
+          </button>
+        </UTooltip>
 
         <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
         <!-- Page Size + Pagination -->
         <div class="flex items-center gap-1">
           <div class="relative">
-            <button
-              @click="showPageMenu = !showPageMenu"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-              title="Item per Halaman"
-            >
-              <Layers class="w-4 h-4" />
-            </button>
+            <UTooltip text="Item per Halaman">
+              <button
+                @click="showPageMenu = !showPageMenu"
+                class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+              >
+                <Layers class="w-4 h-4" />
+              </button>
+            </UTooltip>
             <div
               v-if="showPageMenu"
               @click="showPageMenu = false"
@@ -1019,22 +1028,24 @@ onUnmounted(() => {
             >
               {{ paginationInfo }}
             </span>
-            <button
-              class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
-              title="Sebelumnya"
-              @click="prevPage"
-              :disabled="currentPage === 1"
-            >
-              <ChevronLeft class="w-4 h-4" />
-            </button>
-            <button
-              class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
-              title="Berikutnya"
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-            >
-              <ChevronRight class="w-4 h-4" />
-            </button>
+            <UTooltip text="Sebelumnya">
+              <button
+                class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                @click="prevPage"
+                :disabled="currentPage === 1"
+              >
+                <ChevronLeft class="w-4 h-4" />
+              </button>
+            </UTooltip>
+            <UTooltip text="Berikutnya">
+              <button
+                class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                @click="nextPage"
+                :disabled="currentPage === totalPages"
+              >
+                <ChevronRight class="w-4 h-4" />
+              </button>
+            </UTooltip>
           </div>
         </div>
       </div>
@@ -1190,32 +1201,36 @@ onUnmounted(() => {
                   >
                     <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
-                  <Star
-                    class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
-                    :class="
-                      mail.isStarred
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-neutral-300 dark:text-gray-600'
-                    "
-                    :title="mail.isStarred ? 'Favorit (aktif)' : 'Favorit'"
-                    @click.stop="handleToggleFlag(mail, 'favorit')"
-                  />
-                  <Tag
-                    class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
-                    :class="
-                      mail.isTinjut
-                        ? 'text-primary-500 fill-primary-500'
-                        : 'text-neutral-300 dark:text-gray-600'
-                    "
-                    :title="mail.isTinjut ? 'Tindak Lanjut: Sudah' : 'Tindak Lanjut: Belum'"
-                  />
+                  <UTooltip :text="mail.isStarred ? 'Favorit (aktif) — naskah ditandai penting' : 'Favorit — tandai naskah penting'">
+                    <Star
+                      class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
+                      :class="
+                        mail.isStarred
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-neutral-300 dark:text-gray-600'
+                      "
+                      @click.stop="handleToggleFlag(mail, 'favorit')"
+                    />
+                  </UTooltip>
+                  <UTooltip :text="mail.isTinjut ? 'Tindak Lanjut (sudah) — sudah ditindak lanjuti' : 'Tindak Lanjut (belum) — tandai perlu ditindak lanjuti'">
+                    <Tag
+                      class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
+                      :class="
+                        mail.isTinjut
+                          ? 'text-primary-500 fill-primary-500'
+                          : 'text-neutral-300 dark:text-gray-600'
+                      "
+                    />
+                  </UTooltip>
                   <!-- Badge kategori (mobile) -->
-                  <span
-                    class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    :class="getCategoryStyle(mail.category)"
-                  >
-                    {{ getCategoryLabel(mail.category) }}
-                  </span>
+                  <UTooltip :text="getCategoryFullName(mail.category)">
+                    <span
+                      class="md:hidden ml-auto sm:ml-2 text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                      :class="getCategoryStyle(mail.category)"
+                    >
+                      {{ getCategoryLabel(mail.category) }}
+                    </span>
+                  </UTooltip>
                 </div>
 
                 <!-- Content -->
@@ -1224,11 +1239,11 @@ onUnmounted(() => {
                 >
                   <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
                     <!-- Dot belum dibaca -->
-                    <div
-                      v-if="!mail.isRead"
-                      class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
-                      title="Belum Dibaca"
-                    />
+                    <UTooltip v-if="!mail.isRead" text="Belum Dibaca">
+                      <div
+                        class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
+                      />
+                    </UTooltip>
                     <div class="flex flex-col min-w-0">
                       <UTooltip
                         :text="mail.fullRecipients"
@@ -1257,14 +1272,17 @@ onUnmounted(() => {
 
                   <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
                     <div v-if="mail.labels?.length > 0" class="flex flex-wrap gap-1 shrink-0">
-                      <span
+                      <UTooltip
                         v-for="lbl in mail.labels"
                         :key="lbl"
-                        :title="lbl"
-                        class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help"
+                        :text="lbl"
                       >
-                        {{ lbl }}
-                      </span>
+                        <span
+                          class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 max-w-[80px] truncate cursor-help"
+                        >
+                          {{ lbl }}
+                        </span>
+                      </UTooltip>
                     </div>
                     <div
                       class="text-[13px] text-neutral-900 dark:text-white truncate flex-1 min-w-[120px]"
@@ -1276,12 +1294,14 @@ onUnmounted(() => {
 
                   <!-- Badge kategori (desktop) -->
                   <div class="hidden md:flex shrink-0 w-[50px] justify-start items-center">
-                    <span
-                      class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
-                      :class="getCategoryStyle(mail.category)"
-                    >
-                      {{ getCategoryLabel(mail.category) }}
-                    </span>
+                    <UTooltip :text="getCategoryFullName(mail.category)">
+                      <span
+                        class="w-32 block text-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap truncate"
+                        :class="getCategoryStyle(mail.category)"
+                      >
+                        {{ getCategoryLabel(mail.category) }}
+                      </span>
+                    </UTooltip>
                   </div>
 
                   <div
@@ -1300,38 +1320,40 @@ onUnmounted(() => {
                   class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
                 >
                   <div class="flex items-center gap-2 p-1">
-                    <StickyNote
-                      class="w-4 h-4 transition-colors hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer"
-                      :class="
-                        mail.isNote
-                          ? 'text-orange-600 fill-orange-100 dark:text-orange-400 dark:fill-orange-900/40'
-                          : 'text-neutral-300 dark:text-gray-600'
-                      "
-                      :title="mail.isNote ? 'Catatan (ada)' : 'Catatan'"
-                      @click.stop="handleToggleFlag(mail, 'note')"
-                    />
-                    <Lock
-                      v-if="mail.isLocked"
-                      class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 dark:text-red-400 dark:fill-red-900/40 dark:hover:text-red-400 cursor-pointer"
-                      title="Kunci (aktif)"
-                      @click.stop="handleToggleFlag(mail, 'lock')"
-                    />
-                    <LockOpen
-                      v-else
-                      class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 cursor-pointer"
-                      title="Kunci"
-                      @click.stop="handleToggleFlag(mail, 'lock')"
-                    />
-                    <Archive
-                      class="w-4 h-4 transition-colors hover:text-green-600 dark:hover:text-green-400 cursor-pointer"
-                      :class="
-                        mail.isArsip
-                          ? 'text-green-700 fill-green-100 dark:text-green-400 dark:fill-green-900/40'
-                          : 'text-neutral-300 dark:text-gray-600'
-                      "
-                      :title="mail.isArsip ? 'Arsip (aktif)' : 'Arsip'"
-                      @click.stop="handleToggleFlag(mail, 'arsip')"
-                    />
+                    <UTooltip :text="mail.isNote ? 'Catatan (ada) — naskah punya catatan' : 'Catatan — tambah catatan'">
+                      <StickyNote
+                        class="w-4 h-4 transition-colors hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer"
+                        :class="
+                          mail.isNote
+                            ? 'text-orange-600 fill-orange-100 dark:text-orange-400 dark:fill-orange-900/40'
+                            : 'text-neutral-300 dark:text-gray-600'
+                        "
+                        @click.stop="handleToggleFlag(mail, 'note')"
+                      />
+                    </UTooltip>
+                    <UTooltip :text="mail.isLocked ? 'Kunci (aktif) — naskah dikunci' : 'Kunci — kunci naskah'">
+                      <Lock
+                        v-if="mail.isLocked"
+                        class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 dark:text-red-400 dark:fill-red-900/40 dark:hover:text-red-400 cursor-pointer"
+                        @click.stop="handleToggleFlag(mail, 'lock')"
+                      />
+                      <LockOpen
+                        v-else
+                        class="w-4 h-4 transition-colors text-neutral-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 cursor-pointer"
+                        @click.stop="handleToggleFlag(mail, 'lock')"
+                      />
+                    </UTooltip>
+                    <UTooltip :text="mail.isArsip ? 'Arsip (aktif) — naskah diarsipkan' : 'Arsip — arsipkan naskah'">
+                      <Archive
+                        class="w-4 h-4 transition-colors hover:text-green-600 dark:hover:text-green-400 cursor-pointer"
+                        :class="
+                          mail.isArsip
+                            ? 'text-green-700 fill-green-100 dark:text-green-400 dark:fill-green-900/40'
+                            : 'text-neutral-300 dark:text-gray-600'
+                        "
+                        @click.stop="handleToggleFlag(mail, 'arsip')"
+                      />
+                    </UTooltip>
                   </div>
                 </div>
               </div>

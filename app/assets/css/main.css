@@ -164,3 +164,23 @@ body,
 :is(.dark .custom-scrollbar):hover::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.25);
 }
+
+/* Hilangkan focus ring biru pada icon (svg) yang jadi tooltip trigger / flag */
+svg:focus,
+svg:focus-visible,
+svg[aria-describedby]:focus,
+svg[aria-describedby]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Tooltip konsisten putih (light + dark mode) */
+[role="tooltip"] {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #e5e7eb !important;
+}
+[role="tooltip"] [data-slot="arrow"] {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+}

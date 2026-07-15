@@ -10,9 +10,11 @@
         <UIcon name="i-heroicons-bars-3" class="w-6 h-6" />
       </button>
 
-      <h1 class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white md:hidden">
-        ArsipKu
-      </h1>
+      <NuxtLink to="/beranda" class="md:hidden">
+        <h1 class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white">
+          ArsipKu
+        </h1>
+      </NuxtLink>
 
       <!-- SEARCH BUTTON (DESKTOP) -->
       <div
@@ -37,16 +39,17 @@
             @focus="onSearchFocus"
             class="w-full pl-11 pr-12 py-3 bg-primary-50/80 dark:bg-gray-800 rounded-full hover:bg-white hover:shadow-md dark:hover:bg-gray-700 focus:bg-white dark:focus:bg-gray-700 focus:shadow-md outline-none transition-all text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
           />
-          <button
-            @click="openSearchModal"
-            class="absolute right-3 p-1.5 rounded-full hover:bg-primary-100 dark:hover:bg-gray-600 transition-colors"
-            title="Filter Lanjutan"
-          >
-            <UIcon
-              name="i-heroicons-adjustments-horizontal"
-              class="text-primary-600 dark:text-primary-400 w-5 h-5"
-            />
-          </button>
+          <UTooltip text="Filter Lanjutan">
+            <button
+              @click="openSearchModal"
+              class="absolute right-3 p-1.5 rounded-full hover:bg-primary-100 dark:hover:bg-gray-600 transition-colors"
+            >
+              <UIcon
+                name="i-heroicons-adjustments-horizontal"
+                class="text-primary-600 dark:text-primary-400 w-5 h-5"
+              />
+            </button>
+          </UTooltip>
         </div>
 
         <!-- AUTOCOMPLETE DROPDOWN -->

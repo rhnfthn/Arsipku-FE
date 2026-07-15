@@ -1,12 +1,12 @@
 <template>
   <div ref="bellRef" class="relative">
     <!-- BELL BUTTON -->
-    <button
-      type="button"
-      class="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      :title="hasUnread ? `${unreadCount} notifikasi belum dibaca` : 'Notifikasi'"
-      @click="togglePanel"
-    >
+    <UTooltip :text="hasUnread ? `${unreadCount} notifikasi belum dibaca` : 'Notifikasi'">
+      <button
+        type="button"
+        class="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        @click="togglePanel"
+      >
       <UIcon name="i-lucide-bell" class="w-6 h-6" />
 
       <!-- BADGE -->
@@ -16,7 +16,8 @@
       >
         {{ unreadCount > 99 ? '99+' : unreadCount }}
       </span>
-    </button>
+      </button>
+    </UTooltip>
 
     <!-- PANEL -->
     <NotificationPanel
