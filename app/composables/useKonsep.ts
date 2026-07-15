@@ -6,7 +6,7 @@ import type {
 } from "~/types/konsep";
 
 export const useKonsep = () => {
-  const { apiGet, apiPost, api } = useApi();
+  const { apiGet, apiPost, apiPut, api } = useApi();
 
   const multipartConfig = {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -53,13 +53,11 @@ export const useKonsep = () => {
 
   // Draft KONSEP
   const createDraft = async (formData: FormData) => {
-    const res = await api.post("/KONSEP/draft/create", formData, multipartConfig);
-    return res.data;
+    return await apiPost("/KONSEP/draft/create", formData, multipartConfig);
   };
 
   const updateDraft = async (id: string, formData: FormData) => {
-    const res = await api.put(`/KONSEP/draft/update/${id}`, formData, multipartConfig);
-    return res.data;
+    return await apiPut(`/KONSEP/draft/update/${id}`, formData, multipartConfig);
   };
 
   const getKonsepDraftDetail = async (id: string) => {
