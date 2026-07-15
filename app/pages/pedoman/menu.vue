@@ -31,7 +31,7 @@
           </h2>
 
           <p class="text-gray-500 dark:text-gray-300 mt-3">
-            Peraturan Direksi, Keputusan Direksi, dan SOP tentang Kearsipan
+            Peraturan Direksi, Keputusan Direksi, dan SOP tentang Kearsipan yang ada di lingkungan Perum LPPNPI
           </p>
 
           <div class="mt-6 relative">
