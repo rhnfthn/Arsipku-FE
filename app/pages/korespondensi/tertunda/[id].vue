@@ -468,7 +468,7 @@ onMounted(loadData);
     </div>
 
     <!-- PDF Preview Slideover -->
-    <USlideover v-model:open="isPreviewOpen" title="Preview Dokumen" side="bottom"
+    <USlideover v-model:open="isPreviewOpen" title="Preview Dokumen" description="Preview dokumen" side="bottom"
       :ui="{ content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none', body: 'p-0' }">
       <template #body>
         <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
