@@ -13,13 +13,6 @@
 
     <!-- MAIN CARD -->
     <div class="w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <!-- HEADER -->
-      <div class="flex border-b border-gray-200 dark:border-gray-700">
-        <div class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary dark:text-primary-400">
-          Kirim Email
-        </div>
-      </div>
-
       <!-- FORM -->
       <div class="p-6 flex flex-col gap-4">
         <!-- Subjek -->
@@ -380,6 +373,28 @@ const validate = (): boolean => {
 
   const bccError = validateEmailList(form.value.bcc || '', 'BCC')
   if (bccError) { errorMsg.value = bccError; return false }
+
+  // Cek email duplikat antar field To, CC, dan BCC
+  const allEmails: { email: string; field: string }[] = []
+  for (const email of parseEmails(form.value.to)) {
+    allEmails.push({ email, field: 'To' })
+  }
+  for (const email of parseEmails(form.value.cc || '')) {
+    allEmails.push({ email, field: 'CC' })
+  }
+  for (const email of parseEmails(form.value.bcc || '')) {
+    allEmails.push({ email, field: 'BCC' })
+  }
+
+  const seen = new Map<string, string>()
+  for (const { email, field } of allEmails) {
+    const lower = email.toLowerCase()
+    if (seen.has(lower)) {
+      errorMsg.value = `Email "${email}" duplikat pada field ${seen.get(lower)} dan ${field}`
+      return false
+    }
+    seen.set(lower, field)
+  }
 
   if (!form.value.konten) { errorMsg.value = 'Konten wajib diisi'; return false }
   errorMsg.value = ''
