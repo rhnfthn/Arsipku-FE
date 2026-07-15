@@ -715,6 +715,7 @@
     <USlideover
       v-model:open="isOpenPreview"
       title="Preview PDF"
+      description="Preview dokumen PDF"
       side="bottom"
       :ui="{
         content: 'h-screen max-h-screen',

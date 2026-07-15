@@ -1139,7 +1139,7 @@ const konsepOptions = [
       </template>
     </UModal>
 
-    <USlideover v-model:open="isPreviewOpen" :title="previewTitle" side="bottom"
+    <USlideover v-model:open="isPreviewOpen" :title="previewTitle" :description="previewTitle" side="bottom"
       :ui="{ content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
       <template #body>
         <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
