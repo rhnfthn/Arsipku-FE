@@ -50,14 +50,8 @@
             v-model="form.to"
             type="text"
             placeholder="email@example.com (pisahkan dengan koma untuk multiple)"
-            :class="[
-              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 focus:ring-primary-500 focus:border-primary-500 transition-colors',
-              invalidFields.has('To')
-                ? 'border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 dark:border-gray-600'
-            ]"
+            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
           />
-          <p v-if="fieldErrors.To" class="text-xs text-red-500 mt-1">{{ fieldErrors.To }}</p>
 
           <!-- Select dari kontak eksternal -->
           <div class="mt-1">
@@ -89,14 +83,8 @@
               v-model="form.cc"
               type="text"
               placeholder="cc@example.com"
-              :class="[
-                'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 focus:ring-primary-500 focus:border-primary-500 transition-colors',
-                invalidFields.has('CC')
-                  ? 'border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600'
-              ]"
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
             />
-            <p v-if="fieldErrors.CC" class="text-xs text-red-500 mt-1">{{ fieldErrors.CC }}</p>
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-200">BCC</label>
@@ -104,14 +92,8 @@
               v-model="form.bcc"
               type="text"
               placeholder="bcc@example.com"
-              :class="[
-                'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 focus:ring-primary-500 focus:border-primary-500 transition-colors',
-                invalidFields.has('BCC')
-                  ? 'border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600'
-              ]"
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
             />
-            <p v-if="fieldErrors.BCC" class="text-xs text-red-500 mt-1">{{ fieldErrors.BCC }}</p>
           </div>
         </div>
 
@@ -198,6 +180,10 @@
         <div v-if="response" class="mt-2 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
           <p class="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">Response:</p>
           <pre class="text-xs text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap">{{ JSON.stringify(response, null, 2) }}</pre>
+        </div>
+
+        <div v-if="errorMsg" class="mt-2 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <p class="text-xs text-red-600 dark:text-red-400">{{ errorMsg }}</p>
         </div>
       </div>
     </div>
@@ -299,21 +285,73 @@ const handleInvalidFiles = (invalidFiles: string[]) => {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-// Per-field validation state
-const invalidFields = ref<Set<string>>(new Set())
-const fieldErrors = ref<Record<string, string>>({})
-
 const parseEmails = (raw: string): string[] =>
   raw
     .split(',')
     .map((email) => email.trim())
     .filter(Boolean)
 
+/**
+ * Mengembalikan alasan singkat kenapa sebuah email tidak valid.
+ * Mengembalikan null jika email valid.
+ */
+const getEmailInvalidReason = (email: string): string | null => {
+  if (!email) return null
+
+  // Cek karakter whitespace di awal/akhir (sudah di-trim, tapi cek internal)
+  if (/\s/.test(email)) {
+    return `Email tidak boleh mengandung spasi: "${email}"`
+  }
+
+  // Cek jumlah symbol @
+  const atCount = (email.match(/@/g) || []).length
+  if (atCount === 0) {
+    return `Email harus mengandung symbol "@": "${email}"`
+  }
+  if (atCount > 1) {
+    return `Email hanya boleh memiliki satu symbol "@": "${email}"`
+  }
+
+  // Pisahkan local part dan domain
+  const [localPart, domain] = email.split('@')
+
+  if (!localPart) {
+    return `Bagian sebelum "@" tidak boleh kosong: "${email}"`
+  }
+
+  if (!domain) {
+    return `Bagian setelah "@" (domain) tidak boleh kosong: "${email}"`
+  }
+
+  // Cek domain harus mengandung titik
+  if (!domain.includes('.')) {
+    return `Domain harus mengandung titik (.) contoh: domain.com: "${email}"`
+  }
+
+  // Cek domain tidak boleh diawali/diakhiri titik
+  if (domain.startsWith('.') || domain.endsWith('.')) {
+    return `Domain tidak boleh diawali atau diakhiri titik: "${email}"`
+  }
+
+  // Cek local part tidak diawali/diakhiri titik
+  if (localPart.startsWith('.') || localPart.endsWith('.')) {
+    return `Bagian sebelum "@" tidak boleh diawali/diakhiri titik: "${email}"`
+  }
+
+  // Cek karakter valid secara umum (fallback regex)
+  if (!EMAIL_REGEX.test(email)) {
+    return `Format email tidak valid: "${email}"`
+  }
+
+  return null
+}
+
 const validateEmailList = (raw: string, fieldLabel: string): string | null => {
   const emails = parseEmails(raw)
   for (const email of emails) {
-    if (!EMAIL_REGEX.test(email)) {
-      return `Format email tidak valid: ${email}`
+    const reason = getEmailInvalidReason(email)
+    if (reason) {
+      return `${fieldLabel}: ${reason}`
     }
   }
   return null
@@ -379,41 +417,30 @@ const filesToBase64 = async (): Promise<MailLampiran[]> => {
 }
 
 const validate = (): boolean => {
-  invalidFields.value = new Set()
-  fieldErrors.value = {}
+  // Kumpulkan semua field wajib yang masih kosong
+  const missingFields: string[] = []
+  if (!form.value.subjek) missingFields.push('Subjek')
+  if (!form.value.from_as) missingFields.push('From As')
+  if (!form.value.to) missingFields.push('To')
+  if (!form.value.konten) missingFields.push('Konten')
 
-  if (!form.value.subjek) { errorMsg.value = 'Subjek wajib diisi'; return false }
-  if (!form.value.from_as) { errorMsg.value = 'From As wajib diisi'; return false }
-  if (!form.value.to) {
-    errorMsg.value = 'To wajib diisi'
-    invalidFields.value = new Set(['To'])
-    fieldErrors.value = { To: 'To wajib diisi' }
+  if (missingFields.length > 0) {
+    const fieldList = missingFields.join(', ')
+    errorMsg.value =
+      missingFields.length === 1
+        ? `Field berikut wajib diisi: ${fieldList}`
+        : `Field berikut wajib diisi (${missingFields.length} field kosong): ${fieldList}`
     return false
   }
 
   const toError = validateEmailList(form.value.to, 'To')
-  if (toError) {
-    errorMsg.value = toError
-    invalidFields.value = new Set(['To'])
-    fieldErrors.value = { To: toError }
-    return false
-  }
+  if (toError) { errorMsg.value = toError; return false }
 
   const ccError = validateEmailList(form.value.cc || '', 'CC')
-  if (ccError) {
-    errorMsg.value = ccError
-    invalidFields.value = new Set(['CC'])
-    fieldErrors.value = { CC: ccError }
-    return false
-  }
+  if (ccError) { errorMsg.value = ccError; return false }
 
   const bccError = validateEmailList(form.value.bcc || '', 'BCC')
-  if (bccError) {
-    errorMsg.value = bccError
-    invalidFields.value = new Set(['BCC'])
-    fieldErrors.value = { BCC: bccError }
-    return false
-  }
+  if (bccError) { errorMsg.value = bccError; return false }
 
   // Cek email duplikat antar field To, CC, dan BCC
   const allEmails: { email: string; field: string }[] = []
@@ -432,17 +459,11 @@ const validate = (): boolean => {
     const lower = email.toLowerCase()
     if (seen.has(lower)) {
       errorMsg.value = `Email "${email}" duplikat pada field ${seen.get(lower)} dan ${field}`
-      invalidFields.value = new Set([field, seen.get(lower)!])
-      fieldErrors.value = {
-        [field]: `Email duplikat`,
-        [seen.get(lower)!]: `Email duplikat`,
-      }
       return false
     }
     seen.set(lower, field)
   }
 
-  if (!form.value.konten) { errorMsg.value = 'Konten wajib diisi'; return false }
   errorMsg.value = ''
   return true
 }
@@ -512,8 +533,6 @@ const resetForm = async () => {
   selectedEksternalTo.value = []
   response.value = null
   errorMsg.value = ''
-  invalidFields.value = new Set()
-  fieldErrors.value = {}
   tinymceEditor.value?.setContent('')
 }
 </script>
