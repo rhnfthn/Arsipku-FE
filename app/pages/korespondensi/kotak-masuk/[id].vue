@@ -1484,6 +1484,7 @@ const konsepOptions = computed(() => [
     <USlideover
       v-model:open="isPreviewOpen"
       :title="previewTitle"
+      :description="previewTitle"
       side="bottom"
       :ui="{
         content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',

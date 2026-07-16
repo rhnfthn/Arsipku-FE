@@ -48,6 +48,7 @@ const { canAccessPage } = useFeatureAccess()
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 // ── Composables ───────────────────────────────────────────────────────────────
 const { items, pagination, summary, pending, fetchInbox, markAsRead, toggleFlag } = useInbox();
@@ -104,35 +105,44 @@ const isDeleting = ref(false);
 
 // ── Static Config ─────────────────────────────────────────────────────────────
 const breadcrumbs = [
-  { label: 'Beranda', to: '/beranda' },
-  { label: 'Kotak Masuk', to: '#' },
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('kotak_masuk'), to: '#' },
 ];
 
 const tabs = [
-  { label: 'Semua', value: 'ALL', icon: Inbox },
-  { label: 'Nota Dinas', value: 'ND', icon: FileText },
-  { label: 'Disposisi', value: 'DI', icon: Send },
-  { label: 'Internal', value: 'SDI', icon: Building },
-  { label: 'Eksternal', value: 'SDE', icon: Building2 },
-  { label: 'Konsep', value: 'K', icon: FilePen },
-  { label: 'Kajian', value: 'KA', icon: BookOpen },
+  { label: t('k_semua'), value: 'ALL', icon: Inbox },
+  { label: t('k_nota_dinas'), value: 'ND', icon: FileText },
+  { label: t('k_disposisi'), value: 'DI', icon: Send },
+  { label: t('k_internal'), value: 'SDI', icon: Building },
+  { label: t('k_eksternal'), value: 'SDE', icon: Building2 },
+  { label: t('k_konsep'), value: 'K', icon: FilePen },
+  { label: t('k_kajian'), value: 'KA', icon: BookOpen },
 ];
 
 const filterMenuOptions = [
-  { label: 'Semua', value: 'Semua' },
-  { label: 'Prioritas', value: 'Prioritas' },
-  { label: 'Favorite', value: 'Favorite' },
-  { label: 'Sudah Tinjut', value: 'Sudah Tinjut' },
-  { label: 'Belum Tinjut', value: 'Belum Tinjut' },
-  { label: 'Lock', value: 'Lock' },
-  { label: 'Note', value: 'Note' },
-  { label: 'Arsip', value: 'Arsip' },
-  { label: 'Sudah Dibaca', value: 'Sudah Dibaca' },
-  { label: 'Belum Dibaca', value: 'Belum Dibaca' },
+  { label: t('k_semua'), value: 'Semua' },
+  { label: t('k_prioritas'), value: 'Prioritas' },
+  { label: t('k_favorit'), value: 'Favorite' },
+  { label: t('km_sudah_tinjut'), value: 'Sudah Tinjut' },
+  { label: t('km_belum_tinjut'), value: 'Belum Tinjut' },
+  { label: t('k_lock'), value: 'Lock' },
+  { label: t('km_note'), value: 'Note' },
+  { label: t('k_arsip'), value: 'Arsip' },
+  { label: t('km_sudah_dibaca'), value: 'Sudah Dibaca' },
+  { label: t('k_belum_dibaca'), value: 'Belum Dibaca' },
 ];
 
-const dateOptions = ['7 Hari', '30 Hari', '60 Hari', '1 Tahun', 'Semua'];
-const sortOptions = ['Terbaru', 'Terlama'];
+const dateOptions = [
+  { label: t('k_7_hari'), value: '7 Hari' },
+  { label: t('k_30_hari'), value: '30 Hari' },
+  { label: t('k_60_hari'), value: '60 Hari' },
+  { label: t('k_1_tahun'), value: '1 Tahun' },
+  { label: t('k_semua'), value: 'Semua' },
+];
+const sortOptions = [
+  { label: t('k_terbaru'), value: 'Terbaru' },
+  { label: t('k_terlama'), value: 'Terlama' },
+];
 const pageOptions = [10, 25, 50, 100];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -232,15 +242,15 @@ const assignLabelToSelected = async (labelId: string, labelName: string) => {
 
     await Promise.all(promises);
     toast.add({
-      title: 'Berhasil',
-      description: `Label "${labelName}" ditambahkan ke ${promises.length} item.`,
+      title: t('km_berhasil'),
+      description: t('km_label_ditambahkan', { label: labelName, count: promises.length }),
       color: 'success',
     });
     showLabelAssignModal.value = false;
     selectedIds.value.clear();
     refreshData();
   } catch {
-    toast.add({ title: 'Gagal', description: 'Gagal menambahkan label.', color: 'error' });
+    toast.add({ title: t('km_gagal'), description: t('km_gagal_menambahkan_label'), color: 'error' });
   } finally {
     isLabelProcessing.value = false;
   }
@@ -274,8 +284,8 @@ const selectMail = async (mail: any) => {
   if (!mail?.naskahId) {
     console.warn('[Inbox] selectMail: naskahId kosong untuk mail:', mail);
     useToast().add({
-      title: 'Surat tidak bisa dibuka',
-      description: 'Data surat ini tidak lengkap. Coba refresh halaman atau hubungi admin.',
+      title: t('km_surat_tidak_bisa_dibuka'),
+      description: t('km_surat_tidak_lengkap'),
       color: 'warning',
     });
     return;
@@ -310,11 +320,11 @@ const handleToggleFlag = async (
     if (!item) return;
 
     const descMap: Record<string, [string, string]> = {
-      favorit: ['Ditambahkan ke Favorit', 'Dihapus dari Favorit'],
-      tindak_lanjut: ['Ditandai tindak lanjut', 'Tindak lanjut selesai'],
-      note: ['Note ditandai', 'Tanda note dihapus'],
-      lock: ['Pesan dikunci', 'Kunci pesan dibuka'],
-      arsip: ['Pesan diarsipkan', 'Pesan dikembalikan dari arsip'],
+      favorit: [t('km_ditambahkan_ke_favorit'), t('km_dihapus_dari_favorit')],
+      tindak_lanjut: [t('km_ditandai_tindak_lanjut'), t('km_tindak_lanjut_selesai')],
+      note: [t('km_note_ditandai'), t('km_tanda_note_dihapus')],
+      lock: [t('km_pesan_dikunci'), t('km_kunci_pesan_dibuka')],
+      arsip: [t('km_pesan_diarsipkan'), t('km_pesan_dikembalikan_dari_arsip')],
     };
 
     // Toggle nilai
@@ -329,7 +339,7 @@ const handleToggleFlag = async (
     const isNowActive = (item as any)[flagKey];
 
     toast.add({
-      title: 'Berhasil',
+      title: t('km_berhasil'),
       description: descMap[type][isNowActive ? 0 : 1],
       color: 'success',
     } as any);
@@ -344,7 +354,7 @@ const handleToggleFlag = async (
 
     await toggleFlag(item, type);
   } catch {
-    toast.add({ title: 'Gagal', description: 'Gagal memperbarui status.', color: 'error' });
+    toast.add({ title: t('km_gagal'), description: t('km_gagal_memperbarui_status'), color: 'error' });
     refreshData();
   }
 };
@@ -367,14 +377,14 @@ const saveNoteFromList = async () => {
       item.noteText = hasText ? noteModalText.value : '';
     }
     toast.add({
-      title: 'Berhasil',
-      description: hasText ? 'Catatan disimpan' : 'Catatan dihapus',
+      title: t('km_berhasil'),
+      description: hasText ? t('km_catatan_disimpan') : t('km_catatan_dihapus'),
       color: 'success',
     } as any);
     await toggleFlag(item || mail, 'note', noteModalText.value);
     showNoteModal.value = false;
   } catch {
-    toast.add({ title: 'Gagal', description: 'Gagal menyimpan catatan.', color: 'error' });
+    toast.add({ title: t('km_gagal'), description: t('km_gagal_menyimpan_catatan'), color: 'error' });
     refreshData();
   } finally {
     isSavingNote.value = false;
@@ -403,10 +413,10 @@ const handleBulkExecute = async () => {
     await Promise.all(promises);
 
     toast.add({
-      title: 'Berhasil',
+      title: t('km_berhasil'),
       description: isUnarchiveMode.value
-        ? `${promises.length} item berhasil dikeluarkan dari arsip.`
-        : `${promises.length} item berhasil diarsipkan.`,
+        ? t('km_item_dikeluarkan_arsip', { count: promises.length })
+        : t('km_item_diarsipkan', { count: promises.length }),
       color: 'success',
     });
 
@@ -414,7 +424,7 @@ const handleBulkExecute = async () => {
     showDeleteModal.value = false;
     await refreshData(); // refetch agar list langsung update
   } catch {
-    toast.add({ title: 'Gagal', description: 'Terjadi kesalahan.', color: 'error' });
+    toast.add({ title: t('km_gagal'), description: t('km_terjadi_kesalahan'), color: 'error' });
     await refreshData();
   } finally {
     isDeleting.value = false;
@@ -485,8 +495,8 @@ const downloadExcel = async () => {
 
     if (allItems.length === 0) {
       toast.add({
-        title: 'Tidak ada data',
-        description: 'Tidak ada data untuk diekspor.',
+        title: t('k_tidak_ada_data'),
+        description: t('km_tidak_ada_data_ekspor'),
         color: 'warning',
       });
       return;
@@ -530,15 +540,15 @@ const downloadExcel = async () => {
     XLSX.writeFile(wb, `kotak_masuk_semua_${new Date().toISOString().split('T')[0]}.xlsx`);
 
     toast.add({
-      title: 'Berhasil',
-      description: `${allItems.length} data berhasil diekspor.`,
+      title: t('km_berhasil'),
+      description: t('km_data_berhasil_diekspor', { count: allItems.length }),
       color: 'success',
     });
   } catch (err) {
     console.error('Gagal export Excel:', err);
     toast.add({
-      title: 'Gagal',
-      description: 'Terjadi kesalahan saat mengekspor data.',
+      title: t('km_gagal'),
+      description: t('km_gagal_ekspor'),
       color: 'error',
     });
   } finally {
@@ -559,11 +569,14 @@ const firstSelectedItem = computed(() => {
   return displayItems.value.find((e) => e.id === [...selectedIds.value][0]);
 });
 const paginationInfo = computed(() => {
-  if (pagination.value.total === 0) return '0-0 Dari 0';
+  if (pagination.value.total === 0) return t('km_pagination_zero');
   const start = (pagination.value.page - 1) * pagination.value.limit + 1;
   const end = Math.min(start + pagination.value.limit - 1, pagination.value.total);
-  return `${start}-${end} Dari ${pagination.value.total}`;
+  return t('km_pagination_range', { start, end, total: pagination.value.total });
 });
+const activeFilterLabel = computed(
+  () => filterMenuOptions.find((o) => o.value === activeFilterType.value)?.label ?? activeFilterType.value
+);
 const selectedNaskahIds = computed(() => {
   const result = new Set<string>();
   selectedIds.value.forEach((id) => {
@@ -656,8 +669,8 @@ onMounted(async () => {
     {
       tabs: tabs.map((t) => t.value),
       filters: filterMenuOptions.map((f) => f.value),
-      sorts: sortOptions,
-      dates: dateOptions,
+      sorts: sortOptions.map((o) => o.value),
+      dates: dateOptions.map((o) => o.value),
       pageSizes: pageOptions,
     }
   );
@@ -674,7 +687,7 @@ onUnmounted(() => {
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
-  <PageHeader title="Kotak Masuk" :items="breadcrumbs" />
+  <PageHeader :title="$t('kotak_masuk')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors"
   >
@@ -685,7 +698,7 @@ onUnmounted(() => {
       <!-- LEFT: Checkbox + Filter + Refresh + Bulk Actions -->
       <div class="flex items-center gap-1 shrink-0 relative">
         <!-- Select All -->
-        <UTooltip text="Pilih Semua">
+        <UTooltip :text="$t('k_pilih_semua')">
           <div
             class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
             @click="toggleSelectAll"
@@ -704,7 +717,7 @@ onUnmounted(() => {
 
         <!-- Filter Dropdown -->
         <div class="relative">
-          <UTooltip text="Opsi Filter">
+          <UTooltip :text="$t('k_opsi_filter')">
             <button
               @click="showFilterMenu = !showFilterMenu"
               class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
@@ -744,7 +757,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Refresh -->
-        <UTooltip text="Muat Ulang">
+        <UTooltip :text="$t('k_muat_ulang')">
           <button
             @click="refreshData"
             class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
@@ -760,7 +773,7 @@ onUnmounted(() => {
         <div v-if="selectedIds.size > 0" class="flex items-center">
           <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
           <div class="flex items-center gap-0 animate-in fade-in slide-in-from-left-2 duration-200">
-            <UTooltip text="Arsipkan">
+            <UTooltip :text="$t('k_arsipkan')">
               <button
                 @click="showDeleteModal = true"
                 class="p-1.5 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-primary rounded hidden sm:block transition-colors"
@@ -768,7 +781,7 @@ onUnmounted(() => {
                 <Archive class="w-4 h-4" />
               </button>
             </UTooltip>
-            <UTooltip text="Label">
+            <UTooltip :text="$t('k_label')">
               <button
                 @click="openLabelAssignModal"
                 class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary rounded transition-colors"
@@ -777,7 +790,7 @@ onUnmounted(() => {
               </button>
             </UTooltip>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2"
-              >{{ selectedIds.size }} dipilih</span
+              >{{ selectedIds.size }} {{ $t('km_dipilih') }}</span
             >
           </div>
         </div>
@@ -791,7 +804,7 @@ onUnmounted(() => {
           <span
             class="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700 rounded-full font-medium animate-in fade-in duration-200"
           >
-            {{ activeFilterType }}
+            {{ activeFilterLabel }}
             <button @click="applyFilter('Semua')" class="hover:text-primary-800 ml-0.5">
               <X class="w-3 h-3" />
             </button>
@@ -803,7 +816,7 @@ onUnmounted(() => {
       <div class="flex items-center gap-1 shrink-0 min-w-0 pr-1">
         <!-- Date Filter -->
         <div class="relative">
-          <UTooltip text="Periode Data">
+          <UTooltip :text="$t('k_periode_data')">
             <button
               @click="showDateMenu = !showDateMenu"
               class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors relative"
@@ -832,7 +845,7 @@ onUnmounted(() => {
               <div
                 class="text-[13px] font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center justify-between"
               >
-                <span>Rentang Tanggal</span>
+                <span>{{ $t('km_rentang_tanggal') }}</span>
                 <Check v-if="isCustomDate" class="w-3.5 h-3.5 text-primary" />
               </div>
               <div class="space-y-4">
@@ -840,7 +853,7 @@ onUnmounted(() => {
                 <div>
                   <label
                     class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5"
-                    >Mulai</label
+                    >{{ $t('km_mulai') }}</label
                   >
                   <ClientOnly>
                     <UPopover
@@ -878,7 +891,7 @@ onUnmounted(() => {
                 <div>
                   <label
                     class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5"
-                    >Sampai</label
+                    >{{ $t('km_sampai') }}</label
                   >
                   <ClientOnly>
                     <UPopover
@@ -916,7 +929,7 @@ onUnmounted(() => {
                   @click="applyCustomDate"
                   class="w-full mt-2 bg-primary text-white text-[12px] font-medium py-2.5 rounded-md hover:bg-primary-600 transition-colors shadow-sm active:scale-[0.98]"
                 >
-                  Terapkan Filter
+                  {{ $t('km_terapkan_filter') }}
                 </button>
               </div>
             </div>
@@ -926,16 +939,16 @@ onUnmounted(() => {
               <div
                 class="px-4 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
               >
-                Preset
+                {{ $t('km_preset') }}
               </div>
               <button
                 v-for="opt in dateOptions"
-                :key="opt"
-                @click="selectDateFilter(opt)"
+                :key="opt.value"
+                @click="selectDateFilter(opt.value)"
                 class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-primary flex items-center justify-between transition-colors"
               >
-                <span>{{ opt }}</span>
-                <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
+                <span>{{ opt.label }}</span>
+                <Check v-if="activeDateLabel === opt.value" class="w-3.5 h-3.5 text-primary" />
               </button>
             </div>
           </div>
@@ -943,7 +956,7 @@ onUnmounted(() => {
 
         <!-- Sort -->
         <div class="relative">
-          <UTooltip text="Urutkan">
+          <UTooltip :text="$t('k_urutkan')">
             <button
               @click="showSortMenu = !showSortMenu"
               class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
@@ -962,18 +975,18 @@ onUnmounted(() => {
           >
             <button
               v-for="opt in sortOptions"
-              :key="opt"
-              @click="selectSortOption(opt)"
+              :key="opt.value"
+              @click="selectSortOption(opt.value)"
               class="w-full text-left px-3 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between transition-colors"
             >
-              <span>{{ opt }}</span>
-              <Check v-if="activeSortLabel === opt" class="w-3 h-3 text-primary" />
+              <span>{{ opt.label }}</span>
+              <Check v-if="activeSortLabel === opt.value" class="w-3 h-3 text-primary" />
             </button>
           </div>
         </div>
 
         <!-- Download Excel -->
-        <UTooltip text="Download Excel">
+        <UTooltip :text="$t('k_download_excel')">
           <button
             @click="downloadExcel"
             :disabled="isExporting"
@@ -989,7 +1002,7 @@ onUnmounted(() => {
         <!-- Page Size + Pagination -->
         <div class="flex items-center gap-1">
           <div class="relative">
-            <UTooltip text="Item per Halaman">
+            <UTooltip :text="$t('k_item_per_halaman')">
               <button
                 @click="showPageMenu = !showPageMenu"
                 class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
@@ -1015,7 +1028,7 @@ onUnmounted(() => {
                   'text-primary font-semibold bg-gray-50 dark:bg-gray-700': itemsPerPage === size,
                 }"
               >
-                {{ size }} Item
+                {{ size }} {{ $t('km_item') }}
               </button>
             </div>
           </div>
@@ -1028,7 +1041,7 @@ onUnmounted(() => {
             >
               {{ paginationInfo }}
             </span>
-            <UTooltip text="Sebelumnya">
+            <UTooltip :text="$t('sebelumnya')">
               <button
                 class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
                 @click="prevPage"
@@ -1037,7 +1050,7 @@ onUnmounted(() => {
                 <ChevronLeft class="w-4 h-4" />
               </button>
             </UTooltip>
-            <UTooltip text="Berikutnya">
+            <UTooltip :text="$t('k_berikutnya')">
               <button
                 class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-500 dark:text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent"
                 @click="nextPage"
@@ -1097,7 +1110,7 @@ onUnmounted(() => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari perihal, nomor..."
+              :placeholder="$t('km_cari_perihal_nomor')"
               class="w-full pl-8 pr-8 py-1.5 text-[13px] bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 transition-all"
             />
             <button
@@ -1115,14 +1128,14 @@ onUnmounted(() => {
           v-if="displayItems.length === 0 && !pending && !isLoading"
           :icon="Inbox"
           :title="
-            activeFilterType !== 'Semua' ? 'Filter tidak menghasilkan data' : 'Tidak ada data'
+            activeFilterType !== 'Semua' ? $t('k_filter_kosong') : $t('k_tidak_ada_data')
           "
           :description="
             activeFilterType !== 'Semua'
-              ? 'Filter ini tidak menghasilkan data. Klik tombol di bawah untuk reset.'
-              : 'Kotak masuk kosong.'
+              ? $t('km_filter_kosong_desc')
+              : $t('km_kotak_masuk_kosong')
           "
-          :action-label="activeFilterType !== 'Semua' ? 'Reset filter' : undefined"
+          :action-label="activeFilterType !== 'Semua' ? $t('km_reset_filter') : undefined"
           @action="applyFilter('Semua')"
           icon-wrapper-class="bg-gray-100 dark:bg-gray-700"
           icon-class="text-gray-400 dark:text-gray-500"
@@ -1201,7 +1214,7 @@ onUnmounted(() => {
                   >
                     <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                   </div>
-                  <UTooltip :text="mail.isStarred ? 'Favorit (aktif) — naskah ditandai penting' : 'Favorit — tandai naskah penting'">
+                  <UTooltip :text="mail.isStarred ? $t('km_favorit_aktif') : $t('km_favorit_tandai')">
                     <Star
                       class="w-4 h-4 transition-colors hover:text-yellow-400 cursor-pointer"
                       :class="
@@ -1212,7 +1225,7 @@ onUnmounted(() => {
                       @click.stop="handleToggleFlag(mail, 'favorit')"
                     />
                   </UTooltip>
-                  <UTooltip :text="mail.isTinjut ? 'Tindak Lanjut (sudah) — sudah ditindak lanjuti' : 'Tindak Lanjut (belum) — tandai perlu ditindak lanjuti'">
+                  <UTooltip :text="mail.isTinjut ? $t('km_tinjut_sudah') : $t('km_tinjut_belum')">
                     <Tag
                       class="w-4 h-4 -rotate-45 transition-colors hover:text-primary-300 cursor-pointer"
                       :class="
@@ -1239,7 +1252,7 @@ onUnmounted(() => {
                 >
                   <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
                     <!-- Dot belum dibaca -->
-                    <UTooltip v-if="!mail.isRead" text="Belum Dibaca">
+                    <UTooltip v-if="!mail.isRead" :text="$t('k_belum_dibaca')">
                       <div
                         class="w-2 h-2 rounded-full bg-blue-600 shrink-0 mr-2"
                       />
@@ -1264,7 +1277,7 @@ onUnmounted(() => {
                           v-if="mail.is_priority"
                           class="flex items-center gap-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 dark:border-red-800 transition-colors"
                         >
-                          <AlertTriangle class="w-3 h-3" /> PRIORITAS
+                          <AlertTriangle class="w-3 h-3" /> {{ $t('km_prioritas_badge') }}
                         </span>
                       </div>
                     </div>
@@ -1320,7 +1333,7 @@ onUnmounted(() => {
                   class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
                 >
                   <div class="flex items-center gap-2 p-1">
-                    <UTooltip :text="mail.isNote ? 'Catatan (ada) — naskah punya catatan' : 'Catatan — tambah catatan'">
+                    <UTooltip :text="mail.isNote ? $t('km_catatan_ada') : $t('km_catatan_tambah')">
                       <StickyNote
                         class="w-4 h-4 transition-colors hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer"
                         :class="
@@ -1331,7 +1344,7 @@ onUnmounted(() => {
                         @click.stop="handleToggleFlag(mail, 'note')"
                       />
                     </UTooltip>
-                    <UTooltip :text="mail.isLocked ? 'Kunci (aktif) — naskah dikunci' : 'Kunci — kunci naskah'">
+                    <UTooltip :text="mail.isLocked ? $t('km_kunci_aktif') : $t('km_kunci_naskah')">
                       <Lock
                         v-if="mail.isLocked"
                         class="w-4 h-4 transition-colors text-red-600 fill-red-100 hover:text-red-600 dark:text-red-400 dark:fill-red-900/40 dark:hover:text-red-400 cursor-pointer"
@@ -1343,7 +1356,7 @@ onUnmounted(() => {
                         @click.stop="handleToggleFlag(mail, 'lock')"
                       />
                     </UTooltip>
-                    <UTooltip :text="mail.isArsip ? 'Arsip (aktif) — naskah diarsipkan' : 'Arsip — arsipkan naskah'">
+                    <UTooltip :text="mail.isArsip ? $t('km_arsip_aktif') : $t('km_arsip_arsipkan')">
                       <Archive
                         class="w-4 h-4 transition-colors hover:text-green-600 dark:hover:text-green-400 cursor-pointer"
                         :class="
@@ -1400,21 +1413,21 @@ onUnmounted(() => {
               />
             </div>
             <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-              {{ isUnarchiveMode ? 'Keluarkan dari Arsip?' : 'Arsipkan Surat?' }}
+              {{ isUnarchiveMode ? $t('km_keluarkan_dari_arsip') : $t('km_arsipkan_surat') }}
             </h3>
             <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">
               <div v-if="selectedIds.size === 1 && firstSelectedItem">
-                Apakah Anda yakin ingin
-                {{ isUnarchiveMode ? 'mengeluarkan' : 'mengarsipkan' }} <br />
+                {{ $t('km_apakah_anda_yakin_ingin') }}
+                {{ isUnarchiveMode ? $t('km_mengeluarkan') : $t('km_mengarsipkan') }} <br />
                 <span class="font-semibold text-gray-700 dark:text-gray-200"
                   >"{{ firstSelectedItem.subject }}"</span
                 >?
               </div>
               <div v-else>
-                Apakah Anda yakin ingin
-                {{ isUnarchiveMode ? 'mengeluarkan' : 'mengarsipkan' }} <br />
+                {{ $t('km_apakah_anda_yakin_ingin') }}
+                {{ isUnarchiveMode ? $t('km_mengeluarkan') : $t('km_mengarsipkan') }} <br />
                 <span class="font-bold text-gray-800 dark:text-gray-200"
-                  >{{ selectedIds.size }} item terpilih</span
+                  >{{ selectedIds.size }} {{ $t('km_item_terpilih') }}</span
                 >?
               </div>
             </div>
@@ -1424,7 +1437,7 @@ onUnmounted(() => {
                 :disabled="isDeleting"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
-                Batal
+                {{ $t('k_batal') }}
               </button>
               <button
                 @click="handleBulkExecute"
@@ -1437,7 +1450,7 @@ onUnmounted(() => {
                 "
               >
                 <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
-                {{ isDeleting ? 'Memproses...' : isUnarchiveMode ? 'Keluarkan' : 'Arsipkan' }}
+                {{ isDeleting ? $t('km_memproses') : isUnarchiveMode ? $t('km_keluarkan') : $t('k_arsipkan') }}
               </button>
             </div>
           </div>
@@ -1462,8 +1475,8 @@ onUnmounted(() => {
                 <StickyNote class="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <h3 class="text-base font-bold text-gray-900 dark:text-white">Catatan Surat</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Tambah atau edit catatan</p>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ $t('km_catatan_surat') }}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('km_tambah_atau_edit_catatan') }}</p>
               </div>
             </div>
             <button
@@ -1478,7 +1491,7 @@ onUnmounted(() => {
               v-model="noteModalText"
               rows="5"
               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder:text-gray-400 dark:text-white"
-              placeholder="Tulis catatan Anda di sini..."
+              :placeholder="$t('km_tulis_catatan')"
             ></textarea>
           </div>
           <div
@@ -1489,14 +1502,14 @@ onUnmounted(() => {
               @click="removeNoteFromList"
               class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 transition-colors"
             >
-              Hapus Catatan
+              {{ $t('km_hapus_catatan') }}
             </button>
             <div class="flex gap-3 ml-auto">
               <button
                 @click="showNoteModal = false"
                 class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Batal
+                {{ $t('k_batal') }}
               </button>
               <button
                 @click="saveNoteFromList"
@@ -1504,7 +1517,7 @@ onUnmounted(() => {
                 class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
               >
                 <Loader2 v-if="isSavingNote" class="w-4 h-4 animate-spin" />
-                {{ isSavingNote ? 'Menyimpan...' : 'Simpan' }}
+                {{ isSavingNote ? $t('km_menyimpan') : $t('k_simpan') }}
               </button>
             </div>
           </div>
