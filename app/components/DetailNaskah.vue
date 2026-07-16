@@ -27,6 +27,7 @@ import {
   StickyNote,
   Tag,
   Loader2,
+  ArrowDownCircle,
 } from 'lucide-vue-next';
 
 // Tambah prop
@@ -40,6 +41,7 @@ const props = defineProps<{
   context?: string;
   userPositionId?: string | number;
   isPengirimKonsep?: boolean;
+  canTurunkanLagi?: boolean; // true jika masih ada bawahan untuk diturunkan (turunkan ke bawahan)
   konsepNaskah?: any | null;
   draft?: { id: string; jenis: string } | null;
   collapsed?: boolean;
@@ -57,6 +59,7 @@ const emit = defineEmits<{
   (e: 'finalize'): void;
   (e: 'reject'): void;
   (e: 'edit'): void;
+  (e: 'turunkan-konsep'): void;
   (e: 'lanjut-nota'): void;
   (e: 'lanjut-sdi'): void;
   (e: 'lanjut-sde'): void;
@@ -106,6 +109,15 @@ const isSamePengirimPosition = computed(() => {
   );
   if (!userPos || !pengirimPos) return false;
   return userPos === pengirimPos;
+});
+
+// User = penerima K ini (yang berhak tindak lanjut). Dipakai untuk hide button
+// setelah user sudah aksi (K hasil aksi user: pengirim=user, penerima=orang lain → false).
+const isPenerimaKonsepAktif = computed(() => {
+  const userPos = normalizePositionId(props.userPositionId);
+  if (!userPos) return false;
+  const penerima = props.data?.penerima || [];
+  return penerima.some((p: any) => normalizePositionId(p.position_id || p.id || p.position) === userPos);
 });
 
 // --- CONSTANTS ---
@@ -177,6 +189,7 @@ const getFlowInitials = (n: string) =>
 const aksiConfig: Record<string, { label: string; color: string }> = {
   create: { label: 'BUAT KONSEP', color: 'bg-blue-500' },
   forward: { label: 'REVISI', color: 'bg-amber-500' },
+  turunkan: { label: 'DITURUNKAN', color: 'bg-indigo-500' },
   reject: { label: 'DITOLAK', color: 'bg-red-500' },
 };
 
@@ -278,6 +291,7 @@ const isCollapsed = computed(() => props.collapsed ?? false);
 const showNoteModal = ref(false);
 const noteText = ref('');
 const isSavingNote = ref(false);
+const showRepairDropdown = ref(false);
 
 const openNoteModal = () => {
   noteText.value = props.data?.noteText || props.data?.note_text || '';
@@ -1137,13 +1151,65 @@ const removeNote = () => {
        - Jika user bukan pengirim (penerima/atasan) → tidak ada tombol
   -->
               <template v-if="data.aksi === 'reject'">
+                <!-- Dropdown: hanya kalau masih ada bawahan (canTurunkanLagi) -->
+                <div v-if="isPengirimKonsep && isHead && canTurunkanLagi" class="relative">
+                  <div
+                    @click="showRepairDropdown = !showRepairDropdown"
+                    class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
+                  >
+                    <Edit3 class="w-4 h-4" />
+                    <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
+                    <ChevronDown class="w-3.5 h-3.5 ml-1" />
+                  </div>
+                  <!-- Dropdown overlay -->
+                  <div
+                    v-if="showRepairDropdown"
+                    class="fixed inset-0 z-40"
+                    @click="showRepairDropdown = false"
+                  />
+                  <!-- Dropdown menu -->
+                  <div
+                    v-if="showRepairDropdown"
+                    class="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
+                  >
+                    <div class="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
+                      <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ $t('kon_pilih_aksi_perbaiki') }}</p>
+                    </div>
+                    <button
+                      @click="showRepairDropdown = false; emit('edit')"
+                      class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-3 transition-colors"
+                    >
+                      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                        <Edit3 class="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">{{ $t('kon_perbaiki_sendiri') }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('kon_perbaiki_sendiri_desc') }}</p>
+                      </div>
+                    </button>
+                    <button
+                      @click="showRepairDropdown = false; emit('turunkan-konsep')"
+                      class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-3 transition-colors border-t border-gray-100 dark:border-gray-700"
+                    >
+                      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <ArrowDownCircle class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">{{ $t('kon_turunkan_ke_bawahan') }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('kon_turunkan_ke_bawahan_desc') }}</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Button langsung (tanpa dropdown): kalau tidak ada bawahan -->
                 <div
-                  v-if="isPengirimKonsep && isHead"
+                  v-else-if="isPengirimKonsep && isHead"
                   @click="emit('edit')"
                   class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
                 >
                   <Edit3 class="w-4 h-4" />
-                  <span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
+                  <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
                 </div>
 
                 <!-- Card riwayat (bukan head): tampilkan disabled -->
@@ -1152,7 +1218,82 @@ const removeNote = () => {
                   class="flex bg-amber-300 cursor-not-allowed py-2.5 px-6 rounded-lg text-white gap-2 items-center shadow-sm opacity-50"
                 >
                   <Edit3 class="w-4 h-4" />
-                  <span class="text-sm font-medium whitespace-nowrap">Perbaiki Konsep</span>
+                  <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
+                </div>
+              </template>
+
+              <!-- aksi turunkan: konsep diturunkan ke saya (bawahan) untuk diperbaiki.
+                   Tidak ada Tolak. Perbaiki dropdown: Perbaiki Sendiri / Turunkan ke Bawahan (jika ada bawahan). -->
+              <template v-if="data.aksi === 'turunkan'">
+                <!-- Dropdown: hanya kalau masih ada bawahan (canTurunkanLagi) -->
+                <div v-if="isPenerimaKonsepAktif && isHead && canTurunkanLagi" class="relative">
+                  <div
+                    @click="showRepairDropdown = !showRepairDropdown"
+                    class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
+                  >
+                    <Edit3 class="w-4 h-4" />
+                    <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
+                    <ChevronDown class="w-3.5 h-3.5 ml-1" />
+                  </div>
+                  <!-- Dropdown overlay -->
+                  <div
+                    v-if="showRepairDropdown"
+                    class="fixed inset-0 z-40"
+                    @click="showRepairDropdown = false"
+                  />
+                  <!-- Dropdown menu -->
+                  <div
+                    v-if="showRepairDropdown"
+                    class="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
+                  >
+                    <div class="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
+                      <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ $t('kon_pilih_aksi_perbaiki') }}</p>
+                    </div>
+                    <button
+                      @click="showRepairDropdown = false; emit('edit')"
+                      class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-3 transition-colors"
+                    >
+                      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                        <Edit3 class="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">{{ $t('kon_perbaiki_sendiri') }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('kon_perbaiki_sendiri_desc') }}</p>
+                      </div>
+                    </button>
+                    <button
+                      v-if="canTurunkanLagi"
+                      @click="showRepairDropdown = false; emit('turunkan-konsep')"
+                      class="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-3 transition-colors border-t border-gray-100 dark:border-gray-700"
+                    >
+                      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <ArrowDownCircle class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">{{ $t('kon_turunkan_ke_bawahan') }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('kon_turunkan_ke_bawahan_desc') }}</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Button langsung (tanpa dropdown): kalau tidak ada bawahan -->
+                <div
+                  v-else-if="isPenerimaKonsepAktif && isHead"
+                  @click="emit('edit')"
+                  class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
+                >
+                  <Edit3 class="w-4 h-4" />
+                  <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
+                </div>
+
+                <!-- Card riwayat (bukan head): tampilkan disabled -->
+                <div
+                  v-else-if="!isHead"
+                  class="flex bg-amber-300 cursor-not-allowed py-2.5 px-6 rounded-lg text-white gap-2 items-center shadow-sm opacity-50"
+                >
+                  <Edit3 class="w-4 h-4" />
+                  <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
                 </div>
               </template>
             </template>

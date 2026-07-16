@@ -1,13 +1,13 @@
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="relative">
-    <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
-    <PageHeader title="Tulis Disposisi" :items="breadcrumbs" />
+    <LoadingOverlay :loading="isLoadingData && loadingMessage !== $t('dp_memuat')" :message="loadingMessage" />
+    <PageHeader :title="$t('dp_tulis_disposisi')" :items="breadcrumbs" />
 
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
-      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
+      <div v-if="isLoadingData && loadingMessage === $t('dp_memuat')" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 4" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
@@ -44,18 +44,17 @@
       </div>
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-        <TulisInputTanggal v-model="date" label="Tanggal Disposisi" />
+        <TulisInputTanggal v-model="date" :label="$t('dp_tanggal_disposisi')" />
         <TulisInputSifat v-model="selectedSifat" />
 
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Ref. Nomor
-              Surat</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('dp_ref_nomor_surat') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refNumber"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Ref. Nomor Surat" />
+                :placeholder="$t('dp_ketik_ref_nomor_surat')" />
             </div>
           </div>
         </div>
@@ -63,28 +62,27 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Ref.
-              Perihal</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('dp_ref_perihal') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Ref. Perihal" />
+                :placeholder="$t('dp_ketik_ref_perihal')" />
             </div>
           </div>
         </div>
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju"
+        <TulisInputPenerima v-model="selectedTertuju" :label="$t('tertuju')" :placeholder="$t('dp_pilih_tertuju')"
           :items="recipientList" />
 
         <div class="flex flex-col py-3 gap-3 mb-6">
-          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Instruksi / Disposisi</span>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">{{ $t('dp_instruksi_disposisi') }}</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start group">
-              <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
+            <div v-for="opt in checklistOptions" :key="opt.value" class="flex gap-2 items-start group">
+              <input type="checkbox" :id="opt.value" :value="opt.value" v-model="selectedChecklist"
                 class="mt-0.5 w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
-              <label :for="opt"
+              <label :for="opt.value"
                 class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none leading-tight break-words">
-                {{ opt }}
+                {{ $t(opt.label) }}
               </label>
             </div>
           </div>
@@ -101,17 +99,17 @@
                     <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
                   <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
-                    <div>LEMBAR DISPOSISI</div>
-                    <div class="uppercase">{{ user?.positionText || "NAMA JABATAN" }}</div>
+                    <div class="uppercase">{{ $t('dp_lembar_disposisi') }}</div>
+                    <div class="uppercase">{{ user?.positionText || $t('dp_nama_jabatan') }}</div>
                   </div>
                 </div>
 
                 <div class="flex border-b-2 border-black">
                   <div class="w-[15%] border-r-2 border-black p-2 flex flex-col justify-between">
-                    <div class="font-bold underline mb-4">AGENDA</div>
+                    <div class="font-bold underline mb-4 uppercase">{{ $t('f_agenda') }}</div>
                     <div class="text-xs font-bold space-y-2">
-                      <div>No: ........</div>
-                      <div>Tgl: ........</div>
+                      <div>{{ $t('dp_no') }}: ........</div>
+                      <div>{{ $t('dp_tgl') }}: ........</div>
                     </div>
                   </div>
 
@@ -119,19 +117,19 @@
                     <table class="w-full">
                       <tbody>
                         <tr>
-                          <td class="w-16 py-1">Surat dari</td>
+                          <td class="w-16 py-1">{{ $t('dp_surat_dari') }}</td>
                           <td class="py-1">: {{ user?.positionText || "....................." }}</td>
                         </tr>
                         <tr>
-                          <td class="py-1">Tanggal</td>
+                          <td class="py-1">{{ $t('tanggal') }}</td>
                           <td class="py-1">: {{ formattedDate }}</td>
                         </tr>
                         <tr>
-                          <td class="py-1">Nomor</td>
+                          <td class="py-1">{{ $t('f_nomor') }}</td>
                           <td class="py-1">: {{ refNumber || "-" }}</td>
                         </tr>
                         <tr>
-                          <td class="py-1 align-top">Perihal</td>
+                          <td class="py-1 align-top">{{ $t('perihal') }}</td>
                           <td class="py-1 align-top">: {{ refPerihal || "-" }}</td>
                         </tr>
                       </tbody>
@@ -139,7 +137,7 @@
                   </div>
 
                   <div class="w-[30%] p-2 text-xs">
-                    <div class="font-bold underline mb-2">KLASIFIKASI</div>
+                    <div class="font-bold underline mb-2 uppercase">{{ $t('klasifikasi') }}</div>
                     <div class="space-y-1">
                       <div v-for="s in sifatOptions" :key="s.value" class="flex items-center gap-2">
                         <div class="w-4 h-4 border border-black flex items-center justify-center text-[10px]">
@@ -152,32 +150,32 @@
                 </div>
 
                 <div class="border-b-2 border-black p-2 text-xs">
-                  <div class="font-bold underline mb-1">Kepada Yth. :</div>
+                  <div class="font-bold underline mb-1">{{ $t('f_kepada_yth') }} :</div>
                   <div v-if="selectedTertuju.length > 0" class="pl-4">
                     <ol class="list-decimal ml-4">
                       <li v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</li>
                     </ol>
                   </div>
                   <div v-else class="pl-4 italic text-gray-500">
-                    (Pilih penerima pada form di atas)
+                    {{ $t('dp_pilih_penerima_atas') }}
                   </div>
                 </div>
 
                 <div class="border-b-2 border-black p-2 text-xs flex">
-                  <div class="w-20 font-bold underline shrink-0">DISPOSISI :</div>
+                  <div class="w-20 font-bold underline shrink-0 uppercase">{{ $t('disposisi') }} :</div>
                   <div class="flex-1 grid grid-cols-3 gap-2">
-                    <div v-for="opt in checklistOptions" :key="opt" class="flex items-start gap-1">
+                    <div v-for="opt in checklistOptions" :key="opt.value" class="flex items-start gap-1">
                       <div
                         class="w-3 h-3 border border-black flex items-center justify-center text-[8px] mt-0.5 shrink-0">
-                        {{ selectedChecklist.includes(opt) ? "✓" : "" }}
+                        {{ selectedChecklist.includes(opt.value) ? "✓" : "" }}
                       </div>
-                      <span class="leading-tight">{{ opt }}</span>
+                      <span class="leading-tight">{{ $t(opt.label) }}</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="p-0 min-h-[300px] relative group">
-                  <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200">CATATAN :</div>
+                  <div class="p-2 font-bold text-xs underline bg-gray-100 border-b border-gray-200 uppercase">{{ $t('k_catatan') }} :</div>
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
                     <div class="mb-3">
                       <AiDraftTriggerButton @click="isAiDraftOpen = true" />
@@ -187,13 +185,12 @@
                   <div class="absolute bottom-4 left-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
-                      Paraf
+                      {{ $t('dp_paraf') }}
                     </div>
                   </div>
                 </div>
                 <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
-                  Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
-                  ini.
+                  {{ $t('dp_footer_disposisi') }}
                 </div>
               </div>
             </div>
@@ -207,14 +204,14 @@
             <input type="checkbox" id="isPriority" :checked="isPriority" @change="handlePriorityChange"
               class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
             <label for="isPriority" class="text-sm cursor-pointer select-none">
-              Tandai sebagai Prioritas
+              {{ $t('dp_tandai_prioritas') }}
             </label>
           </div>
         </div>
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.disposisi', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.disposisi', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -245,6 +242,7 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 const route = useRoute();
 const alertState = useAlertState();
+const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -283,21 +281,32 @@ const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tulis Disposisi", to: "#" },
+  { label: t('beranda'), to: "/beranda" },
+  { label: t('dp_tulis_disposisi'), to: "#" },
 ];
 
 const checklistOptions = [
-  "Untuk Diketahui", "Proses Lanjut", "Koordinasikan", "Cek", "Monitor", "Evaluasi",
-  "Dikaji Kemungkinannya", "Laporkan", "Untuk Menjadi Perhatian",
-  "Untuk Dijadikan Acuan/Dipergunakan", "Harap Mewakili", "Harap Mendampingi",
-  "Tunjuk Perwakilan", "Siapkan Bahan/Materi", "Lainnya",
+  { label: 'dp_untuk_diketahui', value: 'Untuk Diketahui' },
+  { label: 'dp_proses_lanjut', value: 'Proses Lanjut' },
+  { label: 'dp_koordinasikan', value: 'Koordinasikan' },
+  { label: 'dp_cek', value: 'Cek' },
+  { label: 'dp_monitor', value: 'Monitor' },
+  { label: 'dp_evaluasi', value: 'Evaluasi' },
+  { label: 'dp_dikaji_kemungkinannya', value: 'Dikaji Kemungkinannya' },
+  { label: 'dp_laporkan', value: 'Laporkan' },
+  { label: 'dp_untuk_menjadi_perhatian', value: 'Untuk Menjadi Perhatian' },
+  { label: 'dp_untuk_dijadikan_acuan', value: 'Untuk Dijadikan Acuan/Dipergunakan' },
+  { label: 'dp_harap_mewakili', value: 'Harap Mewakili' },
+  { label: 'dp_harap_mendampingi', value: 'Harap Mendampingi' },
+  { label: 'dp_tunjuk_perwakilan', value: 'Tunjuk Perwakilan' },
+  { label: 'dp_siapkan_bahan', value: 'Siapkan Bahan/Materi' },
+  { label: 'dp_lainnya', value: 'Lainnya' },
 ];
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
-  role: user.value?.positionText || 'Jabatan',
-  label: 'Ditandatangani secara digital oleh'
+  name: toTitleCase(user.value?.nama) || t('dp_nama_lengkap'),
+  role: user.value?.positionText || t('dp_jabatan'),
+  label: t('dp_ditandatangani_digital')
 }));
 
 const showEditor = computed(() => selectedChecklist.value.includes("Lainnya"));
@@ -320,8 +329,8 @@ const validateAndToast = (payload: DisposisiPayload) => {
   const check = validateDisposisiPayload(payload);
   if (!check.isValid) {
     const firstKey = Object.keys(check.errors || {})[0];
-    const message = firstKey ? (check.errors || {})[firstKey] : "Mohon lengkapi semua field yang wajib diisi.";
-    toastError("Validasi Gagal", message);
+    const message = firstKey ? (check.errors || {})[firstKey] : t('dp_lengkapi_field_wajib');
+    toastError(t('dp_validasi_gagal'), message);
     return false;
   }
 
@@ -329,7 +338,7 @@ const validateAndToast = (payload: DisposisiPayload) => {
   if (selectedChecklist.value.includes("Lainnya")) {
     const strippedContent = (editorContent.value || "").replace(/<[^>]*>?/gm, '').trim(); // Hapus tag HTML
     if (!strippedContent) {
-      toastError("Validasi Gagal", "Catatan/Konten wajib diisi jika instruksi 'Lainnya' dipilih.");
+      toastError(t('dp_validasi_gagal'), t('dp_catatan_wajib_lainnya'));
       return false;
     }
   }
@@ -373,7 +382,7 @@ const handlePriorityChange = async (e: Event) => {
     return;
   }
   target.checked = false;
-  const isConfirmed = await Alert.confirm('Tandai sebagai Prioritas?', 'Dokumen ini akan mendapatkan label prioritas tinggi. Lanjutkan?', 'Ya, Prioritas', 'Batal', false);
+  const isConfirmed = await Alert.confirm(t('dp_tandai_prioritas_konfirmasi'), t('dp_prioritas_desc'), t('dp_ya_prioritas'), t('k_batal'), false);
   Alert.close();
   if (isConfirmed) isPriority.value = true;
 };
@@ -383,13 +392,13 @@ const handlePreview = async () => {
   if (!validateAndToast(payload)) return;
 
   isLoadingData.value = true;
-  loadingMessage.value = "Memproses Pratinjau...";
+  loadingMessage.value = t('dp_memproses_pratinjau');
   try {
     const blob = await generatePdf(createFormData(payload, false));
     setPdfBlob(blob);
     isOpenPreview.value = true;
   } catch (err) {
-    toastError("Gagal Preview");
+    toastError(t('dp_gagal_preview'));
   } finally {
     isLoadingData.value = false;
   }
@@ -399,7 +408,7 @@ const handleSaveDraft = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
 
-  loadingMessage.value = "Menyimpan Draft...";
+  loadingMessage.value = t('dp_menyimpan_draft');
   isLoadingData.value = true;
   try {
     const fd = createFormData(payload, false);
@@ -408,10 +417,10 @@ const handleSaveDraft = async () => {
     } else {
       await saveDI(fd);
     }
-    toastSuccess("Berhasil", "Draft berhasil disimpan");
+    toastSuccess(t('f_berhasil'), t('f_draft_tersimpan'));
     redirectDraf();
   } catch (e: any) {
-    toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
+    toastError(t('f_gagal'), e.response?.data?.message || t('dp_gagal_memperbarui_draft'));
   } finally {
     isLoadingData.value = false;
   }
@@ -446,12 +455,12 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 
 const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
   if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
-    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
+    signMethodModalRef.value?.setPassphraseError(t('dp_passphrase_kosong'));
     return;
   }
 
   const basePayload = getBasePayload();
-  loadingMessage.value = 'Mengirim Disposisi...';
+  loadingMessage.value = t('dp_mengirim_disposisi');
   isLoadingData.value = true;
 
   try {
@@ -467,7 +476,7 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
     };
 
     if (selectedSendType.value === 'digsig') {
-      if (!user.value?.nik) throw new Error('NIK pengguna tidak ditemukan untuk TTE.');
+      if (!user.value?.nik) throw new Error(t('dp_nik_tidak_ditemukan'));
       kirimPayload.nik = user.value.nik;
     }
 
@@ -487,7 +496,7 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
 
     if (res?.data?.success || res?.success) {
       revokePdfUrl();
-      toastSuccess('Berhasil', 'Disposisi berhasil dikirim');
+      toastSuccess(t('f_berhasil'), t('dp_disposisi_terkirim'));
       Alert.close();
 
       // Sama seperti tulis ND — ttd_basah redirect ke tertunda, selainnya ke terkirim
@@ -498,11 +507,11 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
         redirectTerkirim();
       }
     } else {
-      throw new Error(res?.data?.message || 'Pengiriman gagal');
+      throw new Error(res?.data?.message || t('dp_pengiriman_gagal'));
     }
   } catch (e: any) {
     Alert.close();
-    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+    const errMsg = e.response?.data?.message || e.message || t('dp_gagal_kirim_dokumen');
 
     if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
       bsreDisabled.value = false;
@@ -511,7 +520,7 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
       await nextTick();
       signMethodModalRef.value?.setPassphraseError(errMsg);
     } else {
-      toastError('Gagal Mengirim', errMsg);
+      toastError(t('dp_gagal_mengirim'), errMsg);
     }
   } finally {
     isLoadingData.value = false;
@@ -524,7 +533,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 
 onMounted(async () => {
   if (!canAccessPage()) return;
-  loadingMessage.value = "Memuat...";
+  loadingMessage.value = t('dp_memuat');
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();

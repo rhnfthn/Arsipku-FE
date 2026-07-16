@@ -67,14 +67,14 @@ const isLabelProcessing = ref(false);
 const isRefreshing = ref(false);
 const activeFilterType = ref("Semua");
 const showFilterMenu = ref(false);
-const filterMenuOptions = [
+const filterMenuOptions = computed(() => [
   { label: t('k_semua'), value: "Semua" },
   { label: t('k_favorit'), value: "Favorit" },
   { label: t('k_prioritas'), value: "Prioritas" },
   { label: t('k_catatan'), value: "Catatan" },
   { label: t('k_lock'), value: "Lock" },
   { label: t('k_arsip'), value: "Arsip" },
-];
+]);
 const selectedIds = ref(new Set<string>());
 
 // --- FLAG TOGGLE (favorit, arsip, lock, note) ---
@@ -218,21 +218,21 @@ const isCustomDate = computed(() => activeDateLabel.value === "Custom");
 watch(startDateCal, (val) => { if (val) startDateInput.value = val.toString(); });
 watch(endDateCal, (val) => { if (val) endDateInput.value = val.toString(); });
 
-const breadcrumbs = [
+const breadcrumbs = computed(() => [
   { label: t('beranda'), to: "/beranda" },
   { label: t('tertunda'), to: "#" },
-];
+]);
 
 // --- CONFIGURATION ---
 
-const tabs = [
+const tabs = computed(() => [
   { label: t('k_semua'), value: "ALL", icon: Inbox },
   { label: t('k_nota_dinas'), value: "ND", icon: FileText },
   { label: t('k_disposisi'), value: "DI", icon: Send },
   { label: t('k_internal'), value: "SDI", icon: Building },
   { label: t('k_eksternal'), value: "SDE", icon: Building2 },
   { label: t('k_kajian'), value: "KA", icon: BookOpen },
-];
+]);
 // Raw string identifiers (used by shared applyKorespondensiListQuery util for
 // === 'Semua' / === 'Custom' / === 'Terbaru' checks & URL validation). Translate at display.
 const dateOptions = ["7 Hari", "30 Hari", "60 Hari", "1 Tahun", "Semua"];
@@ -445,7 +445,7 @@ onMounted(async () => {
     startDateInput,
     endDateInput,
   }, {
-    tabs: tabs.map((t) => t.value),
+    tabs: tabs.value.map((t) => t.value),
     sorts: sortOptions,
     dates: dateOptions,
     pageSizes: pageOptions,
@@ -617,6 +617,13 @@ onMounted(async () => {
                 <span>{{ dateOptLabel(opt) }}</span>
                 <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
+              <div class="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
+                <button @click="selectDateFilter('Semua')"
+                  class="w-full text-left px-4 py-2 text-[13px] text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors">
+                  <RotateCw class="w-3.5 h-3.5" />
+                  <span>{{ $t('df_reset_tanggal') }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

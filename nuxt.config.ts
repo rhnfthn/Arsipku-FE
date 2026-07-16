@@ -79,6 +79,7 @@ export default defineNuxtConfig({
     defaultLocale: "id",
     langDir: "locales/",
     strategy: "no_prefix",
+    strictMessage: false,
     locales: [
       { code: "id", name: "ID", file: "id.json" },
       { code: "en", name: "EN", file: "en.json" },
