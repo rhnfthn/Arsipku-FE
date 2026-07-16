@@ -103,7 +103,9 @@
               class="w-6 h-6 transition-colors text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-blue-400"
             />
           </div>
-          <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+          <span
+            class="text-[10px] font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors"
+          >
             Helpdesk
           </span>
         </button>
@@ -114,7 +116,10 @@
       v-show="!collapsed || isMobile"
       class="flex-1 flex flex-col h-full overflow-hidden bg-[#F6F8FC] dark:bg-gray-900"
     >
-      <NuxtLink to="/beranda" class="h-20 flex items-center px-4 gap-3 flex-shrink-0 hover:opacity-80 transition-opacity">
+      <NuxtLink
+        to="/beranda"
+        class="h-20 flex items-center px-4 gap-3 flex-shrink-0 hover:opacity-80 transition-opacity"
+      >
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
         <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
       </NuxtLink>
@@ -282,8 +287,12 @@
     >
       <div class="fixed inset-0 bg-black/40" @click="showHelpdeskConfirm = false"></div>
 
-      <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-8 text-center">
-        <div class="w-14 h-14 mx-auto rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mb-4">
+      <div
+        class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-8 text-center"
+      >
+        <div
+          class="w-14 h-14 mx-auto rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mb-4"
+        >
           <UIcon name="i-lucide-headset" class="w-7 h-7 text-primary-600 dark:text-primary-400" />
         </div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Buka Helpdesk?</h3>
@@ -812,7 +821,11 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
           { label: t('klasifikasi'), to: '/master/klasifikasi' },
           { label: t('jenis'), to: '/master/jenis' },
-          { label: t('grup_penerima') || 'Grup Penerima', to: '/master/grup-penerima', icon: 'i-lucide-users' },
+          {
+            label: t('grup_penerima') || 'Grup Penerima',
+            to: '/master/grup-penerima',
+            icon: 'i-lucide-users',
+          },
         ],
       },
       {
