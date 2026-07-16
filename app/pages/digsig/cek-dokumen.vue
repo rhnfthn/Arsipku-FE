@@ -12,9 +12,10 @@
 
     <div class="flex flex-col gap-4 w-full">
       <!-- ================== -->
-      <!-- UPLOAD SECTION -->
+      <!-- UPLOAD SECTION (hidden when results are showing) -->
       <!-- ================== -->
       <div
+        v-if="!fileUploaded || !documentCheck"
         class="bg-white p-6 mt-2 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 dark:text-white dark:bg-gray-800 dark:border-gray-600"
       >
         <Heading variant="heading10sb">{{ $t('cek_upload_title') }}</Heading>
