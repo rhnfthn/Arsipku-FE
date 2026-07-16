@@ -50,6 +50,21 @@
     </div>
 
     <div v-if="forwardTargetInfo" class="mb-4">
+      <!-- DEBUG: Turunkan target info -->
+      <div v-if="isTurunkanAction" class="mb-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 px-3 py-2 text-[11px] font-mono text-yellow-800 dark:text-yellow-300">
+        <p class="font-bold mb-1">DEBUG — Turunkan Target:</p>
+        <p>turunkan_position_id: {{ $route.query.turunkan_position_id }}</p>
+        <p>turunkan_nama: {{ $route.query.turunkan_nama }}</p>
+        <p>isTurunkanAction: {{ isTurunkanAction }}</p>
+        <p>isRejectAction: {{ isRejectAction }}</p>
+        <p>forwardTargetInfo.position: {{ forwardTargetInfo?.position }}</p>
+        <p>forwardTargetInfo.positionText: {{ forwardTargetInfo?.positionText }}</p>
+        <p>refPengirimPositionId: {{ refPengirimPositionId }}</p>
+        <p>selectedSender: {{ selectedSender?.value || selectedSender?.label || 'null' }}</p>
+        <p>detail.from_position_id: {{ detail?.from_position_id }}</p>
+        <p>detail.aksi: {{ detail?.aksi }}</p>
+        <p>atasanLangsung.position: {{ atasanLangsungInfo?.position }}</p>
+      </div>
       <div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3">
         <div class="flex items-start gap-2">
           <UIcon name="i-lucide-user-round-check" class="w-4 h-4 text-primary-500 mt-0.5" />
@@ -69,6 +84,13 @@
       class="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
     >
       Mode revisi: konsep ini dikembalikan dan perlu diperbaiki.
+    </div>
+
+    <div
+      v-if="isTurunkanAction"
+      class="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300"
+    >
+      Mode turunkan: konsep ini akan diteruskan ke bawahan untuk diperbaiki.
     </div>
 
     <div
@@ -332,12 +354,23 @@ const isReferenceLoading = ref(
 
 const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
 const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
+const isTurunkanAction = computed(() => Boolean(route.query.turunkan_position_id));
 const isNewKonsepFromReference = computed(() =>
   String(route.query.workflow || '').toLowerCase() === 'konsep' &&
   String(route.query.action || '').toLowerCase() !== 'edit'
 );
 const forwardTargetInfo = computed(() => {
-  if (isRejectAction.value) {
+  // Turunkan: target = bawahan dari query param
+  if (isTurunkanAction.value) {
+    return {
+      position: String(route.query.turunkan_position_id || ''),
+      positionText: String(route.query.turunkan_nama || ''),
+      nama: String(route.query.turunkan_person_nama || ''),
+    };
+  }
+  // Reject ATAU turunkan mode edit (perbaiki sendiri): kirim balik ke pengirim
+  // yang menolak/menurunkan (= atasan). Untuk turunkan, ini atasan yg delegate ke saya.
+  if (isRejectAction.value || (String(detail.value?.aksi || '').toLowerCase() === 'turunkan' && !isTurunkanAction.value)) {
     const fromPositionId = detail.value?.from_position_id;
     const fromPositionText = detail.value?.from_position_text;
     const fromNama = detail.value?.from_nama;
@@ -667,6 +700,8 @@ const prepareRevisiFormData = () => {
   formData.append('jenis', 'ND');
   formData.append('from_position_id', user.value?.position || '');
   formData.append('to_position_id', refPengirimPositionId.value || String(currentSender.value || ''));
+  // Turunkan: flag aksi='turunkan' (delegasi ke bawahan), else aksi='forward' (naik ke atasan)
+  formData.append('is_turunkan', isTurunkanAction.value ? 'true' : 'false');
   formData.append('pengirim_position_id', String(currentSender.value || ''));
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
@@ -731,11 +766,11 @@ const handleKirimDokumen = async () => {
   const isRevision = route.query.action === 'edit';
 
   const confirmTitle = isRevision
-    ? (isRejectAction.value ? 'Kirim Perbaikan?' : 'Teruskan Konsep?')
+    ? (isRejectAction.value ? 'Kirim Perbaikan?' : isTurunkanAction.value ? 'Turunkan Konsep?' : 'Teruskan Konsep?')
     : 'Kirim Konsep?';
 
   const confirmDescription = isRevision
-    ? (isRejectAction.value ? 'Perbaikan konsep akan dikirim.' : 'Konsep akan diteruskan.')
+    ? (isRejectAction.value ? 'Perbaikan konsep akan dikirim.' : isTurunkanAction.value ? 'Konsep akan diturunkan ke bawahan.' : 'Konsep akan diteruskan.')
     : 'Konsep Nota Dinas akan dikirim.';
 
   const isConfirmed = await Alert.confirm(
@@ -850,7 +885,17 @@ watch(
     () => route.query.action,
   ],
   () => {
-    if (isRejectAction.value && detail.value?.from_position_id) {
+    // Turunkan lagi: gunakan position_id dari query param
+    if (isTurunkanAction.value && route.query.turunkan_position_id) {
+      refPengirimPositionId.value = String(route.query.turunkan_position_id);
+      return;
+    }
+    // Reject ATAU turunkan mode edit (perbaiki sendiri): kirim balik ke atasan (from_position_id)
+    if (
+      (isRejectAction.value ||
+        (String(detail.value?.aksi || '').toLowerCase() === 'turunkan' && !isTurunkanAction.value)) &&
+      detail.value?.from_position_id
+    ) {
       refPengirimPositionId.value = String(detail.value.from_position_id);
       return;
     }
@@ -995,13 +1040,15 @@ onMounted(async () => {
           jenis: originFlow.jenis,
           pengirim: originFlow.pengirim || null,
         };
-        refPengirimPositionId.value = isRejectAction.value && detail.value?.from_position_id
-          ? String(detail.value.from_position_id)
-          : (isNewKonsepFromReference.value
-            ? String(originFlow.pengirim?.position_id || originFlow.pengirim?.position || '')
-            : (atasanLangsungInfo.value?.position
-              ? String(atasanLangsungInfo.value.position)
-              : (originFlow.pengirim?.position_id || '')));
+        refPengirimPositionId.value = isTurunkanAction.value && route.query.turunkan_position_id
+          ? String(route.query.turunkan_position_id)
+          : (isRejectAction.value && detail.value?.from_position_id
+            ? String(detail.value.from_position_id)
+            : (isNewKonsepFromReference.value
+              ? String(originFlow.pengirim?.position_id || originFlow.pengirim?.position || '')
+              : (atasanLangsungInfo.value?.position
+                ? String(atasanLangsungInfo.value.position)
+                : (originFlow.pengirim?.position_id || ''))));
       }
 
     } catch (e) {
@@ -1033,11 +1080,13 @@ onMounted(async () => {
           jenis: rawFlow.jenis,
           pengirim: rawFlow.pengirim || null,
         };
-        refPengirimPositionId.value = isNewKonsepFromReference.value
-          ? String(rawFlow.pengirim?.position_id || rawFlow.pengirim?.position || '')
-          : (atasanLangsungInfo.value?.position
-            ? String(atasanLangsungInfo.value.position)
-            : (rawFlow.pengirim?.position_id || ''));
+        refPengirimPositionId.value = isTurunkanAction.value && route.query.turunkan_position_id
+          ? String(route.query.turunkan_position_id)
+          : (isNewKonsepFromReference.value
+            ? String(rawFlow.pengirim?.position_id || rawFlow.pengirim?.position || '')
+            : (atasanLangsungInfo.value?.position
+              ? String(atasanLangsungInfo.value.position)
+              : (rawFlow.pengirim?.position_id || '')));
       }
     } catch (e) { console.error(e); }
     finally {

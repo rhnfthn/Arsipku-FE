@@ -3,7 +3,7 @@
     <div
       class="bg-white dark:bg-gray-800 z-30 p-4 sm:px-6 rounded-t-lg mb-0 print:hidden transition-colors"
     >
-      <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
+      <PageHeader :title="$t('nm_tulis_nota_dinas')" :items="breadcrumbs" />
     </div>
 
     <UCard
@@ -19,7 +19,7 @@
           <span
             class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0"
           >
-            Berkas
+            {{ $t('berkas') }}
           </span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu
@@ -28,9 +28,9 @@
               :loading="berkasStatus === 'loading'"
               value-key="id"
               :search-attributes="['judulBerkas', 'klasifikasi', 'isiRingkas']"
-              placeholder="Pilih Berkas"
+              :placeholder="$t('nm_pilih_berkas')"
               :search-input="{
-                placeholder: 'Cari judul, klasifikasi, atau isi...',
+                placeholder: $t('nm_cari_berkas'),
                 size: 'lg',
               }"
               variant="none"
@@ -68,7 +68,7 @@
                   v-else
                   class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left"
                 >
-                  Pilih berkas arsip...
+                  {{ $t('nm_pilih_berkas_arsip') }}
                 </span>
               </template>
             </USelectMenu>
@@ -80,7 +80,7 @@
         >
           <span
             class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 font-medium shrink-0"
-            >Tanggal Surat
+            >{{ $t('f_tanggal_surat') }}
           </span>
           <div class="relative w-full">
             <ClientOnly>
@@ -125,14 +125,14 @@
         >
           <span
             class="w-full sm:w-40 text-sm mt-0 sm:mt-1 text-gray-500 font-medium shrink-0"
-            >Tertuju</span
+            >{{ $t('tertuju') }}</span
           >
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu
               v-model="selectedTertuju"
               :items="itemsTertuju"
               multiple
-              placeholder="Kepada ..."
+              :placeholder="$t('f_kepada') + '...'"
               class="w-full p-0"
               variant="none"
               :ui="{
@@ -167,7 +167,7 @@
                     <span
                       v-if="item.disabled"
                       class="text-xs text-red-500 italic"
-                      >Sudah dipilih di Tembusan</span
+                      >{{ $t('nm_sudah_dipilih_tembusan') }}</span
                     >
                   </div>
                 </div>
@@ -210,7 +210,7 @@
                     v-if="!selectedTertuju.length"
                     class="text-sm text-gray-400 dark:text-gray-500"
                   >
-                    Pilih tertuju
+                    {{ $t('nm_pilih_tertuju') }}
                   </span>
                 </div>
               </template>
@@ -223,14 +223,14 @@
         >
           <span
             class="w-full sm:w-40 text-sm mt-0 sm:mt-1 text-gray-500 font-medium shrink-0"
-            >Tembusan</span
+            >{{ $t('f_tembusan') }}</span
           >
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu
               v-model="selectedTembusan"
               :items="itemsTembusan"
               multiple
-              placeholder="Kepada ..."
+              :placeholder="$t('f_kepada') + '...'"
               class="w-full p-0"
               variant="none"
               :ui="{
@@ -266,7 +266,7 @@
                     <span
                       v-if="item.disabled"
                       class="text-xs text-red-500 italic"
-                      >Sudah dipilih di Tertuju</span
+                      >{{ $t('nm_sudah_dipilih_tertuju') }}</span
                     >
                   </div>
                 </div>
@@ -309,7 +309,7 @@
                     v-if="!selectedTembusan.length"
                     class="text-sm text-gray-400 dark:text-gray-500"
                   >
-                    Pilih tembusan
+                    {{ $t('nm_pilih_tembusan') }}
                   </span>
                 </div>
               </template>
@@ -322,15 +322,15 @@
         >
           <span
             class="w-full sm:w-40 text-sm text-gray-500 font-medium shrink-0"
-            >Sifat</span
+            >{{ $t('f_sifat') }}</span
           >
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu
               v-model="selectedSifat"
               :items="sifatOptions"
-              placeholder="Pilih sifat ..."
+              :placeholder="$t('nm_pilih_sifat') + '...'"
               class="w-full p-0"
-              :search-input="{ placeholder: 'Cari sifat ...', size: 'lg' }"
+              :search-input="{ placeholder: $t('nm_cari_sifat'), size: 'lg' }"
               variant="none"
             >
               <template #default>
@@ -343,7 +343,7 @@
                   >
                     {{ selectedSifat.label }}
                   </span>
-                  <span v-else class="text-sm text-gray-400">Pilih sifat</span>
+                  <span v-else class="text-sm text-gray-400">{{ $t('nm_pilih_sifat') }}</span>
                 </div>
               </template>
             </USelectMenu>
@@ -356,13 +356,13 @@
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span
               class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
-              >Perihal</span
+              >{{ $t('perihal') }}</span
             >
             <input
               type="text"
               v-model="subject"
               class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-              placeholder="Ketik perihal"
+              :placeholder="$t('nm_ketik_perihal')"
             />
           </div>
         </div>
@@ -373,13 +373,13 @@
           >
             <div class="flex flex-wrap gap-2 flex-shrink-0">
               <UButton
-                  label="Pilih Template"
+                  :label="$t('nm_pilih_template')"
                   color="primary"
                   variant="soft"
                   @click="openTemplate"
                   icon="i-heroicons-adjustments-horizontal"
                 />
-              <UModal v-model:open="isTemplateModalOpen" title="Pilih Template">
+              <UModal v-model:open="isTemplateModalOpen" :title="$t('nm_pilih_template')">
 
                 <template #body>
                   <div class="flex flex-col gap-2">
@@ -404,7 +404,7 @@
                 icon="i-lucide-eye"
                 color="neutral"
                 variant="soft"
-                label="Preview PDF"
+                :label="$t('f_pratinjau') + ' PDF'"
                 @click="openPreview"
               />
             </div>
@@ -417,13 +417,13 @@
 
           <div class="flex flex-col py-3 gap-2 mt-4">
             <label class="text-sm font-medium text-gray-700"
-              >Lampiran File</label
+              >{{ $t('nm_lampiran_file') }}</label
             >
             <FileUpload
               v-model="uploadedFiles"
               accept="application/pdf"
               :multiple="true"
-              description="Klik atau drag & drop untuk upload file PDF"
+              :description="$t('nm_upload_pdf_hint')"
             />
           </div>
         </div>
@@ -433,7 +433,7 @@
         >
           <UButton
             v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
-            label="Simpan Draft"
+            :label="$t('f_simpan_draf')"
             color="neutral"
             variant="outline"
             size="lg"
@@ -444,7 +444,7 @@
           />
           <UButton
             v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
-            label="Kirim Dokumen"
+            :label="$t('nm_kirim_dokumen')"
             color="primary"
             size="lg"
             icon="i-heroicons-paper-airplane"
@@ -541,10 +541,10 @@
                 margin: 0;
               "
             >
-              NOTA DINAS
+              {{ $t('nota_dinas').toUpperCase() }}
             </h1>
             <p style="font-size: 14px; margin-top: 4px; color: #000000">
-              Nomor : ..............................................
+              {{ $t('f_nomor') }} : ..............................................
             </p>
           </div>
 
@@ -573,7 +573,7 @@
                     vertical-align: top;
                   "
                 >
-                  Kepada Yth.
+                  {{ $t('f_kepada_yth') }}
                 </td>
                 <td
                   style="
@@ -601,7 +601,7 @@
                     vertical-align: top;
                   "
                 >
-                  Dari
+                  {{ $t('f_dari') }}
                 </td>
                 <td style="border: none !important; vertical-align: top">:</td>
                 <td style="border: none !important; vertical-align: top">
@@ -619,7 +619,7 @@
                     vertical-align: top;
                   "
                 >
-                  Perihal
+                  {{ $t('perihal') }}
                 </td>
                 <td style="border: none !important; vertical-align: top">:</td>
                 <td style="border: none !important; vertical-align: top">
@@ -684,7 +684,7 @@
               "
             >
               <div style="font-weight: bold; margin-bottom: 4px">
-                Tembusan :
+                {{ $t('f_tembusan') }} :
               </div>
 
               <ol
@@ -714,8 +714,8 @@
 
     <USlideover
       v-model:open="isOpenPreview"
-      title="Preview PDF"
-      description="Preview dokumen PDF"
+      :title="$t('f_pratinjau') + ' PDF'"
+      :description="$t('nm_preview_dokumen_pdf')"
       side="bottom"
       :ui="{
         content: 'h-screen max-h-screen',
@@ -736,7 +736,7 @@
               name="i-lucide-loader-2"
               class="animate-spin w-8 h-8 text-primary-500"
             />
-            <span class="text-gray-500">Memuat PDF...</span>
+            <span class="text-gray-500">{{ $t('nm_memuat_pdf') }}</span>
           </div>
         </div>
       </template>
@@ -764,14 +764,15 @@ const { saveDraft, isLoadingDraft } = useDraft();
 const { getBerkasList } = useBerkas();
 const { getRecipients } = useRecipients();
 const { user, getProfile, hasPermission } = useAuth(); // <--- INIT USEAUTH
+const { t } = useI18n();
 
 /* -------------------------------------------------------------------------- */
 /* STATE & REFS                                                               */
 /* -------------------------------------------------------------------------- */
 // --- UI State ---
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tulis Nota Dinas", to: "#" },
+  { label: t("beranda"), to: "/beranda" },
+  { label: t("nm_tulis_nota_dinas"), to: "#" },
 ];
 const isFullscreenEditor = ref(false);
 const isTemplateModalOpen = ref(false);
@@ -810,7 +811,7 @@ const tinyMceInit = {
   menubar: false,
   promotion: false,
   branding: false,
-  placeholder: 'Ketik konten disini...',
+  placeholder: t('nm_ketik_konten'),
   plugins: 'lists advlist link image code table',
   toolbar: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | table bullist numlist | code',
 };
@@ -820,8 +821,8 @@ const templates = [
   { id: 1, name: "Default", content: `<ol><li>Contoh isi...</li></ol>` },
 ];
 const sifatOptions = [
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Biasa", value: "biasa" },
+  { label: t("nm_sifat_rahasia"), value: "rahasia" },
+  { label: t("nm_sifat_biasa"), value: "biasa" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -916,7 +917,7 @@ async function openPreview() {
 
   } catch (err) {
     console.error("PDF generate error:", err);
-    alert("Terjadi kesalahan saat generate PDF.");
+    alert(t("nm_kesalahan_generate_pdf"));
     isOpenPreview.value = false;
   } finally {
     loading.value = false;
@@ -928,7 +929,7 @@ const handleSaveDraft = async () => {
   if (!user.value) await getProfile(); // Safety check
 
   if (!selectedBerkas.value) {
-    alert("Mohon pilih berkas arsip terlebih dahulu.");
+    alert(t("nm_pilih_berkas_dahulu"));
     return;
   }
 

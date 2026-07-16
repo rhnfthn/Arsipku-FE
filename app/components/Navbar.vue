@@ -30,7 +30,7 @@
           <input
             v-model="quickSearch"
             type="text"
-            placeholder="Cari perihal surat..."
+            :placeholder="$t('sr_cari_perihal')"
             autocomplete="off"
             @keydown.enter="onSearchEnter"
             @keydown.down.prevent="onArrowDown"
@@ -39,7 +39,7 @@
             @focus="onSearchFocus"
             class="w-full pl-11 pr-12 py-3 bg-primary-50/80 dark:bg-gray-800 rounded-full hover:bg-white hover:shadow-md dark:hover:bg-gray-700 focus:bg-white dark:focus:bg-gray-700 focus:shadow-md outline-none transition-all text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
           />
-          <UTooltip text="Filter Lanjutan">
+          <UTooltip :text="$t('sr_filter_lanjutan')">
             <button
               @click="openSearchModal"
               class="absolute right-3 p-1.5 rounded-full hover:bg-primary-100 dark:hover:bg-gray-600 transition-colors"
@@ -63,7 +63,7 @@
             class="px-4 py-6 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400"
           >
             <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-            Mencari...
+            {{ $t('sr_mencari') }}
           </div>
 
           <!-- EMPTY -->
@@ -71,7 +71,7 @@
             v-else-if="suggestionItems.length === 0"
             class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400"
           >
-            Tidak ada hasil untuk "{{ quickSearch }}"
+            {{ $t('sr_tidak_ada_hasil', { query: quickSearch }) }}
           </div>
 
           <!-- ITEMS -->
@@ -130,7 +130,7 @@
             class="w-full text-left px-4 py-2.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors flex items-center gap-2"
           >
             <UIcon name="i-lucide-search" class="w-3.5 h-3.5" />
-            Lihat semua hasil untuk "{{ quickSearch }}"
+            {{ $t('sr_lihat_semua', { query: quickSearch }) }}
           </button>
         </div>
       </div>
@@ -349,7 +349,7 @@
                   </div>
 
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Pencarian Surat
+                    {{ $t('sr_pencarian_surat') }}
                   </h3>
                 </div>
 
@@ -373,7 +373,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Nomor Surat
+                        {{ $t('sr_nomor_surat') }}
                       </label>
                       <div class="relative">
                         <div
@@ -394,7 +394,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Perihal
+                        {{ $t('sr_perihal') }}
                       </label>
                       <div class="relative">
                         <div
@@ -405,7 +405,7 @@
                         <input
                           type="text"
                           v-model="advancedFilters.perihal"
-                          placeholder="Isi Perihal..."
+                          :placeholder="$t('sr_isi_perihal')"
                           class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors"
                         />
                       </div>
@@ -416,7 +416,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Pengirim/Tertuju
+                        {{ $t('sr_pengirim') }}
                       </label>
                       <div class="relative">
                         <div
@@ -443,7 +443,7 @@
                           @input="handlePengirimInput"
                           @focus="handlePengirimFocus"
                           @blur="handlePengirimBlur"
-                          placeholder="Nama/Jabatan Pengirim..."
+                          :placeholder="$t('sr_nama_pengirim')"
                           class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary-500"
                         />
                         <div
@@ -474,7 +474,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Penerima/Tembusan
+                        {{ $t('sr_penerima') }}
                       </label>
                       <div class="relative">
                         <div
@@ -497,7 +497,7 @@
                           @input="handlePenerimaInput"
                           @focus="handlePenerimaFocus"
                           @blur="handlePenerimaBlur"
-                          placeholder="Nama/Jabatan Penerima..."
+                          :placeholder="$t('sr_nama_penerima')"
                           class="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary-500"
                         />
                         <div
@@ -527,7 +527,7 @@
                   <!-- JENIS SURAT -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Jenis Surat
+                      {{ $t('sr_jenis_surat') }}
                     </label>
                     <div class="flex flex-wrap gap-2.5">
                       <button
@@ -557,7 +557,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Sifat
+                        {{ $t('sr_sifat') }}
                       </label>
                       <div class="relative">
                         <button
@@ -608,7 +608,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Status
+                        {{ $t('sr_status') }}
                       </label>
                       <div class="relative">
                         <button
@@ -662,7 +662,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Lampiran
+                        {{ $t('sr_lampiran_filter') }}
                       </label>
                       <div class="relative">
                         <button
@@ -713,7 +713,7 @@
                       <label
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
                       >
-                        Prioritas
+                        {{ $t('sr_prioritas') }}
                       </label>
                       <div class="relative">
                         <button
@@ -763,14 +763,14 @@
                   <!-- RENTANG TANGGAL -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                      Rentang Tanggal
+                      {{ $t('sr_rentang_tanggal') }}
                     </label>
                     <div class="grid grid-cols-2 gap-4 items-center">
                       <div class="relative">
                         <label
                           class="absolute -top-2 left-3 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400 leading-none"
                         >
-                          Dari
+                          {{ $t('sr_dari') }}
                         </label>
                         <input
                           type="date"
@@ -782,7 +782,7 @@
                         <label
                           class="absolute -top-2 left-3 px-1 bg-white dark:bg-gray-900 text-[10px] text-gray-400 leading-none"
                         >
-                          Sampai
+                          {{ $t('sr_sampai') }}
                         </label>
                         <input
                           type="date"
@@ -804,7 +804,7 @@
                   class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
-                  Reset Filter
+                  {{ $t('sr_reset_filter') }}
                 </button>
 
                 <div class="flex gap-3">
@@ -812,14 +812,14 @@
                     @click="((isSearchModalOpen = false), resetAdvancedFilters())"
                     class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                   >
-                    Batal
+                    {{ $t('sr_batal') }}
                   </button>
                   <button
                     @click="handleAdvancedSearch"
                     class="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 shadow-sm transition-colors"
                   >
                     <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4" />
-                    Terapkan
+                    {{ $t('sr_terapkan') }}
                   </button>
                 </div>
               </div>
@@ -1146,8 +1146,8 @@ const copyDigsigText = async () => {
   }
   digsigCopied.value = true;
   toast.add({
-    title: 'Berhasil disalin',
-    description: 'Teks visualisasi digsig sudah disalin ke clipboard.',
+    title: t('sr_berhasil_disalin'),
+    description: t('sr_digsig_disalin'),
     icon: 'i-heroicons-check-circle',
     color: 'success'
   });
@@ -1382,42 +1382,42 @@ const advancedFilters = reactive({
   jenis: '' as string | null,
   sifat: '' as string | null,
   status: '' as string | null,
-  hasAttachment: 'Semua',
+  hasAttachment: 'all',
   priority: null as boolean | null
 });
 
-const jenisOptions: { label: string; value: string | null }[] = [
-  { label: 'Semua', value: null },
+const jenisOptions = computed(() => [
+  { label: t('sr_semua'), value: null },
   { label: 'Nota Dinas (ND)', value: 'ND' },
   { label: 'Surat Dinas Internal (SDI)', value: 'SDI' },
   { label: 'Surat Dinas Eksternal (SDE)', value: 'SDE' },
   { label: 'Disposisi (DI)', value: 'DI' },
   { label: 'Kajian (KA)', value: 'KA' },
   { label: 'Konsep (K)', value: 'K' }
-];
+]);
 
 // "Semua" sudah ada di index-0 masing-masing, tidak perlu duplikat di template
-const sifatOptions: { label: string; value: string | null }[] = [
-  { label: 'Semua', value: null },
-  { label: 'Biasa', value: 'biasa' },
-  { label: 'Terbatas', value: 'terbatas' },
-  { label: 'Rahasia', value: 'rahasia' },
-  { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
-  { label: 'Terbuka', value: 'terbuka' }
-];
+const sifatOptions = computed(() => [
+  { label: t('sr_semua'), value: null },
+  { label: t('sr_biasa'), value: 'biasa' },
+  { label: t('sr_terbatas'), value: 'terbatas' },
+  { label: t('sr_rahasia'), value: 'rahasia' },
+  { label: t('sr_sangat_rahasia'), value: 'sangat_rahasia' },
+  { label: t('sr_terbuka'), value: 'terbuka' }
+]);
 
-const statusOptions: { label: string; value: string | null }[] = [
-  { label: 'Semua', value: null },
-  { label: 'Draf', value: 'draf' },
-  { label: 'Final', value: 'final' },
-  { label: 'Final TTE', value: 'final_tte' }
-];
+const statusOptions = computed(() => [
+  { label: t('sr_semua'), value: null },
+  { label: t('sr_draf'), value: 'draf' },
+  { label: t('sr_final'), value: 'final' },
+  { label: t('sr_final_tte'), value: 'final_tte' }
+]);
 
-const attachmentOptions = [
-  { label: 'Semua', value: 'Semua' },
-  { label: 'Ya', value: true },
-  { label: 'Tidak', value: false }
-];
+const attachmentOptions = computed(() => [
+  { label: t('sr_semua'), value: 'all' },
+  { label: t('sr_ya'), value: true },
+  { label: t('sr_tidak'), value: false }
+]);
 
 // --- CUSTOM DROPDOWN STATE ---
 const openSifat = ref(false);
@@ -1425,15 +1425,15 @@ const openStatus = ref(false);
 const openLampiran = ref(false);
 
 const sifatLabel = computed(
-  () => sifatOptions.find((s) => s.value === advancedFilters.sifat)?.label ?? 'Semua'
+  () => sifatOptions.value.find((s) => s.value === advancedFilters.sifat)?.label ?? t('sr_semua')
 );
 const statusLabel = computed(
-  () => statusOptions.find((s) => s.value === advancedFilters.status)?.label ?? 'Semua'
+  () => statusOptions.value.find((s) => s.value === advancedFilters.status)?.label ?? t('sr_semua')
 );
 const lampiranLabel = computed(() => {
-  if (advancedFilters.hasAttachment === 'Semua' || advancedFilters.hasAttachment === null)
-    return 'Semua';
-  return attachmentOptions.find((a) => a.value === advancedFilters.hasAttachment)?.label ?? 'Semua';
+  if (advancedFilters.hasAttachment === 'all' || advancedFilters.hasAttachment === null)
+    return t('sr_semua');
+  return attachmentOptions.value.find((a) => a.value === advancedFilters.hasAttachment)?.label ?? t('sr_semua');
 });
 
 function toggleSifat() {
@@ -1473,14 +1473,14 @@ watch(isSearchModalOpen, (val) => {
   }
 });
 
-const priorityOptions = [
-  { label: 'Semua', value: null },
-  { label: 'Prioritas', value: true }
-];
+const priorityOptions = computed(() => [
+  { label: t('sr_semua'), value: null },
+  { label: t('sr_prioritas'), value: true }
+]);
 const openPriority = ref(false);
 
 const priorityLabel = computed(
-  () => priorityOptions.find((p) => p.value === advancedFilters.priority)?.label ?? 'Semua'
+  () => priorityOptions.value.find((p) => p.value === advancedFilters.priority)?.label ?? t('sr_semua')
 );
 
 function togglePriority() {
@@ -1767,7 +1767,7 @@ const locales = [
   { code: 'id', name: 'ID' },
   { code: 'en', name: 'EN' }
 ];
-const { locale, setLocale } = useI18n();
+const { locale, setLocale, t } = useI18n();
 const currentLocale = locale;
 
 const changeLocale = (code: string) => {

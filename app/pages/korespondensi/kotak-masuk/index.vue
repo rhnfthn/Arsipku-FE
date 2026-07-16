@@ -104,12 +104,12 @@ const showDeleteModal = ref(false);
 const isDeleting = ref(false);
 
 // ── Static Config ─────────────────────────────────────────────────────────────
-const breadcrumbs = [
+const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('kotak_masuk'), to: '#' },
-];
+]);
 
-const tabs = [
+const tabs = computed(() => [
   { label: t('k_semua'), value: 'ALL', icon: Inbox },
   { label: t('k_nota_dinas'), value: 'ND', icon: FileText },
   { label: t('k_disposisi'), value: 'DI', icon: Send },
@@ -117,9 +117,9 @@ const tabs = [
   { label: t('k_eksternal'), value: 'SDE', icon: Building2 },
   { label: t('k_konsep'), value: 'K', icon: FilePen },
   { label: t('k_kajian'), value: 'KA', icon: BookOpen },
-];
+]);
 
-const filterMenuOptions = [
+const filterMenuOptions = computed(() => [
   { label: t('k_semua'), value: 'Semua' },
   { label: t('k_prioritas'), value: 'Prioritas' },
   { label: t('k_favorit'), value: 'Favorite' },
@@ -130,19 +130,19 @@ const filterMenuOptions = [
   { label: t('k_arsip'), value: 'Arsip' },
   { label: t('km_sudah_dibaca'), value: 'Sudah Dibaca' },
   { label: t('k_belum_dibaca'), value: 'Belum Dibaca' },
-];
+]);
 
-const dateOptions = [
+const dateOptions = computed(() => [
   { label: t('k_7_hari'), value: '7 Hari' },
   { label: t('k_30_hari'), value: '30 Hari' },
   { label: t('k_60_hari'), value: '60 Hari' },
   { label: t('k_1_tahun'), value: '1 Tahun' },
   { label: t('k_semua'), value: 'Semua' },
-];
-const sortOptions = [
+]);
+const sortOptions = computed(() => [
   { label: t('k_terbaru'), value: 'Terbaru' },
   { label: t('k_terlama'), value: 'Terlama' },
-];
+]);
 const pageOptions = [10, 25, 50, 100];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -575,7 +575,7 @@ const paginationInfo = computed(() => {
   return t('km_pagination_range', { start, end, total: pagination.value.total });
 });
 const activeFilterLabel = computed(
-  () => filterMenuOptions.find((o) => o.value === activeFilterType.value)?.label ?? activeFilterType.value
+  () => filterMenuOptions.value.find((o) => o.value === activeFilterType.value)?.label ?? activeFilterType.value
 );
 const selectedNaskahIds = computed(() => {
   const result = new Set<string>();
@@ -667,10 +667,10 @@ onMounted(async () => {
       endDateInput,
     },
     {
-      tabs: tabs.map((t) => t.value),
-      filters: filterMenuOptions.map((f) => f.value),
-      sorts: sortOptions.map((o) => o.value),
-      dates: dateOptions.map((o) => o.value),
+      tabs: tabs.value.map((t) => t.value),
+      filters: filterMenuOptions.value.map((f) => f.value),
+      sorts: sortOptions.value.map((o) => o.value),
+      dates: dateOptions.value.map((o) => o.value),
       pageSizes: pageOptions,
     }
   );
@@ -950,6 +950,15 @@ onUnmounted(() => {
                 <span>{{ opt.label }}</span>
                 <Check v-if="activeDateLabel === opt.value" class="w-3.5 h-3.5 text-primary" />
               </button>
+              <div class="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
+                <button
+                  @click="selectDateFilter('Semua')"
+                  class="w-full text-left px-4 py-2 text-[13px] text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"
+                >
+                  <RotateCw class="w-3.5 h-3.5" />
+                  <span>{{ $t('df_reset_tanggal') }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

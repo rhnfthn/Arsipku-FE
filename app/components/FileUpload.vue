@@ -1,12 +1,17 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
 const props = defineProps({
   modelValue: { type: Array as () => File[], default: () => [] },
   accept: { type: String, default: 'application/pdf' },
   multiple: { type: Boolean, default: false },
-  label: { type: String, default: 'Upload file' },
-  description: { type: String, default: 'Drag & drop atau klik untuk memilih file' },
+  label: { type: String, default: undefined },
+  description: { type: String, default: undefined },
   maxSize: { type: Number, default: null },
 })
+
+const effectiveLabel = computed(() => props.label ?? t('fu_label'))
+const effectiveDescription = computed(() => props.description ?? t('fu_description'))
 
 const emit = defineEmits(['update:modelValue', 'invalid-files'])
 
@@ -99,10 +104,10 @@ const removeFile = (i: number) => {
       <UIcon name="i-lucide-cloud-upload" class="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
 
       <p class="text-sm text-gray-500 dark:text-gray-300 text-center">
-        <span class="font-semibold text-primary-600 dark:text-primary-400">{{ label }}</span>
+        <span class="font-semibold text-primary-600 dark:text-primary-400">{{ effectiveLabel }}</span>
       </p>
 
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ description }}</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ effectiveDescription }}</p>
 
       <input ref="fileInputRef" type="file" :accept="accept" :multiple="multiple" class="hidden"
         @change="handleFileChange" />
@@ -116,10 +121,11 @@ const removeFile = (i: number) => {
           <UIcon name="i-lucide-file-text" class="size-4 text-red-500 shrink-0" />
           <div class="flex flex-col">
             <span class="text-sm text-gray-700 dark:text-gray-200 truncate font-medium">{{ file.name }}</span>
-            <span class="text-xs text-gray-400 dark:text-gray-500">{{ (file.size / 1024).toFixed(1) }} KB</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">{{ (file.size / 1024).toFixed(1) }} {{ $t('fu_kb') }}</span>
           </div>
         </div>
         <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" :padded="false"
+          :aria-label="$t('fu_delete')"
           class="w-6 h-6 hover:bg-red-50 dark:hover:bg-red-900/30 rounded shrink-0" @click.stop="removeFile(index)" />
       </div>
     </div>

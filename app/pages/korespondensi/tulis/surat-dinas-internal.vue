@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 
@@ -20,6 +20,7 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 const route = useRoute();
 const toast = useToast();
 const alertState = useAlertState();
+const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -72,10 +73,10 @@ const lampiranText = ref("");
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tulis Surat Dinas Internal", to: "#" },
-];
+const breadcrumbs = computed(() => [
+  { label: t('beranda'), to: "/beranda" },
+  { label: t('sdi_judul'), to: "#" },
+]);
 
 // ── Payload & validation ─────────────────────────────────────────────────────
 
@@ -83,14 +84,14 @@ const validateAndToast = (payload: SDIPayloadInput) => {
   const hasTertuju =
     (payload.tertuju?.length ?? 0) > 0 || (payload.penerima_grup?.length ?? 0) > 0;
   if (!hasTertuju) {
-    toastError("Validasi Gagal", "Penerima (Tertuju) harus dipilih minimal satu");
+    toastError(t('sdi_validasi_gagal'), t('sdi_penerima_tertuju_wajib'));
     return false;
   }
   const check = validateSDIPayload(payload);
   if (!check.isValid) {
     const keys = Object.keys(check.errors).filter((k) => k !== "tertuju");
     if (keys.length > 0) {
-      toastError("Validasi Gagal", check.errors[keys[0]!]);
+      toastError(t('sdi_validasi_gagal'), check.errors[keys[0]!]);
       return false;
     }
   }
@@ -134,14 +135,14 @@ const handlePreview = async () => {
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
 
-  loadingMessage.value = "Memproses Pratinjau...";
+  loadingMessage.value = t('sdi_memproses_pratinjau');
   isLoadingData.value = true;
   try {
     const blob = await generatePdf(createFormData(payload, false));
     setPdfBlob(blob);
     isOpenPreview.value = true;
   } catch {
-    toastError("Gagal Preview");
+    toastError(t('sdi_gagal_pratinjau'));
   } finally {
     isLoadingData.value = false;
   }
@@ -150,7 +151,7 @@ const handlePreview = async () => {
 const handleSaveDraft = async () => {
   const payload = getPayload();
   if (!validateAndToast(payload)) return;
-  loadingMessage.value = "Menyimpan Draft...";
+  loadingMessage.value = t('sdi_menyimpan_draf');
   isLoadingData.value = true;
   try {
     const fd = createFormData(payload, false);
@@ -159,10 +160,10 @@ const handleSaveDraft = async () => {
     } else {
       await saveDraft(fd);
     }
-    toastSuccess("Berhasil", "Draft berhasil disimpan");
+    toastSuccess(t('f_berhasil'), t('f_draft_tersimpan'));
     redirectDraf();
   } catch (e: any) {
-    toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
+    toastError(t('f_gagal'), e.response?.data?.message || t('sdi_gagal_memperbarui_draf'));
   } finally {
     Alert.close();
     isLoadingData.value = false;
@@ -171,12 +172,12 @@ const handleSaveDraft = async () => {
 
 const handleKirimDokumen = async (passphrase = '') => {
   if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
-    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
+    signMethodModalRef.value?.setPassphraseError(t('sdi_harap_passphrase'))
     return
   }
 
   const payload = getPayload();
-  loadingMessage.value = "Mengirim Surat Dinas Internal...";
+  loadingMessage.value = t('sdi_mengirim');
   isLoadingData.value = true;
   try {
     const blob = await generatePdf(createFormData(payload, false));
@@ -187,7 +188,7 @@ const handleKirimDokumen = async (passphrase = '') => {
 
     if (selectedSendType.value === 'digsig') {
       fd.append("passphrase", passphrase);
-      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+      if (!user.value?.nik) throw new Error(t('sdi_nik_tidak_ditemukan'));
       fd.append("nik", user.value.nik);
     }
 
@@ -197,7 +198,7 @@ const handleKirimDokumen = async (passphrase = '') => {
 
     if (res?.success || res?.data?.success) {
       revokePdfUrl();
-      toastSuccess("Berhasil", "Surat Dinas Internal berhasil dikirim");
+      toastSuccess(t('f_berhasil'), t('sdi_berhasil_dikirim'));
       Alert.close();
 
       if (selectedSendType.value === 'ttd_basah') {
@@ -207,11 +208,11 @@ const handleKirimDokumen = async (passphrase = '') => {
         redirectTerkirim();
       }
     } else {
-      throw new Error(res?.data?.message || "Pengiriman gagal");
+      throw new Error(res?.data?.message || t('sdi_pengiriman_gagal'));
     }
   } catch (e: any) {
     Alert.close();
-    const errMsg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
+    const errMsg = e.response?.data?.message || e.message || t('sdi_gagal_mengirim_dokumen');
 
     if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
       bsreDisabled.value = false
@@ -220,7 +221,7 @@ const handleKirimDokumen = async (passphrase = '') => {
       await nextTick()
       signMethodModalRef.value?.setPassphraseError(errMsg)
     } else {
-      toastError("Gagal Mengirim", errMsg);
+      toastError(t('sdi_gagal_mengirim'), errMsg);
     }
   } finally {
     isLoadingData.value = false
@@ -265,7 +266,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 // ── onMounted ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
   if (!canAccessPage()) return;
-  loadingMessage.value = "Memuat...";
+  loadingMessage.value = t('sdi_memuat');
   isLoadingData.value = true;
 
   const draftId = route.query.draft_id as string;
@@ -399,7 +400,7 @@ onMounted(async () => {
         if (d.tgl || d.tanggal) setDateFromString(d.tgl || d.tanggal);
       }
     } catch {
-      toastError("Gagal memuat data draft");
+      toastError(t('sdi_gagal_muat_draf'));
     }
   }
 
@@ -409,7 +410,7 @@ onMounted(async () => {
 watch(
   existingFiles,
   (files) => {
-    lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
+    lampiranText.value = files?.length > 0 ? `${files.length} ${t('f_lampiran')}` : `0 ${t('f_lampiran')}`;
   },
   { deep: true, immediate: true }
 );
@@ -418,14 +419,14 @@ watch(
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="relative">
-    <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
-    <PageHeader title="Tulis Surat Dinas Internal" :items="breadcrumbs" />
+    <LoadingOverlay :loading="isLoadingData && loadingMessage !== $t('sdi_memuat')" :message="loadingMessage" />
+    <PageHeader :title="$t('sdi_judul')" :items="breadcrumbs" />
 
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <!-- Skeleton loading -->
-      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
+      <div v-if="isLoadingData && loadingMessage === $t('sdi_memuat')" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
@@ -453,14 +454,14 @@ watch(
       <div v-else class="flex-1 overflow-y-auto space-y-1">
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
-        <TulisInputTanggal v-model="date" label="Tanggal Surat" />
+        <TulisInputTanggal v-model="date" :label="$t('f_tanggal_surat')" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTertuju" :label="$t('tertuju')" :placeholder="$t('sdi_pilih_tertuju')" :items="tertujuItems"
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled-message="$t('sdi_sudah_dipilih')" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+        <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
-          disabled-message="Sudah dipilih" />
+          :disabled-message="$t('sdi_sudah_dipilih')" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -468,11 +469,11 @@ watch(
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('perihal') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal" />
+                :placeholder="$t('sdi_ketik_perihal')" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -485,10 +486,10 @@ watch(
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_lampiran') }}</span>
             <input type="text" v-model="lampiranText" readonly tabindex="-1"
               class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              placeholder="Otomatis terisi saat upload file..." />
+              :placeholder="$t('sdi_lampiran_otomatis')" />
           </div>
         </div>
 
@@ -511,31 +512,31 @@ watch(
                     <table class="w-full align-top">
                       <tbody>
                         <tr>
-                          <td class="w-[80px] align-top">Nomor</td>
+                          <td class="w-[80px] align-top">{{ $t('f_nomor') }}</td>
                           <td class="w-[10px] align-top">:</td>
                           <td class="align-top">................................................</td>
                         </tr>
                         <tr>
-                          <td class="align-top">Sifat</td>
+                          <td class="align-top">{{ $t('f_sifat') }}</td>
                           <td class="align-top">:</td>
-                          <td class="align-top capitalize">{{ selectedSifat?.label || 'Biasa' }}</td>
+                          <td class="align-top capitalize">{{ selectedSifat?.label || $t('sdi_biasa') }}</td>
                         </tr>
                         <tr>
-                          <td class="align-top">Lampiran</td>
+                          <td class="align-top">{{ $t('f_lampiran') }}</td>
                           <td class="align-top">:</td>
                           <td class="align-top">{{ lampiranText || '-' }}</td>
                         </tr>
                         <tr>
-                          <td class="align-top">Perihal</td>
+                          <td class="align-top">{{ $t('perihal') }}</td>
                           <td class="align-top">:</td>
                           <td class="align-top font-bold text-justify">{{ subject ||
                             "................................................" }}</td>
                         </tr>
                       </tbody>
                     </table>
-                    <div class="mt-5">Kepada Yth.</div>
+                    <div class="mt-5">{{ $t('f_kepada_yth') }}</div>
                     <div class="font-bold mb-1">
-                      <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
+                      <div v-if="selectedTertuju.length > 5">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
@@ -544,7 +545,7 @@ watch(
                       </div>
                       <div v-else>................................................</div>
                     </div>
-                    <div class="mb-1">Di Tempat</div>
+                    <div class="mb-1">{{ $t('sdi_di_tempat') }}</div>
                   </div>
                 </div>
 
@@ -558,15 +559,15 @@ watch(
                 <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
-                      <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                      <div class="font-bold">{{ user?.positionText || $t('sdi_nama_jabatan') }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || $t('sdi_nama_lengkap') }}</div>
                   </div>
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underlinec mb-1">Tembusan :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
+                  <div class="font-bold underlinec mb-1">{{ $t('f_tembusan') }} :</div>
+                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">
                       {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
@@ -582,14 +583,14 @@ watch(
                       <table class="w-full">
                         <tbody>
                           <tr>
-                            <td class="align-top pr-2">Lampiran Surat</td>
+                            <td class="align-top pr-2">{{ $t('sdi_lampiran_surat') }}</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Nomor Surat :</td>
+                            <td class="align-top pr-2">{{ $t('sdi_nomor_surat') }} :</td>
                             <td>.....................................</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Tanggal Surat :</td>
+                            <td class="align-top pr-2">{{ $t('f_tanggal_surat') }} :</td>
                             <td>{{ formattedDate }}</td>
                           </tr>
                         </tbody>
@@ -597,14 +598,14 @@ watch(
                     </div>
                   </div>
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
-                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_kepada_yth') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}{{
                         item.organization ? ' - ' + item.organization : '' }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
-                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_tembusan') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}{{
                         item.organization ? ' - ' + item.organization : '' }}</li>
@@ -621,7 +622,7 @@ watch(
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.surat-dinas-internal', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.surat-dinas-internal', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -631,7 +632,7 @@ watch(
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen"
-      :signer-info="{ name: toTitleCase(user?.nama) || 'Nama Lengkap', role: user?.positionText || 'Jabatan', label: 'Ditandatangani secara digital oleh' }"
+      :signer-info="{ name: toTitleCase(user?.nama) || $t('sdi_nama_lengkap'), role: user?.positionText || $t('sdi_jabatan'), label: $t('sdi_ditandatangani_digital') }"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 

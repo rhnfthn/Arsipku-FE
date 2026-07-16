@@ -14,9 +14,9 @@
         </div>
 
         <div class="min-w-0">
-          <p class="text-sm font-bold text-gray-900">Butuh konsep awal?</p>
+          <p class="text-sm font-bold text-gray-900">{{ $t('ai_butuh_konsep_awal') }}</p>
           <p class="mt-0.5 text-xs leading-5 text-gray-600">
-            AI siap bantu susun draf naskah dari konteks yang kamu isi.
+            {{ $t('ai_siap_bantu') }}
           </p>
         </div>
       </div>
@@ -27,7 +27,7 @@
         @click="$emit('click')"
       >
         <UIcon name="i-lucide-wand-sparkles" class="relative size-4" />
-        <span class="relative whitespace-nowrap">Buat Draf AI</span>
+        <span class="relative whitespace-nowrap">{{ $t('ai_buat_draf') }}</span>
         <UIcon
           name="i-lucide-arrow-right"
           class="relative size-4 transition-transform duration-200 group-hover:translate-x-0.5"

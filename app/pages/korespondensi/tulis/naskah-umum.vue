@@ -8,6 +8,7 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 const route = useRoute();
 const toast = useToast();
+const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -64,23 +65,23 @@ const currentJenis = computed(() => {
 });
 
 const breadcrumbs = computed(() => [
-  { label: "Beranda", to: "/beranda" },
-  { label: `Tulis ${currentJenisLabel.value}`, to: "#" },
+  { label: t("nu_beranda"), to: "/beranda" },
+  { label: `${t("nu_tulis")} ${currentJenisLabel.value}`, to: "#" },
 ]);
 
 const currentJenisLabel = computed(() => {
-  if (!currentJenis.value) return "Naskah Dinas";
+  if (!currentJenis.value) return t("nu_naskah_dinas");
   const found = jenisList.value.find((j: any) => j.jenis === currentJenis.value);
   return found?.jenis_text || currentJenis.value;
 });
 
 // ── Kategori grouping untuk dropdown ──────────────────────────────────────────
-const KATEGORI_LABELS: Record<string, string> = {
-  pengaturan: 'Pengaturan dan Penetapan',
-  korespondensi_internal: 'Korespondensi Internal',
-  korespondensi_eksternal: 'Korespondensi Eksternal',
-  khusus: 'Naskah Khusus',
-};
+const KATEGORI_LABELS = computed<Record<string, string>>(() => ({
+  pengaturan: t('nu_kategori_pengaturan'),
+  korespondensi_internal: t('nu_kategori_korespondensi_internal'),
+  korespondensi_eksternal: t('nu_kategori_korespondensi_eksternal'),
+  khusus: t('nu_kategori_khusus'),
+}));
 
 // Daftar jenis yang sudah punya dedicated page (tidak perlu muncul di sini)
 const DEDICATED_JENIS = ['ND', 'SDI', 'SDE', 'DI', 'KA'];
@@ -124,8 +125,8 @@ const jenisSelectItems = computed(() => {
     result.push({
       id: `cat-${kategori}`,
       jenis: '',
-      jenis_text: KATEGORI_LABELS[kategori] || kategori,
-      searchLabel: KATEGORI_LABELS[kategori] || kategori,
+      jenis_text: KATEGORI_LABELS.value[kategori] || kategori,
+      searchLabel: KATEGORI_LABELS.value[kategori] || kategori,
       isParent: true,
       disabled: true,
     });
@@ -164,7 +165,7 @@ const loadSchema = async () => {
     currentTempId.value = '';
     currentS3Key.value = '';
     destroyEditor();
-    toastError('Gagal Membuka Editor', e?.response?.data?.message || e.message || 'Gagal membuka editor OnlyOffice');
+    toastError(t('nu_gagal_membuka_editor'), e?.response?.data?.message || e.message || t('nu_gagal_membuka_editor_desc'));
   }
 };
 
@@ -172,7 +173,7 @@ const loadSchema = async () => {
 // ── Validation ────────────────────────────────────────────────────────────────
 const validateJenis = (): boolean => {
   if (!currentJenis.value) {
-    toastError("Validasi Gagal", "Jenis naskah harus dipilih");
+    toastError(t("nu_validasi_gagal"), t("nu_jenis_harus_dipilih"));
     return false;
   }
   return true;
@@ -205,7 +206,7 @@ const buildFieldPayload = (): Record<string, string | string[]> => {
 const openEditorForCurrentJenis = async (seq = ++editorInitSeq.value) => {
   if (!validateJenis()) return;
   isLoadingData.value = true;
-  loadingMessage.value = 'Membuka editor...';
+  loadingMessage.value = t('nu_membuka_editor');
   try {
     const res = await apiPost('/NU/preview', {
       jenis: currentJenis.value,
@@ -217,7 +218,7 @@ const openEditorForCurrentJenis = async (seq = ++editorInitSeq.value) => {
     currentTempId.value = payload.tempId || '';
     currentS3Key.value = payload.s3Key || '';
     if (!currentTempId.value || !currentS3Key.value) {
-      throw new Error('Respons preview tidak lengkap');
+      throw new Error(t('nu_respons_tidak_lengkap'));
     }
 
     isEditorOpen.value = true;
@@ -231,11 +232,11 @@ const openEditorForCurrentJenis = async (seq = ++editorInitSeq.value) => {
         `${currentJenis.value}.docx`,
         () => {
           isSavingFromEditor.value = true;
-          toastSuccess('Tersimpan', 'Naskah tersimpan dari editor. Klik Kirim untuk finalize.');
+          toastSuccess(t('nu_tersimpan'), t('nu_naskah_tersimpan_editor'));
         },
         () => {
           isSavingFromEditor.value = false;
-          toastError('Simpan Belum Terkonfirmasi', 'Simpan belum terkonfirmasi server, coba Simpan lagi');
+          toastError(t('nu_simpan_belum_terkonfirmasi'), t('nu_simpan_belum_terkonfirmasi_desc'));
         },
       );
     }
@@ -245,7 +246,7 @@ const openEditorForCurrentJenis = async (seq = ++editorInitSeq.value) => {
     currentTempId.value = '';
     currentS3Key.value = '';
     destroyEditor();
-    toastError('Gagal Membuka Editor', e?.response?.data?.message || e.message || 'Gagal membuka editor OnlyOffice');
+    toastError(t('nu_gagal_membuka_editor'), e?.response?.data?.message || e.message || t('nu_gagal_membuka_editor_desc'));
   } finally {
     if (seq === editorInitSeq.value) {
       isLoadingData.value = false;
@@ -263,13 +264,13 @@ watch(currentJenis, loadSchema, { immediate: true });
 // ── Kirim / finalize ──────────────────────────────────────────────────────────
 const handleKirim = async () => {
   if (!currentTempId.value || !isSavingFromEditor.value) {
-    toastError('Belum Simpan', 'Buka editor lalu Simpan dulu sebelum kirim.');
+    toastError(t('nu_belum_simpan'), t('nu_buka_editor_simpan_dulu'));
     return;
   }
 
   const sign_option = selectedSendType.value;
   if (sign_option === 'digsig' && !passphrase.value.trim()) {
-    toastError('Passphrase Wajib', 'Masukkan passphrase untuk TTE.');
+    toastError(t('nu_passphrase_wajib'), t('nu_masukkan_passphrase_tte'));
     return;
   }
 
@@ -314,19 +315,19 @@ const handleKirim = async () => {
   }
 
   isLoadingData.value = true;
-  loadingMessage.value = 'Mengirim naskah...';
+  loadingMessage.value = t('nu_mengirim_naskah');
   try {
     const res = await apiPost('/NU/send', payload);
     const result = res?.data || res;
     if (result?.success || result?.data) {
-      toastSuccess('Berhasil', 'Naskah berhasil dikirim');
+      toastSuccess(t('f_berhasil'), t('nu_naskah_berhasil_dikirim'));
       destroyEditor();
       navigateTo('/korespondensi/terkirim');
     } else {
-      throw new Error(result?.message || 'Pengiriman gagal');
+      throw new Error(result?.message || t('nu_pengiriman_gagal'));
     }
   } catch (e: any) {
-    toastError('Gagal Mengirim', e?.response?.data?.message || e.message || 'Gagal mengirim naskah');
+    toastError(t('nu_gagal_mengirim'), e?.response?.data?.message || e.message || t('nu_gagal_mengirim_desc'));
   } finally {
     isLoadingData.value = false;
     loadingMessage.value = '';
@@ -337,7 +338,7 @@ const handleKirim = async () => {
 
 onMounted(async () => {
   if (!canAccessPage()) return;
-  loadingMessage.value = "Memuat...";
+  loadingMessage.value = t("nu_memuat");
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
@@ -369,14 +370,14 @@ onUnmounted(() => {
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="relative">
-    <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
-    <PageHeader :title="`Tulis ${currentJenisLabel}`" :items="breadcrumbs" />
+    <LoadingOverlay :loading="isLoadingData && loadingMessage !== $t('nu_memuat')" :message="loadingMessage" />
+    <PageHeader :title="$t('nu_tulis') + ' ' + currentJenisLabel" :items="breadcrumbs" />
 
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <!-- Skeleton loading -->
-      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
+      <div v-if="isLoadingData && loadingMessage === $t('nu_memuat')" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
@@ -389,15 +390,15 @@ onUnmounted(() => {
         <div v-if="!route.query.jenis"
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
-            Jenis Naskah
+            {{ $t('f_jenis') }}
           </span>
 
           <div class="flex flex-wrap gap-1 w-full items-center min-w-0">
             <USelectMenu v-model="selectedJenisId" v-model:open="isJenisMenuOpen" :items="jenisSelectItems" value-key="id" label-key="searchLabel"
               variant="none" class="w-full" searchable
               :content="({ class: 'max-h-[380px]' } as any)"
-              :search-attributes="['searchLabel']" placeholder="Pilih Jenis Naskah"
-              :search-input="{ placeholder: 'Cari jenis naskah...' }" :ui="{
+              :search-attributes="['searchLabel']" :placeholder="$t('f_pilih_jenis')"
+              :search-input="{ placeholder: $t('nu_cari_jenis_naskah') }" :ui="{
                 base: '!px-0 !bg-transparent w-full dark:text-white',
                 ring: 'ring-0',
                 shadow: 'shadow-none',
@@ -424,7 +425,7 @@ onUnmounted(() => {
                   {{ selectedJenisObj.jenis }} - {{ selectedJenisObj.jenis_text }}
                 </span>
                 <span v-else class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left">
-                  Pilih Jenis Naskah
+                  {{ $t('f_pilih_jenis') }}
                 </span>
               </template>
 
@@ -436,7 +437,7 @@ onUnmounted(() => {
         <div v-else
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Jenis Naskah</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_jenis') }}</span>
             <div class="flex items-center flex-1 w-full">
               <span class="text-sm text-gray-900 dark:text-white py-1">{{ currentJenisLabel }}</span>
             </div>
@@ -453,10 +454,10 @@ onUnmounted(() => {
 
           <div v-if="!isEditorOpen && !isLoadingData"
             class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-4 flex items-center justify-between gap-3">
-            <span class="text-sm text-gray-500 dark:text-gray-400">Editor belum terbuka.</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ $t('nu_editor_belum_terbuka') }}</span>
             <UButton color="primary" variant="soft" size="sm" @click="handleOpenEditor">
               <Icon name="i-lucide-refresh-cw" class="w-4 h-4 mr-2" />
-              Buka Editor
+              {{ $t('nu_buka_editor') }}
             </UButton>
           </div>
 
@@ -471,13 +472,13 @@ onUnmounted(() => {
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
 
-        <TulisInputTanggal v-model="date" label="Tanggal Surat" />
+        <TulisInputTanggal v-model="date" :label="$t('f_tanggal_surat')" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="[]"
-          :groups="[]" :exclude-items="[]" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTertuju" :label="$t('f_tertuju')" :placeholder="$t('nu_pilih_tertuju')" :items="[]"
+          :groups="[]" :exclude-items="[]" :disabled-message="$t('nu_sudah_dipilih')" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="[]"
-          :groups="[]" :exclude-items="[]" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('nu_pilih_tembusan')" :items="[]"
+          :groups="[]" :exclude-items="[]" :disabled-message="$t('nu_sudah_dipilih')" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -485,11 +486,11 @@ onUnmounted(() => {
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('perihal') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal" />
+                :placeholder="$t('nu_ketik_perihal')" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -511,14 +512,14 @@ onUnmounted(() => {
                     <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
                       {{ currentJenisLabel.toUpperCase() }}
                     </h1>
-                    <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
+                    <p class="text-lg mt-1 text-[14px]">{{ $t('f_nomor') }} : ..............................................</p>
                   </div>
                 </div>
 
                 <div class="bg-white px-8 py-12 min-h-[200px] text-black flex flex-col items-center justify-center gap-3">
                   <Icon name="i-lucide-file-text" class="w-12 h-12 text-gray-300" />
                   <p class="text-[14px] text-gray-500 text-center">
-                    Klik "Buat / Pratinjau" untuk mengisi template dan membuka editor OnlyOffice.
+                    {{ $t('nu_klik_pratinjau') }}
                   </p>
                 </div>
 
@@ -527,9 +528,9 @@ onUnmounted(() => {
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                        <div class="font-bold">{{ user?.positionText || $t('nu_nama_jabatan') }}</div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || $t('nu_nama_lengkap') }}</div>
                     </div>
                   </div>
                 </div>
@@ -544,7 +545,7 @@ onUnmounted(() => {
 
         <!-- ── Sign Option Selector ───────────────────────────────────────────── -->
         <div v-if="currentJenis" class="flex flex-col py-4 gap-3 border-t border-gray-200 dark:border-gray-600">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Metode Tanda Tangan</span>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('nu_metode_tanda_tangan') }}</span>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="rounded-xl border-2 p-4 cursor-pointer transition-all overflow-hidden"
@@ -558,8 +559,8 @@ onUnmounted(() => {
                   <div v-if="selectedSendType === 'qr_only'" class="w-2 h-2 rounded-full bg-primary-500" />
                 </div>
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Tanda Tangan QR</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dokumen ditandatangani secara internal (QR)</div>
+                  <div class="font-semibold text-sm text-gray-900 dark:text-white">{{ $t('nu_ttd_qr') }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('nu_ttd_qr_desc') }}</div>
                 </div>
               </div>
             </div>
@@ -575,8 +576,8 @@ onUnmounted(() => {
                   <div v-if="selectedSendType === 'ttd_basah'" class="w-2 h-2 rounded-full bg-primary-500" />
                 </div>
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Tanda Tangan Basah</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dokumen ditandatangani secara fisik</div>
+                  <div class="font-semibold text-sm text-gray-900 dark:text-white">{{ $t('nu_ttd_basah') }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('nu_ttd_basah_desc') }}</div>
                 </div>
               </div>
             </div>
@@ -592,8 +593,8 @@ onUnmounted(() => {
                   <div v-if="selectedSendType === 'digsig'" class="w-2 h-2 rounded-full bg-primary-500" />
                 </div>
                 <div class="flex-1">
-                  <div class="font-semibold text-sm text-gray-900 dark:text-white">Tanda Tangan Digital (BSrE)</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Dokumen ditandatangani secara elektronik resmi</div>
+                  <div class="font-semibold text-sm text-gray-900 dark:text-white">{{ $t('nu_ttd_digital') }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $t('nu_ttd_digital_desc') }}</div>
                 </div>
               </div>
             </div>
@@ -601,10 +602,10 @@ onUnmounted(() => {
 
           <!-- Passphrase input for digsig -->
           <div v-if="selectedSendType === 'digsig'" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Passphrase TTE</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ $t('nu_passphrase_tte') }}</label>
             <div class="relative max-w-md">
               <input :type="showPassphrase ? 'text' : 'password'" v-model="passphrase"
-                placeholder="Masukkan passphrase TTE Anda"
+                :placeholder="$t('nu_passphrase_placeholder')"
                 class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 pr-10" />
               <button type="button"
                 class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -620,7 +621,7 @@ onUnmounted(() => {
           <UButton v-if="hasPermission('utama.tulis.naskah-lainnya', 'create')" color="primary" size="lg" block
             @click="handleKirim" :disabled="!currentJenis || !isSavingFromEditor || isLoadingData">
             <Icon name="i-lucide-send" class="w-4 h-4 mr-2" />
-            Kirim
+            {{ $t('f_kirim') }}
           </UButton>
         </div>
       </div>
