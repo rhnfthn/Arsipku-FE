@@ -361,7 +361,7 @@
                   :value="pos.position"
                   v-model="addFormMembers"
                   :disabled="isPositionSelected(pos.position)"
-                  class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary flex-shrink-0 disabled:opacity-50"
+                  class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary shrink-0 disabled:opacity-50"
                 />
                 <div class="flex-1 min-w-0">
                   <p class="text-sm text-gray-900 dark:text-white truncate">
@@ -371,7 +371,7 @@
                 </div>
                 <span
                   v-if="isPositionSelected(pos.position)"
-                  class="text-xs text-green-600 dark:text-green-400 font-medium flex-shrink-0"
+                  class="text-xs text-green-600 dark:text-green-400 font-medium shrink-0"
                 >
                   {{ t('gp_already_added') }}
                 </span>
@@ -541,9 +541,9 @@
               >
                 <Plus
                   v-if="!isMemberAlreadyAdded(pos.position)"
-                  class="w-3 h-3 text-primary flex-shrink-0"
+                  class="w-3 h-3 text-primary shrink-0"
                 />
-                <CheckIcon v-else class="w-3 h-3 text-green-500 flex-shrink-0" />
+                <CheckIcon v-else class="w-3 h-3 text-green-500 shrink-0" />
                 <div class="min-w-0 flex-1">
                   <p class="text-sm text-gray-900 dark:text-white truncate">
                     {{ pos.position_text }}
@@ -554,7 +554,7 @@
                 </div>
                 <span
                   v-if="isMemberAlreadyAdded(pos.position)"
-                  class="text-xs text-green-600 dark:text-green-400 font-medium flex-shrink-0"
+                  class="text-xs text-green-600 dark:text-green-400 font-medium shrink-0"
                 >
                   {{ t('gp_already_added') }}
                 </span>
@@ -608,7 +608,7 @@
                 class="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-2 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <div
-                  class="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0"
+                  class="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0"
                 >
                   <Users class="w-3.5 h-3.5 text-primary" />
                 </div>
@@ -626,7 +626,7 @@
                   v-if="hasPermission('master-data', 'delete-grup-penerima') || isSuperadmin"
                   @click="removeMember(member)"
                   :title="t('gp_btn_remove_member')"
-                  class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors flex-shrink-0"
+                  class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors shrink-0"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>
@@ -889,7 +889,7 @@ const submitAdd = async () => {
     showAddModal.value = false;
     await fetchData();
   } catch (err) {
-    toast.add({ title: t('gp_toast_add_fail'), description: err?.message, color: 'error' });
+    toast.add({ title: t('gp_toast_add_fail'), description: err instanceof Error ? err.message : String(err), color: 'error' });
   } finally {
     savingAdd.value = false;
   }
@@ -916,7 +916,7 @@ const submitEdit = async () => {
     showEditModal.value = false;
     await fetchData();
   } catch (err) {
-    toast.add({ title: t('gp_toast_edit_fail'), description: err?.message, color: 'error' });
+    toast.add({ title: t('gp_toast_edit_fail'), description: err instanceof Error ? err.message : String(err), color: 'error' });
   } finally {
     savingEdit.value = false;
   }

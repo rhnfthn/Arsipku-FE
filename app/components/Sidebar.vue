@@ -13,7 +13,7 @@
     ]"
   >
     <div
-      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full flex-shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
+      class="w-[72px] flex flex-col items-center py-4 bg-primary-50 dark:bg-gray-950 h-full shrink-0 space-y-6 relative z-50 dark:border-r dark:border-gray-800"
     >
       <button
         @click="handleMenuClick"
@@ -69,7 +69,7 @@
 
           <div
             v-if="collapsed && hoveredApp === app.id && !isMobile"
-            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-[60] animate-fade-in origin-top-left"
+            class="absolute left-[60px] top-0 w-[260px] bg-[#F6F8FC] dark:bg-gray-800 shadow-2xl rounded-r-xl rounded-b-xl border border-gray-200 dark:border-gray-700 py-4 px-2 z-60 animate-fade-in origin-top-left"
           >
             <div class="px-4 mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
               <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
@@ -118,7 +118,7 @@
     >
       <NuxtLink
         to="/beranda"
-        class="h-20 flex items-center px-4 gap-3 flex-shrink-0 hover:opacity-80 transition-opacity"
+        class="h-20 flex items-center px-4 gap-3 shrink-0 hover:opacity-80 transition-opacity"
       >
         <img src="/logoAirnav.png" alt="ArsipKu Logo" class="w-8 h-8" />
         <span class="text-xl text-gray-600 dark:text-gray-100 font-medium">ArsipKu</span>
@@ -176,7 +176,7 @@
   </aside>
 
   <!-- MODAL ADD / EDIT LABEL -->
-  <div v-if="showLabelModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div v-if="showLabelModal" class="fixed inset-0 z-100 flex items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeLabelModal"></div>
     <div
       class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative z-10 overflow-hidden transform transition-all"
@@ -241,7 +241,7 @@
   </div>
 
   <!-- MODAL CONFIRM DELETE LABEL -->
-  <div v-if="showDeleteModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div v-if="showDeleteModal" class="fixed inset-0 z-100 flex items-center justify-center p-4">
     <div
       class="fixed inset-0 bg-black/50 transition-opacity"
       @click="showDeleteModal = false"
@@ -283,7 +283,7 @@
   >
     <div
       v-if="showHelpdeskConfirm"
-      class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      class="fixed inset-0 z-200 flex items-center justify-center p-4"
     >
       <div class="fixed inset-0 bg-black/40" @click="showHelpdeskConfirm = false"></div>
 
