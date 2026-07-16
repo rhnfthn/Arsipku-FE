@@ -812,6 +812,7 @@ const adminMenuAdministrasi = computed(() => {
           { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2' },
           { label: t('klasifikasi'), to: '/master/klasifikasi' },
           { label: t('jenis'), to: '/master/jenis' },
+          { label: t('grup_penerima') || 'Grup Penerima', to: '/master/grup-penerima', icon: 'i-lucide-users' },
         ],
       },
       {
