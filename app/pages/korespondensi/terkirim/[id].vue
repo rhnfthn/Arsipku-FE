@@ -5,7 +5,7 @@ import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
   Users, FileText, Building2, ChevronRight, ArrowDown,
   PanelRightOpen, PanelRightClose, List, ArrowUpDown,
-  Mail, Send, Save
+  Mail, Send, Save, RotateCcw, RefreshCw
 } from "lucide-vue-next";
 import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
@@ -136,6 +136,7 @@ const kirimEmailForm = ref({
 const kirimEmailLoading = ref(false);
 const kirimEmailError = ref('');
 const kirimEmailSuccess = ref('');
+const showResetConfirmModal = ref(false);
 
 // --- EMAIL VALIDATION HELPERS ---
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -438,11 +439,18 @@ const loadData = async () => {
 
       if (Array.isArray(rawData)) {
         if (rawData.length > 0 && Array.isArray(rawData[0].flow) && rawData[0].flow.length > 0) {
+          // Nested flow structure (legacy)
           inboxData = rawData[0];
           rawFlows = inboxData.flow;
         } else {
+          // Flat array: backend returns all naskah in the chain (e.g. [SDE, SDI, Konsep])
+          // Find the naskah matching the URL id — this is the "viewed" naskah
           rawFlows = rawData;
-          inboxData = rawData[0];
+          inboxData = rawData.find((item: any) => String(item.id) === String(id)) || rawData[0];
+          // Move the matched naskah to the front so it renders as the head card
+          if (inboxData && rawFlows[0] !== inboxData) {
+            rawFlows = [inboxData, ...rawFlows.filter((item: any) => item !== inboxData)];
+          }
         }
       } else if (rawData) {
         inboxData = rawData;
@@ -745,6 +753,26 @@ const openKirimEmailModal = (detail: any) => {
   showKirimEmailModal.value = true;
 };
 
+const confirmResetEmailForm = () => {
+  kirimEmailForm.value = {
+    to: '',
+    cc: '',
+    bcc: '',
+    from_as: 'ARSIPKU',
+  };
+  kirimEmailError.value = '';
+  kirimEmailSuccess.value = '';
+  showResetConfirmModal.value = false;
+};
+
+const handleResetClick = () => {
+  const f = kirimEmailForm.value;
+  const hasContent = f.to.trim() || f.cc.trim() || f.bcc.trim() ||
+    (f.from_as.trim() && f.from_as.trim() !== 'ARSIPKU');
+  if (!hasContent) return;
+  showResetConfirmModal.value = true;
+};
+
 const submitKirimEmail = async (mode: 'send' | 'draft' = 'send') => {
   if (!kirimEmailTarget.value?.id) return;
 
@@ -946,13 +974,12 @@ const konsepOptions = [
         <template #footer>
           <div v-if="hasPermission('utama.terkirim', 'read')" class="flex justify-end gap-2 w-full">
             <button
-              @click="submitKirimEmail('draft')"
+              @click="handleResetClick"
               :disabled="kirimEmailLoading"
-              class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              <Loader2 v-if="kirimEmailLoading" class="w-4 h-4 animate-spin" />
-              <Save v-else class="w-4 h-4" />
-              Simpan Draft
+              <RotateCcw class="w-4 h-4" />
+              Reset
             </button>
             <button
               @click="submitKirimEmail('send')"
@@ -966,6 +993,48 @@ const konsepOptions = [
           </div>
         </template>
       </UModal>
+      </Teleport>
+    </ClientOnly>
+
+    <!-- RESET CONFIRMATION MODAL -->
+    <ClientOnly>
+      <Teleport to="body">
+        <UModal v-model:open="showResetConfirmModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+          <template #header>
+            <div class="w-full flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+                  <RefreshCw class="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Reset Form?</h3>
+                </div>
+              </div>
+              <button @click="showResetConfirmModal = false"
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+          </template>
+          <template #body>
+            <div class="px-1 py-2">
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Semua data yang telah diisi akan dihapus. Lanjutkan?
+              </p>
+            </div>
+          </template>
+          <template #footer>
+            <div class="flex justify-end gap-3">
+              <button @click="showResetConfirmModal = false"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700">Batal</button>
+              <button @click="confirmResetEmailForm"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+                <RefreshCw class="w-4 h-4" />
+                Ya, Reset
+              </button>
+            </div>
+          </template>
+        </UModal>
       </Teleport>
     </ClientOnly>
 
