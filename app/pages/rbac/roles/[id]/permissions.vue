@@ -119,6 +119,7 @@
                               <label
                                 v-for="perm in fitur.permissions"
                                 :key="perm.permissionId || perm.permissionName"
+                                v-show="!(isUserRole && ['template.create', 'template.update', 'template.delete'].includes(perm.permissionName))"
                                 class="inline-flex items-center gap-2 cursor-pointer select-none"
                               >
                                 <input
@@ -191,6 +192,7 @@ const { refreshPermissions } = useAuth();
 const loading = ref(true);
 const saving = ref(false);
 const role = ref<RbacRole | null>(null);
+const isUserRole = computed(() => (role.value?.name || '').toUpperCase() === 'USER');
 const utamaTree = ref<any>(null);
 const utilitasTree = ref<any>(null);
 const administrasiTree = ref<any>(null);

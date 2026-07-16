@@ -1,5 +1,5 @@
 export const useGrupPenerima = () => {
-  const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
+  const { apiGet, apiPost, apiPut, apiDelete } = useApi();
 
   /** GET /persuratan/grup-penerima — list all groups */
   const getGrupPenerima = async (params?: { company?: string; area?: string; jenis?: string }) => {
@@ -30,15 +30,18 @@ export const useGrupPenerima = () => {
   };
 
   /** PUT /persuratan/grup-penerima/:id — update group */
-  const updateGrupPenerima = async (id: string, payload: Partial<{
-    company: string;
-    area: string;
-    nama: string;
-    deskripsi: string;
-    deskripsi_english: string;
-    urutan: number;
-    aktif: boolean;
-  }>) => {
+  const updateGrupPenerima = async (
+    id: string,
+    payload: Partial<{
+      company: string;
+      area: string;
+      nama: string;
+      deskripsi: string;
+      deskripsi_english: string;
+      urutan: number;
+      aktif: boolean;
+    }>
+  ) => {
     return await apiPut(`/persuratan/grup-penerima/${id}`, payload);
   };
 
@@ -67,7 +70,9 @@ export const useGrupPenerima = () => {
 
   /** PUT /persuratan/grup-penerima/members/:detailId — update member */
   const updateGrupPenerimaMember = async (detailId: string, position: string | number) => {
-    return await apiPut(`/persuratan/grup-penerima/members/${detailId}`, { position: String(position) });
+    return await apiPut(`/persuratan/grup-penerima/members/${detailId}`, {
+      position: String(position),
+    });
   };
 
   /** DELETE /persuratan/grup-penerima/:id/members/:detailId — remove member */
