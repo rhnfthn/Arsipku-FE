@@ -72,6 +72,13 @@
       Mode revisi: konsep ini dikembalikan dan perlu diperbaiki.
     </div>
 
+    <div
+      v-if="isTurunkanAction"
+      class="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300"
+    >
+      Mode turunkan: konsep ini akan diteruskan ke bawahan untuk diperbaiki.
+    </div>
+
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
@@ -425,12 +432,21 @@ const isSenderSelected = computed(() => !!selectedSender.value);
 // previous konseptor (detail.from_position_id). Fallback atasan langsung.
 const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
 const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
+const isTurunkanAction = computed(() => Boolean(route.query.turunkan_position_id));
 const isNewKonsepFromReference = computed(() =>
   String(route.query.workflow || '').toLowerCase() === 'konsep' &&
   String(route.query.action || '').toLowerCase() !== 'edit'
 );
 const forwardTargetInfo = computed(() => {
-  if (isRejectAction.value) {
+  if (isTurunkanAction.value) {
+    return {
+      position: String(route.query.turunkan_position_id || ''),
+      positionText: String(route.query.turunkan_nama || ''),
+      nama: String(route.query.turunkan_person_nama || ''),
+    };
+  }
+  // Reject ATAU turunkan mode edit (perbaiki sendiri): kirim balik ke atasan (from_position_id)
+  if (isRejectAction.value || (String(detail.value?.aksi || '').toLowerCase() === 'turunkan' && !isTurunkanAction.value)) {
     const fromPositionId = detail.value?.from_position_id;
     const fromPositionText = detail.value?.from_position_text;
     const fromNama = detail.value?.from_nama;
@@ -778,8 +794,8 @@ const handleKirimDokumen = async () => {
   const isRevision = route.query.action === 'edit';
 
   const isConfirmed = await Alert.confirm(
-    isRevision ? 'Kirim Perbaikan?' : 'Kirim Konsep?',
-    isRevision ? 'Perbaikan konsep akan dikirim.' : 'Konsep Surat Dinas Internal akan dikirim.',
+    isRevision ? (isTurunkanAction.value ? 'Turunkan Konsep?' : 'Kirim Perbaikan?') : 'Kirim Konsep?',
+    isRevision ? (isTurunkanAction.value ? 'Konsep akan diturunkan ke bawahan.' : 'Perbaikan konsep akan dikirim.') : 'Konsep Surat Dinas Internal akan dikirim.',
     'Ya, Kirim',
     'Batal',
     false
@@ -804,6 +820,7 @@ const handleKirimDokumen = async () => {
       formData.append('jenis', 'SDI');
       formData.append('from_position_id', user.value?.position || '');
       formData.append('to_position_id', forwardTargetPositionId.value || String(currentSender.value || ''));
+      formData.append('is_turunkan', isTurunkanAction.value ? 'true' : 'false');
       formData.append('pengirim_position_id', currentSender.value || '');
       formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
       formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));

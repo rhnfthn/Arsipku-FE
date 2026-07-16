@@ -182,19 +182,19 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
       ? await sendDraft(fd, editDraftId.value)
       : await sendNotaDinas(fd);
 
-    if (result.data.success) {
+    if (result.success) {
       revokePdfUrl();
       toastSuccess(t('f_berhasil'), t('nd_nota_dinas_terkirim'));
       Alert.close();
 
       if (selectedSendType.value === "ttd_basah") {
-        const naskahId = result.data?.data?.id || result.data?.id;
+        const naskahId = result.data?.id;
         navigateTo(`/korespondensi/tertunda/${naskahId}?jenis=ND`);
       } else {
         redirectTerkirim();
       }
     } else {
-      throw new Error(result.data.message || t('nd_pengiriman_gagal'));
+      throw new Error(result.message || t('nd_pengiriman_gagal'));
     }
   } catch (e: any) {
     Alert.close();

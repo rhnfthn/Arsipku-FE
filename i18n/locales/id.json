@@ -1824,10 +1824,10 @@
 
   "kon_perbaiki_konsep": "Perbaiki Konsep",
   "kon_perbaiki_sendiri": "Perbaiki Sendiri",
-  "kon_turunkan_ke_staff": "Turunkan ke Staff",
+  "kon_turunkan_ke_bawahan": "Turunkan ke Bawahan",
   "kon_pilih_aksi_perbaiki": "Pilih Aksi Perbaikan",
   "kon_perbaiki_sendiri_desc": "Perbaiki konsep sendiri dan kirimkan kembali ke pengirim.",
-  "kon_turunkan_ke_staff_desc": "Turunkan konsep ke staff yang sebelumnya membuat konsep ini.",
-  "kon_konsep_diturunkan": "Konsep berhasil diturunkan ke staff.",
-  "kon_gagal_turunkan": "Gagal menurunkan konsep ke staff."
+  "kon_turunkan_ke_bawahan_desc": "Turunkan konsep ke bawahan yang sebelumnya membuat konsep ini.",
+  "kon_konsep_diturunkan": "Konsep berhasil diturunkan.",
+  "kon_gagal_turunkan": "Gagal menurunkan konsep."
 }

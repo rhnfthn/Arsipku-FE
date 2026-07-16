@@ -28,12 +28,13 @@ definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const { user, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 
 const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag, markNaskahAsRead } =
   useInbox();
-const { rejectKonsep } = useKonsep();
+const { rejectKonsep, forwardKonsep } = useKonsep();
 
 const id = computed(() => route.params.id as string);
 const jenisQuery = computed(() => (route.query.jenis as string) || '');
@@ -226,6 +227,7 @@ const visibleDetails = computed(() => {
 // --- STATE ---
 const details = ref<any[]>([]);
 const selected = ref<any>(null);
+const rawKonsepResponse = ref<any>(null); // Raw API response for riwayat lookup
 const isLoading = ref(true);
 const isKonsepData = ref(false);
 
@@ -392,6 +394,7 @@ const loadData = async () => {
     if (jenisQuery.value === 'K') {
       isKonsepData.value = true;
       const response = await fetchKonsepDetail(id.value);
+      rawKonsepResponse.value = response; // Store raw for turunkan lookup
       const rawData: any = response;
       const konsepTo = rawData?.to_konsep || null;
 
@@ -462,7 +465,11 @@ const loadData = async () => {
             flow.detail?.naskah_pengirim?.position_id || flow.pengirim?.position_id || ''
           );
 
-          const rawPenerima: any[] = flow.detail?.naskah_penerima || flow.penerima || [];
+          // Untuk K (workflow): penerima = flow.penerima (K penerima = yang berhak aksi).
+          // Untuk KN/ND (naskah asli): penerima = naskah_penerima (penerima naskah final).
+          const rawPenerima: any[] = jenis === 'K'
+            ? (flow.penerima || [])
+            : (flow.detail?.naskah_penerima || flow.penerima || []);
           const penerimaGrup =
             (flow.detail?.penerima_grup?.length ? flow.detail.penerima_grup : null) ||
             (flow.penerima_grup?.length ? flow.penerima_grup : null) ||
@@ -929,6 +936,24 @@ const isPengirimKonsep = computed(() => {
   return isInPenerima;
 });
 
+// canTurunkanLagi: true jika masih ada bawahan yang bisa diturunkan (riwayat K
+// di mana user adalah penerima + aksi create/forward = bawahan naikkan konsep ke user).
+// Mentok (tidak ada bawahan) → false → hanya opsi Perbaiki Sendiri.
+const canTurunkanLagi = computed(() => {
+  if (!isKonsepData.value) return false;
+  const myPosId = String(user.value?.position || '');
+  if (!myPosId || myPosId === 'undefined') return false;
+  const raw = rawKonsepResponse.value;
+  const flows = Array.isArray(raw?.flow) ? raw.flow : [];
+  return flows.some((flow: any) => {
+    if (String(flow?.jenis || '').toUpperCase() !== 'K') return false;
+    const penerimaList = flow?.penerima || [];
+    const isRecipient = penerimaList.some((p: any) => String(p.position_id) === myPosId);
+    const aksi = String(flow?.detail?.aksi || flow?.aksi || '').toLowerCase();
+    return isRecipient && ['forward', 'create'].includes(aksi);
+  });
+});
+
 const draftItem = computed(() => {
   return details.value.find((d: any) => d._rawStatus === 'draf') ?? null;
 });
@@ -981,6 +1006,108 @@ const handleEditKonsep = () => {
       query: { ref_id: selected.value.id, action: 'edit' },
     });
   }
+};
+
+const isTurunkanLoading = ref(false);
+
+const handleTurunkanKonsep = () => {
+  if (!selected.value?.id || !user.value?.position) return;
+
+  const myPosId = String(user.value.position);
+  const raw = rawKonsepResponse.value;
+
+  // DEBUG
+  const riwayat = raw?.riwayat || raw?.data?.riwayat || [];
+  console.log('🐛 [Turunkan] riwayat:', riwayat);
+  console.log('🐛 [Turunkan] myPosId:', myPosId);
+  console.log('🐛 [Turunkan] raw keys:', raw ? Object.keys(raw) : 'null');
+
+  let turunkanPositionId = '';
+  let turunkanNama = '';
+  let turunkanPersonNama = '';
+
+  // STRATEGI 1: Cari dari riwayat — ambil entry yang MENGIRIM ke user saat ini
+  if (riwayat.length > 0) {
+    const myEntry = riwayat.find((r: any) => String(r.toPositionId) === myPosId);
+    if (myEntry) {
+      turunkanPositionId = String(myEntry.fromPositionId || '');
+      turunkanNama = myEntry.fromPositionText || myEntry.from_nama || '';
+      console.log('🐛 [Turunkan] STRAT 1 riwayat:', turunkanPositionId, turunkanNama);
+    }
+  }
+
+  // STRATEGI 2: Cari dari raw.flow — K workflow entry yang penerimanya user saat ini
+  // dan aksi-nya forward/create (= bawahan yang menaikkan konsep ke user).
+  // Pilih entry dengan created_at TERTUA (bawahan pertama yang naikkan ke saya),
+  // bukan first-in-DESC, agar tak salah ambil atasan yang menurunkan (aksi turunkan
+  // diexclude; forward lama bisa ambigu tapi tertua = bawahan asli).
+  if (!turunkanPositionId) {
+    const rawFlows = Array.isArray(raw?.flow) ? raw.flow : (Array.isArray(raw?.data) ? raw.data : []);
+    console.log('🐛 [Turunkan] rawFlows count:', rawFlows.length);
+    let best: { flow: any; ts: number } | null = null;
+    for (const flow of rawFlows) {
+      // Hanya entri K (workflow), bukan KN (naskah asli) / DI
+      if (String(flow?.jenis || '').toUpperCase() !== 'K') continue;
+      const penerimaList = flow?.penerima || [];
+      const isRecipient = penerimaList.some((p: any) => String(p.position_id) === myPosId);
+      const fromId = String(flow?.pengirim?.position_id || '');
+      const aksi = String(flow?.detail?.aksi || flow?.aksi || '').toLowerCase();
+      if (isRecipient && fromId && fromId !== myPosId && ['forward', 'create'].includes(aksi)) {
+        const ts = new Date(flow?.created_at || flow?.tanggal || 0).getTime() || 0;
+        if (!best || ts < best.ts) {
+          best = { flow, ts };
+        }
+      }
+    }
+    if (best) {
+      turunkanPositionId = String(best.flow?.pengirim?.position_id || '');
+      turunkanNama = best.flow?.pengirim?.position_text || '';
+      turunkanPersonNama = best.flow?.pengirim?.nama || '';
+      console.log('🐛 [Turunkan] STRAT 2 raw flow (tertua):', turunkanPositionId, turunkanNama, 'aksi:', String(best.flow?.detail?.aksi || best.flow?.aksi || ''), 'ts:', best.ts);
+    }
+  }
+
+  // STRATEGI 3: Cari dari details.value (processed)
+  if (!turunkanPositionId) {
+    const allDetails = details.value || [];
+    for (const d of allDetails) {
+      const penerimaList = d.penerima || [];
+      console.log('🐛 [Turunkan] checking detail:', d.id, d.aksi, 'penerima:', penerimaList.map((p: any) => ({ id: p.id, pos: p.position_id, label: p.label })));
+      const isRecipient = penerimaList.some((p: any) =>
+        String(p.position_id) === myPosId || String(p.id) === myPosId
+      );
+      const fromId = String(d.from?.position_id || '');
+      if (isRecipient && fromId && fromId !== myPosId && ['forward', 'disposisi', 'create'].includes(d.aksi || '')) {
+        turunkanPositionId = fromId;
+        turunkanNama = d.from?.position_text || '';
+        console.log('🐛 [Turunkan] STRAT 3 details:', turunkanPositionId, turunkanNama);
+        break;
+      }
+    }
+  }
+
+  console.log('🐛 [Turunkan] RESULT:', { turunkanPositionId, turunkanNama });
+
+  if (!turunkanPositionId) {
+    useToast().add({
+      title: t('km_gagal'),
+      description: 'Posisi pembuat konsep tidak ditemukan.',
+      color: 'error',
+    });
+    return;
+  }
+
+  // Navigasi ke form edit konsep dengan query turunkan_position_id
+  router.push({
+    path: resolveKonsepEditPath(selected.value),
+    query: {
+      ref_id: selected.value.id,
+      action: 'edit',
+      turunkan_position_id: String(turunkanPositionId),
+      turunkan_nama: turunkanNama,
+      turunkan_person_nama: turunkanPersonNama,
+    },
+  });
 };
 
 const handleLanjutNotaDinas = () => {
@@ -1150,6 +1277,7 @@ const konsepOptions = computed(() => [
               :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
               :show-edit="isKonsepData && index === 0 && showEditAction"
               :is-pengirim-konsep="isPengirimKonsep"
+              :can-turunkan-lagi="canTurunkanLagi"
               :show-footer-actions="
                 !isKonsepData && index === 0 && !isTerkirim && canCreateFollowUpAction
               "
@@ -1162,6 +1290,7 @@ const konsepOptions = computed(() => [
               @finalize="handleFinalize"
               @reject="handleReject"
               @edit="handleEditKonsep"
+              @turunkan-konsep="handleTurunkanKonsep"
               @lanjut-nota="handleLanjutNotaDinas"
               @lanjut-sdi="handleLanjutSDI"
               @lanjut-sde="handleLanjutSDE"

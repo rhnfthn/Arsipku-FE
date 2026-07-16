@@ -1819,10 +1819,10 @@
 
   "kon_perbaiki_konsep": "Repair Concept",
   "kon_perbaiki_sendiri": "Repair Myself",
-  "kon_turunkan_ke_staff": "Delegate to Staff",
+  "kon_turunkan_ke_bawahan": "Delegate Downward",
   "kon_pilih_aksi_perbaiki": "Choose Repair Action",
   "kon_perbaiki_sendiri_desc": "Repair the concept yourself and send it back to the sender.",
-  "kon_turunkan_ke_staff_desc": "Delegate the concept back to the staff who originally created it.",
-  "kon_konsep_diturunkan": "Concept successfully delegated to staff.",
-  "kon_gagal_turunkan": "Failed to delegate concept to staff."
+  "kon_turunkan_ke_bawahan_desc": "Delegate the concept to the subordinate who previously created it.",
+  "kon_konsep_diturunkan": "Concept successfully delegated.",
+  "kon_gagal_turunkan": "Failed to delegate concept."
 }
