@@ -57,6 +57,7 @@ const emit = defineEmits<{
   (e: 'finalize'): void;
   (e: 'reject'): void;
   (e: 'edit'): void;
+  (e: 'turunkan-konsep'): void;
   (e: 'lanjut-nota'): void;
   (e: 'lanjut-sdi'): void;
   (e: 'lanjut-sde'): void;

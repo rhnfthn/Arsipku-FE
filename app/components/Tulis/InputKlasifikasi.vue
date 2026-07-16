@@ -2,14 +2,14 @@
   <div
     class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
     <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
-      Klasifikasi
+      {{ $t('klasifikasi') }}
     </span>
 
     <div class="flex flex-wrap gap-1 w-full items-center min-w-0">
       <USelectMenu v-model="model" :items="computedItems" value-key="id" label-key="searchLabel" variant="none"
         class="w-full" searchable :content="({ class: 'max-h-[380px]' } as any)"
-        :search-attributes="['searchLabel']" placeholder="Pilih Klasifikasi"
-        :search-input="{ placeholder: 'Cari kode atau nama klasifikasi...' }" :ui="{
+        :search-attributes="['searchLabel']" :placeholder="$t('f_pilih_klasifikasi')"
+        :search-input="{ placeholder: $t('f_cari_klasifikasi') }" :ui="{
           base: '!px-0 !bg-transparent w-full dark:text-white',
           ring: 'ring-0',
           shadow: 'shadow-none',
@@ -39,7 +39,7 @@
             {{ selectedObj.klasifikasi }} - {{ selectedObj.klasifikasi_text }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left">
-            Pilih Klasifikasi
+            {{ $t('f_pilih_klasifikasi') }}
           </span>
         </template>
 

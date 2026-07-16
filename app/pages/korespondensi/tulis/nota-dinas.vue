@@ -14,6 +14,7 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 const route = useRoute();
 const toast = useToast();
 const alertState = useAlertState();
+const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -57,15 +58,15 @@ const english = ref(false);
 const items = ref<any[]>([]);
 const selectedSendType = ref("qr_only");
 
-const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tulis Nota Dinas", to: "#" },
-];
+const breadcrumbs = computed(() => [
+  { label: t('nd_beranda'), to: "/beranda" },
+  { label: t('nd_tulis_nota_dinas'), to: "#" },
+]);
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || "Nama Lengkap",
-  role: user.value?.positionText || "Jabatan",
-  label: "Ditandatangani secara digital oleh",
+  name: toTitleCase(user.value?.nama) || t('nd_nama_lengkap'),
+  role: user.value?.positionText || t('nd_jabatan'),
+  label: t('nd_ditandatangani_digital'),
 }));
 
 // ── Payload & validation ─────────────────────────────────────────────────────
@@ -73,8 +74,8 @@ const signerInfo = computed(() => ({
 const validateAndToast = (payload: DraftPayload) => {
   const result = validateDraftPayload(payload);
   if (!result.isValid) {
-    const firstError = Object.values(result.errors ?? {})[0] ?? "Terjadi kesalahan input";
-    toastError("Validasi Gagal", firstError);
+    const firstError = Object.values(result.errors ?? {})[0] ?? t('nd_kesalahan_input');
+    toastError(t('nd_validasi_gagal'), firstError);
     return false;
   }
   return true;
@@ -121,14 +122,14 @@ const createFormData = (payload: DraftPayload, includePdf = false) => {
 const handlePreview = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
-  loadingMessage.value = "Memproses Pratinjau...";
+  loadingMessage.value = t('nd_memproses_pratinjau');
   isLoadingData.value = true;
   try {
     const blob = await generatePdf(createFormData(payload, false));
     setPdfBlob(blob);
     isOpenPreview.value = true;
   } catch {
-    toastError("Gagal Preview");
+    toastError(t('nd_gagal_preview'));
   } finally {
     isLoadingData.value = false;
   }
@@ -137,14 +138,14 @@ const handlePreview = async () => {
 const handleSaveDraft = async () => {
   const payload = getBasePayload();
   if (!validateAndToast(payload)) return;
-  loadingMessage.value = "Menyimpan Draft...";
+  loadingMessage.value = t('nd_menyimpan_draft');
   isLoadingData.value = true;
   try {
     await saveND(createFormData(payload, false), editDraftId.value);
-    toastSuccess("Berhasil", "Draft berhasil disimpan");
+    toastSuccess(t('f_berhasil'), t('nd_draft_berhasil_disimpan'));
     redirectDraf();
   } catch (e: any) {
-    toastError("Gagal", e.response?.data?.message || "Gagal memperbarui draft");
+    toastError(t('f_gagal'), e.response?.data?.message || t('nd_gagal_memperbarui_draft'));
   } finally {
     isLoadingData.value = false;
   }
@@ -152,12 +153,12 @@ const handleSaveDraft = async () => {
 
 const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
   if (selectedSendType.value === "digsig" && !passphrase.trim()) {
-    signMethodModalRef.value?.setPassphraseError("Harap masukkan passphrase Anda");
+    signMethodModalRef.value?.setPassphraseError(t('nd_passphrase_kosong'));
     return;
   }
 
   const payload = getBasePayload();
-  loadingMessage.value = "Mengirim Nota Dinas...";
+  loadingMessage.value = t('nd_mengirim_nota_dinas');
   isLoadingData.value = true;
   try {
     const blob = await generatePdf(createFormData(payload, false));
@@ -168,7 +169,7 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
 
     if (selectedSendType.value === "digsig") {
       fd.append("passphrase", passphrase);
-      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+      if (!user.value?.nik) throw new Error(t('nd_nik_tidak_ditemukan'));
       fd.append("nik", user.value.nik);
     }
 
@@ -183,7 +184,7 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
 
     if (result.data.success) {
       revokePdfUrl();
-      toastSuccess("Berhasil", "Nota Dinas berhasil dikirim");
+      toastSuccess(t('f_berhasil'), t('nd_nota_dinas_terkirim'));
       Alert.close();
 
       if (selectedSendType.value === "ttd_basah") {
@@ -193,11 +194,11 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
         redirectTerkirim();
       }
     } else {
-      throw new Error(result.data.message || "Pengiriman gagal");
+      throw new Error(result.data.message || t('nd_pengiriman_gagal'));
     }
   } catch (e: any) {
     Alert.close();
-    const errMsg = e.response?.data?.message || e.message || "Gagal mengirim dokumen";
+    const errMsg = e.response?.data?.message || e.message || t('nd_gagal_mengirim_dokumen');
     if (errMsg.toLowerCase().includes("passphrase") || errMsg.toLowerCase().includes("salah")) {
       bsreDisabled.value = false;
       await nextTick();
@@ -205,7 +206,7 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
       await nextTick();
       signMethodModalRef.value?.setPassphraseError(errMsg);
     } else {
-      toastError("Gagal Mengirim", errMsg);
+      toastError(t('nd_gagal_mengirim'), errMsg);
     }
   } finally {
     isLoadingData.value = false;
@@ -245,7 +246,7 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 
 onMounted(async () => {
   if (!canAccessPage()) return;
-  loadingMessage.value = "Memuat...";
+  loadingMessage.value = t('nd_memuat');
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
@@ -350,7 +351,7 @@ onMounted(async () => {
         if (d.tanggal) setDateFromString(d.tanggal);
       }
     } catch {
-      toastError("Gagal memuat data draft");
+      toastError(t('nd_gagal_memuat_draft'));
     }
   }
 
@@ -361,14 +362,14 @@ onMounted(async () => {
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <div v-else class="relative">
-    <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
-    <PageHeader title="Tulis Nota Dinas" :items="breadcrumbs" />
+    <LoadingOverlay :loading="isLoadingData && loadingMessage !== $t('nd_memuat')" :message="loadingMessage" />
+    <PageHeader :title="$t('nd_tulis_nota_dinas')" :items="breadcrumbs" />
 
     <UCard variant="soft"
       :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
 
       <!-- Skeleton loading -->
-      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
+      <div v-if="isLoadingData && loadingMessage === $t('nd_memuat')" class="animate-pulse px-2 space-y-3">
         <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
@@ -396,13 +397,13 @@ onMounted(async () => {
       <div v-else class="flex-1 overflow-y-auto space-y-1">
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
-        <TulisInputTanggal v-model="date" label="Tanggal Surat" />
+        <TulisInputTanggal v-model="date" :label="$t('f_tanggal_surat')" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTertuju" :label="$t('f_tertuju')" :placeholder="$t('nd_pilih_tertuju')" :items="items"
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled-message="$t('nd_sudah_dipilih')" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :groups="recipientGroups" :exclude-items="excludeTembusanList" disabled-message="Sudah dipilih" />
+        <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('nd_pilih_tembusan')" :items="items"
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" :disabled-message="$t('nd_sudah_dipilih')" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -410,11 +411,11 @@ onMounted(async () => {
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_perihal') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal" />
+                :placeholder="$t('nd_ketik_perihal')" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -433,17 +434,16 @@ onMounted(async () => {
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <TulisKopSurat :alamat-info="user?.alamatInfo" />
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA
-                      DINAS</h1>
-                    <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
+                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">{{ $t('nd_nota_dinas') }}</h1>
+                    <p class="text-lg mt-1 text-[14px]">{{ $t('f_nomor') }} : ..............................................</p>
                   </div>
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
-                        <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
+                        <td class="text-[14px] w-[120px] font-bold align-top">{{ $t('f_kepada_yth') }}</td>
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
-                          <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
+                          <span v-if="selectedTertuju.length > 5">{{ $t('nd_periksa_alamat_terlampir') }}</span>
                           <span v-else v-html="selectedTertuju.length
                             ? selectedTertuju.map((s: any, i: number) =>
                               selectedTertuju.length === 1
@@ -455,12 +455,12 @@ onMounted(async () => {
                         </td>
                       </tr>
                       <tr>
-                        <td class="text-[14px] font-bold align-top">Dari</td>
+                        <td class="text-[14px] font-bold align-top">{{ $t('f_dari') }}</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ user?.positionText || 'Posisi' }}</td>
+                        <td class="text-[14px] align-top">{{ user?.positionText || $t('nd_posisi') }}</td>
                       </tr>
                       <tr>
-                        <td class="text-[14px] font-bold align-top">Perihal</td>
+                        <td class="text-[14px] font-bold align-top">{{ $t('f_perihal') }}</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">{{ subject ||
                           "................................................" }}</td>
@@ -479,14 +479,14 @@ onMounted(async () => {
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                        <div class="font-bold">{{ user?.positionText || $t('nd_nama_jabatan') }}</div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || $t('nd_nama_lengkap') }}</div>
                     </div>
                   </div>
                   <div class="text-[12px] mt-2 w-full text-left text-black">
-                    <div class="font-bold underline mb-1">Tembusan :</div>
-                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
+                    <div class="font-bold underline mb-1">{{ $t('f_tembusan') }} :</div>
+                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ $t('nd_periksa_alamat_terlampir') }}</div>
                     <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob ||
                       selectedTembusan[0]?.label }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
@@ -503,14 +503,14 @@ onMounted(async () => {
                       <table class="w-full">
                         <tbody>
                           <tr>
-                            <td class="align-top pr-2">Lampiran Surat</td>
+                            <td class="align-top pr-2">{{ $t('nd_lampiran_surat') }}</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Nomor Surat :</td>
+                            <td class="align-top pr-2">{{ $t('nd_nomor_surat') }} :</td>
                             <td>.....................................</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Tanggal Surat :</td>
+                            <td class="align-top pr-2">{{ $t('f_tanggal_surat') }} :</td>
                             <td>{{ formattedDate }}</td>
                           </tr>
                         </tbody>
@@ -518,13 +518,13 @@ onMounted(async () => {
                     </div>
                   </div>
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
-                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_kepada_yth') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
-                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_tembusan') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}</li>
                     </ol>
@@ -539,7 +539,7 @@ onMounted(async () => {
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.nota-dinas', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.nota-dinas', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>

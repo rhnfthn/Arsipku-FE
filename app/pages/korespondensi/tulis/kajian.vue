@@ -25,17 +25,17 @@
 
           <div class="flex flex-col items-center gap-2">
             <span class="text-gray-900 dark:text-white font-semibold text-lg">
-              {{ loadingMessage || 'Memproses Data' }}
+              {{ loadingMessage || $t('kj_memproses_data') }}
             </span>
             <span class="text-sm text-gray-600 dark:text-gray-400">
-              Mohon tunggu sebentar
+              {{ $t('kj_mohon_tunggu') }}
             </span>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <PageHeader title="Tulis Kajian" :items="breadcrumbs" />
+    <PageHeader :title="$t('kj_tulis_kajian')" :items="breadcrumbs" />
 
     <UCard variant="soft" :ui="{
       root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
@@ -45,21 +45,21 @@
         <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
           :loading="klasifikasiStatus === 'loading'" />
 
-        <TulisInputTanggal v-model="date" label="Tanggal Kajian" />
+        <TulisInputTanggal v-model="date" :label="$t('kj_tanggal_kajian')" />
 
         <TulisInputSifat v-model="selectedSifat" />
 
-        <TulisInputPenerima v-model="selectedPenerima" label="Tertuju" placeholder="Pilih Penerima"
+        <TulisInputPenerima v-model="selectedPenerima" :label="$t('tertuju')" :placeholder="$t('kj_pilih_penerima')"
           :items="recipientItems" />
 
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('perihal') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="subject" :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal" />
+                :placeholder="$t('kj_ketik_perihal')" />
               <span class="text-[10px] font-mono shrink-0 transition-colors"
                 :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
                 {{ subject.length }}/{{ maxPerihal }}
@@ -72,10 +72,10 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_lampiran') }}</span>
             <input type="text" v-model="lampiranText" readonly tabindex="-1"
               class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              placeholder="Otomatis terisi saat upload file..." />
+              :placeholder="$t('kj_otomatis_terisi')" />
           </div>
         </div>
 
@@ -113,19 +113,19 @@
 
                   <div class="text-center mb-6 text-black">
                     <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">
-                      KAJIAN
+                      {{ $t('kj_kajian') }}
                     </h1>
-                    <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
+                    <p class="text-lg mt-1 text-[14px]">{{ $t('f_nomor') }} : ..............................................</p>
                   </div>
 
                   <table class="w-[60%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
                       <tr>
-                        <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
+                        <td class="text-[14px] w-[120px] font-bold align-top">{{ $t('f_kepada_yth') }}</td>
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
                           <span v-if="selectedPenerima.length > 5">
-                            Periksa Alamat Terlampir
+                            {{ $t('kj_periksa_alamat_terlampir') }}
                           </span>
                           <span v-else v-html="selectedPenerima.length
                             ? selectedPenerima.map((s: any, i: number) =>
@@ -138,14 +138,14 @@
                         </td>
                       </tr>
                       <tr>
-                        <td class="text-[14px] font-bold align-top">Dari</td>
+                        <td class="text-[14px] font-bold align-top">{{ $t('f_dari') }}</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">
-                          {{ user?.positionText || 'Posisi Pengirim' }}
+                          {{ user?.positionText || $t('kj_posisi_pengirim') }}
                         </td>
                       </tr>
                       <tr>
-                        <td class="text-[14px] font-bold align-top">Perihal</td>
+                        <td class="text-[14px] font-bold align-top">{{ $t('perihal') }}</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top font-bold">
                           {{ subject || "................................................" }}
@@ -167,9 +167,9 @@
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
                         <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                        <div class="font-bold">{{ user?.positionText || $t('kj_nama_jabatan') }}</div>
                       </div>
-                      <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || $t('kj_nama_lengkap') }}</div>
                     </div>
                   </div>
                 </div>
@@ -181,10 +181,10 @@
                       <table class="w-full">
                         <tbody>
                           <tr>
-                            <td class="align-top pr-2">Lampiran Kajian</td>
+                            <td class="align-top pr-2">{{ $t('kj_lampiran_kajian') }}</td>
                           </tr>
                           <tr>
-                            <td class="align-top pr-2">Tanggal :</td>
+                            <td class="align-top pr-2">{{ $t('tanggal') }} :</td>
                             <td>{{ formattedDate }}</td>
                           </tr>
                         </tbody>
@@ -193,7 +193,7 @@
                   </div>
 
                   <div class="mb-8">
-                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_kepada_yth') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedPenerima" :key="item.value">
                         {{ item.labelJob || item.label }}
@@ -211,13 +211,13 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
     </UCard>
 
-    <USlideover v-model:open="isOpenPreview" title="Pratinjau" description="Pratinjau dokumen" side="bottom" :dismissible="!alertState.isOpen" :ui="{
+    <USlideover v-model:open="isOpenPreview" :title="$t('f_pratinjau')" :description="$t('kj_pratinjau_dokumen')" side="bottom" :dismissible="!alertState.isOpen" :ui="{
       content: 'h-screen max-h-screen',
       body: 'p-0',
       footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
@@ -227,16 +227,16 @@
           <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
           <div v-else class="flex flex-col items-center gap-2">
             <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500">Memuat Pratinjau...</span>
+            <span class="text-gray-500">{{ $t('kj_memuat_pratinjau') }}</span>
           </div>
         </div>
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
 
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" label="Kirim" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_kirim')" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="handleConfirmKirim" />
         </div>
       </template>
@@ -277,6 +277,7 @@ definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
 // const Alert = useAlert(); // Initialize Alert
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const draftListQuery = computed(() => pickKorespondensiListQuery(route.query));
@@ -302,8 +303,8 @@ const {
 } = useKajian();
 
 const breadcrumbs = [
-  { label: "Beranda", to: "/beranda" },
-  { label: "Tulis Kajian", to: "#" },
+  { label: t('beranda'), to: "/beranda" },
+  { label: t('kj_tulis_kajian'), to: "#" },
 ];
 
 const maxPerihal = 200;
@@ -319,9 +320,9 @@ const selectedSendType = ref('qr_only') // Default to 'qr_only' as per instructi
 const passphraseInput = ref('')
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
-  role: user.value?.positionText || 'Jabatan',
-  label: 'Ditandatangani secara digital oleh'
+  name: toTitleCase(user.value?.nama) || t('kj_nama_lengkap'),
+  role: user.value?.positionText || t('jabatan'),
+  label: t('kj_ditandatangani_digital')
 }))
 
 const editDraftId = ref<string | null>(null);
@@ -357,7 +358,7 @@ const tinyMceInit = {
   menubar: false,
   promotion: false,
   branding: false,
-  placeholder: 'Ketik konten disini...',
+  placeholder: t('kj_ketik_konten'),
   plugins: 'lists advlist link image code table fullscreen',
   toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
@@ -377,7 +378,7 @@ const formattedDate = computed(() => {
 })
 
 watch(existingFiles, (files) => {
-  lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
+  lampiranText.value = files?.length > 0 ? `${files.length} ${t('f_lampiran')}` : `0 ${t('f_lampiran')}`;
 }, { deep: true, immediate: true });
 
 // --- PAYLOAD ---
@@ -431,8 +432,8 @@ const validateInput = (payload: KajianPayload) => {
   const check = validateKajianPayload(payload)
   if (!check.isValid) {
     const firstKey = Object.keys(check.errors || {})[0]
-    const message = firstKey ? (check.errors || {})[firstKey] : 'Mohon lengkapi semua field yang wajib diisi.'
-    toast.add({ title: 'Validasi Gagal', description: message, color: 'error' })
+    const message = firstKey ? (check.errors || {})[firstKey] : t('kj_lengkapi_field_wajib')
+    toast.add({ title: t('kj_validasi_gagal'), description: message, color: 'error' })
     return false
   }
   return true
@@ -451,7 +452,7 @@ const handlePreview = async () => {
   if (!validateInput(payload)) return;
 
   isLoadingData.value = true;
-  loadingMessage.value = "Memproses Pratinjau...";
+  loadingMessage.value = t('kj_memproses_pratinjau');
 
   try {
     if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
@@ -463,7 +464,7 @@ const handlePreview = async () => {
     isOpenPreview.value = true;
   } catch (e) {
     console.error(e);
-    toast.add({ title: 'Gagal Preview', color: 'error' });
+    toast.add({ title: t('kj_gagal_preview'), color: 'error' });
   } finally {
     isLoadingData.value = false;
   }
@@ -474,7 +475,7 @@ const handleSaveDraft = async () => {
   if (!validateInput(payload)) throw new Error("Validation failed"); // Throw error for Alert.confirm catch
 
   try {
-    loadingMessage.value = "Menyimpan Draft...";
+    loadingMessage.value = t('kj_menyimpan_draft');
     isLoadingData.value = true;
 
     const fd = createFormData(payload, false);
@@ -487,15 +488,15 @@ const handleSaveDraft = async () => {
     }
 
     if ((res as any)?.data?.success || (res as any)?.success) {
-      toast.add({ title: 'Berhasil', description: 'Draft berhasil disimpan', color: 'success' }); // Changed description
+      toast.add({ title: t('f_berhasil'), description: t('kj_draft_berhasil_disimpan'), color: 'success' }); // Changed description
       if (res.data?.id) editDraftId.value = res.data.id;
       router.push({ path: "/korespondensi/draf", query: draftListQuery.value });
     } else {
-      throw new Error(res?.data?.message || 'Gagal menyimpan draft');
+      throw new Error(res?.data?.message || t('kj_gagal_menyimpan_draft'));
     }
   } catch (e: any) {
     console.error("Gagal simpan draft:", e);
-    throw new Error(e.response?.data?.message || 'Gagal memperbarui draft'); // Re-throw error
+    throw new Error(e.response?.data?.message || t('kj_gagal_memperbarui_draft')); // Re-throw error
   } finally {
     isLoadingData.value = false;
   }
@@ -503,10 +504,10 @@ const handleSaveDraft = async () => {
 
 const confirmSaveDraft = async () => {
   const isConfirmed = await Alert.confirm(
-    'Simpan sebagai Draft?',
-    'Dokumen akan disimpan ke folder draft dan bisa Anda edit kembali nanti.',
-    'Ya, Simpan',
-    'Batal',
+    t('kj_simpan_sebagai_draft'),
+    t('kj_draft_diedit_lagi'),
+    t('kj_ya_simpan'),
+    t('k_batal'),
     false // dismissible
   );
 
@@ -523,14 +524,14 @@ const confirmSaveDraft = async () => {
 
 const handleKirimDokumen = async (passphrase = '') => {
   if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
-    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
+    signMethodModalRef.value?.setPassphraseError(t('kj_masukkan_passphrase'))
     return
   }
 
   const payload = getPayload();
   if (!validateInput(payload)) return;
 
-  loadingMessage.value = "Mengirim Kajian...";
+  loadingMessage.value = t('kj_mengirim_kajian');
   isLoadingData.value = true;
 
   try {
@@ -543,7 +544,7 @@ const handleKirimDokumen = async (passphrase = '') => {
 
     if (selectedSendType.value === 'digsig') {
       fdFinal.append('passphrase', passphrase);
-      if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
+      if (!user.value?.nik) throw new Error(t('kj_nik_tidak_ditemukan'));
       fdFinal.append('nik', user.value.nik);
     }
 
@@ -552,15 +553,15 @@ const handleKirimDokumen = async (passphrase = '') => {
       : await sendKajian(fdFinal);
 
     if ((res as any)?.data?.success || (res as any)?.success) {
-      toast.add({ title: 'Berhasil', description: 'Kajian terkirim', color: 'success' });
+      toast.add({ title: t('f_berhasil'), description: t('kj_kajian_terkirim'), color: 'success' });
       Alert.close();
       router.push("/korespondensi/terkirim");
     } else {
-      throw new Error(res?.data?.message || 'Pengiriman gagal');
+      throw new Error(res?.data?.message || t('kj_pengiriman_gagal'));
     }
   } catch (e: any) {
     Alert.close();
-    const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen';
+    const errMsg = e.response?.data?.message || e.message || t('kj_gagal_mengirim_dokumen');
 
     if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
       bsreDisabled.value = false;
@@ -569,7 +570,7 @@ const handleKirimDokumen = async (passphrase = '') => {
       await nextTick();
       signMethodModalRef.value?.setPassphraseError(errMsg);
     } else {
-      toast.add({ title: 'Gagal Mengirim', description: errMsg, color: 'error' });
+      toast.add({ title: t('kj_gagal_mengirim'), description: errMsg, color: 'error' });
     }
   } finally {
     isLoadingData.value = false;
@@ -605,26 +606,26 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 
 const handlePassphraseSubmit = async () => {
   if (!selectedSendType.value) {
-    toast.add({ title: 'Wajib Diisi', description: 'Pilih metode tanda tangan', color: 'warning' });
+    toast.add({ title: t('kj_wajib_diisi'), description: t('kj_pilih_metode_ttd'), color: 'warning' });
     return;
   }
 
   if (selectedSendType.value === 'digsig' && !passphraseInput.value) {
-    toast.add({ title: 'Wajib Diisi', description: 'Harap masukkan passphrase Anda', color: 'warning' });
+    toast.add({ title: t('kj_wajib_diisi'), description: t('kj_masukkan_passphrase'), color: 'warning' });
     return;
   }
 
   isPassphraseModalOpen.value = false;
 
   const confirmMessage = selectedSendType.value === 'digsig'
-    ? 'Apakah Anda yakin Passphrase benar dan ingin mengirim dokumen ini?'
-    : 'Dokumen akan dikirim tanpa tanda tangan. Lanjutkan?';
+    ? t('kj_konfirmasi_passphrase')
+    : t('kj_kirim_tanpa_ttd');
 
   const isConfirmed = await Alert.confirm(
-    'Konfirmasi Akhir',
+    t('kj_konfirmasi_akhir'),
     confirmMessage,
-    'Ya, Kirim Sekarang',
-    'Periksa Lagi',
+    t('kj_ya_kirim_sekarang'),
+    t('kj_periksa_lagi'),
     false
   );
 
@@ -699,7 +700,7 @@ onMounted(async () => {
     const draftId = route.query.draft_id as string;
     if (draftId) {
       editDraftId.value = draftId;
-      loadingMessage.value = "Memuat Draft...";
+      loadingMessage.value = t('kj_memuat_draft');
       const resDraft = await getKajianDetail(draftId);
 
       if (resDraft.data) {

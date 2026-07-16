@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col py-3 gap-2 mt-4">
     <div class="flex justify-between items-center">
-      <label class="text-sm text-gray-500 dark:text-gray-400 font-medium">Lampiran</label>
+      <label class="text-sm text-gray-500 dark:text-gray-400 font-medium">{{ $t('f_lampiran') }}</label>
 
       <span v-if="isProcessing" class="text-xs text-primary font-medium flex items-center gap-1">
         <UIcon name="i-lucide-loader-2" class="animate-spin" />
@@ -13,10 +13,10 @@
       class="mb-2 transition-all duration-300" />
 
     <FileUpload v-model="selectedFiles" accept="application/pdf" :multiple="true" :disabled="isProcessing"
-      description="Klik atau drag & drop untuk upload file PDF (Maks 10MB)" />
+      :description="$t('lamp_description')" />
 
     <div v-if="existingFiles && existingFiles.length > 0" class="mt-3 space-y-2">
-      <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Lampiran Tersimpan</p>
+      <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $t('lamp_tersimpan') }}</p>
 
       <div v-for="(file, idx) in existingFiles" :key="file.id || idx"
         class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
@@ -47,7 +47,7 @@
 
           <div v-else class="flex flex-col items-center gap-2">
             <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-            <span class="text-gray-500 dark:text-gray-400">Memuat Pratinjau...</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ $t('lamp_memuat_pratinjau') }}</span>
           </div>
 
         </div>
@@ -55,7 +55,7 @@
 
       <template #footer>
         <div class="flex gap-4 w-full justify-end">
-          <UButton label="Tutup" color="primary" variant="ghost" size="lg" class="px-8" @click="showPdfModal = false" />
+          <UButton :label="$t('f_tutup')" color="primary" variant="ghost" size="lg" class="px-8" @click="showPdfModal = false" />
         </div>
       </template>
     </USlideover>
@@ -67,6 +67,8 @@
 import { ref, watch, computed, onUnmounted } from 'vue';
 import { useLampiran } from '@/composables/useLampiran';
 import { Alert } from '@/composables/useAlert';
+
+const { t } = useI18n();
 
 // Props & Emits
 const props = defineProps<{ existingFiles: any[] }>();
@@ -84,7 +86,7 @@ const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const showPdfModal = ref(false);
 const activePdfUrl = ref<string | null>(null);
 const isLocalPdfLoading = ref(false);
-const previewTitle = ref('Pratinjau');
+const previewTitle = ref(t('f_pratinjau'));
 
 // Composables
 const { uploadLampiran, deleteLampiran } = useLampiran();
@@ -93,8 +95,8 @@ const toast = useToast();
 // Computed Status
 const isProcessing = computed(() => isUploading.value || isDeleting.value);
 const processMessage = computed(() => {
-  if (isUploading.value) return `Mengupload ${uploadProgress.value}%`;
-  if (isDeleting.value) return 'Menghapus file...';
+  if (isUploading.value) return t('lamp_mengupload', { progress: uploadProgress.value });
+  if (isDeleting.value) return t('lamp_menghapus_file');
   return '';
 });
 
@@ -126,10 +128,10 @@ const getFileUrlString = (file: any): string => {
 
 const handlePreview = async (file: any) => {
   const url = getFileUrlString(file);
-  const title = file.fileName || file.name || 'Dokumen';
+  const title = file.fileName || file.name || t('dokumen');
 
   if (!url) {
-    toast.add({ title: 'Gagal', description: 'URL dokumen tidak valid', color: 'error' });
+    toast.add({ title: t('f_gagal'), description: t('lamp_gagal_url'), color: 'error' });
     return;
   }
 
@@ -184,8 +186,8 @@ const validateAndUpload = async (files: File[]) => {
 
   if (invalidFiles.length > 0) {
     toast.add({
-      title: 'File Terlalu Besar',
-      description: `${invalidFiles.length} file melebihi ${MAX_SIZE_MB}MB.`,
+      title: t('f_file_terlalu_besar'),
+      description: t('lamp_file_terlalu_besar_pesan', { count: invalidFiles.length, max: MAX_SIZE_MB }),
       color: 'warning',
     });
     if (validFiles.length === 0) {
@@ -215,11 +217,11 @@ const validateAndUpload = async (files: File[]) => {
 
       const newExisting = [...props.existingFiles, ...newUploadedFiles];
       emit('update:existingFiles', newExisting);
-      toast.add({ title: 'Berhasil upload lampiran', color: 'success' });
+      toast.add({ title: t('lamp_berhasil_upload'), color: 'success' });
     }
   } catch (error) {
     console.error('Upload Error:', error);
-    toast.add({ title: 'Gagal upload', description: 'Cek koneksi atau server', color: 'error' });
+    toast.add({ title: t('lamp_gagal_upload'), description: t('lamp_gagal_upload_pesan'), color: 'error' });
   } finally {
     selectedFiles.value = [];
     setTimeout(() => {
@@ -232,10 +234,10 @@ const validateAndUpload = async (files: File[]) => {
 const handleRemove = async (index: number, file: any) => {
   // 1. Tampilkan Alert Konfirmasi
   const isConfirmed = await Alert.confirm(
-    'Hapus lampiran?',
-    'Lampiran yang dihapus tidak dapat dikembalikan.',
-    'Ya, Hapus',
-    'Batal',
+    t('lamp_hapus_lampiran'),
+    t('lamp_konfirmasi_hapus'),
+    t('lamp_ya_hapus'),
+    t('batal'),
     true
   );
 
@@ -253,9 +255,9 @@ const handleRemove = async (index: number, file: any) => {
   try {
     await deleteLampiran(file.id);
     removeFromList(index);
-    toast.add({ title: 'File berhasil dihapus', color: 'success' });
+    toast.add({ title: t('lamp_berhasil_hapus'), color: 'success' });
   } catch (error) {
-    toast.add({ title: 'Gagal menghapus file', color: 'error' });
+    toast.add({ title: t('lamp_gagal_hapus'), color: 'error' });
   } finally {
     isDeleting.value = false;
     Alert.close();

@@ -1,12 +1,12 @@
 <template>
   <div class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-      <UButton label="Pilih Template" color="primary" variant="soft" icon="i-lucide-folder-search"
+      <UButton :label="$t('f_pilih_template')" color="primary" variant="soft" icon="i-lucide-folder-search"
         class="w-full sm:w-auto justify-center" @click="isTemplateModalOpen = true" />
-      <UButton label="Template Saya" icon="i-lucide-folder-pen" variant="soft" color="primary"
+      <UButton :label="$t('tmpl_template_saya')" icon="i-lucide-folder-pen" variant="soft" color="primary"
         class="w-full sm:w-auto justify-center" @click="openMyTemplateModal" />
     </div>
-    <UButton label="Simpan Template" icon="i-lucide-save" variant="soft" color="primary"
+    <UButton :label="$t('tmpl_simpan_template')" icon="i-lucide-save" variant="soft" color="primary"
       class="w-full sm:w-auto justify-center" @click="openSaveModal(false)" />
   </div>
 
@@ -18,7 +18,7 @@
 
       <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Template Umum</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('tmpl_pilih_template_umum') }}</h3>
           <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="isTemplateModalOpen = false" />
         </div>
         <div class="p-4 overflow-y-auto">
@@ -37,7 +37,7 @@
               <span class="text-sm font-semibold text-left text-gray-900 dark:text-white flex-1 min-w-0">
                 {{ item.label }}
               </span>
-              <UButton label="Gunakan" size="xs" color="primary" variant="solid" class="shrink-0"
+              <UButton :label="$t('tmpl_gunakan')" size="xs" color="primary" variant="solid" class="shrink-0"
                 @click.stop="selectTemplate(item)" />
             </template>
 
@@ -63,26 +63,25 @@
       <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col">
         <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ isEditMode ? 'Edit Template' : 'Simpan Template Baru' }}
+            {{ isEditMode ? $t('tmpl_edit_template') : $t('tmpl_simpan_template_baru') }}
           </h3>
         </div>
         <div class="p-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nama Template</label>
-            <UInput v-model="newTemplateName" placeholder="Contoh: Template Undangan Rapat" icon="i-heroicons-tag"
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tmpl_nama_template') }}</label>
+            <UInput v-model="newTemplateName" :placeholder="$t('tmpl_nama_template_placeholder')" icon="i-heroicons-tag"
               size="lg" class="w-full" />
           </div>
           <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p class="text-sm text-blue-800 dark:text-blue-300">
-              <span v-if="isEditMode">Konten template ini akan <strong>diperbarui</strong> dengan isi editor saat
-                ini.</span>
-              <span v-else>Konten editor saat ini akan disimpan sebagai template baru.</span>
+              <span v-if="isEditMode" v-html="$t('tmpl_konten_diperbarui')" />
+              <span v-else v-html="$t('tmpl_konten_disimpan')" />
             </p>
           </div>
         </div>
         <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-lg">
-          <UButton label="Batal" variant="ghost" color="neutral" @click="isAddTemplateOpen = false" />
-          <UButton :label="isEditMode ? 'Simpan Perubahan' : 'Simpan'" color="primary" icon="i-heroicons-check-circle"
+          <UButton :label="$t('batal')" variant="ghost" color="neutral" @click="isAddTemplateOpen = false" />
+          <UButton :label="isEditMode ? $t('tmpl_simpan_perubahan') : $t('f_simpan')" color="primary" icon="i-heroicons-check-circle"
             :loading="isLoadingAction" :disabled="!newTemplateName.trim()" @click="submitTemplate" />
         </div>
       </div>
@@ -96,7 +95,7 @@
       <div class="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">Template Saya</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mr-2">{{ $t('tmpl_template_saya') }}</h3>
             <UBadge color="primary" variant="subtle">{{ myTemplates.length }}</UBadge>
           </div>
           <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="isMyTemplateModalOpen = false" />
@@ -106,7 +105,7 @@
             <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary" />
           </div>
           <div v-else-if="myTemplates.length === 0" class="p-6 text-center text-gray-500">
-            Belum ada template tersimpan.
+            {{ $t('tmpl_belum_ada_template') }}
           </div>
           <div v-else class="space-y-3">
             <!-- <UAccordion multiple :items="myTemplatesAccordion" :ui="{ wrapper: 'space-y-2' }">
@@ -162,7 +161,7 @@
                     @click="handleDeleteTemplate(item.id)" />
                   <!-- Vertical divider -->
                   <div class="h-5 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                  <UButton label="Gunakan" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
+                  <UButton :label="$t('tmpl_gunakan')" size="xs" color="primary" variant="solid" @click="selectTemplate(item)" />
                 </div>
 
               </template>
@@ -200,6 +199,7 @@ const emit = defineEmits<{ (e: 'apply', content: string): void }>();
 // const { Alert } = useSwal();
 import { Alert } from '@/composables/useAlert';
 const toast = useToast();
+const { t } = useI18n();
 const { user, getProfile } = useAuth();
 const { getTemplatesByPosition, createTemplate, updateTemplate, deleteTemplateById } = useTemplateTulis();
 
@@ -220,17 +220,18 @@ const editingId = ref<string | null>(null);
 
 // Static Data (Public)
 const publicTemplates = [
-  { id: 'list-decimal', name: 'Default', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
-  { id: 'list-alpha', name: 'Numbering with child', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li></ol>' },
-  { id: 'list-roman', name: 'Normal Table', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<table border="1"><thead><tr><th>Kolom 1</th><th>Kolom 2</th><th>Kolom 3</th><th>Kolom 4</th><th>Kolom 5</th></tr></thead><tbody><tr><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td></tr><tr><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td></tr><tr><td>Baris 3</td><td>Baris 3</td><td>Baris 3</td><td>Baris 3</td><td>Baris 3</td></tr></tbody></table></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
-  { id: 'list-bullet', name: 'Table Merge', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<table border="1"><thead><tr><th rowspan="2">Kolom Merge 1</th><th colspan="5">Kolom Merge 2</th></tr><tr><th>Kolom 3</th><th>Kolom 4</th><th>Kolom 5</th><th>Kolom 6</th><th>Kolom 7</th></tr></thead><tbody><tr><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td></tr><tr><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td></tr></tbody></table></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
-  { id: 'list-combination', name: 'Numbering & Table', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<table border="1"><thead><tr><th>Kolom 1</th><th>Kolom 2</th><th>Kolom 3</th><th>Kolom 4</th><th>Kolom 5</th><th>Kolom 6</th></tr></thead><tbody><tr><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td></tr><tr><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td></tr></tbody></table></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
-  { id: 'table-identity', name: 'Tabel Identitas Kegiatan', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><td width="30%">Nama Kegiatan</td><td width="70%">:</td></tr><tr><td>Tanggal</td><td>:</td></tr><tr><td>Waktu</td><td>:</td></tr><tr><td>Tempat</td><td>:</td></tr></table>' },
-  { id: 'table-participant', name: 'Tabel Peserta', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><th width="5%">No</th><th width="35%">Nama</th><th width="30%">Jabatan</th><th width="30%">Keterangan</th></tr><tr><td align="center">1</td><td></td><td></td><td></td></tr><tr><td align="center">2</td><td></td><td></td><td></td></tr></table>' },
-  { id: 'table-agenda', name: 'Tabel Agenda Kegiatan', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><th width="10%">No</th><th width="30%">Hari / Tanggal</th><th width="30%">Waktu</th><th width="30%">Agenda</th></tr><tr><td align="center">1</td><td></td><td></td><td></td></tr><tr><td align="center">2</td><td></td><td></td><td></td></tr></table>' },
+  { id: 'list-decimal', name: 'Default', nameKey: 'tmpl_tpl_default', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
+  { id: 'list-alpha', name: 'Numbering with child', nameKey: 'tmpl_tpl_numbering_child', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li></ol>' },
+  { id: 'list-roman', name: 'Normal Table', nameKey: 'tmpl_tpl_normal_table', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<table border="1"><thead><tr><th>Kolom 1</th><th>Kolom 2</th><th>Kolom 3</th><th>Kolom 4</th><th>Kolom 5</th></tr></thead><tbody><tr><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td></tr><tr><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td></tr><tr><td>Baris 3</td><td>Baris 3</td><td>Baris 3</td><td>Baris 3</td><td>Baris 3</td></tr></tbody></table></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
+  { id: 'list-bullet', name: 'Table Merge', nameKey: 'tmpl_tpl_table_merge', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<table border="1"><thead><tr><th rowspan="2">Kolom Merge 1</th><th colspan="5">Kolom Merge 2</th></tr><tr><th>Kolom 3</th><th>Kolom 4</th><th>Kolom 5</th><th>Kolom 6</th><th>Kolom 7</th></tr></thead><tbody><tr><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td></tr><tr><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td></tr></tbody></table></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
+  { id: 'list-combination', name: 'Numbering & Table', nameKey: 'tmpl_tpl_numbering_table', content: '<ol><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<ol type="a"><li>Satu</li><li>Dua</li><li>Tiga</li></ol></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<table border="1"><thead><tr><th>Kolom 1</th><th>Kolom 2</th><th>Kolom 3</th><th>Kolom 4</th><th>Kolom 5</th><th>Kolom 6</th></tr></thead><tbody><tr><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td><td>Baris 1</td></tr><tr><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td><td>Baris 2</td></tr></tbody></table></li><li>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li></ol>' },
+  { id: 'table-identity', name: 'Tabel Identitas Kegiatan', nameKey: 'tmpl_tpl_tabel_identitas', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><td width="30%">Nama Kegiatan</td><td width="70%">:</td></tr><tr><td>Tanggal</td><td>:</td></tr><tr><td>Waktu</td><td>:</td></tr><tr><td>Tempat</td><td>:</td></tr></table>' },
+  { id: 'table-participant', name: 'Tabel Peserta', nameKey: 'tmpl_tpl_tabel_peserta', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><th width="5%">No</th><th width="35%">Nama</th><th width="30%">Jabatan</th><th width="30%">Keterangan</th></tr><tr><td align="center">1</td><td></td><td></td><td></td></tr><tr><td align="center">2</td><td></td><td></td><td></td></tr></table>' },
+  { id: 'table-agenda', name: 'Tabel Agenda Kegiatan', nameKey: 'tmpl_tpl_tabel_agenda', content: '<table border="1" width="100%" cellpadding="6" cellspacing="0"><tr><th width="10%">No</th><th width="30%">Hari / Tanggal</th><th width="30%">Waktu</th><th width="30%">Agenda</th></tr><tr><td align="center">1</td><td></td><td></td><td></td></tr><tr><td align="center">2</td><td></td><td></td><td></td></tr></table>' },
   {
     id: 'list-decimal-parentheses',
     name: 'Daftar Angka (1))',
+    nameKey: 'tmpl_tpl_daftar_angka',
     content: `
       <ol style="list-style-type: decimal;">
         <li style="list-style-type: none;">1) Poin pertama</li>
@@ -244,6 +245,7 @@ const publicTemplates = [
   {
     id: 'list-multilevel',
     name: 'Daftar Bertingkat (1.1.1)',
+    nameKey: 'tmpl_tpl_daftar_bertingkat',
     content: `
       <ol>
         <li>Poin utama
@@ -266,6 +268,7 @@ const publicTemplates = [
   {
     id: 'list-manual-numbering',
     name: 'Daftar Bertingkat Manual (1.1.2)',
+    nameKey: 'tmpl_tpl_daftar_bertingkat_manual',
     content: `
     <ol style="list-style: none; padding-left: 0;">
       <li>1. Pendahuluan
@@ -331,7 +334,10 @@ const publicTemplates = [
 
 // --- COMPUTED ---
 const publicTemplatesAccordion = computed(() => {
-  return publicTemplates.map(t => ({ label: t.name, slot: 'template-body', ...t }));
+  return publicTemplates.map(tpl => {
+    const name = tpl.nameKey ? t(tpl.nameKey) : tpl.name;
+    return { ...tpl, name, label: name, slot: 'template-body' };
+  });
 });
 
 const myTemplatesAccordion = computed(() => {
@@ -371,7 +377,7 @@ const openSaveModal = (edit: boolean) => {
   if (!edit) {
     // Validasi konten kosong saat mau simpan baru
     if (!props.currentContent || props.currentContent.trim() === '') {
-      Alert.warning('Gagal menyimpan!', 'Isi editor terlebih dahulu.');
+      Alert.warning(t('tmpl_gagal_menyimpan'), t('tmpl_isi_editor'));
       return;
     }
     // Reset untuk mode CREATE
@@ -399,7 +405,7 @@ const submitTemplate = async () => {
   const positionId = user.value?.position;
 
   if (!positionId) {
-    Alert.error('Error', 'Posisi user tidak ditemukan.');
+    Alert.error(t('f_gagal'), t('tmpl_error_posisi'));
     return;
   }
 
@@ -416,11 +422,11 @@ const submitTemplate = async () => {
     if (isEditMode.value && editingId.value) {
       // --- UPDATE ---
       await updateTemplate(editingId.value, payload);
-      toast.add({ title: 'Sukses', description: 'Template berhasil diperbarui.', color: 'success' });
+      toast.add({ title: t('f_berhasil'), description: t('tmpl_template_diperbarui'), color: 'success' });
     } else {
       // --- CREATE ---
       await createTemplate(payload);
-      toast.add({ title: 'Sukses', description: 'Template berhasil disimpan.', color: 'success' });
+      toast.add({ title: t('f_berhasil'), description: t('tmpl_template_disimpan'), color: 'success' });
     }
 
     // Refresh list & Close modals
@@ -429,7 +435,7 @@ const submitTemplate = async () => {
 
   } catch (error) {
     console.error(error);
-    Alert.error('Gagal', 'Terjadi kesalahan saat menyimpan template.');
+    Alert.error(t('f_gagal'), t('tmpl_gagal_simpan'));
   } finally {
     isLoadingAction.value = false;
   }
@@ -439,17 +445,17 @@ const submitTemplate = async () => {
 // Tambahkan console.log untuk debugging
 const handleDeleteTemplate = async (id: any) => {
   if (!id) {
-    Alert.warning('Error', 'ID Template tidak ditemukan.');
+    Alert.warning(t('f_gagal'), t('tmpl_error_id_template'));
     return;
   }
 
   // 1. Tampilkan Confirm
   // Saat user klik "Ya, Hapus", tombol akan berubah jadi loading spinner & modal tetap terbuka
   const isConfirmed = await Alert.confirm(
-    'Hapus Template?',
-    'Template yang dihapus tidak dapat dikembalikan.',
-    'Ya, Hapus',
-    'Batal',
+    t('tmpl_konfirmasi_hapus'),
+    t('tmpl_konfirmasi_hapus_pesan'),
+    t('tmpl_ya_hapus'),
+    t('batal'),
     true
   );
 
@@ -463,8 +469,8 @@ const handleDeleteTemplate = async (id: any) => {
     await deleteTemplateById(String(id));
 
     toast.add({
-      title: 'Terhapus',
-      description: 'Template berhasil dihapus.',
+      title: t('tmpl_terhapus'),
+      description: t('tmpl_template_terhapus'),
       color: 'success'
     });
 
@@ -475,8 +481,8 @@ const handleDeleteTemplate = async (id: any) => {
     console.error('Error saat delete:', error);
     // Tampilkan pesan error (bisa pakai toast atau alert warning)
     toast.add({
-      title: 'Gagal',
-      description: 'Gagal menghapus template.',
+      title: t('f_gagal'),
+      description: t('tmpl_gagal_hapus'),
       color: 'error'
     });
   } finally {
@@ -493,10 +499,10 @@ const selectTemplate = async (template: any) => {
   const templateName = template.name || template.label;
 
   const isConfirmed = await Alert.confirm(
-    "Gunakan Template",
-    `Apakah Anda yakin ingin menggunakan template "${templateName}"?<br><br><b>PERINGATAN:</b> Isi editor saat ini akan diganti seluruhnya.`,
-    "Ya, Gunakan",
-    "Batal",
+    t('tmpl_gunakan_template'),
+    t('tmpl_konfirmasi_gunakan', { name: templateName }),
+    t('tmpl_ya_gunakan'),
+    t('batal'),
     false
   );
 

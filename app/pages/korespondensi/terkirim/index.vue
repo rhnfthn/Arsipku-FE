@@ -128,12 +128,12 @@ const currentReaderData = ref({
 });
 
 // ── Static Config ─────────────────────────────────────────────────────────────
-const breadcrumbs = [
+const breadcrumbs = computed(() => [
   { label: t('tk_beranda'), to: '/beranda' },
   { label: t('terkirim'), to: '#' },
-];
+]);
 
-const tabs = [
+const tabs = computed(() => [
   { label: t('k_semua'), value: 'ALL', icon: Inbox },
   { label: t('k_nota_dinas'), value: 'ND', icon: FileText },
   { label: t('k_disposisi'), value: 'DI', icon: Send },
@@ -141,34 +141,34 @@ const tabs = [
   { label: t('k_eksternal'), value: 'SDE', icon: Building2 },
   { label: t('k_konsep'), value: 'KO', icon: FilePen },
   { label: t('k_kajian'), value: 'KA', icon: BookOpen },
-];
+]);
 
-const filterMenuOptions = [
+const filterMenuOptions = computed(() => [
   { label: t('k_semua'), value: 'Semua' },
   { label: t('k_favorit'), value: 'Favorit' },
   { label: t('k_prioritas'), value: 'Prioritas' },
   { label: t('k_catatan'), value: 'Catatan' },
   { label: t('k_lock'), value: 'Lock' },
   { label: t('k_arsip'), value: 'Arsip' },
-];
+]);
 
 const dateOptions = ['7 Hari', '30 Hari', '60 Hari', '1 Tahun', 'Semua'];
 const sortOptions = ['Terbaru', 'Terlama'];
 const pageOptions = [10, 25, 50, 100];
 
-const dateLabelMap: Record<string, string> = {
+const dateLabelMap = computed<Record<string, string>>(() => ({
   '7 Hari': t('k_7_hari'),
   '30 Hari': t('k_30_hari'),
   '60 Hari': t('k_60_hari'),
   '1 Tahun': t('k_1_tahun'),
   'Semua': t('k_semua'),
-};
-const sortLabelMap: Record<string, string> = {
+}));
+const sortLabelMap = computed<Record<string, string>>(() => ({
   'Terbaru': t('k_terbaru'),
   'Terlama': t('k_terlama'),
-};
-const filterLabelMap: Record<string, string> = Object.fromEntries(
-  filterMenuOptions.map((f) => [f.value, f.label])
+}));
+const filterLabelMap = computed<Record<string, string>>(() =>
+  Object.fromEntries(filterMenuOptions.value.map((f) => [f.value, f.label]))
 );
 
 // ── Helpers ─────────────────────────────────────────────────────────────────--
@@ -871,8 +871,8 @@ onMounted(async () => {
       endDateInput,
     },
     {
-      tabs: tabs.map((t) => t.value),
-      filters: filterMenuOptions.map((f) => f.value),
+      tabs: tabs.value.map((t) => t.value),
+      filters: filterMenuOptions.value.map((f) => f.value),
       sorts: sortOptions,
       dates: dateOptions,
       pageSizes: pageOptions,
@@ -1169,6 +1169,15 @@ onUnmounted(() => {
                 <span>{{ dateLabelMap[opt] || opt }}</span>
                 <Check v-if="activeDateLabel === opt" class="w-3.5 h-3.5 text-primary" />
               </button>
+              <div class="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
+                <button
+                  @click="selectDateFilter('Semua')"
+                  class="w-full text-left px-4 py-2 text-[13px] text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"
+                >
+                  <RotateCw class="w-3.5 h-3.5" />
+                  <span>{{ $t('df_reset_tanggal') }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
