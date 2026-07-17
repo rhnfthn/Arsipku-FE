@@ -176,6 +176,27 @@ const connectSocket = async (): Promise<void> => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
 
+    // ── RBAC permission changed handler ──
+    // Saat superadmin mengubah permission role, backend emit event ini.
+    // Frontend harus re-fetch profile (untuk update activePermissions)
+    // lalu cek apakah halaman saat ini masih bisa diakses.
+    socket.on('rbac:permission-changed', async (payload: any) => {
+      console.log('[useRealtimeSocket] RBAC permission changed:', payload);
+      if (!process.client) return;
+
+      // Re-fetch profile untuk update activePermissions
+      const { getProfile } = useAuth();
+      await getProfile(true); // force refresh
+
+      // Cek apakah halaman saat ini masih bisa diakses
+      const { canAccessPage } = useFeatureAccess();
+      const route = useRoute();
+      if (!canAccessPage(route.path)) {
+        // Redirect ke access-denied
+        navigateTo(`/access-denied?from=${encodeURIComponent(route.fullPath)}`);
+      }
+    });
+
     // Don't resolve here — resolved on 'connect' or 'connect_error' events above
   });
 
