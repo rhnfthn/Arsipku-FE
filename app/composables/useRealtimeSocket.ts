@@ -71,7 +71,13 @@ const connectSocket = async (): Promise<void> => {
 
   connectPromise = new Promise<void>((resolve) => {
     let settled = false;
-    const done = () => { if (!settled) { settled = true; connectPromise = null; resolve(); } };
+    const done = () => {
+      if (!settled) {
+        settled = true;
+        connectPromise = null;
+        resolve();
+      }
+    };
 
     const token = getToken();
     if (!token) {
@@ -122,7 +128,7 @@ const connectSocket = async (): Promise<void> => {
         const count =
           typeof payload.inboxCount === 'number'
             ? payload.inboxCount
-            : payload.inboxCount?.data?.count ?? payload.inboxCount?.count ?? 0;
+            : (payload.inboxCount?.data?.count ?? payload.inboxCount?.count ?? 0);
         inboxCount.value = count;
       }
       if (payload.labelCounts && typeof payload.labelCounts === 'object') {
@@ -132,7 +138,9 @@ const connectSocket = async (): Promise<void> => {
         bsreAlert.value = payload.bsreAlert;
       }
       if (payload.naskahDinasVerifikatorWaitingCount != null) {
-        naskahDinasVerifikatorWaitingCount.value = Number(payload.naskahDinasVerifikatorWaitingCount);
+        naskahDinasVerifikatorWaitingCount.value = Number(
+          payload.naskahDinasVerifikatorWaitingCount
+        );
       }
       if (payload.nomorCounts && typeof payload.nomorCounts === 'object') {
         nomorCounts.value = { ...nomorCounts.value, ...payload.nomorCounts };

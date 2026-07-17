@@ -73,15 +73,36 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   { pattern: /^\/korespondensi\/draf\/[^/]+$/, perm: 'utama.draft:read-detail' },
   // Konsep & Finalisasi & Lanjut — inherit dari parent tulis permission
   { pattern: /^\/korespondensi\/tulis\/konsep\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
-  { pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
-  { pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
-  { pattern: /^\/korespondensi\/tulis\/finalisasi\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
-  { pattern: /^\/korespondensi\/tulis\/finalisasi\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
-  { pattern: /^\/korespondensi\/tulis\/finalisasi\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
+  {
+    pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-internal/,
+    perm: 'utama.tulis.surat-dinas-internal:read',
+  },
+  {
+    pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-eksternal/,
+    perm: 'utama.tulis.surat-dinas-eksternal:read',
+  },
+  {
+    pattern: /^\/korespondensi\/tulis\/finalisasi\/nota-dinas/,
+    perm: 'utama.tulis.nota-dinas:read',
+  },
+  {
+    pattern: /^\/korespondensi\/tulis\/finalisasi\/surat-dinas-internal/,
+    perm: 'utama.tulis.surat-dinas-internal:read',
+  },
+  {
+    pattern: /^\/korespondensi\/tulis\/finalisasi\/surat-dinas-eksternal/,
+    perm: 'utama.tulis.surat-dinas-eksternal:read',
+  },
   { pattern: /^\/korespondensi\/tulis\/lanjut\/disposisi/, perm: 'utama.tulis.disposisi:read' },
   { pattern: /^\/korespondensi\/tulis\/lanjut\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
-  { pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-internal/, perm: 'utama.tulis.surat-dinas-internal:read' },
-  { pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-eksternal/, perm: 'utama.tulis.surat-dinas-eksternal:read' },
+  {
+    pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-internal/,
+    perm: 'utama.tulis.surat-dinas-internal:read',
+  },
+  {
+    pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-eksternal/,
+    perm: 'utama.tulis.surat-dinas-eksternal:read',
+  },
   // Master data — sub-pages inherit parent permission
   { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
   { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
