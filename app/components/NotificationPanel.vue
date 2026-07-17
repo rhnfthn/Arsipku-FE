@@ -83,58 +83,67 @@
           <p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada notifikasi</p>
         </div>
 
-        <!-- LIST -->
-        <ul v-else class="py-1">
-          <li
-            v-for="item in notifications"
-            :key="item.id"
-            class="px-4 py-3 cursor-pointer flex items-start gap-3 transition-colors border-b border-gray-50 dark:border-gray-800/60 last:border-0"
-            :class="
-              item.isRead
-                ? 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
-                : 'bg-primary-50/60 dark:bg-primary-900/10 hover:bg-primary-50 dark:hover:bg-primary-900/20'
-            "
-            @click="$emit('clickItem', item)"
-          >
-            <!-- ICON -->
+        <!-- LIST (grouped by week) -->
+        <div v-else class="py-1">
+          <template v-for="(group, gi) in groupedNotifications" :key="gi">
+            <!-- Week label -->
             <div
-              class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              class="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 sticky top-0 bg-white dark:bg-gray-900 z-10"
+            >
+              {{ group.label }}
+            </div>
+            <!-- Items in this week -->
+            <li
+              v-for="item in group.items"
+              :key="item.id"
+              class="px-4 py-3 cursor-pointer flex items-start gap-3 transition-colors border-b border-gray-50 dark:border-gray-800/60 last:border-0"
               :class="
                 item.isRead
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-                  : 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
+                  ? 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                  : 'bg-primary-50/60 dark:bg-primary-900/10 hover:bg-primary-50 dark:hover:bg-primary-900/20'
               "
+              @click="$emit('clickItem', item)"
             >
-              <UIcon :name="resolveNotificationIcon(item.type)" class="w-4 h-4" />
-            </div>
-
-            <!-- CONTENT -->
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <p
-                  class="text-sm font-medium truncate"
-                  :class="
-                    item.isRead
-                      ? 'text-gray-600 dark:text-gray-400'
-                      : 'text-gray-900 dark:text-gray-100'
-                  "
-                >
-                  {{ item.title }}
-                </p>
-                <span
-                  v-if="!item.isRead"
-                  class="w-2 h-2 rounded-full bg-primary-500 shrink-0"
-                />
+              <!-- ICON -->
+              <div
+                class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                :class="
+                  item.isRead
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                    : 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
+                "
+              >
+                <UIcon :name="resolveNotificationIcon(item.type)" class="w-4 h-4" />
               </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                {{ item.body }}
-              </p>
-              <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 block">
-                {{ formatNotificationTime(item.createdAt) }}
-              </span>
-            </div>
-          </li>
-        </ul>
+
+              <!-- CONTENT -->
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <p
+                    class="text-sm font-medium truncate"
+                    :class="
+                      item.isRead
+                        ? 'text-gray-600 dark:text-gray-400'
+                        : 'text-gray-900 dark:text-gray-100'
+                    "
+                  >
+                    {{ item.title }}
+                  </p>
+                  <span
+                    v-if="!item.isRead"
+                    class="w-2 h-2 rounded-full bg-primary-500 shrink-0"
+                  />
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
+                  {{ item.body }}
+                </p>
+                <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 block">
+                  {{ formatNotificationTime(item.createdAt) }}
+                </span>
+              </div>
+            </li>
+          </template>
+        </div>
       </div>
 
       <!-- FOOTER -->
@@ -152,9 +161,9 @@
 
 <script setup lang="ts">
 import type { NotificationItem } from '~/types/notification';
-import { formatNotificationTime, resolveNotificationIcon } from '~/utils/notification-helpers';
+import { formatNotificationTime, resolveNotificationIcon, groupNotificationsByWeek } from '~/utils/notification-helpers';
 
-defineProps<{
+const props = defineProps<{
   notifications: NotificationItem[];
   unreadCount: number;
   isLoading: boolean;
@@ -169,4 +178,7 @@ defineEmits<{
   (e: 'viewAll'): void;
   (e: 'clickItem', item: NotificationItem): void;
 }>();
+
+// Group notifications by week for display
+const groupedNotifications = computed(() => groupNotificationsByWeek(props.notifications));
 </script>
