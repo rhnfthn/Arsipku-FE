@@ -167,69 +167,78 @@
           </p>
         </div>
 
-        <ul v-else class="divide-y divide-gray-100 dark:divide-gray-800">
-          <li
-            v-for="item in notifications"
-            :key="item.id"
-            class="group cursor-pointer transition-colors first:rounded-t-none last:rounded-b-xl"
-            :class="
-              item.isRead
-                ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                : 'bg-primary-50/60 hover:bg-primary-50 dark:bg-primary-900/10 dark:hover:bg-primary-900/20'
-            "
-            @click="openNotification(item)"
-          >
-            <div class="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-start md:gap-4">
-              <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                :class="
-                  item.isRead
-                    ? 'bg-gray-100 text-gray-400 dark:bg-gray-800'
-                    : 'bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300'
-                "
-              >
-                <UIcon :name="resolveNotificationIcon(item.type)" class="h-5 w-5" />
-              </div>
-
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <h3
-                    class="text-sm font-semibold"
-                    :class="item.isRead ? 'text-gray-700 dark:text-gray-300' : 'text-gray-950 dark:text-white'"
-                  >
-                    {{ item.title }}
-                  </h3>
-                  <span class="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-                    {{ getTypeLabel(item.type) }}
-                  </span>
-                  <UBadge v-if="!item.isRead" size="xs" color="primary" variant="subtle">
-                    Baru
-                  </UBadge>
-                </div>
-
-                <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-                  {{ item.body }}
-                </p>
-
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                  <span>{{ formatNotificationTime(item.createdAt) }}</span>
-                  <span>-</span>
-                  <span>{{ formatNotificationDateTime(item.createdAt) }}</span>
-                </div>
-              </div>
-
-              <button
-                v-if="!item.isRead"
-                type="button"
-                class="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-primary transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20 md:self-center"
-                @click.stop="markSingleAsRead(item.id)"
-              >
-                <UIcon name="i-lucide-check" class="h-3.5 w-3.5" />
-                Tandai dibaca
-              </button>
+        <div v-else class="divide-y divide-gray-100 dark:divide-gray-800">
+          <template v-for="(group, gi) in groupedNotifications" :key="gi">
+            <!-- Week label -->
+            <div
+              class="sticky top-0 z-10 bg-gray-50/95 px-6 py-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 backdrop-blur dark:bg-gray-800/95 dark:text-gray-500"
+            >
+              {{ group.label }}
             </div>
-          </li>
-        </ul>
+            <!-- Items in this week -->
+            <li
+              v-for="item in group.items"
+              :key="item.id"
+              class="group cursor-pointer transition-colors"
+              :class="
+                item.isRead
+                  ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                  : 'bg-primary-50/60 hover:bg-primary-50 dark:bg-primary-900/10 dark:hover:bg-primary-900/20'
+              "
+              @click="openNotification(item)"
+            >
+              <div class="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-start md:gap-4">
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                  :class="
+                    item.isRead
+                      ? 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                      : 'bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300'
+                  "
+                >
+                  <UIcon :name="resolveNotificationIcon(item.type)" class="h-5 w-5" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3
+                      class="text-sm font-semibold"
+                      :class="item.isRead ? 'text-gray-700 dark:text-gray-300' : 'text-gray-950 dark:text-white'"
+                    >
+                      {{ item.title }}
+                    </h3>
+                    <span class="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                      {{ getTypeLabel(item.type) }}
+                    </span>
+                    <UBadge v-if="!item.isRead" size="xs" color="primary" variant="subtle">
+                      Baru
+                    </UBadge>
+                  </div>
+
+                  <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                    {{ item.body }}
+                  </p>
+
+                  <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                    <span>{{ formatNotificationTime(item.createdAt) }}</span>
+                    <span>-</span>
+                    <span>{{ formatNotificationDateTime(item.createdAt) }}</span>
+                  </div>
+                </div>
+
+                <button
+                  v-if="!item.isRead"
+                  type="button"
+                  class="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-primary transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20 md:self-center"
+                  @click.stop="markSingleAsRead(item.id)"
+                >
+                  <UIcon name="i-lucide-check" class="h-3.5 w-3.5" />
+                  Tandai dibaca
+                </button>
+              </div>
+            </li>
+          </template>
+        </div>
 
         <Pagination
           v-if="notificationMeta.total > 0"
@@ -262,6 +271,7 @@ import {
   formatNotificationDateTime,
   formatNotificationTime,
   resolveNotificationIcon,
+  groupNotificationsByWeek,
 } from '~/utils/notification-helpers';
 
 definePageMeta({ middleware: 'auth' });
@@ -280,6 +290,9 @@ const {
   connectSocket,
   resolveNotificationRoute,
 } = useNotifications();
+
+// Group notifications by week for display
+const groupedNotifications = computed(() => groupNotificationsByWeek(notifications.value));
 
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda', icon: 'i-lucide-home' },

@@ -59,3 +59,81 @@ export const formatNotificationDateTime = (iso: string): string => {
     return '';
   }
 };
+
+/**
+ * Get the start of the week (Monday) for a given date.
+ */
+const getWeekStart = (date: Date): Date => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday as start
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+/**
+ * Format a week label: "1 Jul - 7 Jul 2025" or "This Week" / "Last Week".
+ */
+export const formatWeekLabel = (weekStart: Date): string => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thisWeekStart = getWeekStart(today);
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  if (weekStart.getTime() === thisWeekStart.getTime()) return 'Minggu Ini';
+  if (weekStart.getTime() === lastWeekStart.getTime()) return 'Minggu Lalu';
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const sameYear = weekStart.getFullYear() === weekEnd.getFullYear();
+  const sameMonth = sameYear && weekStart.getMonth() === weekEnd.getMonth();
+
+  const fmtShort = (d: Date) =>
+    d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  const fmtFull = (d: Date) =>
+    d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  if (sameMonth) {
+    return `${weekStart.getDate()} - ${fmtFull(weekEnd)}`;
+  }
+  if (sameYear) {
+    return `${fmtShort(weekStart)} - ${fmtFull(weekEnd)}`;
+  }
+  return `${fmtFull(weekStart)} - ${fmtFull(weekEnd)}`;
+};
+
+/**
+ * Group notifications by week (Monday as start of week).
+ * Returns an array of { label, items } sorted newest first.
+ */
+export const groupNotificationsByWeek = <T extends { createdAt: string }>(
+  notifications: T[]
+): { label: string; items: T[] }[] => {
+  const groups = new Map<string, { label: string; items: T[] }>();
+
+  for (const item of notifications) {
+    const date = new Date(item.createdAt);
+    if (isNaN(date.getTime())) continue;
+
+    const weekStart = getWeekStart(date);
+    const key = weekStart.toISOString();
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        label: formatWeekLabel(weekStart),
+        items: [],
+      });
+    }
+    groups.get(key)!.items.push(item);
+  }
+
+  // Sort by week start descending (newest first)
+  return Array.from(groups.values()).sort((a, b) => {
+    const aDate = new Date(a.items[0].createdAt);
+    const bDate = new Date(b.items[0].createdAt);
+    return bDate.getTime() - aDate.getTime();
+  });
+};
