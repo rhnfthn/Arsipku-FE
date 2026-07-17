@@ -145,29 +145,99 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const parseEmails = (raw: string): string[] =>
   raw.split(',').map(s => s.trim()).filter(Boolean);
 
+/**
+ * Mengembalikan alasan singkat kenapa sebuah email tidak valid.
+ * Mengembalikan null jika email valid.
+ */
+const getEmailInvalidReason = (email: string): string | null => {
+  if (!email) return null;
+
+  // Cek karakter whitespace
+  if (/\s/.test(email)) {
+    return `Email tidak boleh mengandung spasi: "${email}"`;
+  }
+
+  // Cek jumlah symbol @
+  const atCount = (email.match(/@/g) || []).length;
+  if (atCount === 0) {
+    return `Email harus mengandung symbol "@": "${email}"`;
+  }
+  if (atCount > 1) {
+    return `Email hanya boleh memiliki satu symbol "@": "${email}"`;
+  }
+
+  // Pisahkan local part dan domain
+  const [localPart, domain] = email.split('@');
+
+  if (!localPart) {
+    return `Bagian sebelum "@" tidak boleh kosong: "${email}"`;
+  }
+
+  if (!domain) {
+    return `Bagian setelah "@" (domain) tidak boleh kosong: "${email}"`;
+  }
+
+  // Cek domain harus mengandung titik
+  if (!domain.includes('.')) {
+    return `Domain harus mengandung titik (.) contoh: domain.com: "${email}"`;
+  }
+
+  // Cek domain tidak boleh diawali/diakhiri titik
+  if (domain.startsWith('.') || domain.endsWith('.')) {
+    return `Domain tidak boleh diawali atau diakhiri titik: "${email}"`;
+  }
+
+  // Cek local part tidak diawali/diakhiri titik
+  if (localPart.startsWith('.') || localPart.endsWith('.')) {
+    return `Bagian sebelum "@" tidak boleh diawali/diakhiri titik: "${email}"`;
+  }
+
+  // Cek karakter valid secara umum (fallback regex)
+  if (!EMAIL_REGEX.test(email)) {
+    return `Format email tidak valid: "${email}"`;
+  }
+
+  return null;
+};
+
 /** Validasi format + duplikat antar To/CC/BCC */
 const validateEmailFields = (): string | null => {
   const to = parseEmails(kirimEmailForm.value.to);
   const cc = parseEmails(kirimEmailForm.value.cc);
   const bcc = parseEmails(kirimEmailForm.value.bcc);
 
-  if (to.length === 0) return 'Alamat email tujuan (To) wajib diisi';
+  // Kumpulkan field wajib yang masih kosong
+  const missingFields: string[] = [];
+  if (to.length === 0) missingFields.push('To');
+  if (!kirimEmailForm.value.from_as?.trim()) missingFields.push('From As');
 
-  // Cek format semua email
-  const all = [...to, ...cc, ...bcc];
-  for (const email of all) {
-    if (!EMAIL_REGEX.test(email)) return `Format email tidak valid: ${email}`;
+  if (missingFields.length > 0) {
+    const fieldList = missingFields.join(', ');
+    return missingFields.length === 1
+      ? `Field berikut wajib diisi: ${fieldList}`
+      : `Field berikut wajib diisi (${missingFields.length} field kosong): ${fieldList}`;
+  }
+
+  // Cek format semua email dengan alasan spesifik
+  const allWithEmails: { email: string; field: string }[] = [];
+  for (const email of to) allWithEmails.push({ email, field: 'To' });
+  for (const email of cc) allWithEmails.push({ email, field: 'CC' });
+  for (const email of bcc) allWithEmails.push({ email, field: 'BCC' });
+
+  for (const { email, field } of allWithEmails) {
+    const reason = getEmailInvalidReason(email);
+    if (reason) return `${field}: ${reason}`;
   }
 
   // Cek duplikat antar field (case-insensitive)
-  const seen = new Set<string>();
+  const seen = new Map<string, string>();
   const dupes: string[] = [];
-  for (const email of all) {
+  for (const { email, field } of allWithEmails) {
     const lower = email.toLowerCase();
     if (seen.has(lower)) {
       dupes.push(email);
     } else {
-      seen.add(lower);
+      seen.set(lower, field);
     }
   }
   if (dupes.length > 0) {
