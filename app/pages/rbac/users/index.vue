@@ -234,7 +234,22 @@ const { searchPersons } = usePerson();
 const { user: authUser, hasPermission } = useAuth();
 
 // Hanya SUPERADMIN & ADMIN yang bisa di-assign (USER adalah default, tidak perlu dipilih)
-const assignableRoles = computed(() => roles.value.filter((r) => r.name !== 'USER'));
+// Jika user sudah punya role ADMIN, SUPERADMIN tidak bisa ditambah (dan sebaliknya)
+const assignableRoles = computed(() => {
+  const existingRoleNames = new Set(
+    (modalUserRoles.value ?? []).map((ur) => (ur.roleName || '').toUpperCase()),
+  );
+  return roles.value.filter((r) => {
+    if (r.name === 'USER') return false;
+    // Jika user sudah punya role ini → tidak perlu ditampilkan (sudah ada)
+    if (existingRoleNames.has(r.name.toUpperCase())) return false;
+    // Jika user sudah punya ADMIN → SUPERADMIN tidak bisa ditambah
+    if (r.name === 'SUPERADMIN' && existingRoleNames.has('ADMIN')) return false;
+    // Jika user sudah punya SUPERADMIN → ADMIN tidak bisa ditambah
+    if (r.name === 'ADMIN' && existingRoleNames.has('SUPERADMIN')) return false;
+    return true;
+  });
+});
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
@@ -360,6 +375,31 @@ const modalSelectPerson = async (person: PersonSuggestion) => {
 
 const modalAssignRole = async () => {
   if (!modalSelectedPerson.value || !modalSelectedRoleId.value) return;
+
+  // Validasi: user tidak boleh punya SUPERADMIN + ADMIN sekaligus
+  const selectedRoleName = (roles.value.find((r) => r.id === modalSelectedRoleId.value)?.name || '').toUpperCase();
+  const existingRoleNames = new Set(
+    (modalUserRoles.value ?? []).map((ur) => (ur.roleName || '').toUpperCase()),
+  );
+  if (selectedRoleName === 'SUPERADMIN' && existingRoleNames.has('ADMIN')) {
+    toast.add({
+      title: t('rbac_fail'),
+      description: 'User sudah memiliki role ADMIN. Tidak bisa menambahkan SUPERADMIN.',
+      color: 'error',
+      icon: 'i-lucide-x-circle',
+    });
+    return;
+  }
+  if (selectedRoleName === 'ADMIN' && existingRoleNames.has('SUPERADMIN')) {
+    toast.add({
+      title: t('rbac_fail'),
+      description: 'User sudah memiliki role SUPERADMIN. Tidak bisa menambahkan ADMIN.',
+      color: 'error',
+      icon: 'i-lucide-x-circle',
+    });
+    return;
+  }
+
   modalAssigning.value = true;
   // Optimistic update — tambah ke state lokal dulu
   const tempRole: RbacUserRoleRow = {
