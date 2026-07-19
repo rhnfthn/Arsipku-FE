@@ -537,9 +537,12 @@ const loadData = async () => {
         });
 
         if (hasFinalKonsepNaskah) {
+          // ponytail: jangan override aksi ke 'finish' — itu menimpa aksi asli
+          // per-node (create/forward/turunkan/revisi/reject/approve/finalize) yang
+          // dipakai badge riwayat konsep di DetailNaskah. Pakai flag terpisah.
           details.value = details.value.map((row: any) => ({
             ...row,
-            aksi: 'finish',
+            isKonsepFinished: true,
           }));
         }
       }

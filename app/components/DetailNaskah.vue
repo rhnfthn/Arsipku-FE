@@ -186,16 +186,22 @@ const getFlowInitials = (n: string) =>
     : '?';
 
 // --- AKSI BADGE (tambahan) ---
+// Badge status per langkah riwayat konsep. Tampil di setiap node K workflow
+// agar user tahu status konsep (create/forward/turunkan/revisi/reject/approve/finalize)
+// tanpa bingung baca riwayat. Label di-uppercase via CSS template.
 const aksiConfig: Record<string, { label: string; color: string }> = {
-  create: { label: 'BUAT KONSEP', color: 'bg-blue-500' },
-  forward: { label: 'REVISI', color: 'bg-amber-500' },
-  turunkan: { label: 'DITURUNKAN', color: 'bg-indigo-500' },
-  reject: { label: 'DITOLAK', color: 'bg-red-500' },
+  create:   { label: 'Konsep Baru',  color: 'bg-blue-500' },
+  forward:  { label: 'Diteruskan',   color: 'bg-blue-500' },
+  turunkan: { label: 'Perlu Revisi', color: 'bg-amber-500' },
+  revisi:   { label: 'Direvisi',     color: 'bg-amber-500' },
+  reject:   { label: 'Ditolak',      color: 'bg-red-500' },
+  approve:  { label: 'Disetujui',    color: 'bg-green-500' },
+  finalize: { label: 'Final',        color: 'bg-green-500' },
 };
 
 const aksiBadge = computed(() => {
   const aksi = props.data?.aksi as string;
-  return aksiConfig[aksi] ?? null; // null = badge tidak ditampilkan
+  return aksiConfig[aksi as keyof typeof aksiConfig] ?? null; // null = badge tidak ditampilkan
 });
 
 const jenisBadgeClass = computed(() => {
@@ -232,7 +238,7 @@ const isKonsepNaskahTerkirim = computed(() => {
   if (!props.isHead) return false;
 
   const nomor = String(konsepNaskahInfo.value?.nomor || '').trim();
-  return props.data?.aksi === 'finish' || (nomor !== '' && nomor !== '-');
+  return props.data?.isKonsepFinished || (nomor !== '' && nomor !== '-');
 });
 
 const konsepRecipientLabel = computed(() =>
@@ -613,7 +619,7 @@ const removeNote = () => {
                 : data.jenis_label || data.aksi
           }}
         </div>
-        <!-- Badge aksi tambahan: hanya muncul untuk create / forward / reject -->
+        <!-- Badge aksi: status langkah riwayat konsep (create/forward/turunkan/revisi/reject/approve/finalize) -->
         <template v-if="aksiBadge">
           <span class="opacity-40">•</span>
           <div
@@ -1082,7 +1088,11 @@ const removeNote = () => {
           <!-- debug {{ userPositionId }} -->
           <div class="flex flex-wrap gap-3 mt-8">
             <!-- ===== JENIS KO (Konsep): Setujui / Tolak / Perbaiki ===== -->
-            <template v-if="['K'].includes(data.jenis)">
+            <!-- ponytail: sembunyikan semua action button konsep saat workflow sudah
+                 finalize (isKonsepFinished). Sebelumnya ini di-gate oleh override
+                 aksi='finish' yang menimpa aksi asli; sekarang aksi asli dipertahankan
+                 untuk badge riwayat, jadi gate pakai flag terpisah. -->
+            <template v-if="['K'].includes(data.jenis) && !data.isKonsepFinished">
               <!-- aksi create/forward → Setujui + Tolak (untuk BOD) -->
               <template
                 v-if="data.aksi === 'create' || data.aksi === 'forward' || data.aksi === 'finalize'"
