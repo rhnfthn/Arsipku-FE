@@ -948,7 +948,7 @@ const removeNote = () => {
         </div>
 
         <div
-          v-if="data.aksi === 'reject' || data.aksi === 'create' || data.aksi === 'forward'"
+          v-if="isHead && (data.aksi === 'reject' || data.aksi === 'create' || data.aksi === 'forward')"
           class="mb-4 flex flex-col md:flex-row gap-2"
         >
           <div
