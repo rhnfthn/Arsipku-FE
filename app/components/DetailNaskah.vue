@@ -204,6 +204,23 @@ const aksiBadge = computed(() => {
   return aksiConfig[aksi as keyof typeof aksiConfig] ?? null; // null = badge tidak ditampilkan
 });
 
+// Perihal untuk tampilan. Treat "-", null, "" sebagai kosong. Untuk disposisi
+// (DI) tanpa ref perihal, tampilkan pesan jelas agar user tidak bingung lihat "-".
+const displayPerihal = computed(() => {
+  const p = props.data?.perihal;
+  const s = props.data?.subject;
+  const val = p && String(p).trim() !== '' && String(p).trim() !== '-'
+    ? p
+    : s && String(s).trim() !== '' && String(s).trim() !== '-'
+      ? s
+      : null;
+  if (val) return val;
+  if (String(props.data?.jenis || '').toUpperCase() === 'DI') {
+    return 'Tidak ada ref perihal naskah';
+  }
+  return '(Tidak ada perihal)';
+});
+
 const jenisBadgeClass = computed(() => {
   const isKonsep = props.data?.aksi === 'create' ||
     (['K', 'KO'].includes(String(props.data?.jenis || '').toUpperCase()) && props.data?.jenis_naskah_konsep);
@@ -543,7 +560,7 @@ const removeNote = () => {
             </span>
             <span class="opacity-30">•</span>
             <p class="text-sm text-gray-700 dark:text-gray-300 truncate flex-1 min-w-0">
-              {{ data.perihal || data.subject || '(Tidak ada perihal)' }}
+              {{ displayPerihal }}
             </p>
             <span class="opacity-30 shrink-0">•</span>
             <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
@@ -559,10 +576,10 @@ const removeNote = () => {
       class="p-5 sm:py-5 sm:px-8 bg-gray-50/30 dark:bg-gray-900/30 border-y border-gray-100 dark:border-gray-700"
     >
       <h2
-        v-if="data.subject || data.perihal"
+        v-if="displayPerihal"
         class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3"
       >
-        {{ data.subject || data.perihal || '(Tidak ada perihal)' }}
+        {{ displayPerihal }}
       </h2>
       <h2
         v-else-if="data.jenis_label?.includes('DISPOSISI')"
