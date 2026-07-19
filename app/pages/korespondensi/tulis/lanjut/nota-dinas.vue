@@ -411,13 +411,13 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
     }
 
     const result = await sendNotaDinas(fd);
-    if (result.data.success) {
+    if (result.success) {
       revokePdfUrl();
       toastSuccess("Berhasil", "Nota Dinas berhasil dikirim");
       Alert.close();
       redirectTerkirim();
     } else {
-      throw new Error(result.data.message || "Pengiriman gagal");
+      throw new Error(result.message || "Pengiriman gagal");
     }
   } catch (e: any) {
     Alert.close();
