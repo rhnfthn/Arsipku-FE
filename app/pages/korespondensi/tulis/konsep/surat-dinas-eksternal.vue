@@ -125,6 +125,29 @@
             disabled-message="Sudah dipilih di Tertuju" />
         </div>
 
+        <!-- Garis Kewenangan (a.n.) — khusus SDE. Signer bertanda tangan atas nama pejabat pemberi kuasa. -->
+        <div :class="['flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0', { 'opacity-60 grayscale pointer-events-none': !isSenderSelected }]">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" v-model="useGarisKewenangan" :disabled="!isSenderSelected" class="w-4 h-4 accent-primary-500" />
+              Garis Kewenangan (a.n.)
+            </label>
+            <div class="flex items-center flex-1 w-full gap-2">
+              <template v-if="useGarisKewenangan">
+                <template v-if="isDirut">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
+                </template>
+                <template v-else>
+                  <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
+                  <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
+                  <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
+                </template>
+              </template>
+              <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
+            </div>
+          </div>
+        </div>
+
         <TulisInputSifat v-model="selectedSifat" />
 
         <!-- Perihal -->
@@ -224,6 +247,8 @@
                 <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
+                      <!-- Garis Kewenangan (a.n.) — live preview sebelum generate PDF -->
+                      <div v-if="useGarisKewenangan && atasNamaLabel" class="font-bold mb-1">a.n {{ atasNamaLabel }}</div>
                       <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
                     <div class="font-bold text-[14px] underline">{{ toTitleCase(selectedSender?.raw?.persnum_person_text || user?.nama) || 'Nama Lengkap' }}</div>
@@ -423,6 +448,86 @@ const isNewKonsepFromReference = computed(() =>
   String(route.query.workflow || '').toLowerCase() === 'konsep' &&
   String(route.query.action || '').toLowerCase() !== 'edit'
 );
+
+// --- GARIS KEWENANGAN (a.n.) — clone dari form SDE biasa ---
+// Signer = selectedSender (pengirim konsep). a.n. based on signer position.
+const useGarisKewenangan = ref(false);
+const atasanOptions = ref<any[]>([]);
+const selectedAtasNamaId = ref<number | null>(null);
+const isLoadingAtasan = ref(false);
+
+const signerPositionText = computed(() =>
+  String(selectedSender.value?.labelJob || user.value?.positionText || ''),
+);
+const isDirut = computed(() => /direktur\s+utama/i.test(signerPositionText.value));
+
+const atasNamaLabel = computed(() => {
+  if (!useGarisKewenangan.value) return '';
+  if (isDirut.value) return 'Direksi';
+  const sel = atasanOptions.value.find(
+    (x) => Number(x.position) === Number(selectedAtasNamaId.value),
+  );
+  return sel?.position_text || '';
+});
+
+const fetchAtasan = async () => {
+  const signerPosId = selectedSender.value?.value || user.value?.position;
+  if (isDirut.value || !signerPosId) return;
+  isLoadingAtasan.value = true;
+  try {
+    const res = await apiGet<any>(`/org-data/atasnama/${signerPosId}`);
+    atasanOptions.value = res?.data || [];
+    // Auto-fill atasan pertama (paling senior di direktorat signer).
+    selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+  } catch (e) {
+    console.error('Gagal fetch atasan:', e);
+    atasanOptions.value = [];
+    selectedAtasNamaId.value = null;
+  } finally {
+    isLoadingAtasan.value = false;
+  }
+};
+
+// Auto-tembusan: ketika atas nama dipilih (non-Dirut), add atasan ke tembusan.
+watch(selectedAtasNamaId, (newId) => {
+  if (!newId) return;
+  const r = atasanOptions.value.find((x) => Number(x.position) === Number(newId));
+  if (!r) return;
+  if (selectedTembusan.value.some((t: any) => Number(t.value) === Number(newId))) return;
+  selectedTembusan.value.push({
+    label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text}`,
+    labelJob: r.position_text,
+    value: String(r.position),
+    raw: r,
+  } as any);
+});
+
+// Checkbox on/off → fetch/re-select atau reset + hapus atasan dari tembusan.
+watch(useGarisKewenangan, (on) => {
+  if (on && !isDirut.value) {
+    if (atasanOptions.value.length > 0) {
+      selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+    } else {
+      fetchAtasan();
+    }
+  }
+  if (!on) {
+    const prevId = selectedAtasNamaId.value;
+    if (prevId) {
+      selectedTembusan.value = selectedTembusan.value.filter(
+        (t: any) => Number(t.value) !== Number(prevId),
+      );
+    }
+    selectedAtasNamaId.value = null;
+  }
+});
+
+// Signer berubah → reset a.n. (atasan lama salah untuk signer baru).
+watch(() => selectedSender.value?.value, () => {
+  atasanOptions.value = [];
+  selectedAtasNamaId.value = null;
+  if (useGarisKewenangan.value && !isDirut.value) fetchAtasan();
+});
 const forwardTargetInfo = computed(() => {
   if (isTurunkanAction.value) {
     return {
@@ -617,6 +722,10 @@ const prepareKonsepFormData = () => {
   formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
   formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
   formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+  // Garis Kewenangan (a.n.)
+  formData.append('atas_nama', useGarisKewenangan.value ? atasNamaLabel.value : "");
+  const atasNamaPosId = (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || null;
+  if (atasNamaPosId) formData.append('atas_nama_position_id', String(atasNamaPosId));
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
   formData.append('catatan', message.value || '-');
   return formData;
@@ -918,7 +1027,20 @@ onMounted(async () => {
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-        editorContent.value = unwrappedData.konten || unwrappedData.naskah?.konten || "";
+        // ponytail: konten ada di KN node (naskah_asli) di flow, BUKAN top-level
+        // unwrappedData (fetchKonsepDetail tidak surface konten). Sebelumnya pakai
+        // unwrappedData.konten/naskah?.konten → undefined → form kosong saat lanjut konsep.
+        const knFlow = (unwrappedData.flow || []).find(
+          (f: any) => String(f?.jenis || '').toUpperCase() === 'KN',
+        );
+        const kFlowsWithKonten = (unwrappedData.flow || []).filter((f: any) => f?.konten);
+        const latestKWithKonten = kFlowsWithKonten[kFlowsWithKonten.length - 1];
+        editorContent.value =
+          unwrappedData.konten ||
+          unwrappedData.naskah?.konten ||
+          knFlow?.konten ||
+          latestKWithKonten?.konten ||
+          "";
 
         // Pengirim
         if (unwrappedData.pengirim) {
