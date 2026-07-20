@@ -19,11 +19,9 @@ export const useGrupPenerima = () => {
   /** POST /persuratan/grup-penerima — create group */
   const createGrupPenerima = async (payload: {
     company: string;
-    area: string;
     nama: string;
     deskripsi?: string;
     deskripsi_english?: string;
-    urutan?: number;
     aktif?: boolean;
   }) => {
     return await apiPost('/persuratan/grup-penerima', payload);
@@ -34,11 +32,9 @@ export const useGrupPenerima = () => {
     id: string,
     payload: Partial<{
       company: string;
-      area: string;
       nama: string;
       deskripsi: string;
       deskripsi_english: string;
-      urutan: number;
       aktif: boolean;
     }>
   ) => {
