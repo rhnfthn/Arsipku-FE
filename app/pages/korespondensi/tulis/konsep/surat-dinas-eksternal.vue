@@ -125,6 +125,29 @@
             disabled-message="Sudah dipilih di Tertuju" />
         </div>
 
+        <!-- Garis Kewenangan (a.n.) — khusus SDE. Signer bertanda tangan atas nama pejabat pemberi kuasa. -->
+        <div :class="['flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0', { 'opacity-60 grayscale pointer-events-none': !isSenderSelected }]">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" v-model="useGarisKewenangan" :disabled="!isSenderSelected" class="w-4 h-4 accent-primary-500" />
+              Garis Kewenangan (a.n.)
+            </label>
+            <div class="flex items-center flex-1 w-full gap-2">
+              <template v-if="useGarisKewenangan">
+                <template v-if="isDirut">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
+                </template>
+                <template v-else>
+                  <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
+                  <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
+                  <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
+                </template>
+              </template>
+              <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
+            </div>
+          </div>
+        </div>
+
         <TulisInputSifat v-model="selectedSifat" />
 
         <!-- Perihal -->
@@ -224,6 +247,8 @@
                 <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
+                      <!-- Garis Kewenangan (a.n.) — live preview sebelum generate PDF -->
+                      <div v-if="useGarisKewenangan && atasNamaLabel" class="font-bold mb-1">a.n {{ atasNamaLabel }}</div>
                       <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
                     <div class="font-bold text-[14px] underline">{{ toTitleCase(selectedSender?.raw?.persnum_person_text || user?.nama) || 'Nama Lengkap' }}</div>
@@ -351,6 +376,10 @@ const isLoadingData = ref(false);
 const detail = ref<any>(null);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
+// ponytail: flag supaya watch(selectedSender) tidak reset tertuju/tembusan
+// saat pre-fill dari konsep existing (lanjut/edit). Tanpa ini, set selectedSender
+// di branch A → watch fires (microtask) → wipe tertuju/tembusan yang baru di-fill.
+const isPrefillingKonsep = ref(false);
 const editDraftId = ref<string | null>(null);
 const message = ref("");
 const subject = ref("");
@@ -423,6 +452,93 @@ const isNewKonsepFromReference = computed(() =>
   String(route.query.workflow || '').toLowerCase() === 'konsep' &&
   String(route.query.action || '').toLowerCase() !== 'edit'
 );
+
+// --- GARIS KEWENANGAN (a.n.) — clone dari form SDE biasa ---
+// Signer = selectedSender (pengirim konsep). a.n. based on signer position.
+const useGarisKewenangan = ref(false);
+const atasanOptions = ref<any[]>([]);
+const selectedAtasNamaId = ref<number | null>(null);
+const isLoadingAtasan = ref(false);
+
+const signerPositionText = computed(() =>
+  String(selectedSender.value?.labelJob || user.value?.positionText || ''),
+);
+const isDirut = computed(() => /direktur\s+utama/i.test(signerPositionText.value));
+
+// ponytail: override label untuk restore a.n. dari konsep existing (lanjut/edit).
+// KN node cuma simpan label (bukan position_id), jadi restore pakai label langsung.
+const atasNamaManualLabel = ref('');
+const atasNamaLabel = computed(() => {
+  if (!useGarisKewenangan.value) return '';
+  if (isDirut.value) return 'Direksi';
+  if (atasNamaManualLabel.value) return atasNamaManualLabel.value;
+  const sel = atasanOptions.value.find(
+    (x) => Number(x.position) === Number(selectedAtasNamaId.value),
+  );
+  return sel?.position_text || '';
+});
+
+const fetchAtasan = async () => {
+  const signerPosId = selectedSender.value?.value || user.value?.position;
+  if (isDirut.value || !signerPosId) return;
+  isLoadingAtasan.value = true;
+  try {
+    const res = await apiGet<any>(`/org-data/atasnama/${signerPosId}`);
+    atasanOptions.value = res?.data || [];
+    // Auto-fill atasan pertama (paling senior di direktorat signer).
+    selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+  } catch (e) {
+    console.error('Gagal fetch atasan:', e);
+    atasanOptions.value = [];
+    selectedAtasNamaId.value = null;
+  } finally {
+    isLoadingAtasan.value = false;
+  }
+};
+
+// Auto-tembusan: ketika atas nama dipilih (non-Dirut), add atasan ke tembusan.
+watch(selectedAtasNamaId, (newId) => {
+  if (!newId) return;
+  const r = atasanOptions.value.find((x) => Number(x.position) === Number(newId));
+  if (!r) return;
+  if (selectedTembusan.value.some((t: any) => Number(t.value) === Number(newId))) return;
+  selectedTembusan.value.push({
+    label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text}`,
+    labelJob: r.position_text,
+    value: String(r.position),
+    raw: r,
+  } as any);
+});
+
+// Checkbox on/off → fetch/re-select atau reset + hapus atasan dari tembusan.
+watch(useGarisKewenangan, (on) => {
+  if (on && !isDirut.value) {
+    // Kalau ada manual label (restore dari konsep existing), jangan re-fetch/re-select.
+    if (atasNamaManualLabel.value) return;
+    if (atasanOptions.value.length > 0) {
+      selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+    } else {
+      fetchAtasan();
+    }
+  }
+  if (!on) {
+    const prevId = selectedAtasNamaId.value;
+    if (prevId) {
+      selectedTembusan.value = selectedTembusan.value.filter(
+        (t: any) => Number(t.value) !== Number(prevId),
+      );
+    }
+    selectedAtasNamaId.value = null;
+    atasNamaManualLabel.value = ''; // clear override saat uncheck
+  }
+});
+
+// Signer berubah → reset a.n. (atasan lama salah untuk signer baru).
+watch(() => selectedSender.value?.value, () => {
+  atasanOptions.value = [];
+  selectedAtasNamaId.value = null;
+  if (useGarisKewenangan.value && !isDirut.value) fetchAtasan();
+});
 const forwardTargetInfo = computed(() => {
   if (isTurunkanAction.value) {
     return {
@@ -617,6 +733,10 @@ const prepareKonsepFormData = () => {
   formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
   formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
   formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+  // Garis Kewenangan (a.n.)
+  formData.append('atas_nama', useGarisKewenangan.value ? atasNamaLabel.value : "");
+  const atasNamaPosId = (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || null;
+  if (atasNamaPosId) formData.append('atas_nama_position_id', String(atasNamaPosId));
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
   formData.append('catatan', message.value || '-');
   return formData;
@@ -706,8 +826,11 @@ const handleKirimDokumen = async () => {
       formData.append('catatan', message.value || '-');
       formData.append('lampiran_count', existingFiles.value.length > 0 ? '1' : '0');
 
-      const dataWrapper = detail.value?.data || detail.value;
-      const konsepId = dataWrapper?.konsep?.id;
+      // ponytail: konsepId = K naskah id (forwardKonsep BE cari findOne {id, jenis:'K'}).
+      // Sebelumnya pakai dataWrapper?.konsep?.id (stale — fetchKonsepDetail tidak
+      // return .konsep) → undefined → error "ID Konsep tidak ditemukan".
+      // detail.value.id = idKonsep = ref_id (K node id dari route).
+      const konsepId = detail.value?.id || (detail.value?.data?.konsep?.id) || (route.query.ref_id as string);
       if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
 
       result = await forwardKonsep(konsepId, formData);
@@ -805,7 +928,9 @@ const fetchTembusanBySender = async (senderPositionId: string) => {
 };
 
 watch(selectedSender, async (newVal, oldVal) => {
-  if (newVal?.value !== oldVal?.value) {
+  // ponytail: skip reset tertuju/tembusan saat pre-fill konsep existing (lanjut/edit).
+  // Tanpa ini, set selectedSender di branch A → watch wipe tertuju/tembusan yang di-fill.
+  if (newVal?.value !== oldVal?.value && !isPrefillingKonsep.value) {
     selectedTertuju.value = [];
     selectedTembusan.value = [];
   }
@@ -903,22 +1028,42 @@ onMounted(async () => {
           if (createFlow?.catatan) message.value = createFlow.catatan;
         }
 
-        const tglStr = unwrappedData.tanggal || unwrappedData.naskah?.tanggal;
+        // ponytail: fetchKonsepDetail (useInbox) tidak surface sifat/klasifikasi/konten
+        // di top-level. Ambil dari KN node (naskah_asli) di flow — punya semua field.
+        const knFlow = (unwrappedData.flow || []).find(
+          (f: any) => String(f?.jenis || '').toUpperCase() === 'KN',
+        );
+        const kn: any = knFlow || {};
+
+        const tglStr = unwrappedData.tanggal || kn.tanggal || unwrappedData.naskah?.tanggal;
         if (tglStr) {
           const tglParts = new Date(tglStr);
           date.value = new CalendarDate(tglParts.getFullYear(), tglParts.getMonth() + 1, tglParts.getDate());
         }
 
-        const sifatStr = unwrappedData.sifat || unwrappedData.naskah?.sifat;
-        if (sifatStr) selectedSifat.value = sifatOptions.find(opt => opt.value === sifatStr.toLowerCase()) || sifatOptions[3];
+        const sifatStr = unwrappedData.sifat || kn.sifat || unwrappedData.naskah?.sifat;
+        if (sifatStr) selectedSifat.value = sifatOptions.find(opt => opt.value === String(sifatStr).toLowerCase()) || sifatOptions[3];
 
-        const klasCode = unwrappedData.naskah?.klasifikasi;
+        const klasCode = unwrappedData.naskah?.klasifikasi || kn.klasifikasi;
         if (klasCode) {
           const foundKlas = klasifikasiList.value.find(k => k.klasifikasi === klasCode);
           if (foundKlas) selectedKlasifikasiId.value = foundKlas.id;
         }
 
-        editorContent.value = unwrappedData.konten || unwrappedData.naskah?.konten || "";
+        // Konten: dari KN node (naskah_asli), fallback K node terbaru yang punya konten.
+        const kFlowsWithKonten = (unwrappedData.flow || []).filter((f: any) => f?.konten);
+        const latestKWithKonten = kFlowsWithKonten[kFlowsWithKonten.length - 1];
+        editorContent.value =
+          unwrappedData.konten ||
+          unwrappedData.naskah?.konten ||
+          kn.konten ||
+          latestKWithKonten?.konten ||
+          "";
+
+        // ponytail: aktifkan flag pre-fill supaya watch(selectedSender) tidak
+        // wipe tertuju/tembusan yang baru di-fill. Flag di-reset via nextTick
+        // (setelah watch microtask jalan).
+        isPrefillingKonsep.value = true;
 
         // Pengirim
         if (unwrappedData.pengirim) {
@@ -932,20 +1077,39 @@ onMounted(async () => {
           };
         }
 
-        // Tertuju: restore dari penerima eksternal
-        if (unwrappedData.kepada && Array.isArray(unwrappedData.kepada)) {
-          selectedTertuju.value = unwrappedData.kepada.map((p: any) => ({
-            label: p.nama || p.label || '',
-            labelJob: p.nama || p.label || '',
-            value: String(p.id || p.value || ''),
-            raw: p,
-          }));
+        // Tertuju (penerima eksternal SDE): pakai id_sirkuler (external id) dari
+        // KN penerima / unwrappedData.kepada. Sebelumnya pakai p.id (tidak ada di
+        // shape naskah_penerima) → value "undefined" → tertuju kosong saat lanjut.
+        // Tertuju (penerima eksternal SDE): prioritaskan kn.penerima_ids (array
+        // of external ids) — match ke externalItems. Fallback kn.penerima (dengan
+        // id_sirkuler) / unwrappedData.kepada.
+        const penerimaIdsSrc: string[] = Array.isArray(kn.penerima_ids) ? kn.penerima_ids : [];
+        if (penerimaIdsSrc.length > 0) {
+          selectedTertuju.value = penerimaIdsSrc.map((id: string) => {
+            const match = externalItems.value.find((e: any) => String(e.value) === String(id));
+            return match || { label: id, labelJob: id, value: String(id), raw: { id } };
+          });
+        } else {
+          const kepadaSource = (Array.isArray(kn.penerima) && kn.penerima.length > 0)
+            ? kn.penerima
+            : (unwrappedData.kepada || []);
+          if (Array.isArray(kepadaSource) && kepadaSource.length > 0) {
+            selectedTertuju.value = kepadaSource.map((p: any) => ({
+              label: p.nama || p.label || '',
+              labelJob: p.nama || p.label || '',
+              value: String(p.id_sirkuler || p.id || p.value || ''),
+              raw: p,
+            }));
+          }
         }
 
-        // Tembusan: restore dari internal
-        if (unwrappedData.tembusan && Array.isArray(unwrappedData.tembusan)) {
-          selectedTembusan.value = unwrappedData.tembusan.map((t: any) => {
-            const posId = String(t.position || t.position_id || t.id || '');
+        // Tembusan (internal): pakai position_id dari KN tembusan / unwrappedData.tembusan.
+        const tembusanSource = (Array.isArray(kn.tembusan) && kn.tembusan.length > 0)
+          ? kn.tembusan
+          : (unwrappedData.tembusan || []);
+        if (Array.isArray(tembusanSource) && tembusanSource.length > 0) {
+          selectedTembusan.value = tembusanSource.map((t: any) => {
+            const posId = String(t.position_id || t.position || t.id || '');
             return internalItems.value.find(i => i.value === posId) || {
               label: `${t.nama || ''} - ${t.position_text || ''}`,
               labelJob: t.position_text || '',
@@ -955,8 +1119,26 @@ onMounted(async () => {
           });
         }
 
-        if (unwrappedData.lampiran_files && Array.isArray(unwrappedData.lampiran_files)) {
-          existingFiles.value = unwrappedData.lampiran_files.map((f: any) => ({
+        // Garis Kewenangan (a.n.): restore dari KN node.
+        // atas_nama = label (untuk display), atas_nama_position_id = position id
+        // (untuk selectedAtasNamaId supaya re-toggle/tembusan konsisten).
+        if (kn.atas_nama) {
+          atasNamaManualLabel.value = kn.atas_nama;
+          if (kn.atas_nama_position_id) {
+            selectedAtasNamaId.value = Number(kn.atas_nama_position_id) || null;
+          }
+          useGarisKewenangan.value = true;
+        }
+
+        // ponytail: reset flag pre-fill via nextTick (setelah watch(selectedSender)
+        // microtask jalan — supaya watch skip reset tertuju/tembusan saat pre-fill).
+        nextTick(() => { isPrefillingKonsep.value = false; });
+
+        const lampiranFilesSrc = (Array.isArray(kn.lampiran_files) && kn.lampiran_files.length > 0)
+          ? kn.lampiran_files
+          : (unwrappedData.lampiran_files || []);
+        if (Array.isArray(lampiranFilesSrc) && lampiranFilesSrc.length > 0) {
+          existingFiles.value = lampiranFilesSrc.map((f: any) => ({
             id: f.id, fileName: f.filename || f.file_name || 'File',
             filePath: f.url || f.file_path || '', fileSize: f.size || 0,
           }));
