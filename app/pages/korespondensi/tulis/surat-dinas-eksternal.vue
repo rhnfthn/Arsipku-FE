@@ -63,6 +63,30 @@
         <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('sde_pilih_tembusan')"
           :items="internalItems" />
 
+        <!-- Garis Kewenangan (a.n.) — signer bertanda tangan atas nama pejabat pemberi kuasa -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          <div class="flex flex-col sm:flex-row sm:items-center w-full">
+            <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" v-model="useGarisKewenangan" class="w-4 h-4 accent-primary-500" />
+              Garis Kewenangan (a.n.)
+            </label>
+            <div class="flex items-center flex-1 w-full gap-2">
+              <template v-if="useGarisKewenangan">
+                <template v-if="isDirut">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
+                </template>
+                <template v-else>
+                  <!-- Auto-fill atasan (level 1 di atas, di direktorat sama). Tidak ada dropdown. -->
+                  <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
+                  <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
+                  <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
+                </template>
+              </template>
+              <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
+            </div>
+          </div>
+        </div>
+
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -175,6 +199,8 @@
                 <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
+                      <!-- Garis Kewenangan (a.n.) — live preview sebelum generate PDF -->
+                      <div v-if="useGarisKewenangan && atasNamaLabel" class="font-bold mb-1">a.n {{ atasNamaLabel }}</div>
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
                     <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
@@ -339,6 +365,88 @@ const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
 
+// --- GARIS KEWENANGAN (a.n.) ---
+// Checkbox untuk aktifkan "atas nama". Kalau signer = Direktur Utama → fixed
+// "a.n Direksi" (no dropdown). Else → dropdown atasan di direktorat sama.
+const useGarisKewenangan = ref(false);
+const atasanOptions = ref<any[]>([]);
+const selectedAtasNamaId = ref<number | null>(null);
+const isLoadingAtasan = ref(false);
+
+const isDirut = computed(() =>
+  /direktur\s+utama/i.test(user.value?.positionText || ''),
+);
+
+// Label pemberi kuasa untuk template "a.n <label>".
+const atasNamaLabel = computed(() => {
+  if (!useGarisKewenangan.value) return '';
+  if (isDirut.value) return 'Direksi';
+  const sel = atasanOptions.value.find(
+    (x) => Number(x.position) === Number(selectedAtasNamaId.value),
+  );
+  return sel?.position_text || '';
+});
+
+const fetchAtasan = async () => {
+  if (isDirut.value || !user.value?.position) return;
+  isLoadingAtasan.value = true;
+  try {
+    const { apiGet } = useApi();
+    const res = await apiGet<any>(`/org-data/atasnama/${user.value.position}`);
+    atasanOptions.value = res?.data || [];
+    // Auto-fill atasan pertama (paling senior di direktorat — e.g. Direktur
+    // untuk signer EVP). Tidak ada dropdown, user tidak perlu pilih.
+    selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+  } catch (e) {
+    console.error('Gagal fetch atasan:', e);
+    atasanOptions.value = [];
+    selectedAtasNamaId.value = null;
+  } finally {
+    isLoadingAtasan.value = false;
+  }
+};
+
+// Auto-tembusan: ketika atas nama dipilih (non-Dirut), add atasan ke tembusan.
+// Shape sama dengan mapInternalItems (label/labelJob/raw) supaya tampil benar
+// di template tembusan list. BE tetap force-CC jadi kalau FE kehapus, BE tambah lagi.
+watch(selectedAtasNamaId, (newId) => {
+  if (!newId) return;
+  const r = atasanOptions.value.find(
+    (x) => Number(x.position) === Number(newId),
+  );
+  if (!r) return;
+  if (selectedTembusan.value.some((t: any) => Number(t.value) === Number(newId))) return;
+  selectedTembusan.value.push({
+    label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text}`,
+    labelJob: r.position_text,
+    value: String(r.position),
+    raw: r,
+  });
+});
+
+// Ketika checkbox on → fetch atasan (non-Dirut) atau re-select yang sudah ter-fetch.
+// Kalau Dirut, skip (fixed label "Direksi"). Off → null + hapus atasan dari tembusan.
+watch(useGarisKewenangan, (on) => {
+  if (on && !isDirut.value) {
+    if (atasanOptions.value.length > 0) {
+      // Sudah pernah fetch → re-select atasan pertama (fix bug: re-check tidak muncul).
+      selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+    } else {
+      fetchAtasan(); // fetchAtasan auto-select atasan pertama.
+    }
+  }
+  if (!on) {
+    // Uncheck → hapus atasan auto-added dari tembusan + reset pilihan.
+    const prevId = selectedAtasNamaId.value;
+    if (prevId) {
+      selectedTembusan.value = selectedTembusan.value.filter(
+        (t: any) => Number(t.value) !== Number(prevId),
+      );
+    }
+    selectedAtasNamaId.value = null;
+  }
+});
+
 const breadcrumbs = [
   { label: t('beranda'), to: "/beranda" },
   { label: t('sde_judul_halaman'), to: "#" },
@@ -368,6 +476,9 @@ const getPayload = () => {
     nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
     nama_lengkap: user.value?.nama || "",
+    // Garis Kewenangan (a.n.)
+    atas_nama: useGarisKewenangan.value ? atasNamaLabel.value : "",
+    atas_nama_position_id: (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || null,
     tgl: tglDb.value,
     tanggal: tglDisplay.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)
