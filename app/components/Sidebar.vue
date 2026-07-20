@@ -813,12 +813,11 @@ const adminMenuAdministrasi = computed(() => {
     },
   ];
 
-  if (user.value?.role === 'superadmin' || hasRole('SUPERADMIN')) {
+  if (isAdminOrSuperadmin.value) {
     base.push(
       {
         label: t('master_data'),
         icon: 'i-lucide-database',
-        permission: { resource: 'master-data', action: 'read' },
         children: [
           { label: t('tertuju'), to: '/master/tertuju-eksternal', permission: { resource: 'master-data', action: 'read-tertuju' } },
           { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2', permission: { resource: 'master-data', action: 'read-perusahaan' } },
@@ -828,7 +827,7 @@ const adminMenuAdministrasi = computed(() => {
             label: t('grup_penerima') || 'Grup Penerima',
             to: '/master/grup-penerima',
             icon: 'i-lucide-users',
-            permission: { resource: 'master-data', action: 'read' },
+            permission: { resource: 'master-data', action: 'read-grup-penerima' },
           },
         ],
       },

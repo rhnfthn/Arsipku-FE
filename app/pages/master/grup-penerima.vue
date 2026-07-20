@@ -6,7 +6,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
         <PageHeader :title="t('gp_title')" :items="items" />
         <button
-          v-if="hasPermission('master-data', 'create-grup-penerima') || isSuperadmin"
+          v-if="hasPermission('master-data', 'create-grup-penerima')"
           @click="openAddModal"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
         >
@@ -154,6 +154,7 @@
                   <div class="flex items-center justify-center gap-1">
                     <!-- View members -->
                     <button
+                      v-if="hasPermission('master-data', 'read-grup-penerima-detail')"
                       @click="viewMembers(item)"
                       :title="t('gp_btn_members')"
                       class="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors"
@@ -162,7 +163,7 @@
                     </button>
                     <!-- Edit -->
                     <button
-                      v-if="hasPermission('master-data', 'update-grup-penerima') || isSuperadmin"
+                      v-if="hasPermission('master-data', 'update-grup-penerima')"
                       @click="openEditModal(item)"
                       :title="t('gp_btn_edit')"
                       class="p-1.5 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 transition-colors"
@@ -171,7 +172,7 @@
                     </button>
                     <!-- Toggle aktif -->
                     <button
-                      v-if="hasPermission('master-data', 'update-grup-penerima') || isSuperadmin"
+                      v-if="hasPermission('master-data', 'update-grup-penerima')"
                       @click="toggleAktif(item)"
                       :title="t('gp_btn_toggle')"
                       class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 transition-colors"
@@ -180,7 +181,7 @@
                     </button>
                     <!-- Delete -->
                     <button
-                      v-if="hasPermission('master-data', 'delete-grup-penerima') || isSuperadmin"
+                      v-if="hasPermission('master-data', 'delete-grup-penerima')"
                       @click="confirmDelete(item)"
                       :title="t('gp_btn_delete')"
                       class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors"
@@ -509,7 +510,7 @@
         <div class="space-y-3 p-1">
           <!-- Add member with search -->
           <div
-            v-if="hasPermission('master-data', 'create-grup-penerima') || isSuperadmin"
+            v-if="hasPermission('master-data', 'create-grup-penerima')"
             class="space-y-2"
           >
             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">{{
