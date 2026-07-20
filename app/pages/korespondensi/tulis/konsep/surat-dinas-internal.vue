@@ -114,16 +114,20 @@
 
         <!-- Tertuju: exclude yang sudah dipilih di TEMBUSAN -->
         <!-- Tertuju: exclude tembusan + anggota grup tembusan -->
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
-          :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="items"
-          :groups="recipientGroups" :exclude-items="expandedExcludeTertuju" :disabled="!isSenderSelected"
-          disabled-message="Sudah dipilih di Tembusan" />
+        <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
+          <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
+            :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="items"
+            :groups="recipientGroups" :exclude-items="expandedExcludeTertuju" :disabled="!isSenderSelected"
+            disabled-message="Sudah dipilih di Tembusan" />
+        </div>
 
         <!-- Tembusan: exclude tertuju + anggota grup tertuju -->
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
-          :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
-          :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
-          disabled-message="Sudah dipilih di Tertuju" />
+        <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
+          <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
+            :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
+            :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
+            disabled-message="Sudah dipilih di Tertuju" />
+        </div>
         <TulisInputSifat v-model="selectedSifat" />
 
         <!-- Perihal -->
