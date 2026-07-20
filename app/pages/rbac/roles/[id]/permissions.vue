@@ -37,7 +37,7 @@
                   ? 'border-primary text-primary font-semibold'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
               >
-                {{ section.tree?.label ?? section.key }}
+                {{ section.tree?.label === 'FAQ & Pedoman' ? 'FAQ' : (section.tree?.label ?? section.key) }}
               </button>
             </div>
             <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
