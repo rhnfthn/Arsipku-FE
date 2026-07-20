@@ -443,12 +443,20 @@ const loadData = async () => {
           ? lastFlow.penerima.some((t: any) => String(t.position_id || t.id || '') === myPosId)
           : false;
 
+        // ponytail: hide action buttons kalau user sudah tindak lanjut (acted on
+        // konsep ini). Sebelumnya cuma cek aksi create/forward → tombol tetap
+        // muncul walau user sudah forward/reject/turunkan.
+        const lastFlowTinjut =
+          lastFlow?.user_sirkulasi?.is_tindak_lanjut ??
+          lastFlow?.is_tindak_lanjut ??
+          false;
+
         showFinalizeActions.value =
-          isInPenerima && (lastAksi === 'create' || lastAksi === 'forward');
+          isInPenerima && (lastAksi === 'create' || lastAksi === 'forward') && !lastFlowTinjut;
 
         const pengirimId = String(lastFlow.pengirim?.position_id || '');
         showEditAction.value =
-          lastAksi === 'reject' && myPosId !== '' && pengirimId !== '' && myPosId === pengirimId;
+          lastAksi === 'reject' && myPosId !== '' && pengirimId !== '' && myPosId === pengirimId && !lastFlowTinjut;
 
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
