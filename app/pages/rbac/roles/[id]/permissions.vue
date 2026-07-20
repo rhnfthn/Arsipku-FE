@@ -25,14 +25,6 @@
       <template v-else-if="role">
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
           <!-- Toolbar -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50 dark:bg-gray-700/50 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
-            <div>
-              <h3 class="text-sm font-bold text-gray-800 dark:text-white">
-                {{ t('rbac_edit_permission_for') }} {{ role.name }}
-              </h3>
-            </div>
-          </div>
-
           <!-- Tabs + Action buttons in one row -->
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700 px-5">
             <div class="flex overflow-x-auto gap-1">
