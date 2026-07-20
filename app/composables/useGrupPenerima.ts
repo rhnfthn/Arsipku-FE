@@ -1,5 +1,5 @@
 export const useGrupPenerima = () => {
-  const { apiGet, apiPost, apiPut, apiDelete } = useApi();
+  const { apiGet, apiPost, apiPut, apiDelete, clearApiCache } = useApi();
 
   /** GET /persuratan/grup-penerima — list all groups */
   const getGrupPenerima = async (params?: { company?: string; area?: string; jenis?: string }) => {
@@ -43,7 +43,10 @@ export const useGrupPenerima = () => {
 
   /** PUT /persuratan/grup-penerima/:id/toggle-aktif — toggle active */
   const toggleAktifGrupPenerima = async (id: string) => {
-    return await apiPut(`/persuratan/grup-penerima/${id}/toggle-aktif`, {});
+    const res = await apiPut(`/persuratan/grup-penerima/${id}/toggle-aktif`, {});
+    // Clear cache agar fetchData mendapat data fresh
+    clearApiCache();
+    return res;
   };
 
   /** DELETE /persuratan/grup-penerima/:id — delete group */
