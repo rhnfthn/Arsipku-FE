@@ -16,6 +16,7 @@ const { getJenisList } = useJenis();
 const { apiGet, apiPost, api } = useApi();
 const { initEditor, destroyEditor, isReady, error: editorError } = useOnlyOffice();
 const { getKlasifikasi } = useKlasifikasi();
+const { getRecipients, getRecipientGroups } = useRecipients();
 
 // ── Shared composable ────────────────────────────────────────────────────────
 const {
@@ -24,10 +25,15 @@ const {
   date, selectedKlasifikasiId, selectedKlasifikasi, selectedSifat, existingFiles,
   klasifikasiList, klasifikasiStatus,
   selectedTertuju, selectedTembusan,
+  recipientGroups,
+  excludeTertujuList, excludeTembusanList,
   maxPerihal, sifatOptions,
   formattedDate, tglDb, tglDisplay,
   toastError, toastSuccess,
 } = useTulis();
+
+// ── Recipient items (individu) ───────────────────────────────────────────────
+const recipientItems = ref<any[]>([]);
 
 // ── Naskah Umum state ─────────────────────────────────────────────────────────
 const selectedJenisId = ref<string>("");
@@ -355,6 +361,28 @@ onMounted(async () => {
       const found = jenisList.value.find((j: any) => j.jenis === route.query.jenis);
       if (found) selectedJenisId.value = found.id;
     }
+
+    // ── Load recipients (individu) ──────────────────────────────────────────
+    try {
+      const resRec = await getRecipients();
+      const rawRecipients = resRec.recipients || (resRec as any).data || [];
+      recipientItems.value = rawRecipients.map((r: any) => ({
+        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+        labelJob: r.position_text || r.positionText,
+        value: String(r.position || r.position_id || r.id),
+        raw: r,
+      }));
+    } catch (e) {
+      recipientItems.value = [];
+    }
+
+    // ── Load recipient groups (grup penerima) ───────────────────────────────
+    try {
+      const groups = await getRecipientGroups();
+      recipientGroups.value = (groups || []).filter((g: any) => g.aktif);
+    } catch (e) {
+      recipientGroups.value = [];
+    }
   } catch {
     klasifikasiStatus.value = "error";
   }
@@ -474,11 +502,11 @@ onUnmounted(() => {
 
         <TulisInputTanggal v-model="date" :label="$t('f_tanggal_surat')" />
 
-        <TulisInputPenerima v-model="selectedTertuju" :label="$t('f_tertuju')" :placeholder="$t('nu_pilih_tertuju')" :items="[]"
-          :groups="[]" :exclude-items="[]" :disabled-message="$t('nu_sudah_dipilih')" />
+        <TulisInputPenerima v-model="selectedTertuju" :label="$t('f_tertuju')" :placeholder="$t('nu_pilih_tertuju')" :items="recipientItems"
+          :groups="recipientGroups" :exclude-items="excludeTembusanList" :disabled-message="$t('nu_sudah_dipilih')" />
 
-        <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('nu_pilih_tembusan')" :items="[]"
-          :groups="[]" :exclude-items="[]" :disabled-message="$t('nu_sudah_dipilih')" />
+        <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('nu_pilih_tembusan')" :items="recipientItems"
+          :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled-message="$t('nu_sudah_dipilih')" />
 
         <TulisInputSifat v-model="selectedSifat" />
 

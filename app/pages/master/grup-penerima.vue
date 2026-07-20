@@ -775,7 +775,7 @@ const fetchData = async () => {
     list.value = res?.data || res || [];
   } catch (err) {
     console.error('❌ Error fetch grup penerima:', err);
-    list.value = [];
+    // Jangan kosongkan list agar data tidak "hilang" dari UI saat error
   } finally {
     loading.value = false;
   }
@@ -864,6 +864,8 @@ const toggleAktif = async (item: any) => {
   try {
     await toggleAktifGrupPenerima(item.id);
     toast.add({ title: t('gp_toast_toggle_ok'), color: 'success' });
+    // Update status lokal dulu agar UI langsung responsif
+    item.aktif = !item.aktif;
     await fetchData();
   } catch (err) {
     toast.add({ title: t('gp_toast_toggle_fail'), color: 'error' });
