@@ -2,7 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
-      <PageHeader :title="`${t('rbac_roles_title')} ${t('rbac_superadmin_only')}`" :items="items" />
+      <PageHeader :title="t('rbac_roles_title')" :items="items" />
     </div>
 
     <!-- Card Table (tanpa toolbar & pagination) -->

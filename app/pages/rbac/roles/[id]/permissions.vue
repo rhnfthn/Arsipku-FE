@@ -30,11 +30,25 @@
               <h3 class="text-sm font-bold text-gray-800 dark:text-white">
                 {{ t('rbac_edit_permission_for') }} {{ role.name }}
               </h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ t('rbac_permission_matrix_desc') }}
-              </p>
             </div>
-            <div class="flex items-center gap-2">
+          </div>
+
+          <!-- Tabs + Action buttons in one row -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700 px-5">
+            <div class="flex overflow-x-auto gap-1">
+              <button
+                v-for="tab in tabs"
+                :key="tab.key"
+                @click="activeTab = tab.key"
+                class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                :class="activeTab === tab.key
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+            <div class="flex items-center gap-2 pb-2 sm:pb-0">
               <button type="button" @click="allExpanded ? collapseAll() : expandAll()"
                 class="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                 {{ allExpanded ? t('rbac_collapse_all') : t('rbac_expand_all') }}
@@ -47,21 +61,6 @@
                 {{ allChecked ? t('rbac_uncheck_all_btn') : t('rbac_check_all_btn') }}
               </button>
             </div>
-          </div>
-
-          <!-- Tabs: Utama / Utilitas / Administrasi / Laporan / FAQ -->
-          <div class="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-5 gap-1">
-            <button
-              v-for="tab in tabs"
-              :key="tab.key"
-              @click="activeTab = tab.key"
-              class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-              :class="activeTab === tab.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-            >
-              {{ tab.label }}
-            </button>
           </div>
 
           <!-- Matrix tree -->
