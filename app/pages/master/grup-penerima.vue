@@ -88,21 +88,13 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="bg-primary-400 text-white dark:bg-primary-600">
-                <th
-                  class="px-4 py-3 text-left font-medium cursor-pointer"
-                  @click="sortBy('urutan')"
-                >
-                  <div class="flex items-center gap-1">
-                    {{ t('gp_col_no') }} <ArrowUpDown class="w-3 h-3" />
-                  </div>
-                </th>
                 <th class="px-4 py-3 text-left font-medium cursor-pointer" @click="sortBy('nama')">
                   <div class="flex items-center gap-1">
                     {{ t('gp_col_name') }} <ArrowUpDown class="w-3 h-3" />
                   </div>
                 </th>
                 <th class="px-4 py-3 text-left font-medium">{{ t('gp_col_company') }}</th>
-                <th class="px-4 py-3 text-left font-medium">{{ t('gp_col_area') }}</th>
+                <th class="px-4 py-3 text-left font-medium">{{ t('gp_col_desc') }}</th>
                 <th class="px-4 py-3 text-left font-medium">{{ t('gp_col_members') }}</th>
                 <th class="px-4 py-3 text-left font-medium">{{ t('gp_col_status') }}</th>
                 <th class="px-4 py-3 text-center font-medium">{{ t('gp_col_actions') }}</th>
@@ -112,14 +104,14 @@
               <!-- Loading skeleton -->
               <template v-if="loading">
                 <tr v-for="i in 5" :key="`skeleton-${i}`">
-                  <td colspan="7" class="px-4 py-3">
+                  <td colspan="6" class="px-4 py-3">
                     <div class="h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                   </td>
                 </tr>
               </template>
               <!-- Empty state -->
               <tr v-else-if="paginatedData.length === 0">
-                <td colspan="7" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                <td colspan="6" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                   {{ t('gp_empty') }}
                 </td>
               </tr>
@@ -129,12 +121,11 @@
                 :key="item.id"
                 class="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ item.urutan ?? '-' }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ item.nama }}</td>
                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
                   {{ item.company || '-' }}
                 </td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ item.area || '-' }}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ item.deskripsi || '-' }}</td>
                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
                   {{ item.details?.length ?? 0 }} {{ t('gp_members_unit') }}
                 </td>
@@ -252,8 +243,8 @@
         </template>
         <div class="space-y-4 p-1 max-h-[70vh] overflow-y-auto">
           <!-- Group info -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="col-span-2">
+          <div class="space-y-3">
+            <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >{{ t('gp_col_name') }} <span class="text-red-500">*</span></label
               >
@@ -284,21 +275,6 @@
               </p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >{{ t('gp_col_area') }} <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="addForm.area"
-                type="text"
-                placeholder="A000"
-                class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                :class="addErrors.area ? 'border-red-500' : 'border-gray-300'"
-              />
-              <p v-if="addErrors.area" class="text-xs text-red-500 mt-1">
-                {{ t('gp_err_required') }}
-              </p>
-            </div>
-            <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
                 t('gp_col_desc')
               }}</label>
@@ -308,17 +284,6 @@
                 :placeholder="t('gp_desc_placeholder')"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
               ></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
-                t('gp_col_urutan')
-              }}</label>
-              <input
-                v-model.number="addForm.urutan"
-                type="number"
-                placeholder="1"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
             </div>
           </div>
 
@@ -437,16 +402,6 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >{{ t('gp_col_area') }} <span class="text-red-500">*</span></label
-            >
-            <input
-              v-model="editForm.area"
-              type="text"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
               t('gp_col_desc')
             }}</label>
@@ -455,16 +410,6 @@
               rows="2"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
             ></textarea>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{
-              t('gp_col_urutan')
-            }}</label>
-            <input
-              v-model.number="editForm.urutan"
-              type="number"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
           </div>
         </div>
         <div class="flex gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
@@ -704,7 +649,7 @@ const perPage = ref(10);
 const currentPage = ref(1);
 const openRowsDropdown = ref(false);
 const rowsChoices = [5, 10, 20, 50];
-const sortColumn = ref('urutan');
+const sortColumn = ref('nama');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
 // Add modal
@@ -713,11 +658,9 @@ const savingAdd = ref(false);
 const addForm = ref({
   nama: '',
   company: 'PERUM LPPNPI',
-  area: 'A000',
   deskripsi: '',
-  urutan: undefined as number | undefined,
 });
-const addErrors = ref({ nama: false, company: false, area: false });
+const addErrors = ref({ nama: false, company: false });
 const addFormMembers = ref<string[]>([]);
 const addMemberSearch = ref('');
 
@@ -728,9 +671,7 @@ const editId = ref('');
 const editForm = ref({
   nama: '',
   company: '',
-  area: '',
   deskripsi: '',
-  urutan: undefined as number | undefined,
 });
 
 // Delete
@@ -757,7 +698,7 @@ const filteredData = computed(() => {
       (item) =>
         item.nama?.toLowerCase().includes(s) ||
         item.company?.toLowerCase().includes(s) ||
-        item.area?.toLowerCase().includes(s)
+        item.deskripsi?.toLowerCase().includes(s)
     );
   }
   data.sort((a, b) => {
@@ -854,11 +795,9 @@ const openAddModal = async () => {
   addForm.value = {
     nama: '',
     company: 'PERUM LPPNPI',
-    area: 'A000',
     deskripsi: '',
-    urutan: undefined,
   };
-  addErrors.value = { nama: false, company: false, area: false };
+  addErrors.value = { nama: false, company: false };
   addFormMembers.value = [];
   addMemberSearch.value = '';
   showAddModal.value = true;
@@ -869,9 +808,8 @@ const submitAdd = async () => {
   addErrors.value = {
     nama: !addForm.value.nama,
     company: !addForm.value.company,
-    area: !addForm.value.area,
   };
-  if (addErrors.value.nama || addErrors.value.company || addErrors.value.area) return;
+  if (addErrors.value.nama || addErrors.value.company) return;
   savingAdd.value = true;
   try {
     const res = await createGrupPenerima(addForm.value);
@@ -902,9 +840,7 @@ const openEditModal = (item: any) => {
   editForm.value = {
     nama: item.nama,
     company: item.company,
-    area: item.area,
     deskripsi: item.deskripsi || '',
-    urutan: item.urutan,
   };
   showEditModal.value = true;
 };
