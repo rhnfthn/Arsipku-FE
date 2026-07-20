@@ -46,7 +46,7 @@ const routePermissions: Record<string, string> = {
   '/master/perusahaan': 'master-data:read-perusahaan',
   '/master/klasifikasi': 'master-data:read-klasifikasi',
   '/master/jenis': 'master-data:read-jenis',
-  '/master/grup-penerima': 'master-data:read',
+  '/master/grup-penerima': 'master-data:read-grup-penerima',
   // RBAC management (superadmin only, but permission check for completeness)
   '/rbac/roles': 'role:read',
   '/rbac/permissions': 'role:read',
