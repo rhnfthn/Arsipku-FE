@@ -765,6 +765,23 @@ onMounted(async () => {
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
         setSifatFromString(d.sifat || 'biasa');
         if (d.tgl) setDateFromString(d.tgl);
+
+        // Garis Kewenangan (a.n.): restore dari draft SDE.
+        if (d.atas_nama) {
+          useGarisKewenangan.value = true;
+          if (d.atas_nama_position_id) {
+            selectedAtasNamaId.value = Number(d.atas_nama_position_id) || null;
+          }
+          // Untuk non-Dirut tanpa position_id (legacy), pakai manual label.
+          if (!isDirut.value && !selectedAtasNamaId.value) {
+            // fetch atasan + cari yang match label
+            await fetchAtasan();
+            const match = atasanOptions.value.find((x: any) =>
+              String(x.position_text || '').toLowerCase() === String(d.atas_nama).toLowerCase(),
+            );
+            if (match) selectedAtasNamaId.value = match.position;
+          }
+        }
       }
     }
 
