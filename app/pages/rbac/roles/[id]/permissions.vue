@@ -25,22 +25,28 @@
       <template v-else-if="role">
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
           <!-- Toolbar -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50 dark:bg-gray-700/50 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
-            <div>
-              <h3 class="text-sm font-bold text-gray-800 dark:text-white">
-                {{ t('rbac_edit_permission_for') }} {{ role.name }}
-              </h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ t('rbac_permission_matrix_desc') }}
-              </p>
+          <!-- Tabs + Action buttons in one row -->
+          <div class="flex items-center justify-between gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-5">
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
+              <button
+                v-for="section in allSections"
+                :key="section.key"
+                @click="activeTab = section.key"
+                class="px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0"
+                :class="activeTab === section.key
+                  ? 'border-primary text-primary font-semibold'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              >
+                {{ section.tree?.label === 'FAQ & Pedoman' ? 'FAQ' : (section.tree?.label ?? section.key) }}
+              </button>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <button type="button" @click="allExpanded ? collapseAll() : expandAll()"
-                class="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                class="px-2 sm:px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors whitespace-nowrap">
                 {{ allExpanded ? t('rbac_collapse_all') : t('rbac_expand_all') }}
               </button>
               <button type="button" @click="toggleCheckAll"
-                class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                class="px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap"
                 :class="allChecked
                   ? 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                   : 'bg-primary text-white hover:bg-primary-700'">
@@ -49,92 +55,57 @@
             </div>
           </div>
 
-          <!-- Tabs: Utama / Utilitas / Administrasi / Laporan / FAQ -->
-          <div class="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-5 gap-1">
-            <button
-              v-for="tab in tabs"
-              :key="tab.key"
-              @click="activeTab = tab.key"
-              class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
-              :class="activeTab === tab.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-            >
-              {{ tab.label }}
-            </button>
-          </div>
-
-          <!-- Matrix tree -->
+          <!-- Active section content -->
           <div class="p-5 max-h-[65vh] overflow-y-auto">
             <div v-if="!currentTree" class="text-center py-10 text-gray-400">
               {{ t('rbac_resources_empty') }}
             </div>
 
             <div v-else class="space-y-2">
-              <div
-                v-for="halaman in [currentTree]"
-                :key="halaman.key"
-                class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
-              >
-                <button
-                  class="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  @click="toggle(halaman.key)"
-                >
-                  <UIcon
-                    :name="isOpen(halaman.key) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-                    class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                  />
-                  <Heading variant="heading9b" as="h3">{{ halaman.label }}</Heading>
-                </button>
-
-                <div v-show="isOpen(halaman.key)" class="divide-y divide-gray-100 dark:divide-gray-800">
-                  <div v-for="menu in halaman.menus" :key="`${halaman.key}-${menu.key}`" class="pl-4">
+              <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                  <div v-for="menu in currentTree.menus" :key="`${activeTab}-${menu.key}`" class="pl-4">
                     <button
                       class="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
-                      @click="toggle(`${halaman.key}-${menu.key}`)"
+                      @click="toggle(`${activeTab}-${menu.key}`)"
                     >
                       <UIcon
-                        :name="isOpen(`${halaman.key}-${menu.key}`) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                        :name="isOpen(`${activeTab}-${menu.key}`) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
                         class="w-4 h-4 text-gray-400 dark:text-gray-500"
                       />
                       <Paragraph variant="body2b">{{ menu.label }}</Paragraph>
                     </button>
 
-                    <div v-show="isOpen(`${halaman.key}-${menu.key}`)" class="pl-6 divide-y divide-gray-50 dark:divide-gray-800/60">
-                      <div v-for="subMenu in menu.subMenus" :key="`${halaman.key}-${menu.key}-${subMenu.key}`">
-                        <div v-if="subMenu.label !== menu.label" class="px-4 py-2">
-                          <Paragraph variant="body3m" class="text-gray-600 dark:text-gray-300">{{ subMenu.label }}</Paragraph>
-                        </div>
+                    <div v-show="isOpen(`${activeTab}-${menu.key}`)" class="pl-6 divide-y divide-gray-50 dark:divide-gray-800/60">
+                      <div
+                        v-for="subMenu in menu.subMenus"
+                        :key="`${activeTab}-${menu.key}-${subMenu.key}`"
+                        class="flex flex-col sm:flex-row sm:items-start gap-2 px-4 py-3 border-b border-gray-50 dark:border-gray-800/40 last:border-0"
+                      >
+                        <Paragraph variant="body3m" class="text-gray-700 dark:text-gray-300 min-w-[180px] sm:min-w-[220px] flex-shrink-0 pt-0.5">
+                          {{ subMenu.label }}
+                        </Paragraph>
 
-                        <div class="pl-8 pr-4 py-2">
-                          <div
-                            v-for="fitur in subMenu.fiturs"
-                            :key="`${halaman.key}-${menu.key}-${subMenu.key}-${fitur.key}`"
-                            class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2 border-b border-gray-50 dark:border-gray-800/40 last:border-0"
-                          >
-                            <Paragraph variant="body3m" class="text-gray-700 dark:text-gray-300 min-w-[200px]">
-                              {{ fitur.label }}
-                            </Paragraph>
-                            <div class="flex flex-wrap items-center gap-4">
-                              <label
-                                v-for="perm in fitur.permissions"
-                                :key="perm.permissionId || perm.permissionName"
-                                v-show="!(isUserRole && ['template.create', 'template.update', 'template.delete'].includes(perm.permissionName))"
-                                class="inline-flex items-center gap-2 cursor-pointer select-none"
-                              >
-                                <input
-                                  type="checkbox"
-                                  :checked="selectedIds.includes(perm.permissionId)"
-                                  :disabled="!perm.permissionId"
-                                  class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                                  @change="togglePermission(perm.permissionId, $event.target.checked)"
-                                />
-                                <span class="text-xs text-gray-600 dark:text-gray-400">
-                                  {{ perm.label }} — {{ perm.description }}
-                                </span>
-                              </label>
-                            </div>
-                          </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full">
+                          <template v-for="fitur in subMenu.fiturs" :key="`${activeTab}-${menu.key}-${subMenu.key}-${fitur.key}`">
+                            <label
+                              v-for="perm in fitur.permissions"
+                              :key="perm.permissionId || perm.permissionName"
+                              v-show="!(isUserRole && ['template.create', 'template.update', 'template.delete'].includes(perm.permissionName))"
+                              class="inline-flex items-start gap-2 cursor-pointer select-none"
+                            >
+                              <input
+                                type="checkbox"
+                                :checked="selectedIds.includes(perm.permissionId)"
+                                :disabled="!perm.permissionId"
+                                class="w-4 h-4 mt-0.5 text-primary border-gray-300 rounded focus:ring-primary flex-shrink-0"
+                                @change="togglePermission(perm.permissionId, $event.target.checked)"
+                              />
+                              <span class="text-xs text-gray-600 dark:text-gray-400 leading-tight">
+                                {{ perm.label }} — {{ perm.description }}
+                              </span>
+                            </label>
+                          </template>
                         </div>
                       </div>
                     </div>
@@ -317,23 +288,46 @@ function toggle(key: string) {
 function expandAll() {
   if (!currentTree.value) return;
   const set = new Set(openKeys.value);
-  set.add(currentTree.value.key);
+  set.add(activeTab.value);
   for (const menu of currentTree.value.menus ?? []) {
-    set.add(`${currentTree.value.key}-${menu.key}`);
+    set.add(`${activeTab.value}-${menu.key}`);
   }
   openKeys.value = set;
 }
 function collapseAll() {
-  openKeys.value = new Set();
+  const set = new Set(openKeys.value);
+  set.delete(activeTab.value);
+  if (currentTree.value) {
+    for (const menu of currentTree.value.menus ?? []) {
+      set.delete(`${activeTab.value}-${menu.key}`);
+    }
+  }
+  openKeys.value = set;
 }
 const allExpanded = computed(() => {
   if (!currentTree.value) return false;
-  if (!openKeys.value.has(currentTree.value.key)) return false;
+  if (!openKeys.value.has(activeTab.value)) return false;
   for (const menu of currentTree.value.menus ?? []) {
-    if (!openKeys.value.has(`${currentTree.value.key}-${menu.key}`)) return false;
+    if (!openKeys.value.has(`${activeTab.value}-${menu.key}`)) return false;
   }
   return true;
 });
+
+const allSections = computed(() => {
+  const roleName = (role.value?.name || '').toUpperCase();
+  const sections = [
+    { key: 'utama', tree: utamaTree.value },
+    { key: 'utilitas', tree: utilitasTree.value },
+    { key: 'administrasi', tree: administrasiTree.value },
+    { key: 'laporan', tree: laporanTree.value },
+    { key: 'faq', tree: faqTree.value },
+  ];
+  if (roleName === 'USER') {
+    return sections.filter(s => ['utama', 'utilitas', 'faq'].includes(s.key));
+  }
+  return sections;
+});
+
 function toggleCheckAll() {
   if (allChecked.value) {
     selectedIds.value = [];
@@ -404,6 +398,7 @@ onMounted(async () => {
       (faq.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       selectedIds.value = Array.from(ids);
       initialIds.value = new Set(ids);
+      // Default: expand tab aktif (Utama) + menu di dalamnya
       expandAll();
     }
   } catch (e: any) {
