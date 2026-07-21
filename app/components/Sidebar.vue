@@ -332,6 +332,7 @@ import {
 import { useRoute } from 'vue-router';
 
 import { useAuth } from '~/composables/useAuth';
+import { useDelegationMode } from '~/composables/useDelegationMode';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
@@ -342,6 +343,7 @@ import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
 const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
+const { isReadOnly } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
@@ -524,7 +526,7 @@ const userMenuUtama = computed(() => [
     icon: 'i-lucide-layout-dashboard',
     permission: { resource: 'utama.beranda', action: 'read' },
   },
-  tulisMenu.value,
+  ...(isReadOnly.value ? [] : [tulisMenu.value]),
   {
     label: t('kotak_masuk'),
     to: '/korespondensi/kotak-masuk',
@@ -677,7 +679,7 @@ const adminMenuUtama = computed(() => [
     icon: 'i-lucide-layout-dashboard',
     permission: { resource: 'utama.beranda', action: 'read' },
   },
-  tulisMenu.value,
+  ...(isReadOnly.value ? [] : [tulisMenu.value]),
   {
     label: t('kotak_masuk'),
     to: '/korespondensi/kotak-masuk',
