@@ -152,7 +152,7 @@
         :items="menuItems"
         :content="{ align: 'end' }"
         :ui="{
-          content: 'w-72 dark:bg-gray-900 dark:ring-gray-800',
+          content: 'w-72 dark:bg-gray-900 dark:ring-gray-800 max-h-[70vh] overflow-y-auto',
           item: 'px-4 py-3',
           itemLabel: 'text-sm'
         }"
@@ -1589,13 +1589,13 @@ const highlightText = (text: string, query: string) => {
 };
 
 // --- USER / DELEGATION ---
+const isCurrentlyDelegated = computed(() => !!activeDelegationId.value);
+
 const positionStatusLabel = computed(() => {
   const u = user.value;
   if (!u) return null;
-  if (u.position_status) return u.position_status;
-  if (u.delegations && u.delegations.length > 0) {
-    return u.delegations[0].delegated_role?.position_status;
-  }
+  // Only show position_status when actually in delegated mode
+  if (isCurrentlyDelegated.value && u.position_status) return u.position_status;
   return null;
 });
 
@@ -1623,15 +1623,19 @@ const fetchDelegationRoles = async () => {
 watch(
   user,
   (newUser) => {
-    if (newUser) {
-      fetchDelegationRoles();
-      if (!activeDelegationId.value) {
-        originalRoleLabel.value = newUser.positionText;
-        if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
-      } else if (process.client) {
-        const stored = localStorage.getItem('arsipku_original_position');
-        if (stored) originalRoleLabel.value = stored;
-      }
+    if (!newUser) return;
+    fetchDelegationRoles();
+    // Capture the original (YBS) role only when NOT delegated — use the
+    // authoritative position_status (Spec A), not the activeDelegationId
+    // localStorage proxy (racy: initActiveState runs in onMounted, which may
+    // fire after the watch resolves on profile-populate). When delegated,
+    // keep the stored original so it never becomes the delegated position.
+    if (!newUser.position_status) {
+      originalRoleLabel.value = newUser.positionText;
+      if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
+    } else if (process.client) {
+      const stored = localStorage.getItem('arsipku_original_position');
+      if (stored) originalRoleLabel.value = stored;
     }
   },
   { immediate: true }
@@ -1793,7 +1797,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   const mainAccountItem = {
     uiName: user.value?.nama || 'User',
-    uiBadge: user.value?.role,
+    uiBadge: hasDelegationData ? 'Akun Asli' : (user.value?.role || 'User'),
     uiPosition: originalRoleLabel.value,
     uiCompany: user.value?.companyText,
     label: originalRoleLabel.value,

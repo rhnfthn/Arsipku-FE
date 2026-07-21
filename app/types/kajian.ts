@@ -26,7 +26,10 @@ export const KajianSchema = z.object({
   lampiran_text: z.string().optional()
 })
 
-export type KajianPayload = z.infer<typeof KajianSchema>
+export type KajianPayload = z.infer<typeof KajianSchema> & {
+  positionText?: string;
+  namaLengkap?: string;
+}
 
 // Tambahkan wrapper function seperti pola disposisi
 export const validateKajianPayload = (data: any): {

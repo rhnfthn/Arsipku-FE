@@ -8,6 +8,9 @@
     <!-- ANNOUNCEMENT BANNER -->
     <AnnouncementBanner />
 
+    <!-- DELEGASI READ-ONLY BANNER -->
+    <DelegationReadOnlyBanner />
+
     <!-- SIDEBAR - top mengikuti tinggi alert -->
     <div
       class="fixed left-0 bottom-0 z-[93] transition-all duration-300"
@@ -20,6 +23,7 @@
     <div
       class="flex flex-col min-h-dvh transition-all duration-300"
       :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'"
+      :style="{ paddingTop: alertHeight }"
     >
       <!-- NAVBAR - Sticky top mengikuti tinggi alert -->
       <div
@@ -48,15 +52,21 @@
 
 <script setup lang="ts">
 import { useDigsig } from '~/composables/useDigsig'
+import { useDelegationMode } from '~/composables/useDelegationMode'
 import Alert from '~/components/Alert.vue'
 
 const collapsed = ref(false)
 const sidebarRef = ref()
 
 const { bsreAlert } = useDigsig()
+const { isReadOnly } = useDelegationMode()
+
+const DELEGATION_BANNER_HEIGHT = 44 // matches DelegationReadOnlyBanner h-11
 
 const alertHeight = computed(() => {
-  return bsreAlert.value?.isActive ? '52px' : '0px'
+  let h = bsreAlert.value?.isActive ? 52 : 0
+  if (isReadOnly.value) h += DELEGATION_BANNER_HEIGHT
+  return `${h}px`
 })
 
 const openMobileSidebar = () => {

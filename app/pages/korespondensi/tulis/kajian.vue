@@ -141,7 +141,7 @@
                         <td class="text-[14px] font-bold align-top">{{ $t('f_dari') }}</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">
-                          {{ user?.positionText || $t('kj_posisi_pengirim') }}
+                          {{ renderedPositionLabel || $t('kj_posisi_pengirim') }}
                         </td>
                       </tr>
                       <tr>
@@ -167,7 +167,7 @@
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
                         <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || $t('kj_nama_jabatan') }}</div>
+                        <div class="font-bold">{{ renderedPositionLabel || $t('kj_nama_jabatan') }}</div>
                       </div>
                       <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || $t('kj_nama_lengkap') }}</div>
                     </div>
@@ -291,6 +291,7 @@ const { getConfigDigsig } = useDigsig();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
+const { renderedPositionLabel } = useDelegationMode();
 const { getKlasifikasi } = useKlasifikasi();
 const {
   getRecipients,
@@ -321,7 +322,7 @@ const passphraseInput = ref('')
 
 const signerInfo = computed(() => ({
   name: toTitleCase(user.value?.nama) || t('kj_nama_lengkap'),
-  role: user.value?.positionText || t('jabatan'),
+  role: renderedPositionLabel.value || t('jabatan'),
   label: t('kj_ditandatangani_digital')
 }))
 
@@ -400,7 +401,9 @@ const getPayload = (): KajianPayload => {
     perihal: subject.value,
     konten: editorContent.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean) as string[],
-    lampiran_text: lampiranText.value
+    lampiran_text: lampiranText.value,
+    positionText: renderedPositionLabel.value || "",
+    namaLengkap: user.value?.nama || ""
   }
 }
 

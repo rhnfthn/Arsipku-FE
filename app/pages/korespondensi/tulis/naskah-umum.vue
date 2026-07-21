@@ -11,6 +11,7 @@ const toast = useToast();
 const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
+const { renderedPositionLabel } = useDelegationMode();
 const { canAccessPage } = useFeatureAccess();
 const { getJenisList } = useJenis();
 const { apiGet, apiPost, api } = useApi();
@@ -199,7 +200,7 @@ const buildFieldPayload = (): Record<string, string | string[]> => {
   fields.perihal = subject.value;
   fields.tanggal = tglDb.value;
   fields.tglsurat = tglDb.value;
-  fields.dari = user.value?.positionText || '';
+  fields.dari = renderedPositionLabel.value || user.value?.positionText || '';
   fields.namapengirim = user.value?.nama || '';
   fields.tujuan = recipientNames.length ? recipientNames.join('\n') : '';
   fields.klasifikasi = selectedKlasifikasi.value?.klasifikasi || '';
