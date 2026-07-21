@@ -207,36 +207,38 @@
         </div>
 
         <template #delegation-item="{ item }: { item: any }">
-          <div class="flex flex-col w-full min-w-0 gap-0.5 py-1">
+          <div class="flex flex-col w-full min-w-0 gap-1 py-1 relative">
             <div class="flex items-center justify-between w-full gap-3">
               <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {{ item.uiName }}
               </span>
 
-              <UBadge
-                size="xs"
-                variant="subtle"
-                color="primary"
-                class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize leading-none"
-              >
-                {{ item.uiBadge }}
-              </UBadge>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <UBadge
+                  size="xs"
+                  variant="subtle"
+                  color="primary"
+                  class="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize leading-none"
+                >
+                  {{ item.uiBadge }}
+                </UBadge>
+                <UIcon
+                  v-if="item.isActive"
+                  name="i-heroicons-check-circle-20-solid"
+                  class="w-4 h-4 text-primary-600 dark:text-primary-400"
+                />
+              </div>
             </div>
 
-            <div class="flex items-center justify-between tracking-tight w-full gap-3">
-              <span
-                class="text-xs text-gray-500 dark:text-gray-400 text-left whitespace-normal break-words leading-snug"
-              >
-                {{ item.uiPosition }}
-                <span class="mx-0.5 opacity-50">•</span>
-                <span class="text-gray-400 dark:text-gray-500">{{ item.uiCompany }}</span>
-              </span>
-
-              <UIcon
-                v-if="item.isActive"
-                name="i-heroicons-check-circle-20-solid"
-                class="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5"
-              />
+            <div class="flex flex-col gap-0.5 w-full">
+              <div v-if="item.uiPosition" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 leading-snug">
+                <UIcon name="i-lucide-briefcase" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500" />
+                <span class="truncate">{{ item.uiPosition }}</span>
+              </div>
+              <div v-if="item.uiArea" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 leading-snug">
+                <UIcon name="i-lucide-map-pin" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500" />
+                <span class="truncate">{{ item.uiArea }}</span>
+              </div>
             </div>
           </div>
         </template>
@@ -1799,7 +1801,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     uiName: user.value?.nama || 'User',
     uiBadge: hasDelegationData ? 'Akun Asli' : (user.value?.role || 'User'),
     uiPosition: originalRoleLabel.value,
-    uiCompany: user.value?.companyText,
+    uiArea: user.value?.areaText || user.value?.companyText || '',
     label: originalRoleLabel.value,
     slot: 'delegation-item',
     isActive: isMainAccountActive,
@@ -1814,7 +1816,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       uiName: details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
       uiPosition: details.position_text || 'Jabatan Tidak Tersedia',
-      uiCompany: details.company_text,
+      uiArea: details.area_text || details.company_text || '',
       label: details.position_text || 'Delegasi',
       slot: 'delegation-item',
       isActive: currentId === role.id,

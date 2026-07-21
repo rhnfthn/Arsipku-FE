@@ -96,7 +96,7 @@
             </Heading>
           </div>
           <img
-            src="/dashboard.png"
+            :src="dashboardImage"
             class="absolute -right-6 -bottom-8 h-60 w-auto object-contain opacity-90 animate-float z-20 pointer-events-none"
             alt="Dashboard Decoration"
           />
@@ -255,6 +255,7 @@ import { onMounted } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { useDashboard } from '@/composables/useDashboard'
+import { useDark } from '@vueuse/core'
 
 definePageMeta({
   middleware: 'auth'
@@ -264,6 +265,9 @@ const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
 const { canAccessPage } = useFeatureAccess()
 const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
   useDashboard()
+
+const isDark = useDark()
+const dashboardImage = computed(() => isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png')
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
 
