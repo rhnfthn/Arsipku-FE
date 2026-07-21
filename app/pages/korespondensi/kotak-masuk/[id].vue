@@ -1160,6 +1160,15 @@ const handleLanjutSDE = () => {
       },
     });
 };
+const handleLanjutSDEMassal = () => {
+  if (!ensureCanCreateFollowUpAction()) return;
+  // TODO: implementasi alur SDE massal
+  useToast().add({
+    title: 'SDE Massal',
+    description: 'Fitur SDE massal belum tersedia (desain).',
+    color: 'info',
+  });
+};
 const handleLanjutDisposisi = () => {
   if (!ensureCanCreateFollowUpAction()) return;
 
@@ -1305,6 +1314,7 @@ const konsepOptions = computed(() => [
               @lanjut-nota="handleLanjutNotaDinas"
               @lanjut-sdi="handleLanjutSDI"
               @lanjut-sde="handleLanjutSDE"
+              @lanjut-sde-massal="handleLanjutSDEMassal"
               @lanjut-disposisi="handleLanjutDisposisi"
               :draft="
                 index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null
