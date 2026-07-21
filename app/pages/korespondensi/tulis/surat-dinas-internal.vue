@@ -27,7 +27,7 @@ const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, updateDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
-
+const { renderedPositionLabel } = useDelegationMode();
 
 
 const { getConfigDigsig } = useDigsig();
@@ -113,7 +113,7 @@ const getPayload = (): SDIPayloadInput => ({
   konten: editorContent.value,
   english: false,
   nama_tempat: user.value?.areaText || "",
-  nama_jabatan: user.value?.positionText || "",
+  nama_jabatan: renderedPositionLabel.value || "",
   nama_lengkap: user.value?.nama || "",
   tgl: tglDb.value,
   tanggal: tglDisplay.value,
@@ -559,7 +559,7 @@ watch(
                 <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
-                      <div class="font-bold">{{ user?.positionText || $t('sdi_nama_jabatan') }}</div>
+                      <div class="font-bold">{{ renderedPositionLabel || $t('sdi_nama_jabatan') }}</div>
                     </div>
                     <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || $t('sdi_nama_lengkap') }}</div>
                   </div>
@@ -632,7 +632,7 @@ watch(
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen"
-      :signer-info="{ name: toTitleCase(user?.nama) || $t('sdi_nama_lengkap'), role: user?.positionText || $t('sdi_jabatan'), label: $t('sdi_ditandatangani_digital') }"
+      :signer-info="{ name: toTitleCase(user?.nama) || $t('sdi_nama_lengkap'), role: renderedPositionLabel || $t('sdi_jabatan'), label: $t('sdi_ditandatangani_digital') }"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
