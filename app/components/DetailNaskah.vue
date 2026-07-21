@@ -28,6 +28,7 @@ import {
   Tag,
   Loader2,
   ArrowDownCircle,
+  Layers,
 } from 'lucide-vue-next';
 
 // Tambah prop
@@ -63,6 +64,7 @@ const emit = defineEmits<{
   (e: 'lanjut-nota'): void;
   (e: 'lanjut-sdi'): void;
   (e: 'lanjut-sde'): void;
+  (e: 'lanjut-sde-massal'): void;
   (e: 'lanjut-disposisi'): void;
   (e: 'lanjut-konsep'): void;
   (e: 'kirim-email'): void;
@@ -1352,6 +1354,15 @@ const removeNote = () => {
               >
                 <Building2 class="w-4 h-4" />
                 <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Eksternal</span>
+              </div>
+
+              <div
+                v-if="hasAccess(['SDE'])"
+                @click="emit('lanjut-sde-massal')"
+                class="flex bg-indigo-600 hover:bg-indigo-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+              >
+                <Layers class="w-4 h-4" />
+                <span class="text-sm font-medium whitespace-nowrap">Lanjut SDE Massal</span>
               </div>
 
               <div
