@@ -1623,15 +1623,19 @@ const fetchDelegationRoles = async () => {
 watch(
   user,
   (newUser) => {
-    if (newUser) {
-      fetchDelegationRoles();
-      if (!activeDelegationId.value) {
-        originalRoleLabel.value = newUser.positionText;
-        if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
-      } else if (process.client) {
-        const stored = localStorage.getItem('arsipku_original_position');
-        if (stored) originalRoleLabel.value = stored;
-      }
+    if (!newUser) return;
+    fetchDelegationRoles();
+    // Capture the original (YBS) role only when NOT delegated — use the
+    // authoritative position_status (Spec A), not the activeDelegationId
+    // localStorage proxy (racy: initActiveState runs in onMounted, which may
+    // fire after the watch resolves on profile-populate). When delegated,
+    // keep the stored original so it never becomes the delegated position.
+    if (!newUser.position_status) {
+      originalRoleLabel.value = newUser.positionText;
+      if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
+    } else if (process.client) {
+      const stored = localStorage.getItem('arsipku_original_position');
+      if (stored) originalRoleLabel.value = stored;
     }
   },
   { immediate: true }
