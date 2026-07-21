@@ -152,7 +152,7 @@
         :items="menuItems"
         :content="{ align: 'end' }"
         :ui="{
-          content: 'w-72 dark:bg-gray-900 dark:ring-gray-800',
+          content: 'w-72 dark:bg-gray-900 dark:ring-gray-800 max-h-[70vh] overflow-y-auto',
           item: 'px-4 py-3',
           itemLabel: 'text-sm'
         }"
@@ -1589,13 +1589,13 @@ const highlightText = (text: string, query: string) => {
 };
 
 // --- USER / DELEGATION ---
+const isCurrentlyDelegated = computed(() => !!activeDelegationId.value);
+
 const positionStatusLabel = computed(() => {
   const u = user.value;
   if (!u) return null;
-  if (u.position_status) return u.position_status;
-  if (u.delegations && u.delegations.length > 0) {
-    return u.delegations[0].delegated_role?.position_status;
-  }
+  // Only show position_status when actually in delegated mode
+  if (isCurrentlyDelegated.value && u.position_status) return u.position_status;
   return null;
 });
 
@@ -1797,7 +1797,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   const mainAccountItem = {
     uiName: user.value?.nama || 'User',
-    uiBadge: user.value?.role,
+    uiBadge: hasDelegationData ? 'Akun Asli' : (user.value?.role || 'User'),
     uiPosition: originalRoleLabel.value,
     uiCompany: user.value?.companyText,
     label: originalRoleLabel.value,
