@@ -22,6 +22,7 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
 const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND, sendDraft } = useNotaDinas();
+const { renderedPositionLabel } = useDelegationMode();
 const { getConfigDigsig } = useDigsig();
 
 const isSignMethodModalOpen = ref(false);
@@ -65,7 +66,7 @@ const breadcrumbs = computed(() => [
 
 const signerInfo = computed(() => ({
   name: toTitleCase(user.value?.nama) || t('nd_nama_lengkap'),
-  role: user.value?.positionText || t('nd_jabatan'),
+  role: renderedPositionLabel.value || t('nd_jabatan'),
   label: t('nd_ditandatangani_digital'),
 }));
 
@@ -100,7 +101,7 @@ const getBasePayload = (): DraftPayload => ({
   english: false,
 
   nama_tempat: user.value?.areaText || "Kantor Pusat",
-  nama_jabatan: user.value?.positionText || "",
+  nama_jabatan: renderedPositionLabel.value || "",
   nama_lengkap: user.value?.nama || "",
 
   tgl: tglDb.value || "",
@@ -457,7 +458,7 @@ onMounted(async () => {
                       <tr>
                         <td class="text-[14px] font-bold align-top">{{ $t('f_dari') }}</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ user?.positionText || $t('nd_posisi') }}</td>
+                        <td class="text-[14px] align-top">{{ renderedPositionLabel || $t('nd_posisi') }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">{{ $t('f_perihal') }}</td>
@@ -479,7 +480,7 @@ onMounted(async () => {
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || $t('nd_nama_jabatan') }}</div>
+                        <div class="font-bold">{{ renderedPositionLabel || $t('nd_nama_jabatan') }}</div>
                       </div>
                       <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || $t('nd_nama_lengkap') }}</div>
                     </div>

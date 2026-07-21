@@ -100,7 +100,7 @@
                   </div>
                   <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
                     <div class="uppercase">{{ $t('dp_lembar_disposisi') }}</div>
-                    <div class="uppercase">{{ user?.positionText || $t('dp_nama_jabatan') }}</div>
+                    <div class="uppercase">{{ renderedPositionLabel || $t('dp_nama_jabatan') }}</div>
                   </div>
                 </div>
 
@@ -118,7 +118,7 @@
                       <tbody>
                         <tr>
                           <td class="w-16 py-1">{{ $t('dp_surat_dari') }}</td>
-                          <td class="py-1">: {{ user?.positionText || "....................." }}</td>
+                          <td class="py-1">: {{ renderedPositionLabel || "....................." }}</td>
                         </tr>
                         <tr>
                           <td class="py-1">{{ $t('tanggal') }}</td>
@@ -247,6 +247,7 @@ const { t } = useI18n();
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 const { getRecipients, sendDisposisi, saveDraft: saveDI, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
+const { renderedPositionLabel } = useDelegationMode();
 
 const { getConfigDigsig } = useDigsig();
 
@@ -305,7 +306,7 @@ const checklistOptions = [
 
 const signerInfo = computed(() => ({
   name: toTitleCase(user.value?.nama) || t('dp_nama_lengkap'),
-  role: user.value?.positionText || t('dp_jabatan'),
+  role: renderedPositionLabel.value || t('dp_jabatan'),
   label: t('dp_ditandatangani_digital')
 }));
 
@@ -348,7 +349,8 @@ const validateAndToast = (payload: DisposisiPayload) => {
 
 const getBasePayload = (): DisposisiPayload => ({
   id_naskah: editDraftId.value || null,
-  pengirim: user.value?.position || "",
+  pengirim: renderedPositionLabel.value || user.value?.positionText || "",
+  penandatangan: user.value?.nama || "",
   tertuju: selectedTertuju.value.map(i => i.value),
   tanggal_disposisi: tglDb.value,
   tanggal_ui: tglDisplay.value,

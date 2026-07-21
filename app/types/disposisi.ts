@@ -6,6 +6,7 @@ export const DisposisiPayloadSchema = z.object({
   ref_id:             z.string().nullable().optional(),
   id_referensi_naskah: z.string().nullable().optional(),
   pengirim:           z.string().min(1, "Pengirim tidak teridentifikasi"),
+  penandatangan:      z.string().optional(),
   tertuju:            z.array(z.string()).min(1, "Penerima tertuju wajib dipilih minimal satu"),
   tanggal_disposisi:  z.string().min(1, "Tanggal disposisi wajib diisi").regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal salah"),
   sifat:              z.string().min(1, "Sifat surat wajib dipilih"),
