@@ -551,7 +551,7 @@ watch(
 
                 <div class="min-h-[300px] relative group">
                   <div class="mb-3">
-                    <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                    <AiDraftTriggerButton v-if="hasPermission('utama.tulis.surat-dinas-internal', 'generate-ai')" @click="isAiDraftOpen = true" />
                   </div>
                   <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                 </div>
