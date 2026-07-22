@@ -100,7 +100,7 @@
                   </div>
                   <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
                     <div class="uppercase">{{ $t('dp_lembar_disposisi') }}</div>
-                    <div class="uppercase">{{ renderedPositionLabel || $t('dp_nama_jabatan') }}</div>
+                    <div class="uppercase">{{ user?.positionText || $t('dp_nama_jabatan') }}</div>
                   </div>
                 </div>
 
@@ -118,7 +118,7 @@
                       <tbody>
                         <tr>
                           <td class="w-16 py-1">{{ $t('dp_surat_dari') }}</td>
-                          <td class="py-1">: {{ renderedPositionLabel || "....................." }}</td>
+                          <td class="py-1">: {{ user?.positionText || "....................." }}</td>
                         </tr>
                         <tr>
                           <td class="py-1">{{ $t('tanggal') }}</td>

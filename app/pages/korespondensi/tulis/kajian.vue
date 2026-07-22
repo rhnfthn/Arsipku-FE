@@ -141,7 +141,7 @@
                         <td class="text-[14px] font-bold align-top">{{ $t('f_dari') }}</td>
                         <td class="text-[14px] align-top">:</td>
                         <td class="text-[14px] align-top">
-                          {{ renderedPositionLabel || $t('kj_posisi_pengirim') }}
+                          {{ user?.positionText || $t('kj_posisi_pengirim') }}
                         </td>
                       </tr>
                       <tr>
