@@ -458,7 +458,7 @@ onMounted(async () => {
                       <tr>
                         <td class="text-[14px] font-bold align-top">{{ $t('f_dari') }}</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ renderedPositionLabel || $t('nd_posisi') }}</td>
+                        <td class="text-[14px] align-top">{{ user?.positionText || $t('nd_posisi') }}</td>
                       </tr>
                       <tr>
                         <td class="text-[14px] font-bold align-top">{{ $t('f_perihal') }}</td>
