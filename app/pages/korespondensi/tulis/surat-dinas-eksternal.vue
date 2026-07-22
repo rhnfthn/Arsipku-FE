@@ -185,7 +185,7 @@
                 </div>
 
                 <div class="mb-3">
-                  <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                  <AiDraftTriggerButton v-if="hasPermission('utama.tulis.surat-dinas-eksternal', 'generate-ai')" @click="isAiDraftOpen = true" />
                 </div>
 
                 <div class="min-h-[300px] relative group">

@@ -471,7 +471,7 @@ onMounted(async () => {
                 </div>
 
                 <div class="mb-3">
-                  <AiDraftTriggerButton @click="isAiDraftOpen = true" />
+                  <AiDraftTriggerButton v-if="hasPermission('utama.tulis.nota-dinas', 'generate-ai')" @click="isAiDraftOpen = true" />
                 </div>
                 <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
 
