@@ -290,7 +290,7 @@ export const useDigsig = () => {
       if (params?.status) queryParams.append('status', params.status);
       if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
 
-      const url = `/digsig/document${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `/digsig/document/my-documents${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const res = await apiGet<DigsigDocumentResponse>(url);
 
       if (res.success && res.data) {
