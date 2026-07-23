@@ -815,7 +815,7 @@ const adminMenuAdministrasi = computed(() => {
     },
   ];
 
-  if (isAdminOrSuperadmin.value) {
+  if (isSuperadmin.value) {
     base.push(
       {
         label: t('master_data'),
