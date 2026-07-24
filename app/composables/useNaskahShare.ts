@@ -110,7 +110,22 @@ export function useNaskahShare() {
     }
   };
 
-  // ── Revoke share ────────────────────────────────
+  // ── Revoke single recipient ─────────────────────
+  const revokeRecipient = async (shareId: string, recipientId: string, reason?: string) => {
+    try {
+      const reasonParam = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+      const res = await apiDelete<{
+        success: boolean; message: string; data: any;
+      }>(`/naskah-share/${shareId}/recipients/${recipientId}${reasonParam}`);
+      clearApiCache('/naskah-share');
+      return res;
+    } catch (err: any) {
+      console.error('[useNaskahShare] revokeRecipient error:', err);
+      throw err;
+    }
+  };
+
+  // ── Revoke share (all recipients) ────────────────
   const revokeShare = async (shareId: string, reason?: string) => {
     try {
       const reasonParam = reason ? `?reason=${encodeURIComponent(reason)}` : '';
@@ -213,6 +228,7 @@ export function useNaskahShare() {
     // actions
     fetchShares,
     createShare,
+    revokeRecipient,
     revokeShare,
     openNaskah,
     markAsRead,

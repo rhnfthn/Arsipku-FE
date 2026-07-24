@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { User, Calendar, StickyNote, CheckCircle2, Circle, FileText } from 'lucide-vue-next';
+import { User, Calendar, StickyNote, CheckCircle2, Circle, FileText, ShieldOff } from 'lucide-vue-next';
 import type { ShareItem } from '~/composables/useNaskahShare';
 import { getCategoryStyle, getCategoryFullName, formatShortDate } from '~/utils/mail-helpers';
 
 const props = defineProps<{
   share: ShareItem;
+  isSender?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
+  (e: 'revoke-recipient', payload: { share: ShareItem; recipientId: string; recipientName: string }): void;
 }>();
 
 const isOpen = ref(true);
@@ -130,8 +132,13 @@ watch(isOpen, (val) => {
                 <p v-if="recipient.positionText" class="text-[10px] text-gray-400 dark:text-gray-500 truncate">{{ recipient.positionText }}</p>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
+                <!-- DICABUT = akses dicabut -->
+                <template v-if="recipient.status === 'DICABUT'">
+                  <ShieldOff class="w-4 h-4 text-red-400 dark:text-red-500" />
+                  <span class="text-[10px] font-semibold text-red-500 dark:text-red-400">Dicabut</span>
+                </template>
                 <!-- DIBACA = sudah baca -->
-                <template v-if="recipient.status === 'DIBACA'">
+                <template v-else-if="recipient.status === 'DIBACA'">
                   <CheckCircle2 class="w-4 h-4 text-emerald-500" />
                   <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Dibaca</span>
                 </template>
@@ -145,6 +152,17 @@ watch(isOpen, (val) => {
                   <Circle class="w-4 h-4 text-gray-300 dark:text-gray-600" />
                   <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Terkirim</span>
                 </template>
+                <!-- Revoke button per recipient -->
+                <UTooltip v-if="props.isSender && share.status === 'AKTIF' && recipient.status !== 'DICABUT'" text="Cabut akses">
+                  <UButton
+                    icon="i-lucide-shield-off"
+                    color="error"
+                    variant="ghost"
+                    size="xs"
+                    class="ml-1"
+                    @click="emit('revoke-recipient', { share, recipientId: recipient.recipientId || recipient.id, recipientName: recipient.nama })"
+                  />
+                </UTooltip>
               </div>
             </div>
           </div>
