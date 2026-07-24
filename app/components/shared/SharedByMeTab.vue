@@ -13,7 +13,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:page', page: number): void;
-  (e: 'revoke', share: ShareItem): void;
   (e: 'view', share: ShareItem): void;
   (e: 'open-pdf', share: ShareItem): void;
   (e: 'refresh'): void;
@@ -29,25 +28,7 @@ const columns = computed(() => [
   { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
 ]);
 
-const getDropdownItems = (share: ShareItem) => {
-  const items: any[] = [
-    {
-      label: 'Lihat Naskah Asli',
-      icon: 'i-lucide-eye',
-      onSelect: () => emit('view', share),
-    },
-  ];
 
-  if (share.status === 'AKTIF') {
-    items.push({
-      label: 'Cabut Akses',
-      icon: 'i-lucide-shield-off',
-      onSelect: () => emit('revoke', share),
-    });
-  }
-
-  return items;
-};
 </script>
 
 <template>
@@ -141,14 +122,7 @@ const getDropdownItems = (share: ShareItem) => {
               @click="emit('open-pdf', row)"
             />
           </UTooltip>
-          <UDropdownMenu :items="getDropdownItems(row)">
-            <UButton
-              icon="i-lucide-ellipsis-vertical"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-            />
-          </UDropdownMenu>
+
         </div>
       </template>
     </DataTable>

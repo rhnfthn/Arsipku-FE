@@ -49,8 +49,9 @@ const shareModalNaskahNomor = ref('');
 
 const showRevokeModal = ref(false);
 const revokeShareId = ref('');
+const revokeRecipientId = ref('');
+const revokeRecipientName = ref('');
 const revokeSharePerihal = ref('');
-const revokeRecipientCount = ref(0);
 
 const showDetailModal = ref(false);
 const detailShare = ref<any>(null);
@@ -102,10 +103,11 @@ const selectPageSize = (v: number) => {
   showPageMenu.value = false;
 };
 
-const handleRevoke = (share: any) => {
-  revokeShareId.value = share.id;
-  revokeSharePerihal.value = share.naskahPerihal;
-  revokeRecipientCount.value = share.recipients?.length || 0;
+const handleRevoke = (payload: { share: any; recipientId: string; recipientName: string }) => {
+  revokeShareId.value = payload.share.id;
+  revokeSharePerihal.value = payload.share.naskahPerihal;
+  revokeRecipientId.value = payload.recipientId;
+  revokeRecipientName.value = payload.recipientName;
   showRevokeModal.value = true;
 };
 
@@ -253,7 +255,6 @@ onMounted(() => { loadData(); });
           :page="currentPage"
           :limit="itemsPerPage"
           @update:page="currentPage = $event"
-          @revoke="handleRevoke"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
           @refresh="handleRefresh"
@@ -265,8 +266,9 @@ onMounted(() => { loadData(); });
     <SharedShareRevokeModal
       v-if="showRevokeModal"
       :share-id="revokeShareId"
+      :recipient-id="revokeRecipientId"
+      :recipient-name="revokeRecipientName"
       :naskah-perihal="revokeSharePerihal"
-      :recipient-count="revokeRecipientCount"
       @close="showRevokeModal = false"
       @revoked="handleRevoked"
     />
@@ -275,7 +277,9 @@ onMounted(() => { loadData(); });
     <SharedShareDetailModal
       v-if="showDetailModal && detailShare"
       :share="detailShare"
+      :is-sender="true"
       @close="showDetailModal = false"
+      @revoke-recipient="handleRevoke"
     />
 
     <!-- PDF Viewer Full Page -->
