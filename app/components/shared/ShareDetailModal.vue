@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { User, Calendar, StickyNote, CheckCircle2, Circle, FileText, ShieldOff } from 'lucide-vue-next';
 import type { ShareItem } from '~/composables/useNaskahShare';
-import { getCategoryStyle, getCategoryFullName, formatShortDate } from '~/utils/mail-helpers';
+import { getCategoryStyle, getCategoryFullName, formatFullDateTime } from '~/utils/mail-helpers';
 
 const props = defineProps<{
   share: ShareItem;
@@ -89,7 +89,35 @@ watch(isOpen, (val) => {
               </div>
               <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tanggal Dibagikan</p>
             </div>
-            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatShortDate(share.createdAt) }}</p>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatFullDateTime(share.createdAt) }}</p>
+          </div>
+
+          <!-- Jenis Akses -->
+          <div class="col-span-2 p-3 rounded-xl border" :class="share.accessType === 'SEKALI_LIHAT'
+            ? 'bg-amber-50/60 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30'
+            : 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30'">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center"
+                :class="share.accessType === 'SEKALI_LIHAT' ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-blue-100 dark:bg-blue-900/40'">
+                <UIcon :name="share.accessType === 'SEKALI_LIHAT' ? 'i-lucide-eye' : 'i-lucide-calendar'"
+                  class="w-3 h-3"
+                  :class="share.accessType === 'SEKALI_LIHAT' ? 'text-amber-500 dark:text-amber-400' : 'text-blue-500 dark:text-blue-400'" />
+              </div>
+              <p class="text-[10px] font-semibold uppercase tracking-wider"
+                :class="share.accessType === 'SEKALI_LIHAT' ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'">
+                Jenis Akses
+              </p>
+            </div>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ share.accessType === 'SEKALI_LIHAT' ? 'Sekali Lihat' : `Rentang Waktu — ${share.durationDays || '-'} hari` }}
+            </p>
+            <p v-if="share.expiresAt" class="text-[11px] mt-0.5"
+              :class="share.accessType === 'SEKALI_LIHAT' ? 'text-amber-500 dark:text-amber-400' : 'text-blue-500 dark:text-blue-400'">
+              Berlaku hingga {{ formatFullDateTime(share.expiresAt) }}
+            </p>
+            <p v-if="share.accessType === 'SEKALI_LIHAT'" class="text-[11px] text-amber-500 dark:text-amber-400 mt-0.5">
+              Penerima hanya dapat membuka naskah satu kali
+            </p>
           </div>
         </div>
 
@@ -109,7 +137,7 @@ watch(isOpen, (val) => {
               <User class="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
             </div>
             <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Status Penerima ({{ share.recipients.length }})
+              Penerima ({{ share.recipients.length }})
             </p>
           </div>
           <div class="space-y-2">
@@ -119,10 +147,10 @@ watch(isOpen, (val) => {
               class="flex items-center gap-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50"
             >
               <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                :class="recipient.status === 'DIBACA' ? 'bg-emerald-100 dark:bg-emerald-900/40' : recipient.status === 'DIBUKA' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-gray-200 dark:bg-gray-700'"
+                :class="recipient.status === 'DICABUT' ? 'bg-red-100 dark:bg-red-900/40' : (recipient.status === 'DIBACA' || recipient.status === 'DIBUKA') ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-gray-200 dark:bg-gray-700'"
               >
                 <span class="text-[11px] font-bold"
-                  :class="recipient.status === 'DIBACA' ? 'text-emerald-600 dark:text-emerald-400' : recipient.status === 'DIBUKA' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500'"
+                  :class="recipient.status === 'DICABUT' ? 'text-red-600 dark:text-red-400' : (recipient.status === 'DIBACA' || recipient.status === 'DIBUKA') ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'"
                 >
                   {{ recipient.nama?.charAt(0)?.toUpperCase() }}
                 </span>
@@ -132,25 +160,23 @@ watch(isOpen, (val) => {
                 <p v-if="recipient.positionText" class="text-[10px] text-gray-400 dark:text-gray-500 truncate">{{ recipient.positionText }}</p>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <!-- DICABUT = akses dicabut -->
-                <template v-if="recipient.status === 'DICABUT'">
-                  <ShieldOff class="w-4 h-4 text-red-400 dark:text-red-500" />
-                  <span class="text-[10px] font-semibold text-red-500 dark:text-red-400">Dicabut</span>
-                </template>
-                <!-- DIBACA = sudah baca -->
-                <template v-else-if="recipient.status === 'DIBACA'">
-                  <CheckCircle2 class="w-4 h-4 text-emerald-500" />
-                  <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Dibaca</span>
-                </template>
-                <!-- DIBUKA = sudah buka PDF -->
-                <template v-else-if="recipient.status === 'DIBUKA'">
-                  <CheckCircle2 class="w-4 h-4 text-orange-500" />
-                  <span class="text-[10px] font-semibold text-orange-600 dark:text-orange-400">Terkirim</span>
-                </template>
-                <!-- BELUM_DIBACA = belum dibaca -->
-                <template v-else>
-                  <Circle class="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Terkirim</span>
+                <!-- Status badge (only for sender) -->
+                <template v-if="props.isSender">
+                  <!-- DIBACA / DIBUKA = sudah baca / buka PDF -->
+                  <template v-if="recipient.status === 'DIBACA' || recipient.status === 'DIBUKA'">
+                    <CheckCircle2 class="w-4 h-4 text-emerald-500" />
+                    <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Dibaca</span>
+                  </template>
+                  <!-- DICABUT = akses dicabut -->
+                  <template v-else-if="recipient.status === 'DICABUT'">
+                    <ShieldOff class="w-4 h-4 text-red-400 dark:text-red-500" />
+                    <span class="text-[10px] font-semibold text-red-500 dark:text-red-400">Dicabut</span>
+                  </template>
+                  <!-- BELUM_DIBACA = belum dibaca -->
+                  <template v-else>
+                    <Circle class="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                    <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Terkirim</span>
+                  </template>
                 </template>
                 <!-- Revoke button per recipient -->
                 <UTooltip v-if="props.isSender && share.status === 'AKTIF' && recipient.status !== 'DICABUT'" text="Cabut akses">

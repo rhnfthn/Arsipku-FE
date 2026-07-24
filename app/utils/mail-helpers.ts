@@ -1,6 +1,7 @@
 // utils/mail-helpers.ts
 // Shared helpers untuk halaman korespondensi (kotak masuk, terkirim, label, dll)
 
+const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const monthShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const monthLong = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
@@ -22,6 +23,21 @@ export const formatShortDate = (dateString: string | null | undefined): string =
   if (isToday) return time;
   if (isThisYear) return `${day} ${month} ${time}`;
   return `${day} ${month} ${date.getFullYear()} ${time}`;
+};
+
+export const formatFullDateTime = (dateString: string | null | undefined): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+
+  const dayName = dayNames[date.getDay()];
+  const day = date.getDate();
+  const month = monthLong[date.getMonth()];
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+
+  return `${dayName}, ${day} ${month} ${year} ${hours}.${minutes}`;
 };
 
 export const getCategoryStyle = (cat: string): string => {

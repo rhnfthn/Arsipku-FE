@@ -22,6 +22,7 @@ const columns = computed(() => [
   { key: 'naskahJenis', label: 'Jenis', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'naskahNomor', label: 'Nomor', sortable: false },
   { key: 'pemberi', label: 'Dari', sortable: false },
+  { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
   { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
 ]);
@@ -80,6 +81,27 @@ const getMyRecipientStatus = (share: ShareItem) => {
         </div>
       </template>
 
+      <template #cell-accessType="{ row }">
+        <div class="flex flex-col items-center gap-1">
+          <span
+            v-if="row.accessType === 'SEKALI_LIHAT'"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+          >
+            <UIcon name="i-lucide-eye" class="w-3 h-3" />
+            Sekali Lihat
+          </span>
+          <template v-else>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+              <UIcon name="i-lucide-calendar" class="w-3 h-3" />
+              {{ row.durationDays || '-' }} hari
+            </span>
+            <span v-if="row.expiresAt" class="text-[9px] text-neutral-400 dark:text-neutral-500">
+              s/d {{ formatShortDate(row.expiresAt) }}
+            </span>
+          </template>
+        </div>
+      </template>
+
       <template #cell-createdAt="{ row }">
         <span class="text-xs text-neutral-500 dark:text-neutral-400">
           {{ formatShortDate(row.createdAt) }}
@@ -108,7 +130,7 @@ const getMyRecipientStatus = (share: ShareItem) => {
           </UTooltip>
           <UButton
             v-if="getMyRecipientStatus(row) === 'BELUM_DIBACA'"
-            label="Buka"
+            :label="row.accessType === 'SEKALI_LIHAT' ? 'Buka Sekali' : 'Buka'"
             icon="i-lucide-book-open"
             size="xs"
             @click="emit('open', row)"
