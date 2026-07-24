@@ -113,8 +113,18 @@ const handleOpenPdf = async (share: any) => {
     } else {
       pdfViewerUrl.value = '';
     }
-  } catch {
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || '';
     pdfViewerUrl.value = '';
+    showPdfViewer.value = false;
+    useToast().add({
+      title: 'Tidak dapat membuka',
+      description: msg.includes('sekali') || msg.includes('ditutup')
+        ? 'Anda hanya dapat membuka naskah ini sekali. Akses sudah ditutup.'
+        : msg || 'Gagal membuka naskah',
+      color: 'error',
+    });
+    loadData();
   } finally {
     isLoadingPdf.value = false;
   }
@@ -281,7 +291,7 @@ onMounted(() => { loadData(); });
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen...</p>
             </div>
           </div>
-          <iframe v-if="pdfViewerUrl" :src="pdfViewerUrl" class="w-full h-full border-none" />
+          <iframe v-if="pdfViewerUrl" :key="pdfViewerUrl" :src="pdfViewerUrl" class="w-full h-full border-none" />
           <div v-else-if="!isLoadingPdf" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
             <Icon name="i-lucide-file-text" class="w-12 h-12 opacity-30" />
             <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>

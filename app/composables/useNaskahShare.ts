@@ -21,6 +21,9 @@ export interface ShareItem {
   pemberiNama: string;
   pemberiPositionText: string;
   catatan: string | null;
+  accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU';
+  durationDays?: number | null;
+  expiresAt?: string | null;
   status: 'AKTIF' | 'DICABUT';
   revokedAt?: string | null;
   revokedReason?: string | null;
@@ -95,13 +98,22 @@ export function useNaskahShare() {
   };
 
   // ── Create share ────────────────────────────────
-  const createShare = async (naskahId: string, recipientIds: string[], catatan?: string) => {
+  const createShare = async (
+    naskahId: string,
+    recipientIds: string[],
+    catatan?: string,
+    accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU',
+    durationDays?: number,
+  ) => {
     try {
+      const payload: any = { naskahId, recipientIds, catatan: catatan || undefined };
+      if (accessType) payload.accessType = accessType;
+      if (accessType === 'RENTANG_WAKTU' && durationDays) payload.durationDays = durationDays;
       const res = await apiPost<{
         success: boolean;
         data: any;
         message: string;
-      }>('/naskah-share', { naskahId, recipientIds, catatan: catatan || undefined });
+      }>('/naskah-share', payload);
       clearApiCache('/naskah-share');
       return res;
     } catch (err: any) {
@@ -154,6 +166,8 @@ export function useNaskahShare() {
           jenis: string;
           pemberi: { id: string; nama: string; positionText: string };
           sharedAt: string;
+          accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU';
+          expiresAt?: string | null;
           pdfUrl: string | null;
         };
       }>(`/naskah-share/${shareId}/open`);
