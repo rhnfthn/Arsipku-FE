@@ -24,7 +24,7 @@ export interface ShareItem {
   accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU';
   durationDays?: number | null;
   expiresAt?: string | null;
-  status: 'AKTIF' | 'DICABUT';
+  status: 'AKTIF' | 'BERAKHIR';
   revokedAt?: string | null;
   revokedReason?: string | null;
   createdAt: string;
@@ -61,6 +61,7 @@ export function useNaskahShare() {
     search?: string;
     status?: string;
     jenis?: string;
+    sort?: 'ASC' | 'DESC';
   } = {}) => {
     pending.value = true;
     error.value = null;
@@ -72,6 +73,7 @@ export function useNaskahShare() {
       if (params.search) query.set('search', params.search);
       if (params.status) query.set('status', params.status);
       if (params.jenis) query.set('jenis', params.jenis);
+      if (params.sort) query.set('sort', params.sort);
 
       const res = await apiGet<{
         success: boolean;
@@ -185,7 +187,7 @@ export function useNaskahShare() {
       // Update local state
       const item = sharedToMe.value.find((s) => s.id === shareId);
       if (item) {
-        const recipient = item.recipients.find((r) => r.status === 'BELUM_DIBACA');
+        const recipient = item.recipients.find((r) => r.status === 'TERKIRIM');
         if (recipient) recipient.status = 'DIBACA';
       }
     } catch (err: any) {
