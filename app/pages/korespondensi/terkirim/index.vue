@@ -1655,6 +1655,13 @@ onUnmounted(() => {
                         </button>
                       </UTooltip>
                     </UDropdownMenu>
+                    <UTooltip :text="$t('berbagi', 'Bagikan')">
+                      <UIcon
+                        name="i-heroicons-share"
+                        class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600 font-bold"
+                        @click.stop="handleShare(mail)"
+                      />
+                    </UTooltip>
                   </div>
                 </div>
               </div>
