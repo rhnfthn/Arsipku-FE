@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { RotateCw, ArrowUpDown, Search, X } from 'lucide-vue-next';
+import { RotateCcw, ChevronDown, Search } from 'lucide-vue-next';
 import SharedByMeTab from '~/components/shared/SharedByMeTab.vue';
 
 definePageMeta({
@@ -17,6 +17,7 @@ const {
   pagination,
   fetchShares,
   openNaskah,
+  getShareDetail,
 } = useNaskahShare();
 
 // ── Breadcrumbs ──────────────────────────────────────────────────────────────
@@ -34,6 +35,25 @@ const currentPage = ref(1);
 
 const showSortMenu = ref(false);
 const showPageMenu = ref(false);
+const showStatusDropdown = ref(false);
+
+const filterStatus = ref('Semua');
+const statusOptions = [
+  { label: 'Semua Status', value: 'Semua' },
+  { label: 'Aktif', value: 'AKTIF' },
+  { label: 'Berakhir', value: 'BERAKHIR' },
+];
+
+const filterStatusLabel = computed(() =>
+  statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
+);
+
+const selectStatus = (val: string) => {
+  filterStatus.value = val;
+  showStatusDropdown.value = false;
+  currentPage.value = 1;
+  loadData();
+};
 
 const sortOptions = [
   { label: 'Terbaru', value: 'Terbaru' },
@@ -42,11 +62,6 @@ const sortOptions = [
 const pageOptions = [10, 25, 50, 100];
 
 // ── Modals ───────────────────────────────────────────────────────────────────
-const showShareModal = ref(false);
-const shareModalNaskahId = ref('');
-const shareModalNaskahPerihal = ref('');
-const shareModalNaskahNomor = ref('');
-
 const showRevokeModal = ref(false);
 const revokeShareId = ref('');
 const revokeRecipientId = ref('');
@@ -72,6 +87,8 @@ const loadData = async () => {
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value || undefined,
+      status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
+      sort: activeSortLabel.value === 'Terlama' ? 'ASC' : 'DESC',
     });
   } finally {
     isRefreshing.value = false;
@@ -111,8 +128,13 @@ const handleRevoke = (payload: { share: any; recipientId: string; recipientName:
   showRevokeModal.value = true;
 };
 
-const handleViewDetail = (share: any) => {
-  detailShare.value = share;
+const handleViewDetail = async (share: any) => {
+  try {
+    const freshData = await getShareDetail(share.id);
+    detailShare.value = freshData || share;
+  } catch {
+    detailShare.value = share;
+  }
   showDetailModal.value = true;
 };
 
@@ -155,108 +177,141 @@ onMounted(() => { loadData(); });
 
     <!-- Main Container -->
     <div
-      class="w-full flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors"
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <!-- ── TOOLBAR ─────────────────────────────────────────────────────── -->
-      <div
-        class="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 shrink-0 z-30 min-w-0 glass-panel bg-white dark:bg-gray-800 transition-colors"
-      >
-        <!-- LEFT: Refresh -->
-        <div class="flex items-center gap-2 shrink-0 min-w-0">
-          <UTooltip text="Muat ulang">
-            <button
-              @click="handleRefresh"
-              class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-            >
-              <RotateCw
-                class="w-4 h-4 transition-transform duration-300"
-                :class="{ 'animate-spin': isRefreshing }"
-              />
-            </button>
-          </UTooltip>
-        </div>
+      <!-- TOOLBAR -->
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 p-3.5">
+        <!-- ROWS PER PAGE + STATUS FILTER + SEARCH -->
+        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
+          <!-- ROWS PER PAGE DROPDOWN -->
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <button
+                type="button"
+                @click.stop="showPageMenu = !showPageMenu"
+                class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+              >
+                <span>{{ itemsPerPage }}</span>
+                <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showPageMenu }" />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="showPageMenu"
+                  class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                >
+                  <button
+                    v-for="n in pageOptions"
+                    :key="n"
+                    type="button"
+                    @click.stop="selectPageSize(n)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                      itemsPerPage === n
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ]"
+                  >
+                    {{ n }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
+          </div>
 
-        <!-- RIGHT: Search + Sort + Page Size -->
-        <div class="flex items-center gap-1 shrink-0 min-w-0">
-          <!-- Search -->
+          <!-- STATUS FILTER -->
           <div class="relative">
-            <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <button
+              type="button"
+              @click.stop="showStatusDropdown = !showStatusDropdown"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[130px] justify-between hover:border-primary transition-all"
+            >
+              <span>{{ filterStatusLabel }}</span>
+              <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showStatusDropdown }" />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="showStatusDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectStatus(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    filterStatus === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- SEARCH -->
+          <div class="relative flex-1">
             <input
               v-model="searchQuery"
               type="text"
               placeholder="Cari perihal atau nomor..."
-              class="pl-8 pr-8 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary w-48 sm:w-56 transition-colors"
+              class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+          </div>
+        </div>
+
+        <!-- SORT + REFRESH -->
+        <div class="flex items-center gap-2">
+          <!-- SORT -->
+          <div class="relative">
             <button
-              v-if="searchQuery"
-              @click="searchQuery = ''"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              type="button"
+              @click.stop="showSortMenu = !showSortMenu"
+              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[100px] justify-between hover:border-primary transition-all"
             >
-              <X class="w-3.5 h-3.5" />
+              <span>{{ activeSortLabel }}</span>
+              <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showSortMenu }" />
             </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="showSortMenu"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="opt in sortOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectSortOption(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    activeSortLabel === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
           </div>
 
-          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden md:block" />
-
-          <!-- Sort -->
-          <div class="relative">
-            <UTooltip text="Urutkan">
-              <button
-                @click="showSortMenu = !showSortMenu"
-                class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-              >
-                <ArrowUpDown class="w-4 h-4" />
-              </button>
-            </UTooltip>
-            <div v-if="showSortMenu" @click="showSortMenu = false" class="fixed inset-0 z-40 bg-transparent" />
-            <div
-              v-if="showSortMenu"
-              class="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-            >
-              <button
-                v-for="opt in sortOptions"
-                :key="opt.value"
-                @click="selectSortOption(opt.value)"
-                class="w-full text-left px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between transition-colors"
-              >
-                <span :class="activeSortLabel === opt.value ? 'font-semibold text-primary' : ''">{{ opt.label }}</span>
-                <svg v-if="activeSortLabel === opt.value" class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Page Size -->
-          <div class="relative">
-            <UTooltip text="Item per halaman">
-              <button
-                @click="showPageMenu = !showPageMenu"
-                class="flex items-center gap-1 p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors text-xs"
-              >
-                {{ itemsPerPage }}
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-              </button>
-            </UTooltip>
-            <div v-if="showPageMenu" @click="showPageMenu = false" class="fixed inset-0 z-40 bg-transparent" />
-            <div
-              v-if="showPageMenu"
-              class="absolute top-full right-0 mt-1 w-20 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-150"
-            >
-              <button
-                v-for="opt in pageOptions"
-                :key="opt"
-                @click="selectPageSize(opt)"
-                class="w-full text-center px-4 py-2 text-[13px] text-neutral-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
-                :class="itemsPerPage === opt ? 'font-semibold text-primary' : ''"
-              >
-                {{ opt }}
-              </button>
-            </div>
-          </div>
+          <!-- REFRESH BUTTON -->
+          <button
+            @click="handleRefresh"
+            :disabled="isRefreshing"
+            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
+            Refresh
+          </button>
         </div>
       </div>
 
       <!-- ── CONTENT ─────────────────────────────────────────────────────── -->
-      <div class="bg-white dark:bg-gray-900">
+      <div class="overflow-x-auto">
         <SharedByMeTab
           :shares="sharedByMe"
           :loading="pending"
@@ -266,12 +321,13 @@ onMounted(() => { loadData(); });
           @update:page="currentPage = $event"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
+          @revoke="handleRevoke"
           @refresh="handleRefresh"
         />
       </div>
     </div>
 
-    <!-- Revoke Modal -->
+    <!-- Revoke Single Recipient Modal -->
     <SharedShareRevokeModal
       v-if="showRevokeModal"
       :share-id="revokeShareId"
@@ -328,3 +384,15 @@ onMounted(() => { loadData(); });
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.2s ease;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+</style>
