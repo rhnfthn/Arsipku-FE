@@ -32,6 +32,7 @@ const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/naskah-dinas(?:[/?#]|$)/,
   /^\/search\/v3(?:[/?#]|$)/,
   /^\/mail-service\/logs(?:[/?#]|$)/,
+  /^\/arsip-dinamis(?:[/?#]|$)/,
 ];
 
 const normalizeApiUrl = (url: string): string => {
