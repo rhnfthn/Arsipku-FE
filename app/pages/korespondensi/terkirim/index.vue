@@ -31,6 +31,8 @@ import {
   Calendar as CalendarIcon,
   Eye,
   X,
+  FolderPlus,
+  Folder,
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { useSirkulasi } from '~/composables/useTerkirim';
@@ -63,6 +65,81 @@ const {
   toggleFlag,
 } = useSirkulasi();
 const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
+const { getBerkasList, addNaskahToBerkas, getBerkasStatusByNaskah } = useArsipDinamis();
+const { canReadBerkasStatus } = useArsipDinamisPermission();
+
+// ── Masukkan ke Berkas ───────────────────────────────────────────────────────
+const showAddToBerkasModal = ref(false);
+const selectedNaskahForBerkas = ref<any>(null);
+const berkasListForModal = ref<any[]>([]);
+const selectedBerkasId = ref('');
+const isAddingToBerkas = ref(false);
+const berkasStatusMap = ref<Record<string, any>>({});
+
+const fetchBerkasStatus = async (rows: any[]) => {
+  if (!canReadBerkasStatus.value || rows.length === 0) return;
+  const ids = rows.map((r: any) => r.naskahId).filter(Boolean);
+  if (!ids.length) return;
+  try {
+    const res: any = await getBerkasStatusByNaskah(ids);
+    const arr: any[] = res?.data ?? res;
+    const map: Record<string, any> = {};
+    arr.forEach((x: any) => { map[x.naskah_id] = x; });
+    berkasStatusMap.value = map;
+  } catch {
+    berkasStatusMap.value = {};
+  }
+};
+
+const folderMenuItems = (row: any) => {
+  const items = [
+    { label: 'Tambah ke Berkas', icon: 'i-lucide-folder-plus', onSelect: () => openAddToBerkasModal(row) },
+    { label: 'Buat Berkas Baru', icon: 'i-lucide-plus', onSelect: () => navigateTo('/kelola/pemeliharaan/pemberkasan/berkas-saya') },
+  ];
+  const status = berkasStatusMap.value[row.naskahId];
+  if (status) {
+    items.push({ label: 'Lihat Detail Berkas', icon: 'i-lucide-eye', onSelect: () => navigateTo(`/kelola/pemeliharaan/pemberkasan/${status.berkas_id}`) });
+  }
+  return items;
+};
+
+const openAddToBerkasModal = async (mail: any) => {
+  selectedNaskahForBerkas.value = mail;
+  selectedBerkasId.value = '';
+  showAddToBerkasModal.value = true;
+  try {
+    const data: any = await getBerkasList({ status: 'aktif', limit: 100 });
+    // getBerkasList mengembalikan envelope { success, data: { data: [...], meta } };
+    // ambil array-nya (defensif terhadap variasi envelope) — bukan object pagination.
+    berkasListForModal.value =
+      data?.data?.data && Array.isArray(data.data.data)
+        ? data.data.data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+  } catch (e) {
+    console.error('Gagal memuat daftar berkas:', e);
+  }
+};
+
+const handleAddToBerkas = async () => {
+  if (!selectedBerkasId.value || !selectedNaskahForBerkas.value) return;
+  isAddingToBerkas.value = true;
+  try {
+    await addNaskahToBerkas(selectedBerkasId.value, {
+      naskah_ids: [selectedNaskahForBerkas.value.naskahId],
+      sumber: 'terkirim',
+    });
+    toast.add({ title: 'Naskah berhasil ditambahkan ke berkas', color: 'success' });
+    showAddToBerkasModal.value = false;
+  } catch (e: any) {
+    toast.add({ title: e?.message || 'Gagal menambahkan ke berkas', color: 'error' });
+  } finally {
+    isAddingToBerkas.value = false;
+  }
+};
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 const isRefreshing = ref(false);
@@ -246,6 +323,7 @@ const refreshData = async () => {
     }
 
     await fetchSentBox(params);
+    await fetchBerkasStatus(items.value || []);
   } catch (err) {
     console.error('Gagal refresh data terkirim:', err);
   } finally {
@@ -1495,6 +1573,24 @@ onUnmounted(() => {
                     </UTooltip>
                   </div>
 
+                  <!-- Status Berkas -->
+                  <div class="hidden md:flex shrink-0 w-[100px] justify-start items-center">
+                    <span
+                      v-if="berkasStatusMap[mail.naskahId]"
+                      class="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+                    >
+                      <Folder class="h-3.5 w-3.5" />
+                      {{ berkasStatusMap[mail.naskahId].kode_berkas }}
+                    </span>
+                    <span
+                      v-else
+                      class="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                      Belum
+                    </span>
+                  </div>
+
                   <div
                     class="shrink-0 w-full md:w-[160px] flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-0 pt-0.5"
                   >
@@ -1549,6 +1645,16 @@ onUnmounted(() => {
                         @click.stop="handleToggleFlag(mail, 'arsip')"
                       />
                     </UTooltip>
+                    <UDropdownMenu :items="folderMenuItems(mail)">
+                      <UTooltip text="Masukkan ke Berkas">
+                        <button
+                          class="inline-flex rounded-md p-1 text-neutral-300 dark:text-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                          @click.stop
+                        >
+                          <FolderPlus class="w-4 h-4" />
+                        </button>
+                      </UTooltip>
+                    </UDropdownMenu>
                   </div>
                 </div>
               </div>
@@ -1567,6 +1673,40 @@ onUnmounted(() => {
       @assign="assignLabelToSelected"
       @success="selectedIds.clear()"
     />
+
+    <!-- Modal Masukkan ke Berkas -->
+    <UModal v-model:open="showAddToBerkasModal">
+      <template #header>
+        <h3 class="text-lg font-semibold">Masukkan ke Berkas</h3>
+      </template>
+      <template #default>
+        <div class="p-4 space-y-4">
+          <p v-if="selectedNaskahForBerkas" class="text-sm text-gray-500">
+            Naskah: <span class="font-medium text-gray-900 dark:text-white">{{ selectedNaskahForBerkas.subject }}</span>
+          </p>
+          <UFormField label="Pilih Berkas Aktif">
+            <USelect
+              v-model="selectedBerkasId"
+              :items="berkasListForModal.map(b => ({ label: `${b.kodeBerkas ?? b.kode_berkas ?? '-'} — ${b.judulBerkas ?? b.judul_berkas ?? '-'}`, value: b.id }))"
+              placeholder="Pilih berkas tujuan"
+            />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton variant="ghost" @click="showAddToBerkasModal = false">Batal</UButton>
+          <UButton
+            color="primary"
+            :disabled="!selectedBerkasId"
+            :loading="isAddingToBerkas"
+            @click="handleAddToBerkas"
+          >
+            Tambahkan
+          </UButton>
+        </div>
+      </template>
+    </UModal>
 
     <!-- Modal Status Pembaca -->
     <ClientOnly>
