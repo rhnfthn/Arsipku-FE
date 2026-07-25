@@ -14,7 +14,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:page', page: number): void;
   (e: 'open', share: ShareItem): void;
-  (e: 'view', share: ShareItem): void;  (e: 'open-pdf', share: ShareItem): void;  (e: 'refresh'): void;
+  (e: 'view', share: ShareItem): void;
+  (e: 'open-pdf', share: ShareItem): void;
+  (e: 'refresh'): void;
 }>();
 
 const columns = computed(() => [
@@ -28,7 +30,7 @@ const columns = computed(() => [
 ]);
 
 const getMyRecipientStatus = (share: ShareItem) => {
-  return share.recipients?.[0]?.status || 'BELUM_DIBACA';
+  return share.recipients?.[0]?.status || 'TERKIRIM';
 };
 </script>
 
@@ -42,7 +44,7 @@ const getMyRecipientStatus = (share: ShareItem) => {
     >
       <template #cell-naskahPerihal="{ row }">
         <div class="max-w-[260px]">
-          <p class="text-sm font-medium text-neutral-900 dark:text-white truncate">
+          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
             {{ row.naskahPerihal || '(Tanpa perihal)' }}
           </p>
         </div>
@@ -62,7 +64,7 @@ const getMyRecipientStatus = (share: ShareItem) => {
       </template>
 
       <template #cell-naskahNomor="{ row }">
-        <span class="text-xs text-neutral-600 dark:text-neutral-400 font-mono">
+        <span class="text-xs text-gray-600 dark:text-gray-400 font-mono">
           {{ row.naskahNomor || '-' }}
         </span>
       </template>
@@ -75,35 +77,33 @@ const getMyRecipientStatus = (share: ShareItem) => {
             </span>
           </div>
           <div class="min-w-0">
-            <p class="text-sm text-neutral-900 dark:text-white truncate">{{ row.pemberiNama }}</p>
-            <p class="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">{{ row.pemberiPositionText }}</p>
+            <p class="text-sm text-gray-900 dark:text-white truncate">{{ row.pemberiNama }}</p>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ row.pemberiPositionText }}</p>
           </div>
         </div>
       </template>
 
       <template #cell-accessType="{ row }">
-        <div class="flex flex-col items-center gap-1">
+        <div class="flex items-center justify-center">
           <span
             v-if="row.accessType === 'SEKALI_LIHAT'"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 whitespace-nowrap"
           >
             <UIcon name="i-lucide-eye" class="w-3 h-3" />
             Sekali Lihat
           </span>
-          <template v-else>
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-              <UIcon name="i-lucide-calendar" class="w-3 h-3" />
-              {{ row.durationDays || '-' }} hari
-            </span>
-            <span v-if="row.expiresAt" class="text-[9px] text-neutral-400 dark:text-neutral-500">
-              s/d {{ formatShortDate(row.expiresAt) }}
-            </span>
-          </template>
+          <span
+            v-else
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap"
+          >
+            <UIcon name="i-lucide-calendar" class="w-3 h-3" />
+            {{ row.durationDays || '-' }} hari
+          </span>
         </div>
       </template>
 
       <template #cell-createdAt="{ row }">
-        <span class="text-xs text-neutral-500 dark:text-neutral-400">
+        <span class="text-xs text-gray-500 dark:text-gray-400">
           {{ formatShortDate(row.createdAt) }}
         </span>
       </template>
@@ -121,6 +121,7 @@ const getMyRecipientStatus = (share: ShareItem) => {
           </UTooltip>
           <UTooltip text="Buka PDF">
             <UButton
+              v-if="row.accessType !== 'SEKALI_LIHAT' || getMyRecipientStatus(row) === 'TERKIRIM'"
               icon="i-lucide-file-text"
               color="success"
               variant="ghost"
@@ -128,13 +129,6 @@ const getMyRecipientStatus = (share: ShareItem) => {
               @click="emit('open-pdf', row)"
             />
           </UTooltip>
-          <UButton
-            v-if="getMyRecipientStatus(row) === 'BELUM_DIBACA'"
-            :label="row.accessType === 'SEKALI_LIHAT' ? 'Buka Sekali' : 'Buka'"
-            icon="i-lucide-book-open"
-            size="xs"
-            @click="emit('open', row)"
-          />
         </div>
       </template>
     </DataTable>
