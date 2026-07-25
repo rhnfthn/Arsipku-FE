@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { User, Calendar, StickyNote, CheckCircle2, Circle, FileText, ShieldOff } from 'lucide-vue-next';
+import { ShieldOff } from 'lucide-vue-next';
+import Modal from '~/components/Modal.vue';
+import Heading from '~/components/Heading.vue';
 import type { ShareItem } from '~/composables/useNaskahShare';
 import { getCategoryStyle, getCategoryFullName, formatFullDateTime } from '~/utils/mail-helpers';
 
@@ -26,28 +28,25 @@ watch(isOpen, (val) => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="isOpen"
-    :ui="{
-      content: 'w-full sm:max-w-xl shadow-2xl',
-      overlay: 'bg-black/50 backdrop-blur-sm',
-      header: 'border-b border-gray-100 dark:border-gray-800 px-0 py-0',
-      body: 'px-0 py-0',
-      footer: 'border-t border-gray-100 dark:border-gray-800 px-6 py-3.5',
-    }"
-    @close="handleClose"
-  >
-    <template #header>
-      <div class="px-6 pt-5 pb-4">
-        <div class="flex items-start gap-3">
-          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/40 dark:to-primary-800/20 flex items-center justify-center shrink-0 shadow-sm">
-            <FileText class="w-5 h-5 text-primary-500 dark:text-primary-400" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <h3 class="text-base font-bold text-gray-900 dark:text-white leading-snug">
+  <Teleport to="body">
+    <Modal v-model="isOpen" :hideDefaultFooter="true" size="xl">
+      <template #title>
+        <div class="mt-5 ml-5 mb-3">
+          <Heading variant="heading9b" class="font-bold text-sm dark:text-white">
+            Detail Naskah Dibagikan
+          </Heading>
+        </div>
+      </template>
+
+      <div class="px-3 max-h-[calc(100vh-150px)] overflow-y-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mt-2">
+          <!-- Naskah -->
+          <div class="md:col-span-2">
+            <p class="text-gray-600 dark:text-gray-400 mb-1">Naskah</p>
+            <p class="font-medium text-gray-900 dark:text-white">
               {{ share.naskahPerihal || '(Tanpa perihal)' }}
-            </h3>
-            <div class="flex items-center gap-2 mt-1.5">
+            </p>
+            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
               <span
                 :class="[
                   getCategoryStyle(share.naskahJenis),
@@ -59,153 +58,117 @@ watch(isOpen, (val) => {
               <span v-if="share.naskahNomor" class="text-[11px] text-gray-400 dark:text-gray-500 font-mono">
                 {{ share.naskahNomor }}
               </span>
+              <SharedShareBadge :status="share.status" size="xs" />
             </div>
           </div>
-        </div>
-      </div>
-    </template>
 
-    <template #body>
-      <div class="px-6 py-4 max-h-[60vh] overflow-y-auto space-y-4">
-        <!-- Info Cards -->
-        <div class="grid grid-cols-2 gap-3">
-          <!-- Pemberi -->
-          <div class="col-span-2 sm:col-span-1 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50">
-            <div class="flex items-center gap-2 mb-2">
-              <div class="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
-                <User class="w-3 h-3 text-primary-500 dark:text-primary-400" />
-              </div>
-              <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Pemberi Akses</p>
-            </div>
-            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ share.pemberiNama || '-' }}</p>
-            <p v-if="share.pemberiPositionText" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{{ share.pemberiPositionText }}</p>
+          <!-- Pemberi Akses -->
+          <div>
+            <p class="text-gray-600 dark:text-gray-400 mb-1">Pemberi Akses</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ share.pemberiNama || '-' }}</p>
+            <p v-if="share.pemberiPositionText" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ share.pemberiPositionText }}</p>
           </div>
 
-          <!-- Tanggal -->
-          <div class="col-span-2 sm:col-span-1 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50">
-            <div class="flex items-center gap-2 mb-2">
-              <div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                <Calendar class="w-3 h-3 text-blue-500 dark:text-blue-400" />
-              </div>
-              <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tanggal Dibagikan</p>
-            </div>
-            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatFullDateTime(share.createdAt) }}</p>
+          <!-- Tanggal Dibagikan -->
+          <div>
+            <p class="text-gray-600 dark:text-gray-400 mb-1">Tanggal Dibagikan</p>
+            <p class="font-medium text-gray-900 dark:text-white">{{ formatFullDateTime(share.createdAt) }}</p>
           </div>
 
           <!-- Jenis Akses -->
-          <div class="col-span-2 p-3 rounded-xl border" :class="share.accessType === 'SEKALI_LIHAT'
-            ? 'bg-amber-50/60 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30'
-            : 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30'">
-            <div class="flex items-center gap-2 mb-1.5">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center"
-                :class="share.accessType === 'SEKALI_LIHAT' ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-blue-100 dark:bg-blue-900/40'">
-                <UIcon :name="share.accessType === 'SEKALI_LIHAT' ? 'i-lucide-eye' : 'i-lucide-calendar'"
-                  class="w-3 h-3"
-                  :class="share.accessType === 'SEKALI_LIHAT' ? 'text-amber-500 dark:text-amber-400' : 'text-blue-500 dark:text-blue-400'" />
-              </div>
-              <p class="text-[10px] font-semibold uppercase tracking-wider"
-                :class="share.accessType === 'SEKALI_LIHAT' ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'">
-                Jenis Akses
-              </p>
-            </div>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+          <div class="md:col-span-2">
+            <p class="text-gray-600 dark:text-gray-400 mb-1">Jenis Akses</p>
+            <p class="font-medium text-gray-900 dark:text-white">
               {{ share.accessType === 'SEKALI_LIHAT' ? 'Sekali Lihat' : `Rentang Waktu — ${share.durationDays || '-'} hari` }}
             </p>
-            <p v-if="share.expiresAt" class="text-[11px] mt-0.5"
-              :class="share.accessType === 'SEKALI_LIHAT' ? 'text-amber-500 dark:text-amber-400' : 'text-blue-500 dark:text-blue-400'">
+            <p v-if="share.expiresAt" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Berlaku hingga {{ formatFullDateTime(share.expiresAt) }}
             </p>
-            <p v-if="share.accessType === 'SEKALI_LIHAT'" class="text-[11px] text-amber-500 dark:text-amber-400 mt-0.5">
+            <p v-if="share.accessType === 'SEKALI_LIHAT'" class="text-xs text-amber-500 dark:text-amber-400 mt-1">
               Penerima hanya dapat membuka naskah satu kali
             </p>
           </div>
+
+          <!-- Catatan -->
+          <div v-if="share.catatan" class="md:col-span-2">
+            <p class="text-gray-600 dark:text-gray-400 mb-1">Catatan</p>
+            <p class="font-medium text-gray-700 dark:text-gray-300 leading-relaxed">{{ share.catatan }}</p>
+          </div>
         </div>
 
-        <!-- Catatan -->
-        <div v-if="share.catatan" class="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
-          <div class="flex items-center gap-2 mb-1.5">
-            <StickyNote class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-            <p class="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Catatan</p>
-          </div>
-          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ share.catatan }}</p>
-        </div>
-
-        <!-- Status Penerima -->
-        <div v-if="share.recipients && share.recipients.length">
-          <div class="flex items-center gap-2 mb-2.5">
-            <div class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-              <User class="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
-            </div>
-            <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Penerima ({{ share.recipients.length }})
-            </p>
-          </div>
-          <div class="space-y-2">
-            <div
-              v-for="recipient in share.recipients"
-              :key="recipient.id"
-              class="flex items-center gap-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50"
-            >
-              <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                :class="recipient.status === 'DICABUT' ? 'bg-red-100 dark:bg-red-900/40' : (recipient.status === 'DIBACA' || recipient.status === 'DIBUKA') ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-gray-200 dark:bg-gray-700'"
-              >
-                <span class="text-[11px] font-bold"
-                  :class="recipient.status === 'DICABUT' ? 'text-red-600 dark:text-red-400' : (recipient.status === 'DIBACA' || recipient.status === 'DIBUKA') ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'"
+        <!-- Penerima Table -->
+        <!-- Penerima Table (hanya untuk pengirim) -->
+        <div v-if="props.isSender && share.recipients && share.recipients.length" class="mt-6 mb-5 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead class="bg-primary dark:bg-primary-700 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th class="p-2 text-left text-white font-semibold">NO</th>
+                  <th class="p-2 text-left font-semibold text-white">NAMA</th>
+                  <th class="p-2 text-left font-semibold text-white">JABATAN</th>
+                  <th class="p-2 text-center font-semibold text-white">STATUS</th>
+                  <th class="p-2 text-center font-semibold text-white">AKSI</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(recipient, i) in share.recipients"
+                  :key="recipient.id"
+                  class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  {{ recipient.nama?.charAt(0)?.toUpperCase() }}
-                </span>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ recipient.nama }}</p>
-                <p v-if="recipient.positionText" class="text-[10px] text-gray-400 dark:text-gray-500 truncate">{{ recipient.positionText }}</p>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <!-- Status badge (only for sender) -->
-                <template v-if="props.isSender">
-                  <!-- DIBACA / DIBUKA = sudah baca / buka PDF -->
-                  <template v-if="recipient.status === 'DIBACA' || recipient.status === 'DIBUKA'">
-                    <CheckCircle2 class="w-4 h-4 text-emerald-500" />
-                    <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Dibaca</span>
-                  </template>
-                  <!-- DICABUT = akses dicabut -->
-                  <template v-else-if="recipient.status === 'DICABUT'">
-                    <ShieldOff class="w-4 h-4 text-red-400 dark:text-red-500" />
-                    <span class="text-[10px] font-semibold text-red-500 dark:text-red-400">Dicabut</span>
-                  </template>
-                  <!-- BELUM_DIBACA = belum dibaca -->
-                  <template v-else>
-                    <Circle class="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                    <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Terkirim</span>
-                  </template>
-                </template>
-                <!-- Revoke button per recipient -->
-                <UTooltip v-if="props.isSender && share.status === 'AKTIF' && recipient.status !== 'DICABUT'" text="Cabut akses">
-                  <UButton
-                    icon="i-lucide-shield-off"
-                    color="error"
-                    variant="ghost"
-                    size="xs"
-                    class="ml-1"
-                    @click="emit('revoke-recipient', { share, recipientId: recipient.recipientId || recipient.id, recipientName: recipient.nama })"
-                  />
-                </UTooltip>
-              </div>
-            </div>
+                  <td class="p-2">
+                    <span class="text-gray-900 dark:text-white">{{ i + 1 }}</span>
+                  </td>
+                  <td class="p-2">
+                    <span class="font-medium text-gray-900 dark:text-white">{{ recipient.nama || '-' }}</span>
+                  </td>
+                  <td class="p-2">
+                    <span class="text-gray-500 dark:text-gray-400">{{ recipient.positionText || '-' }}</span>
+                  </td>
+                  <td class="p-2 text-center">
+                    <span
+                      class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                      :class="recipient.status === 'DIBACA' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : recipient.status === 'BERAKHIR' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'"
+                    >
+                      {{ recipient.status === 'DIBACA' ? 'Dibaca' : recipient.status === 'BERAKHIR' ? 'Berakhir' : 'Terkirim' }}
+                    </span>
+                  </td>
+                  <td class="p-2 text-center">
+                    <button
+                      v-if="share.status === 'AKTIF' && recipient.status !== 'BERAKHIR'"
+                      @click="emit('revoke-recipient', { share, recipientId: recipient.recipientId || recipient.id, recipientName: recipient.nama })"
+                      class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 inline-flex items-center gap-1 text-[10px] font-medium"
+                    >
+                      <ShieldOff class="w-3 h-3" />
+                      Akhiri
+                    </button>
+                    <span v-else class="text-xs text-gray-400">-</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
-    </template>
 
-    <template #footer>
-      <div class="flex justify-end">
-        <UButton
-          label="Tutup"
-          variant="outline"
-          color="neutral"
-          size="sm"
-          @click="handleClose"
-        />
+        <!-- Info Berakhir -->
+        <div v-if="share.status === 'BERAKHIR'" class="mt-4 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+          <p class="text-sm font-medium text-red-800 dark:text-red-300">Akses Berakhir</p>
+          <p class="text-xs text-red-600 dark:text-red-400 mt-1">
+            <span v-if="share.revokedAt">{{ formatFullDateTime(share.revokedAt) }}</span>
+            <span v-if="share.revokedReason"> — {{ share.revokedReason }}</span>
+          </p>
+        </div>
       </div>
-    </template>
-  </UModal>
+
+      <!-- Footer -->
+      <div class="flex justify-end px-5 py-3 border-t border-gray-200 dark:border-gray-700">
+        <button
+          @click="handleClose"
+          class="px-4 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+        >
+          Tutup
+        </button>
+      </div>
+    </Modal>
+  </Teleport>
 </template>
