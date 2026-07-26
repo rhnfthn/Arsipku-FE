@@ -121,6 +121,25 @@ const toggleVerifikator = (persnum: number) => {
   }
 };
 
+const getVerifikator = (persnum: number) => {
+  return verifikatorList.value.find((x) => x.persnum === persnum);
+};
+
+const availableVerifikator = computed(() => {
+  return verifikatorList.value.filter(
+    (v) => !selectedVerifikatorPersnums.value.includes(v.persnum),
+  );
+});
+
+const onVerifikatorSelect = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  const persnum = Number(target.value);
+  if (persnum && !isNaN(persnum)) {
+    toggleVerifikator(persnum);
+    target.value = '';
+  }
+};
+
 const addPenerima = () => {
   const persnum = Number(penerimaInput.value.trim());
   if (!persnum || isNaN(persnum)) {
@@ -385,42 +404,59 @@ onMounted(() => {
           Verifikator Pengusul <span class="text-red-500">*</span>
           <span class="ml-1 text-xs text-gray-400">(pilih 1-3 managerial di divisi Anda)</span>
         </label>
+
+        <!-- Selected verifikator chips -->
+        <div v-if="selectedVerifikatorPersnums.length > 0" class="flex flex-wrap gap-2 mb-2">
+          <span
+            v-for="(persnum, idx) in selectedVerifikatorPersnums"
+            :key="persnum"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+          >
+            <span
+              class="w-1.5 h-1.5 rounded-full"
+              :class="{
+                'bg-blue-500': getVerifikator(persnum)?.levelJabatan === 'AVP',
+                'bg-purple-500': getVerifikator(persnum)?.levelJabatan === 'VP',
+                'bg-red-500': getVerifikator(persnum)?.levelJabatan === 'EVP',
+              }"
+            ></span>
+            <span>{{ idx + 1 }}. {{ getVerifikator(persnum)?.nama || `Persnum ${persnum}` }}</span>
+            <span class="text-gray-400">·</span>
+            <span class="text-gray-500">{{ getVerifikator(persnum)?.levelJabatan }}</span>
+            <button
+              type="button"
+              @click="toggleVerifikator(persnum)"
+              class="ml-0.5 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </span>
+        </div>
+
+        <!-- Dropdown select -->
         <div v-if="verifikatorList.length === 0" class="text-sm text-gray-400 py-2">
           Tidak ada data managerial. Pastikan Anda memiliki akses.
         </div>
-        <div v-else class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-          <label
-            v-for="v in verifikatorList"
-            :key="v.persnum"
-            class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30"
-            :class="selectedVerifikatorPersnums.includes(v.persnum) ? 'bg-primary/5' : ''"
+        <div v-else-if="selectedVerifikatorPersnums.length < 3" class="relative">
+          <select
+            @change="onVerifikatorSelect($event)"
+            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
           >
-            <input
-              type="checkbox"
-              :checked="selectedVerifikatorPersnums.includes(v.persnum)"
-              @change="toggleVerifikator(v.persnum)"
-              class="w-4 h-4 text-primary rounded"
-            />
-            <div class="flex-1">
-              <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
-                {{ v.nama || `Persnum ${v.persnum}` }}
-              </div>
-              <div class="text-xs text-gray-500">
-                {{ v.jabatan || v.levelJabatan }} · {{ v.divisiNama || '-' }}
-              </div>
-            </div>
-            <span
-              class="px-2 py-0.5 rounded text-xs font-medium"
-              :class="{
-                'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': v.levelJabatan === 'AVP',
-                'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400': v.levelJabatan === 'VP',
-                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': v.levelJabatan === 'EVP',
-              }"
+            <option value="">+ Pilih verifikator ({{ selectedVerifikatorPersnums.length }}/3)...</option>
+            <option
+              v-for="v in availableVerifikator"
+              :key="v.persnum"
+              :value="v.persnum"
             >
-              {{ v.levelJabatan }}
-            </span>
-          </label>
+              {{ v.nama || `Persnum ${v.persnum}` }} — {{ v.jabatan || v.levelJabatan }} ({{ v.levelJabatan }})
+            </option>
+          </select>
         </div>
+        <p v-else class="text-xs text-amber-600 dark:text-amber-400">
+          Maksimal 3 verifikator terpilih. Hapus salah satu untuk menambah yang baru.
+        </p>
       </div>
 
       <!-- Penerima Akses Tambahan -->
