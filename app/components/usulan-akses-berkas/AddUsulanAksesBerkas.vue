@@ -11,7 +11,57 @@ const emit = defineEmits<{
 }>();
 
 const { fetchVerifikator, verifikatorList, createUsulan, pending } = useUsulanAksesBerkas();
+const { apiGet } = useApi();
 const toast = useToast();
+
+// ── Divisi list ───────────────────────────────────
+interface DivisiOption {
+  organization: number;
+  shortText: string | null;
+  longText: string | null;
+  abbreviation: string | null;
+}
+const divisiList = ref<DivisiOption[]>([]);
+const divisiLoading = ref(false);
+const divisiSearch = ref('');
+
+const filteredDivisi = computed(() => {
+  if (!divisiSearch.value.trim()) return divisiList.value;
+  const q = divisiSearch.value.toLowerCase();
+  return divisiList.value.filter((d) =>
+    (d.shortText || '').toLowerCase().includes(q) ||
+    (d.longText || '').toLowerCase().includes(q) ||
+    (d.abbreviation || '').toLowerCase().includes(q) ||
+    String(d.organization).includes(q)
+  );
+});
+
+const selectedDivisiLabel = computed(() => {
+  if (!divisiPemberiId.value) return '';
+  const d = divisiList.value.find((x) => x.organization === divisiPemberiId.value);
+  if (!d) return String(divisiPemberiId.value);
+  return d.shortText || d.longText || d.abbreviation || String(d.organization);
+});
+
+const fetchDivisiList = async () => {
+  divisiLoading.value = true;
+  try {
+    const res = await apiGet<DivisiOption[]>('/organization');
+    divisiList.value = (res?.data || res || []).filter((d: any) => d.organization != null);
+  } catch (err) {
+    console.error('[AddUsulanAksesBerkas] fetchDivisiList error:', err);
+    divisiList.value = [];
+  } finally {
+    divisiLoading.value = false;
+  }
+};
+
+const showDivisiDropdown = ref(false);
+const selectDivisi = (org: number) => {
+  divisiPemberiId.value = org;
+  showDivisiDropdown.value = false;
+  divisiSearch.value = '';
+};
 
 const isOpen = computed({
   get: () => props.modelValue,
@@ -158,11 +208,15 @@ const handleSubmit = async () => {
 watch(isOpen, (val) => {
   if (val) {
     fetchVerifikator();
+    fetchDivisiList();
   }
 });
 
 onMounted(() => {
-  if (isOpen.value) fetchVerifikator();
+  if (isOpen.value) {
+    fetchVerifikator();
+    fetchDivisiList();
+  }
 });
 </script>
 
@@ -218,14 +272,50 @@ onMounted(() => {
       <!-- Divisi Pemberi (hanya AKTIF) -->
       <div v-if="!isINAKTIF">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Divisi Pemberi (Organization ID) <span class="text-red-500">*</span>
+          Divisi Pemberi <span class="text-red-500">*</span>
         </label>
-        <input
-          v-model.number="divisiPemberiId"
-          type="number"
-          placeholder="Masukkan organization_id divisi pemberi"
-          class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
-        />
+        <div class="relative">
+          <button
+            type="button"
+            @click="showDivisiDropdown = !showDivisiDropdown"
+            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary text-left flex items-center justify-between"
+          >
+            <span :class="divisiPemberiId ? 'text-gray-900 dark:text-white' : 'text-gray-400'">
+              {{ divisiPemberiId ? selectedDivisiLabel : 'Pilih divisi pemberi...' }}
+            </span>
+            <svg class="w-4 h-4 text-gray-400" :class="{ 'rotate-180': showDivisiDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div
+            v-if="showDivisiDropdown"
+            class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-hidden"
+          >
+            <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+              <input
+                v-model="divisiSearch"
+                type="text"
+                placeholder="Cari divisi..."
+                class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div class="max-h-48 overflow-y-auto">
+              <div v-if="divisiLoading" class="px-3 py-4 text-sm text-gray-400 text-center">Memuat...</div>
+              <div v-else-if="filteredDivisi.length === 0" class="px-3 py-4 text-sm text-gray-400 text-center">Tidak ada divisi ditemukan</div>
+              <button
+                v-for="d in filteredDivisi"
+                :key="d.organization"
+                type="button"
+                @click="selectDivisi(d.organization)"
+                class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                :class="divisiPemberiId === d.organization ? 'bg-primary/5 text-primary font-medium' : 'text-gray-700 dark:text-gray-300'"
+              >
+                <div>{{ d.shortText || d.longText || d.abbreviation || '-' }}</div>
+                <div class="text-xs text-gray-400">Org ID: {{ d.organization }}{{ d.abbreviation ? ' · ' + d.abbreviation : '' }}</div>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Tujuan Akses -->
