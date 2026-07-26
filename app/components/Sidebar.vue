@@ -561,6 +561,12 @@ const userMenuUtama = computed(() => [
       { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
     ],
   },
+  {
+    label: 'Usulan Akses Berkas',
+    to: '/usulan-akses-berkas',
+    icon: 'i-lucide-folder-key',
+    permission: { resource: 'usulan-akses-berkas', action: 'read' },
+  },
 ]);
 
 const userMenuUtilitas = computed(() => {
@@ -722,6 +728,12 @@ const adminMenuUtama = computed(() => [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
       { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
     ],
+  },
+  {
+    label: 'Usulan Akses Berkas',
+    to: '/usulan-akses-berkas',
+    icon: 'i-lucide-folder-key',
+    permission: { resource: 'usulan-akses-berkas', action: 'read' },
   },
 ]);
 

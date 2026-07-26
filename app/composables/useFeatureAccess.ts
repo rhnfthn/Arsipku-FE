@@ -61,6 +61,8 @@ const routePermissions: Record<string, string> = {
   '/faq/manajemen': 'faq:read',
   '/pedoman/menu': 'pedoman:read',
   '/pedoman/manajemen': 'pedoman:read',
+  // Usulan Akses Berkas
+  '/usulan-akses-berkas': 'usulan-akses-berkas:read',
   // Konfigurasi
   '/konfigurasi-sistem': 'konfigurasi:read',
 };
@@ -105,7 +107,9 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   },
   // Master data — sub-pages inherit parent permission
   { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
-  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
+ { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
+  // Usulan Akses Berkas — detail page
+  { pattern: /^\/usulan-akses-berkas\/[^/]+$/, perm: 'usulan-akses-berkas:read' },
 ];
 
 export function useFeatureAccess() {
