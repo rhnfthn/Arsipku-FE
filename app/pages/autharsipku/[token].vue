@@ -107,7 +107,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('Verify token gagal:', error)
     await delayWithFade()
-    return navigateTo('/login')
+    return navigateTo('/')
   }
 })
 

@@ -1,7 +1,0 @@
-install editor tinymce
-
-npm install tinymce@6 @tinymce/tinymce-vue
-
--- use for offline
-mkdir -p public/tinymce
-cp -r node_modules/tinymce/* public/tinymce/

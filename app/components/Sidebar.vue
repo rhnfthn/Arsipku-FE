@@ -552,6 +552,15 @@ const userMenuUtama = computed(() => [
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
   },
+  {
+    label: t('berbagi', 'Berbagi'),
+    icon: 'i-heroicons-share',
+    permission: { resource: 'naskah-share', action: 'read' },
+    children: [
+      { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
+      { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
+    ],
+  },
 ]);
 
 const userMenuUtilitas = computed(() => {
@@ -704,6 +713,15 @@ const adminMenuUtama = computed(() => [
     to: '/korespondensi/draf',
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
+  },
+  {
+    label: t('berbagi', 'Berbagi'),
+    icon: 'i-heroicons-share',
+    permission: { resource: 'naskah-share', action: 'read' },
+    children: [
+      { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
+      { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
+    ],
   },
 ]);
 
