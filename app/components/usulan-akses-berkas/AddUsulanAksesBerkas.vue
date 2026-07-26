@@ -1,0 +1,404 @@
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import Modal from '~/components/Modal.vue';
+import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { JenisBerkas, DurasiPreset, JenisAkses, type LevelJabatan } from '~/types/usulan-akses-berkas';
+
+const props = defineProps<{ modelValue: boolean }>();
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean];
+  created: [];
+}>();
+
+const { fetchVerifikator, verifikatorList, createUsulan, pending } = useUsulanAksesBerkas();
+const toast = useToast();
+
+const isOpen = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val),
+});
+
+// ── Form state ───────────────────────────────────
+const jenisBerkas = ref<JenisBerkas>(JenisBerkas.AKTIF);
+const divisiPemberiId = ref<number | null>(null);
+const tujuanAkses = ref('');
+const durasiAkses = ref<DurasiPreset>(DurasiPreset.EMPAT_BELAS_HARI);
+const customTanggalSelesai = ref('');
+const jenisAksesSelected = ref<JenisAkses[]>([JenisAkses.LIHAT]);
+const suratUsulanFileId = ref('');
+const penerimaAksesTambahan = ref<number[]>([]);
+const penerimaInput = ref('');
+const selectedVerifikatorPersnums = ref<number[]>([]);
+
+const durasiOptions = [
+  { label: '7 Hari', value: DurasiPreset.TUJUH_HARI },
+  { label: '14 Hari', value: DurasiPreset.EMPAT_BELAS_HARI },
+  { label: '1 Bulan', value: DurasiPreset.SATU_BULAN },
+  { label: '2 Bulan', value: DurasiPreset.DUA_BULAN },
+  { label: '3 Bulan', value: DurasiPreset.TIGA_BULAN },
+  { label: '6 Bulan', value: DurasiPreset.ENAM_BULAN },
+  { label: '1 Tahun', value: DurasiPreset.SATU_TAHUN },
+  { label: 'Custom', value: DurasiPreset.CUSTOM },
+];
+
+const jenisAksesOptions = [
+  { label: 'Lihat', value: JenisAkses.LIHAT },
+  { label: 'Unduh', value: JenisAkses.UNDUH },
+  { label: 'Cetak', value: JenisAkses.CETAK },
+];
+
+const isINAKTIF = computed(() => jenisBerkas.value === JenisBerkas.INAKTIF);
+
+const toggleJenisAkses = (val: JenisAkses) => {
+  const idx = jenisAksesSelected.value.indexOf(val);
+  if (idx >= 0) {
+    jenisAksesSelected.value.splice(idx, 1);
+  } else {
+    jenisAksesSelected.value.push(val);
+  }
+};
+
+const toggleVerifikator = (persnum: number) => {
+  const idx = selectedVerifikatorPersnums.value.indexOf(persnum);
+  if (idx >= 0) {
+    selectedVerifikatorPersnums.value.splice(idx, 1);
+  } else {
+    if (selectedVerifikatorPersnums.value.length >= 3) {
+      toast.add({ title: 'Maksimal 3 verifikator', color: 'error' });
+      return;
+    }
+    selectedVerifikatorPersnums.value.push(persnum);
+  }
+};
+
+const addPenerima = () => {
+  const persnum = Number(penerimaInput.value.trim());
+  if (!persnum || isNaN(persnum)) {
+    toast.add({ title: 'Persnum tidak valid', color: 'error' });
+    return;
+  }
+  if (penerimaAksesTambahan.value.includes(persnum)) {
+    toast.add({ title: 'Persnum sudah ada di daftar', color: 'error' });
+    return;
+  }
+  penerimaAksesTambahan.value.push(persnum);
+  penerimaInput.value = '';
+};
+
+const removePenerima = (persnum: number) => {
+  const idx = penerimaAksesTambahan.value.indexOf(persnum);
+  if (idx >= 0) penerimaAksesTambahan.value.splice(idx, 1);
+};
+
+const resetForm = () => {
+  jenisBerkas.value = JenisBerkas.AKTIF;
+  divisiPemberiId.value = null;
+  tujuanAkses.value = '';
+  durasiAkses.value = DurasiPreset.EMPAT_BELAS_HARI;
+  customTanggalSelesai.value = '';
+  jenisAksesSelected.value = [JenisAkses.LIHAT];
+  suratUsulanFileId.value = '';
+  penerimaAksesTambahan.value = [];
+  penerimaInput.value = '';
+  selectedVerifikatorPersnums.value = [];
+};
+
+const canSubmit = computed(() => {
+  if (tujuanAkses.value.trim().length < 30) return false;
+  if (jenisAksesSelected.value.length === 0) return false;
+  if (selectedVerifikatorPersnums.value.length === 0) return false;
+  if (!isINAKTIF.value && !divisiPemberiId.value) return false;
+  if (durasiAkses.value === DurasiPreset.CUSTOM && !customTanggalSelesai.value) return false;
+  return true;
+});
+
+const handleSubmit = async () => {
+  if (!canSubmit.value) {
+    toast.add({ title: 'Lengkapi semua field wajib', color: 'error' });
+    return;
+  }
+
+  const verifikatorPengusul = selectedVerifikatorPersnums.value
+    .map((persnum) => {
+      const v = verifikatorList.value.find((x) => x.persnum === persnum);
+      if (!v) return null;
+      return { persnum: v.persnum, levelJabatan: v.levelJabatan as LevelJabatan };
+    })
+    .filter(Boolean) as { persnum: number; levelJabatan: LevelJabatan }[];
+
+  try {
+    await createUsulan({
+      jenisBerkas: jenisBerkas.value,
+      divisiPemberiId: isINAKTIF.value ? undefined : Number(divisiPemberiId.value),
+      tujuanAkses: tujuanAkses.value.trim(),
+      durasiAkses: durasiAkses.value,
+      customTanggalSelesai:
+        durasiAkses.value === DurasiPreset.CUSTOM
+          ? customTanggalSelesai.value
+          : undefined,
+      jenisAkses: jenisAksesSelected.value,
+      suratUsulanFileId: suratUsulanFileId.value || undefined,
+      verifikatorPengusul,
+      penerimaAksesTambahan:
+        penerimaAksesTambahan.value.length > 0
+          ? penerimaAksesTambahan.value
+          : undefined,
+    });
+    resetForm();
+    emit('created');
+  } catch (err: any) {
+    toast.add({
+      title: 'Gagal membuat usulan',
+      description: err?.message || 'Terjadi kesalahan',
+      color: 'error',
+    });
+  }
+};
+
+watch(isOpen, (val) => {
+  if (val) {
+    fetchVerifikator();
+  }
+});
+
+onMounted(() => {
+  if (isOpen.value) fetchVerifikator();
+});
+</script>
+
+<template>
+  <Modal v-model="isOpen" :hideDefaultFooter="true" size="2xl">
+    <template #title>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Buat Usulan Akses Berkas
+      </h2>
+    </template>
+
+    <div class="space-y-5 max-h-[70vh] overflow-y-auto p-1">
+      <!-- Jenis Berkas -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Jenis Berkas <span class="text-red-500">*</span>
+        </label>
+        <div class="flex gap-3">
+          <label
+            class="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-colors"
+            :class="jenisBerkas === JenisBerkas.AKTIF
+              ? 'border-primary bg-primary/5 text-primary'
+              : 'border-gray-300 dark:border-gray-600'"
+          >
+            <input
+              v-model="jenisBerkas"
+              type="radio"
+              :value="JenisBerkas.AKTIF"
+              class="hidden"
+            />
+            <span>Aktif</span>
+          </label>
+          <label
+            class="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-colors"
+            :class="jenisBerkas === JenisBerkas.INAKTIF
+              ? 'border-primary bg-primary/5 text-primary'
+              : 'border-gray-300 dark:border-gray-600'"
+          >
+            <input
+              v-model="jenisBerkas"
+              type="radio"
+              :value="JenisBerkas.INAKTIF"
+              class="hidden"
+            />
+            <span>Inaktif</span>
+          </label>
+        </div>
+        <p v-if="isINAKTIF" class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+          Untuk berkas inaktif, divisi pemberi otomatis di-set ke Corporate Secretary Division.
+        </p>
+      </div>
+
+      <!-- Divisi Pemberi (hanya AKTIF) -->
+      <div v-if="!isINAKTIF">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Divisi Pemberi (Organization ID) <span class="text-red-500">*</span>
+        </label>
+        <input
+          v-model.number="divisiPemberiId"
+          type="number"
+          placeholder="Masukkan organization_id divisi pemberi"
+          class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      <!-- Tujuan Akses -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Tujuan Akses <span class="text-red-500">*</span>
+          <span class="ml-1 text-xs text-gray-400">({{ tujuanAkses.length }} / 1000 karakter)</span>
+        </label>
+        <textarea
+          v-model="tujuanAkses"
+          rows="3"
+          maxlength="1000"
+          placeholder="Jelaskan tujuan peminjaman akses berkas (minimal 30 karakter)..."
+          class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+        ></textarea>
+      </div>
+
+      <!-- Durasi Akses -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Durasi Akses <span class="text-red-500">*</span>
+        </label>
+        <select
+          v-model="durasiAkses"
+          class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+        >
+          <option v-for="opt in durasiOptions" :key="opt.value" :value="opt.value">
+            {{ opt.label }}
+          </option>
+        </select>
+        <input
+          v-if="durasiAkses === DurasiPreset.CUSTOM"
+          v-model="customTanggalSelesai"
+          type="date"
+          class="mt-2 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      <!-- Jenis Akses -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Jenis Akses <span class="text-red-500">*</span>
+        </label>
+        <div class="flex gap-3">
+          <label
+            v-for="opt in jenisAksesOptions"
+            :key="opt.value"
+            class="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-colors"
+            :class="jenisAksesSelected.includes(opt.value)
+              ? 'border-primary bg-primary/5 text-primary'
+              : 'border-gray-300 dark:border-gray-600'"
+          >
+            <input
+              type="checkbox"
+              :checked="jenisAksesSelected.includes(opt.value)"
+              @change="toggleJenisAkses(opt.value)"
+              class="hidden"
+            />
+            <span>{{ opt.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Verifikator Pengusul -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Verifikator Pengusul <span class="text-red-500">*</span>
+          <span class="ml-1 text-xs text-gray-400">(pilih 1-3 managerial di divisi Anda)</span>
+        </label>
+        <div v-if="verifikatorList.length === 0" class="text-sm text-gray-400 py-2">
+          Tidak ada data managerial. Pastikan Anda memiliki akses.
+        </div>
+        <div v-else class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+          <label
+            v-for="v in verifikatorList"
+            :key="v.persnum"
+            class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30"
+            :class="selectedVerifikatorPersnums.includes(v.persnum) ? 'bg-primary/5' : ''"
+          >
+            <input
+              type="checkbox"
+              :checked="selectedVerifikatorPersnums.includes(v.persnum)"
+              @change="toggleVerifikator(v.persnum)"
+              class="w-4 h-4 text-primary rounded"
+            />
+            <div class="flex-1">
+              <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                {{ v.nama || `Persnum ${v.persnum}` }}
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ v.jabatan || v.levelJabatan }} · {{ v.divisiNama || '-' }}
+              </div>
+            </div>
+            <span
+              class="px-2 py-0.5 rounded text-xs font-medium"
+              :class="{
+                'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': v.levelJabatan === 'AVP',
+                'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400': v.levelJabatan === 'VP',
+                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': v.levelJabatan === 'EVP',
+              }"
+            >
+              {{ v.levelJabatan }}
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Penerima Akses Tambahan -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Penerima Akses Tambahan (opsional)
+        </label>
+        <div class="flex gap-2">
+          <input
+            v-model="penerimaInput"
+            type="number"
+            placeholder="Masukkan persnum..."
+            class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+            @keyup.enter="addPenerima"
+          />
+          <button
+            @click="addPenerima"
+            type="button"
+            class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+          >
+            Tambah
+          </button>
+        </div>
+        <div v-if="penerimaAksesTambahan.length > 0" class="mt-2 flex flex-wrap gap-2">
+          <span
+            v-for="p in penerimaAksesTambahan"
+            :key="p"
+            class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs"
+          >
+            {{ p }}
+            <button @click="removePenerima(p)" type="button" class="text-red-500 hover:text-red-700">
+              ×
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Surat Usulan File ID -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Surat Usulan File ID (opsional)
+        </label>
+        <input
+          v-model="suratUsulanFileId"
+          type="text"
+          placeholder="S3 file ID surat usulan..."
+          class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+        />
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <button
+        @click="isOpen = false"
+        type="button"
+        class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+      >
+        Batal
+      </button>
+      <button
+        @click="handleSubmit"
+        :disabled="!canSubmit || pending"
+        type="button"
+        class="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ pending ? 'Menyimpan...' : 'Kirim Usulan' }}
+      </button>
+    </div>
+  </Modal>
+</template>
