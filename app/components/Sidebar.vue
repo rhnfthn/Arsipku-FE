@@ -552,6 +552,15 @@ const userMenuUtama = computed(() => [
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
   },
+  {
+    label: t('berbagi', 'Berbagi'),
+    icon: 'i-heroicons-share',
+    permission: { resource: 'naskah-share', action: 'read' },
+    children: [
+      { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
+      { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
+    ],
+  },
 ]);
 
 const userMenuUtilitas = computed(() => {
@@ -704,6 +713,15 @@ const adminMenuUtama = computed(() => [
     to: '/korespondensi/draf',
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
+  },
+  {
+    label: t('berbagi', 'Berbagi'),
+    icon: 'i-heroicons-share',
+    permission: { resource: 'naskah-share', action: 'read' },
+    children: [
+      { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
+      { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
+    ],
   },
 ]);
 
@@ -877,6 +895,62 @@ const adminMenuLaporan = computed(() => [
   },
 ]);
 
+// ─── Menu Kelola (Arsip Dinamis) ─────────────────────────────────────────────
+
+const adminMenuKelola = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+        permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+      },
+      {
+        label: 'Persetujuan',
+        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+        icon: 'i-lucide-file-check',
+        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      },
+      {
+        label: 'Riwayat & Retensi',
+        to: '/kelola/pemeliharaan/riwayat-retensi',
+        icon: 'i-lucide-history',
+        permission: { resource: 'pemeliharaan.retensi', action: 'read' },
+      },
+      {
+        label: 'Usulan Akses Berkas',
+        to: '/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      },
+    ],
+  },
+]);
+
+const userMenuKelola = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+        permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+      },
+      {
+        label: 'Usulan Akses Berkas',
+        to: '/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      },
+    ],
+  },
+]);
+
 // ─── Notification flags ───────────────────────────────────────────────────────
 
 const hasAdministrasiNotification = computed(
@@ -952,6 +1026,13 @@ const apps = computed(() => {
         hasNotification: hasInboxUnread.value,
       },
       {
+        id: 'admin-kelola',
+        label: 'Kelola',
+        icon: 'i-lucide-archive',
+        menus: filterMenuByPermission(adminMenuKelola.value),
+        hasNotification: false,
+      },
+      {
         id: 'admin-utilitas',
         label: t('utilitas'),
         icon: 'i-heroicons-squares-plus',
@@ -992,6 +1073,13 @@ const apps = computed(() => {
       icon: 'i-heroicons-home',
       menus: filterMenuByPermission(userMenuUtama.value),
       hasNotification: hasInboxUnread.value,
+    },
+    {
+      id: 'user-kelola',
+      label: 'Kelola',
+      icon: 'i-lucide-archive',
+      menus: filterMenuByPermission(userMenuKelola.value),
+      hasNotification: false,
     },
     {
       id: 'user-utilitas',
