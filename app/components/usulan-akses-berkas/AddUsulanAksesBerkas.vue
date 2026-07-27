@@ -226,14 +226,23 @@ const handleSubmit = async () => {
 
 watch(isOpen, (val) => {
   if (val) {
-    fetchVerifikator();
+    fetchVerifikator().catch((err) => {
+      console.error('[AddUsulanAksesBerkas] fetchVerifikator failed:', err);
+      toast.add({
+        title: 'Gagal memuat verifikator',
+        description: err?.message || 'Tidak dapat memuat daftar verifikator',
+        color: 'error',
+      });
+    });
     fetchDivisiList();
   }
 });
 
 onMounted(() => {
   if (isOpen.value) {
-    fetchVerifikator();
+    fetchVerifikator().catch((err) => {
+      console.error('[AddUsulanAksesBerkas] fetchVerifikator failed:', err);
+    });
     fetchDivisiList();
   }
 });
