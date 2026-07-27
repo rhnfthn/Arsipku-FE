@@ -148,6 +148,9 @@
       <!-- NOTIFICATION BELL -->
       <NotificationBell />
 
+      <!-- ANOMALY BELL (Super Admin only) -->
+      <AuditAnomalyBell v-if="hasRole('SUPERADMIN')" />
+
       <UDropdownMenu
         :items="menuItems"
         :content="{ align: 'end' }"
@@ -949,7 +952,7 @@ import { useDark } from '@vueuse/core';
 import type { DropdownMenuItem } from '#ui/types';
 
 // --- INIT COMPOSABLES ---
-const { user, getProfile, logout, hasPermission } = useAuth();
+const { user, getProfile, logout, hasPermission, hasRole } = useAuth();
 const { getAvailableRoles, switchRole } = useDelegasi();
 const toast = useToast();
 const route = useRoute();

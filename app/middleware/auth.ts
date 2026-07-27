@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     : tokenCookie.value;
   const path = to.path;
 
-  const superadminOnlyPrefixes = ['/rbac', '/konfigurasi-sistem'];
+  const superadminOnlyPrefixes = ['/rbac', '/konfigurasi-sistem', '/admin/audit'];
 
   const isPathMatchPrefix = (prefixes: string[]) =>
     prefixes.some((prefix) => path === prefix || path.startsWith(prefix + '/'));
@@ -87,6 +87,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/kelola/pemeliharaan/pemberkasan',
     '/kelola/pemeliharaan/persetujuan-pemberkasan',
     '/usulan-akses-berkas',
+    '/riwayat-aktivitas',
   ];
 
   if (role === 'user') {
