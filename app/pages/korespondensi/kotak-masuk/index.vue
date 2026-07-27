@@ -1519,6 +1519,7 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+    </div>
 
     <!-- Share Modal -->
     <ShareModal
@@ -1529,13 +1530,6 @@ onUnmounted(() => {
       @close="handleShareClose"
       @shared="handleShareClose"
     />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ── MODALS ─────────────────────────────────────────────────────────── -->
 
