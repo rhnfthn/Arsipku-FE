@@ -248,6 +248,11 @@ onMounted(() => {
     </template>
 
     <div class="space-y-5 max-h-[70vh] overflow-y-auto p-1">
+      <!-- Info: Sekretaris yang didelegasikan -->
+      <div class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 text-sm text-blue-700 dark:text-blue-300">
+        <strong>Info:</strong> Usulan dibuat atas nama divisi Anda sebagai Sekretaris yang didelegasikan. Verifikator (AVP/VP/EVP) otomatis diambil dari managerial di divisi Anda.
+      </div>
+
       <!-- Jenis Berkas -->
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
