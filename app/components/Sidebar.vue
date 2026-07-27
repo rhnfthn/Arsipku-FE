@@ -932,14 +932,34 @@ const menuKelola = computed(() => [
         icon: 'i-lucide-folder-plus',
         access: 'pemberkasan',
       },
+    ],
+  },
+  {
+    label: 'Persetujuan',
+    icon: 'i-lucide-file-check',
+    permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+    children: [
       {
-        label: 'Persetujuan Pemberkasan',
+        label: 'Penutupan Berkas',
         to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
         icon: 'i-lucide-file-check',
         permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
       },
+    ],
+  },
+  {
+    label: 'Persetujuan',
+    icon: 'i-lucide-file-check',
+    permission: { resource: 'usulan-akses-berkas', action: 'read' },
+    children: [
       {
-        label: 'Usulan Akses Berkas',
+        label: 'Penutupan Berkas',
+        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+        icon: 'i-lucide-folder-lock',
+        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      },
+      {
+        label: 'Usulan Akses',
         to: '/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
         permission: { resource: 'usulan-akses-berkas', action: 'read' },

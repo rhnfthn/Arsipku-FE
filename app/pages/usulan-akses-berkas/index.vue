@@ -12,7 +12,7 @@ import { useAuth } from '~/composables/useAuth';
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 
 definePageMeta({ middleware: 'auth' });
-useHead({ title: 'Usulan Akses Berkas' });
+useHead({ title: 'Persetujuan Usulan Akses Berkas' });
 
 const { t } = useI18n();
 const { canAccessPage, hasPermission } = useFeatureAccess();
@@ -36,6 +36,7 @@ const itemsPerPage = ref(10);
 
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
+  { label: 'Persetujuan', to: '#' },
   { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
 ]);
 
@@ -121,7 +122,7 @@ onMounted(() => {
       <!-- Header -->
       <div class="flex items-center justify-between mb-5">
         <div>
-          <Heading variant="heading6b">Usulan Akses Berkas</Heading>
+          <Heading variant="heading6b">Persetujuan Usulan Akses Berkas</Heading>
           <PageHeader :items="breadcrumbs" />
         </div>
         <button
