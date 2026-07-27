@@ -9,75 +9,76 @@
           { label: 'Persetujuan Pemberkasan' },
         ]"
       />
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Tinjau pengajuan penutupan berkas yang menunggu persetujuan Anda.
-      </p>
-    </div>
-
-    <div class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div
-        class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-warning-50 text-warning-600 dark:bg-warning-950/40"
-          >
-            <Clock3 class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Menunggu Persetujuan</p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ statistik?.menunggu ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-      <div
-        class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-950/40"
-          >
-            <FolderCheck class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Disetujui Hari Ini</p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ statistik?.disetujui_hari_ini ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-      <div
-        class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-error-50 text-error-600 dark:bg-error-950/40"
-          >
-            <ShieldCheck class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Ditolak</p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ statistik?.ditolak ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div
-      class="rounded-lg border border-gray-200 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800"
+      class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800"
     >
-      <DataToolbar
-        v-model="perPage"
-        v-model:search="search"
-        search-placeholder="Cari nama, kode, atau klasifikasi berkas…"
-        :rows-choices="[10, 25, 50]"
-        :show-export="false"
-        @refresh="fetchData"
-      />
+      <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
+        <div class="flex items-center gap-3 flex-wrap flex-1">
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleRowsPerPage"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
+            >
+              <span>{{ perPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openRowsPerPage }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openRowsPerPage"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]"
+              >
+                <button
+                  v-for="n in [10, 25, 50]"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    perPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <div class="relative flex-1 min-w-[180px]">
+            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari nama, kode, atau klasifikasi berkas…"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
+        </div>
+        <button
+          @click="exportData"
+          :disabled="isExporting"
+          class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          <UIcon v-if="isExporting" name="i-lucide-loader-circle" class="w-3.5 h-3.5 animate-spin" />
+          <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+          Export
+        </button>
+      </div>
 
       <DataTable
         :columns="columns"
         :rows="pengajuanList"
         :loading="pending"
+        header-class="bg-primary dark:bg-primary-700 text-white text-left"
+        body-class="divide-y divide-gray-100 dark:divide-gray-700"
+        row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         empty-message="Tidak ada pengajuan penutupan yang menunggu persetujuan Anda."
       >
         <template #cell-judulBerkas="{ row }">
@@ -134,10 +135,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { Clock3, Eye, FolderCheck, ShieldCheck } from 'lucide-vue-next';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ChevronDown, Eye } from 'lucide-vue-next';
 
-const { getPengajuanPenutupan, getStatistikPersetujuan } = useArsipDinamis();
+const { getPengajuanPenutupan } = useArsipDinamis();
 const toast = useToast();
 
 const pengajuanList = ref<any[]>([]);
@@ -146,8 +147,27 @@ const search = ref('');
 const perPage = ref(10);
 const currentPage = ref(1);
 const totalItems = ref(0);
-const statistik = ref<{ menunggu: number; disetujui_hari_ini: number; ditolak: number } | null>(null);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+const openRowsPerPage = ref(false);
+
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+}
+
+function selectRowsPerPage(n: number) {
+  perPage.value = n;
+  openRowsPerPage.value = false;
+}
+
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const els = document.querySelectorAll('[data-custom-dropdown]');
+  for (const el of Array.from(els)) {
+    if (el.contains(target)) return;
+  }
+  openRowsPerPage.value = false;
+}
 
 const columns = [
   { key: 'judulBerkas', label: 'Nama Berkas' },
@@ -170,14 +190,11 @@ const formatDate = (value?: string) => {
 const fetchData = async () => {
   pending.value = true;
   try {
-    const [response, statsRes] = await Promise.all([
-      getPengajuanPenutupan({
-        search: search.value || undefined,
-        page: currentPage.value,
-        limit: perPage.value,
-      }),
-      getStatistikPersetujuan(),
-    ]);
+    const response = await getPengajuanPenutupan({
+      search: search.value || undefined,
+      page: currentPage.value,
+      limit: perPage.value,
+    });
 
     // useApi mengembalikan envelope global `{ success, data }`, sedangkan
     // endpoint ini mengembalikan payload pagination `{ data, meta }`.
@@ -188,8 +205,6 @@ const fetchData = async () => {
         ? payload
         : [];
     totalItems.value = Number(payload?.meta?.total ?? pengajuanList.value.length);
-
-    statistik.value = (statsRes?.data ?? statsRes) as any;
   } catch (e: any) {
     console.error('Gagal memuat pengajuan:', e);
     pengajuanList.value = [];
@@ -201,6 +216,45 @@ const fetchData = async () => {
     });
   } finally {
     pending.value = false;
+  }
+};
+
+const isExporting = ref(false);
+
+const exportData = async () => {
+  if (totalItems.value === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const response: any = await getPengajuanPenutupan({
+      search: search.value || undefined,
+      page: 1,
+      limit: totalItems.value || 9999,
+    });
+    const payload = response?.data?.data ? response.data : response;
+    const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+    if (!rows.length) {
+      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      return;
+    }
+    const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
+    const csvRows = rows.map((r: any) => [
+      r.berkas?.judulBerkas,
+      r.berkas?.kodeBerkas,
+      r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
+      `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
+      r.createdAt,
+      r.status || 'Menunggu',
+    ]);
+    downloadCsv(`persetujuan-pemberkasan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+  } catch (e) {
+    console.error('Gagal export:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
   }
 };
 
@@ -221,4 +275,15 @@ watch(search, () => {
 });
 
 onMounted(fetchData);
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
+});
 </script>
+
+<style scoped>
+.filter-dd-enter-active, .filter-dd-leave-active { transition: opacity .15s ease, transform .15s ease; }
+.filter-dd-enter-from, .filter-dd-leave-to { opacity: 0; transform: translateY(-4px); }
+</style>
