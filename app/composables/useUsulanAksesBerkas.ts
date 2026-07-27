@@ -66,10 +66,13 @@ export function useUsulanAksesBerkas() {
         undefined,
         { skipCache: true },
       );
-      usulanList.value = res.data || [];
-      pagination.total = res.total || 0;
-      pagination.page = res.page || params.page || 1;
-      pagination.limit = res.limit || params.limit || 20;
+      // BE interceptor wraps response: { success, data: { data: [...], total, page, limit } }
+      // apiGet returns res.data which is { data: [...], total, page, limit }
+      const payload = (res as any)?.data ?? res;
+      usulanList.value = payload.data || payload || [];
+      pagination.total = payload.total ?? (Array.isArray(payload) ? payload.length : 0);
+      pagination.page = payload.page || params.page || 1;
+      pagination.limit = payload.limit || params.limit || 20;
       return res;
     } catch (err: any) {
       error.value = err;
