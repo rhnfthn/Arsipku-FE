@@ -7,7 +7,7 @@
 
     <!-- Summary Cards -->
     <div class="mb-4">
-      <AnomalyCard :summary="anomalySummary" />
+      <AuditAnomalyCard :summary="anomalySummary" />
     </div>
 
     <!-- Filter bar -->
@@ -78,7 +78,7 @@
 
     <!-- Table -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
-      <AnomalyTable
+      <AuditAnomalyTable
         :rows="anomalies"
         :loading="loading"
         :page="filter.page || 1"
@@ -86,6 +86,7 @@
         @view="openDetail"
         @resolve="onResolve"
         @ignore="onIgnore"
+        @reviewing="onReviewing"
       />
 
       <!-- Pagination -->
@@ -239,6 +240,15 @@
           <!-- Modal Footer -->
           <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 flex items-center justify-end gap-2">
             <button
+              v-if="selectedAnomaly.status === 'NEW'"
+              @click="onModalReviewing"
+              :disabled="updatingStatus"
+              class="px-4 py-2 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50"
+            >
+              <UIcon name="i-lucide-search" class="w-4 h-4 mr-1 inline" />
+              Tandai Reviewing
+            </button>
+            <button
               v-if="selectedAnomaly.status === 'NEW' || selectedAnomaly.status === 'REVIEWING'"
               @click="onModalResolve"
               :disabled="updatingStatus"
@@ -379,6 +389,16 @@ const onIgnore = async (row: AuditAnomaly) => {
   }
 };
 
+const onReviewing = async (row: AuditAnomaly) => {
+  try {
+    await updateAnomalyStatus(row.id, { status: 'REVIEWING' });
+    await loadAnomalies();
+  } catch (e) {
+    console.error('Gagal tandai reviewing anomali:', e);
+    alert('Gagal memperbarui status anomali');
+  }
+};
+
 const onModalResolve = async () => {
   if (!selectedAnomaly.value) return;
   updatingStatus.value = true;
@@ -409,6 +429,24 @@ const onModalIgnore = async () => {
     await loadAnomalies();
   } catch (e) {
     console.error('Gagal ignore anomali:', e);
+    alert('Gagal memperbarui status anomali');
+  } finally {
+    updatingStatus.value = false;
+  }
+};
+
+const onModalReviewing = async () => {
+  if (!selectedAnomaly.value) return;
+  updatingStatus.value = true;
+  try {
+    await updateAnomalyStatus(selectedAnomaly.value.id, {
+      status: 'REVIEWING',
+      handlingNote: handlingNote.value || null,
+    });
+    showDetail.value = false;
+    await loadAnomalies();
+  } catch (e) {
+    console.error('Gagal tandai reviewing anomali:', e);
     alert('Gagal memperbarui status anomali');
   } finally {
     updatingStatus.value = false;
