@@ -181,6 +181,17 @@ const canSubmit = computed(() => {
   return true;
 });
 
+// Debug: tampilkan kondisi yang belum terpenuhi
+const submitBlockReasons = computed(() => {
+  const reasons: string[] = [];
+  if (tujuanAkses.value.trim().length < 30) reasons.push(`Tujuan akses minimal 30 karakter (sekarang ${tujuanAkses.value.trim().length})`);
+  if (jenisAksesSelected.value.length === 0) reasons.push('Pilih minimal 1 jenis akses');
+  if (selectedVerifikatorPersnums.value.length === 0) reasons.push('Pilih minimal 1 verifikator');
+  if (!isINAKTIF.value && !divisiPemberiId.value) reasons.push('Pilih divisi pemberi (wajib untuk berkas AKTIF)');
+  if (durasiAkses.value === DurasiPreset.CUSTOM && !customTanggalSelesai.value) reasons.push('Isi tanggal selesai custom');
+  return reasons;
+});
+
 const handleSubmit = async () => {
   if (!canSubmit.value) {
     toast.add({ title: 'Lengkapi semua field wajib', color: 'error' });
@@ -524,6 +535,13 @@ onMounted(() => {
 
     <!-- Footer -->
     <div class="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <!-- Debug: tampilkan alasan tombol disable -->
+      <div v-if="!canSubmit && submitBlockReasons.length > 0" class="text-xs text-amber-600 dark:text-amber-400 mr-auto">
+        <div class="font-medium mb-1">Syarat yang belum terpenuhi:</div>
+        <ul class="list-disc list-inside space-y-0.5">
+          <li v-for="(reason, i) in submitBlockReasons" :key="i">{{ reason }}</li>
+        </ul>
+      </div>
       <button
         @click="isOpen = false"
         type="button"
