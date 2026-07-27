@@ -141,7 +141,7 @@ const onVerifikatorSelect = (event: Event) => {
 };
 
 const addPenerima = () => {
-  const persnum = Number(penerimaInput.value.trim());
+  const persnum = Number(String(penerimaInput.value).trim());
   if (!persnum || isNaN(persnum)) {
     toast.add({ title: 'Persnum tidak valid', color: 'error' });
     return;
