@@ -68,6 +68,24 @@ const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 const { getBerkasList, addNaskahToBerkas, getBerkasStatusByNaskah } = useArsipDinamis();
 const { canReadBerkasStatus } = useArsipDinamisPermission();
 
+// ── Share Naskah ─────────────────────────────────────────────────────────────
+const showShareModal = ref(false);
+const shareNaskah = ref<any>(null);
+
+const handleShare = (mail: any) => {
+  if (!mail?.naskahId) {
+    toast.add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
+    return;
+  }
+  shareNaskah.value = mail;
+  showShareModal.value = true;
+};
+
+const handleShareClose = () => {
+  showShareModal.value = false;
+  shareNaskah.value = null;
+};
+
 // ── Masukkan ke Berkas ───────────────────────────────────────────────────────
 const showAddToBerkasModal = ref(false);
 const selectedNaskahForBerkas = ref<any>(null);
@@ -1676,6 +1694,16 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Share Modal -->
+    <ShareModal
+      v-if="showShareModal && shareNaskah"
+      :naskah-id="shareNaskah.naskahId"
+      :naskah-perihal="shareNaskah.perihal || shareNaskah.judul"
+      :naskah-nomor="shareNaskah.nomor"
+      @close="handleShareClose"
+      @shared="handleShareClose"
+    />
 
     <!-- ── MODALS ─────────────────────────────────────────────────────────── -->
 
