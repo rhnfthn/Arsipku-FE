@@ -989,7 +989,7 @@ onUnmounted(() => {
 
 <template>
   <AccessDenied v-if="!canAccessPage()" />
-  <template v-else>
+  <div v-else>
   <PageHeader :title="$t('terkirim')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue"
@@ -2366,7 +2366,7 @@ onUnmounted(() => {
       </Teleport>
     </ClientOnly>
   </div>
-  </template>
+  </div>
 </template>
 
 <style scoped>
