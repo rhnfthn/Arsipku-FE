@@ -17,6 +17,7 @@
     "@nuxt/icon": "^2.1.0",
     "@nuxt/ui": "^4.2.1",
     "@nuxtjs/i18n": "^10.2.1",
+    "@sentry/vue": "^10.68.0",
     "@tinymce/tinymce-vue": "^4.0.7",
     "@vuepic/vue-datepicker": "^12.0.5",
     "axios": "^1.13.2",

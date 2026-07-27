@@ -72,6 +72,9 @@ export default defineNuxtConfig({
       pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || "http://172.20.16.115:3011",
       previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || "http://172.20.16.115:3011",
       onlyofficeUrl: process.env.NUXT_PUBLIC_ONLYOFFICE_URL || "http://localhost:80",
+      // Sentry (frontend error monitoring) — no-op jika tidak di-set
+      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || "",
+      sentryTracesSampleRate: process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || "1.0",
     },
   },
 

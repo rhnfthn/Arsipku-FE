@@ -19,15 +19,21 @@ import {
   PanelRightOpen,
   PanelRightClose,
   List,
+  Layers,
 } from 'lucide-vue-next';
 import { pickKorespondensiListQuery } from '~/utils/korespondensi-list-state';
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
+import SdeMasalModal from '@/components/korespondensi/sde-masal/SdeMasalModal.vue';
 
 definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const router = useRouter();
+
+// SDE Masal modal state
+const sdeMasalModalOpen = ref(false);
+const sdeMasalParentId = ref<string>('');
 const { t } = useI18n();
 const { user, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -1162,12 +1168,16 @@ const handleLanjutSDE = () => {
 };
 const handleLanjutSDEMassal = () => {
   if (!ensureCanCreateFollowUpAction()) return;
-  // TODO: implementasi alur SDE massal
-  useToast().add({
-    title: 'SDE Massal',
-    description: 'Fitur SDE massal belum tersedia (desain).',
-    color: 'info',
-  });
+  if (selected.value?.id) {
+    router.push({
+      path: '/korespondensi/tulis/sde-masal',
+      query: { parentNaskahId: selected.value.id },
+    });
+  }
+};
+const onSdeMasalSuccess = (result: any) => {
+  // Setelah generate massal berhasil, redirect ke dashboard SDE Masal
+  router.push('/korespondensi/sde-masal');
 };
 const handleLanjutDisposisi = () => {
   if (!ensureCanCreateFollowUpAction()) return;
@@ -1180,6 +1190,17 @@ const handleLanjutDisposisi = () => {
 };
 const selectKonsep = (opt: any) => {
   if (!ensureCanCreateFollowUpAction()) return;
+
+  // SDE Masal tidak terikat draftItem (tidak ada draft per jenis)
+  if (opt.type === 'SDE_MASAL') {
+    isOpenKonsepModal.value = false;
+    if (!selected.value?.id) return;
+    router.push({
+      path: opt.path,
+      query: { parentNaskahId: selected.value.id },
+    });
+    return;
+  }
 
   if (draftItem.value && opt.type !== draftItem.value.jenis) return;
 
@@ -1246,6 +1267,13 @@ const konsepOptions = computed(() => [
     path: '/korespondensi/tulis/konsep/surat-dinas-eksternal',
     icon: Building2,
     colorClass: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  {
+    type: 'SDE_MASAL',
+    label: 'SDE Masal (Surat Dinas Eksternal Massal)',
+    path: '/korespondensi/tulis/sde-masal',
+    icon: Layers,
+    colorClass: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
   },
 ]);
 </script>
@@ -1466,7 +1494,7 @@ const konsepOptions = computed(() => [
             @click="selectKonsep(opt)"
             class="group flex items-center gap-4 p-4 rounded-xl border transition-all duration-200"
             :class="
-              draftItem
+              draftItem && opt.type !== 'SDE_MASAL'
                 ? opt.type === draftItem.jenis
                   ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-600 cursor-pointer'
                   : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 opacity-40 cursor-not-allowed'
@@ -1477,7 +1505,7 @@ const konsepOptions = computed(() => [
               class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
               :class="[
                 opt.colorClass,
-                draftItem && opt.type !== draftItem.jenis
+                draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
                   ? ''
                   : 'transition-transform group-hover:scale-110',
               ]"
@@ -1489,7 +1517,7 @@ const konsepOptions = computed(() => [
                 <h4
                   class="text-base font-bold text-gray-900 dark:text-white"
                   :class="
-                    draftItem && opt.type !== draftItem.jenis
+                    draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
                       ? ''
                       : 'group-hover:text-primary-600 transition-colors'
                   "
@@ -1497,26 +1525,26 @@ const konsepOptions = computed(() => [
                   {{ opt.label }}
                 </h4>
                 <span
-                  v-if="draftItem && opt.type === draftItem.jenis"
+                  v-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type === draftItem.jenis"
                   class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-white uppercase tracking-wide"
                 >
                   Draft Tersimpan
                 </span>
                 <span
-                  v-else-if="draftItem && opt.type !== draftItem.jenis"
+                  v-else-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis"
                   class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-300 dark:bg-gray-600 text-white uppercase tracking-wide"
                 >
                   Tidak Tersedia
                 </span>
               </div>
               <p
-                v-if="draftItem && opt.type === draftItem.jenis"
+                v-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type === draftItem.jenis"
                 class="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5"
               >
                 Klik untuk melanjutkan draft yang sudah ada
               </p>
               <p
-                v-else-if="draftItem && opt.type !== draftItem.jenis"
+                v-else-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis"
                 class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
               >
                 Selesaikan draft yang ada terlebih dahulu
@@ -1525,7 +1553,7 @@ const konsepOptions = computed(() => [
             <ChevronRight
               class="w-5 h-5 transition-colors"
               :class="
-                draftItem && opt.type !== draftItem.jenis
+                draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
                   ? 'text-gray-200 dark:text-gray-700'
                   : 'text-gray-300 group-hover:text-primary-500'
               "
@@ -1669,6 +1697,13 @@ const konsepOptions = computed(() => [
         </div>
       </template>
     </USlideover>
+
+    <!-- SDE Masal Modal -->
+    <SdeMasalModal
+      v-model="sdeMasalModalOpen"
+      :parent-naskah-id="sdeMasalParentId"
+      @success="onSdeMasalSuccess"
+    />
   </div>
   </template>
 </template>

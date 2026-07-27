@@ -1,6 +1,7 @@
 <script setup>
 const props = defineProps({
   title: { type: String, default: '' },
+  subtitle: { type: String, default: '' },
   items: { type: Array, default: () => [] },
 });
 </script>
@@ -16,6 +17,9 @@ const props = defineProps({
         </h1>
       </slot>
     </div>
+    <p v-if="subtitle" class="text-sm text-gray-500 dark:text-gray-400">
+      {{ subtitle }}
+    </p>
 
     <!-- BREADCRUMB -->
     <UBreadcrumb
