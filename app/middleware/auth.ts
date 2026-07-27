@@ -86,6 +86,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/naskah-dinas/verifikator',
     '/kelola/pemeliharaan/pemberkasan',
     '/kelola/pemeliharaan/persetujuan-pemberkasan',
+    '/usulan-akses-berkas',
   ];
 
   if (role === 'user') {

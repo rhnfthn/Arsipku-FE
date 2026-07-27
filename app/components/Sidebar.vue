@@ -920,6 +920,12 @@ const adminMenuKelola = computed(() => [
         icon: 'i-lucide-history',
         permission: { resource: 'pemeliharaan.retensi', action: 'read' },
       },
+      {
+        label: 'Usulan Akses Berkas',
+        to: '/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      },
     ],
   },
 ]);
@@ -934,6 +940,12 @@ const userMenuKelola = computed(() => [
         to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
         icon: 'i-lucide-folder-plus',
         permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+      },
+      {
+        label: 'Usulan Akses Berkas',
+        to: '/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        permission: { resource: 'usulan-akses-berkas', action: 'read' },
       },
     ],
   },
