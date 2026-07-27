@@ -93,8 +93,12 @@ export function useUsulanAksesBerkas() {
         undefined,
         { skipCache: true },
       );
-      usulanDetail.value = res;
-      return res;
+      // BE interceptor wraps response: { success, data: { ...usulan, steps, selectedBerkas } }
+      // apiGet returns res.data which is { success, data: {...} }
+      // So the actual usulan object is at res.data (the inner data)
+      const payload = (res as any)?.data ?? res;
+      usulanDetail.value = payload;
+      return payload;
     } catch (err: any) {
       error.value = err;
       console.error('[useUsulanAksesBerkas] fetchDetail error:', err);
