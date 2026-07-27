@@ -8,6 +8,7 @@ import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAkses
 import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAksesBerkas.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useFeatureAccess } from '~/composables/useFeatureAccess';
+import { useAuth } from '~/composables/useAuth';
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 
 definePageMeta({ middleware: 'auth' });
@@ -16,7 +17,16 @@ useHead({ title: 'Usulan Akses Berkas' });
 const { t } = useI18n();
 const { canAccessPage, hasPermission } = useFeatureAccess();
 const { usulanList, pending, pagination, fetchList } = useUsulanAksesBerkas();
+const { user } = useAuth();
 const toast = useToast();
+
+// Hanya Sekretaris yang didelegasikan (position_status = 'SE') yang dapat
+// membuat usulan peminjaman berkas. SUPERADMIN tetap bisa untuk testing.
+const isDelegatedSekretaris = computed(() => {
+  const ps = user.value?.position_status;
+  const role = user.value?.activeRole?.name ?? user.value?.role;
+  return ps === 'SE' || (role && String(role).toUpperCase() === 'SUPERADMIN');
+});
 
 const openAdd = ref(false);
 const searchQuery = ref('');
@@ -115,7 +125,7 @@ onMounted(() => {
           <PageHeader :items="breadcrumbs" />
         </div>
         <button
-          v-if="hasPermission('usulan-akses-berkas', 'create')"
+          v-if="hasPermission('usulan-akses-berkas', 'create') && isDelegatedSekretaris"
           @click="openAdd = true"
           class="inline-flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-dark transition-colors"
         >
