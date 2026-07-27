@@ -867,6 +867,15 @@ const adminMenuAdministrasi = computed(() => {
         to: '/konfigurasi-sistem',
         icon: 'i-lucide-settings-2',
         permission: { resource: 'konfigurasi', action: 'read' },
+      },
+      {
+        label: 'Audit Trail',
+        icon: 'i-lucide-file-search-2',
+        children: [
+          { label: 'Log Aktivitas', to: '/admin/audit' },
+          { label: 'Anomali / Alert', to: '/admin/audit/anomaly' },
+          { label: 'Laporan Audit', to: '/admin/audit/report' },
+        ],
       }
     );
   }
