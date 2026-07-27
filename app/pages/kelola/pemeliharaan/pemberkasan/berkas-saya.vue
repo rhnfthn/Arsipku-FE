@@ -54,7 +54,7 @@
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     perPage === n
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                   ]"
                 >
                   {{ n }}
@@ -90,7 +90,7 @@
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     filterStatus === opt.value
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                   ]"
                 >
                   {{ opt.label }}
@@ -124,7 +124,7 @@
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
                     filterKlasifikasi === ''
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                   ]"
                 >
                   Semua Klasifikasi
@@ -138,7 +138,7 @@
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     filterKlasifikasi === k.klasifikasi
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                   ]"
                 >
                   {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
@@ -174,7 +174,7 @@
                     'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
                     filterTahun === opt.value
                       ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                   ]"
                 >
                   {{ opt.label }}
@@ -193,7 +193,10 @@
           </button>
 
           <div class="relative flex-1 min-w-[180px]">
-            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <UIcon
+              name="i-lucide-search"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            />
             <input
               v-model="search"
               type="text"
@@ -207,7 +210,11 @@
           :disabled="isExporting"
           class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
         >
-          <UIcon v-if="isExporting" name="i-lucide-loader-circle" class="w-3.5 h-3.5 animate-spin" />
+          <UIcon
+            v-if="isExporting"
+            name="i-lucide-loader-circle"
+            class="w-3.5 h-3.5 animate-spin"
+          />
           <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
           Export
         </button>
@@ -235,7 +242,16 @@
           </span>
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :status="row.status" />
+          <span
+            class="px-2.5 py-0.5 text-xs rounded-full font-medium inline-flex items-center gap-1 w-fit border"
+            :style="statusStyle(row.status)"
+          >
+            <span
+              class="w-1.5 h-1.5 rounded-full"
+              :style="{ backgroundColor: statusStyle(row.status).dot }"
+            />
+            {{ statusStyle(row.status).label }}
+          </span>
         </template>
         <template #cell-updatedAt="{ row }">
           <span class="text-xs text-gray-500">{{ formatDate(row.updatedAt) }}</span>
@@ -261,12 +277,7 @@
 
     <!-- Modal Tambah Berkas -->
     <Teleport to="body">
-      <Modal
-        v-model="showCreateModal"
-        :saving="isSubmitting"
-        size="xl"
-        :hide-default-footer="true"
-      >
+      <Modal v-model="showCreateModal" :saving="isSubmitting" size="xl" :hide-default-footer="true">
         <template #title>
           <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
             Tambah Berkas Arsip Aktif
@@ -275,21 +286,67 @@
 
         <div class="space-y-1">
           <!-- Klasifikasi -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Klasifikasi <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
-              <select
+              <USelectMenu
                 v-model="form.klasifikasi"
-                @change="onKlasifikasiChange"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full"
+                :items="klasifikasiItems"
+                value-key="klasifikasi"
+                label-key="klasifikasi_text"
+                searchable
+                :search-attributes="['klasifikasi', 'klasifikasi_text']"
+                placeholder="Pilih klasifikasi arsip"
+                :search-input="{ placeholder: 'Cari klasifikasi…' }"
+                variant="none"
+                class="w-full"
+                :ui="{
+                  base: '!px-0 !bg-transparent w-full dark:text-white',
+                  ring: 'ring-0',
+                  shadow: 'shadow-none',
+                  width: 'w-full max-w-[calc(100vw-2rem)]',
+                  content: 'z-[100]',
+                } as any"
+                @update:model-value="onKlasifikasiChange"
               >
-                <option value="" disabled>Pilih klasifikasi arsip</option>
-                <option v-for="k in klasifikasiList" :key="k.klasifikasi" :value="k.klasifikasi">
-                  {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
-                </option>
-              </select>
+                <template #item="{ item }">
+                  <div v-if="item.isParent" class="w-full py-1 overflow-hidden">
+                    <span
+                      class="text-xs font-bold text-primary-500 dark:text-primary-400 uppercase tracking-widest block w-full truncate"
+                    >
+                      {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
+                    </span>
+                  </div>
+                  <div v-else class="flex flex-col min-w-0 w-full overflow-hidden py-1">
+                    <span
+                      class="text-sm font-medium text-gray-900 dark:text-white block w-full truncate"
+                    >
+                      {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
+                    </span>
+                  </div>
+                </template>
+                <template #default>
+                  <span
+                    v-if="klasifikasiSelected"
+                    class="truncate text-sm block w-full text-left dark:text-white"
+                  >
+                    {{ klasifikasiSelected.klasifikasi }} —
+                    {{ klasifikasiSelected.klasifikasi_text || '' }}
+                  </span>
+                  <span
+                    v-else
+                    class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left"
+                  >
+                    Pilih klasifikasi arsip
+                  </span>
+                </template>
+              </USelectMenu>
               <p v-if="modalErrors.klasifikasi" class="text-xs text-red-500 mt-1">
                 Klasifikasi wajib dipilih
               </p>
@@ -297,8 +354,12 @@
           </div>
 
           <!-- Nama Berkas -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Nama Berkas <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
@@ -316,8 +377,12 @@
           </div>
 
           <!-- Retensi Aktif -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Retensi Aktif
             </span>
             <div class="flex-1 w-full">
@@ -332,8 +397,12 @@
           </div>
 
           <!-- Retensi Inaktif -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Retensi Inaktif
             </span>
             <div class="flex-1 w-full">
@@ -348,8 +417,12 @@
           </div>
 
           <!-- Kategori Berkas -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Kategori Berkas
             </span>
             <div class="flex-1 w-full">
@@ -363,8 +436,12 @@
           </div>
 
           <!-- Lokasi Fisik -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Lokasi Fisik <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
@@ -383,7 +460,9 @@
 
           <!-- Foto Lokasi Fisik -->
           <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Foto Lokasi Fisik
             </span>
             <div class="flex-1 w-full">
@@ -421,8 +500,12 @@
           </div>
 
           <!-- Nomor Berkas -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Nomor Berkas
             </span>
             <div class="flex-1 w-full">
@@ -436,8 +519,12 @@
           </div>
 
           <!-- Penyusutan Akhir -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Penyusutan Akhir <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
@@ -453,7 +540,9 @@
 
           <!-- Uraian -->
           <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Uraian <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
@@ -472,7 +561,9 @@
 
           <!-- Dokumen Pendukung -->
           <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
               Dokumen Pendukung
             </span>
             <div class="flex-1 w-full">
@@ -528,16 +619,19 @@
           >
             <button
               type="button"
-              :disabled="isSubmitting"
+              :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="resetForm(); showCreateModal = false"
+              @click="
+                resetForm();
+                showCreateModal = false;
+              "
             >
               Batal
             </button>
 
             <button
               type="button"
-              :disabled="isSubmitting"
+              :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 text-primary hover:bg-primary-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               @click="onSubmitBerkas('draft')"
             >
@@ -546,11 +640,11 @@
 
             <button
               type="button"
-              :disabled="isSubmitting"
+              :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-80 disabled:cursor-not-allowed"
               @click="onSubmitBerkas('aktif')"
             >
-              <span v-if="isSubmitting" class="inline-flex items-center gap-2">
+              <span v-if="isSubmitting || isUploading" class="inline-flex items-center gap-2">
                 <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle
                     cx="12"
@@ -568,7 +662,7 @@
                     class="opacity-90"
                   />
                 </svg>
-                Menyimpan...
+                {{ isUploading ? 'Mengunggah...' : 'Menyimpan...' }}
               </span>
               <span v-else>Simpan & Aktifkan</span>
             </button>
@@ -597,6 +691,7 @@ const {
   createBerkas,
   activateBerkas,
   getKlasifikasiDenganRetensi,
+  uploadBerkasFile,
 } = useArsipDinamis();
 const toast = useToast();
 
@@ -612,6 +707,7 @@ const berkasList = ref<any[]>([]);
 const totalItems = ref(0);
 const pending = ref(false);
 const isSubmitting = ref(false);
+const isUploading = ref(false);
 const klasifikasiList = ref<any[]>([]);
 
 const filterStatus = ref('');
@@ -707,7 +803,11 @@ function handleDocumentClick(e: MouseEvent) {
   for (const el of Array.from(els)) {
     if (el.contains(target)) return;
   }
-  openRowsPerPage.value = openFilterStatus.value = openFilterKlasifikasi.value = openFilterTahun.value = false;
+  openRowsPerPage.value =
+    openFilterStatus.value =
+    openFilterKlasifikasi.value =
+    openFilterTahun.value =
+      false;
 }
 
 // ── Form ─────────────────────────────────────────────────────────
@@ -755,6 +855,20 @@ const columns = [
 
 // ── Helpers ──────────────────────────────────────────────────────
 
+// ── Status color standard (berkas-saya only) ───────────────────
+const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
+  draft: { label: 'Draft', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' },
+  aktif: { label: 'Aktif', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
+  ditolak: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
+  closed_retensi_aktif: { label: 'Closed — Retensi Aktif', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+};
+const statusStyle = (status: string) => {
+  const key = (status || '').toLowerCase().replace(/[\s-]+/g, '_');
+  const s = STATUS_STYLE[key] || STATUS_STYLE.draft;
+  return { label: s.label, backgroundColor: s.bg, color: s.text, borderColor: s.border, dot: s.dot };
+};
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
@@ -784,6 +898,21 @@ const resetForm = () => {
   selectedRetensiAktif.value = 0;
   selectedRetensiInaktif.value = 0;
 };
+
+const klasifikasiSelected = computed(() =>
+  klasifikasiList.value.find((k: any) => k.klasifikasi === form.klasifikasi)
+);
+
+// Parent klasifikasi (kode tanpa ".") di-disable & ditampilkan sebagai group header,
+// menyamakan perilaku dengan form klasifikasi di halaman tulis naskah.
+const klasifikasiItems = computed(() =>
+  [...klasifikasiList.value]
+    .sort((a: any, b: any) => String(a.klasifikasi).localeCompare(String(b.klasifikasi)))
+    .map((item: any) => {
+      const isParent = !String(item.klasifikasi).includes('.');
+      return { ...item, isParent, disabled: isParent };
+    })
+);
 
 const onKlasifikasiChange = () => {
   const k = klasifikasiList.value.find((item: any) => item.klasifikasi === form.klasifikasi);
@@ -825,6 +954,37 @@ const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
 
   isSubmitting.value = true;
   try {
+    // Upload file pendukung (foto lokasi & dokumen) ke storage bila dipilih;
+    // simpan KEY hasil upload (bukan nama file) ke DB.
+    let fotoLokasiKey: string | undefined;
+    let dokumenPendukungKey: string | undefined;
+    if (form.foto_lokasi_fisik) {
+      isUploading.value = true;
+      try {
+        const res: any = await uploadBerkasFile(form.foto_lokasi_fisik);
+        fotoLokasiKey = res?.data?.key ?? res?.key;
+      } catch (e: any) {
+        throw new Error(
+          `Gagal upload foto lokasi: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
+        );
+      } finally {
+        isUploading.value = false;
+      }
+    }
+    if (form.dokumen_pendukung) {
+      isUploading.value = true;
+      try {
+        const res: any = await uploadBerkasFile(form.dokumen_pendukung);
+        dokumenPendukungKey = res?.data?.key ?? res?.key;
+      } catch (e: any) {
+        throw new Error(
+          `Gagal upload dokumen pendukung: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
+        );
+      } finally {
+        isUploading.value = false;
+      }
+    }
+
     const payload: Record<string, any> = {
       klasifikasi: form.klasifikasi,
       judul_berkas: form.judul_berkas,
@@ -833,9 +993,8 @@ const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
       lokasi: form.lokasi,
       isi_ringkas: form.isi_ringkas,
       kategori_berkas: form.kategori_berkas || undefined,
-      // ⚠️ Nama file saja; upload multipart ke storage adalah gap pre-existing (lihat catatan task).
-      foto_lokasi_fisik: form.foto_lokasi_fisik?.name || undefined,
-      dokumen_pendukung: form.dokumen_pendukung?.name || undefined,
+      foto_lokasi_fisik: fotoLokasiKey,
+      dokumen_pendukung: dokumenPendukungKey,
     };
 
     const result: any = await createBerkas(payload);
@@ -907,7 +1066,11 @@ const isExporting = ref(false);
 
 const exportData = async () => {
   if (totalItems.value === 0) {
-    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    toast.add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
     return;
   }
   isExporting.value = true;
@@ -922,10 +1085,22 @@ const exportData = async () => {
     });
     const rows = normalizePaginatedResponse(list).data;
     if (!rows.length) {
-      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Tidak ada data untuk diexport',
+        color: 'warning',
+      });
       return;
     }
-    const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Lokasi Fisik', 'Status', 'Updated'];
+    const headers = [
+      'Nama Berkas',
+      'Kode Berkas',
+      'Klasifikasi',
+      'Retensi (A/I)',
+      'Lokasi Fisik',
+      'Status',
+      'Updated',
+    ];
     const csvRows = rows.map((b: any) => [
       b.judulBerkas,
       b.kodeBerkas,
@@ -936,7 +1111,11 @@ const exportData = async () => {
       b.updatedAt,
     ]);
     downloadCsv(`berkas-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+    toast.add({
+      title: 'Berhasil',
+      description: `${rows.length} data berhasil diexport`,
+      color: 'success',
+    });
   } catch (e) {
     console.error('Gagal export berkas:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
