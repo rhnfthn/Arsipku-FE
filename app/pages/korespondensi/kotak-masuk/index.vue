@@ -32,6 +32,7 @@ import {
   X,
   FolderPlus,
   Folder,
+  Share,
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { useInbox } from '~/composables/useInbox';
@@ -1506,16 +1507,10 @@ onUnmounted(() => {
                       />
                     </UTooltip>
                     <UTooltip :text="$t('berbagi', 'Bagikan')">
-                      <button
-                        type="button"
-                        class="inline-flex items-center justify-center p-1 text-neutral-300 dark:text-gray-600 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                      <Share
+                        class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600 font-bold"
                         @click.stop="handleShare(mail)"
-                      >
-                        <UIcon
-                          name="i-heroicons-share"
-                          class="w-4 h-4 font-bold"
-                        />
-                      </button>
+                      />
                     </UTooltip>
                   </div>
                 </div>
