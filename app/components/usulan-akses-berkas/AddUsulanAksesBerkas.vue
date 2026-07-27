@@ -181,6 +181,17 @@ const canSubmit = computed(() => {
   return true;
 });
 
+// Debug: tampilkan kondisi yang belum terpenuhi
+const submitBlockReasons = computed(() => {
+  const reasons: string[] = [];
+  if (tujuanAkses.value.trim().length < 30) reasons.push(`Tujuan akses minimal 30 karakter (sekarang ${tujuanAkses.value.trim().length})`);
+  if (jenisAksesSelected.value.length === 0) reasons.push('Pilih minimal 1 jenis akses');
+  if (selectedVerifikatorPersnums.value.length === 0) reasons.push('Pilih minimal 1 verifikator');
+  if (!isINAKTIF.value && !divisiPemberiId.value) reasons.push('Pilih divisi pemberi (wajib untuk berkas AKTIF)');
+  if (durasiAkses.value === DurasiPreset.CUSTOM && !customTanggalSelesai.value) reasons.push('Isi tanggal selesai custom');
+  return reasons;
+});
+
 const handleSubmit = async () => {
   if (!canSubmit.value) {
     toast.add({ title: 'Lengkapi semua field wajib', color: 'error' });
@@ -257,6 +268,14 @@ onMounted(() => {
     </template>
 
     <div class="space-y-5 max-h-[60vh] overflow-y-auto p-1">
+      <!-- Debug: tampilkan alasan tombol disable -->
+      <div v-if="!canSubmit && submitBlockReasons.length > 0" class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-700 dark:text-amber-300">
+        <div class="font-medium mb-1">Syarat yang belum terpenuhi:</div>
+        <ul class="list-disc list-inside space-y-0.5">
+          <li v-for="(reason, i) in submitBlockReasons" :key="i">{{ reason }}</li>
+        </ul>
+      </div>
+
       <!-- Info: Sekretaris yang didelegasikan -->
       <div class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 text-sm text-blue-700 dark:text-blue-300">
         <strong>Info:</strong> Usulan dibuat atas nama divisi Anda sebagai Sekretaris yang didelegasikan. Verifikator (AVP/VP/EVP) otomatis diambil dari managerial di divisi Anda.
