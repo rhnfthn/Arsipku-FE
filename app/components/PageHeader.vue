@@ -9,9 +9,13 @@ const props = defineProps({
   <div class="space-y-1 mb-5">
     <!-- TITLE -->
     <!-- <Heading variant="heading6sb" class="text-gray-900 dark:text-white"> -->
-    <h1 v-if="title" class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-      {{ title }}
-    </h1>
+    <div v-if="title || $slots.title" class="flex flex-wrap items-center gap-3">
+      <slot name="title">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {{ title }}
+        </h1>
+      </slot>
+    </div>
 
     <!-- BREADCRUMB -->
     <UBreadcrumb
@@ -30,13 +34,7 @@ const props = defineProps({
       <!-- DROPDOWN -->
       <template #dropdown="{ item }">
         <UDropdownMenu :items="item.children">
-          <UButton
-            :icon="item.icon"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            class="p-0.5"
-          />
+          <UButton :icon="item.icon" color="neutral" variant="ghost" size="xs" class="p-0.5" />
         </UDropdownMenu>
       </template>
     </UBreadcrumb>
