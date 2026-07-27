@@ -5,7 +5,7 @@ import {
   Loader2, X, CheckCircle, XCircle, AlertCircle,
   Users, FileText, Building2, ChevronRight, ArrowDown,
   PanelRightOpen, PanelRightClose, List, ArrowUpDown,
-  Mail, Send, Save, RotateCcw, RefreshCw
+  Mail, Send, Save, RotateCcw, RefreshCw, Layers
 } from "lucide-vue-next";
 import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
@@ -803,7 +803,15 @@ const handleLanjutNotaDinas = () => { if (selected.value?.id) router.push({ path
 const handleLanjutSDI = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-internal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutSDE = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'tindak_lanjut' } }); };
 const handleLanjutDisposisi = () => { if (selected.value?.id) router.push({ path: '/korespondensi/tulis/disposisi', query: { ref_id: selected.value.id, ref_jenis: selected.value.jenis, action: 'disposisi' } }); };
-const selectKonsep = (opt: any) => { isOpenKonsepModal.value = false; if (selected.value?.id) router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } }); };
+const selectKonsep = (opt: any) => {
+  isOpenKonsepModal.value = false;
+  if (!selected.value?.id) return;
+  if (opt.type === 'SDE_MASAL') {
+    router.push({ path: opt.path, query: { parentNaskahId: selected.value.id } });
+    return;
+  }
+  router.push({ path: opt.path, query: { ref_id: selected.value.id, workflow: 'konsep', ref_jenis: selected.value.jenis } });
+};
 
 // === KIRIM VIA EMAIL ===
 const openKirimEmailModal = (detail: any) => {
@@ -892,7 +900,8 @@ const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
   { type: 'SDI', label: 'Surat Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
-  { type: 'SDE', label: 'Surat Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' }
+  { type: 'SDE', label: 'Surat Eksternal', desc: 'Pihak luar', path: '/korespondensi/tulis/konsep/surat-dinas-eksternal', icon: Building2, colorClass: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' },
+  { type: 'SDE_MASAL', label: 'SDE Masal', desc: 'Surat Dinas Eksternal Massal', path: '/korespondensi/tulis/sde-masal', icon: Layers, colorClass: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' }
 ];
 </script>
 
