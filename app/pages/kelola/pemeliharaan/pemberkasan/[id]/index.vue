@@ -324,6 +324,42 @@
           description="Modul audit log terpisah akan ditambahkan di phase berikutnya (spec §15.7)."
         />
       </section>
+
+      <section v-else-if="activeTab === 'retensi'" class="mt-5 space-y-5">
+        <template v-if="isRetensiAktif">
+          <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center gap-2 mb-4">
+              <Clock3 class="h-5 w-5 text-primary-500" />
+              <h3 class="font-semibold text-gray-900 dark:text-white">Retensi Aktif Berjalan</h3>
+              <StatusBadge status="closed_retensi_aktif" />
+            </div>
+            <div class="w-full h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+              <div class="h-full bg-primary-500" :style="{ width: retensiProgress + '%' }" />
+            </div>
+            <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">{{ retensiInfo }}</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <p class="text-xs text-gray-500 dark:text-gray-400">JRA Aktif</p>
+              <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ berkas?.retensiAktifTahun || 0 }} Tahun</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Sisa Waktu</p>
+              <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ sisaWaktu }}</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Jatuh Tempo Inaktif</p>
+              <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkas?.tanggalRetensiInaktifBerakhir) }}</p>
+            </div>
+          </div>
+        </template>
+        <EmptyState
+          v-else
+          icon="i-lucide-clock"
+          title="Retensi belum berjalan"
+          description="Berkas ini belum ditutup. Retensi aktif berjalan setelah berkas ditutup dan disetujui."
+        />
+      </section>
     </template>
 
     <UModal
@@ -483,7 +519,7 @@ const detailPath = computed(() => `/kelola/pemeliharaan/pemberkasan/${berkasId.v
 const berkas = ref<Record<string, any> | null>(null);
 const pending = ref(true);
 const loadError = ref('');
-const activeTab = ref<'overview' | 'naskah' | 'timeline' | 'activity-log'>('overview');
+const activeTab = ref<'overview' | 'naskah' | 'timeline' | 'activity-log' | 'retensi'>('overview');
 const naskahList = ref<Record<string, any>[]>([]);
 const naskahSearch = ref('');
 const naskahPending = ref(false);
@@ -518,6 +554,7 @@ const tabs = [
   { label: 'Daftar Naskah', value: 'naskah' as const, icon: FileText },
   { label: 'Timeline', value: 'timeline' as const, icon: History },
   { label: 'Activity Log', value: 'activity-log' as const, icon: ListTree },
+  { label: 'Retensi', value: 'retensi' as const, icon: Clock3 },
 ];
 const naskahColumns = [
   { key: 'nomorSurat', label: 'Nomor & Tanggal' },
@@ -549,6 +586,33 @@ const quickInfoCards = computed(() => [
   { label: 'Tanggal Dibuat', value: formatDate(berkas.value?.tanggalDibuat) },
   { label: 'Retensi Berakhir', value: formatDate(berkas.value?.tanggalRetensiAktifBerakhir) },
 ]);
+const isRetensiAktif = computed(() => berkas.value?.status === 'closed_retensi_aktif');
+const retensiProgress = computed(() => {
+  const start = berkas.value?.tanggalDitutup;
+  const end = berkas.value?.tanggalRetensiAktifBerakhir;
+  if (!start || !end) return 0;
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  const now = Date.now();
+  if (now >= e) return 100;
+  if (now <= s) return 0;
+  return Math.round(((now - s) / (e - s)) * 100);
+});
+const retensiInfo = computed(() => {
+  const end = berkas.value?.tanggalRetensiAktifBerakhir;
+  if (!end) return 'Tanggal jatuh tempo retensi belum dihitung.';
+  const days = Math.ceil((new Date(end).getTime() - Date.now()) / 86400000);
+  if (days <= 0) return 'Masa retensi aktif telah berakhir.';
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  return `Tersisa ${years} tahun ${months} bulan dari total masa retensi aktif ${berkas.value?.retensiAktifTahun || 0} tahun.`;
+});
+const sisaWaktu = computed(() => {
+  const end = berkas.value?.tanggalRetensiAktifBerakhir;
+  if (!end) return '-';
+  const days = Math.ceil((new Date(end).getTime() - Date.now()) / 86400000);
+  return days <= 0 ? 'Lewat' : `${days} hari`;
+});
 const metadataList = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-' },
   { label: 'Kategori Berkas', value: berkas.value?.kategoriBerkas || '-' },
