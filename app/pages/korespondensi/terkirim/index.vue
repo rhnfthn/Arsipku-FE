@@ -1696,7 +1696,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Share Modal -->
-    <ShareModal
+    <SharedShareModal
       v-if="showShareModal && shareNaskah"
       :naskah-id="shareNaskah.naskahId"
       :naskah-perihal="shareNaskah.perihal || shareNaskah.judul"
