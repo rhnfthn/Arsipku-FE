@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 
 const props = defineProps<{
-  status: StatusUsulan;
+  status?: StatusUsulan;
 }>();
 
 const statusConfig: Record<StatusUsulan, { label: string; class: string }> = {
