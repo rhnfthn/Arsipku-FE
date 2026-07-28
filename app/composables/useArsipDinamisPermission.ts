@@ -1,35 +1,29 @@
 import type { ComputedRef } from 'vue';
 
 /**
- * Permission composable untuk modul Arsip Dinamis — Pemberkasan.
+ * Capability flags modul Arsip Dinamis — Pemberkasan & Persetujuan.
  *
- * Mengekspos 7 flag `ComputedRef<boolean>` yang dibaca oleh Task 14
- * (Kotak Masuk/Terkirim — kolom Status Berkas dinamis) dan halaman
- * Pemberkasan lainnya.
- *
- * FE permission API yang sebenarnya (Sidebar.vue & useAuth.ts):
- * - composable: `useAuth()`
- * - user: `useState<UserProfile | null>('user')`
- * - permissions: `user.value.activePermissions` berbentuk
- *   `{ resource: string, actions: string[] }[]`
- * - helper bawaan: `hasPermission(resource, action)`
- *
- * Kode ini menggunakan `useAuth().hasPermission(resource, action)` sehingga
- * otomatis reaktif terhadap perubahan `activeRole` / refresh permissions.
+ * Berbasis effective-role (usePemeliharaanAccess: position_status + bodTag),
+ * BUKAN RBAC hasPermission, supaya gating tombol cocok dengan rule akses
+ * pemeliharaan (terutama aktor delegated SE/PS/PT/PH dan admin bypass).
+ * Nama & shape 7 flag dipertahankan agar pemanggil (halaman pemberkasan,
+ * persetujuan, Kotak Masuk) tidak rusak.
  */
 export const useArsipDinamisPermission = () => {
-  const { hasPermission } = useAuth();
+  const { hasRole } = useAuth();
+  const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
-  const can = (resource: string, action: string): ComputedRef<boolean> =>
-    computed(() => hasPermission(resource, action));
+  const admin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
+  const pem = ((): ComputedRef<boolean> => computed(() => admin.value || canPemberkasan.value));
+  const per = ((): ComputedRef<boolean> => computed(() => admin.value || canPersetujuan.value));
 
   return {
-    canCreatePemberkasan: can('pemeliharaan.pemberkasan', 'create'),
-    canUpdateBerkas: can('pemeliharaan.pemberkasan', 'update'),
-    canAddNaskah: can('pemeliharaan.pemberkasan', 'add-naskah'),
-    canAjukanTutup: can('pemeliharaan.pemberkasan', 'ajukan-tutup'),
-    canApprove: can('pemeliharaan.verifikasi', 'approve'),
-    canReject: can('pemeliharaan.verifikasi', 'reject'),
-    canReadBerkasStatus: can('pemeliharaan.pemberkasan', 'read'),
+    canCreatePemberkasan: pem(),
+    canUpdateBerkas: pem(),
+    canAddNaskah: pem(),
+    canAjukanTutup: pem(),
+    canApprove: per(),
+    canReject: per(),
+    canReadBerkasStatus: computed(() => admin.value || canPemberkasan.value || canPersetujuan.value),
   };
 };
