@@ -311,7 +311,10 @@
                     @update:model-value="syncVerifikator(idx)"
                   >
                     <template #item="{ item, selected }: any">
-                      <div class="flex min-w-0 items-start gap-2 py-1">
+                      <div
+                        class="flex min-w-0 items-start gap-2 py-1"
+                        :class="item.disabled && 'cursor-not-allowed opacity-40'"
+                      >
                         <UIcon
                           name="i-lucide-user-circle-2"
                           class="mt-0.5 size-5 shrink-0 text-gray-400"
@@ -319,12 +322,15 @@
                         <div class="min-w-0 flex-1">
                           <p
                             class="truncate text-sm"
-                            :class="selected && 'font-semibold text-primary-600'"
+                            :class="[
+                              selected && 'font-semibold text-primary-600',
+                              item.disabled && 'line-through',
+                            ]"
                           >
                             {{ item.label }}
                           </p>
                           <p class="truncate text-xs text-gray-500">
-                            {{ item.positionText || 'Tanpa jabatan' }}
+                            {{ item.disabled ? 'Sudah dipilih' : item.positionText || 'Tanpa jabatan' }}
                           </p>
                         </div>
                         <UIcon
@@ -453,6 +459,7 @@ const router = useRouter();
 const { getBerkasById, ajukanTutupBerkas, getDaftarNaskah, fetchBerkasFileBlob } =
   useArsipDinamis();
 const { apiGet } = useApi();
+const { user, getProfile } = useAuth();
 const toast = useToast();
 
 const berkasId = computed(() => route.params.id as string);
@@ -516,13 +523,17 @@ const stepLabel = (idx: number) =>
 
 const optionsFor = (idx: number) => {
   const current = verifikatorList.value[idx]?.verifikator_persnum;
-  const selected = new Set(
+  const selectedElsewhere = new Set(
     verifikatorList.value
       .filter((_, i) => i !== idx)
       .map((v) => v.verifikator_persnum)
       .filter(Boolean)
   );
-  return verifikatorOptions.value.filter((o) => o.value === current || !selected.has(o.value));
+  return verifikatorOptions.value.map((o) => ({
+    ...o,
+    // Pilihan yang sudah dipakai di baris lain di-disable (tetap tampil, tak bisa double-pick).
+    disabled: o.value !== current && selectedElsewhere.has(o.value),
+  }));
 };
 const syncVerifikator = (idx: number) => {
   const selected = verifikatorOptions.value.find(
@@ -705,15 +716,22 @@ onMounted(async () => {
     } catch {
       naskahTotal.value = 0;
     }
-    const people: any = await apiGet('/person/with-position/all', { params: { limit: 500 } });
-    const payload = people?.data ?? people;
-    const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
-    verifikatorOptions.value = list.map((p: any) => ({
-      label: `${p.nama || p.name} — ${p.position_text || 'Tanpa jabatan'} (${p.persnum})`,
-      value: String(p.persnum),
-      positionId: Number(p.position || p.position_id) || undefined,
-      positionText: p.position_text || '',
+
+    // Verifikator hanya boleh atasan managerial pengaju (rantai parent strict:
+    // AVP/VP/EVP/Direktur di garis pelaporan) — GET /org-data/atasan-managerial/:positionId
+    if (!user.value) await getProfile();
+    const positionId = Number(user.value?.position);
+    const atasanRes: any = await apiGet(`/org-data/atasan-managerial/${positionId}`);
+    const atasans: any[] = Array.isArray(atasanRes?.data) ? atasanRes.data : [];
+    verifikatorOptions.value = atasans.map((r: any) => ({
+      label: `${r.persnum_person_text || 'Tanpa nama'} — ${
+        r.position_text || 'Tanpa jabatan'
+      } (${r.persnum_person})`,
+      value: String(r.persnum_person),
+      positionId: Number(r.position) || undefined,
+      positionText: r.position_text || '',
     }));
+
     // Muat lampiran (foto lokasi & dokumen pendukung) secara non-blocking
     loadBerkasFiles();
   } catch (e) {
