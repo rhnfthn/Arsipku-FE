@@ -292,47 +292,41 @@
           </div>
         </div>
         <div class="overflow-x-auto p-5">
-          <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            <div
-              class="grid min-w-[760px] grid-cols-[1.1fr_2.2fr_1fr_1.2fr_0.8fr] bg-primary-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+          <DataTable
+            :columns="naskahColumns"
+            :rows="naskahList"
+            empty-message="Belum ada naskah dalam berkas ini."
+          >
+            <template #cell-nomorSurat="{ row }"
+              ><span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{
+                row.nomorSurat || '-'
+              }}</span></template
             >
-              <span>No Naskah</span><span>Perihal</span><span>Jenis</span><span>Tanggal</span
-              ><span>Status</span>
-            </div>
-            <div
-              v-if="naskahList.length === 0"
-              class="px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+            <template #cell-perihal="{ row }"
+              ><span class="text-sm text-gray-900 dark:text-white">{{
+                row.perihal || '-'
+              }}</span></template
             >
-              Belum ada naskah dalam berkas ini.
-            </div>
-            <div
-              v-for="item in naskahList"
-              :key="item.id || item.nomorSurat"
-              class="grid min-w-[760px] grid-cols-[1.1fr_2.2fr_1fr_1.2fr_0.8fr] items-center border-t border-gray-100 px-4 py-4 text-sm dark:border-gray-700"
+            <template #cell-naskahTipe="{ row }"
+              ><span
+                class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+              >
+                {{ naskahTipeLabel(row.naskahTipe) }}
+              </span></template
             >
-              <span class="font-mono text-gray-700 dark:text-gray-300">{{
-                item.nomorSurat || '-'
-              }}</span>
-              <span class="text-gray-900 dark:text-white">{{ item.perihal || '-' }}</span>
-              <span>
-                <span
-                  class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                >
-                  {{ naskahTipeLabel(item.naskahTipe) }}
-                </span>
-              </span>
-              <span class="text-gray-600 dark:text-gray-400">{{
-                formatDate(item.tanggalNaskah)
-              }}</span>
-              <span>
-                <span
-                  class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-900/30 dark:text-success-400"
-                >
-                  <span class="size-1.5 rounded-full bg-success-500" /> Final
-                </span>
-              </span>
-            </div>
-          </div>
+            <template #cell-tanggalNaskah="{ row }"
+              ><span class="text-sm text-gray-600 dark:text-gray-400">{{
+                formatDate(row.tanggalNaskah)
+              }}</span></template
+            >
+            <template #cell-status
+              ><span
+                class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-900/30 dark:text-success-400"
+              >
+                <span class="size-1.5 rounded-full bg-success-500" /> Final
+              </span></template
+            >
+          </DataTable>
         </div>
       </section>
 
@@ -399,7 +393,7 @@
 
       <!-- Aksi Verifikasi -->
       <section
-        v-if="!isLoading"
+        v-if="!isLoading && !verifikasiSelesai && !isRiwayatMode"
         class="overflow-hidden rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -441,6 +435,92 @@
               >{{ isLastVerifikator ? 'Setujui Penutupan' : 'Lanjutkan Verifikasi' }}</UButton
             >
           </div>
+        </div>
+      </section>
+
+      <!-- Keputusan Anda (mode riwayat — read-only) -->
+      <section
+        v-else-if="isRiwayatMode && !isLoading"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              :class="
+                myDecision?.status === 'approved'
+                  ? 'bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-400'
+                  : 'bg-error-100 text-error-600 dark:bg-error-900/40 dark:text-error-400'
+              "
+            >
+              <UIcon
+                :name="myDecision?.status === 'approved' ? 'i-lucide-circle-check-big' : 'i-lucide-circle-x'"
+                class="size-5"
+              />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Keputusan Anda</h3>
+              <p v-if="myDecision" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Anda
+                <span
+                  :class="
+                    myDecision?.status === 'approved'
+                      ? 'font-medium text-success-700 dark:text-success-400'
+                      : 'font-medium text-error-700 dark:text-error-400'
+                  "
+                >{{ myDecision?.status === 'approved' ? 'menyetujui' : 'menolak' }}</span>
+                pengajuan penutupan berkas ini pada {{ formatDate(myDecision?.actionAt) }}.
+              </p>
+              <p v-else class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Data keputusan tidak ditemukan.
+              </p>
+            </div>
+          </div>
+          <UButton
+            class="w-full sm:w-auto"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-lucide-arrow-left"
+            to="/kelola/pemeliharaan/persetujuan-pemberkasan"
+            >Kembali ke Daftar Persetujuan</UButton
+          >
+        </div>
+        <div v-if="myDecision?.catatan" class="border-t border-gray-100 px-5 py-3 dark:border-gray-700">
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Catatan</p>
+          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{{ myDecision?.catatan }}</p>
+        </div>
+      </section>
+
+      <!-- Verifikasi Selesai (tidak ada langkah pending) -->
+      <section
+        v-else-if="!isLoading && verifikasiSelesai"
+        class="overflow-hidden rounded-xl border border-success-100 bg-gradient-to-br from-success-50 to-white p-5 shadow-sm dark:border-success-900/40 dark:from-success-900/20 dark:to-gray-800"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-400"
+            >
+              <UIcon name="i-lucide-circle-check-big" class="size-5" />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Verifikasi Selesai</h3>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Pengajuan penutupan berkas ini sudah selesai diproses. Tidak ada aksi lain
+                diperlukan.
+              </p>
+            </div>
+          </div>
+          <UButton
+            class="w-full sm:w-auto"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-lucide-arrow-left"
+            to="/kelola/pemeliharaan/persetujuan-pemberkasan"
+            >Kembali ke Daftar Persetujuan</UButton
+          >
         </div>
       </section>
     </main>
@@ -548,7 +628,7 @@
             <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-4 shrink-0" />
             <span
               >Penolakan akan membatalkan pengajuan penutupan berkas ini. Berkas kembali ke status
-              aktif.</span
+              ditolak (dapat direvisi &amp; diajukan ulang).</span
             >
           </div>
           <div>
@@ -601,6 +681,7 @@ const {
   fetchBerkasFileBlob,
 } = useArsipDinamis();
 const toast = useToast();
+const { user } = useAuth();
 const berkasId = computed(() => route.params.id as string);
 const berkas = ref<any>(null);
 const verifikasiList = ref<any[]>([]);
@@ -629,12 +710,21 @@ const pendingIndex = computed(() =>
   verifikasiList.value.findIndex((item) => item.status === 'pending')
 );
 const isLastVerifikator = computed(
-  () => pendingIndex.value < 0 || pendingIndex.value === verifikasiList.value.length - 1
+  () =>
+    pendingIndex.value >= 0 &&
+    pendingIndex.value === verifikasiList.value.length - 1
 );
+const verifikasiSelesai = computed(() => pendingIndex.value < 0);
 const progressLabel = computed(() =>
   pendingIndex.value < 0
     ? 'Verifikasi selesai'
     : `Verifikasi Tahap ${pendingIndex.value + 1} dari ${verifikasiList.value.length}`
+);
+
+const isRiwayatMode = computed(() => !!route.query.riwayat);
+const myPersnum = computed(() => String(user.value?.persnum ?? ''));
+const myDecision = computed(() =>
+  verifikasiList.value.find((v: any) => String(v.verifikatorPersnum) === myPersnum.value),
 );
 
 const display = (value: any) =>
@@ -691,6 +781,14 @@ const naskahTipeLabel = (t?: string) => {
   };
   return map[String(t || '').toUpperCase()] || t || '-';
 };
+
+const naskahColumns = [
+  { key: 'nomorSurat', label: 'No Naskah' },
+  { key: 'perihal', label: 'Perihal' },
+  { key: 'naskahTipe', label: 'Jenis' },
+  { key: 'tanggalNaskah', label: 'Tanggal' },
+  { key: 'status', label: 'Status' },
+];
 
 const stepItems = computed(() => [
   ...verifikasiList.value.map((item, index) => ({
