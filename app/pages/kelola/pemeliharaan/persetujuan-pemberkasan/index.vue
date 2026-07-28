@@ -11,6 +11,31 @@
       />
     </div>
 
+    <!-- Tab nav -->
+    <div class="mb-5 print:hidden">
+      <div
+        class="overflow-x-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <nav class="flex gap-1" aria-label="Persetujuan pemberkasan">
+          <button
+            v-for="tab in tabs"
+            :key="tab.value"
+            type="button"
+            class="flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all"
+            :class="
+              activeTab === tab.value
+                ? 'bg-primary-50 text-primary-700 shadow-sm dark:bg-primary-900/30 dark:text-primary-400'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+            "
+            @click="activeTab = tab.value"
+          >
+            <UIcon :name="tab.icon" class="h-4 w-4" />
+            {{ tab.label }}
+          </button>
+        </nav>
+      </div>
+    </div>
+
     <div
       class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800"
     >
@@ -60,6 +85,24 @@
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
+
+          <!-- Filter status (khusus tab Riwayat) -->
+          <div v-if="activeTab === 'riwayat'" class="flex items-center gap-1">
+            <button
+              v-for="opt in statusOptions"
+              :key="opt.value"
+              type="button"
+              @click="statusFilter = opt.value"
+              :class="[
+                'rounded-lg px-3 py-1.5 text-xs font-medium transition-all border',
+                statusFilter === opt.value
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-primary'
+              ]"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
         </div>
         <button
           @click="exportData"
@@ -74,12 +117,12 @@
 
       <DataTable
         :columns="columns"
-        :rows="pengajuanList"
+        :rows="rows"
         :loading="pending"
         header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        empty-message="Tidak ada pengajuan penutupan yang menunggu persetujuan Anda."
+        :empty-message="emptyMessage"
       >
         <template #cell-judulBerkas="{ row }">
           <div class="min-w-52">
@@ -105,22 +148,61 @@
             formatDate(row.createdAt)
           }}</span>
         </template>
-        <template #cell-status>
+        <template #cell-actionAt="{ row }">
+          <span class="text-xs text-gray-500 dark:text-gray-400">{{
+            formatDate(row.actionAt)
+          }}</span>
+        </template>
+        <template #cell-status="{ row }">
           <span
+            v-if="row.status === 'pending'"
             class="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-950/40 dark:text-warning-300"
           >
             <span class="h-1.5 w-1.5 rounded-full bg-warning-500" />
             Menunggu Anda
           </span>
+          <span
+            v-else-if="row.status === 'approved'"
+            class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-1 text-xs font-medium text-success-700 dark:bg-success-950/40 dark:text-success-300"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-success-500" />
+            Disetujui
+          </span>
+          <span
+            v-else-if="row.status === 'rejected'"
+            class="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-1 text-xs font-medium text-error-700 dark:bg-error-950/40 dark:text-error-300"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-error-500" />
+            Ditolak
+          </span>
+          <span v-else class="text-xs text-gray-500 dark:text-gray-400">{{ row.status || '-' }}</span>
+        </template>
+        <template #cell-catatan="{ row }">
+          <span
+            class="block max-w-[220px] truncate text-xs text-gray-600 dark:text-gray-300"
+            :title="row.catatan || ''"
+          >
+            {{ row.catatan || '-' }}
+          </span>
         </template>
         <template #cell-aksi="{ row }">
           <NuxtLink
+            v-if="activeTab === 'menunggu'"
             :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review`"
             class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
             title="Review Pengajuan"
           >
             <Eye class="h-4 w-4" />
             Review
+          </NuxtLink>
+          <NuxtLink
+            v-else
+            :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review?riwayat=1`"
+            class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
+            title="Lihat Keputusan"
+          >
+            <Eye class="h-4 w-4" />
+            Lihat
           </NuxtLink>
         </template>
       </DataTable>
@@ -135,13 +217,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { ChevronDown, Eye } from 'lucide-vue-next';
 
-const { getPengajuanPenutupan } = useArsipDinamis();
+const { getPengajuanPenutupan, getRiwayatPersetujuan } = useArsipDinamis();
 const toast = useToast();
 
-const pengajuanList = ref<any[]>([]);
+const rows = ref<any[]>([]);
 const pending = ref(false);
 const search = ref('');
 const perPage = ref(10);
@@ -149,7 +231,21 @@ const currentPage = ref(1);
 const totalItems = ref(0);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
+const activeTab = ref<'menunggu' | 'riwayat'>('menunggu');
+const statusFilter = ref<'all' | 'approved' | 'rejected'>('all');
+
 const openRowsPerPage = ref(false);
+
+const tabs = [
+  { value: 'menunggu', label: 'Menunggu Persetujuan', icon: 'i-lucide-clock' },
+  { value: 'riwayat', label: 'Riwayat Persetujuan', icon: 'i-lucide-history' },
+] as const;
+
+const statusOptions = [
+  { value: 'all', label: 'Semua' },
+  { value: 'approved', label: 'Disetujui' },
+  { value: 'rejected', label: 'Ditolak' },
+] as const;
 
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
@@ -169,14 +265,32 @@ function handleDocumentClick(e: MouseEvent) {
   openRowsPerPage.value = false;
 }
 
-const columns = [
-  { key: 'judulBerkas', label: 'Nama Berkas' },
-  { key: 'kodeBerkas', label: 'Kode Berkas' },
-  { key: 'retensi', label: 'Retensi (A/I)' },
-  { key: 'createdAt', label: 'Tanggal Pengajuan' },
-  { key: 'status', label: 'Status' },
-  { key: 'aksi', label: 'Aksi' },
-];
+const columns = computed(() =>
+  activeTab.value === 'menunggu'
+    ? [
+        { key: 'judulBerkas', label: 'Nama Berkas' },
+        { key: 'kodeBerkas', label: 'Kode Berkas' },
+        { key: 'retensi', label: 'Retensi (A/I)' },
+        { key: 'createdAt', label: 'Tanggal Pengajuan' },
+        { key: 'status', label: 'Status' },
+        { key: 'aksi', label: 'Aksi' },
+      ]
+    : [
+        { key: 'judulBerkas', label: 'Nama Berkas' },
+        { key: 'kodeBerkas', label: 'Kode Berkas' },
+        { key: 'retensi', label: 'Retensi (A/I)' },
+        { key: 'actionAt', label: 'Tanggal Aksi' },
+        { key: 'status', label: 'Status' },
+        { key: 'catatan', label: 'Catatan' },
+        { key: 'aksi', label: 'Aksi' },
+      ]
+);
+
+const emptyMessage = computed(() =>
+  activeTab.value === 'menunggu'
+    ? 'Tidak ada pengajuan penutupan yang menunggu persetujuan Anda.'
+    : 'Tidak ada riwayat persetujuan.'
+);
 
 const formatDate = (value?: string) => {
   if (!value) return '-';
@@ -187,30 +301,41 @@ const formatDate = (value?: string) => {
   });
 };
 
+const statusLabel = (s?: string) =>
+  s === 'approved' ? 'Disetujui' : s === 'rejected' ? 'Ditolak' : s === 'pending' ? 'Menunggu' : s || '-';
+
 const fetchData = async () => {
   pending.value = true;
   try {
-    const response = await getPengajuanPenutupan({
-      search: search.value || undefined,
-      page: currentPage.value,
-      limit: perPage.value,
-    });
+    const response =
+      activeTab.value === 'menunggu'
+        ? await getPengajuanPenutupan({
+            search: search.value || undefined,
+            page: currentPage.value,
+            limit: perPage.value,
+          })
+        : await getRiwayatPersetujuan({
+            search: search.value || undefined,
+            status: statusFilter.value,
+            page: currentPage.value,
+            limit: perPage.value,
+          });
 
     // useApi mengembalikan envelope global `{ success, data }`, sedangkan
     // endpoint ini mengembalikan payload pagination `{ data, meta }`.
     const payload = response?.data?.data ? response.data : response;
-    pengajuanList.value = Array.isArray(payload?.data)
+    rows.value = Array.isArray(payload?.data)
       ? payload.data
       : Array.isArray(payload)
         ? payload
         : [];
-    totalItems.value = Number(payload?.meta?.total ?? pengajuanList.value.length);
+    totalItems.value = Number(payload?.meta?.total ?? rows.value.length);
   } catch (e: any) {
-    console.error('Gagal memuat pengajuan:', e);
-    pengajuanList.value = [];
+    console.error('Gagal memuat data:', e);
+    rows.value = [];
     totalItems.value = 0;
     toast.add({
-      title: 'Gagal memuat persetujuan',
+      title: 'Gagal memuat data',
       description: e?.data?.message || e?.message || 'Silakan coba kembali.',
       color: 'error',
     });
@@ -228,28 +353,51 @@ const exportData = async () => {
   }
   isExporting.value = true;
   try {
-    const response: any = await getPengajuanPenutupan({
-      search: search.value || undefined,
-      page: 1,
-      limit: totalItems.value || 9999,
-    });
+    const response: any =
+      activeTab.value === 'menunggu'
+        ? await getPengajuanPenutupan({
+            search: search.value || undefined,
+            page: 1,
+            limit: totalItems.value || 9999,
+          })
+        : await getRiwayatPersetujuan({
+            search: search.value || undefined,
+            status: statusFilter.value,
+            page: 1,
+            limit: totalItems.value || 9999,
+          });
     const payload = response?.data?.data ? response.data : response;
-    const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-    if (!rows.length) {
+    const list = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+    if (!list.length) {
       toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
       return;
     }
-    const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
-    const csvRows = rows.map((r: any) => [
-      r.berkas?.judulBerkas,
-      r.berkas?.kodeBerkas,
-      r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
-      `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
-      r.createdAt,
-      r.status || 'Menunggu',
-    ]);
-    downloadCsv(`persetujuan-pemberkasan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (activeTab.value === 'menunggu') {
+      const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
+      const csvRows = list.map((r: any) => [
+        r.berkas?.judulBerkas,
+        r.berkas?.kodeBerkas,
+        r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
+        `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
+        r.createdAt,
+        statusLabel(r.status),
+      ]);
+      downloadCsv(`persetujuan-pemberkasan_${stamp}.csv`, headers, csvRows);
+    } else {
+      const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Aksi', 'Status', 'Catatan'];
+      const csvRows = list.map((r: any) => [
+        r.berkas?.judulBerkas,
+        r.berkas?.kodeBerkas,
+        r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
+        `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
+        r.actionAt,
+        statusLabel(r.status),
+        r.catatan,
+      ]);
+      downloadCsv(`riwayat-persetujuan_${stamp}.csv`, headers, csvRows);
+    }
+    toast.add({ title: 'Berhasil', description: `${list.length} data berhasil diexport`, color: 'success' });
   } catch (e) {
     console.error('Gagal export:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
@@ -272,6 +420,16 @@ watch(search, () => {
     if (currentPage.value !== 1) currentPage.value = 1;
     else fetchData();
   }, 350);
+});
+
+watch(activeTab, () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
+});
+
+watch(statusFilter, () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
 });
 
 onMounted(fetchData);
