@@ -13,13 +13,15 @@
             ]"
             @click="col.sortable && $emit('sort', col.key)"
           >
-            {{ col.label }}
-            <UIcon
-              v-if="col.sortable"
-              name="i-lucide-arrow-up-down"
-              class="ml-1 w-3.5 h-3.5 inline-flex align-middle transition-opacity"
-              :class="sortKey === col.key ? 'opacity-100' : 'opacity-50'"
-            />
+            <span class="inline-flex items-center gap-1 whitespace-nowrap">
+              {{ col.label }}
+              <UIcon
+                v-if="col.sortable"
+                name="i-lucide-arrow-up-down"
+                class="w-3.5 h-3.5 transition-opacity"
+                :class="sortKey === col.key ? 'opacity-100' : 'opacity-50'"
+              />
+            </span>
           </th>
         </tr>
       </thead>
