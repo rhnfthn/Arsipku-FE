@@ -145,6 +145,8 @@ const handleOpenPdf = async (share: any) => {
     } else {
       pdfViewerUrl.value = '';
     }
+    // Refresh data agar status recipient (SEKALI_LIHAT → BERAKHIR) terupdate di UI
+    loadData();
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || '';
     pdfViewerUrl.value = '';
