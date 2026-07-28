@@ -1,0 +1,82 @@
+/** Tipe data untuk dashboard Verifikasi Usulan (gabungan inaktif + aktif ke inaktif). */
+
+export type JenisUsulan = 'inaktif' | 'aktif_ke_inaktif';
+
+export type VerifikasiStatus =
+  | 'DRAFT'
+  | 'MENUNGGU_VERIFIKASI_ATASAN'
+  | 'DITOLAK_ATASAN'
+  | 'DISETUJUI_ATASAN'
+  | 'MENUNGGU_VERIFIKASI_TERAKHIR'
+  | 'DITOLAK_VERIFIKASI_TERAKHIR'
+  | 'DISETUJUI_VERIFIKASI_TERAKHIR'
+  | 'USUL_PINDAH_DIKIRIM'
+  | 'SIAPKAN_BERKAS_FISIK'
+  | 'DIKIRIM'
+  | 'MENUNGGU_VERIFIKASI_BERKAS_FISIK'
+  | 'BERKAS_FISIK_TIDAK_SESUAI'
+  | 'BERKAS_FISIK_SESUAI'
+  | 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU'
+  | 'DITOLAK_PERSETUJUAN_TU'
+  | 'DISETUJUI_PERSETUJUAN_TU'
+  | 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU'
+  | 'DITOLAK_PERSETUJUAN_TERAKHIR_TU'
+  | 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU'
+  | 'ARSIP_INAKTIF_DITERIMA'
+  | 'PENATAAN_ARSIP_INAKTIF'
+  | 'SELESAI';
+
+/** Usulan gabungan dengan field jenis untuk membedakan sumber data. */
+export interface VerifikasiUsulanItem {
+  id: string;
+  jenis: JenisUsulan;
+  nomorUsulan: string;
+  tanggalUsulan: string;
+  sekretarisName: string;
+  sekretarisPersnum?: number;
+  atasanName: string;
+  atasanPersnum?: number;
+  arsipId: string;
+  arsipPerihal: string;
+  arsipKode?: string | null;
+  tanggalRetensiAktifHabis?: string | null;
+  keterangan?: string | null;
+  status: VerifikasiStatus;
+  rejectedNote?: string | null;
+  verifyNote?: string | null;
+  finalVerifyNote?: string | null;
+  beritaAcaraUrl?: string | null;
+  beritaAcaraNomor?: string | null;
+  approvedAt?: string | null;
+  finalVerifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VerifikasiFilter {
+  jenis?: JenisUsulan | '';
+  status?: VerifikasiStatus | '';
+  search?: string;
+  startDate?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface VerifikasiSummary {
+  menungguVerifikasi: number;
+  menungguVerifikasiTerakhir: number;
+  disetujui: number;
+  ditolak: number;
+  selesai: number;
+  total: number;
+}
+
+export interface VerifikasiActionPayload {
+  catatanVerifikasi?: string;
+}
+
+export interface RejectPayload {
+  alasanPenolakan: string;
+}
