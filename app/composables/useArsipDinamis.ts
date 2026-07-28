@@ -123,6 +123,10 @@ export const useArsipDinamis = () => {
     return await apiGet('/arsip-dinamis/persetujuan', { params }, { skipCache: true });
   };
 
+  const getRiwayatPersetujuan = async (params?: Record<string, any>) => {
+    return await apiGet('/arsip-dinamis/persetujuan/riwayat', { params }, { skipCache: true });
+  };
+
   const getRiwayatRetensi = async (params?: Record<string, any>) => {
     return await apiGet('/arsip-dinamis/riwayat-retensi', { params }, { skipCache: true });
   };
@@ -164,6 +168,7 @@ export const useArsipDinamis = () => {
     rejectVerifikasi,
     // Manager
     getPengajuanPenutupan,
+    getRiwayatPersetujuan,
     getRiwayatRetensi,
     getNaskahSaya,
     getStatistikPersetujuan,
