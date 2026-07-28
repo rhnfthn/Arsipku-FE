@@ -70,6 +70,15 @@
           >
             Ajukan Penutupan
           </UButton>
+          <UButton
+            v-if="canDelete"
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash-2"
+            @click="showDeleteModal = true"
+          >
+            Hapus
+          </UButton>
         </div>
       </div>
 
@@ -1069,6 +1078,35 @@
       >
     </UModal>
 
+    <UModal v-model:open="showDeleteModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <template #header
+        ><h3 class="text-base font-semibold text-error-700 dark:text-error-400">Hapus Berkas</h3
+        ></template>
+      <template #body>
+        <div class="space-y-3 p-4 text-sm text-gray-600 dark:text-gray-300">
+          <p>
+            Berkas <strong>{{ berkas?.judulBerkas }}</strong> akan dihapus. Hanya berkas
+            <span class="font-medium">Draft</span> yang dapat dihapus.
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Aksi ini tidak dapat dibatalkan.
+          </p>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton variant="ghost" @click="showDeleteModal = false">Batal</UButton>
+          <UButton
+            color="error"
+            icon="i-lucide-trash-2"
+            :loading="isDeleting"
+            @click="handleDeleteBerkas"
+            >Hapus Berkas</UButton
+          >
+        </div>
+      </template>
+    </UModal>
+
     <UModal
       v-model:open="lightboxOpen"
       :ui="{ content: 'max-w-4xl', overlay: 'bg-black/80 backdrop-blur-sm' }"
@@ -1130,6 +1168,7 @@ const route = useRoute();
 const {
   activateBerkas,
   addNaskahToBerkas,
+  deleteBerkas,
   getBerkasById,
   getBerkasStatusByNaskah,
   getDaftarNaskah,
@@ -1187,6 +1226,8 @@ const showRemoveModal = ref(false);
 const selectedNaskah = ref<Record<string, any> | null>(null);
 const isRemovingNaskah = ref(false);
 const isActivating = ref(false);
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
 let naskahSearchTimer: ReturnType<typeof setTimeout> | undefined;
 let candidateSearchTimer: ReturnType<typeof setTimeout> | undefined;
 let naskahRequestId = 0;
@@ -1253,6 +1294,7 @@ const canRemoveNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.valu
 const canClose = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canEdit = computed(() => ['draft', 'aktif', 'ditolak'].includes(berkas.value?.status));
 const canActivate = computed(() => berkas.value?.status === 'draft');
+const canDelete = computed(() => berkas.value?.status === 'draft');
 const quickInfoCards = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-', icon: Hash },
   { label: 'Jumlah Naskah', value: String(naskahTotal.value), icon: Files },
@@ -1721,6 +1763,28 @@ async function handleActivateBerkas() {
     });
   } finally {
     isActivating.value = false;
+  }
+}
+
+async function handleDeleteBerkas() {
+  isDeleting.value = true;
+  try {
+    await deleteBerkas(berkasId.value);
+    toast.add({
+      title: 'Berkas berhasil dihapus',
+      description: 'Berkas draft telah dihapus secara permanen.',
+      color: 'success',
+    });
+    showDeleteModal.value = false;
+    navigateTo(backPath);
+  } catch (error) {
+    toast.add({
+      title: 'Gagal menghapus berkas',
+      description: getErrorMessage(error, 'Silakan coba kembali.'),
+      color: 'error',
+    });
+  } finally {
+    isDeleting.value = false;
   }
 }
 function openAddNaskahModal() {
