@@ -1891,5 +1891,6 @@
   "kon_perbaiki_sendiri_desc": "Perbaiki konsep sendiri dan kirimkan kembali ke pengirim.",
   "kon_turunkan_ke_bawahan_desc": "Turunkan konsep ke bawahan yang sebelumnya membuat konsep ini.",
   "kon_konsep_diturunkan": "Konsep berhasil diturunkan.",
-  "kon_gagal_turunkan": "Gagal menurunkan konsep."
+  "kon_gagal_turunkan": "Gagal menurunkan konsep.",
+  "berbagi": "Berbagi"
 }
