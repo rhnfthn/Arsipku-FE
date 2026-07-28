@@ -844,11 +844,11 @@ const retensiInaktifLabel = computed(() =>
 
 const columns = [
   { key: 'judulBerkas', label: 'Nama Berkas', sortable: true },
-  { key: 'kodeBerkas', label: 'Kode Berkas' },
-  { key: 'klasifikasiTeks', label: 'Klasifikasi' },
+  { key: 'kodeBerkas', label: 'Kode Berkas', sortable: true },
+  { key: 'klasifikasiTeks', label: 'Klasifikasi', sortable: true },
   { key: 'retensi', label: 'Retensi (A/I)' },
-  { key: 'lokasi', label: 'Lokasi Fisik' },
-  { key: 'status', label: 'Status' },
+  { key: 'lokasi', label: 'Lokasi Fisik', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
   { key: 'updatedAt', label: 'Updated', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
@@ -1051,6 +1051,8 @@ const fetchData = async () => {
       tahun: filterTahun.value || undefined,
       page: currentPage.value,
       limit: perPage.value,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
     });
     const normalizedList = normalizePaginatedResponse(list);
     berkasList.value = normalizedList.data;
@@ -1149,6 +1151,12 @@ watch([currentPage, perPage], ([, newPerPage], [, oldPerPage]) => {
     return;
   }
   fetchData();
+});
+
+// Sort changes -> reset to page 1 (currentPage watcher fetches; if on page 1, fetch directly).
+watch([sortKey, sortDir], () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
 });
 
 // ── Init ─────────────────────────────────────────────────────────
