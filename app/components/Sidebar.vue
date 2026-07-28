@@ -383,6 +383,18 @@ const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
+// Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
+// Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
+const isAtasanManagerialUsulan = ref(false);
+const checkAtasanManagerialUsulan = async () => {
+  try {
+    const res = await apiGet('/transfer-active-to-inactive/is-atasan', {}, { skipCache: true });
+    isAtasanManagerialUsulan.value = res?.data?.isAtasan ?? false;
+  } catch (e) {
+    isAtasanManagerialUsulan.value = false;
+  }
+};
+
 // ─── Count fetching ───────────────────────────────────────────────────────────
 // Nomor count sekarang sepenuhnya dari WebSocket (realtime:summary + nomor:count event).
 // Tidak ada lagi REST fallback ke /admin/nomor-request-count atau /nomor-request-count.
@@ -436,6 +448,8 @@ watch(
       // Connect WebSocket realtime — initial summary akan kirim semua count
       // (inbox, label, bsre, verifikator, nomor admin + user)
       rtInit();
+      // Cek apakah user adalah atasan managerial di usulan pemindahan arsip
+      checkAtasanManagerialUsulan();
     }
   },
   { immediate: true }
@@ -919,16 +933,73 @@ const menuKelola = computed(() => [
         access: 'pemberkasan',
       },
       {
-        label: 'Persetujuan',
+        label: 'Persetujuan Pemberkasan',
         to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
         icon: 'i-lucide-file-check',
-        access: 'persetujuan',
+        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
       },
       {
         label: 'Usulan Akses Berkas',
         to: '/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
         permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      },
+      {
+        label: 'Pemindahan Arsip Aktif\nke Inaktif',
+        to: '/maintenance/transfer-active-to-inactive-file',
+        icon: 'i-lucide-file-up',
+        roles: ['user', 'superadmin'],
+        // Sembunyikan untuk user yang adalah atasan managerial (mereka lihat "Verifikasi Usulan")
+        hideIfAtasan: true,
+      },
+      {
+        label: 'Verifikasi Usulan',
+        to: '/maintenance/verifikasi-usulan',
+        icon: 'i-lucide-clipboard-check',
+        // Tampilkan untuk admin/superadmin ATAU user yang pernah dipilih sebagai atasan
+        showIfAtasan: true,
+      },
+    ],
+  },
+]);
+
+const userMenuKelola = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+        permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+      },
+      {
+        label: 'Persetujuan Pemberkasan',
+        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+        icon: 'i-lucide-file-check',
+        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      },
+      {
+        label: 'Usulan Akses Berkas',
+        to: '/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      },
+      {
+        label: 'Pemindahan Arsip Aktif\nke Inaktif',
+        to: '/maintenance/transfer-active-to-inactive-file',
+        icon: 'i-lucide-file-up',
+        roles: ['user', 'superadmin'],
+        // Sembunyikan untuk user yang adalah atasan managerial (mereka lihat "Verifikasi Usulan")
+        hideIfAtasan: true,
+      },
+      {
+        label: 'Verifikasi Usulan',
+        to: '/maintenance/verifikasi-usulan',
+        icon: 'i-lucide-clipboard-check',
+        // Tampilkan untuk admin/superadmin ATAU user yang pernah dipilih sebagai atasan
+        showIfAtasan: true,
       },
     ],
   },
@@ -953,47 +1024,58 @@ const hasUtilitasNotification = computed(() => {
 const filterMenuByPermission = (items) => {
   // Menu RBAC management selalu tampil untuk superadmin (tidak difilter)
   // Menu lain difilter berdasarkan permission, termasuk superadmin
+  // Support nested children (recursive) untuk menu 2+ level.
+  // Support role-based filtering via `roles` array on item.
+  const isAtasanManagerialTuPersnum = Number(user.value?.persnum) === 10010123;
+
+  const hasRoleAccess = (item) => {
+    if (!item.roles || item.roles.length === 0) return true;
+    // Superadmin selalu lihat semua menu
+    if (isSuperadmin.value) return true;
+    // Atasan Managerial TU via persnum 10010123
+    if (isAtasanManagerialTuPersnum && item.roles.includes('atasan_managerial_tu')) return true;
+    // Cek role user
+    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toLowerCase();
+    return item.roles.some((r) => r === role);
+  };
+
+  const filterRecursive = (item) => {
+    if (!item) return null;
+    const cloned = { ...item };
+
+    // Cek permission item itu sendiri
+    if (cloned.permission) {
+      const hasAccess = hasPermission(cloned.permission.resource, cloned.permission.action);
+      if (!hasAccess) return null;
+    }
+
+    // Cek role-based access
+    if (!hasRoleAccess(cloned)) return null;
+
+    // Cek showIfAtasan — tampilkan hanya jika user adalah atasan managerial
+    if (cloned.showIfAtasan && !isAtasanManagerialUsulan.value && !isAdminOrSuperadmin.value) {
+      return null;
+    }
+
+    // Cek hideIfAtasan — sembunyikan jika user adalah atasan managerial
+    if (cloned.hideIfAtasan && (isAtasanManagerialUsulan.value || isAdminOrSuperadmin.value)) {
+      return null;
+    }
+
+    // Filter children secara recursive
+    if (item.children) {
+      cloned.children = item.children
+        .map((child) => filterRecursive(child))
+        .filter((child) => child !== null);
+      // Jika semua children hilang, parent juga hilang
+      if (cloned.children.length === 0) return null;
+    }
+
+    return cloned;
+  };
+
   return items
-    .map((item) => {
-      // Deep clone item agar tidak mutasi computed asli
-      const cloned = { ...item };
-      if (item.children) cloned.children = [...item.children];
-
-      // Jika item punya permission check (RBAC), validasi
-      if (cloned.permission) {
-        const hasAccess = hasPermission(cloned.permission.resource, cloned.permission.action);
-        if (!hasAccess) return null;
-      }
-      // Jika item punya access check (effective-role pemeliharaan), validasi
-      if (cloned.access) {
-        const ok =
-          isAdminOrSuperadmin.value ||
-          (cloned.access === 'pemberkasan' && canPemberkasan.value) ||
-          (cloned.access === 'persetujuan' && canPersetujuan.value);
-        if (!ok) return null;
-      }
-
-      // Jika item punya children, filter children juga
-      if (cloned.children) {
-        cloned.children = cloned.children.filter((child) => {
-          if (child.permission) {
-            return hasPermission(child.permission.resource, child.permission.action);
-          }
-          if (child.access) {
-            return (
-              isAdminOrSuperadmin.value ||
-              (child.access === 'pemberkasan' && canPemberkasan.value) ||
-              (child.access === 'persetujuan' && canPersetujuan.value)
-            );
-          }
-          return true; // child tanpa permission/access check → tampil
-        });
-        // Jika semua children hilang, parent juga hilang
-        if (cloned.children.length === 0) return null;
-      }
-
-      return cloned;
-    })
+    .map((item) => filterRecursive(item))
     .filter((item) => item !== null);
 };
 
