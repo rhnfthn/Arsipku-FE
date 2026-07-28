@@ -1,7 +1,7 @@
 <template>
   <div class="overflow-x-auto">
     <table class="min-w-full border-collapse text-sm">
-      <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
+      <thead :class="headerClass">
         <tr>
           <th
             v-for="col in columns"
@@ -14,13 +14,16 @@
             @click="col.sortable && $emit('sort', col.key)"
           >
             {{ col.label }}
-            <span v-if="col.sortable && sortKey === col.key" class="ml-1">
-              {{ sortDir === 'asc' ? '▲' : '▼' }}
-            </span>
+            <UIcon
+              v-if="col.sortable"
+              name="i-lucide-arrow-up-down"
+              class="ml-1 w-3.5 h-3.5 inline-flex align-middle transition-opacity"
+              :class="sortKey === col.key ? 'opacity-100' : 'opacity-50'"
+            />
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody :class="bodyClass">
         <tr v-if="loading">
           <td :colspan="columns.length" class="px-4 py-6">
             <div class="space-y-4 animate-pulse">
@@ -41,7 +44,7 @@
           v-else
           v-for="(row, idx) in rows"
           :key="row.id ?? row.persnum ?? idx"
-          class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+          :class="rowClass"
         >
           <td v-for="col in columns" :key="col.key" :class="['px-4 py-3', col.class || '']">
             <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]" :index="idx">
@@ -72,12 +75,19 @@ withDefaults(
     emptyMessage?: string;
     sortKey?: string;
     sortDir?: 'asc' | 'desc';
+    headerClass?: string;
+    bodyClass?: string;
+    rowClass?: string;
   }>(),
   {
     loading: false,
     skeletonRows: 5,
     emptyMessage: 'Tidak ada data yang cocok dengan pencarian.',
     sortDir: 'asc',
+    headerClass: 'bg-primary-400 dark:bg-primary-700 text-white text-left',
+    bodyClass: '',
+    rowClass:
+      'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
   }
 );
 

@@ -924,12 +924,6 @@ const adminMenuKelola = computed(() => [
         permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
       },
       {
-        label: 'Riwayat & Retensi',
-        to: '/kelola/pemeliharaan/riwayat-retensi',
-        icon: 'i-lucide-history',
-        permission: { resource: 'pemeliharaan.retensi', action: 'read' },
-      },
-      {
         label: 'Usulan Akses Berkas',
         to: '/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
