@@ -14,6 +14,18 @@ const { fetchVerifikator, verifikatorList, createUsulan, pending } = useUsulanAk
 const { apiGet } = useApi();
 const toast = useToast();
 
+// Helper: extract error message dari AxiosError (BE return { message: [...] | string })
+const extractErrorMessage = (err: any): string => {
+  const beMessage = err?.response?.data?.message;
+  if (Array.isArray(beMessage) && beMessage.length > 0) {
+    return beMessage.join(', ');
+  }
+  if (typeof beMessage === 'string' && beMessage.trim()) {
+    return beMessage;
+  }
+  return err?.message || 'Terjadi kesalahan';
+};
+
 // ── Divisi list ───────────────────────────────────
 interface DivisiOption {
   organization: number;
@@ -229,7 +241,7 @@ const handleSubmit = async () => {
   } catch (err: any) {
     toast.add({
       title: 'Gagal membuat usulan',
-      description: err?.message || 'Terjadi kesalahan',
+      description: extractErrorMessage(err),
       color: 'error',
     });
   }
@@ -241,7 +253,7 @@ watch(isOpen, (val) => {
       console.error('[AddUsulanAksesBerkas] fetchVerifikator failed:', err);
       toast.add({
         title: 'Gagal memuat verifikator',
-        description: err?.message || 'Tidak dapat memuat daftar verifikator',
+        description: extractErrorMessage(err),
         color: 'error',
       });
     });
@@ -253,6 +265,11 @@ onMounted(() => {
   if (isOpen.value) {
     fetchVerifikator().catch((err) => {
       console.error('[AddUsulanAksesBerkas] fetchVerifikator failed:', err);
+      toast.add({
+        title: 'Gagal memuat verifikator',
+        description: extractErrorMessage(err),
+        color: 'error',
+      });
     });
     fetchDivisiList();
   }

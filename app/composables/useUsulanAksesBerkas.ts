@@ -27,15 +27,18 @@ export function useUsulanAksesBerkas() {
   });
 
   // ── GET /usulan-akses-berkas/verifikator ────────
-  const fetchVerifikator = async () => {
+  // divisiId opsional — kalau diisi, fetch managerial di divisi tersebut
+  // (untuk Pilih Berkas: pakai divisiPemberiId dari usulan)
+  const fetchVerifikator = async (divisiId?: number) => {
     pending.value = true;
     error.value = null;
     try {
+      const query = divisiId ? `?divisiId=${divisiId}` : '';
       const res = await apiGet<{
         success: boolean;
         data: VerifikatorItem[];
         total: number;
-      }>('/usulan-akses-berkas/verifikator', undefined, { skipCache: true });
+      }>(`/usulan-akses-berkas/verifikator${query}`, undefined, { skipCache: true });
       verifikatorList.value = res.data || [];
       return res;
     } catch (err: any) {
@@ -47,9 +50,77 @@ export function useUsulanAksesBerkas() {
     }
   };
 
+  // ── GET /berkas?status=closed_retensi_aktif ────
+  // Ambil list berkas yang eligible untuk dipilih saat Pilih Berkas.
+  // BE filter by status (closed_retensi_aktif) + isAktif=true.
+  const fetchBerkasEligible = async (status = 'closed_retensi_aktif') => {
+    try {
+      const res = await apiGet<any[]>(
+        `/berkas?status=${status}`,
+        undefined,
+        { skipCache: true },
+      );
+      const payload = (res as any)?.data ?? res;
+      return Array.isArray(payload) ? payload : [];
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchBerkasEligible error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/my-entitlements ────
+  // List akses berkas yang sudah diterbitkan untuk user yang login.
+  const fetchMyEntitlements = async () => {
+    try {
+      const res = await apiGet<{
+        success: boolean;
+        data: any[];
+        total: number;
+      }>('/usulan-akses-berkas/my-entitlements', undefined, { skipCache: true });
+      return (res as any)?.data ?? res ?? [];
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchMyEntitlements error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/berkas/:berkasId ──
+  // Detail berkas untuk SE pengusul (cek entitlement)
+  const fetchBerkasDetail = async (berkasId: string) => {
+    try {
+      const res = await apiGet<any>(
+        `/usulan-akses-berkas/berkas/${berkasId}`,
+        undefined,
+        { skipCache: true },
+      );
+      return (res as any)?.data ?? res;
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchBerkasDetail error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/berkas/:berkasId/naskah ──
+  // List naskah di dalam berkas (cek entitlement, bukan permission pemeliharaan)
+  const fetchNaskahByBerkas = async (berkasId: string) => {
+    try {
+      const res = await apiGet<any>(
+        `/usulan-akses-berkas/berkas/${berkasId}/naskah`,
+        undefined,
+        { skipCache: true },
+      );
+      const payload = (res as any)?.data ?? res;
+      return Array.isArray(payload) ? payload : (payload?.data ?? []);
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchNaskahByBerkas error:', err);
+      throw err;
+    }
+  };
+
   // ── GET /usulan-akses-berkas (list) ─────────────
   const fetchList = async (params: {
     status?: string;
+    scope?: string;
     page?: number;
     limit?: number;
   } = {}) => {
@@ -58,6 +129,7 @@ export function useUsulanAksesBerkas() {
     try {
       const query = new URLSearchParams();
       if (params.status) query.set('status', params.status);
+      if (params.scope) query.set('scope', params.scope);
       query.set('page', String(params.page || pagination.page));
       query.set('limit', String(params.limit || pagination.limit));
 
@@ -231,6 +303,10 @@ export function useUsulanAksesBerkas() {
     pagination,
     // actions
     fetchVerifikator,
+    fetchBerkasEligible,
+    fetchMyEntitlements,
+    fetchBerkasDetail,
+    fetchNaskahByBerkas,
     fetchList,
     fetchDetail,
     createUsulan,
