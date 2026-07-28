@@ -393,7 +393,7 @@
 
       <!-- Aksi Verifikasi -->
       <section
-        v-if="!isLoading && !verifikasiSelesai"
+        v-if="!isLoading && !verifikasiSelesai && !isRiwayatMode"
         class="overflow-hidden rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -435,6 +435,60 @@
               >{{ isLastVerifikator ? 'Setujui Penutupan' : 'Lanjutkan Verifikasi' }}</UButton
             >
           </div>
+        </div>
+      </section>
+
+      <!-- Keputusan Anda (mode riwayat — read-only) -->
+      <section
+        v-else-if="isRiwayatMode && !isLoading"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              :class="
+                myDecision?.status === 'approved'
+                  ? 'bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-400'
+                  : 'bg-error-100 text-error-600 dark:bg-error-900/40 dark:text-error-400'
+              "
+            >
+              <UIcon
+                :name="myDecision?.status === 'approved' ? 'i-lucide-circle-check-big' : 'i-lucide-circle-x'"
+                class="size-5"
+              />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Keputusan Anda</h3>
+              <p v-if="myDecision" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Anda
+                <span
+                  :class="
+                    myDecision?.status === 'approved'
+                      ? 'font-medium text-success-700 dark:text-success-400'
+                      : 'font-medium text-error-700 dark:text-error-400'
+                  "
+                >{{ myDecision?.status === 'approved' ? 'menyetujui' : 'menolak' }}</span>
+                pengajuan penutupan berkas ini pada {{ formatDate(myDecision?.actionAt) }}.
+              </p>
+              <p v-else class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Data keputusan tidak ditemukan.
+              </p>
+            </div>
+          </div>
+          <UButton
+            class="w-full sm:w-auto"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-lucide-arrow-left"
+            to="/kelola/pemeliharaan/persetujuan-pemberkasan"
+            >Kembali ke Daftar Persetujuan</UButton
+          >
+        </div>
+        <div v-if="myDecision?.catatan" class="border-t border-gray-100 px-5 py-3 dark:border-gray-700">
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Catatan</p>
+          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{{ myDecision?.catatan }}</p>
         </div>
       </section>
 
@@ -627,6 +681,7 @@ const {
   fetchBerkasFileBlob,
 } = useArsipDinamis();
 const toast = useToast();
+const { user } = useAuth();
 const berkasId = computed(() => route.params.id as string);
 const berkas = ref<any>(null);
 const verifikasiList = ref<any[]>([]);
@@ -664,6 +719,12 @@ const progressLabel = computed(() =>
   pendingIndex.value < 0
     ? 'Verifikasi selesai'
     : `Verifikasi Tahap ${pendingIndex.value + 1} dari ${verifikasiList.value.length}`
+);
+
+const isRiwayatMode = computed(() => !!route.query.riwayat);
+const myPersnum = computed(() => String(user.value?.persnum ?? ''));
+const myDecision = computed(() =>
+  verifikasiList.value.find((v: any) => String(v.verifikatorPersnum) === myPersnum.value),
 );
 
 const display = (value: any) =>
