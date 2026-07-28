@@ -1,0 +1,269 @@
+import { ref } from 'vue';
+import { useApi } from './useApi';
+import type {
+  VerifikasiUsulanItem,
+  VerifikasiFilter,
+  VerifikasiSummary,
+  VerifikasiActionPayload,
+  RejectPayload,
+  JenisUsulan,
+} from '~/types/verifikasi-usulan';
+
+/**
+ * Composable untuk dashboard Verifikasi Usulan (gabungan inaktif + aktif ke inaktif).
+ * Menggunakan 2 endpoint existing dan menggabungkan hasilnya di frontend.
+ */
+export const useVerifikasiUsulan = () => {
+  const { apiGet, apiPatch, apiPost } = useApi();
+
+  const list = ref<VerifikasiUsulanItem[]>([]);
+  const summary = ref<VerifikasiSummary | null>(null);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+  const meta = ref<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
+  const isAtasan = ref(false);
+
+  /** Cek apakah user login pernah dipilih sebagai atasan managerial. */
+  const checkIsAtasan = async (): Promise<boolean> => {
+    try {
+      const res: any = await apiGet('/transfer-active-to-inactive/is-atasan', {}, { skipCache: true });
+      isAtasan.value = res?.data?.isAtasan ?? false;
+      return isAtasan.value;
+    } catch {
+      isAtasan.value = false;
+      return false;
+    }
+  };
+
+  /** Normalisasi item dari endpoint inaktif / aktif-ke-inaktif ke format gabungan. */
+  const normalize = (raw: any, jenis: JenisUsulan): VerifikasiUsulanItem => ({
+    id: raw.id,
+    jenis,
+    nomorUsulan: raw.nomorUsulan ?? '-',
+    tanggalUsulan: raw.tanggalUsulan ?? raw.tanggal_usulan ?? raw.createdAt,
+    sekretarisName: raw.sekretarisName ?? raw.sekretaris_name ?? '-',
+    sekretarisPersnum: raw.sekretarisPersnum ?? raw.sekretaris_persnum,
+    atasanName: raw.atasanName ?? raw.atasan_name ?? '-',
+    atasanPersnum: raw.atasanPersnum ?? raw.atasan_persnum,
+    arsipId: raw.arsipId ?? raw.arsip_id ?? '',
+    arsipPerihal: raw.arsipPerihal ?? raw.arsip_perihal ?? '-',
+    arsipKode: raw.arsipKode ?? raw.arsip_kode ?? null,
+    tanggalRetensiAktifHabis: raw.tanggalRetensiAktifHabis ?? raw.tanggal_retensi_aktif_habis ?? null,
+    keterangan: raw.keterangan ?? null,
+    status: raw.status,
+    rejectedNote: raw.rejectedNote ?? raw.rejected_note ?? null,
+    verifyNote: raw.verifyNote ?? raw.verify_note ?? null,
+    finalVerifyNote: raw.finalVerifyNote ?? raw.final_verify_note ?? null,
+    beritaAcaraUrl: raw.beritaAcaraUrl ?? raw.berita_acara_url ?? null,
+    beritaAcaraNomor: raw.beritaAcaraNomor ?? raw.berita_acara_nomor ?? null,
+    approvedAt: raw.approvedAt ?? raw.approved_at ?? null,
+    finalVerifiedAt: raw.finalVerifiedAt ?? raw.final_verified_at ?? null,
+    createdAt: raw.createdAt ?? raw.created_at,
+    updatedAt: raw.updatedAt ?? raw.updated_at,
+  });
+
+  /** Fetch gabungan dari 2 endpoint. */
+  const fetchList = async (filter: VerifikasiFilter = {}) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const params: Record<string, any> = { ...filter };
+      Object.keys(params).forEach((k) => {
+        if (params[k] === undefined || params[k] === null || params[k] === '') delete params[k];
+      });
+
+      const jenis = params.jenis;
+      delete params.jenis;
+
+      const tasks: Promise<{ data: any[]; meta?: any; jenis: JenisUsulan }>[] = [];
+
+      // Hanya panggil endpoint Pemindahan Arsip Aktif ke Inaktif
+      // (Sekretaris hanya menggunakan fitur ini, bukan transfer-inactive-file)
+      if (!jenis || jenis === 'aktif_ke_inaktif') {
+        tasks.push(
+          apiGet('/transfer-active-to-inactive', { params }, { skipCache: true })
+            .then((r: any) => {
+              console.log('[useVerifikasiUsulan] Raw response aktif_ke_inaktif:', r);
+              const data = Array.isArray(r) ? r : (r?.data ?? []);
+              const meta = Array.isArray(r) ? { total: r.length } : r?.meta;
+              return { data, meta, jenis: 'aktif_ke_inaktif' as JenisUsulan };
+            })
+            .catch((e) => {
+              console.error('[useVerifikasiUsulan] Error aktif_ke_inaktif:', e);
+              return { data: [], meta: null, jenis: 'aktif_ke_inaktif' as JenisUsulan };
+            }),
+        );
+      }
+
+      const results = await Promise.all(tasks);
+
+      // Debug: log hasil dari setiap endpoint
+      for (const r of results) {
+        console.log(`[useVerifikasiUsulan] Endpoint ${r.jenis}: ${r.data.length} items, meta:`, r.meta);
+        if (r.data.length > 0) {
+          console.log(`[useVerifikasiUsulan] Sample ${r.jenis} item:`, r.data[0]);
+        }
+      }
+
+      // Gabungkan dan normalisasi
+      const combined: VerifikasiUsulanItem[] = [];
+      let totalAll = 0;
+      for (const r of results) {
+        for (const raw of r.data) {
+          combined.push(normalize(raw, r.jenis));
+        }
+        totalAll += r.meta?.total ?? r.data.length;
+      }
+
+      console.log('[useVerifikasiUsulan] Combined:', combined.length, 'items, total:', totalAll);
+
+      // Sort by createdAt DESC
+      combined.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      list.value = combined;
+      meta.value = {
+        page: params.page ?? 1,
+        limit: params.limit ?? 10,
+        total: totalAll,
+        totalPages: Math.ceil(totalAll / (params.limit ?? 10)),
+      };
+      console.log('[useVerifikasiUsulan] list.value set to:', list.value.length, 'items');
+      return { data: combined, meta: meta.value };
+    } catch (e: any) {
+      console.error('[useVerifikasiUsulan] fetchList error:', e);
+      error.value = e?.message || 'Gagal memuat data';
+      list.value = [];
+      meta.value = null;
+      throw e;
+    } finally {
+      loading.value = false;
+      console.log('[useVerifikasiUsulan] loading set to false, list:', list.value.length, 'items');
+    }
+  };
+
+  /** Summary hanya dari endpoint Pemindahan Arsip Aktif ke Inaktif. */
+  const fetchSummary = async (): Promise<VerifikasiSummary | null> => {
+    try {
+      const activeRes: any = await apiGet('/transfer-active-to-inactive/summary', {}, { skipCache: true }).catch(() => null);
+
+      const a = activeRes?.data ?? {};
+
+      const sum: VerifikasiSummary = {
+        menungguVerifikasi: a.menungguVerifikasi ?? 0,
+        menungguVerifikasiTerakhir: a.menungguFinal ?? 0,
+        disetujui: a.disetujui ?? 0,
+        ditolak: a.ditolak ?? 0,
+        selesai: a.selesai ?? 0,
+        total: a.total ?? 0,
+      };
+      summary.value = sum;
+      return sum;
+    } catch (e: any) {
+      error.value = e?.message || 'Gagal memuat ringkasan';
+      throw e;
+    }
+  };
+
+  /** Detail usulan berdasarkan jenis. */
+  const fetchDetail = async (id: string, jenis: JenisUsulan): Promise<VerifikasiUsulanItem | null> => {
+    try {
+      const endpoint = jenis === 'aktif_ke_inaktif'
+        ? '/transfer-active-to-inactive'
+        : '/transfer-inactive-file';
+      const res: any = await apiGet(`${endpoint}/${id}`, {}, { skipCache: true });
+      return normalize(res?.data, jenis);
+    } catch (e: any) {
+      error.value = e?.message || 'Gagal memuat detail';
+      throw e;
+    }
+  };
+
+  /** Verifikasi awal → DISETUJUI_ATASAN. */
+  const verify = async (id: string, jenis: JenisUsulan, payload: VerifikasiActionPayload) => {
+    const endpoint = jenis === 'aktif_ke_inaktif'
+      ? `/transfer-active-to-inactive/${id}/approve`
+      : `/transfer-inactive-file/${id}/approve`;
+    const r: any = await apiPatch(endpoint, { verifyNote: payload.catatanVerifikasi });
+    return r?.data;
+  };
+
+  /** Verifikasi terakhir → DISETUJUI_VERIFIKASI_TERAKHIR. */
+  const finalVerify = async (id: string, jenis: JenisUsulan, payload: VerifikasiActionPayload) => {
+    const endpoint = jenis === 'aktif_ke_inaktif'
+      ? `/transfer-active-to-inactive/${id}/final-verify`
+      : `/transfer-inactive-file/${id}/final-verify`;
+    const r: any = await apiPatch(endpoint, { finalVerifyNote: payload.catatanVerifikasi });
+    return r?.data;
+  };
+
+  /** Tolak usulan → DITOLAK_ATASAN (wajib alasan). */
+  const reject = async (id: string, jenis: JenisUsulan, payload: RejectPayload) => {
+    const endpoint = jenis === 'aktif_ke_inaktif'
+      ? `/transfer-active-to-inactive/${id}/reject`
+      : `/transfer-inactive-file/${id}/reject`;
+    const r: any = await apiPatch(endpoint, { rejectedNote: payload.alasanPenolakan });
+    return r?.data;
+  };
+
+  /** Generate Berita Acara. */
+  const generateBeritaAcara = async (id: string, jenis: JenisUsulan) => {
+    const endpoint = jenis === 'aktif_ke_inaktif'
+      ? `/transfer-active-to-inactive/${id}/berita-acara`
+      : `/transfer-inactive-file/${id}/berita-acara`;
+    const r: any = await apiPost(endpoint, {});
+    return r?.data;
+  };
+
+  /** Atasan klik "Kirim Usul Pindah" → USUL_PINDAH_DIKIRIM */
+  const kirimUsulPindah = async (id: string, jenis: JenisUsulan) => {
+    const endpoint = `/transfer-active-to-inactive/${id}/kirim-usul-pindah`;
+    const r: any = await apiPatch(endpoint, {});
+    return r?.data;
+  };
+
+  /** Atasan/Sekretaris klik "Siapkan Berkas Fisik" → SIAPKAN_BERKAS_FISIK */
+  const siapkanBerkasFisik = async (id: string, jenis: JenisUsulan) => {
+    const endpoint = `/transfer-active-to-inactive/${id}/siapkan-berkas-fisik`;
+    const r: any = await apiPatch(endpoint, {});
+    return r?.data;
+  };
+
+  /** Upload Berkas Fisik & Berita Acara */
+  const uploadBerkas = async (id: string, jenis: JenisUsulan, payload: { berkasFisikUrl?: string; beritaAcaraSerahTerimaUrl?: string }) => {
+    const endpoint = `/transfer-active-to-inactive/${id}/upload-berkas`;
+    const r: any = await apiPatch(endpoint, payload);
+    return r?.data;
+  };
+
+  /** Selesaikan usulan → SELESAI */
+  const selesaikanUsulan = async (id: string, jenis: JenisUsulan) => {
+    const endpoint = `/transfer-active-to-inactive/${id}/selesai`;
+    const r: any = await apiPatch(endpoint, {});
+    return r?.data;
+  };
+
+  return {
+    list,
+    summary,
+    loading,
+    error,
+    meta,
+    isAtasan,
+    checkIsAtasan,
+    fetchList,
+    fetchSummary,
+    fetchDetail,
+    verify,
+    finalVerify,
+    reject,
+    generateBeritaAcara,
+    kirimUsulPindah,
+    siapkanBerkasFisik,
+    uploadBerkas,
+    selesaikanUsulan,
+  };
+};
