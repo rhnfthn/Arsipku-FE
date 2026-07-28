@@ -379,6 +379,7 @@ const { t } = useI18n();
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
 const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
+const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
@@ -906,7 +907,7 @@ const adminMenuLaporan = computed(() => [
 
 // ─── Menu Kelola (Arsip Dinamis) ─────────────────────────────────────────────
 
-const adminMenuKelola = computed(() => [
+const menuKelola = computed(() => [
   {
     label: 'Pemeliharaan',
     icon: 'i-lucide-folder-cog',
@@ -915,34 +916,13 @@ const adminMenuKelola = computed(() => [
         label: 'Pemberkasan',
         to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
         icon: 'i-lucide-folder-plus',
-        permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+        access: 'pemberkasan',
       },
       {
         label: 'Persetujuan',
         to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
         icon: 'i-lucide-file-check',
-        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
-      },
-      {
-        label: 'Usulan Akses Berkas',
-        to: '/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      },
-    ],
-  },
-]);
-
-const userMenuKelola = computed(() => [
-  {
-    label: 'Pemeliharaan',
-    icon: 'i-lucide-folder-cog',
-    children: [
-      {
-        label: 'Pemberkasan',
-        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
-        icon: 'i-lucide-folder-plus',
-        permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+        access: 'persetujuan',
       },
       {
         label: 'Usulan Akses Berkas',
@@ -959,14 +939,14 @@ const userMenuKelola = computed(() => [
 const hasAdministrasiNotification = computed(
   () =>
     adminCounts.value.menunggu_verifikasi > 0 ||
-    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
+    (canPersetujuan.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
 );
 const hasUtilitasNotification = computed(() => {
   if (rtVerifikatorCount.value > 0) return true;
   if (isAdminOrSuperadmin.value) return false;
   return (
     userCounts.value.menunggu_verifikasi > 0 ||
-    (hasBodTag.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
+    (canPersetujuan.value && (userCounts.value.menunggu_persetujuan ?? 0) > 0)
   );
 });
 
@@ -979,10 +959,18 @@ const filterMenuByPermission = (items) => {
       const cloned = { ...item };
       if (item.children) cloned.children = [...item.children];
 
-      // Jika item punya permission check, validasi
+      // Jika item punya permission check (RBAC), validasi
       if (cloned.permission) {
         const hasAccess = hasPermission(cloned.permission.resource, cloned.permission.action);
         if (!hasAccess) return null;
+      }
+      // Jika item punya access check (effective-role pemeliharaan), validasi
+      if (cloned.access) {
+        const ok =
+          isAdminOrSuperadmin.value ||
+          (cloned.access === 'pemberkasan' && canPemberkasan.value) ||
+          (cloned.access === 'persetujuan' && canPersetujuan.value);
+        if (!ok) return null;
       }
 
       // Jika item punya children, filter children juga
@@ -991,7 +979,14 @@ const filterMenuByPermission = (items) => {
           if (child.permission) {
             return hasPermission(child.permission.resource, child.permission.action);
           }
-          return true; // child tanpa permission check → tampil
+          if (child.access) {
+            return (
+              isAdminOrSuperadmin.value ||
+              (child.access === 'pemberkasan' && canPemberkasan.value) ||
+              (child.access === 'persetujuan' && canPersetujuan.value)
+            );
+          }
+          return true; // child tanpa permission/access check → tampil
         });
         // Jika semua children hilang, parent juga hilang
         if (cloned.children.length === 0) return null;
@@ -1032,7 +1027,7 @@ const apps = computed(() => {
         id: 'admin-kelola',
         label: 'Kelola',
         icon: 'i-lucide-archive',
-        menus: filterMenuByPermission(adminMenuKelola.value),
+        menus: filterMenuByPermission(menuKelola.value),
         hasNotification: false,
       },
       {
@@ -1081,7 +1076,7 @@ const apps = computed(() => {
       id: 'user-kelola',
       label: 'Kelola',
       icon: 'i-lucide-archive',
-      menus: filterMenuByPermission(userMenuKelola.value),
+      menus: filterMenuByPermission(menuKelola.value),
       hasNotification: false,
     },
     {
