@@ -150,7 +150,7 @@
             class="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-950/40 dark:text-warning-300"
           >
             <span class="h-1.5 w-1.5 rounded-full bg-warning-500" />
-            Menunggu Anda
+            Menunggu Persetujuan Anda
           </span>
           <span
             v-else-if="row.status === 'approved'"
@@ -236,7 +236,7 @@ const openFilterStatus = ref(false);
 
 const statusOptions = [
   { value: 'all', label: 'Semua' },
-  { value: 'menunggu', label: 'Menunggu Anda' },
+  { value: 'menunggu', label: 'Menunggu Persetujuan Anda' },
   { value: 'approved', label: 'Disetujui' },
   { value: 'rejected', label: 'Ditolak' },
 ] as const;
@@ -312,7 +312,7 @@ const formatDate = (value?: string) => {
 };
 
 const statusLabel = (s?: string) =>
-  s === 'approved' ? 'Disetujui' : s === 'rejected' ? 'Ditolak' : s === 'pending' ? 'Menunggu Anda' : s || '-';
+  s === 'approved' ? 'Disetujui' : s === 'rejected' ? 'Ditolak' : s === 'pending' ? 'Menunggu Persetujuan Anda' : s || '-';
 
 const isMenunggu = () => statusFilter.value === 'menunggu';
 

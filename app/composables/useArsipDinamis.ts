@@ -3,7 +3,7 @@
  * Endpoint: /arsip-dinamis/*
  */
 export const useArsipDinamis = () => {
-  const { apiGet, apiPost, apiPut, apiPatch, apiDelete } = useApi();
+  const { apiGet, apiPost, apiPut, apiDelete } = useApi();
 
   // ── Berkas CRUD ─────────────────────────────────────────────────
 
@@ -25,10 +25,6 @@ export const useArsipDinamis = () => {
 
   const updateBerkas = async (id: string, data: Record<string, any>) => {
     return await apiPut(`/arsip-dinamis/berkas/${id}`, data);
-  };
-
-  const activateBerkas = async (id: string) => {
-    return await apiPatch(`/arsip-dinamis/berkas/${id}/activate`);
   };
 
   const deleteBerkas = async (id: string) => {
@@ -154,7 +150,6 @@ export const useArsipDinamis = () => {
     getBerkasById,
     createBerkas,
     updateBerkas,
-    activateBerkas,
     deleteBerkas,
     uploadBerkasFile,
     fetchBerkasFileBlob,

@@ -32,7 +32,7 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-gray-400',
   },
   aktif: {
-    label: 'Aktif',
+    label: 'Terbuka',
     bg: 'bg-primary-50 dark:bg-primary-900/30',
     text: 'text-primary-700 dark:text-primary-400',
     dot: 'bg-primary-500',
@@ -44,19 +44,19 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-emerald-500',
   },
   menunggu_verifikasi: {
-    label: 'Menunggu Verifikasi',
+    label: 'Menunggu Verifikasi Managerial',
     bg: 'bg-warning-50 dark:bg-warning-900/30',
     text: 'text-warning-700 dark:text-warning-400',
     dot: 'bg-warning-500',
   },
   ditolak: {
-    label: 'Ditolak',
+    label: 'Verifikasi Ditolak Managerial',
     bg: 'bg-error-50 dark:bg-error-900/30',
     text: 'text-error-700 dark:text-error-400',
     dot: 'bg-error-500',
   },
   closed_retensi_aktif: {
-    label: 'Closed — Retensi Aktif',
+    label: 'Tertutup',
     bg: 'bg-success-50 dark:bg-success-900/30',
     text: 'text-success-700 dark:text-success-400',
     dot: 'bg-success-500',

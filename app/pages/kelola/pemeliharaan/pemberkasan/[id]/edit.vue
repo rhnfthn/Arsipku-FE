@@ -423,7 +423,7 @@
       </h2>
       <p class="mx-auto mt-1 max-w-lg text-sm text-gray-500 dark:text-gray-400">
         Berkas dengan status <span class="font-medium">{{ statusLabel }}</span> tidak bisa diubah.
-        Hanya berkas berstatus Aktif, Draft, atau Ditolak yang dapat diedit.
+        Hanya berkas berstatus Terbuka atau Verifikasi Ditolak Managerial yang dapat diedit.
       </p>
       <div class="mt-5 flex justify-center gap-2">
         <UButton color="primary" icon="i-lucide-arrow-left" :to="detailPath">
@@ -474,16 +474,15 @@ const existingDokumen = ref('');
 const selectedRetensiAktif = ref(0);
 const selectedRetensiInaktif = ref(0);
 
-const EDITABLE_STATUSES = ['draft', 'aktif', 'ditolak'];
+const EDITABLE_STATUSES = ['aktif', 'ditolak'];
 const canEdit = computed(() => EDITABLE_STATUSES.includes(berkas.value?.status));
 
 const statusLabel = computed(() => {
   const map: Record<string, string> = {
-    draft: 'Draft',
-    aktif: 'Aktif',
-    menunggu_verifikasi: 'Sedang Diverifikasi',
-    ditolak: 'Ditolak',
-    closed_retensi_aktif: 'Closed — Retensi Aktif',
+    aktif: 'Terbuka',
+    menunggu_verifikasi: 'Menunggu Verifikasi Managerial',
+    ditolak: 'Verifikasi Ditolak Managerial',
+    closed_retensi_aktif: 'Tertutup',
   };
   return map[berkas.value?.status] || berkas.value?.status || '-';
 });

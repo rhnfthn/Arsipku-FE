@@ -54,15 +54,6 @@
             Edit Berkas
           </UButton>
           <UButton
-            v-if="canActivate"
-            color="primary"
-            icon="i-lucide-circle-play"
-            :loading="isActivating"
-            @click="handleActivateBerkas"
-          >
-            Aktifkan Berkas
-          </UButton>
-          <UButton
             v-if="canClose"
             color="primary"
             icon="i-lucide-lock-keyhole"
@@ -103,11 +94,11 @@
           </span>
           <div class="min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              Berkas Ditolak — Perlu Revisi
+              Verifikasi Ditolak Managerial — Perlu Revisi
             </h3>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Berkas ini ditolak verifikator. Revisi metadata dan/atau daftar naskah, lalu ajukan
-              ulang penutupan.
+              Verifikasi penutupan berkas ini ditolak manager. Revisi metadata dan/atau daftar
+              naskah, lalu ajukan ulang penutupan.
             </p>
             <div
               v-if="alasanPenolakan"
@@ -1086,7 +1077,7 @@
         <div class="space-y-3 p-4 text-sm text-gray-600 dark:text-gray-300">
           <p>
             Berkas <strong>{{ berkas?.judulBerkas }}</strong> akan dihapus. Hanya berkas
-            <span class="font-medium">Draft</span> yang dapat dihapus.
+            <span class="font-medium">Terbuka tanpa naskah</span> yang dapat dihapus.
           </p>
           <p class="text-xs text-gray-500 dark:text-gray-400">
             Aksi ini tidak dapat dibatalkan.
@@ -1166,7 +1157,6 @@ definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const {
-  activateBerkas,
   addNaskahToBerkas,
   deleteBerkas,
   getBerkasById,
@@ -1225,7 +1215,6 @@ const addNaskahTabs = [
 const showRemoveModal = ref(false);
 const selectedNaskah = ref<Record<string, any> | null>(null);
 const isRemovingNaskah = ref(false);
-const isActivating = ref(false);
 const showDeleteModal = ref(false);
 const isDeleting = ref(false);
 let naskahSearchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1292,9 +1281,10 @@ function resetCandidateFilters() {
 const canAddNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canRemoveNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canClose = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
-const canEdit = computed(() => ['draft', 'aktif', 'ditolak'].includes(berkas.value?.status));
-const canActivate = computed(() => berkas.value?.status === 'draft');
-const canDelete = computed(() => berkas.value?.status === 'draft');
+const canEdit = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
+const canDelete = computed(
+  () => berkas.value?.status === 'aktif' && naskahList.value.length === 0,
+);
 const quickInfoCards = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-', icon: Hash },
   { label: 'Jumlah Naskah', value: String(naskahTotal.value), icon: Files },
@@ -1745,27 +1735,6 @@ async function fetchCandidates() {
     if (requestId === candidateRequestId) candidatePending.value = false;
   }
 }
-async function handleActivateBerkas() {
-  isActivating.value = true;
-  try {
-    await activateBerkas(berkasId.value);
-    await fetchBerkas();
-    toast.add({
-      title: 'Berkas berhasil diaktifkan',
-      description: 'Aksi Tambah Naskah dan Ajukan Penutupan kini tersedia.',
-      color: 'success',
-    });
-  } catch (error) {
-    toast.add({
-      title: 'Gagal mengaktifkan berkas',
-      description: getErrorMessage(error, 'Silakan coba kembali.'),
-      color: 'error',
-    });
-  } finally {
-    isActivating.value = false;
-  }
-}
-
 async function handleDeleteBerkas() {
   isDeleting.value = true;
   try {
