@@ -245,6 +245,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Kirim -->
+    <KirimUsulanModal
+      v-model="isKirimModalOpen"
+      :atasan-list="selectedAtasanList"
+      :arsip-list="selectedArsipList"
+      :loading="submitting"
+      @confirm="onConfirmKirim"
+    />
   </Teleport>
 </template>
 
@@ -253,6 +262,7 @@ import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useApi } from '~/composables/useApi';
 import { useArsipDinamis } from '~/composables/useArsipDinamis';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
+import KirimUsulanModal from '~/components/transfer-active-to-inactive/KirimUsulanModal.vue';
 import type {
   TransferActiveToInactive,
   AtasanManagerialOption,
@@ -277,6 +287,7 @@ const { create, update } = useTransferActiveToInactive();
 const { getDaftarNaskah } = useArsipDinamis();
 
 const submitting = ref(false);
+const isKirimModalOpen = ref(false);
 const form = reactive({ keterangan: '' });
 
 // Atasan — multi select
@@ -492,6 +503,19 @@ const fillFromEdit = (data: TransferActiveToInactive) => {
 };
 
 const submit = async (asDraft: boolean) => {
+  if (selectedAtasanList.value.length === 0 || selectedArsipList.value.length === 0) return;
+  if (asDraft) {
+    await doSubmit(true);
+  } else {
+    isKirimModalOpen.value = true;
+  }
+};
+
+const onConfirmKirim = async () => {
+  await doSubmit(false);
+};
+
+const doSubmit = async (asDraft: boolean) => {
   if (selectedAtasanList.value.length === 0 || selectedArsipList.value.length === 0) return;
   submitting.value = true;
   try {
