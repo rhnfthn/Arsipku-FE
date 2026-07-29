@@ -234,6 +234,82 @@
                 </div>
               </div>
             </div>
+
+            <!-- ─── Card: Daftar Isi ─── -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
+                <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
+                </button>
+              </div>
+              <div id="daftar-isi-print" class="text-sm">
+                <p class="font-semibold text-gray-900 dark:text-white mb-2">Daftar Isi — {{ item.nomorUsulan }}</p>
+                <table class="w-full border-collapse text-xs">
+                  <thead>
+                    <tr class="border-b border-gray-200 dark:border-gray-600">
+                      <th class="text-left py-1.5 pr-2 text-gray-500">No</th>
+                      <th class="text-left py-1.5 pr-2 text-gray-500">Nama Berkas / Perihal</th>
+                      <th class="text-left py-1.5 text-gray-500">Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
+                      <td class="py-1.5 pr-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
+                      <td class="py-1.5 pr-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
+                      <td class="py-1.5 text-gray-500">{{ d.keterangan }}</td>
+                    </tr>
+                    <tr v-if="daftarIsi.length === 0">
+                      <td colspan="3" class="py-2 text-center text-gray-400 italic">Tidak ada arsip</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ─── Card: Berita Acara Serah Terima ─── -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
+                <div class="flex gap-2">
+                  <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
+                  </button>
+                  <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
+                    <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
+                  </button>
+                </div>
+              </div>
+              <div id="berita-acara-print" class="text-sm space-y-3">
+                <p class="font-semibold text-center text-gray-900 dark:text-white">BERITA ACARA SERAH TERIMA</p>
+                <p class="text-center text-xs text-gray-500">Nomor: {{ item.nomorUsulan }}</p>
+                <div class="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <p class="text-xs font-medium text-gray-500 mb-1">Atasan Managerial:</p>
+                    <p class="text-sm text-gray-900 dark:text-white">{{ beritaAcaraData.atasan?.nama ?? '-' }}</p>
+                    <p v-if="beritaAcaraData.atasan?.jabatan" class="text-xs text-gray-400">{{ beritaAcaraData.atasan.jabatan }}</p>
+                    <p v-if="beritaAcaraData.atasan?.persnum" class="text-xs text-gray-400">Persnum: {{ beritaAcaraData.atasan.persnum }}</p>
+                    <p v-if="beritaAcaraData.atasan?.divisi" class="text-xs text-gray-400">{{ beritaAcaraData.atasan.divisi }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-gray-500 mb-1">Pengirim (Sekretaris):</p>
+                    <p class="text-sm text-gray-900 dark:text-white">{{ beritaAcaraData.pengirim?.nama ?? '-' }}</p>
+                    <p v-if="beritaAcaraData.pengirim?.persnum" class="text-xs text-gray-400">Persnum: {{ beritaAcaraData.pengirim.persnum }}</p>
+                    <p v-if="beritaAcaraData.pengirim?.divisi" class="text-xs text-gray-400">{{ beritaAcaraData.pengirim.divisi }}</p>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <p class="text-xs font-medium text-gray-500 mb-1">Daftar Arsip:</p>
+                  <ul class="list-disc list-inside text-xs text-gray-600 dark:text-gray-300">
+                    <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">{{ a.kode ?? '-' }} — {{ a.perihal }}</li>
+                  </ul>
+                </div>
+                <div v-if="beritaAcaraData.keterangan" class="mt-2">
+                  <p class="text-xs font-medium text-gray-500 mb-1">Keterangan:</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-300">{{ beritaAcaraData.keterangan }}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
         <!-- Right: Timeline Riwayat (4/12, sticky) -->
@@ -284,6 +360,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
+import { useApi } from '~/composables/useApi';
 import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
@@ -292,6 +369,7 @@ import type { TransferActiveToInactive } from '~/types/transfer-active-to-inacti
 definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
+const { apiGet } = useApi();
 const {
   fetchDetail,
   send,
@@ -307,6 +385,8 @@ const loading = ref(true);
 const actionLoading = ref(false);
 const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
+const daftarIsi = ref<any[]>([]);
+const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 
 const items = computed(() => [
   { label: 'Beranda', to: '/' },
@@ -323,6 +403,7 @@ const loadDetail = async () => {
   loading.value = true;
   try {
     item.value = await fetchDetail(route.params.id as string);
+    await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -332,6 +413,50 @@ const loadDetail = async () => {
 
 const refresh = async () => {
   item.value = await fetchDetail(route.params.id as string);
+  await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
+};
+
+const loadDaftarIsi = async () => {
+  try {
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
+    daftarIsi.value = res?.data?.daftarIsi ?? [];
+  } catch (e) {
+    daftarIsi.value = [];
+  }
+};
+
+const loadBeritaAcaraData = async () => {
+  try {
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true });
+    beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] };
+  } catch (e) {
+    beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] };
+  }
+};
+
+const printDaftarIsi = () => {
+  const el = document.getElementById('daftar-isi-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<html><head><title>Daftar Isi</title></head><body style="font-family:Arial;padding:20px">${el.innerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+};
+
+const printBeritaAcara = () => {
+  const el = document.getElementById('berita-acara-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<html><head><title>Berita Acara Serah Terima</title></head><body style="font-family:Arial;padding:20px">${el.innerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+};
+
+const downloadBeritaAcara = () => {
+  // Trigger PDF download via backend (placeholder — generate PDF di backend)
+  window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
 };
 
 const act = async (fn: () => Promise<any>) => {
