@@ -938,30 +938,43 @@ const isSekretarisActor = computed(() => activePositionStatus.value === 'SE');
 // Admin (SUPERADMIN/ADMIN) lihat keduanya, User biasa lihat Pemberkasan saja.
 
 const adminMenuKelola = computed(() => {
+  const pemeliharaanChildren = [
+    {
+      label: 'Pemberkasan',
+      to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+      icon: 'i-lucide-folder-plus',
+      permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Persetujuan',
+      to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+      icon: 'i-lucide-file-check',
+      permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+    },
+    {
+      label: 'Usulan Akses',
+      to: '/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+    },
+    {
+      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+    },
+    {
+      label: 'Verifikasi Usulan',
+      to: '/maintenance/verifikasi-usulan',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
+  ];
+
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
-      children: [
-        {
-          label: 'Pemberkasan',
-          to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
-          icon: 'i-lucide-folder-plus',
-          permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
-        },
-        {
-          label: 'Persetujuan',
-          to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
-          icon: 'i-lucide-file-check',
-          permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
-        },
-        {
-          label: 'Usulan Akses',
-          to: '/usulan-akses-berkas',
-          icon: 'i-lucide-folder-key',
-          permission: { resource: 'usulan-akses-berkas', action: 'read' },
-        },
-      ],
+      children: pemeliharaanChildren,
     },
   ];
 
@@ -1013,18 +1026,31 @@ const adminMenuKelola = computed(() => {
 });
 
 const userMenuKelola = computed(() => {
+  const pemeliharaanChildren = [
+    {
+      label: 'Pemberkasan',
+      to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+      icon: 'i-lucide-folder-plus',
+      permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+    },
+    {
+      label: 'Verifikasi Usulan',
+      to: '/maintenance/verifikasi-usulan',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
+  ];
+
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
-      children: [
-        {
-          label: 'Pemberkasan',
-          to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
-          icon: 'i-lucide-folder-plus',
-          permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
-        },
-      ],
+      children: pemeliharaanChildren,
     },
   ];
 
