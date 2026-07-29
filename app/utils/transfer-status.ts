@@ -5,29 +5,38 @@ export const statusBadgeClass = (s: TransferActiveToInactiveStatus): string => {
   const m: Record<string, string> = {
     DRAFT: 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300',
     // Menunggu Persetujuan (atasan sekretaris) = kuning
-    MENUNGGU_VERIFIKASI_ATASAN: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    MENUNGGU_VERIFIKASI_ATASAN:
+      'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     DITOLAK_ATASAN: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
     DISETUJUI_ATASAN: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-    MENUNGGU_VERIFIKASI_TERAKHIR: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    MENUNGGU_VERIFIKASI_TERAKHIR:
+      'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     DITOLAK_VERIFIKASI_TERAKHIR: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    // Menunggu Verifikasi (masuk TU) = biru
-    DISETUJUI_VERIFIKASI_TERAKHIR: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    // Menunggu Verifikasi (verifikasi terakhir selesai) = biru
+    DISETUJUI_VERIFIKASI_TERAKHIR:
+      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     USUL_PINDAH_DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     SIAPKAN_BERKAS_FISIK: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    MENUNGGU_VERIFIKASI_BERKAS_FISIK:
+      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     BERKAS_FISIK_TIDAK_SESUAI: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
     BERKAS_FISIK_SESUAI: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU:
+      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     DITOLAK_PERSETUJUAN_TU: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
     DISETUJUI_PERSETUJUAN_TU: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     // Menunggu Penerimaan (dari Atasan TU) = ungu
-    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU:
+      'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
     // Selesai = hijau
-    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
-    ARSIP_INAKTIF_DITERIMA: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
-    PENATAAN_ARSIP_INAKTIF: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU:
+      'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    ARSIP_INAKTIF_DITERIMA:
+      'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    PENATAAN_ARSIP_INAKTIF:
+      'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     SELESAI: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
   };
   return `px-2 py-0.5 text-xs rounded-full font-medium ${m[s] || m.DRAFT}`;
@@ -43,7 +52,7 @@ export const statusLabel = (s: TransferActiveToInactiveStatus): string => {
     DISETUJUI_ATASAN: 'Menunggu Persetujuan',
     MENUNGGU_VERIFIKASI_TERAKHIR: 'Menunggu Persetujuan',
     DITOLAK_VERIFIKASI_TERAKHIR: 'Tolak',
-    // Verifikasi terakhir selesai → masuk TU → Menunggu Verifikasi
+    // Verifikasi terakhir selesai → siap kirim ke TU
     DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
     USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
     SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
