@@ -45,23 +45,43 @@
       <p>Naskah tidak ditemukan di berkas ini.</p>
     </div>
 
-    <!-- Preview modal -->
-    <UModal v-model:open="isPreviewOpen" :ui="{ width: 'sm:max-w-5xl' }">
-      <template #header>
-        <span class="font-medium">{{ previewTitle }}</span>
-      </template>
-      <div class="min-h-96">
-        <div v-if="isPdfLoading" class="flex min-h-96 items-center justify-center">
-          <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary-500" />
+    <!-- Preview dokumen (slideover bawah, menyamakan halaman detail naskah) -->
+    <USlideover
+      v-model:open="isPreviewOpen"
+      :title="previewTitle"
+      :description="previewTitle"
+      side="bottom"
+      :ui="{
+        content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+        body: 'p-0',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+      }"
+    >
+      <template #body>
+        <div class="relative flex h-full w-full flex-col bg-gray-100 dark:bg-gray-900">
+          <div
+            v-if="isPdfLoading"
+            class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90"
+          >
+            <UIcon name="i-lucide-loader-circle" class="mb-2 size-10 animate-spin text-primary-500" />
+            <span class="text-xs text-gray-500 dark:text-gray-400">Memuat Dokumen...</span>
+          </div>
+          <iframe
+            v-if="activePdfUrl"
+            :src="activePdfUrl"
+            class="h-full w-full flex-1 border-none"
+            title="Preview dokumen"
+          />
+          <div
+            v-else-if="!isPdfLoading"
+            class="flex h-full flex-col items-center justify-center gap-2 text-gray-500"
+          >
+            <UIcon name="i-lucide-file-text" class="size-12 opacity-30" />
+            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
+          </div>
         </div>
-        <iframe
-          v-if="activePdfUrl"
-          :src="activePdfUrl"
-          class="h-96 w-full sm:h-[70vh]"
-          title="Preview dokumen"
-        />
-      </div>
-    </UModal>
+      </template>
+    </USlideover>
   </div>
 </template>
 
