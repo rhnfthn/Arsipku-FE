@@ -240,27 +240,31 @@
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
                 <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
+                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
                 </button>
               </div>
               <div id="daftar-isi-print" class="text-sm">
-                <p class="font-semibold text-gray-900 dark:text-white mb-2">Daftar Isi — {{ item.nomorUsulan }}</p>
+                <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ item.nomorUsulan }}</p>
                 <table class="w-full border-collapse text-xs">
                   <thead>
-                    <tr class="border-b border-gray-200 dark:border-gray-600">
-                      <th class="text-left py-1.5 pr-2 text-gray-500">No</th>
-                      <th class="text-left py-1.5 pr-2 text-gray-500">Nama Berkas / Perihal</th>
-                      <th class="text-left py-1.5 text-gray-500">Keterangan</th>
+                    <tr class="border-b-2 border-gray-300 dark:border-gray-500">
+                      <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
+                      <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
+                      <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
+                      <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                      <td class="py-1.5 pr-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                      <td class="py-1.5 pr-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
-                      <td class="py-1.5 text-gray-500">{{ d.keterangan }}</td>
+                      <td class="text-center py-2 px-2">
+                        <input type="checkbox" class="w-4 h-4 text-[#457fb6] border-gray-300 rounded" />
+                      </td>
+                      <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
+                      <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
+                      <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
                     </tr>
                     <tr v-if="daftarIsi.length === 0">
-                      <td colspan="3" class="py-2 text-center text-gray-400 italic">Tidak ada arsip</td>
+                      <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
                     </tr>
                   </tbody>
                 </table>
@@ -280,33 +284,56 @@
                   </button>
                 </div>
               </div>
-              <div id="berita-acara-print" class="text-sm space-y-3">
-                <p class="font-semibold text-center text-gray-900 dark:text-white">BERITA ACARA SERAH TERIMA</p>
-                <p class="text-center text-xs text-gray-500">Nomor: {{ item.nomorUsulan }}</p>
-                <div class="grid grid-cols-2 gap-4 mt-3">
+              <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
+                <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
+                <p class="text-center text-xs mb-3">Nomor: {{ item.nomorUsulan }}</p>
+                <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(item.tanggalUsulan) }}</p>
+
+                <p class="text-xs leading-relaxed mb-4">
+                  Pada hari ini {{ hariIni }} tanggal {{ formatTanggalLengkap(item.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
+                </p>
+
+                <div class="space-y-3 mb-4 text-xs">
                   <div>
-                    <p class="text-xs font-medium text-gray-500 mb-1">Atasan Managerial:</p>
-                    <p class="text-sm text-gray-900 dark:text-white">{{ beritaAcaraData.atasan?.nama ?? '-' }}</p>
-                    <p v-if="beritaAcaraData.atasan?.jabatan" class="text-xs text-gray-400">{{ beritaAcaraData.atasan.jabatan }}</p>
-                    <p v-if="beritaAcaraData.atasan?.persnum" class="text-xs text-gray-400">Persnum: {{ beritaAcaraData.atasan.persnum }}</p>
-                    <p v-if="beritaAcaraData.atasan?.divisi" class="text-xs text-gray-400">{{ beritaAcaraData.atasan.divisi }}</p>
+                    <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData.atasan?.nama ?? '-' }}</p>
+                    <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
+                    <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
                   </div>
                   <div>
-                    <p class="text-xs font-medium text-gray-500 mb-1">Pengirim (Sekretaris):</p>
-                    <p class="text-sm text-gray-900 dark:text-white">{{ beritaAcaraData.pengirim?.nama ?? '-' }}</p>
-                    <p v-if="beritaAcaraData.pengirim?.persnum" class="text-xs text-gray-400">Persnum: {{ beritaAcaraData.pengirim.persnum }}</p>
-                    <p v-if="beritaAcaraData.pengirim?.divisi" class="text-xs text-gray-400">{{ beritaAcaraData.pengirim.divisi }}</p>
+                    <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData.pengirim?.nama ?? '-' }}</p>
+                    <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                    <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
                   </div>
                 </div>
-                <div class="mt-3">
-                  <p class="text-xs font-medium text-gray-500 mb-1">Daftar Arsip:</p>
-                  <ul class="list-disc list-inside text-xs text-gray-600 dark:text-gray-300">
-                    <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">{{ a.kode ?? '-' }} — {{ a.perihal }}</li>
-                  </ul>
-                </div>
-                <div v-if="beritaAcaraData.keterangan" class="mt-2">
-                  <p class="text-xs font-medium text-gray-500 mb-1">Keterangan:</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-300">{{ beritaAcaraData.keterangan }}</p>
+
+                <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
+                <p class="text-xs leading-relaxed mb-3">
+                  Pihak pertama telah menyerahkan kepada pihak kedua berupa:
+                </p>
+                <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
+                  <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">
+                    {{ a.kode ?? '-' }} — {{ a.perihal }}
+                  </li>
+                  <li v-if="beritaAcaraData.keterangan">{{ beritaAcaraData.keterangan }}</li>
+                </ol>
+
+                <p class="text-xs leading-relaxed mb-6">
+                  Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
+                </p>
+
+                <p class="text-xs text-right mb-6">{{ kotaIni }}, {{ formatTanggalLengkap(item.tanggalUsulan) }}</p>
+
+                <div class="grid grid-cols-2 gap-8 text-xs">
+                  <div class="text-center">
+                    <p class="font-semibold mb-16">Pihak Pertama</p>
+                    <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.atasan?.nama ?? '-' }}</p>
+                    <p class="text-gray-500">{{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="font-semibold mb-16">Pihak Kedua</p>
+                    <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.pengirim?.nama ?? '-' }}</p>
+                    <p class="text-gray-500">{{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -464,10 +491,11 @@ const printDaftarIsi = () => {
   w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 30px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f5f5f5; }
     h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { border: 1px solid #333; padding: 8px; text-align: left; background: #f0f0f0; }
+    td { border: 1px solid #333; padding: 8px; }
+    .checkbox { width: 20px; height: 20px; }
   </style>
   </head><body>${el.innerHTML}</body></html>`);
   w.document.close();
@@ -482,14 +510,22 @@ const printBeritaAcara = () => {
   if (!w) return;
   w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    h2 { text-align: center; margin-bottom: 10px; }
-    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 20px 0; }
-    .ba-section { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
-    .ba-label { font-size: 12px; color: #666; margin-bottom: 4px; }
-    .ba-value { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
-    ul { padding-left: 20px; }
-    li { margin-bottom: 4px; }
+    body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h2 { text-align: center; font-size: 16px; margin-bottom: 5px; }
+    .ba-nomor { text-align: center; font-size: 12px; margin-bottom: 5px; }
+    .ba-tanggal { text-align: center; font-size: 12px; color: #666; margin-bottom: 20px; }
+    .ba-paragraf { font-size: 12px; line-height: 1.8; margin-bottom: 15px; text-align: justify; }
+    .ba-pihak { font-size: 12px; margin-bottom: 15px; }
+    .ba-pihak p { margin-bottom: 4px; }
+    .ba-label { color: #666; font-style: italic; font-size: 11px; }
+    .ba-list { font-size: 12px; margin-left: 20px; margin-bottom: 15px; }
+    .ba-list li { margin-bottom: 4px; }
+    .ba-ttd { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 40px; font-size: 12px; }
+    .ba-ttd-col { text-align: center; }
+    .ba-ttd-label { font-weight: bold; margin-bottom: 80px; }
+    .ba-ttd-nama { border-top: 1px solid #333; padding-top: 5px; font-weight: bold; }
+    .ba-ttd-jabatan { color: #666; font-size: 11px; }
+    .ba-kota { text-align: right; font-size: 12px; margin-bottom: 30px; }
   </style>
   </head><body>${el.innerHTML}</body></html>`);
   w.document.close();
@@ -500,6 +536,20 @@ const printBeritaAcara = () => {
 const downloadBeritaAcara = () => {
   // Trigger PDF download via backend (placeholder — generate PDF di backend)
   window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
+};
+
+const hariIni = computed(() => {
+  const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  return hari[new Date().getDay()];
+});
+
+const kotaIni = 'Jakarta';
+
+const formatTanggalLengkap = (d: string | Date | null): string => {
+  if (!d) return '-';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
 };
 
 const act = async (fn: () => Promise<any>) => {
