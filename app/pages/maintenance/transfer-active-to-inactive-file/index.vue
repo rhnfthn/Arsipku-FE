@@ -98,54 +98,114 @@
               </td>
             </tr>
             <!-- Rows -->
-            <tr
-              v-for="(row, idx) in gabunganList"
-              :key="row.id"
-              class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors"
-            >
-              <td class="px-3 py-2 text-gray-500">{{ idx + 1 }}</td>
-              <td class="px-3 py-2 font-medium text-gray-700 dark:text-gray-200">
-                <div class="truncate" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
-                <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300">
-                <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell">
-                <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden md:table-cell">
-                <div class="truncate" :title="row.atasanName ?? '-'">
-                  <template v-if="row.isUsulan">{{ row.atasanName ?? '-' }}</template>
-                  <template v-else>-</template>
-                </div>
-              </td>
-              <td class="px-3 py-2">
-                <span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span>
-              </td>
-              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap hidden xl:table-cell">{{ formatDate(row.tanggal) }}</td>
-              <td class="px-3 py-2 text-center">
-                <!-- Arsip belum jadi usulan → tombol Pindahkan -->
-                <button
-                  v-if="!row.isUsulan && isSekretaris"
-                  @click="openCreateModalWithArsip(row)"
-                  title="Pindahkan"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                >
-                  <UIcon name="i-lucide-file-up" class="w-4 h-4" />
-                </button>
-                <!-- Usulan sudah dibuat → tombol Detail -->
-                <button
-                  v-else-if="row.isUsulan"
-                  @click="openDetail(row)"
-                  title="Detail"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                >
-                  <UIcon name="i-heroicons-eye" class="w-4 h-4" />
-                </button>
-              </td>
-            </tr>
+            <template v-for="(row, idx) in gabunganList" :key="row.id">
+              <tr
+                class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                @click="toggleExpand(row.id)"
+              >
+                <td class="px-3 py-2 text-gray-500">{{ idx + 1 }}</td>
+                <td class="px-3 py-2 font-medium text-gray-700 dark:text-gray-200">
+                  <div class="truncate" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
+                  <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
+                </td>
+                <td class="px-3 py-2 text-gray-600 dark:text-gray-300">
+                  <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
+                </td>
+                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell">
+                  <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
+                </td>
+                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
+                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden md:table-cell">
+                  <div class="truncate" :title="row.atasanName ?? '-'">
+                    <template v-if="row.isUsulan">{{ row.atasanName ?? '-' }}</template>
+                    <template v-else>-</template>
+                  </div>
+                </td>
+                <td class="px-3 py-2">
+                  <span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span>
+                </td>
+                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap hidden xl:table-cell">{{ formatDate(row.tanggal) }}</td>
+                <td class="px-3 py-2 text-center" @click.stop>
+                  <!-- Arsip belum jadi usulan → tombol Pindahkan -->
+                  <button
+                    v-if="!row.isUsulan && isSekretaris"
+                    @click="openCreateModalWithArsip(row)"
+                    title="Pindahkan"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                  >
+                    <UIcon name="i-lucide-file-up" class="w-4 h-4" />
+                  </button>
+                  <!-- Usulan DRAFT → tombol Kirim Usulan -->
+                  <button
+                    v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
+                    @click="onSendUsulan(row)"
+                    title="Kirim ke Atasan Managerial"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors"
+                  >
+                    <UIcon name="i-lucide-send" class="w-4 h-4" />
+                  </button>
+                  <!-- Usulan sudah dibuat → tombol Detail -->
+                  <button
+                    v-else-if="row.isUsulan"
+                    @click="openDetail(row)"
+                    title="Detail"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                  >
+                    <UIcon name="i-heroicons-eye" class="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+              <!-- Expand Detail -->
+              <tr v-if="expandedId === row.id">
+                <td colspan="9" class="px-3 py-4 bg-gray-50 dark:bg-gray-700/30">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span class="text-gray-400 text-xs">Kode Berkas</span>
+                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.kodeBerkas ?? '-' }}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-400 text-xs">Klasifikasi</span>
+                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.klasifikasi ?? '-' }}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-400 text-xs">Retensi Habis</span>
+                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ formatDate(row.tanggalRetensiAktifHabis) }}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-400 text-xs">Tanggal</span>
+                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ formatDate(row.tanggal) }}</p>
+                    </div>
+                    <div v-if="row.isUsulan">
+                      <span class="text-gray-400 text-xs">Nomor Usulan</span>
+                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.nomorUsulan ?? '-' }}</p>
+                    </div>
+                    <div v-if="row.isUsulan">
+                      <span class="text-gray-400 text-xs">Atasan Managerial</span>
+                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.atasanName ?? '-' }}</p>
+                    </div>
+                    <div>
+                      <span class="text-gray-400 text-xs">Status</span>
+                      <p><span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span></p>
+                    </div>
+                    <div v-if="row.isUsulan" class="flex items-end gap-2">
+                      <button
+                        v-if="row.status === 'DRAFT' && isSekretaris"
+                        @click="onSendUsulan(row)"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
+                      >
+                        <UIcon name="i-lucide-send" class="w-3.5 h-3.5 mr-1 inline" /> Kirim Usulan
+                      </button>
+                      <button
+                        @click="openDetail(row)"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                      >
+                        <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5 mr-1 inline" /> Detail
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -166,6 +226,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useApi } from '~/composables/useApi';
+import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useAuth } from '~/composables/useAuth';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
@@ -174,6 +235,7 @@ import type { TransferActiveToInactive } from '~/types/transfer-active-to-inacti
 definePageMeta({ middleware: ['auth'] });
 
 const { apiGet } = useApi();
+const { send } = useTransferActiveToInactive();
 const { user, isSuperadmin, isAdmin } = useAuth();
 
 /** Baris gabungan (arsip belum usulan + usulan sudah dibuat). */
@@ -193,6 +255,22 @@ interface GabunganRow {
 const gabunganList = ref<GabunganRow[]>([]);
 const loading = ref(false);
 const preselectedArsip = ref<any | null>(null);
+const expandedId = ref<string | null>(null);
+
+const toggleExpand = (id: string) => {
+  expandedId.value = expandedId.value === id ? null : id;
+};
+
+const onSendUsulan = async (row: GabunganRow) => {
+  if (!confirm(`Kirim usulan ${row.nomorUsulan ?? row.perihal} ke Atasan Managerial?`)) return;
+  try {
+    await send(row.id);
+    await loadGabungan();
+  } catch (e) {
+    console.error('Gagal mengirim usulan:', e);
+    alert('Gagal mengirim usulan.');
+  }
+};
 const isCreateModalOpen = ref(false);
 const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 
