@@ -1322,7 +1322,7 @@ const apps = computed(() => {
       label: 'Kelola',
       icon: 'i-lucide-archive',
       menus: filterMenuByPermission(userMenuKelola.value),
-      hasNotification: false,
+      hasNotification: rtArsipPersetujuanCount.value > 0,
     },
     {
       id: 'user-utilitas',
