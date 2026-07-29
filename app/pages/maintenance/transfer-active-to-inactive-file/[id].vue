@@ -356,6 +356,28 @@
   </div>
 </template>
 
+<style>
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #daftar-isi-print,
+  #daftar-isi-print *,
+  #berita-acara-print,
+  #berita-acara-print * {
+    visibility: visible;
+  }
+  #daftar-isi-print,
+  #berita-acara-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+  }
+}
+</style>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
@@ -439,9 +461,18 @@ const printDaftarIsi = () => {
   if (!el) return;
   const w = window.open('', '_blank');
   if (!w) return;
-  w.document.write(`<html><head><title>Daftar Isi</title></head><body style="font-family:Arial;padding:20px">${el.innerHTML}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    h2 { text-align: center; margin-bottom: 20px; }
+  </style>
+  </head><body>${el.innerHTML}</body></html>`);
   w.document.close();
-  w.print();
+  w.focus();
+  setTimeout(() => { w.print(); w.close(); }, 250);
 };
 
 const printBeritaAcara = () => {
@@ -449,9 +480,21 @@ const printBeritaAcara = () => {
   if (!el) return;
   const w = window.open('', '_blank');
   if (!w) return;
-  w.document.write(`<html><head><title>Berita Acara Serah Terima</title></head><body style="font-family:Arial;padding:20px">${el.innerHTML}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; }
+    h2 { text-align: center; margin-bottom: 10px; }
+    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 20px 0; }
+    .ba-section { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+    .ba-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .ba-value { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+  </style>
+  </head><body>${el.innerHTML}</body></html>`);
   w.document.close();
-  w.print();
+  w.focus();
+  setTimeout(() => { w.print(); w.close(); }, 250);
 };
 
 const downloadBeritaAcara = () => {
