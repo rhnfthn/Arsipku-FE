@@ -35,6 +35,8 @@ export interface TransferActiveToInactive {
   atasanPersnum: number;
   atasanName: string;
   atasanPositionId: number | null;
+  currentApprovalLevel: number;
+  totalApprovalLevels: number;
   tuPersnum: number | null;
   tuName: string | null;
   atasanTuPersnum: number | null;
@@ -43,6 +45,12 @@ export interface TransferActiveToInactive {
   arsipPerihal: string;
   arsipKode: string | null;
   tanggalRetensiAktifHabis: string | null;
+  arsipIds: Array<{
+    id: string;
+    perihal: string;
+    kode: string | null;
+    tanggalRetensiHabis: string | null;
+  }> | null;
   keterangan: string | null;
   status: TransferActiveToInactiveStatus;
   rejectedNote: string | null;
@@ -65,6 +73,24 @@ export interface TransferActiveToInactive {
   tuFinalApprovedAt: string | null;
   receivedAt: string | null;
   arrangedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Daftar level approval (dari GET /:id). */
+  approvalLevels?: ApprovalLevel[];
+}
+
+/** Level approval berjenjang. */
+export interface ApprovalLevel {
+  id: string;
+  transferId: string;
+  atasanPersnum: number;
+  atasanName: string;
+  atasanPositionId: number | null;
+  atasanPositionText: string | null;
+  urutan: number;
+  status: 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK';
+  verifiedAt: string | null;
+  catatan: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -95,27 +121,33 @@ export interface TransferSummary {
   disetujuiTU?: number;
 }
 
+/** Item atasan untuk multi-select. */
+export interface AtasanItemPayload {
+  persnum: number;
+  name?: string;
+  positionId?: number;
+  positionText?: string;
+}
+
+/** Item arsip untuk multi-select. */
+export interface ArsipItemPayload {
+  id: string;
+  perihal?: string;
+  kode?: string;
+  tanggalRetensiHabis?: string;
+}
+
 export interface CreateTransferPayload {
   tanggalUsulan?: string;
-  atasanPersnum: number;
-  atasanName?: string;
-  atasanPositionId?: number;
-  arsipId: string;
-  arsipPerihal?: string;
-  arsipKode?: string;
-  tanggalRetensiAktifHabis?: string;
+  atasanList: AtasanItemPayload[];
+  arsipList: ArsipItemPayload[];
   keterangan?: string;
   submit?: boolean;
 }
 
 export interface UpdateTransferPayload {
-  atasanPersnum?: number;
-  atasanName?: string;
-  atasanPositionId?: number;
-  arsipId?: string;
-  arsipPerihal?: string;
-  arsipKode?: string;
-  tanggalRetensiAktifHabis?: string;
+  atasanList?: AtasanItemPayload[];
+  arsipList?: ArsipItemPayload[];
   keterangan?: string;
 }
 

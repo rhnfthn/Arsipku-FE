@@ -81,10 +81,18 @@
               <div class="flex items-start gap-3">
                 <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
                 <div>
-                  <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">Menunggu Verifikasi</h3>
-                  <p class="text-sm text-yellow-600 dark:text-yellow-400">
-                    Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi.
-                  </p>
+                  <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+                    {{ isCurrentTurn ? 'Menunggu Verifikasi Anda' : 'Menunggu Verifikasi Atasan Lain' }}
+                  </h3>
+                    <p class="text-sm text-yellow-600 dark:text-yellow-400">
+                      <template v-if="isCurrentTurn">
+                        Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi Anda.
+                      </template>
+                      <template v-else>
+                        Usulan dari {{ usulan.sekretarisName }} sedang menunggu verifikasi atasan tahap {{ usulan.currentApprovalLevel }}.
+                        Akan tiba ke Anda setelah atasan sebelumnya menyetujui.
+                      </template>
+                    </p>
                 </div>
               </div>
             </div>
@@ -282,6 +290,7 @@ const {
   siapkanBerkasFisik,
   uploadBerkas,
   selesaikanUsulan,
+  checkIsCurrentTurn,
 } = useVerifikasiUsulan();
 
 const usulan = ref<VerifikasiUsulanItem | null>(null);
@@ -290,6 +299,7 @@ const actionLoading = ref(false);
 const isRejectModalOpen = ref(false);
 const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
+const isCurrentTurn = ref(false);
 
 const jenis = computed<JenisUsulan>(() => {
   const j = route.query.jenis as string;
@@ -313,22 +323,30 @@ const isOwnUsulan = computed(() => {
   return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
 });
 
-/** Bisa verifikasi hanya jika status sesuai DAN bukan usulan sendiri. */
+/** Bisa verifikasi hanya jika status MENUNGGU_VERIFIKASI_ATASAN, bukan usulan sendiri, DAN sedang giliran. */
 const canVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
-  return usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN';
+  if (usulan.value.status !== 'MENUNGGU_VERIFIKASI_ATASAN') return false;
+  return isCurrentTurn.value;
 });
 
-/** Bisa verifikasi terakhir hanya jika status sesuai DAN bukan usulan sendiri. */
-const canFinalVerify = computed(() => {
-  if (!usulan.value || isOwnUsulan.value) return false;
-  return usulan.value.status === 'MENUNGGU_VERIFIKASI_TERAKHIR';
-});
+/** Verifikasi terakhir tidak lagi dipakai untuk multi-level (final di-handle oleh approve). */
+const canFinalVerify = computed(() => false);
 
 const loadDetail = async () => {
   loading.value = true;
   try {
     usulan.value = await fetchDetail(route.params.id as string, jenis.value);
+    // Cek apakah user sedang giliran
+    if (
+      usulan.value &&
+      jenis.value === 'aktif_ke_inaktif' &&
+      usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN'
+    ) {
+      isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
+    } else {
+      isCurrentTurn.value = false;
+    }
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -338,6 +356,15 @@ const loadDetail = async () => {
 
 const refresh = async () => {
   usulan.value = await fetchDetail(route.params.id as string, jenis.value);
+  if (
+    usulan.value &&
+    jenis.value === 'aktif_ke_inaktif' &&
+    usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN'
+  ) {
+    isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
+  } else {
+    isCurrentTurn.value = false;
+  }
 };
 
 const act = async (fn: () => Promise<any>) => {
