@@ -351,6 +351,19 @@ const fetchData = async () => {
   }
 };
 
+// Realtime: auto-refetch saat count "menunggu persetujuan Anda" berubah
+// (berkas diajukan/di-approve/di-reject) — tanpa refresh manual.
+const route = useRoute();
+const { arsipPersetujuanWaitingCount } = useRealtimeSocket();
+watch(arsipPersetujuanWaitingCount, () => {
+  if (
+    route.path.startsWith('/kelola/pemeliharaan/persetujuan-pemberkasan') &&
+    !pending.value
+  ) {
+    fetchData();
+  }
+});
+
 const isExporting = ref(false);
 
 const exportData = async () => {

@@ -367,6 +367,7 @@ const {
   bsreAlert: rtBsreAlert,
   nomorCounts: rtNomorCounts,
   naskahDinasVerifikatorWaitingCount: rtVerifikatorCount,
+  arsipPersetujuanWaitingCount: rtArsipPersetujuanCount,
   isConnected: rtConnected,
   init: rtInit,
   destroy: rtDestroy,
@@ -923,6 +924,7 @@ const menuKelola = computed(() => [
         to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
         icon: 'i-lucide-file-check',
         access: 'persetujuan',
+        badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
         label: 'Usulan Akses Berkas',
@@ -1028,7 +1030,7 @@ const apps = computed(() => {
         label: 'Kelola',
         icon: 'i-lucide-archive',
         menus: filterMenuByPermission(menuKelola.value),
-        hasNotification: false,
+        hasNotification: rtArsipPersetujuanCount.value > 0,
       },
       {
         id: 'admin-utilitas',
@@ -1077,7 +1079,7 @@ const apps = computed(() => {
       label: 'Kelola',
       icon: 'i-lucide-archive',
       menus: filterMenuByPermission(menuKelola.value),
-      hasNotification: false,
+      hasNotification: rtArsipPersetujuanCount.value > 0,
     },
     {
       id: 'user-utilitas',
