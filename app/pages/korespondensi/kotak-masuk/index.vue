@@ -32,6 +32,7 @@ import {
   X,
   FolderPlus,
   Folder,
+  Share,
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { useInbox } from '~/composables/useInbox';
@@ -57,6 +58,24 @@ const { items, pagination, summary, pending, fetchInbox, markAsRead, toggleFlag 
 const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 const { getBerkasList, addNaskahToBerkas, getBerkasStatusByNaskah } = useArsipDinamis();
 const { canReadBerkasStatus } = useArsipDinamisPermission();
+
+// ── Share Naskah ─────────────────────────────────────────────────────────────
+const showShareModal = ref(false);
+const shareNaskah = ref<any>(null);
+
+const handleShare = (mail: any) => {
+  if (!mail?.naskahId) {
+    toast.add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
+    return;
+  }
+  shareNaskah.value = mail;
+  showShareModal.value = true;
+};
+
+const handleShareClose = () => {
+  showShareModal.value = false;
+  shareNaskah.value = null;
+};
 
 // ── Masukkan ke Berkas ───────────────────────────────────────────────────────
 const showAddToBerkasModal = ref(false);
@@ -758,7 +777,7 @@ onUnmounted(() => {
 
 <template>
   <AccessDenied v-if="!canAccessPage()" />
-  <template v-else>
+  <div v-else>
   <PageHeader :title="$t('kotak_masuk')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors"
@@ -1172,7 +1191,7 @@ onUnmounted(() => {
             <UButton
               v-for="tab in tabs"
               :key="tab.value"
-              @click="activeTab = tab.value"
+              @click="() => { activeTab = tab.value }"
               color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="
@@ -1503,6 +1522,16 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Share Modal -->
+    <SharedShareModal
+      v-if="showShareModal && shareNaskah"
+      :naskah-id="shareNaskah.naskahId"
+      :naskah-perihal="shareNaskah.perihal || shareNaskah.judul"
+      :naskah-nomor="shareNaskah.nomor"
+      @close="handleShareClose"
+      @shared="handleShareClose"
+    />
+
     <!-- ── MODALS ─────────────────────────────────────────────────────────── -->
 
     <LabelAssignModal
@@ -1714,7 +1743,7 @@ onUnmounted(() => {
       </div>
     </Teleport>
   </div>
-  </template>
+  </div>
 </template>
 
 <style scoped>

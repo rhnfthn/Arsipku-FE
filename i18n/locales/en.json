@@ -1887,5 +1887,6 @@
   "kon_perbaiki_sendiri_desc": "Repair the concept yourself and send it back to the sender.",
   "kon_turunkan_ke_bawahan_desc": "Delegate the concept to the subordinate who previously created it.",
   "kon_konsep_diturunkan": "Concept successfully delegated.",
-  "kon_gagal_turunkan": "Failed to delegate concept."
+  "kon_gagal_turunkan": "Failed to delegate concept.",
+  "berbagi": "Share"
 }
