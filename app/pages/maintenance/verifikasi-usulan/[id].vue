@@ -170,8 +170,37 @@
             </div>
           </div>
 
+          <!-- Card Siapkan Berkas Fisik (saat Siap Kirim ke TU) -->
+          <div
+            v-if="canKirimTU"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+          >
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Siapkan Berkas Fisik</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Sebelum mengirim usulan ke Unit Tata Naskah, pastikan:
+            </p>
+            <div class="space-y-3 mb-4">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input v-model="siapkanBerkasFisik" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">Berkas Fisik sudah disiapkan</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input v-model="siapkanBeritaAcara" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
+                <span class="text-sm text-gray-700 dark:text-gray-300">Berita Acara Serah Terima sudah disiapkan</span>
+              </label>
+            </div>
+            <button
+              @click="onKirimTU"
+              :disabled="!canSendToTU || actionLoading"
+              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
+            </button>
+          </div>
+
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canKirimTU || canFinalVerify" class="flex gap-2">
+          <div v-if="canVerify || canFinalVerify" class="flex gap-2">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -197,16 +226,6 @@
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui Verifikasi Terakhir
-            </button>
-            <!-- Tombol Kirim ke TU untuk Atasan Managerial saat verifikasi terakhir selesai -->
-            <button
-              v-if="canKirimTU"
-              @click="onKirimTU"
-              :disabled="actionLoading"
-              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
-            >
-              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
             </button>
           </div>
 
@@ -321,6 +340,10 @@ const isCurrentTurn = ref(false);
 const catatanVerifikasi = ref('');
 const daftarIsi = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
+const siapkanBerkasFisik = ref(false);
+const siapkanBeritaAcara = ref(false);
+
+const canSendToTU = computed(() => siapkanBerkasFisik.value && siapkanBeritaAcara.value);
 
 const { apiGet } = useApi();
 
@@ -571,7 +594,8 @@ const onKirimUsulPindah = () => {
 };
 
 const onKirimTU = () => {
-  if (!confirm('Kirim usulan ke Unit Tata Naskah?')) return;
+  if (!canSendToTU.value) return;
+  if (!confirm('Kirim usulan ke Unit Tata Naskah?\n\nUsulan akan diteruskan ke Unit Tata Naskah untuk verifikasi berkas fisik.')) return;
   act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
 };
 
