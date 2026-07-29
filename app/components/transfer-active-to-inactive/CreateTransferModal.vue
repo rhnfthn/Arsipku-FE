@@ -412,9 +412,9 @@ const loadAtasanManagerial = async () => {
 const loadArsipRetensiHabis = async () => {
   arsipLoading.value = true;
   try {
-    const { getBerkasList } = useArsipDinamis();
-    const res: any = await getBerkasList({ status: 'closed_retensi_aktif', limit: 100 });
-    const data = res?.data?.data ?? res?.data ?? res ?? [];
+    // Ambil dari endpoint Berkas Saya retensi habis (status Tertutup + retensi aktif habis)
+    const res: any = await apiGet('/arsip-dinamis/berkas-saya/retensi-habis', { params: { limit: 100 } }, { skipCache: true });
+    const data = res?.data?.data ?? res?.data ?? [];
     arsipOptions.value = (Array.isArray(data) ? data : []).map((b: any) => ({
       id: b.id,
       judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
