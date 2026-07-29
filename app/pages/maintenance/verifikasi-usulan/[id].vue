@@ -304,6 +304,14 @@
       :confirm-label="approveMode === 'finalVerify' ? 'Setujui Verifikasi Terakhir' : 'Setujui Verifikasi'"
       @confirm="onConfirmApprove"
     />
+
+    <!-- Send to TU Modal -->
+    <SendToTUModal
+      v-model="isSendToTUModalOpen"
+      :usulan="usulan"
+      :loading="actionLoading"
+      @confirm="onConfirmKirimTU"
+    />
   </div>
 </template>
 
@@ -318,6 +326,7 @@ import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRi
 import BeritaAcaraCard from '~/components/verifikasi-usulan/BeritaAcaraCard.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
 import ApproveUsulanModal from '~/components/verifikasi-usulan/ApproveUsulanModal.vue';
+import SendToTUModal from '~/components/verifikasi-usulan/SendToTUModal.vue';
 import type { VerifikasiUsulanItem, JenisUsulan } from '~/types/verifikasi-usulan';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import { formatDate } from '~/utils/transfer-status';
@@ -345,6 +354,7 @@ const loading = ref(true);
 const actionLoading = ref(false);
 const isRejectModalOpen = ref(false);
 const isApproveModalOpen = ref(false);
+const isSendToTUModalOpen = ref(false);
 const approveMode = ref<'verify' | 'finalVerify'>('verify');
 const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
@@ -615,7 +625,10 @@ const onKirimUsulPindah = () => {
 
 const onKirimTU = () => {
   if (!canSendToTU.value) return;
-  if (!confirm('Kirim usulan ke Unit Tata Naskah?\n\nUsulan akan diteruskan ke Unit Tata Naskah untuk verifikasi berkas fisik.')) return;
+  isSendToTUModalOpen.value = true;
+};
+
+const onConfirmKirimTU = () => {
   act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
 };
 
