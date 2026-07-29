@@ -14,6 +14,18 @@ const { fetchVerifikator, verifikatorList, createUsulan, pending } = useUsulanAk
 const { apiGet } = useApi();
 const toast = useToast();
 
+// Helper: extract error message dari AxiosError (BE return { message: [...] | string })
+const extractErrorMessage = (err: any): string => {
+  const beMessage = err?.response?.data?.message;
+  if (Array.isArray(beMessage) && beMessage.length > 0) {
+    return beMessage.join(', ');
+  }
+  if (typeof beMessage === 'string' && beMessage.trim()) {
+    return beMessage;
+  }
+  return err?.message || 'Terjadi kesalahan';
+};
+
 // ── Divisi list ───────────────────────────────────
 interface DivisiOption {
   organization: number;
@@ -181,6 +193,17 @@ const canSubmit = computed(() => {
   return true;
 });
 
+// Debug: tampilkan kondisi yang belum terpenuhi
+const submitBlockReasons = computed(() => {
+  const reasons: string[] = [];
+  if (tujuanAkses.value.trim().length < 30) reasons.push(`Tujuan akses minimal 30 karakter (sekarang ${tujuanAkses.value.trim().length})`);
+  if (jenisAksesSelected.value.length === 0) reasons.push('Pilih minimal 1 jenis akses');
+  if (selectedVerifikatorPersnums.value.length === 0) reasons.push('Pilih minimal 1 verifikator');
+  if (!isINAKTIF.value && !divisiPemberiId.value) reasons.push('Pilih divisi pemberi (wajib untuk berkas AKTIF)');
+  if (durasiAkses.value === DurasiPreset.CUSTOM && !customTanggalSelesai.value) reasons.push('Isi tanggal selesai custom');
+  return reasons;
+});
+
 const handleSubmit = async () => {
   if (!canSubmit.value) {
     toast.add({ title: 'Lengkapi semua field wajib', color: 'error' });
@@ -218,7 +241,7 @@ const handleSubmit = async () => {
   } catch (err: any) {
     toast.add({
       title: 'Gagal membuat usulan',
-      description: err?.message || 'Terjadi kesalahan',
+      description: extractErrorMessage(err),
       color: 'error',
     });
   }
@@ -226,28 +249,55 @@ const handleSubmit = async () => {
 
 watch(isOpen, (val) => {
   if (val) {
-    fetchVerifikator();
+    fetchVerifikator().catch((err) => {
+      console.error('[AddUsulanAksesBerkas] fetchVerifikator failed:', err);
+      toast.add({
+        title: 'Gagal memuat verifikator',
+        description: extractErrorMessage(err),
+        color: 'error',
+      });
+    });
     fetchDivisiList();
   }
 });
 
 onMounted(() => {
   if (isOpen.value) {
-    fetchVerifikator();
+    fetchVerifikator().catch((err) => {
+      console.error('[AddUsulanAksesBerkas] fetchVerifikator failed:', err);
+      toast.add({
+        title: 'Gagal memuat verifikator',
+        description: extractErrorMessage(err),
+        color: 'error',
+      });
+    });
     fetchDivisiList();
   }
 });
 </script>
 
 <template>
-  <Modal v-model="isOpen" :hideDefaultFooter="true" size="2xl">
+  <Modal v-model="isOpen" :hideDefaultFooter="true" size="w-[680px] max-w-[92vw] max-h-[88vh]">
     <template #title>
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
         Buat Usulan Akses Berkas
       </h2>
     </template>
 
-    <div class="space-y-5 max-h-[70vh] overflow-y-auto p-1">
+    <div class="space-y-5 max-h-[60vh] overflow-y-auto p-1">
+      <!-- Debug: tampilkan alasan tombol disable -->
+      <div v-if="!canSubmit && submitBlockReasons.length > 0" class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-700 dark:text-amber-300">
+        <div class="font-medium mb-1">Syarat yang belum terpenuhi:</div>
+        <ul class="list-disc list-inside space-y-0.5">
+          <li v-for="(reason, i) in submitBlockReasons" :key="i">{{ reason }}</li>
+        </ul>
+      </div>
+
+      <!-- Info: Sekretaris yang didelegasikan -->
+      <div class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 text-sm text-blue-700 dark:text-blue-300">
+        <strong>Info:</strong> Usulan dibuat atas nama divisi Anda sebagai Sekretaris yang didelegasikan. Verifikator (AVP/VP/EVP) otomatis diambil dari managerial di divisi Anda.
+      </div>
+
       <!-- Jenis Berkas -->
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -509,11 +559,12 @@ onMounted(() => {
     </div>
 
     <!-- Footer -->
-    <div class="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+    <div class="flex justify-between gap-3 px-0 py-4 border-t border-gray-200 dark:border-gray-700">
       <button
         @click="isOpen = false"
         type="button"
-        class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+        :disabled="pending"
+        class="flex-1 px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Batal
       </button>
@@ -521,7 +572,7 @@ onMounted(() => {
         @click="handleSubmit"
         :disabled="!canSubmit || pending"
         type="button"
-        class="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+        class="flex-1 px-6 py-2 bg-primary dark:bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 dark:hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {{ pending ? 'Menyimpan...' : 'Kirim Usulan' }}
       </button>
