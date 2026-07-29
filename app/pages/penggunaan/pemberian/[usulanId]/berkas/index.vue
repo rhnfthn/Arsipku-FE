@@ -1,0 +1,310 @@
+<script setup lang="ts">
+// Detail berkas yang diberikan — style seperti pemberkasan detail
+// Fetch usulan detail untuk dapat selectedBerkas, lalu fetch berkas detail + naskah
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User, Key } from 'lucide-vue-next';
+import PageHeader from '~/components/PageHeader.vue';
+import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+
+definePageMeta({ middleware: 'auth' });
+useHead({ title: 'Berkas yang Diberikan' });
+
+const route = useRoute();
+const { t } = useI18n();
+const { usulanDetail, pending, fetchDetail, fetchBerkasDetail, fetchNaskahByBerkas } = useUsulanAksesBerkas();
+const toast = useToast();
+
+const extractErrorMessage = (err: any): string => {
+  const beMessage = err?.response?.data?.message;
+  if (Array.isArray(beMessage) && beMessage.length > 0) return beMessage.join(', ');
+  if (typeof beMessage === 'string' && beMessage.trim()) return beMessage;
+  return err?.message || 'Terjadi kesalahan';
+};
+
+const usulanId = computed(() => route.params.usulanId as string);
+
+const berkasDetail = ref<any>(null);
+const naskahList = ref<any[]>([]);
+const naskahLoading = ref(false);
+const search = ref('');
+const perPage = ref(10);
+const currentPage = ref(1);
+const total = ref(0);
+
+const openRowsPerPage = ref(false);
+function toggleRowsPerPage() { openRowsPerPage.value = !openRowsPerPage.value; }
+function selectRowsPerPage(n: number) { perPage.value = n; openRowsPerPage.value = false; currentPage.value = 1; loadNaskah(); }
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const els = document.querySelectorAll('[data-custom-dropdown]');
+  for (const el of Array.from(els)) { if (el.contains(target)) return; }
+  openRowsPerPage.value = false;
+}
+
+const breadcrumbs = computed(() => [
+  { label: t('beranda') || 'Beranda', to: '/beranda' },
+  { label: 'Penggunaan', to: '#' },
+  { label: 'Pemberian', to: '/penggunaan/pemberian' },
+  { label: berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
+]);
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '-';
+  return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const columns = [
+  { key: 'perihal', label: 'Perihal' },
+  { key: 'naskahTipe', label: 'Tipe' },
+  { key: 'nomorSurat', label: 'Nomor Surat' },
+  { key: 'tanggalNaskah', label: 'Tanggal' },
+  { key: 'aksi', label: '' },
+];
+
+const loadAll = async () => {
+  try {
+    // 1. Fetch usulan detail untuk dapat selectedBerkas
+    await fetchDetail(usulanId.value);
+    const berkasItems = (usulanDetail.value as any)?.selectedBerkas || [];
+    if (berkasItems.length === 0) {
+      toast.add({ title: 'Tidak Ada Berkas', description: 'Usulan ini belum memiliki berkas.', color: 'error' });
+      return;
+    }
+
+    // 2. Fetch detail berkas pertama (atau semua — untuk simplicity ambil pertama)
+    const firstBerkasId = berkasItems[0].berkasId;
+    berkasDetail.value = await fetchBerkasDetail(firstBerkasId);
+
+    // 3. Load naskah di dalam berkas
+    await loadNaskah(firstBerkasId);
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
+  }
+};
+
+const loadNaskah = async (berkasId?: string) => {
+  const bid = berkasId || berkasDetail.value?.id;
+  if (!bid) return;
+  naskahLoading.value = true;
+  try {
+    naskahList.value = await fetchNaskahByBerkas(bid);
+    total.value = naskahList.value.length;
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
+  } finally {
+    naskahLoading.value = false;
+  }
+};
+
+const openNaskah = (row: any) => {
+  navigateTo(`/penggunaan/pemberian/${usulanId.value}/naskah/${row.naskahId}`);
+};
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+watch(search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => { currentPage.value = 1; }, 400);
+});
+
+const filteredNaskah = computed(() => {
+  if (!search.value.trim()) return naskahList.value;
+  const q = search.value.toLowerCase();
+  return naskahList.value.filter(
+    (n) => (n.perihal || '').toLowerCase().includes(q) || (n.nomorSurat || '').toLowerCase().includes(q),
+  );
+});
+
+onMounted(() => {
+  loadAll();
+  document.addEventListener('click', handleDocumentClick);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
+});
+</script>
+
+<template>
+  <div class="bg-gray-50 dark:bg-gray-900 pt-5 min-h-screen px-5">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+      <PageHeader
+        :title="berkasDetail?.judulBerkas || 'Berkas yang Diberikan'"
+        :items="breadcrumbs"
+      />
+      <button
+        @click="$router.back()"
+        class="flex items-center gap-2 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm transition-colors shrink-0"
+      >
+        <ChevronLeft class="w-4 h-4" /> Kembali
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="pending && !berkasDetail" class="space-y-5" aria-busy="true">
+      <div class="h-56 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-800" />
+      <div class="h-72 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />
+    </div>
+
+    <template v-else-if="berkasDetail">
+      <!-- Quick Info Cards (seperti pemberkasan) -->
+      <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+              <Folder class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <p class="truncate text-xs font-medium uppercase text-gray-500">Klasifikasi</p>
+              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasiTeks || berkasDetail.klasifikasi || '-' }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+              <Building2 class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <p class="truncate text-xs font-medium uppercase text-gray-500">Divisi Pemberi</p>
+              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPemberiNama || '-' }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+              <User class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <p class="truncate text-xs font-medium uppercase text-gray-500">EVP Pemberi</p>
+              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evpPemberiNama || '-' }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+              <Key class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <p class="truncate text-xs font-medium uppercase text-gray-500">Akses</p>
+              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.permissions?.join(', ') || '-' }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+              <Clock class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <p class="truncate text-xs font-medium uppercase text-gray-500">Berakhir</p>
+              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggalSelesai) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Berkas Section -->
+      <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+            <Folder class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <h2 class="font-semibold text-gray-900 dark:text-white">Informasi Berkas</h2>
+        </div>
+        <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <FileText class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judulBerkas }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Folder class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Kode/Klasifikasi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasi }} — {{ berkasDetail.klasifikasiTeks }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Building2 class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPemberiNama }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <User class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">EVP Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evpPemberiNama }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Key class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.permissions?.join(', ') }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Clock class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggalMulai) }} — {{ formatDate(berkasDetail.tanggalSelesai) }}</dd></div>
+          </div>
+        </dl>
+        <div v-if="berkasDetail.tujuanAkses" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
+          <p class="mb-1 text-xs font-medium uppercase text-gray-500">Tujuan Akses</p>
+          <p class="text-sm text-gray-800 dark:text-gray-200">{{ berkasDetail.tujuanAkses }}</p>
+        </div>
+      </div>
+
+      <!-- Daftar Naskah -->
+      <div class="mt-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+        <!-- Toolbar -->
+        <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
+          <div class="flex items-center gap-3 flex-wrap flex-1">
+            <div class="relative" data-custom-dropdown>
+              <button type="button" @click.stop="toggleRowsPerPage"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between">
+                <span>{{ perPage }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': openRowsPerPage }" />
+              </button>
+              <Transition name="filter-dd">
+                <div v-if="openRowsPerPage" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]">
+                  <button v-for="n in [10, 25, 50]" :key="n" type="button" @click.stop="selectRowsPerPage(n)"
+                    :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      perPage === n ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']">
+                    {{ n }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
+            <div class="relative flex-1 min-w-[180px]">
+              <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input v-model="search" type="text" placeholder="Cari Naskah…"
+                class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition" />
+            </div>
+          </div>
+        </div>
+
+        <DataTable :columns="columns" :rows="filteredNaskah" :loading="naskahLoading"
+          header-class="bg-primary dark:bg-primary-700 text-white text-left"
+          body-class="divide-y divide-gray-100 dark:divide-gray-700"
+          row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          empty-message="Belum ada naskah di dalam berkas ini.">
+          <template #cell-perihal="{ row }">
+            <div class="flex items-start gap-2">
+              <FileText class="mt-0.5 size-4 shrink-0 text-gray-400" />
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ row.perihal || '(Tanpa perihal)' }}</span>
+            </div>
+          </template>
+          <template #cell-naskahTipe="{ row }">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">{{ row.naskahTipe }}</span>
+          </template>
+          <template #cell-nomorSurat="{ row }">
+            <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ row.nomorSurat || '-' }}</span>
+          </template>
+          <template #cell-tanggalNaskah="{ row }">
+            <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalNaskah) }}</span>
+          </template>
+          <template #cell-aksi="{ row }">
+            <button @click="openNaskah(row)"
+              class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
+              title="Lihat Naskah">
+              <Eye class="size-4" /> Lihat Naskah
+            </button>
+          </template>
+        </DataTable>
+      </div>
+    </template>
+  </div>
+</template>
