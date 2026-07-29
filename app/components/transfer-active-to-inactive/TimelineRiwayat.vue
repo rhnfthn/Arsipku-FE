@@ -48,7 +48,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <p :class="stepTextClass(2)" class="text-sm font-medium">Menunggu Verifikasi</p>
-          <p class="text-xs text-gray-400 mt-0.5">Atasan Managerial Sekretaris</p>
+          <p class="text-xs text-gray-400 mt-0.5">Verifikasi terakhir Atasan Managerial → masuk TU</p>
           <p v-if="item.finalVerifiedAt" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.finalVerifiedAt) }}</p>
         </div>
       </div>
@@ -65,7 +65,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <p :class="stepTextClass(3)" class="text-sm font-medium">Menunggu Penerimaan</p>
-          <p class="text-xs text-gray-400 mt-0.5">Atasan Managerial TU / TU</p>
+          <p class="text-xs text-gray-400 mt-0.5">TU kirim ke Atasan Managerial TU</p>
           <p v-if="item.tanggalDikirim" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.tanggalDikirim) }}</p>
         </div>
       </div>
