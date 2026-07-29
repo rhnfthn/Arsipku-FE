@@ -1741,7 +1741,7 @@ async function handleDeleteBerkas() {
     await deleteBerkas(berkasId.value);
     toast.add({
       title: 'Berkas berhasil dihapus',
-      description: 'Berkas draft telah dihapus secara permanen.',
+      description: 'Berkas telah dihapus secara permanen.',
       color: 'success',
     });
     showDeleteModal.value = false;

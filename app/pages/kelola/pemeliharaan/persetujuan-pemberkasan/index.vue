@@ -222,8 +222,8 @@ const currentPage = ref(1);
 const totalItems = ref(0);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
-// Satu tabel, filter status: Semua / Menunggu Anda (default) / Disetujui / Ditolak.
-// Semua = menunggu+approved+rejected. Menunggu Anda = pending & giliran Anda.
+// Satu tabel, filter status: Semua / Menunggu Persetujuan Anda (default) / Disetujui / Ditolak.
+// Semua = menunggu+approved+rejected. Menunggu Persetujuan Anda = pending & giliran Anda.
 // Disetujui/Ditolak = keputusan lampau Anda. Semua via getPersetujuanSaya({status}).
 const statusFilter = ref<'all' | 'menunggu' | 'approved' | 'rejected'>('menunggu');
 
@@ -242,7 +242,7 @@ const statusOptions = [
 ] as const;
 
 const statusFilterLabel = computed(
-  () => statusOptions.find((o) => o.value === statusFilter.value)?.label ?? 'Menunggu Anda',
+  () => statusOptions.find((o) => o.value === statusFilter.value)?.label ?? 'Menunggu Persetujuan Anda',
 );
 
 function toggleRowsPerPage() {
