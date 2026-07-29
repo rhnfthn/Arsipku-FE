@@ -102,6 +102,9 @@ export const useVerifikasiUsulan = () => {
       delete params.page;
       delete params.limit;
 
+      // Ambil semua data dari backend (limit besar) untuk filter DRAFT di frontend
+      params.limit = 999;
+
       const tasks: Promise<{ data: any[]; meta?: any; jenis: JenisUsulan }>[] = [];
 
       // Hanya panggil endpoint Pemindahan Arsip Aktif ke Inaktif
