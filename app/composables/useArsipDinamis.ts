@@ -63,6 +63,16 @@ export const useArsipDinamis = () => {
     );
   };
 
+  // Detail naskah TUNGGAL dalam konteks berkas (sebagai anggota pemberkasan/
+  // persetujuan) — tanpa cek peserta korespondensi. Return envelope { data }.
+  const getNaskahDetailInBerkas = async (berkasId: string, naskahId: string) => {
+    return await apiGet(
+      `/arsip-dinamis/berkas/${berkasId}/naskah/${naskahId}/detail`,
+      {},
+      { skipCache: true }
+    );
+  };
+
   const addNaskahToBerkas = async (
     berkasId: string,
     data: { naskah_ids: string[]; sumber: string }
@@ -157,6 +167,7 @@ export const useArsipDinamis = () => {
     getKlasifikasiDenganRetensi,
     // Naskah
     getDaftarNaskah,
+    getNaskahDetailInBerkas,
     addNaskahToBerkas,
     removeNaskahFromBerkas,
     getNaskahSiapArsip,

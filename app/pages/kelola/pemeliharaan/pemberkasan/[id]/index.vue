@@ -1492,8 +1492,10 @@ function sourceBadgeClass(value?: string) {
     : 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400';
 }
 function getNaskahDetailLink(row: Record<string, any>) {
-  const section = row.sumber === 'terkirim' ? 'terkirim' : 'kotak-masuk';
-  return `/korespondensi/${section}/${row.naskahId}?jenis=${encodeURIComponent(row.naskahTipe || '')}`;
+  // Buka naskah dalam konteks berkas (sebagai anggota pemberkasan/persetujuan),
+  // bukan sebagai peserta korespondensi — hindari 403 saat viewer bukan
+  // pengirim/penerima naskah yg ditambahkan orang lain ke berkas ini.
+  return `/kelola/pemeliharaan/pemberkasan/${berkasId.value}/naskah/${row.naskahId}`;
 }
 
 async function fetchBerkas() {
