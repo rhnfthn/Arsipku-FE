@@ -142,31 +142,7 @@
               </div>
             </div>
 
-            <!-- Berita Acara -->
-            <div
-              v-if="showBeritaAcara"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Berita Acara</h3>
-              <button
-                v-if="!item.beritaAcaraUrl"
-                @click="onGenerateBA"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 mb-2"
-              >
-                <UIcon name="i-lucide-file-text" class="w-4 h-4 mr-1 inline" /> Generate
-              </button>
-              <div v-else>
-                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">{{ item.beritaAcaraNomor }}</p>
-                <a
-                  :href="item.beritaAcaraUrl"
-                  target="_blank"
-                  class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors"
-                >
-                  <UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF
-                </a>
-              </div>
-            </div>
+            <!-- Berita Acara (Generate) dihapus — BA format resmi ada di card bawah -->
 
             <!-- DIKIRIM: Menunggu Penerimaan -->
             <div
