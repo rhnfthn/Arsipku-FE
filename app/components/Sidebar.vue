@@ -343,7 +343,7 @@ import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
 const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
-const { isReadOnly } = useDelegationMode();
+const { isReadOnly, activePositionStatus } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
@@ -919,91 +919,183 @@ const adminMenuLaporan = computed(() => [
   },
 ]);
 
-// ─── Menu Kelola (Arsip Dinamis) ─────────────────────────────────────────────
+// Cek apakah user adalah Managerial (EVP/VP/AVP) berdasarkan positionText.
+const isManagerialPosition = computed(() => {
+  const ps = activePositionStatus.value;
+  if (ps === 'SE' || ps === 'VI') return false;
+  const posText = (user.value?.positionText || '').toUpperCase();
+  if (posText.includes('EVP')) return true;
+  if (posText.includes('AVP')) return true;
+  if (posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP') return true;
+  return false;
+});
 
-const menuKelola = computed(() => [
-  {
-    label: 'Pemeliharaan',
-    icon: 'i-lucide-folder-cog',
-    children: [
-      {
-        label: 'Pemberkasan',
-        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
-        icon: 'i-lucide-folder-plus',
-        access: 'pemberkasan',
-      },
-      {
-        label: 'Persetujuan Pemberkasan',
-        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
-        icon: 'i-lucide-file-check',
-        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
-      },
-      {
-        label: 'Usulan Akses Berkas',
-        to: '/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      },
-      {
-        label: 'Pemindahan Arsip Aktif\nke Inaktif',
-        to: '/maintenance/transfer-active-to-inactive-file',
-        icon: 'i-lucide-file-up',
-        roles: ['user', 'superadmin'],
-        // Sembunyikan untuk user yang adalah atasan managerial (mereka lihat "Verifikasi Usulan")
-        hideIfAtasan: true,
-      },
-      {
-        label: 'Verifikasi Usulan',
-        to: '/maintenance/verifikasi-usulan',
-        icon: 'i-lucide-clipboard-check',
-        // Tampilkan untuk admin/superadmin ATAU user yang pernah dipilih sebagai atasan
-        showIfAtasan: true,
-      },
-    ],
-  },
-]);
+// Cek apakah user adalah SE (Sekretaris yang didelegasikan)
+const isSekretarisActor = computed(() => activePositionStatus.value === 'SE');
 
-const userMenuKelola = computed(() => [
-  {
-    label: 'Pemeliharaan',
-    icon: 'i-lucide-folder-cog',
-    children: [
-      {
-        label: 'Pemberkasan',
-        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
-        icon: 'i-lucide-folder-plus',
-        permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
-      },
-      {
-        label: 'Persetujuan Pemberkasan',
-        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
-        icon: 'i-lucide-file-check',
-        permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
-      },
-      {
-        label: 'Usulan Akses Berkas',
-        to: '/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      },
-      {
-        label: 'Pemindahan Arsip Aktif\nke Inaktif',
-        to: '/maintenance/transfer-active-to-inactive-file',
-        icon: 'i-lucide-file-up',
-        roles: ['user', 'superadmin'],
-        // Sembunyikan untuk user yang adalah atasan managerial (mereka lihat "Verifikasi Usulan")
-        hideIfAtasan: true,
-      },
-      {
-        label: 'Verifikasi Usulan',
-        to: '/maintenance/verifikasi-usulan',
-        icon: 'i-lucide-clipboard-check',
-        // Tampilkan untuk admin/superadmin ATAU user yang pernah dipilih sebagai atasan
-        showIfAtasan: true,
-      },
-    ],
-  },
-]);
+// ── Menu Pemeliharaan (milik Fakhri — JANGAN UBAH) ──
+// Struktur asli Fakhri: Pemberkasan + Persetujuan Pemberkasan
+// Admin (SUPERADMIN/ADMIN) lihat keduanya, User biasa lihat Pemberkasan saja.
+
+const adminMenuKelola = computed(() => {
+  const pemeliharaanChildren = [
+    {
+      label: 'Pemberkasan',
+      to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+      icon: 'i-lucide-folder-plus',
+      permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Persetujuan',
+      to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+      icon: 'i-lucide-file-check',
+      permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+    },
+    {
+      label: 'Usulan Akses',
+      to: '/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+    },
+    {
+      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+      hideIfManagerial: true,
+    },
+    {
+      label: 'Verifikasi Usulan',
+      to: '/maintenance/verifikasi-usulan',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
+  ];
+
+  const menus = [
+    {
+      label: 'Pemeliharaan',
+      icon: 'i-lucide-folder-cog',
+      children: pemeliharaanChildren,
+    },
+  ];
+
+  // ── Menu Penggunaan (scope kita) ──
+  // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
+  // Tiap child tampil berdasarkan actor:
+  //   - Permintaan: SE (buat usulan)
+  //   - Persetujuan: Managerial (verifikasi)
+  //   - Pemeriksaan: Managerial (placeholder)
+  //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
+  const penggunaanChildren = [];
+
+  if (isSekretarisActor.value) {
+    penggunaanChildren.push({
+      label: 'Permintaan',
+      to: '/penggunaan/permintaan',
+      icon: 'i-lucide-file-plus',
+    });
+  }
+
+  if (isManagerialPosition.value) {
+    penggunaanChildren.push({
+      label: 'Persetujuan',
+      to: '/penggunaan/persetujuan',
+      icon: 'i-lucide-file-check',
+    });
+    penggunaanChildren.push({
+      label: 'Pemeriksaan',
+      to: '/penggunaan/pemeriksaan',
+      icon: 'i-lucide-search-check',
+    });
+  }
+
+  penggunaanChildren.push({
+    label: 'Pemberian',
+    to: '/penggunaan/pemberian',
+    icon: 'i-lucide-folder-check',
+  });
+
+  if (penggunaanChildren.length > 0) {
+    menus.push({
+      label: 'Penggunaan',
+      icon: 'i-lucide-folder-open',
+      children: penggunaanChildren,
+    });
+  }
+
+  return menus;
+});
+
+const userMenuKelola = computed(() => {
+  const pemeliharaanChildren = [
+    {
+      label: 'Pemberkasan',
+      to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+      icon: 'i-lucide-folder-plus',
+      permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+      hideIfManagerial: true,
+    },
+    {
+      label: 'Verifikasi Usulan',
+      to: '/maintenance/verifikasi-usulan',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
+  ];
+
+  const menus = [
+    {
+      label: 'Pemeliharaan',
+      icon: 'i-lucide-folder-cog',
+      children: pemeliharaanChildren,
+    },
+  ];
+
+  // ── Menu Penggunaan (scope kita) ──
+  const penggunaanChildren = [];
+
+  if (isSekretarisActor.value) {
+    penggunaanChildren.push({
+      label: 'Permintaan',
+      to: '/penggunaan/permintaan',
+      icon: 'i-lucide-file-plus',
+    });
+  }
+
+  if (isManagerialPosition.value) {
+    penggunaanChildren.push({
+      label: 'Persetujuan',
+      to: '/penggunaan/persetujuan',
+      icon: 'i-lucide-file-check',
+    });
+    penggunaanChildren.push({
+      label: 'Pemeriksaan',
+      to: '/penggunaan/pemeriksaan',
+      icon: 'i-lucide-search-check',
+    });
+  }
+
+  penggunaanChildren.push({
+    label: 'Pemberian',
+    to: '/penggunaan/pemberian',
+    icon: 'i-lucide-folder-check',
+  });
+
+  if (penggunaanChildren.length > 0) {
+    menus.push({
+      label: 'Penggunaan',
+      icon: 'i-lucide-folder-open',
+      children: penggunaanChildren,
+    });
+  }
+
+  return menus;
+});
 
 // ─── Notification flags ───────────────────────────────────────────────────────
 
@@ -1062,6 +1154,18 @@ const filterMenuByPermission = (items) => {
       return null;
     }
 
+    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
+    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
+    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
+      return null;
+    }
+
+    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
+    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
+    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
+      return null;
+    }
+
     // Filter children secara recursive
     if (item.children) {
       cloned.children = item.children
@@ -1109,7 +1213,7 @@ const apps = computed(() => {
         id: 'admin-kelola',
         label: 'Kelola',
         icon: 'i-lucide-archive',
-        menus: filterMenuByPermission(menuKelola.value),
+        menus: filterMenuByPermission(adminMenuKelola.value),
         hasNotification: false,
       },
       {
@@ -1158,7 +1262,7 @@ const apps = computed(() => {
       id: 'user-kelola',
       label: 'Kelola',
       icon: 'i-lucide-archive',
-      menus: filterMenuByPermission(menuKelola.value),
+      menus: filterMenuByPermission(userMenuKelola.value),
       hasNotification: false,
     },
     {
