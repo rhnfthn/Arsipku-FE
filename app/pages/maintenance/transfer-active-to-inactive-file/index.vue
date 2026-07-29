@@ -118,7 +118,7 @@
                 <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
                 <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden md:table-cell">
                   <div class="truncate" :title="row.atasanName ?? '-'">
-                    <template v-if="row.isUsulan">{{ row.atasanName ?? '-' }}</template>
+                    <template v-if="row.isUsulan && row.status !== 'DRAFT'">{{ row.atasanName ?? '-' }}</template>
                     <template v-else>-</template>
                   </div>
                 </td>
@@ -167,6 +167,7 @@
       v-model="isCreateModalOpen"
       :edit-data="selectedTransfer"
       :preselected-arsip="preselectedArsip"
+      :prefill-atasan="prefillAtasan"
       @created="onTransferCreated"
       @updated="onTransferUpdated"
     />
@@ -185,8 +186,9 @@ import type { TransferActiveToInactive } from '~/types/transfer-active-to-inacti
 definePageMeta({ middleware: ['auth'] });
 
 const { apiGet } = useApi();
-const { send } = useTransferActiveToInactive();
+const { send, fetchDetail } = useTransferActiveToInactive();
 const { user, isSuperadmin, isAdmin } = useAuth();
+
 
 /** Baris gabungan (arsip belum usulan + usulan sudah dibuat). */
 interface GabunganRow {
@@ -206,21 +208,27 @@ const gabunganList = ref<GabunganRow[]>([]);
 const loading = ref(false);
 const preselectedArsip = ref<any | null>(null);
 const expandedId = ref<string | null>(null);
+/** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
+const prefillAtasan = ref(true);
 
 const toggleExpand = (id: string) => {
   expandedId.value = expandedId.value === id ? null : id;
 };
 
 const onSendUsulan = async (row: GabunganRow) => {
-  if (!confirm(`Kirim usulan ${row.nomorUsulan ?? row.perihal} ke Atasan Managerial?`)) return;
+  // Buka CreateTransferModal (mode edit) — arsip terisi otomatis, atasan KOSONG
   try {
-    await send(row.id);
-    await loadGabungan();
+    selectedTransfer.value = await fetchDetail(row.id);
   } catch (e) {
-    console.error('Gagal mengirim usulan:', e);
-    alert('Gagal mengirim usulan.');
+    console.error('Gagal memuat detail usulan:', e);
+    alert('Gagal memuat detail usulan.');
+    return;
   }
+  preselectedArsip.value = null;
+  prefillAtasan.value = false;
+  isCreateModalOpen.value = true;
 };
+
 const isCreateModalOpen = ref(false);
 const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 
@@ -288,11 +296,13 @@ const onExport = () => {
 const openCreateModal = () => {
   selectedTransfer.value = null;
   preselectedArsip.value = null;
+  prefillAtasan.value = true;
   isCreateModalOpen.value = true;
 };
 
 const openCreateModalWithArsip = (row: GabunganRow) => {
   selectedTransfer.value = null;
+  prefillAtasan.value = true;
   preselectedArsip.value = {
     id: row.id,
     perihal: row.perihal,

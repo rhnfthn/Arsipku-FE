@@ -187,6 +187,7 @@
     <CreateTransferModal
       v-model="isEditModalOpen"
       :edit-data="item"
+      :prefill-atasan="prefillAtasan"
       @updated="onUpdated"
     />
 
@@ -264,6 +265,8 @@ const loading = ref(true);
 const actionLoading = ref(false);
 const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
+/** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
+const prefillAtasan = ref(true);
 const daftarIsi = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 
@@ -434,6 +437,7 @@ const act = async (fn: () => Promise<any>) => {
 };
 
 const onEdit = () => {
+  prefillAtasan.value = true;
   isEditModalOpen.value = true;
 };
 
@@ -443,8 +447,9 @@ const onUpdated = async () => {
 };
 
 const onSend = () => {
-  if (!confirm('Kirim usulan ke atasan?')) return;
-  act(() => send(item.value!.id));
+  // Buka CreateTransferModal (mode edit) — arsip terisi, atasan KOSONG
+  prefillAtasan.value = false;
+  isEditModalOpen.value = true;
 };
 
 const onResubmit = () => {

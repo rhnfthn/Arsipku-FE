@@ -238,14 +238,14 @@
               <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
               <div>
                 <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
-                  {{ isCurrentTurn ? 'Menunggu Verifikasi Anda' : 'Menunggu Verifikasi Atasan Lain' }}
+                  {{ (isCurrentTurn || isCurrentTurnFromLevels) ? 'Menunggu Verifikasi Anda' : 'Menunggu Verifikasi Atasan Lain' }}
                 </h3>
                 <p class="text-sm text-yellow-600 dark:text-yellow-400">
-                  <template v-if="isCurrentTurn">
+                  <template v-if="isCurrentTurn || isCurrentTurnFromLevels">
                     Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi Anda.
                   </template>
                   <template v-else>
-                    Usulan dari {{ usulan.sekretarisName }} sedang menunggu verifikasi atasan tahap {{ usulan.currentApprovalLevel }}.
+                    Usulan dari {{ usulan.sekretarisName }} sedang menunggu verifikasi atasan tahap {{ usulan.currentApprovalLevel }} dari {{ usulan.totalApprovalLevels }}.
                   </template>
                 </p>
               </div>
@@ -508,6 +508,41 @@ const isOwnUsulan = computed(() => {
   return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
 });
 
+/** True jika user login ada di daftar atasan berjenjang (approvalLevels). */
+const isAtasanInLevels = computed(() => {
+  if (!usulan.value || !user.value) return false;
+  const levels = usulan.value.approvalLevels;
+  if (!levels || levels.length === 0) return false;
+  return levels.some((l) => Number(l.atasanPersnum) === Number(user.value.persnum));
+});
+
+/**
+ * Cek giliran dari approvalLevels (fallback jika checkIsCurrentTurn gagal).
+ * User sedang giliran jika ada level dengan urutan = currentApprovalLevel,
+ * status MENUNGGU, dan atasanPersnum = user login.
+ * Jika approvalLevels tidak ada (legacy), cek atasanPersnum langsung untuk 1-level.
+ */
+const isCurrentTurnFromLevels = computed(() => {
+  if (!usulan.value || !user.value) return false;
+  const levels = usulan.value.approvalLevels;
+  const currentLevel = usulan.value.currentApprovalLevel ?? 1;
+  // Jika ada approvalLevels, cek dari sana
+  if (levels && levels.length > 0) {
+    const level = levels.find((l) => l.urutan === currentLevel);
+    if (!level) return false;
+    return (
+      level.status === 'MENUNGGU' &&
+      Number(level.atasanPersnum) === Number(user.value.persnum)
+    );
+  }
+  // Fallback: jika tidak ada approvalLevels (legacy/single atasan),
+  // cek atasanPersnum langsung dari usulan
+  if (usulan.value.atasanPersnum) {
+    return Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+  }
+  return false;
+});
+
 /** Bisa verifikasi hanya jika status Menunggu Persetujuan/Verifikasi, bukan usulan sendiri, DAN sedang giliran. */
 const canVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
@@ -515,13 +550,23 @@ const canVerify = computed(() => {
     usulan.value.status !== 'MENUNGGU_VERIFIKASI_ATASAN' &&
     usulan.value.status !== 'DISETUJUI_ATASAN'
   ) return false;
-  return isCurrentTurn.value;
+  // Gunakan isCurrentTurn dari API, fallback ke cek dari approvalLevels
+  return isCurrentTurn.value || isCurrentTurnFromLevels.value;
 });
 
-/** Verifikasi terakhir: atasan managerial saat status MENUNGGU_VERIFIKASI_TERAKHIR. */
+/** Verifikasi terakhir: atasan managerial saat status MENUNGGU_VERIFIKASI_TERAKHIR.
+ * Hanya atasan level terakhir yang bisa final verify. */
 const canFinalVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
-  return usulan.value.status === 'MENUNGGU_VERIFIKASI_TERAKHIR';
+  if (usulan.value.status !== 'MENUNGGU_VERIFIKASI_TERAKHIR') return false;
+  // Cek apakah user login adalah atasan level terakhir
+  const levels = usulan.value.approvalLevels;
+  if (levels && levels.length > 0 && user.value) {
+    const lastLevel = levels[levels.length - 1];
+    return Number(lastLevel.atasanPersnum) === Number(user.value.persnum);
+  }
+  // Fallback: jika tidak ada approvalLevels, izinkan (backward compat)
+  return true;
 });
 
 /** Atasan Managerial TU bisa approve penerimaan saat status DIKIRIM (Menunggu Penerimaan). */
@@ -551,6 +596,20 @@ const loadDetail = async () => {
        usulan.value.status === 'DISETUJUI_ATASAN')
     ) {
       isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
+      // Fallback: jika API return false, cek dari approvalLevels atau atasanPersnum langsung
+      if (!isCurrentTurn.value && user.value) {
+        const levels = usulan.value.approvalLevels;
+        const currentLevel = usulan.value.currentApprovalLevel ?? 1;
+        if (levels && levels.length > 0) {
+          const level = levels.find((l) => l.urutan === currentLevel);
+          if (level && level.status === 'MENUNGGU') {
+            isCurrentTurn.value = Number(level.atasanPersnum) === Number(user.value.persnum);
+          }
+        } else if (usulan.value.atasanPersnum) {
+          // Legacy: tidak ada approvalLevels, cek atasanPersnum langsung
+          isCurrentTurn.value = Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+        }
+      }
     } else {
       isCurrentTurn.value = false;
     }
@@ -571,6 +630,20 @@ const refresh = async () => {
      usulan.value.status === 'DISETUJUI_ATASAN')
   ) {
     isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
+    // Fallback: jika API return false, cek dari approvalLevels atau atasanPersnum langsung
+    if (!isCurrentTurn.value && user.value) {
+      const levels = usulan.value.approvalLevels;
+      const currentLevel = usulan.value.currentApprovalLevel ?? 1;
+      if (levels && levels.length > 0) {
+        const level = levels.find((l) => l.urutan === currentLevel);
+        if (level && level.status === 'MENUNGGU') {
+          isCurrentTurn.value = Number(level.atasanPersnum) === Number(user.value.persnum);
+        }
+      } else if (usulan.value.atasanPersnum) {
+        // Legacy: tidak ada approvalLevels, cek atasanPersnum langsung
+        isCurrentTurn.value = Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+      }
+    }
   } else {
     isCurrentTurn.value = false;
   }

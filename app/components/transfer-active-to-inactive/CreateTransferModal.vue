@@ -274,6 +274,8 @@ const props = defineProps<{
   modelValue: boolean;
   editData?: TransferActiveToInactive | null;
   preselectedArsip?: any | null;
+  /** Pre-fill atasan dari editData? Default true. Set false untuk tombol Kirim dari Draft. */
+  prefillAtasan?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -461,21 +463,24 @@ const resetForm = () => {
 };
 
 const fillFromEdit = (data: TransferActiveToInactive) => {
-  // Atasan: reconstruct from approvalLevels if available, else from legacy fields
-  if (data.approvalLevels && data.approvalLevels.length > 0) {
-    selectedAtasanList.value = data.approvalLevels.map((l) => ({
-      position: l.atasanPositionId ?? 0,
-      persnum: l.atasanPersnum,
-      name: l.atasanName,
-      positionText: l.atasanPositionText ?? '',
-    }));
-  } else {
-    selectedAtasanList.value = [{
-      position: data.atasanPositionId ?? 0,
-      persnum: data.atasanPersnum,
-      name: data.atasanName,
-      positionText: '',
-    }];
+  // Atasan: hanya pre-fill jika prefillAtasan !== false
+  // (tombol Kirim dari Draft → atasan kosong, user pilih sendiri)
+  if (props.prefillAtasan !== false) {
+    if (data.approvalLevels && data.approvalLevels.length > 0) {
+      selectedAtasanList.value = data.approvalLevels.map((l) => ({
+        position: l.atasanPositionId ?? 0,
+        persnum: l.atasanPersnum,
+        name: l.atasanName,
+        positionText: l.atasanPositionText ?? '',
+      }));
+    } else {
+      selectedAtasanList.value = [{
+        position: data.atasanPositionId ?? 0,
+        persnum: data.atasanPersnum,
+        name: data.atasanName,
+        positionText: '',
+      }];
+    }
   }
   // Arsip: reconstruct from arsipIds if available, else from legacy fields
   if (data.arsipIds && data.arsipIds.length > 0) {
@@ -552,6 +557,7 @@ const doSubmit = async (asDraft: boolean) => {
     alert(msg);
   } finally {
     submitting.value = false;
+    isKirimModalOpen.value = false;
   }
 };
 
