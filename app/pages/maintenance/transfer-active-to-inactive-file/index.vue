@@ -27,105 +27,121 @@
     </div>
 
     <!-- Filter Bar -->
-    <TransferFilterBar
-      v-model="filter"
-      class="mb-4"
-      @apply="reload"
-      @reset="resetFilter"
-    />
-
-    <!-- Arsip Siap Dipindahkan (dari Berkas Saya) -->
-    <div v-if="isSekretaris" class="mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-          Arsip Siap Dipindahkan
-          <span class="text-sm font-normal text-gray-500">({{ arsipTersedia.length }} arsip)</span>
-        </h3>
-        <button
-          @click="loadArsipTersedia"
-          :disabled="arsipLoading"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-        >
-          <UIcon name="i-lucide-refresh-cw" class="w-3.5 h-3.5" :class="arsipLoading ? 'animate-spin' : ''" /> Refresh
-        </button>
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <!-- Search -->
+      <div class="relative flex-1 min-w-[200px]">
+        <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          v-model="filter.search"
+          type="text"
+          placeholder="Cari kode berkas, nama berkas, atasan..."
+          @input="reload"
+          class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+        />
       </div>
-
-      <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full border-collapse text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700/50 text-left">
-              <tr>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">No</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Kode Berkas</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Nama Berkas</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Klasifikasi</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Retensi Aktif Habis</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Status</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Lokasi Fisik</th>
-                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="arsipLoading">
-                <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-400">
-                  <UIcon name="i-lucide-loader-2" class="w-5 h-5 animate-spin inline mr-1" /> Memuat data arsip...
-                </td>
-              </tr>
-              <tr v-else-if="arsipTersedia.length === 0">
-                <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-400">
-                  <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>Tidak ada arsip siap dipindahkan</p>
-                  <p class="text-xs mt-1">Arsip dengan status Tertutup dan retensi aktif habis akan muncul di sini.</p>
-                </td>
-              </tr>
-              <tr
-                v-for="(a, idx) in arsipTersedia"
-                :key="a.id"
-                class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-              >
-                <td class="px-4 py-3 text-gray-500">{{ idx + 1 }}</td>
-                <td class="px-4 py-3 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{{ a.kodeBerkas ?? '-' }}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="a.perihal">{{ a.perihal }}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ a.klasifikasi ?? '-' }}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(a.tanggalRetensiAktifHabis) }}</td>
-                <td class="px-4 py-3">
-                  <span v-if="a.sedangDiproses" class="px-2 py-0.5 text-xs rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300">
-                    Sedang Diproses
-                  </span>
-                  <span v-else class="px-2 py-0.5 text-xs rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                    Tertutup
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ a.lokasiFisik ?? '-' }}</td>
-                <td class="px-4 py-3 text-center">
-                  <button
-                    v-if="!a.sedangDiproses"
-                    @click="openCreateModalWithArsip(a)"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
-                  >
-                    <UIcon name="i-lucide-file-up" class="w-3.5 h-3.5" /> Pindahkan
-                  </button>
-                  <span v-else class="text-xs text-gray-400 italic">Sedang diproses</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Status Filter -->
+      <select
+        v-model="filter.status"
+        @change="reload"
+        class="h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+      >
+        <option value="">Semua Status</option>
+        <option value="DRAFT">Draft</option>
+        <option value="MENUNGGU_VERIFIKASI_ATASAN">Menunggu Persetujuan</option>
+        <option value="DITOLAK_ATASAN">Tolak</option>
+        <option value="DISETUJUI_ATASAN">Menunggu Verifikasi</option>
+        <option value="MENUNGGU_VERIFIKASI_TERAKHIR">Menunggu Verifikasi</option>
+        <option value="DISETUJUI_VERIFIKASI_TERAKHIR">Menunggu Penerimaan</option>
+        <option value="DIKIRIM">Menunggu Penerimaan</option>
+        <option value="SELESAI">Selesai</option>
+      </select>
+      <!-- Refresh -->
+      <button
+        @click="loadGabungan"
+        :disabled="loading"
+        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+      >
+        <UIcon name="i-lucide-refresh-cw" class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
+      </button>
     </div>
 
-    <!-- Table Usulan -->
-    <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Daftar Usulan Pemindahan</h3>
-    <TransferTable
-      :data="list"
-      :loading="loading"
-      :meta="meta"
-      @detail="openDetail"
-      @edit="openEdit"
-      @send="onSend"
-      @delete="onDelete"
-      @page="goPage"
-    />
+    <!-- Tabel Gabungan -->
+    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-sm">
+          <thead class="bg-[#457fb6] text-white text-left">
+            <tr>
+              <th class="px-4 py-3 font-semibold">No</th>
+              <th class="px-4 py-3 font-semibold">Kode Berkas</th>
+              <th class="px-4 py-3 font-semibold">Nama Berkas / Perihal</th>
+              <th class="px-4 py-3 font-semibold">Klasifikasi</th>
+              <th class="px-4 py-3 font-semibold">Retensi Aktif Habis</th>
+              <th class="px-4 py-3 font-semibold">Atasan Managerial</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+              <th class="px-4 py-3 font-semibold">Tanggal</th>
+              <th class="px-4 py-3 font-semibold text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Loading -->
+            <tr v-if="loading">
+              <td colspan="9" class="px-4 py-6 text-center text-sm text-gray-400">
+                <UIcon name="i-lucide-loader-2" class="w-5 h-5 animate-spin inline mr-1" /> Memuat data...
+              </td>
+            </tr>
+            <!-- Empty -->
+            <tr v-else-if="gabunganList.length === 0">
+              <td colspan="9" class="px-4 py-10 text-center text-sm text-gray-400">
+                <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Tidak ada data</p>
+                <p class="text-xs mt-1">Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini.</p>
+              </td>
+            </tr>
+            <!-- Rows -->
+            <tr
+              v-for="(row, idx) in gabunganList"
+              :key="row.id"
+              class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors"
+            >
+              <td class="px-4 py-3 text-gray-500">{{ idx + 1 }}</td>
+              <td class="px-4 py-3 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                {{ row.kodeBerkas ?? '-' }}
+                <span v-if="row.isUsulan" class="block text-xs text-gray-400">{{ row.nomorUsulan }}</span>
+              </td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.klasifikasi ?? '-' }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                <template v-if="row.isUsulan">{{ row.atasanName ?? '-' }}</template>
+                <template v-else>-</template>
+              </td>
+              <td class="px-4 py-3">
+                <span :class="statusBadgeClass(row.status)">{{ statusLabel(row.status) }}</span>
+              </td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggal) }}</td>
+              <td class="px-4 py-3 text-center">
+                <!-- Arsip belum jadi usulan → tombol Pindahkan -->
+                <button
+                  v-if="!row.isUsulan && isSekretaris"
+                  @click="openCreateModalWithArsip(row)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
+                >
+                  <UIcon name="i-lucide-file-up" class="w-3.5 h-3.5" /> Pindahkan
+                </button>
+                <!-- Usulan sudah dibuat → tombol Detail -->
+                <button
+                  v-else-if="row.isUsulan"
+                  @click="openDetail(row)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
+                >
+                  <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5" /> Detail
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- Modal Wizard -->
     <CreateTransferModal
@@ -141,64 +157,42 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useApi } from '~/composables/useApi';
 import { useAuth } from '~/composables/useAuth';
-import TransferFilterBar from '~/components/transfer-active-to-inactive/TransferFilterBar.vue';
-import TransferTable from '~/components/transfer-active-to-inactive/TransferTable.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
-import type {
-  TransferFilter,
-  TransferActiveToInactive,
-} from '~/types/transfer-active-to-inactive';
-import { formatDate } from '~/utils/transfer-status';
+import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
+import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
 definePageMeta({ middleware: ['auth'] });
 
-const {
-  fetchList,
-  send,
-  remove,
-  list,
-  loading,
-  meta,
-} = useTransferActiveToInactive();
 const { apiGet } = useApi();
 const { user, isSuperadmin, isAdmin } = useAuth();
 
-/** Arsip tersedia dari Berkas Saya (status Tertutup, retensi habis). */
-interface ArsipTersedia {
+/** Baris gabungan (arsip belum usulan + usulan sudah dibuat). */
+interface GabunganRow {
   id: string;
-  label: string;
-  perihal: string;
+  isUsulan: boolean;
+  nomorUsulan?: string;
   kodeBerkas: string | null;
+  perihal: string;
   klasifikasi: string | null;
-  retensiAktif: number | null;
-  retensiInaktif: number | null;
   tanggalRetensiAktifHabis: string | null;
+  atasanName: string | null;
   status: string;
-  lokasiFisik: string | null;
-  fileUrl: string | null;
-  sedangDiproses: boolean;
+  tanggal: string | null;
 }
-const arsipTersedia = ref<ArsipTersedia[]>([]);
-const arsipLoading = ref(false);
-const preselectedArsip = ref<ArsipTersedia | null>(null);
 
-const loadArsipTersedia = async () => {
-  arsipLoading.value = true;
-  try {
-    const res: any = await apiGet('/transfer-active-to-inactive/arsip-tersedia', {}, { skipCache: true });
-    arsipTersedia.value = res?.data ?? [];
-  } catch (e) {
-    console.error('Gagal memuat arsip tersedia:', e);
-    arsipTersedia.value = [];
-  } finally {
-    arsipLoading.value = false;
-  }
-};
+const gabunganList = ref<GabunganRow[]>([]);
+const loading = ref(false);
+const preselectedArsip = ref<any | null>(null);
+const isCreateModalOpen = ref(false);
+const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 
-/** Hanya Sekretaris (role USER) yang boleh membuat usulan. Admin/Superadmin bisa lihat tapi tidak buat. */
+const filter = reactive({
+  search: '',
+  status: '',
+});
+
 const isSekretaris = computed(() => {
   const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
   return role === 'USER' || isAdmin.value || isSuperadmin.value;
@@ -210,67 +204,49 @@ const items = [
   { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
 ];
 
-const filter = reactive<TransferFilter>({
-  page: 1,
-  limit: 10,
-  status: undefined,
-  search: '',
-  startDate: '',
-  sortBy: 'createdAt',
-  sortOrder: 'DESC',
-});
-
-const isCreateModalOpen = ref(false);
-const selectedTransfer = ref<TransferActiveToInactive | null>(null);
-
-const loadData = async () => {
+const loadGabungan = async () => {
+  loading.value = true;
   try {
-    await fetchList({ ...filter });
+    const params: Record<string, any> = {};
+    if (filter.search) params.search = filter.search;
+    if (filter.status) params.status = filter.status;
+    const res: any = await apiGet('/transfer-active-to-inactive/gabungan', { params }, { skipCache: true });
+    gabunganList.value = res?.data ?? [];
   } catch (e) {
-    console.error('Gagal memuat data:', e);
+    console.error('Gagal memuat data gabungan:', e);
+    gabunganList.value = [];
+  } finally {
+    loading.value = false;
   }
 };
 
+const reload = () => {
+  loadGabungan();
+};
+
 const onExport = () => {
-  // Export CSV sederhana
-  if (!list.value || list.value.length === 0) {
+  if (gabunganList.value.length === 0) {
     alert('Tidak ada data untuk diexport');
     return;
   }
-  const headers = ['Nomor Usulan', 'Perihal Arsip', 'Atasan', 'Status', 'Tanggal'];
-  const rows = list.value.map((r: any) => [
-    r.nomorUsulan ?? '',
-    r.arsipPerihal ?? '',
+  const headers = ['Kode Berkas', 'Nama Berkas', 'Klasifikasi', 'Retensi Habis', 'Atasan', 'Status', 'Tanggal'];
+  const rows = gabunganList.value.map((r) => [
+    r.kodeBerkas ?? '',
+    r.perihal ?? '',
+    r.klasifikasi ?? '',
+    r.tanggalRetensiAktifHabis ?? '',
     r.atasanName ?? '',
     r.status ?? '',
-    r.tanggalUsulan ?? '',
+    r.tanggal ?? '',
   ]);
   const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `usulan-pemindahan-${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `pemindahan-arsip-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-};
-
-const reload = () => {
-  filter.page = 1;
-  loadData();
-};
-
-const resetFilter = () => {
-  filter.status = undefined;
-  filter.search = '';
-  filter.startDate = '';
-  filter.page = 1;
-  loadData();
-};
-
-const goPage = (p: number) => {
-  filter.page = p;
-  loadData();
 };
 
 const openCreateModal = () => {
@@ -279,55 +255,29 @@ const openCreateModal = () => {
   isCreateModalOpen.value = true;
 };
 
-const openCreateModalWithArsip = (arsip: ArsipTersedia) => {
+const openCreateModalWithArsip = (row: GabunganRow) => {
   selectedTransfer.value = null;
-  preselectedArsip.value = arsip;
+  preselectedArsip.value = {
+    id: row.id,
+    perihal: row.perihal,
+    kodeBerkas: row.kodeBerkas,
+    tanggalRetensiAktifHabis: row.tanggalRetensiAktifHabis,
+    klasifikasi: row.klasifikasi,
+  };
   isCreateModalOpen.value = true;
 };
 
-const openDetail = (row: TransferActiveToInactive) => {
+const openDetail = (row: GabunganRow) => {
   navigateTo(`/maintenance/transfer-active-to-inactive-file/${row.id}`);
 };
 
-const openEdit = (row: TransferActiveToInactive) => {
-  selectedTransfer.value = row;
-  isCreateModalOpen.value = true;
-};
-
-const onSend = async (row: TransferActiveToInactive) => {
-  if (!confirm(`Kirim usulan ${row.nomorUsulan} ke atasan?`)) return;
-  try {
-    await send(row.id);
-    await loadData();
-  } catch (e) {
-    console.error('Gagal mengirim usulan:', e);
-    alert('Gagal mengirim usulan.');
-  }
-};
-
-const onDelete = async (row: TransferActiveToInactive) => {
-  if (!confirm(`Hapus draft usulan ${row.nomorUsulan}? Tindakan ini tidak dapat dibatalkan.`)) return;
-  try {
-    await remove(row.id);
-    await loadData();
-  } catch (e) {
-    console.error('Gagal menghapus usulan:', e);
-    alert('Gagal menghapus usulan.');
-  }
-};
-
 const onTransferCreated = async () => {
-  await loadData();
-  await loadArsipTersedia();
+  await loadGabungan();
 };
 
 const onTransferUpdated = async () => {
-  await loadData();
-  await loadArsipTersedia();
+  await loadGabungan();
 };
 
-onMounted(() => {
-  loadData();
-  loadArsipTersedia();
-});
+onMounted(() => loadGabungan());
 </script>
