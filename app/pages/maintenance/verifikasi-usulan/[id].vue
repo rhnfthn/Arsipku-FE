@@ -295,6 +295,15 @@
 
     <!-- Reject Modal -->
     <RejectModal v-model="isRejectModalOpen" @confirm="onReject" />
+
+    <!-- Approve Modal -->
+    <ApproveUsulanModal
+      v-model="isApproveModalOpen"
+      :usulan="usulan"
+      :title="approveMode === 'finalVerify' ? 'Konfirmasi Verifikasi Terakhir' : 'Konfirmasi Verifikasi'"
+      :confirm-label="approveMode === 'finalVerify' ? 'Setujui Verifikasi Terakhir' : 'Setujui Verifikasi'"
+      @confirm="onConfirmApprove"
+    />
   </div>
 </template>
 
@@ -308,6 +317,7 @@ import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vu
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import BeritaAcaraCard from '~/components/verifikasi-usulan/BeritaAcaraCard.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
+import ApproveUsulanModal from '~/components/verifikasi-usulan/ApproveUsulanModal.vue';
 import type { VerifikasiUsulanItem, JenisUsulan } from '~/types/verifikasi-usulan';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import { formatDate } from '~/utils/transfer-status';
@@ -334,6 +344,8 @@ const usulan = ref<VerifikasiUsulanItem | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
 const isRejectModalOpen = ref(false);
+const isApproveModalOpen = ref(false);
+const approveMode = ref<'verify' | 'finalVerify'>('verify');
 const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
@@ -569,13 +581,21 @@ const act = async (fn: () => Promise<any>) => {
 };
 
 const onApprove = (catatan: string) => {
-  if (!confirm('Setujui verifikasi usulan ini?')) return;
-  act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan || catatanVerifikasi.value }));
+  approveMode.value = 'verify';
+  isApproveModalOpen.value = true;
 };
 
 const onFinalVerify = (catatan: string) => {
-  if (!confirm('Setujui verifikasi terakhir usulan ini?')) return;
-  act(() => finalVerify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
+  approveMode.value = 'finalVerify';
+  isApproveModalOpen.value = true;
+};
+
+const onConfirmApprove = () => {
+  if (approveMode.value === 'finalVerify') {
+    act(() => finalVerify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatanVerifikasi.value }));
+  } else {
+    act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatanVerifikasi.value }));
+  }
 };
 
 const openRejectModal = () => {
