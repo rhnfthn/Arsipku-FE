@@ -59,13 +59,13 @@ const collapsed = ref(false)
 const sidebarRef = ref()
 
 const { bsreAlert } = useDigsig()
-const { isReadOnly } = useDelegationMode()
+const { isViewer } = useDelegationMode()
 
 const DELEGATION_BANNER_HEIGHT = 44 // matches DelegationReadOnlyBanner h-11
 
 const alertHeight = computed(() => {
   let h = bsreAlert.value?.isActive ? 52 : 0
-  if (isReadOnly.value) h += DELEGATION_BANNER_HEIGHT
+  if (isViewer.value) h += DELEGATION_BANNER_HEIGHT
   return `${h}px`
 })
 

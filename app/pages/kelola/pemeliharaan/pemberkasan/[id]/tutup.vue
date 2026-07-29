@@ -490,8 +490,8 @@ const canSubmit = computed(
 const statusLabel = computed(() => {
   const map: Record<string, string> = {
     aktif: 'Siap Ditutup',
-    menunggu_verifikasi: 'Sedang Diverifikasi',
-    ditolak: 'Ditolak — Silakan Revisi',
+    menunggu_verifikasi: 'Sedang Diverifikasi Managerial',
+    ditolak: 'Verifikasi Ditolak Managerial — Silakan Revisi',
   };
   return map[berkas.value?.status] || 'Penutupan Berkas';
 });
