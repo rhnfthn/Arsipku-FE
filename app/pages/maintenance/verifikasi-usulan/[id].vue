@@ -249,6 +249,25 @@
                 </div>
               </div>
             </div>
+
+            <!-- DIKIRIM: Card Setujui Penerimaan untuk Atasan Managerial TU -->
+            <div
+              v-if="usulan.status === 'DIKIRIM' && canApproveReceipt"
+              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+            >
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Setujui Penerimaan</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Usulan dari {{ usulan.sekretarisName }} menunggu penerimaan dari Atasan Managerial TU.
+                Setujui untuk menyelesaikan proses pemindahan arsip.
+              </p>
+              <button
+                @click="onApproveReceipt"
+                :disabled="actionLoading"
+                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+              >
+                <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Setujui Penerimaan
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -290,6 +309,7 @@ const {
   siapkanBerkasFisik,
   uploadBerkas,
   selesaikanUsulan,
+  approveReceipt,
   checkIsCurrentTurn,
 } = useVerifikasiUsulan();
 
@@ -332,6 +352,15 @@ const canVerify = computed(() => {
 
 /** Verifikasi terakhir tidak lagi dipakai untuk multi-level (final di-handle oleh approve). */
 const canFinalVerify = computed(() => false);
+
+/** Atasan Managerial TU bisa approve penerimaan saat status DIKIRIM (Menunggu Penerimaan). */
+const canApproveReceipt = computed(() => {
+  if (!usulan.value || isOwnUsulan.value) return false;
+  if (usulan.value.status !== 'DIKIRIM') return false;
+  // Hanya ADMIN/SUPERADMIN (Atasan TU) yang bisa approve receipt
+  const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
+  return role === 'ADMIN' || role === 'SUPERADMIN';
+});
 
 const loadDetail = async () => {
   loading.value = true;
@@ -431,6 +460,11 @@ const onUploadBeritaAcara = (e: Event) => {
 const onSelesaikan = () => {
   if (!confirm('Selesaikan proses? Pastikan berkas fisik dan berita acara sudah diupload.')) return;
   act(() => selesaikanUsulan(usulan.value!.id, jenis.value));
+};
+
+const onApproveReceipt = () => {
+  if (!confirm('Setujui penerimaan usulan ini? Usulan akan diselesaikan.')) return;
+  act(() => approveReceipt(usulan.value!.id, jenis.value));
 };
 
 onMounted(() => loadDetail());

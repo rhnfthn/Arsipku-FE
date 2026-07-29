@@ -283,9 +283,16 @@ export const useVerifikasiUsulan = () => {
     return r?.data;
   };
 
-  /** Selesaikan usulan → SELESAI */
+  /** Selesaikan usulan → kirim ke TU (MENUNGGU_PENERIMAAN) */
   const selesaikanUsulan = async (id: string, jenis: JenisUsulan) => {
     const endpoint = `/transfer-active-to-inactive/${id}/selesai`;
+    const r: any = await apiPatch(endpoint, {});
+    return r?.data;
+  };
+
+  /** Atasan Managerial TU setujui penerimaan → SELESAI */
+  const approveReceipt = async (id: string, jenis: JenisUsulan) => {
+    const endpoint = `/transfer-active-to-inactive/${id}/approve-receipt`;
     const r: any = await apiPatch(endpoint, {});
     return r?.data;
   };
@@ -309,6 +316,7 @@ export const useVerifikasiUsulan = () => {
     siapkanBerkasFisik,
     uploadBerkas,
     selesaikanUsulan,
+    approveReceipt,
     checkIsCurrentTurn,
   };
 };
