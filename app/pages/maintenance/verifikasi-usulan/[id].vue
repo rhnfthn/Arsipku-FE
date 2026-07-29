@@ -62,13 +62,7 @@
             </div>
           </div>
 
-          <!-- Berita Acara -->
-          <BeritaAcaraCard
-            v-if="showBeritaAcara"
-            :usulan="usulan"
-            :generating="actionLoading"
-            @generate="onGenerateBA"
-          />
+          <!-- Berita Acara (hapus dari atasan managerial — hanya di sekretaris) -->
 
           <!-- ─── Card: Daftar Isi ─── -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
@@ -106,75 +100,10 @@
             </div>
           </div>
 
-          <!-- ─── Card: Berita Acara Serah Terima ─── -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
-              <div class="flex gap-2">
-                <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
-                </button>
-                <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
-                  <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
-                </button>
-              </div>
-            </div>
-            <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
-              <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
-              <p class="text-center text-xs mb-3">Nomor: {{ usulan.nomorUsulan }}</p>
-              <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(usulan.tanggalUsulan) }}</p>
-
-              <p class="text-xs leading-relaxed mb-4">
-                Pada hari ini {{ hariIni }} tanggal {{ formatTanggalLengkap(usulan.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
-              </p>
-
-              <div class="space-y-3 mb-4 text-xs">
-                <div>
-                  <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
-                  <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
-                </div>
-                <div>
-                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
-                  <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
-                </div>
-              </div>
-
-              <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
-              <p class="text-xs leading-relaxed mb-3">
-                Pihak pertama telah menyerahkan kepada pihak kedua berupa:
-              </p>
-              <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
-                <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">
-                  {{ a.kode ?? '-' }} — {{ a.perihal }}
-                </li>
-                <li v-if="beritaAcaraData.keterangan">{{ beritaAcaraData.keterangan }}</li>
-              </ol>
-
-              <p class="text-xs leading-relaxed mb-6">
-                Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
-              </p>
-
-              <p class="text-xs text-right mb-6">{{ kotaIni }}, {{ formatTanggalLengkap(usulan.tanggalUsulan) }}</p>
-
-              <div class="grid grid-cols-2 gap-8 text-xs">
-                <div class="text-center">
-                  <p class="font-semibold mb-16">Pihak Pertama</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
-                  <p class="text-gray-500">{{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
-                </div>
-                <div class="text-center">
-                  <p class="font-semibold mb-16">Pihak Kedua</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
-                  <p class="text-gray-500">{{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Berita Acara Serah Terima (hapus dari atasan managerial — hanya di sekretaris) -->
 
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canApproveReceipt" class="flex gap-2">
+          <div v-if="canVerify || canApproveReceipt || canKirimTU" class="flex gap-2">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -198,6 +127,16 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
             >
               <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Setujui Penerimaan
+            </button>
+            <!-- Tombol Kirim ke TU untuk Atasan Managerial saat verifikasi terakhir selesai -->
+            <button
+              v-if="canKirimTU"
+              @click="onKirimTU"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
             </button>
           </div>
 
@@ -476,6 +415,13 @@ const canApproveReceipt = computed(() => {
   return role === 'ADMIN' || role === 'SUPERADMIN';
 });
 
+/** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR). */
+const canKirimTU = computed(() => {
+  if (!usulan.value || isOwnUsulan.value) return false;
+  if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
+  return isCurrentTurn.value || true; // Atasan terakhir yang sudah approve bisa kirim
+});
+
 const loadDetail = async () => {
   loading.value = true;
   try {
@@ -549,6 +495,11 @@ const onGenerateBA = () => act(() => generateBeritaAcara(usulan.value!.id, jenis
 
 const onKirimUsulPindah = () => {
   if (!confirm('Kirim usul pindah arsip inaktif ke Unit Tata Naskah?')) return;
+  act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
+};
+
+const onKirimTU = () => {
+  if (!confirm('Kirim usulan ke Unit Tata Naskah?')) return;
   act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
 };
 
