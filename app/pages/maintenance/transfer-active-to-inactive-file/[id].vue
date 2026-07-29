@@ -47,52 +47,7 @@
 
           <!-- ─── Button Action (di bawah detail) ─── -->
 
-          <!-- DRAFT: Edit + Kirim -->
-          <div
-            v-if="item.status === 'DRAFT'"
-            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-          >
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Aksi Sekretaris</h3>
-            <div class="flex flex-col gap-2">
-              <button
-                @click="onEdit"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <UIcon name="i-lucide-pencil" class="w-4 h-4 mr-1 inline" /> Edit Usulan
-              </button>
-              <button
-                @click="onSend"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke Atasan
-              </button>
-            </div>
-          </div>
-
-          <!-- DITOLAK_ATASAN: Edit + Ajukan Kembali -->
-          <div
-            v-if="item.status === 'DITOLAK_ATASAN'"
-            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-          >
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Aksi Sekretaris</h3>
-            <div class="flex flex-col gap-2">
-              <button
-                @click="onEdit"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <UIcon name="i-lucide-pencil" class="w-4 h-4 mr-1 inline" /> Edit Usulan
-              </button>
-              <button
-                @click="onResubmit"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-                <UIcon v-else name="i-lucide-refresh-cw" class="w-4 h-4 mr-1 inline" /> Ajukan Kembali
-              </button>
-            </div>
-          </div>
+          <!-- Aksi Sekretaris (DRAFT/DITOLAK) dihapus -->
 
             <!-- MENUNGGU_VERIFIKASI_ATASAN -->
             <div
@@ -126,46 +81,23 @@
               </div>
             </div>
 
-            <!-- DISETUJUI_VERIFIKASI_TERAKHIR: Kirim ke TU -->
+            <!-- DISETUJUI_VERIFIKASI_TERAKHIR: Menunggu atasan kirim ke TU (bukan sekretaris) -->
             <div
               v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+              class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
             >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Kirim ke Unit Tata Naskah</h3>
-              <button
-                @click="onDispatch"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim
-              </button>
-            </div>
-
-            <!-- Berita Acara -->
-            <div
-              v-if="showBeritaAcara"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Berita Acara</h3>
-              <button
-                v-if="!item.beritaAcaraUrl"
-                @click="onGenerateBA"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 mb-2"
-              >
-                <UIcon name="i-lucide-file-text" class="w-4 h-4 mr-1 inline" /> Generate
-              </button>
-              <div v-else>
-                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">{{ item.beritaAcaraNomor }}</p>
-                <a
-                  :href="item.beritaAcaraUrl"
-                  target="_blank"
-                  class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors"
-                >
-                  <UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF
-                </a>
+              <div class="flex items-start gap-3">
+                <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                <div>
+                  <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Verifikasi</h3>
+                  <p class="text-sm text-blue-600 dark:text-blue-400">
+                    Verifikasi terakhir selesai. Atasan Managerial akan mengirim usulan ke Unit Tata Naskah.
+                  </p>
+                </div>
               </div>
             </div>
+
+            <!-- Berita Acara (Generate) dihapus — BA format resmi ada di card bawah -->
 
             <!-- DIKIRIM: Menunggu Penerimaan -->
             <div
@@ -235,108 +167,6 @@
               </div>
             </div>
 
-            <!-- ─── Card: Daftar Isi ─── -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
-                <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
-                </button>
-              </div>
-              <div id="daftar-isi-print" class="text-sm">
-                <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ item.nomorUsulan }}</p>
-                <table class="w-full border-collapse text-xs">
-                  <thead>
-                    <tr class="border-b-2 border-gray-300 dark:border-gray-500">
-                      <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
-                      <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
-                      <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
-                      <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                      <td class="text-center py-2 px-2">
-                        <input type="checkbox" class="w-4 h-4 text-[#457fb6] border-gray-300 rounded" />
-                      </td>
-                      <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                      <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
-                      <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
-                    </tr>
-                    <tr v-if="daftarIsi.length === 0">
-                      <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- ─── Card: Berita Acara Serah Terima ─── -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
-                <div class="flex gap-2">
-                  <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
-                  </button>
-                  <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
-                    <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
-                  </button>
-                </div>
-              </div>
-              <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
-                <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
-                <p class="text-center text-xs mb-3">Nomor: {{ item.nomorUsulan }}</p>
-                <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(item.tanggalUsulan) }}</p>
-
-                <p class="text-xs leading-relaxed mb-4">
-                  Pada hari ini {{ hariIni }} tanggal {{ formatTanggalLengkap(item.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
-                </p>
-
-                <div class="space-y-3 mb-4 text-xs">
-                  <div>
-                    <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData.atasan?.nama ?? '-' }}</p>
-                    <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
-                    <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
-                  </div>
-                  <div>
-                    <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData.pengirim?.nama ?? '-' }}</p>
-                    <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
-                    <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
-                  </div>
-                </div>
-
-                <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
-                <p class="text-xs leading-relaxed mb-3">
-                  Pihak pertama telah menyerahkan kepada pihak kedua berupa:
-                </p>
-                <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
-                  <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">
-                    {{ a.kode ?? '-' }} — {{ a.perihal }}
-                  </li>
-                  <li v-if="beritaAcaraData.keterangan">{{ beritaAcaraData.keterangan }}</li>
-                </ol>
-
-                <p class="text-xs leading-relaxed mb-6">
-                  Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
-                </p>
-
-                <p class="text-xs text-right mb-6">{{ kotaIni }}, {{ formatTanggalLengkap(item.tanggalUsulan) }}</p>
-
-                <div class="grid grid-cols-2 gap-8 text-xs">
-                  <div class="text-center">
-                    <p class="font-semibold mb-16">Pihak Pertama</p>
-                    <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.atasan?.nama ?? '-' }}</p>
-                    <p class="text-gray-500">{{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
-                  </div>
-                  <div class="text-center">
-                    <p class="font-semibold mb-16">Pihak Kedua</p>
-                    <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.pengirim?.nama ?? '-' }}</p>
-                    <p class="text-gray-500">{{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
         <!-- Right: Timeline Riwayat (4/12, sticky) -->
@@ -357,6 +187,7 @@
     <CreateTransferModal
       v-model="isEditModalOpen"
       :edit-data="item"
+      :prefill-atasan="prefillAtasan"
       @updated="onUpdated"
     />
 
@@ -434,6 +265,8 @@ const loading = ref(true);
 const actionLoading = ref(false);
 const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
+/** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
+const prefillAtasan = ref(true);
 const daftarIsi = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 
@@ -604,6 +437,7 @@ const act = async (fn: () => Promise<any>) => {
 };
 
 const onEdit = () => {
+  prefillAtasan.value = true;
   isEditModalOpen.value = true;
 };
 
@@ -613,8 +447,9 @@ const onUpdated = async () => {
 };
 
 const onSend = () => {
-  if (!confirm('Kirim usulan ke atasan?')) return;
-  act(() => send(item.value!.id));
+  // Buka CreateTransferModal (mode edit) — arsip terisi, atasan KOSONG
+  prefillAtasan.value = false;
+  isEditModalOpen.value = true;
 };
 
 const onResubmit = () => {

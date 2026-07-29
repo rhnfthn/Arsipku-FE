@@ -245,6 +245,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Kirim -->
+    <KirimUsulanModal
+      v-model="isKirimModalOpen"
+      :atasan-list="selectedAtasanList"
+      :arsip-list="selectedArsipList"
+      :loading="submitting"
+      @confirm="onConfirmKirim"
+    />
   </Teleport>
 </template>
 
@@ -253,6 +262,7 @@ import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useApi } from '~/composables/useApi';
 import { useArsipDinamis } from '~/composables/useArsipDinamis';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
+import KirimUsulanModal from '~/components/transfer-active-to-inactive/KirimUsulanModal.vue';
 import type {
   TransferActiveToInactive,
   AtasanManagerialOption,
@@ -264,6 +274,8 @@ const props = defineProps<{
   modelValue: boolean;
   editData?: TransferActiveToInactive | null;
   preselectedArsip?: any | null;
+  /** Pre-fill atasan dari editData? Default true. Set false untuk tombol Kirim dari Draft. */
+  prefillAtasan?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -277,6 +289,7 @@ const { create, update } = useTransferActiveToInactive();
 const { getDaftarNaskah } = useArsipDinamis();
 
 const submitting = ref(false);
+const isKirimModalOpen = ref(false);
 const form = reactive({ keterangan: '' });
 
 // Atasan — multi select
@@ -450,21 +463,24 @@ const resetForm = () => {
 };
 
 const fillFromEdit = (data: TransferActiveToInactive) => {
-  // Atasan: reconstruct from approvalLevels if available, else from legacy fields
-  if (data.approvalLevels && data.approvalLevels.length > 0) {
-    selectedAtasanList.value = data.approvalLevels.map((l) => ({
-      position: l.atasanPositionId ?? 0,
-      persnum: l.atasanPersnum,
-      name: l.atasanName,
-      positionText: l.atasanPositionText ?? '',
-    }));
-  } else {
-    selectedAtasanList.value = [{
-      position: data.atasanPositionId ?? 0,
-      persnum: data.atasanPersnum,
-      name: data.atasanName,
-      positionText: '',
-    }];
+  // Atasan: hanya pre-fill jika prefillAtasan !== false
+  // (tombol Kirim dari Draft → atasan kosong, user pilih sendiri)
+  if (props.prefillAtasan !== false) {
+    if (data.approvalLevels && data.approvalLevels.length > 0) {
+      selectedAtasanList.value = data.approvalLevels.map((l) => ({
+        position: l.atasanPositionId ?? 0,
+        persnum: l.atasanPersnum,
+        name: l.atasanName,
+        positionText: l.atasanPositionText ?? '',
+      }));
+    } else {
+      selectedAtasanList.value = [{
+        position: data.atasanPositionId ?? 0,
+        persnum: data.atasanPersnum,
+        name: data.atasanName,
+        positionText: '',
+      }];
+    }
   }
   // Arsip: reconstruct from arsipIds if available, else from legacy fields
   if (data.arsipIds && data.arsipIds.length > 0) {
@@ -492,6 +508,19 @@ const fillFromEdit = (data: TransferActiveToInactive) => {
 };
 
 const submit = async (asDraft: boolean) => {
+  if (selectedAtasanList.value.length === 0 || selectedArsipList.value.length === 0) return;
+  if (asDraft) {
+    await doSubmit(true);
+  } else {
+    isKirimModalOpen.value = true;
+  }
+};
+
+const onConfirmKirim = async () => {
+  await doSubmit(false);
+};
+
+const doSubmit = async (asDraft: boolean) => {
   if (selectedAtasanList.value.length === 0 || selectedArsipList.value.length === 0) return;
   submitting.value = true;
   try {
@@ -528,6 +557,7 @@ const submit = async (asDraft: boolean) => {
     alert(msg);
   } finally {
     submitting.value = false;
+    isKirimModalOpen.value = false;
   }
 };
 
