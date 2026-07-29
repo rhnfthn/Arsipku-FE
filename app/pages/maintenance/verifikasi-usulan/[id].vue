@@ -181,11 +181,11 @@
             </p>
             <div class="space-y-3 mb-4">
               <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="siapkanBerkasFisik" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
+                <input v-model="checklistBerkasFisik" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">Berkas Fisik sudah disiapkan</span>
               </label>
               <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="siapkanBeritaAcara" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
+                <input v-model="checklistBeritaAcara" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
                 <span class="text-sm text-gray-700 dark:text-gray-300">Berita Acara Serah Terima sudah disiapkan</span>
               </label>
             </div>
@@ -340,10 +340,10 @@ const isCurrentTurn = ref(false);
 const catatanVerifikasi = ref('');
 const daftarIsi = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
-const siapkanBerkasFisik = ref(false);
-const siapkanBeritaAcara = ref(false);
+const checklistBerkasFisik = ref(false);
+const checklistBeritaAcara = ref(false);
 
-const canSendToTU = computed(() => siapkanBerkasFisik.value && siapkanBeritaAcara.value);
+const canSendToTU = computed(() => checklistBerkasFisik.value && checklistBeritaAcara.value);
 
 const { apiGet } = useApi();
 
