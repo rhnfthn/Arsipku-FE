@@ -171,7 +171,7 @@
           </div>
 
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canKirimTU" class="flex gap-2">
+          <div v-if="canVerify || canKirimTU || canFinalVerify" class="flex gap-2">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -187,6 +187,16 @@
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui
+            </button>
+            <!-- Verifikasi Terakhir (dengan Daftar Isi + BA) -->
+            <button
+              v-if="canFinalVerify"
+              @click="onFinalVerify(catatanVerifikasi)"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui Verifikasi Terakhir
             </button>
             <!-- Tombol Kirim ke TU untuk Atasan Managerial saat verifikasi terakhir selesai -->
             <button
@@ -444,7 +454,7 @@ const items = computed(() => [
 
 const showBeritaAcara = computed(() => {
   if (!usulan.value) return false;
-  return ['DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(usulan.value.status);
+  return ['MENUNGGU_VERIFIKASI_TERAKHIR', 'DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(usulan.value.status);
 });
 
 /** True jika usulan ini dibuat oleh user yang login sebagai Sekretaris. */
@@ -463,8 +473,11 @@ const canVerify = computed(() => {
   return isCurrentTurn.value;
 });
 
-/** Verifikasi terakhir tidak lagi dipakai untuk multi-level (final di-handle oleh approve). */
-const canFinalVerify = computed(() => false);
+/** Verifikasi terakhir: atasan managerial saat status MENUNGGU_VERIFIKASI_TERAKHIR. */
+const canFinalVerify = computed(() => {
+  if (!usulan.value || isOwnUsulan.value) return false;
+  return usulan.value.status === 'MENUNGGU_VERIFIKASI_TERAKHIR';
+});
 
 /** Atasan Managerial TU bisa approve penerimaan saat status DIKIRIM (Menunggu Penerimaan). */
 const canApproveReceipt = computed(() => {
@@ -478,8 +491,7 @@ const canApproveReceipt = computed(() => {
 /** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR). */
 const canKirimTU = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
-  if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
-  return isCurrentTurn.value || true; // Atasan terakhir yang sudah approve bisa kirim
+  return usulan.value.status === 'DISETUJUI_VERIFIKASI_TERAKHIR';
 });
 
 const loadDetail = async () => {
