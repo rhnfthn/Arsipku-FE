@@ -91,14 +91,120 @@
         <p class="text-gray-700 dark:text-gray-300 text-sm mt-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">{{ transfer.verifyNote }}</p>
       </div>
     </div>
+
+    <!-- ─── Section: Total Arsip ─── -->
+    <div class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Total Arsip</h4>
+        <button @click="showTotalArsip = !showTotalArsip" class="text-xs text-[#457fb6] hover:underline">
+          {{ showTotalArsip ? 'Sembunyikan' : 'Tampilkan' }}
+        </button>
+      </div>
+      <div v-if="showTotalArsip" class="text-sm text-gray-600 dark:text-gray-300">
+        <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ totalArsip }} berkas</span></p>
+      </div>
+    </div>
+
+    <!-- ─── Section: File Rincian ─── -->
+    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">File Rincian</h4>
+        <button @click="showFileRincian = !showFileRincian" class="text-xs text-[#457fb6] hover:underline">
+          {{ showFileRincian ? 'Sembunyikan' : 'Tampilkan' }}
+        </button>
+      </div>
+      <div v-if="showFileRincian" class="space-y-2">
+        <div v-if="fileRincian.length === 0" class="text-sm text-gray-400 italic">Tidak ada file</div>
+        <div
+          v-for="(f, idx) in fileRincian"
+          :key="idx"
+          class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+        >
+          <UIcon name="i-lucide-file-text" class="w-4 h-4 text-gray-400 shrink-0" />
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-900 dark:text-white truncate">{{ f.nama ?? f.naskahId }}</p>
+            <p v-if="f.ukuran" class="text-xs text-gray-400">{{ f.ukuran }}</p>
+          </div>
+          <button
+            v-if="f.url"
+            @click="downloadFile(f)"
+            class="text-xs text-[#457fb6] hover:underline shrink-0"
+          >Download</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Section: Riwayat ─── -->
+    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Riwayat</h4>
+        <button @click="showRiwayat = !showRiwayat" class="text-xs text-[#457fb6] hover:underline">
+          {{ showRiwayat ? 'Sembunyikan' : 'Tampilkan' }}
+        </button>
+      </div>
+      <div v-if="showRiwayat" class="space-y-2">
+        <div
+          v-for="(r, idx) in riwayatList"
+          :key="idx"
+          class="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+        >
+          <div class="w-2 h-2 rounded-full bg-[#457fb6] mt-1.5 shrink-0"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span :class="statusBadgeClass(r.status)" class="text-[11px]">{{ statusLabel(r.status) }}</span>
+              <span class="text-xs text-gray-400">{{ formatDate(r.tanggal) }}</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Oleh: {{ r.oleh ?? '-' }}</p>
+            <p v-if="r.catatan" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Catatan: {{ r.catatan }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import type { TransferActiveToInactive, ApprovalLevel } from '~/types/transfer-active-to-inactive';
 import { statusBadgeClass, statusLabel, formatDate } from '~/utils/transfer-status';
 
-defineProps<{ transfer: TransferActiveToInactive }>();
+const props = defineProps<{ transfer: TransferActiveToInactive }>();
+
+const showTotalArsip = ref(true);
+const showFileRincian = ref(true);
+const showRiwayat = ref(true);
+
+const totalArsip = computed(() => props.transfer.arsipIds?.length ?? 1);
+
+const fileRincian = computed(() => {
+  // Placeholder — file di-load dari endpoint /:id/files (TODO: fetch di parent)
+  return [];
+});
+
+const riwayatList = computed(() => {
+  const r: Array<{ status: any; tanggal: string | null; oleh: string | null; catatan: string | null }> = [];
+  r.push({ status: 'DRAFT' as any, tanggal: props.transfer.createdAt, oleh: props.transfer.sekretarisName, catatan: null });
+  if (props.transfer.approvedAt) {
+    r.push({ status: 'DISETUJUI_ATASAN' as any, tanggal: props.transfer.approvedAt, oleh: props.transfer.atasanName, catatan: props.transfer.verifyNote });
+  }
+  if (props.transfer.finalVerifiedAt) {
+    r.push({ status: 'DISETUJUI_VERIFIKASI_TERAKHIR' as any, tanggal: props.transfer.finalVerifiedAt, oleh: props.transfer.atasanName, catatan: props.transfer.finalVerifyNote });
+  }
+  if (props.transfer.tanggalDikirim) {
+    r.push({ status: 'DIKIRIM' as any, tanggal: props.transfer.tanggalDikirim, oleh: props.transfer.sekretarisName, catatan: null });
+  }
+  if (props.transfer.tuFinalApprovedAt) {
+    r.push({ status: 'SELESAI' as any, tanggal: props.transfer.tuFinalApprovedAt, oleh: props.transfer.atasanTuName, catatan: null });
+  }
+  if (props.transfer.rejectedNote) {
+    r.push({ status: 'DITOLAK_ATASAN' as any, tanggal: props.transfer.updatedAt, oleh: props.transfer.atasanName, catatan: props.transfer.rejectedNote });
+  }
+  return r;
+});
+
+const downloadFile = (f: any) => {
+  if (f.url) window.open(f.url, '_blank');
+};
 
 const levelStatusClass = (status: string): string => {
   if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
