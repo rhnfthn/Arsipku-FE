@@ -235,7 +235,6 @@
               </div>
             </div>
           </div>
-        </div>
 
         <!-- Right: Timeline Riwayat (4/12, sticky) -->
         <div class="lg:col-span-4">
