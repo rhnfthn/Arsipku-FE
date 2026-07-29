@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
+import { useAuth } from './useAuth';
 import type {
   VerifikasiUsulanItem,
   VerifikasiFilter,
@@ -15,6 +16,7 @@ import type {
  */
 export const useVerifikasiUsulan = () => {
   const { apiGet, apiPatch, apiPost } = useApi();
+  const { user } = useAuth();
 
   const list = ref<VerifikasiUsulanItem[]>([]);
   const summary = ref<VerifikasiSummary | null>(null);
@@ -60,6 +62,20 @@ export const useVerifikasiUsulan = () => {
     finalVerifiedAt: raw.finalVerifiedAt ?? raw.final_verified_at ?? null,
     createdAt: raw.createdAt ?? raw.created_at,
     updatedAt: raw.updatedAt ?? raw.updated_at,
+    currentApprovalLevel: raw.currentApprovalLevel ?? raw.current_approval_level ?? 1,
+    totalApprovalLevels: raw.totalApprovalLevels ?? raw.total_approval_levels ?? 1,
+    approvalLevels: Array.isArray(raw.approvalLevels)
+      ? raw.approvalLevels.map((l: any) => ({
+          id: l.id,
+          atasanPersnum: l.atasanPersnum ?? l.atasan_persnum,
+          atasanName: l.atasanName ?? l.atasan_name ?? '-',
+          atasanPositionText: l.atasanPositionText ?? l.atasan_position_text ?? null,
+          urutan: l.urutan,
+          status: l.status,
+          verifiedAt: l.verifiedAt ?? l.verified_at ?? null,
+          catatan: l.catatan ?? null,
+        }))
+      : undefined,
   });
 
   /** Fetch gabungan dari 2 endpoint. */
@@ -113,6 +129,23 @@ export const useVerifikasiUsulan = () => {
           combined.push(normalize(raw, r.jenis));
         }
         totalAll += r.meta?.total ?? r.data.length;
+      }
+
+      // Enrich: cek isCurrentTurn untuk setiap item yang sedang menunggu verifikasi
+      const userPersnum = (user as any)?.persnum;
+      if (userPersnum) {
+        await Promise.all(
+          combined.map(async (item) => {
+            if (
+              item.jenis === 'aktif_ke_inaktif' &&
+              item.status === 'MENUNGGU_VERIFIKASI_ATASAN'
+            ) {
+              item.isCurrentTurn = await checkIsCurrentTurn(item.id, item.jenis);
+            } else {
+              item.isCurrentTurn = false;
+            }
+          }),
+        );
       }
 
       console.log('[useVerifikasiUsulan] Combined:', combined.length, 'items, total:', totalAll);
@@ -182,13 +215,24 @@ export const useVerifikasiUsulan = () => {
     }
   };
 
-  /** Verifikasi awal → DISETUJUI_ATASAN. */
+  /** Verifikasi (approve) — gunakan endpoint /verify (multi-level berjenjang). */
   const verify = async (id: string, jenis: JenisUsulan, payload: VerifikasiActionPayload) => {
     const endpoint = jenis === 'aktif_ke_inaktif'
-      ? `/transfer-active-to-inactive/${id}/approve`
+      ? `/transfer-active-to-inactive/${id}/verify`
       : `/transfer-inactive-file/${id}/approve`;
     const r: any = await apiPatch(endpoint, { verifyNote: payload.catatanVerifikasi });
     return r?.data;
+  };
+
+  /** Cek apakah user login sedang giliran verifikasi. */
+  const checkIsCurrentTurn = async (id: string, jenis: JenisUsulan): Promise<boolean> => {
+    if (jenis !== 'aktif_ke_inaktif') return false;
+    try {
+      const r: any = await apiGet(`/transfer-active-to-inactive/${id}/is-current-turn`, {}, { skipCache: true });
+      return r?.data?.isCurrentTurn ?? false;
+    } catch {
+      return false;
+    }
   };
 
   /** Verifikasi terakhir → DISETUJUI_VERIFIKASI_TERAKHIR. */
@@ -265,5 +309,6 @@ export const useVerifikasiUsulan = () => {
     siapkanBerkasFisik,
     uploadBerkas,
     selesaikanUsulan,
+    checkIsCurrentTurn,
   };
 };
