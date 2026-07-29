@@ -139,12 +139,17 @@
                   v-for="a in filteredArsip"
                   :key="a.id"
                   type="button"
+                  :disabled="a.sedangDiproses && !isArsipSelected(a)"
                   @click="toggleArsip(a)"
-                  class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
+                  class="w-full text-left px-4 py-3 text-sm transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
+                  :class="a.sedangDiproses && !isArsipSelected(a) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-700'"
                 >
                   <div class="min-w-0">
                     <div class="font-medium text-gray-900 dark:text-white truncate">{{ a.kodeBerkas ?? '-' }} — {{ a.judulBerkas }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Retensi habis: {{ formatDate(a.tanggalRetensiAktifBerakhir) }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Retensi habis: {{ formatDate(a.tanggalRetensiAktifBerakhir) }}
+                      <span v-if="a.sedangDiproses" class="ml-2 text-yellow-600 dark:text-yellow-400 font-medium">Sedang Diproses</span>
+                    </div>
                   </div>
                   <UIcon v-if="isArsipSelected(a)" name="i-lucide-check-circle" class="w-5 h-5 text-green-500 shrink-0" />
                 </button>
@@ -258,6 +263,7 @@ import { formatDate } from '~/utils/transfer-status';
 const props = defineProps<{
   modelValue: boolean;
   editData?: TransferActiveToInactive | null;
+  preselectedArsip?: any | null;
 }>();
 
 const emit = defineEmits<{
@@ -282,7 +288,7 @@ const selectedAtasanList = ref<AtasanManagerialOption[]>([]);
 const atasanDropdownRef = ref<HTMLElement | null>(null);
 
 // Arsip — multi select
-const arsipOptions = ref<ArsipRetensiHabisOption[]>([]);
+const arsipOptions = ref<(ArsipRetensiHabisOption & { sedangDiproses?: boolean })[]>([]);
 const arsipLoading = ref(false);
 const arsipSearch = ref('');
 const arsipDropdownOpen = ref(false);
@@ -343,7 +349,9 @@ const toggleAtasan = (a: AtasanManagerialOption) => {
   atasanDropdownOpen.value = true;
 };
 
-const toggleArsip = async (a: ArsipRetensiHabisOption) => {
+const toggleArsip = async (a: ArsipRetensiHabisOption & { sedangDiproses?: boolean }) => {
+  // Block arsip yang sedang diproses di usulan lain
+  if (a.sedangDiproses && !isArsipSelected(a)) return;
   const idx = selectedArsipList.value.findIndex((s) => s.id === a.id);
   if (idx >= 0) {
     selectedArsipList.value.splice(idx, 1);
@@ -412,15 +420,16 @@ const loadAtasanManagerial = async () => {
 const loadArsipRetensiHabis = async () => {
   arsipLoading.value = true;
   try {
-    // Ambil dari endpoint Berkas Saya retensi habis (status Tertutup + retensi aktif habis)
-    const res: any = await apiGet('/arsip-dinamis/berkas-saya/retensi-habis', { params: { limit: 100 } }, { skipCache: true });
-    const data = res?.data?.data ?? res?.data ?? [];
+    // Ambil dari endpoint arsip-tersedia (Berkas Saya: Tertutup + retensi habis)
+    const res: any = await apiGet('/transfer-active-to-inactive/arsip-tersedia', {}, { skipCache: true });
+    const data = res?.data ?? [];
     arsipOptions.value = (Array.isArray(data) ? data : []).map((b: any) => ({
       id: b.id,
-      judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
-      kodeBerkas: b.kodeBerkas ?? b.kode_berkas ?? null,
-      tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifBerakhir ?? b.tanggal_retensi_aktif_berakhir ?? null,
-      kategoriBerkas: b.kategoriBerkas ?? b.kategori_berkas ?? null,
+      judulBerkas: b.perihal ?? b.judulBerkas ?? '-',
+      kodeBerkas: b.kodeBerkas ?? null,
+      tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifHabis ?? null,
+      kategoriBerkas: b.klasifikasi ?? null,
+      sedangDiproses: b.sedangDiproses ?? false,
     }));
   } catch (e) {
     console.error('Gagal memuat arsip retensi habis:', e);
@@ -546,7 +555,22 @@ watch(
       resetForm();
       loadAtasanManagerial();
       loadArsipRetensiHabis();
-      if (props.editData) fillFromEdit(props.editData);
+      if (props.editData) {
+        fillFromEdit(props.editData);
+      } else if (props.preselectedArsip) {
+        // Pre-select arsip dari tombol "Pindahkan" di dashboard
+        const a = props.preselectedArsip;
+        const item = {
+          id: a.id,
+          judulBerkas: a.perihal ?? '-',
+          kodeBerkas: a.kodeBerkas ?? null,
+          tanggalRetensiAktifBerakhir: a.tanggalRetensiAktifHabis ?? null,
+          kategoriBerkas: a.klasifikasi ?? null,
+          files: [] as any[],
+        };
+        selectedArsipList.value.push(item);
+        loadArsipFiles(item);
+      }
       document.addEventListener('keydown', onKeydown);
     } else {
       document.removeEventListener('keydown', onKeydown);
