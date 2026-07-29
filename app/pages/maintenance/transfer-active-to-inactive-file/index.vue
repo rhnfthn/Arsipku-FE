@@ -98,11 +98,12 @@
               </td>
             </tr>
             <!-- Rows -->
-            <template v-for="(row, idx) in gabunganList" :key="row.id">
-              <tr
-                class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
-                @click="toggleExpand(row.id)"
-              >
+            <tr
+              v-for="(row, idx) in gabunganList"
+              :key="row.id"
+              class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+              @click="openDetail(row)"
+            >
                 <td class="px-3 py-2 text-gray-500">{{ idx + 1 }}</td>
                 <td class="px-3 py-2 font-medium text-gray-700 dark:text-gray-200">
                   <div class="truncate" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
@@ -155,57 +156,6 @@
                   </button>
                 </td>
               </tr>
-              <!-- Expand Detail -->
-              <tr v-if="expandedId === row.id">
-                <td colspan="9" class="px-3 py-4 bg-gray-50 dark:bg-gray-700/30">
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span class="text-gray-400 text-xs">Kode Berkas</span>
-                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.kodeBerkas ?? '-' }}</p>
-                    </div>
-                    <div>
-                      <span class="text-gray-400 text-xs">Klasifikasi</span>
-                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.klasifikasi ?? '-' }}</p>
-                    </div>
-                    <div>
-                      <span class="text-gray-400 text-xs">Retensi Habis</span>
-                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ formatDate(row.tanggalRetensiAktifHabis) }}</p>
-                    </div>
-                    <div>
-                      <span class="text-gray-400 text-xs">Tanggal</span>
-                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ formatDate(row.tanggal) }}</p>
-                    </div>
-                    <div v-if="row.isUsulan">
-                      <span class="text-gray-400 text-xs">Nomor Usulan</span>
-                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.nomorUsulan ?? '-' }}</p>
-                    </div>
-                    <div v-if="row.isUsulan">
-                      <span class="text-gray-400 text-xs">Atasan Managerial</span>
-                      <p class="text-gray-700 dark:text-gray-200 font-medium">{{ row.atasanName ?? '-' }}</p>
-                    </div>
-                    <div>
-                      <span class="text-gray-400 text-xs">Status</span>
-                      <p><span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span></p>
-                    </div>
-                    <div v-if="row.isUsulan" class="flex items-end gap-2">
-                      <button
-                        v-if="row.status === 'DRAFT' && isSekretaris"
-                        @click="onSendUsulan(row)"
-                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
-                      >
-                        <UIcon name="i-lucide-send" class="w-3.5 h-3.5 mr-1 inline" /> Kirim Usulan
-                      </button>
-                      <button
-                        @click="openDetail(row)"
-                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                      >
-                        <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5 mr-1 inline" /> Detail
-                      </button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </template>
           </tbody>
         </table>
       </div>
@@ -354,6 +304,7 @@ const openCreateModalWithArsip = (row: GabunganRow) => {
 };
 
 const openDetail = (row: GabunganRow) => {
+  if (!row.isUsulan) return;
   navigateTo(`/maintenance/transfer-active-to-inactive-file/${row.id}`);
 };
 
