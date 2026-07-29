@@ -1,8 +1,8 @@
 <template>
   <div class="mb-0.5">
-    <div v-if="hasChildren" @click="toggle" :class="containerClasses">
+    <div v-if="hasChildren" @click="toggle" :class="containerClasses" :title="item?.label">
       <UIcon v-if="item?.icon" :key="item.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[14px] truncate leading-5">{{ item?.label }}</span>
+      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
 
       <span
         v-if="item?.badge"
@@ -22,9 +22,9 @@
       />
     </div>
 
-    <NuxtLink v-else-if="item?.to" :to="item.to" :class="containerClasses">
+    <NuxtLink v-else-if="item?.to" :to="item.to" :class="containerClasses" :title="item?.label">
       <UIcon v-if="item?.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[14px] truncate leading-5">{{ item?.label }}</span>
+      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
 
       <span
         v-if="item?.badge"
@@ -36,10 +36,18 @@
 
     <div v-if="hasChildren && isOpen" class="mt-0.5 mx-3 space-y-0.5">
       <template v-for="(child, i) in item.children" :key="i">
+        <!-- Recursive: child punya sub-children → render nested SidebarItem -->
+        <SidebarItem
+          v-if="child && child.children && child.children.length > 0"
+          :item="child"
+          :collapsed="collapsed"
+        />
+        <!-- Leaf: child langsung ke route -->
         <NuxtLink
-          v-if="child && child.to"
+          v-else-if="child && child.to"
           :to="child.to"
-          class="whitespace-nowrap flex items-center px-4 py-2.5 my-1 pl-12 rounded-full text-[14px] transition-colors dark:text-gray-400 relative"
+          :title="child.label"
+          class="flex items-start px-4 py-2.5 my-1 pl-12 rounded-full text-[13px] leading-tight whitespace-pre-line break-words transition-colors dark:text-gray-400 relative"
           :class="
             isActiveChild(child.to)
               ? 'bg-[#D3E3FD] font-bold text-gray-900 dark:bg-gray-700 dark:text-white'
@@ -72,10 +80,16 @@ const isOpen = ref(false);
 // Check if has children
 const hasChildren = computed(() => props.item?.children && props.item.children.length > 0);
 
-// Check if any children has badge
+// Check if any children (or sub-children) has badge
 const hasChildrenWithBadges = computed(() => {
   if (!hasChildren.value) return false;
-  return props.item.children.some((child) => child?.badge && child.badge > 0);
+  const checkRecursive = (items) =>
+    items.some((child) => {
+      if (child?.badge && child.badge > 0) return true;
+      if (child?.children && child.children.length > 0) return checkRecursive(child.children);
+      return false;
+    });
+  return checkRecursive(props.item.children);
 });
 
 // Helper for exact or nested active state
@@ -89,6 +103,16 @@ const isActiveChild = (path) => {
   return route.path === path;
 };
 
+// Helper recursive: cek apakah item (atau keturunannya) aktif
+const isItemActiveRecursive = (item) => {
+  if (!item) return false;
+  if (item.to && isActiveChild(item.to)) return true;
+  if (item.children && item.children.length > 0) {
+    return item.children.some((child) => isItemActiveRecursive(child));
+  }
+  return false;
+};
+
 // Logic Active State
 const isActive = computed(() => {
   if (!props.item) return false;
@@ -98,8 +122,8 @@ const isActive = computed(() => {
   }
 
   if (hasChildren.value) {
-    // Parent active jika salah satu child exact match dengan route saat ini
-    return props.item.children.some((child) => child?.to && isActiveChild(child.to));
+    // Parent active jika salah satu child (atau sub-child) exact match dengan route
+    return props.item.children.some((child) => isItemActiveRecursive(child));
   }
   return false;
 });

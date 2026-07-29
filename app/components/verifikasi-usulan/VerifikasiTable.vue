@@ -1,0 +1,111 @@
+<template>
+  <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+    <div class="overflow-x-auto">
+      <table class="min-w-full border-collapse text-sm">
+        <thead class="bg-[#457fb6] text-white text-left">
+          <tr>
+            <th class="px-4 py-3 font-semibold">No</th>
+            <th class="px-4 py-3 font-semibold">Nomor Usulan</th>
+            <th class="px-4 py-3 font-semibold">Perihal Arsip</th>
+            <th class="px-4 py-3 font-semibold">Sekretaris</th>
+            <th class="px-4 py-3 font-semibold">Tahap Verifikasi</th>
+            <th class="px-4 py-3 font-semibold">Tanggal</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+            <th class="px-4 py-3 font-semibold text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading -->
+          <tr v-if="loading">
+            <td colspan="8" class="px-4 py-6">
+              <div class="space-y-4 animate-pulse">
+                <div v-for="n in 5" :key="n" class="h-12 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty -->
+          <tr v-else-if="!data || data.length === 0">
+            <td colspan="8" class="px-4 py-10 text-center text-sm text-gray-400">
+              <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>Belum ada usulan pemindahan arsip yang perlu diverifikasi</p>
+              <p class="text-xs text-gray-400 mt-1">Usulan dari Sekretaris akan muncul di sini setelah dikirim ke Anda.</p>
+            </td>
+          </tr>
+
+          <!-- Rows -->
+          <template v-else>
+            <tr
+              v-for="(row, idx) in data"
+              :key="row.id"
+              class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <td class="px-4 py-3 text-gray-500">{{ idx + 1 }}</td>
+              <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-700 dark:text-gray-200">{{ row.nomorUsulan }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.arsipPerihal">{{ row.arsipPerihal }}</td>
+              <td class="px-4 py-3 text-gray-700 dark:text-gray-200">{{ row.sekretarisName }}</td>
+              <td class="px-4 py-3">
+                <div v-if="row.totalApprovalLevels && row.totalApprovalLevels > 1" class="text-xs">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">
+                    Tahap {{ row.currentApprovalLevel }} / {{ row.totalApprovalLevels }}
+                  </span>
+                  <div v-if="row.isCurrentTurn" class="mt-0.5">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">
+                      <UIcon name="i-lucide-clock" class="w-3 h-3" /> Menunggu Verifikasi Anda
+                    </span>
+                  </div>
+                </div>
+                <div v-else class="text-xs text-gray-400">-</div>
+              </td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatVerifikasiDate(row.tanggalUsulan) }}</td>
+              <td class="px-4 py-3">
+                <span :class="verifikasiStatusBadge(row.status)">{{ verifikasiStatusLabel(row.status) }}</span>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <button
+                  @click="$emit('detail', row)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
+                >
+                  <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5" />
+                  {{ needsVerification(row.status) ? 'Verifikasi' : 'Detail' }}
+                </button>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { watch } from 'vue';
+import type { VerifikasiUsulanItem, VerifikasiStatus } from '~/types/verifikasi-usulan';
+import {
+  verifikasiStatusBadge,
+  verifikasiStatusLabel,
+  formatVerifikasiDate,
+} from '~/utils/verifikasi-status';
+
+const props = defineProps<{
+  data: VerifikasiUsulanItem[];
+  loading: boolean;
+}>();
+
+defineEmits<{ detail: [row: VerifikasiUsulanItem] }>();
+
+// Debug: log data yang diterima komponen
+watch(
+  () => props.data,
+  (newData) => {
+    console.log('[VerifikasiTable] Data received:', newData?.length, 'items');
+    if (newData && newData.length > 0) {
+      console.log('[VerifikasiTable] First item:', newData[0]);
+    }
+  },
+  { immediate: true },
+);
+
+const needsVerification = (s: VerifikasiStatus) =>
+  s === 'MENUNGGU_VERIFIKASI_ATASAN' || s === 'MENUNGGU_VERIFIKASI_TERAKHIR';
+</script>

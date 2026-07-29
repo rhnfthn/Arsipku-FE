@@ -88,6 +88,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/kelola/pemeliharaan/persetujuan-pemberkasan',
     '/usulan-akses-berkas',
     '/riwayat-aktivitas',
+    '/usulan-pindah',
+    '/maintenance/transfer-inactive-file',
+    '/maintenance/approval-transfer-inactive-file',
+    '/maintenance/verify-physical-inactive-file',
+    '/maintenance/final-approval-transfer-inactive-file',
+    '/maintenance/transfer-active-to-inactive-file',
+    '/maintenance/transfer-active-to-inactive',
+    '/maintenance/approval-transfer-active-to-inactive-file',
+    '/maintenance/approval-transfer-active-to-inactive',
+    '/maintenance/verify-physical-active-to-inactive',
+    '/maintenance/final-approval-transfer-active-to-inactive',
+    '/maintenance/verifikasi-usulan',
   ];
 
   if (role === 'user') {

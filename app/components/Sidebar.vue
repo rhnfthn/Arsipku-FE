@@ -343,7 +343,7 @@ import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
 const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
-const { isReadOnly } = useDelegationMode();
+const { isReadOnly, activePositionStatus } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
 const { unreadCount, fetchInboxCount } = useInboxCount();
@@ -383,6 +383,18 @@ const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADM
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
+
+// Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
+// Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
+const isAtasanManagerialUsulan = ref(false);
+const checkAtasanManagerialUsulan = async () => {
+  try {
+    const res = await apiGet('/transfer-active-to-inactive/is-atasan', {}, { skipCache: true });
+    isAtasanManagerialUsulan.value = res?.data?.isAtasan ?? false;
+  } catch (e) {
+    isAtasanManagerialUsulan.value = false;
+  }
+};
 
 // ─── Count fetching ───────────────────────────────────────────────────────────
 // Nomor count sekarang sepenuhnya dari WebSocket (realtime:summary + nomor:count event).
@@ -437,6 +449,8 @@ watch(
       // Connect WebSocket realtime — initial summary akan kirim semua count
       // (inbox, label, bsre, verifikator, nomor admin + user)
       rtInit();
+      // Cek apakah user adalah atasan managerial di usulan pemindahan arsip
+      checkAtasanManagerialUsulan();
     }
   },
   { immediate: true }
@@ -908,33 +922,183 @@ const adminMenuLaporan = computed(() => [
 
 // ─── Menu Kelola (Arsip Dinamis) ─────────────────────────────────────────────
 
-const menuKelola = computed(() => [
-  {
-    label: 'Pemeliharaan',
-    icon: 'i-lucide-folder-cog',
-    children: [
-      {
-        label: 'Pemberkasan',
-        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
-        icon: 'i-lucide-folder-plus',
-        access: 'pemberkasan',
-      },
-      {
-        label: 'Persetujuan',
-        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
-        icon: 'i-lucide-file-check',
-        access: 'persetujuan',
-        badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
-      },
-      {
-        label: 'Usulan Akses Berkas',
-        to: '/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      },
-    ],
-  },
-]);
+const isManagerialPosition = computed(() => {
+  const ps = activePositionStatus.value;
+  if (ps === 'SE' || ps === 'VI') return false;
+  const posText = (user.value?.positionText || '').toUpperCase();
+  if (posText.includes('EVP')) return true;
+  if (posText.includes('AVP')) return true;
+  if (posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP') return true;
+  return false;
+});
+
+// Cek apakah user adalah SE (Sekretaris yang didelegasikan)
+const isSekretarisActor = computed(() => activePositionStatus.value === 'SE');
+
+// ── Menu Pemeliharaan (milik Fakhri — JANGAN UBAH) ──
+// Struktur asli Fakhri: Pemberkasan + Persetujuan Pemberkasan
+// Admin (SUPERADMIN/ADMIN) lihat keduanya, User biasa lihat Pemberkasan saja.
+
+const adminMenuKelola = computed(() => {
+  const pemeliharaanChildren = [
+    {
+      label: 'Pemberkasan',
+      to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+      icon: 'i-lucide-folder-plus',
+      permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Persetujuan',
+      to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+      icon: 'i-lucide-file-check',
+      permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+    },
+    {
+      label: 'Usulan Akses',
+      to: '/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+    },
+    {
+      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+      hideIfManagerial: true,
+    },
+    {
+      label: 'Verifikasi Usulan',
+      to: '/maintenance/verifikasi-usulan',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
+  ];
+
+  const menus = [
+    {
+      label: 'Pemeliharaan',
+      icon: 'i-lucide-folder-cog',
+      children: pemeliharaanChildren,
+    },
+  ];
+
+  // ── Menu Penggunaan (scope kita) ──
+  // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
+  // Tiap child tampil berdasarkan actor:
+  //   - Permintaan: SE (buat usulan)
+  //   - Persetujuan: Managerial (verifikasi)
+  //   - Pemeriksaan: Managerial (placeholder)
+  //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
+  const penggunaanChildren = [];
+
+  if (isSekretarisActor.value) {
+    penggunaanChildren.push({
+      label: 'Permintaan',
+      to: '/penggunaan/permintaan',
+      icon: 'i-lucide-file-plus',
+    });
+  }
+
+  if (isManagerialPosition.value) {
+    penggunaanChildren.push({
+      label: 'Persetujuan',
+      to: '/penggunaan/persetujuan',
+      icon: 'i-lucide-file-check',
+    });
+    penggunaanChildren.push({
+      label: 'Pemeriksaan',
+      to: '/penggunaan/pemeriksaan',
+      icon: 'i-lucide-search-check',
+    });
+  }
+
+  penggunaanChildren.push({
+    label: 'Pemberian',
+    to: '/penggunaan/pemberian',
+    icon: 'i-lucide-folder-check',
+  });
+
+  if (penggunaanChildren.length > 0) {
+    menus.push({
+      label: 'Penggunaan',
+      icon: 'i-lucide-folder-open',
+      children: penggunaanChildren,
+    });
+  }
+
+  return menus;
+});
+
+const userMenuKelola = computed(() => {
+  const pemeliharaanChildren = [
+    {
+      label: 'Pemberkasan',
+      to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+      icon: 'i-lucide-folder-plus',
+      permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+      hideIfManagerial: true,
+    },
+    {
+      label: 'Verifikasi Usulan',
+      to: '/maintenance/verifikasi-usulan',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
+  ];
+
+  const menus = [
+    {
+      label: 'Pemeliharaan',
+      icon: 'i-lucide-folder-cog',
+      children: pemeliharaanChildren,
+    },
+  ];
+
+  // ── Menu Penggunaan (scope kita) ──
+  const penggunaanChildren = [];
+
+  if (isSekretarisActor.value) {
+    penggunaanChildren.push({
+      label: 'Permintaan',
+      to: '/penggunaan/permintaan',
+      icon: 'i-lucide-file-plus',
+    });
+  }
+
+  if (isManagerialPosition.value) {
+    penggunaanChildren.push({
+      label: 'Persetujuan',
+      to: '/penggunaan/persetujuan',
+      icon: 'i-lucide-file-check',
+    });
+    penggunaanChildren.push({
+      label: 'Pemeriksaan',
+      to: '/penggunaan/pemeriksaan',
+      icon: 'i-lucide-search-check',
+    });
+  }
+
+  penggunaanChildren.push({
+    label: 'Pemberian',
+    to: '/penggunaan/pemberian',
+    icon: 'i-lucide-folder-check',
+  });
+
+  if (penggunaanChildren.length > 0) {
+    menus.push({
+      label: 'Penggunaan',
+      icon: 'i-lucide-folder-open',
+      children: penggunaanChildren,
+    });
+  }
+
+  return menus;
+});
 
 // ─── Notification flags ───────────────────────────────────────────────────────
 
@@ -955,47 +1119,70 @@ const hasUtilitasNotification = computed(() => {
 const filterMenuByPermission = (items) => {
   // Menu RBAC management selalu tampil untuk superadmin (tidak difilter)
   // Menu lain difilter berdasarkan permission, termasuk superadmin
+  // Support nested children (recursive) untuk menu 2+ level.
+  // Support role-based filtering via `roles` array on item.
+  const isAtasanManagerialTuPersnum = Number(user.value?.persnum) === 10010123;
+
+  const hasRoleAccess = (item) => {
+    if (!item.roles || item.roles.length === 0) return true;
+    // Superadmin selalu lihat semua menu
+    if (isSuperadmin.value) return true;
+    // Atasan Managerial TU via persnum 10010123
+    if (isAtasanManagerialTuPersnum && item.roles.includes('atasan_managerial_tu')) return true;
+    // Cek role user
+    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toLowerCase();
+    return item.roles.some((r) => r === role);
+  };
+
+  const filterRecursive = (item) => {
+    if (!item) return null;
+    const cloned = { ...item };
+
+    // Cek permission item itu sendiri
+    if (cloned.permission) {
+      const hasAccess = hasPermission(cloned.permission.resource, cloned.permission.action);
+      if (!hasAccess) return null;
+    }
+
+    // Cek role-based access
+    if (!hasRoleAccess(cloned)) return null;
+
+    // Cek showIfAtasan — tampilkan hanya jika user adalah atasan managerial
+    if (cloned.showIfAtasan && !isAtasanManagerialUsulan.value && !isAdminOrSuperadmin.value) {
+      return null;
+    }
+
+    // Cek hideIfAtasan — sembunyikan jika user adalah atasan managerial
+    if (cloned.hideIfAtasan && (isAtasanManagerialUsulan.value || isAdminOrSuperadmin.value)) {
+      return null;
+    }
+
+    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
+    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
+    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
+      return null;
+    }
+
+    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
+    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
+    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
+      return null;
+    }
+
+    // Filter children secara recursive
+    if (item.children) {
+      cloned.children = item.children
+        .map((child) => filterRecursive(child))
+        .filter((child) => child !== null);
+      // Jika semua children hilang, parent juga hilang
+      if (cloned.children.length === 0) return null;
+    }
+
+    return cloned;
+  };
+
   return items
-    .map((item) => {
-      // Deep clone item agar tidak mutasi computed asli
-      const cloned = { ...item };
-      if (item.children) cloned.children = [...item.children];
-
-      // Jika item punya permission check (RBAC), validasi
-      if (cloned.permission) {
-        const hasAccess = hasPermission(cloned.permission.resource, cloned.permission.action);
-        if (!hasAccess) return null;
-      }
-      // Jika item punya access check (effective-role pemeliharaan), validasi
-      if (cloned.access) {
-        const ok =
-          isAdminOrSuperadmin.value ||
-          (cloned.access === 'pemberkasan' && canPemberkasan.value) ||
-          (cloned.access === 'persetujuan' && canPersetujuan.value);
-        if (!ok) return null;
-      }
-
-      // Jika item punya children, filter children juga
-      if (cloned.children) {
-        cloned.children = cloned.children.filter((child) => {
-          if (child.permission) {
-            return hasPermission(child.permission.resource, child.permission.action);
-          }
-          if (child.access) {
-            return (
-              isAdminOrSuperadmin.value ||
-              (child.access === 'pemberkasan' && canPemberkasan.value) ||
-              (child.access === 'persetujuan' && canPersetujuan.value)
-            );
-          }
-          return true; // child tanpa permission/access check → tampil
-        });
-        // Jika semua children hilang, parent juga hilang
-        if (cloned.children.length === 0) return null;
-      }
-
-      return cloned;
-    })
+    .map((item) => filterRecursive(item))
     .filter((item) => item !== null);
 };
 
@@ -1029,7 +1216,7 @@ const apps = computed(() => {
         id: 'admin-kelola',
         label: 'Kelola',
         icon: 'i-lucide-archive',
-        menus: filterMenuByPermission(menuKelola.value),
+        menus: filterMenuByPermission(adminMenuKelola.value),
         hasNotification: rtArsipPersetujuanCount.value > 0,
       },
       {
@@ -1078,8 +1265,8 @@ const apps = computed(() => {
       id: 'user-kelola',
       label: 'Kelola',
       icon: 'i-lucide-archive',
-      menus: filterMenuByPermission(menuKelola.value),
-      hasNotification: rtArsipPersetujuanCount.value > 0,
+      menus: filterMenuByPermission(userMenuKelola.value),
+      hasNotification: false,
     },
     {
       id: 'user-utilitas',
