@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div v-if="modelValue" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div class="fixed inset-0 bg-black/40 backdrop-blur-[8px] transition-opacity" @click="close"></div>
+      <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" @click="close"></div>
       <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[560px] overflow-hidden z-[10000]">
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tolak Usulan</h3>
