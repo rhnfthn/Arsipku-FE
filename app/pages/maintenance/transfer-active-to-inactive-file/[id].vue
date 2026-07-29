@@ -490,12 +490,33 @@ const printDaftarIsi = () => {
   if (!w) return;
   w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; }
-    h2 { text-align: center; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { border: 1px solid #333; padding: 8px; text-align: left; background: #f0f0f0; }
-    td { border: 1px solid #333; padding: 8px; }
-    .checkbox { width: 20px; height: 20px; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; padding: 30px; color: #111; }
+    .text-sm { font-size: 13px; }
+    .text-xs { font-size: 12px; }
+    .font-semibold { font-weight: 600; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .text-gray-500 { color: #6b7280; }
+    .text-gray-600 { color: #4b5563; }
+    .text-gray-700 { color: #374151; }
+    .text-gray-400 { color: #9ca3af; }
+    .text-center { text-align: center; }
+    .italic { font-style: italic; }
+    .w-full { width: 100%; }
+    .w-8 { width: 32px; }
+    .w-10 { width: 40px; }
+    .w-4 { width: 16px; }
+    .h-4 { height: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { border-bottom: 2px solid #d1d5db; padding: 8px; text-align: left; font-weight: 600; }
+    td { border-bottom: 1px solid #f3f4f6; padding: 8px; }
+    .px-2 { padding-left: 8px; padding-right: 8px; }
+    .py-2 { padding-top: 8px; padding-bottom: 8px; }
+    .py-4 { padding-top: 16px; padding-bottom: 16px; }
+    .pr-2 { padding-right: 8px; }
+    input[type="checkbox"] { width: 16px; height: 16px; }
+    p { margin: 0; }
   </style>
   </head><body>${el.innerHTML}</body></html>`);
   w.document.close();
@@ -510,22 +531,39 @@ const printBeritaAcara = () => {
   if (!w) return;
   w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title>
   <style>
-    body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-    h2 { text-align: center; font-size: 16px; margin-bottom: 5px; }
-    .ba-nomor { text-align: center; font-size: 12px; margin-bottom: 5px; }
-    .ba-tanggal { text-align: center; font-size: 12px; color: #666; margin-bottom: 20px; }
-    .ba-paragraf { font-size: 12px; line-height: 1.8; margin-bottom: 15px; text-align: justify; }
-    .ba-pihak { font-size: 12px; margin-bottom: 15px; }
-    .ba-pihak p { margin-bottom: 4px; }
-    .ba-label { color: #666; font-style: italic; font-size: 11px; }
-    .ba-list { font-size: 12px; margin-left: 20px; margin-bottom: 15px; }
-    .ba-list li { margin-bottom: 4px; }
-    .ba-ttd { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 40px; font-size: 12px; }
-    .ba-ttd-col { text-align: center; }
-    .ba-ttd-label { font-weight: bold; margin-bottom: 80px; }
-    .ba-ttd-nama { border-top: 1px solid #333; padding-top: 5px; font-weight: bold; }
-    .ba-ttd-jabatan { color: #666; font-size: 11px; }
-    .ba-kota { text-align: right; font-size: 12px; margin-bottom: 30px; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #111; }
+    /* Replikasi Tailwind classes */
+    .text-sm { font-size: 13px; }
+    .text-xs { font-size: 12px; }
+    .text-base { font-size: 16px; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .italic { font-style: italic; }
+    .mb-1 { margin-bottom: 4px; }
+    .mb-3 { margin-bottom: 12px; }
+    .mb-4 { margin-bottom: 16px; }
+    .mb-6 { margin-bottom: 24px; }
+    .mb-16 { margin-bottom: 64px; }
+    .mt-3 { margin-top: 12px; }
+    .space-y-3 > * + * { margin-top: 12px; }
+    .space-y-1 > * + * { margin-top: 4px; }
+    .leading-relaxed { line-height: 1.625; }
+    .text-gray-500 { color: #6b7280; }
+    .text-gray-400 { color: #9ca3af; }
+    .ml-2 { margin-left: 8px; }
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+    .gap-8 { gap: 32px; }
+    .gap-4 { gap: 16px; }
+    .border-t { border-top: 1px solid #9ca3af; }
+    .border-gray-400 { border-color: #9ca3af; }
+    .pt-1 { padding-top: 4px; }
+    ol { padding-left: 20px; margin: 0; }
+    li { margin-bottom: 4px; }
+    p { margin: 0; }
   </style>
   </head><body>${el.innerHTML}</body></html>`);
   w.document.close();
