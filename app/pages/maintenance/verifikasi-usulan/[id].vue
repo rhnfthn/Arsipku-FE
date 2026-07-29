@@ -38,236 +38,121 @@
         </div>
       </div>
 
-      <!-- 2-column layout: info (left) + aksi (right sticky) -->
+      <!-- 2-column layout: info+timeline+aksi (left) + verifikasi ringkas (right) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Left: Informasi Usulan (8/12) -->
-        <div class="lg:col-span-8">
+        <!-- Left: Informasi Usulan + Timeline + Tombol Aksi (8/12) -->
+        <div class="lg:col-span-8 space-y-5">
           <VerifikasiDetail :usulan="usulan" />
+
+          <!-- Timeline Riwayat -->
+          <TimelineRiwayat :item="usulanToTransfer" />
+
+          <!-- Tombol Aksi di bawah Timeline -->
+          <div v-if="canVerify || canApproveReceipt" class="flex gap-2">
+            <button
+              @click="openRejectModal"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon name="i-lucide-x" class="w-4 h-4 mr-1 inline" /> Tolak
+            </button>
+            <button
+              v-if="canVerify"
+              @click="onApprove(catatanVerifikasi)"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui
+            </button>
+            <button
+              v-if="canApproveReceipt"
+              @click="onApproveReceipt"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Setujui Penerimaan
+            </button>
+          </div>
+
+          <!-- Status info (read-only) -->
+          <div
+            v-if="usulan.status === 'MENUNGGU_VERIFIKASI_ATASAN' && !canVerify"
+            class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+                  {{ isCurrentTurn ? 'Menunggu Verifikasi Anda' : 'Menunggu Verifikasi Atasan Lain' }}
+                </h3>
+                <p class="text-sm text-yellow-600 dark:text-yellow-400">
+                  <template v-if="isCurrentTurn">
+                    Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi Anda.
+                  </template>
+                  <template v-else>
+                    Usulan dari {{ usulan.sekretarisName }} sedang menunggu verifikasi atasan tahap {{ usulan.currentApprovalLevel }}.
+                  </template>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="usulan.status === 'DITOLAK_ATASAN' || usulan.status === 'DITOLAK_VERIFIKASI_TERAKHIR'"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-x-circle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Usulan Ditolak</h3>
+                <p class="text-sm text-red-600 dark:text-red-400">{{ usulan.rejectedNote ?? 'Tidak ada catatan' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="usulan.status === 'SELESAI'"
+            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Usulan Selesai</h3>
+                <p class="text-sm text-green-600 dark:text-green-400">Proses pemindahan arsip selesai.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Right: Card Verifikasi / Aksi (4/12, sticky) -->
+        <!-- Right: Card Verifikasi Ringkas (4/12, sticky) -->
         <div class="lg:col-span-4">
           <div class="lg:sticky lg:top-5 space-y-5">
-            <!-- MENUNGGU_VERIFIKASI_ATASAN: Verifikasi Usulan -->
-            <VerifikasiCard
-              v-if="canVerify"
-              :usulan="usulan"
-              :submitting="actionLoading"
-              @approve="onApprove"
-              @reject="openRejectModal"
-            />
+            <!-- Card Verifikasi Usulan (ringkas) -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Verifikasi Usulan</h3>
+              <div class="space-y-2 mb-4 text-sm">
+                <p><span class="text-gray-500 dark:text-gray-400">Sekretaris:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.sekretarisName }}</span></p>
+                <p><span class="text-gray-500 dark:text-gray-400">Arsip:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.arsipPerihal }}</span></p>
+              </div>
+              <div class="mb-4">
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi</label>
+                <textarea
+                  v-model="catatanVerifikasi"
+                  rows="4"
+                  placeholder="Catatan verifikasi (opsional)..."
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
+                ></textarea>
+              </div>
+            </div>
 
-            <!-- MENUNGGU_VERIFIKASI_TERAKHIR: Verifikasi Terakhir -->
-            <FinalVerifikasiCard
-              v-if="canFinalVerify"
-              :submitting="actionLoading"
-              @approve="onFinalVerify"
-              @reject="openRejectModal"
-            />
-
-            <!-- DISETUJUI_ATASAN / DISETUJUI_VERIFIKASI_TERAKHIR / DIKIRIM / SELESAI: Berita Acara -->
+            <!-- Berita Acara -->
             <BeritaAcaraCard
               v-if="showBeritaAcara"
               :usulan="usulan"
               :generating="actionLoading"
               @generate="onGenerateBA"
             />
-
-            <!-- Status info cards (read-only) -->
-            <div
-              v-if="usulan.status === 'MENUNGGU_VERIFIKASI_ATASAN' && !canVerify"
-              class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
-                    {{ isCurrentTurn ? 'Menunggu Verifikasi Anda' : 'Menunggu Verifikasi Atasan Lain' }}
-                  </h3>
-                    <p class="text-sm text-yellow-600 dark:text-yellow-400">
-                      <template v-if="isCurrentTurn">
-                        Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi Anda.
-                      </template>
-                      <template v-else>
-                        Usulan dari {{ usulan.sekretarisName }} sedang menunggu verifikasi atasan tahap {{ usulan.currentApprovalLevel }}.
-                        Akan tiba ke Anda setelah atasan sebelumnya menyetujui.
-                      </template>
-                    </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DITOLAK_ATASAN' || usulan.status === 'DITOLAK_VERIFIKASI_TERAKHIR'"
-              class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-x-circle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Usulan Ditolak</h3>
-                  <p class="text-sm text-red-600 dark:text-red-400">{{ usulan.rejectedNote ?? 'Tidak ada catatan' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DISETUJUI_VERIFIKASI_TERAKHIR'"
-              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Verifikasi Selesai</h3>
-                  <p class="text-sm text-green-600 dark:text-green-400">
-                    Usulan lolos verifikasi. Sekretaris dapat mengirim ke Unit Tata Naskah.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DISETUJUI_VERIFIKASI_TERAKHIR'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Kirim Usul Pindah Arsip Inaktif</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Kirim usulan ke Unit Tata Naskah untuk proses selanjutnya.
-              </p>
-              <button
-                @click="onKirimUsulPindah"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim Usul Pindah
-              </button>
-            </div>
-
-            <div
-              v-if="usulan.status === 'USUL_PINDAH_DIKIRIM'"
-              class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-send" class="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Usul Pindah Arsip Inaktif Dikirim</h3>
-                  <p class="text-sm text-purple-600 dark:text-purple-400">
-                    Usulan sudah dikirim. Siapkan Berkas Fisik dan Berita Acara Serah Terima untuk penyelesaian.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- USUL_PINDAH_DIKIRIM: Tombol Lanjutkan Siapkan Berkas Fisik -->
-            <div
-              v-if="usulan.status === 'USUL_PINDAH_DIKIRIM'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Siapkan Berkas Fisik</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Upload Berkas Fisik dan Berita Acara Serah Terima untuk menyelesaikan usulan.
-              </p>
-              <button
-                @click="onSiapkanBerkasFisik"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-file-check" class="w-4 h-4 mr-1 inline" /> Lanjutkan Siapkan Berkas Fisik
-              </button>
-            </div>
-
-            <!-- SIAPKAN_BERKAS_FISIK: Upload form + Selesaikan -->
-            <div
-              v-if="usulan.status === 'SIAPKAN_BERKAS_FISIK'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Upload Berkas Fisik</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Upload Berkas Fisik dan Berita Acara Serah Terima, lalu klik Selesaikan Proses.
-              </p>
-              <div class="space-y-4">
-                <!-- Berkas Fisik -->
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Berkas Fisik (PDF)</label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    @change="onUploadBerkasFisik"
-                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#457fb6] file:text-white hover:file:bg-[#3a6d9c]"
-                  />
-                  <p v-if="berkasFisikUrl" class="text-xs text-green-600 mt-1">✓ {{ berkasFisikUrl }}</p>
-                </div>
-                <!-- Berita Acara Serah Terima -->
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Berita Acara Serah Terima (PDF)</label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    @change="onUploadBeritaAcara"
-                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#457fb6] file:text-white hover:file:bg-[#3a6d9c]"
-                  />
-                  <p v-if="beritaAcaraUrl" class="text-xs text-green-600 mt-1">✓ {{ beritaAcaraUrl }}</p>
-                </div>
-                <!-- Tombol Selesaikan -->
-                <button
-                  @click="onSelesaikan"
-                  :disabled="actionLoading"
-                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-                >
-                  <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Selesaikan Proses
-                </button>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'SIAPKAN_BERKAS_FISIK' || usulan.status === 'SELESAI'"
-              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">
-                    {{ usulan.status === 'SELESAI' ? 'Usulan Selesai' : 'Berkas Fisik Disiapkan' }}
-                  </h3>
-                  <p class="text-sm text-green-600 dark:text-green-400">
-                    {{ usulan.status === 'SELESAI' ? 'Proses pemindahan arsip selesai.' : 'Sekretaris sedang menyiapkan berkas fisik.' }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DIKIRIM'"
-              class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-send" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Usulan Dikirim</h3>
-                  <p class="text-sm text-blue-600 dark:text-blue-400">
-                    Usulan telah dikirim ke Unit Tata Naskah untuk verifikasi berkas fisik.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- DIKIRIM: Card Setujui Penerimaan untuk Atasan Managerial TU -->
-            <div
-              v-if="usulan.status === 'DIKIRIM' && canApproveReceipt"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Setujui Penerimaan</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Usulan dari {{ usulan.sekretarisName }} menunggu penerimaan dari Atasan Managerial TU.
-                Setujui untuk menyelesaikan proses pemindahan arsip.
-              </p>
-              <button
-                @click="onApproveReceipt"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Setujui Penerimaan
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -289,11 +174,11 @@ import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
 import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vue';
-import VerifikasiCard from '~/components/verifikasi-usulan/VerifikasiCard.vue';
-import FinalVerifikasiCard from '~/components/verifikasi-usulan/FinalVerifikasiCard.vue';
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import BeritaAcaraCard from '~/components/verifikasi-usulan/BeritaAcaraCard.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
 import type { VerifikasiUsulanItem, JenisUsulan } from '~/types/verifikasi-usulan';
+import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -320,6 +205,56 @@ const isRejectModalOpen = ref(false);
 const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
+const catatanVerifikasi = ref('');
+
+/** Mapping usulan ke format TransferActiveToInactive untuk TimelineRiwayat. */
+const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
+  id: usulan.value?.id ?? '',
+  nomorUsulan: usulan.value?.nomorUsulan ?? '',
+  tanggalUsulan: usulan.value?.tanggalUsulan ?? '',
+  sekretarisPersnum: usulan.value?.sekretarisPersnum ?? 0,
+  sekretarisName: usulan.value?.sekretarisName ?? '',
+  divisiId: null,
+  divisiName: null,
+  atasanPersnum: usulan.value?.atasanPersnum ?? 0,
+  atasanName: usulan.value?.atasanName ?? '',
+  atasanPositionId: null,
+  currentApprovalLevel: usulan.value?.currentApprovalLevel ?? 1,
+  totalApprovalLevels: usulan.value?.totalApprovalLevels ?? 1,
+  tuPersnum: null,
+  tuName: null,
+  atasanTuPersnum: null,
+  atasanTuName: null,
+  arsipId: usulan.value?.arsipId ?? '',
+  arsipPerihal: usulan.value?.arsipPerihal ?? '',
+  arsipKode: usulan.value?.arsipKode ?? null,
+  tanggalRetensiAktifHabis: usulan.value?.tanggalRetensiAktifHabis ?? null,
+  arsipIds: null,
+  keterangan: usulan.value?.keterangan ?? null,
+  status: usulan.value?.status as any ?? 'DRAFT',
+  rejectedNote: usulan.value?.rejectedNote ?? null,
+  verifyNote: usulan.value?.verifyNote ?? null,
+  approvedBy: null,
+  approvedAt: usulan.value?.approvedAt ?? null,
+  finalVerifiedBy: null,
+  finalVerifiedAt: usulan.value?.finalVerifiedAt ?? null,
+  finalVerifyNote: null,
+  beritaAcaraUrl: usulan.value?.beritaAcaraUrl ?? null,
+  beritaAcaraNomor: usulan.value?.beritaAcaraNomor ?? null,
+  tanggalDikirim: null,
+  physicalChecklist: null,
+  physicalVerifiedBy: null,
+  physicalVerifiedAt: null,
+  physicalVerificationNote: null,
+  tuApprovedBy: null,
+  tuApprovedAt: null,
+  tuFinalApprovedBy: null,
+  tuFinalApprovedAt: null,
+  receivedAt: null,
+  arrangedAt: null,
+  createdAt: usulan.value?.createdAt ?? '',
+  updatedAt: usulan.value?.updatedAt ?? '',
+}));
 
 const jenis = computed<JenisUsulan>(() => {
   const j = route.query.jenis as string;
@@ -416,7 +351,7 @@ const act = async (fn: () => Promise<any>) => {
 
 const onApprove = (catatan: string) => {
   if (!confirm('Setujui verifikasi usulan ini?')) return;
-  act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
+  act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan || catatanVerifikasi.value }));
 };
 
 const onFinalVerify = (catatan: string) => {
