@@ -96,21 +96,24 @@ export const useVerifikasiUsulan = () => {
       const jenis = params.jenis;
       delete params.jenis;
 
+      // Pagination dilakukan di frontend (setelah filter DRAFT)
+      const page = params.page ?? 1;
+      const limit = params.limit ?? 10;
+      delete params.page;
+      delete params.limit;
+
       const tasks: Promise<{ data: any[]; meta?: any; jenis: JenisUsulan }>[] = [];
 
       // Hanya panggil endpoint Pemindahan Arsip Aktif ke Inaktif
-      // (Sekretaris hanya menggunakan fitur ini, bukan transfer-inactive-file)
       if (!jenis || jenis === 'aktif_ke_inaktif') {
         tasks.push(
           apiGet('/transfer-active-to-inactive', { params }, { skipCache: true })
             .then((r: any) => {
-              console.log('[useVerifikasiUsulan] Raw response aktif_ke_inaktif:', r);
               const data = Array.isArray(r) ? r : (r?.data ?? []);
-              const meta = Array.isArray(r) ? { total: r.length } : r?.meta;
-              return { data, meta, jenis: 'aktif_ke_inaktif' as JenisUsulan };
+              return { data, meta: null, jenis: 'aktif_ke_inaktif' as JenisUsulan };
             })
             .catch((e) => {
-              console.error('[useVerifikasiUsulan] Error aktif_ke_inaktif:', e);
+              console.error('[useVerifikasiUsulan] Error:', e);
               return { data: [], meta: null, jenis: 'aktif_ke_inaktif' as JenisUsulan };
             })
         );
@@ -118,36 +121,33 @@ export const useVerifikasiUsulan = () => {
 
       const results = await Promise.all(tasks);
 
-      // Debug: log hasil dari setiap endpoint
-      for (const r of results) {
-        console.log(
-          `[useVerifikasiUsulan] Endpoint ${r.jenis}: ${r.data.length} items, meta:`,
-          r.meta
-        );
-        if (r.data.length > 0) {
-          console.log(`[useVerifikasiUsulan] Sample ${r.jenis} item:`, r.data[0]);
-        }
-      }
-
-      // Gabungkan dan normalisasi
+      // Gabungkan dan normalisasi, filter DRAFT
       const combined: VerifikasiUsulanItem[] = [];
-      let totalAll = 0;
       for (const r of results) {
         for (const raw of r.data) {
           const item = normalize(raw, r.jenis);
-          // Atasan managerial tidak melihat usulan dengan status DRAFT
-          // (DRAFT hanya ada di sekretaris, belum dikirim)
           if (item.status === 'DRAFT') continue;
           combined.push(item);
         }
-        totalAll += r.meta?.total ?? r.data.length;
       }
 
-      // Enrich: cek isCurrentTurn untuk setiap item yang sedang menunggu verifikasi
+      // Sort by createdAt DESC
+      combined.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      // Pagination di frontend
+      const totalAll = combined.length;
+      const startIdx = (page - 1) * limit;
+      const pagedData = combined.slice(startIdx, startIdx + limit);
+
+      // Enrich: cek isCurrentTurn
       const userPersnum = (user as any)?.persnum;
       if (userPersnum) {
         await Promise.all(
-          combined.map(async (item) => {
+          pagedData.map(async (item) => {
             if (
               item.jenis === 'aktif_ke_inaktif' &&
               (item.status === 'MENUNGGU_VERIFIKASI_ATASAN' || item.status === 'DISETUJUI_ATASAN')
@@ -160,24 +160,14 @@ export const useVerifikasiUsulan = () => {
         );
       }
 
-      console.log('[useVerifikasiUsulan] Combined:', combined.length, 'items, total:', totalAll);
-
-      // Sort by createdAt DESC
-      combined.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA;
-      });
-
-      list.value = combined;
+      list.value = pagedData;
       meta.value = {
-        page: params.page ?? 1,
-        limit: params.limit ?? 10,
+        page,
+        limit,
         total: totalAll,
-        totalPages: Math.ceil(totalAll / (params.limit ?? 10)),
+        totalPages: Math.ceil(totalAll / limit),
       };
-      console.log('[useVerifikasiUsulan] list.value set to:', list.value.length, 'items');
-      return { data: combined, meta: meta.value };
+      return { data: pagedData, meta: meta.value };
     } catch (e: any) {
       console.error('[useVerifikasiUsulan] fetchList error:', e);
       error.value = e?.message || 'Gagal memuat data';
@@ -186,7 +176,6 @@ export const useVerifikasiUsulan = () => {
       throw e;
     } finally {
       loading.value = false;
-      console.log('[useVerifikasiUsulan] loading set to false, list:', list.value.length, 'items');
     }
   };
 
