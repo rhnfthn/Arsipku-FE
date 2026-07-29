@@ -138,7 +138,8 @@ export const useVerifikasiUsulan = () => {
           combined.map(async (item) => {
             if (
               item.jenis === 'aktif_ke_inaktif' &&
-              item.status === 'MENUNGGU_VERIFIKASI_ATASAN'
+              (item.status === 'MENUNGGU_VERIFIKASI_ATASAN' ||
+               item.status === 'DISETUJUI_ATASAN')
             ) {
               item.isCurrentTurn = await checkIsCurrentTurn(item.id, item.jenis);
             } else {

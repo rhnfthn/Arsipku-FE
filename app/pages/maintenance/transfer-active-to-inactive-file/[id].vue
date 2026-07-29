@@ -46,9 +46,11 @@
           </div>
         </div>
 
-        <!-- Right: Card Aksi (4/12, sticky) -->
+        <!-- Right: Timeline + Card Aksi (4/12, sticky) -->
         <div class="lg:col-span-4">
-          <div class="lg:sticky lg:top-5 space-y-5">
+          <div class="lg:sticky lg:top-4 space-y-5">
+            <!-- Timeline Riwayat -->
+            <TimelineRiwayat :item="item" />
             <!-- DRAFT: Edit + Kirim -->
             <div
               v-if="item.status === 'DRAFT'"
@@ -281,6 +283,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue';
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
