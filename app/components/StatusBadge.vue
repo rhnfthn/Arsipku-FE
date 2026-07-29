@@ -18,10 +18,11 @@ import { computed } from 'vue';
  *
  * Mapping status (untuk Arsip Dinamis):
  * - draft                → Abu-abu
- * - aktif / active       → Hijau (primary)
- * - menunggu_verifikasi  → Kuning (warning)
- * - ditolak              → Merah (error)
- * - closed_retensi_aktif → Hijau (success)
+ * - aktif / active       → Hijau
+ * - menunggu_verifikasi  → Kuning
+ * - ditolak              → Merah
+ * - closed_retensi_aktif → Biru
+ * Warna berkas-status disamakan dengan badge di tabel Berkas Saya (berkas-saya.vue STATUS_STYLE).
  */
 
 const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -32,10 +33,10 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-gray-400',
   },
   aktif: {
-    label: 'Aktif',
-    bg: 'bg-primary-50 dark:bg-primary-900/30',
-    text: 'text-primary-700 dark:text-primary-400',
-    dot: 'bg-primary-500',
+    label: 'Terbuka',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
   },
   active: {
     label: 'Aktif',
@@ -44,22 +45,22 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-emerald-500',
   },
   menunggu_verifikasi: {
-    label: 'Menunggu Verifikasi',
-    bg: 'bg-warning-50 dark:bg-warning-900/30',
-    text: 'text-warning-700 dark:text-warning-400',
-    dot: 'bg-warning-500',
+    label: 'Menunggu Verifikasi Managerial',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
   },
   ditolak: {
-    label: 'Ditolak',
-    bg: 'bg-error-50 dark:bg-error-900/30',
-    text: 'text-error-700 dark:text-error-400',
-    dot: 'bg-error-500',
+    label: 'Verifikasi Ditolak Managerial',
+    bg: 'bg-red-100 dark:bg-red-900/30',
+    text: 'text-red-600 dark:text-red-400',
+    dot: 'bg-red-600',
   },
   closed_retensi_aktif: {
-    label: 'Closed — Retensi Aktif',
-    bg: 'bg-success-50 dark:bg-success-900/30',
-    text: 'text-success-700 dark:text-success-400',
-    dot: 'bg-success-500',
+    label: 'Tertutup',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    text: 'text-blue-600 dark:text-blue-400',
+    dot: 'bg-blue-600',
   },
 };
 
