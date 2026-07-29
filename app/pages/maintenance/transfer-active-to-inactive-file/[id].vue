@@ -241,6 +241,103 @@
         <div class="lg:col-span-4">
           <div class="lg:sticky lg:top-4 space-y-5">
             <TimelineRiwayat :item="item" />
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Not Found -->
+    <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
+      Usulan tidak ditemukan
+    </div>
+
+    <!-- Edit Modal -->
+    <CreateTransferModal
+      v-model="isEditModalOpen"
+      :edit-data="item"
+      @updated="onUpdated"
+    />
+
+    <!-- Resubmit Confirm Modal -->
+    <div v-if="isResubmitModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50" @click="isResubmitModalOpen = false"></div>
+      <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden z-10">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ajukan Kembali Usulan</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Usulan akan diajukan ulang ke Atasan Managerial untuk verifikasi.
+          </p>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+          <button @click="isResubmitModalOpen = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Batal</button>
+          <button @click="confirmResubmit" :disabled="actionLoading" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50">
+            {{ actionLoading ? 'Mengirim...' : 'Ajukan Kembali' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
+import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue';
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
+import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
+import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
+
+definePageMeta({ middleware: ['auth'] });
+
+const route = useRoute();
+const {
+  fetchDetail,
+  send,
+  resubmit,
+  dispatch,
+  generateBeritaAcara,
+  siapkanBerkasFisik,
+  selesaikanUsulan,
+} = useTransferActiveToInactive();
+
+const item = ref<TransferActiveToInactive | null>(null);
+const loading = ref(true);
+const actionLoading = ref(false);
+const isEditModalOpen = ref(false);
+const isResubmitModalOpen = ref(false);
+
+const items = computed(() => [
+  { label: 'Beranda', to: '/' },
+  { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
+  { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/transfer-active-to-inactive-file/${route.params.id}` },
+]);
+
+const showBeritaAcara = computed(() => {
+  if (!item.value) return false;
+  return ['DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(item.value.status);
+});
+
+const loadDetail = async () => {
+  loading.value = true;
+  try {
+    item.value = await fetchDetail(route.params.id as string);
+  } catch (e) {
+    console.error('Gagal memuat detail:', e);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const refresh = async () => {
+  item.value = await fetchDetail(route.params.id as string);
+};
+
+const act = async (fn: () => Promise<any>) => {
+  actionLoading.value = true;
+  try {
     await fn();
     await refresh();
   } catch (e) {
