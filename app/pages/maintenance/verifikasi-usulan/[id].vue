@@ -171,7 +171,7 @@
           </div>
 
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canApproveReceipt || canKirimTU" class="flex gap-2">
+          <div v-if="canVerify || canKirimTU" class="flex gap-2">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -187,14 +187,6 @@
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui
-            </button>
-            <button
-              v-if="canApproveReceipt"
-              @click="onApproveReceipt"
-              :disabled="actionLoading"
-              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
-            >
-              <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Setujui Penerimaan
             </button>
             <!-- Tombol Kirim ke TU untuk Atasan Managerial saat verifikasi terakhir selesai -->
             <button
