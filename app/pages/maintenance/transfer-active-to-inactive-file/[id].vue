@@ -172,14 +172,14 @@
             <!-- DIKIRIM / SELESAI -->
             <div
               v-if="item.status === 'DIKIRIM'"
-              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
+              class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5"
             >
               <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                <UIcon name="i-lucide-clock" class="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
                 <div>
-                  <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Usulan Dikirim</h3>
-                  <p class="text-sm text-green-600 dark:text-green-400">
-                    Usulan dikirim ke Unit Tata Naskah.
+                  <h3 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Menunggu Penerimaan</h3>
+                  <p class="text-sm text-purple-600 dark:text-purple-400">
+                    Usulan dikirim ke Unit Tata Naskah. Menunggu penerimaan dari Atasan Managerial TU.
                   </p>
                 </div>
               </div>
@@ -203,21 +203,21 @@
               </button>
             </div>
 
-            <!-- SIAPKAN_BERKAS_FISIK: Upload file + Selesai -->
+            <!-- SIAPKAN_BERKAS_FISIK: Upload file + Kirim ke TU -->
             <div
               v-if="item.status === 'SIAPKAN_BERKAS_FISIK'"
               class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
             >
               <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Upload Berkas Fisik</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Upload berkas fisik dan Berita Acara Serah Terima, lalu klik Selesai.
+                Upload berkas fisik dan Berita Acara Serah Terima, lalu kirim ke Unit Tata Naskah.
               </p>
               <button
                 @click="onSelesai"
                 :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
               >
-                <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Selesai
+                <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
               </button>
             </div>
 
