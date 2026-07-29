@@ -134,7 +134,11 @@ export const useVerifikasiUsulan = () => {
       let totalAll = 0;
       for (const r of results) {
         for (const raw of r.data) {
-          combined.push(normalize(raw, r.jenis));
+          const item = normalize(raw, r.jenis);
+          // Atasan managerial tidak melihat usulan dengan status DRAFT
+          // (DRAFT hanya ada di sekretaris, belum dikirim)
+          if (item.status === 'DRAFT') continue;
+          combined.push(item);
         }
         totalAll += r.meta?.total ?? r.data.length;
       }
