@@ -40,6 +40,7 @@ const nomorCounts = ref<{
   user?: Record<string, any>;
 }>({});
 const naskahDinasVerifikatorWaitingCount = ref<number>(0);
+const arsipPersetujuanWaitingCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
 
@@ -142,6 +143,11 @@ const connectSocket = async (): Promise<void> => {
           payload.naskahDinasVerifikatorWaitingCount
         );
       }
+      if (payload.arsipPersetujuanWaitingCount != null) {
+        arsipPersetujuanWaitingCount.value = Number(
+          payload.arsipPersetujuanWaitingCount
+        );
+      }
       if (payload.nomorCounts && typeof payload.nomorCounts === 'object') {
         nomorCounts.value = { ...nomorCounts.value, ...payload.nomorCounts };
       }
@@ -177,6 +183,12 @@ const connectSocket = async (): Promise<void> => {
     socket.on('naskah-dinas:verifikator-count', (payload: any) => {
       if (payload && typeof payload.waiting === 'number') {
         naskahDinasVerifikatorWaitingCount.value = payload.waiting;
+      }
+    });
+
+    socket.on('arsip:persetujuan-count', (payload: any) => {
+      if (payload && typeof payload.waiting === 'number') {
+        arsipPersetujuanWaitingCount.value = payload.waiting;
       }
     });
 
@@ -250,6 +262,7 @@ export function useRealtimeSocket() {
     bsreAlert,
     nomorCounts,
     naskahDinasVerifikatorWaitingCount,
+    arsipPersetujuanWaitingCount,
     isConnected,
     hasBsreAlert,
     // Socket reference (for custom event listeners)

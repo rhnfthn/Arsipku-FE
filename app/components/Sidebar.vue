@@ -367,6 +367,7 @@ const {
   bsreAlert: rtBsreAlert,
   nomorCounts: rtNomorCounts,
   naskahDinasVerifikatorWaitingCount: rtVerifikatorCount,
+  arsipPersetujuanWaitingCount: rtArsipPersetujuanCount,
   isConnected: rtConnected,
   init: rtInit,
   destroy: rtDestroy,
@@ -919,7 +920,8 @@ const adminMenuLaporan = computed(() => [
   },
 ]);
 
-// Cek apakah user adalah Managerial (EVP/VP/AVP) berdasarkan positionText.
+// ─── Menu Kelola (Arsip Dinamis) ─────────────────────────────────────────────
+
 const isManagerialPosition = computed(() => {
   const ps = activePositionStatus.value;
   if (ps === 'SE' || ps === 'VI') return false;
@@ -950,6 +952,7 @@ const adminMenuKelola = computed(() => {
       to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
       icon: 'i-lucide-file-check',
       permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
     {
       label: 'Usulan Akses',
@@ -1214,7 +1217,7 @@ const apps = computed(() => {
         label: 'Kelola',
         icon: 'i-lucide-archive',
         menus: filterMenuByPermission(adminMenuKelola.value),
-        hasNotification: false,
+        hasNotification: rtArsipPersetujuanCount.value > 0,
       },
       {
         id: 'admin-utilitas',
