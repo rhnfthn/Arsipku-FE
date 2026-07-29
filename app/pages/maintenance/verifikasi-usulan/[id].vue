@@ -343,10 +343,13 @@ const isOwnUsulan = computed(() => {
   return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
 });
 
-/** Bisa verifikasi hanya jika status MENUNGGU_VERIFIKASI_ATASAN, bukan usulan sendiri, DAN sedang giliran. */
+/** Bisa verifikasi hanya jika status Menunggu Persetujuan/Verifikasi, bukan usulan sendiri, DAN sedang giliran. */
 const canVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
-  if (usulan.value.status !== 'MENUNGGU_VERIFIKASI_ATASAN') return false;
+  if (
+    usulan.value.status !== 'MENUNGGU_VERIFIKASI_ATASAN' &&
+    usulan.value.status !== 'DISETUJUI_ATASAN'
+  ) return false;
   return isCurrentTurn.value;
 });
 
@@ -370,7 +373,8 @@ const loadDetail = async () => {
     if (
       usulan.value &&
       jenis.value === 'aktif_ke_inaktif' &&
-      usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN'
+      (usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN' ||
+       usulan.value.status === 'DISETUJUI_ATASAN')
     ) {
       isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
     } else {
@@ -388,7 +392,8 @@ const refresh = async () => {
   if (
     usulan.value &&
     jenis.value === 'aktif_ke_inaktif' &&
-    usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN'
+    (usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN' ||
+     usulan.value.status === 'DISETUJUI_ATASAN')
   ) {
     isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
   } else {
