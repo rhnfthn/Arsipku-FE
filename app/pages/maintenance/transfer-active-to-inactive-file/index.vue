@@ -68,30 +68,30 @@
     <!-- Tabel Gabungan -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full border-collapse text-sm">
+        <table class="w-full border-collapse text-[13px] table-fixed">
           <thead class="bg-[#457fb6] text-white text-left">
             <tr>
-              <th class="px-4 py-3 font-semibold">No</th>
-              <th class="px-4 py-3 font-semibold">Kode Berkas</th>
-              <th class="px-4 py-3 font-semibold">Nama Berkas / Perihal</th>
-              <th class="px-4 py-3 font-semibold">Klasifikasi</th>
-              <th class="px-4 py-3 font-semibold">Retensi Aktif Habis</th>
-              <th class="px-4 py-3 font-semibold">Atasan Managerial</th>
-              <th class="px-4 py-3 font-semibold">Status</th>
-              <th class="px-4 py-3 font-semibold">Tanggal</th>
-              <th class="px-4 py-3 font-semibold text-center">Aksi</th>
+              <th class="px-3 py-2.5 font-semibold w-[5%]">No</th>
+              <th class="px-3 py-2.5 font-semibold w-[15%]">Kode / No. Usulan</th>
+              <th class="px-3 py-2.5 font-semibold w-[24%]">Nama Berkas / Perihal</th>
+              <th class="px-3 py-2.5 font-semibold w-[14%] hidden lg:table-cell">Klasifikasi</th>
+              <th class="px-3 py-2.5 font-semibold w-[12%]">Retensi Habis</th>
+              <th class="px-3 py-2.5 font-semibold w-[14%] hidden md:table-cell">Atasan</th>
+              <th class="px-3 py-2.5 font-semibold w-[12%]">Status</th>
+              <th class="px-3 py-2.5 font-semibold w-[10%] hidden xl:table-cell">Tanggal</th>
+              <th class="px-3 py-2.5 font-semibold text-center w-[8%]">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <!-- Loading -->
             <tr v-if="loading">
-              <td colspan="9" class="px-4 py-6 text-center text-sm text-gray-400">
+              <td colspan="9" class="px-3 py-6 text-center text-sm text-gray-400">
                 <UIcon name="i-lucide-loader-2" class="w-5 h-5 animate-spin inline mr-1" /> Memuat data...
               </td>
             </tr>
             <!-- Empty -->
             <tr v-else-if="gabunganList.length === 0">
-              <td colspan="9" class="px-4 py-10 text-center text-sm text-gray-400">
+              <td colspan="9" class="px-3 py-10 text-center text-sm text-gray-400">
                 <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>Tidak ada data</p>
                 <p class="text-xs mt-1">Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini.</p>
@@ -103,38 +103,46 @@
               :key="row.id"
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors"
             >
-              <td class="px-4 py-3 text-gray-500">{{ idx + 1 }}</td>
-              <td class="px-4 py-3 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                {{ row.kodeBerkas ?? '-' }}
-                <span v-if="row.isUsulan" class="block text-xs text-gray-400">{{ row.nomorUsulan }}</span>
+              <td class="px-3 py-2 text-gray-500">{{ idx + 1 }}</td>
+              <td class="px-3 py-2 font-medium text-gray-700 dark:text-gray-200">
+                <div class="truncate" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
+                <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
               </td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.klasifikasi ?? '-' }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
-                <template v-if="row.isUsulan">{{ row.atasanName ?? '-' }}</template>
-                <template v-else>-</template>
+              <td class="px-3 py-2 text-gray-600 dark:text-gray-300">
+                <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
               </td>
-              <td class="px-4 py-3">
-                <span :class="statusBadgeClass(row.status)">{{ statusLabel(row.status) }}</span>
+              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell">
+                <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
               </td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggal) }}</td>
-              <td class="px-4 py-3 text-center">
+              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
+              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden md:table-cell">
+                <div class="truncate" :title="row.atasanName ?? '-'">
+                  <template v-if="row.isUsulan">{{ row.atasanName ?? '-' }}</template>
+                  <template v-else>-</template>
+                </div>
+              </td>
+              <td class="px-3 py-2">
+                <span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span>
+              </td>
+              <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap hidden xl:table-cell">{{ formatDate(row.tanggal) }}</td>
+              <td class="px-3 py-2 text-center">
                 <!-- Arsip belum jadi usulan → tombol Pindahkan -->
                 <button
                   v-if="!row.isUsulan && isSekretaris"
                   @click="openCreateModalWithArsip(row)"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
+                  title="Pindahkan"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                 >
-                  <UIcon name="i-lucide-file-up" class="w-3.5 h-3.5" /> Pindahkan
+                  <UIcon name="i-lucide-file-up" class="w-4 h-4" />
                 </button>
                 <!-- Usulan sudah dibuat → tombol Detail -->
                 <button
                   v-else-if="row.isUsulan"
                   @click="openDetail(row)"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
+                  title="Detail"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                 >
-                  <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5" /> Detail
+                  <UIcon name="i-heroicons-eye" class="w-4 h-4" />
                 </button>
               </td>
             </tr>
