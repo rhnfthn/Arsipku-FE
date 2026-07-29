@@ -70,6 +70,109 @@
             @generate="onGenerateBA"
           />
 
+          <!-- ─── Card: Daftar Isi ─── -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
+              <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
+              </button>
+            </div>
+            <div id="daftar-isi-print" class="text-sm">
+              <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ usulan.nomorUsulan }}</p>
+              <table class="w-full border-collapse text-xs">
+                <thead>
+                  <tr class="border-b-2 border-gray-300 dark:border-gray-500">
+                    <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
+                    <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
+                    <td class="text-center py-2 px-2">
+                      <input type="checkbox" class="w-4 h-4 text-[#457fb6] border-gray-300 rounded" />
+                    </td>
+                    <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
+                    <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
+                  </tr>
+                  <tr v-if="daftarIsi.length === 0">
+                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ─── Card: Berita Acara Serah Terima ─── -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
+              <div class="flex gap-2">
+                <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
+                </button>
+                <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
+                  <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
+                </button>
+              </div>
+            </div>
+            <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
+              <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
+              <p class="text-center text-xs mb-3">Nomor: {{ usulan.nomorUsulan }}</p>
+              <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(usulan.tanggalUsulan) }}</p>
+
+              <p class="text-xs leading-relaxed mb-4">
+                Pada hari ini {{ hariIni }} tanggal {{ formatTanggalLengkap(usulan.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
+              </p>
+
+              <div class="space-y-3 mb-4 text-xs">
+                <div>
+                  <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
+                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
+                  <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
+                </div>
+                <div>
+                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
+                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                  <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
+                </div>
+              </div>
+
+              <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
+              <p class="text-xs leading-relaxed mb-3">
+                Pihak pertama telah menyerahkan kepada pihak kedua berupa:
+              </p>
+              <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
+                <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">
+                  {{ a.kode ?? '-' }} — {{ a.perihal }}
+                </li>
+                <li v-if="beritaAcaraData.keterangan">{{ beritaAcaraData.keterangan }}</li>
+              </ol>
+
+              <p class="text-xs leading-relaxed mb-6">
+                Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
+              </p>
+
+              <p class="text-xs text-right mb-6">{{ kotaIni }}, {{ formatTanggalLengkap(usulan.tanggalUsulan) }}</p>
+
+              <div class="grid grid-cols-2 gap-8 text-xs">
+                <div class="text-center">
+                  <p class="font-semibold mb-16">Pihak Pertama</p>
+                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
+                  <p class="text-gray-500">{{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="font-semibold mb-16">Pihak Kedua</p>
+                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
+                  <p class="text-gray-500">{{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Tombol Aksi di bawah card verifikasi -->
           <div v-if="canVerify || canApproveReceipt" class="flex gap-2">
             <button
@@ -172,12 +275,14 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
+import { useApi } from '~/composables/useApi';
 import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import BeritaAcaraCard from '~/components/verifikasi-usulan/BeritaAcaraCard.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
 import type { VerifikasiUsulanItem, JenisUsulan } from '~/types/verifikasi-usulan';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
+import { formatDate } from '~/utils/transfer-status';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -205,6 +310,78 @@ const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
 const catatanVerifikasi = ref('');
+const daftarIsi = ref<any[]>([]);
+const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
+
+const { apiGet } = useApi();
+
+const hariIni = computed(() => {
+  const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  return hari[new Date().getDay()];
+});
+const kotaIni = 'Jakarta';
+const formatTanggalLengkap = (d: string | Date | null): string => {
+  if (!d) return '-';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const loadDaftarIsi = async () => {
+  try {
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
+    daftarIsi.value = res?.data?.daftarIsi ?? [];
+  } catch { daftarIsi.value = []; }
+};
+const loadBeritaAcaraData = async () => {
+  try {
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true });
+    beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] };
+  } catch { beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] }; }
+};
+
+const printDaftarIsi = () => {
+  const el = document.getElementById('daftar-isi-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title><style>
+    body{font-family:Arial,sans-serif;padding:30px;color:#111}
+    .text-sm{font-size:13px}.text-xs{font-size:12px}.font-semibold{font-weight:600}
+    .mb-3{margin-bottom:12px}.text-gray-500{color:#6b7280}.text-gray-600{color:#4b5563}
+    .text-gray-700{color:#374151}.text-gray-400{color:#9ca3af}.text-center{text-align:center}
+    .italic{font-style:italic}.w-full{width:100%}.w-8{width:32px}.w-10{width:40px}
+    table{width:100%;border-collapse:collapse}
+    th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}
+    td{border-bottom:1px solid #f3f4f6;padding:8px}
+    .px-2{padding-left:8px;padding-right:8px}.py-2{padding-top:8px;padding-bottom:8px}
+    .py-4{padding-top:16px;padding-bottom:16px}input[type=checkbox]{width:16px;height:16px}p{margin:0}
+  </style></head><body>${el.innerHTML}</body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250);
+};
+const printBeritaAcara = () => {
+  const el = document.getElementById('berita-acara-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title><style>
+    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:40px;max-width:800px;margin:0 auto;color:#111}
+    .text-sm{font-size:13px}.text-xs{font-size:12px}.text-base{font-size:16px}
+    .text-center{text-align:center}.text-right{text-align:right}
+    .font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}
+    .mb-1{margin-bottom:4px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+    .mb-6{margin-bottom:24px}.mb-16{margin-bottom:64px}.space-y-3>*+*{margin-top:12px}
+    .space-y-1>*+*{margin-top:4px}.leading-relaxed{line-height:1.625}
+    .text-gray-500{color:#6b7280}.ml-2{margin-left:8px}
+    .grid{display:grid}.grid-cols-2{grid-template-columns:1fr 1fr}
+    .gap-8{gap:32px}.border-t{border-top:1px solid #9ca3af}.pt-1{padding-top:4px}
+    ol{padding-left:20px;margin:0}li{margin-bottom:4px}p{margin:0}
+  </style></head><body>${el.innerHTML}</body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250);
+};
+const downloadBeritaAcara = () => {
+  window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
+};
 
 /** Mapping usulan ke format TransferActiveToInactive untuk TimelineRiwayat. */
 const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
@@ -314,6 +491,7 @@ const loadDetail = async () => {
     } else {
       isCurrentTurn.value = false;
     }
+    await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -333,6 +511,7 @@ const refresh = async () => {
   } else {
     isCurrentTurn.value = false;
   }
+  await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
 };
 
 const act = async (fn: () => Promise<any>) => {
