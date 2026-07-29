@@ -12,9 +12,9 @@ export const verifikasiStatusBadge = (s: VerifikasiStatus): string => {
     MENUNGGU_VERIFIKASI_TERAKHIR:
       'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     DITOLAK_VERIFIKASI_TERAKHIR: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    // Menunggu Verifikasi (masuk TU) = biru
+    // Menunggu Verifikasi (verifikasi terakhir selesai) = biru
     DISETUJUI_VERIFIKASI_TERAKHIR:
-      'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK:
       'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
@@ -51,7 +51,7 @@ export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
     MENUNGGU_VERIFIKASI_TERAKHIR: 'Menunggu Persetujuan',
     DITOLAK_VERIFIKASI_TERAKHIR: 'Tolak',
     // Siap Kirim ke TU: verifikasi terakhir selesai, menunggu atasan kirim
-    DISETUJUI_VERIFIKASI_TERAKHIR: 'Siap Kirim ke TU',
+    DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
     BERKAS_FISIK_TIDAK_SESUAI: 'Tolak',
