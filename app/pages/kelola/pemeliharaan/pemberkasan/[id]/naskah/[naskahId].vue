@@ -14,140 +14,25 @@
       <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary-500" />
     </div>
 
-    <template v-else-if="naskah">
-      <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <UButton
-          color="primary"
-          variant="soft"
-          icon="i-lucide-arrow-left"
-          :to="`/kelola/pemeliharaan/pemberkasan/${berkasId}`"
-        >
-          Kembali ke Berkas
-        </UButton>
-        <UBadge
-          v-if="naskah.jenis_label"
-          color="primary"
-          variant="soft"
-          size="lg"
-          class="gap-1.5 rounded-full"
-        >
-          {{ naskah.jenis_label }}
-        </UBadge>
-      </div>
-
-      <div
-        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
-      >
-        <!-- Header metadata -->
-        <div class="border-b border-gray-100 px-5 py-5 dark:border-gray-700">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-              {{ naskah.perihal || 'Tanpa perihal' }}
-            </h1>
-            <span
-              v-if="naskah.label_ttd"
-              class="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
-            >
-              {{ naskah.label_ttd }}
-            </span>
-          </div>
-          <dl class="mt-4 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-            <div class="flex items-start gap-2 text-sm">
-              <span class="min-w-16 text-gray-500 dark:text-gray-400">Nomor</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ naskah.nomor || '-' }}</span>
-            </div>
-            <div class="flex items-start gap-2 text-sm">
-              <span class="min-w-16 text-gray-500 dark:text-gray-400">Tanggal</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatDate(naskah.tanggal) }}</span>
-            </div>
-            <div class="flex items-start gap-2 text-sm">
-              <span class="min-w-16 text-gray-500 dark:text-gray-400">Sifat</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ naskah.sifat || '-' }}</span>
-            </div>
-            <div class="flex items-start gap-2 text-sm">
-              <span class="min-w-16 text-gray-500 dark:text-gray-400">Status</span>
-              <span class="font-medium capitalize text-gray-900 dark:text-white">{{ naskah.status || '-' }}</span>
-            </div>
-          </dl>
-        </div>
-
-        <!-- Sirkulasi -->
-        <div class="grid grid-cols-1 gap-4 border-b border-gray-100 px-5 py-5 dark:border-gray-700 sm:grid-cols-3">
-          <div>
-            <p class="mb-1.5 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Pengirim</p>
-            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ sirkulasiLabel(naskah.pengirim) || '-' }}</p>
-          </div>
-          <div>
-            <p class="mb-1.5 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Kepada</p>
-            <ul class="space-y-0.5 text-sm text-gray-900 dark:text-white">
-              <li v-for="p in recipientList(naskah.penerima, naskah.penerima_grup)" :key="p.key">
-                {{ p.label }}
-              </li>
-              <li v-if="!recipientList(naskah.penerima, naskah.penerima_grup).length">-</li>
-            </ul>
-          </div>
-          <div>
-            <p class="mb-1.5 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Tembusan</p>
-            <ul class="space-y-0.5 text-sm text-gray-900 dark:text-white">
-              <li v-for="t in recipientList(naskah.tembusan, naskah.tembusan_grup)" :key="t.key">
-                {{ t.label }}
-              </li>
-              <li v-if="!recipientList(naskah.tembusan, naskah.tembusan_grup).length">-</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Disposisi (jika DI) -->
+    <template v-else-if="details.length">
+      <div class="space-y-4">
         <div
-          v-if="naskah.detail_disposisi"
-          class="border-b border-gray-100 px-5 py-5 dark:border-gray-700"
+          v-for="(detail, index) in details"
+          :key="detail.id || index"
+          :id="`card-${detail.id || index}`"
         >
-          <p class="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Disposisi</p>
-          <p class="whitespace-pre-line text-sm text-gray-900 dark:text-white">
-            {{ naskah.detail_disposisi.disposisi || '-' }}
-          </p>
-          <p v-if="naskah.detail_disposisi.catatan" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            <span class="font-medium">Catatan:</span> {{ naskah.detail_disposisi.catatan }}
-          </p>
-        </div>
-
-        <!-- Konten -->
-        <div class="px-5 py-5">
-          <p class="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Isi Naskah</p>
-          <div
-            class="prose-naskah max-w-none text-sm leading-relaxed text-gray-800 dark:text-gray-200"
-            v-html="naskah.konten || '<p class=\'text-gray-400\'>Naskah tidak memiliki konten.</p>'"
+          <DetailNaskah
+            context="inbox"
+            read-only
+            :data="detail"
+            :is-head="index === 0"
+            :collapsed="isCardCollapsed(detail.id, index)"
+            :user-position-id="positionId"
+            @back="goBack"
+            @preview="openDocumentPreview($event, detail.perihal || 'Naskah')"
+            @preview-file="openPreviewFile"
+            @toggle-collapse="toggleCardCollapse(detail.id, index)"
           />
-        </div>
-
-        <!-- Lampiran -->
-        <div
-          v-if="naskah.lampiran_files?.length || naskah.final_pdf"
-          class="border-t border-gray-100 px-5 py-5 dark:border-gray-700"
-        >
-          <p class="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Lampiran & Dokumen</p>
-          <ul class="space-y-2">
-            <li v-if="naskah.final_pdf">
-              <button
-                type="button"
-                class="flex items-center gap-2 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
-                @click="openDocumentPreview(naskah.final_pdf, naskah.perihal || 'Naskah final')"
-              >
-                <UIcon name="i-lucide-file-text" class="size-4" />
-                Naskah final (PDF)
-              </button>
-            </li>
-            <li v-for="file in naskah.lampiran_files" :key="file.id">
-              <button
-                type="button"
-                class="flex items-center gap-2 text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
-                @click="openDocumentPreview(file.file_pdf, file.file_name)"
-              >
-                <UIcon name="i-lucide-paperclip" class="size-4" />
-                {{ file.file_name || 'Lampiran' }}
-              </button>
-            </li>
-          </ul>
         </div>
       </div>
     </template>
@@ -182,51 +67,109 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import DetailNaskah from '@/components/DetailNaskah.vue';
 
 definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
+const router = useRouter();
+const { user } = useAuth();
 const { getNaskahDetailInBerkas } = useArsipDinamis();
 const toast = useToast();
 
 const berkasId = computed(() => String(route.params.id || ''));
 const naskahIdParam = computed(() => String(route.params.naskahId || ''));
-
-const naskah = ref<Record<string, any> | null>(null);
-const pending = ref(true);
-
-const pageTitle = computed(() =>
-  naskah.value?.perihal ? `Naskah: ${naskah.value.perihal}` : 'Detail Naskah',
+const positionId = computed(
+  () => user.value?.position?.id || user.value?.position_id || user.value?.position || '',
 );
 
-function formatDate(value?: string | Date | null) {
-  if (!value) return '-';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? String(value)
-    : new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
-}
+const details = ref<any[]>([]);
+const pending = ref(true);
+const collapsed = ref<Set<string>>(new Set());
 
-function sirkulasiLabel(s: any): string {
-  if (!s) return '';
-  const parts = [s.position_text, s.organization_text, s.nama_sirkuler].filter(Boolean);
-  return parts.join(' — ');
-}
+const pageTitle = computed(() => 'Detail Naskah');
 
-// Naskah penerima bisa per-individu (penerima[]) atau per-grup (penerima_grup[]).
-function recipientList(individuals: any[], groups: any[]) {
-  const out: { key: string; label: string }[] = [];
-  if (Array.isArray(individuals)) {
-    for (const p of individuals) out.push({ key: p.id || p.position || out.length, label: sirkulasiLabel(p) });
+// Grouping penerima/tembusan (menyamakan tampilan dengan kotak masuk/terkirim):
+// anggota grup lengkap dirangkum jadi 1 entri "Grup", sisanya individual.
+function processGrouping(individuals: any[], groups: any[], senderPositionId?: string) {
+  if (!Array.isArray(individuals) || individuals.length === 0) return [];
+  if (!Array.isArray(groups) || groups.length === 0) return individuals;
+  const individualIds = new Set(individuals.map((i) => String(i.position_id || i.id)));
+  const matched = new Set<string>();
+  const myPosId = String(positionId.value || '');
+  const excluded = new Set([myPosId, senderPositionId].filter(Boolean));
+  const out: any[] = [];
+  for (const g of groups) {
+    const req = (g.position_ids || []).map(String);
+    const complete =
+      req.length > 0 && req.every((id: string) => individualIds.has(id) || excluded.has(id));
+    if (complete) {
+      out.push({
+        id: g.id || `group-${g.nama}`,
+        nama: g.nama,
+        position_text: g.nama,
+        organization_text: 'Grup Penerima',
+        is_group: true,
+      });
+      req.forEach((id: string) => matched.add(id));
+    }
   }
-  if (Array.isArray(groups)) {
-    for (const g of groups) out.push({ key: g.id || `g-${out.length}`, label: `${g.nama || 'Grup'} (grup)` });
+  for (const indiv of individuals) {
+    if (!matched.has(String(indiv.position_id || indiv.id))) out.push(indiv);
   }
   return out;
 }
 
-// Preview PDF via blob (hindari hot-link bocor ke viewer luar).
+function mapFlowToDetail(item: any, index: number, flow: any[]) {
+  const senderPosId = String(item.pengirim?.position_id || item.from?.position_id || '');
+  const penerimaGrup = item.penerima_grup || [];
+  const tembusanGrup = item.tembusan_grup || [];
+  const to = processGrouping(item.penerima || item.to || [], penerimaGrup, senderPosId);
+  const cc = processGrouping(item.tembusan || item.cc || [], tembusanGrup, senderPosId);
+  return {
+    id: item.id,
+    sifat: item.sifat,
+    aksi: item.status || item.aksi || 'read',
+    jenis: item.jenis,
+    jenis_label: item.jenis_label,
+    nomor: item.nomor || '-',
+    tanggal: item.tanggal || item.created_at,
+    created_at: item.created_at,
+    perihal: item.perihal,
+    pengirim: item.pengirim,
+    from: item.pengirim,
+    to,
+    cc,
+    // Isi surat (HTML) dirender via v-html blok di DetailNaskah (rich_content/
+    // mainDisplayContentHtml). JANGAN set `konten` — itu memunculkan blok "Instruksi"
+    // disposisi untuk SEMUA jenis & merender HTML sebagai text biasa.
+    rich_content: item.konten || '',
+    mainDisplayContentHtml: item.konten || '',
+    // Khusus DI: instruksi disposisi (plain) + catatan (body v-html).
+    disposisi: item.detail?.disposisi || item.disposisi || '',
+    catatan: item.detail?.catatan || item.catatan || '',
+    lampiran_files: item.lampiran_files || [],
+    final_pdf_url: item.final_pdf_url || item.final_pdf || '',
+    pdf_snapshot: item.final_pdf_url || item.final_pdf || '',
+    _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
+    _hasNewer: false,
+    _hasOlder: false,
+  };
+}
+
+function isCardCollapsed(id: string, index: number) {
+  return collapsed.value.has(String(id || index));
+}
+function toggleCardCollapse(id: string, index: number) {
+  const key = String(id || index);
+  const next = new Set(collapsed.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  collapsed.value = next;
+}
+
+// Preview PDF via blob.
 const isPreviewOpen = ref(false);
 const isPdfLoading = ref(false);
 const activePdfUrl = ref<string | null>(null);
@@ -242,14 +185,21 @@ async function openDocumentPreview(url: string, title = 'Dokumen') {
   isPdfLoading.value = true;
   activePdfUrl.value = null;
   try {
-    const response = await fetch(url);
-    const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' });
+    const res = await fetch(url);
+    const blob = new Blob([await res.arrayBuffer()], { type: 'application/pdf' });
     activePdfUrl.value = URL.createObjectURL(blob);
   } catch {
     activePdfUrl.value = url;
   } finally {
     isPdfLoading.value = false;
   }
+}
+function openPreviewFile(file: any) {
+  openDocumentPreview(file.file_url || file.file_pdf || file.file_path, file.file_name || 'Lampiran');
+}
+
+function goBack() {
+  router.push(`/kelola/pemeliharaan/pemberkasan/${berkasId.value}`);
 }
 
 onMounted(async () => {
@@ -259,9 +209,14 @@ onMounted(async () => {
   }
   try {
     const response = await getNaskahDetailInBerkas(berkasId.value, naskahIdParam.value);
-    naskah.value = response?.data ?? response;
+    const rawData: any = response?.data ?? response;
+    let flow: any[] = [];
+    if (Array.isArray(rawData)) flow = rawData;
+    else if (rawData && Array.isArray(rawData.flow)) flow = rawData.flow;
+    else if (rawData) flow = [rawData];
+    details.value = flow.map((item, index) => mapFlowToDetail(item, index, flow));
   } catch (error: any) {
-    naskah.value = null;
+    details.value = [];
     toast.add({
       title: 'Detail naskah gagal dimuat',
       description: error?.message || 'Silakan coba kembali.',
