@@ -961,6 +961,7 @@ const adminMenuKelola = computed(() => {
       label: 'Pemindahan Arsip Aktif ke Inaktif',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
+      hideIfManagerial: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1037,6 +1038,7 @@ const userMenuKelola = computed(() => {
       label: 'Pemindahan Arsip Aktif ke Inaktif',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
+      hideIfManagerial: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1149,6 +1151,18 @@ const filterMenuByPermission = (items) => {
 
     // Cek hideIfAtasan — sembunyikan jika user adalah atasan managerial
     if (cloned.hideIfAtasan && (isAtasanManagerialUsulan.value || isAdminOrSuperadmin.value)) {
+      return null;
+    }
+
+    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
+    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
+    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
+      return null;
+    }
+
+    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
+    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
+    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
       return null;
     }
 
