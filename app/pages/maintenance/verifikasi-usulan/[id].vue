@@ -44,10 +44,33 @@
         <div class="lg:col-span-8 space-y-5">
           <VerifikasiDetail :usulan="usulan" />
 
-          <!-- Timeline Riwayat -->
-          <TimelineRiwayat :item="usulanToTransfer" />
+          <!-- Card Verifikasi Usulan (ringkas) -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Verifikasi Usulan</h3>
+            <div class="space-y-2 mb-4 text-sm">
+              <p><span class="text-gray-500 dark:text-gray-400">Sekretaris:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.sekretarisName }}</span></p>
+              <p><span class="text-gray-500 dark:text-gray-400">Arsip:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.arsipPerihal }}</span></p>
+            </div>
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi</label>
+              <textarea
+                v-model="catatanVerifikasi"
+                rows="4"
+                placeholder="Catatan verifikasi (opsional)..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
+              ></textarea>
+            </div>
+          </div>
 
-          <!-- Tombol Aksi di bawah Timeline -->
+          <!-- Berita Acara -->
+          <BeritaAcaraCard
+            v-if="showBeritaAcara"
+            :usulan="usulan"
+            :generating="actionLoading"
+            @generate="onGenerateBA"
+          />
+
+          <!-- Tombol Aksi di bawah card verifikasi -->
           <div v-if="canVerify || canApproveReceipt" class="flex gap-2">
             <button
               @click="openRejectModal"
@@ -125,34 +148,10 @@
           </div>
         </div>
 
-        <!-- Right: Card Verifikasi Ringkas (4/12, sticky) -->
+        <!-- Right: Timeline Riwayat (4/12, sticky) -->
         <div class="lg:col-span-4">
           <div class="lg:sticky lg:top-5 space-y-5">
-            <!-- Card Verifikasi Usulan (ringkas) -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Verifikasi Usulan</h3>
-              <div class="space-y-2 mb-4 text-sm">
-                <p><span class="text-gray-500 dark:text-gray-400">Sekretaris:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.sekretarisName }}</span></p>
-                <p><span class="text-gray-500 dark:text-gray-400">Arsip:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.arsipPerihal }}</span></p>
-              </div>
-              <div class="mb-4">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi</label>
-                <textarea
-                  v-model="catatanVerifikasi"
-                  rows="4"
-                  placeholder="Catatan verifikasi (opsional)..."
-                  class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
-                ></textarea>
-              </div>
-            </div>
-
-            <!-- Berita Acara -->
-            <BeritaAcaraCard
-              v-if="showBeritaAcara"
-              :usulan="usulan"
-              :generating="actionLoading"
-              @generate="onGenerateBA"
-            />
+            <TimelineRiwayat :item="usulanToTransfer" />
           </div>
         </div>
       </div>
