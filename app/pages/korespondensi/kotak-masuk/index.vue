@@ -777,7 +777,7 @@ onUnmounted(() => {
 
 <template>
   <AccessDenied v-if="!canAccessPage()" />
-  <template v-else>
+  <div v-else>
   <PageHeader :title="$t('kotak_masuk')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors"
@@ -1743,7 +1743,7 @@ onUnmounted(() => {
       </div>
     </Teleport>
   </div>
-  </template>
+  </div>
 </template>
 
 <style scoped>
