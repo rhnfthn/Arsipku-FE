@@ -117,6 +117,10 @@ export const useTransferActiveToInactive = () => {
     const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/selesai`, {});
     return r?.data;
   };
+  const approveReceipt = async (id: string) => {
+    const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/approve-receipt`, {});
+    return r?.data;
+  };
   const verifyPhysical = async (id: string, p: VerifyPhysicalPayload) => {
     const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/verify-physical`, p);
     return r?.data;
@@ -175,6 +179,7 @@ export const useTransferActiveToInactive = () => {
     kirimUsulPindah,
     siapkanBerkasFisik,
     selesaikanUsulan,
+    approveReceipt,
     verifyPhysical,
     tuApprove,
     tuReject,
