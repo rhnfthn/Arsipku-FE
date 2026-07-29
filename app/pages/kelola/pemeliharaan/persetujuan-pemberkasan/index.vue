@@ -11,31 +11,6 @@
       />
     </div>
 
-    <!-- Tab nav -->
-    <div class="mb-5 print:hidden">
-      <div
-        class="overflow-x-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-      >
-        <nav class="flex gap-1" aria-label="Persetujuan pemberkasan">
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            type="button"
-            class="flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all"
-            :class="
-              activeTab === tab.value
-                ? 'bg-primary-50 text-primary-700 shadow-sm dark:bg-primary-900/30 dark:text-primary-400'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
-            "
-            @click="activeTab = tab.value"
-          >
-            <UIcon :name="tab.icon" class="h-4 w-4" />
-            {{ tab.label }}
-          </button>
-        </nav>
-      </div>
-    </div>
-
     <div
       class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800"
     >
@@ -86,22 +61,40 @@
             />
           </div>
 
-          <!-- Filter status (khusus tab Riwayat) -->
-          <div v-if="activeTab === 'riwayat'" class="flex items-center gap-1">
+          <!-- FILTER STATUS — custom dropdown -->
+          <div class="relative" data-custom-dropdown>
             <button
-              v-for="opt in statusOptions"
-              :key="opt.value"
               type="button"
-              @click="statusFilter = opt.value"
-              :class="[
-                'rounded-lg px-3 py-1.5 text-xs font-medium transition-all border',
-                statusFilter === opt.value
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-primary'
-              ]"
+              @click.stop="toggleFilterStatus"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[150px] justify-between"
             >
-              {{ opt.label }}
+              <span class="truncate">{{ statusFilterLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterStatus }"
+              />
             </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[170px]"
+              >
+                <button
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    statusFilter === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
           </div>
         </div>
         <button
@@ -119,6 +112,9 @@
         :columns="columns"
         :rows="rows"
         :loading="pending"
+        :sort-key="sortKey"
+        :sort-dir="sortDir"
+        @sort="handleSort"
         header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -143,14 +139,9 @@
             {{ row.berkas?.retensiInaktifTahun || 0 }}I</span
           >
         </template>
-        <template #cell-createdAt="{ row }">
-          <span class="text-xs text-gray-500 dark:text-gray-400">{{
-            formatDate(row.createdAt)
-          }}</span>
-        </template>
         <template #cell-actionAt="{ row }">
           <span class="text-xs text-gray-500 dark:text-gray-400">{{
-            formatDate(row.actionAt)
+            formatDate(row.actionAt || row.createdAt)
           }}</span>
         </template>
         <template #cell-status="{ row }">
@@ -159,7 +150,7 @@
             class="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-950/40 dark:text-warning-300"
           >
             <span class="h-1.5 w-1.5 rounded-full bg-warning-500" />
-            Menunggu Anda
+            Menunggu Persetujuan Anda
           </span>
           <span
             v-else-if="row.status === 'approved'"
@@ -187,7 +178,7 @@
         </template>
         <template #cell-aksi="{ row }">
           <NuxtLink
-            v-if="activeTab === 'menunggu'"
+            v-if="row.status === 'pending'"
             :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review`"
             class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
             title="Review Pengajuan"
@@ -220,7 +211,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { ChevronDown, Eye } from 'lucide-vue-next';
 
-const { getPengajuanPenutupan, getRiwayatPersetujuan } = useArsipDinamis();
+const { getPersetujuanSaya } = useArsipDinamis();
 const toast = useToast();
 
 const rows = ref<any[]>([]);
@@ -231,29 +222,56 @@ const currentPage = ref(1);
 const totalItems = ref(0);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
-const activeTab = ref<'menunggu' | 'riwayat'>('menunggu');
-const statusFilter = ref<'all' | 'approved' | 'rejected'>('all');
+// Satu tabel, filter status: Semua / Menunggu Persetujuan Anda (default) / Disetujui / Ditolak.
+// Semua = menunggu+approved+rejected. Menunggu Persetujuan Anda = pending & giliran Anda.
+// Disetujui/Ditolak = keputusan lampau Anda. Semua via getPersetujuanSaya({status}).
+const statusFilter = ref<'all' | 'menunggu' | 'approved' | 'rejected'>('menunggu');
+
+// Sort state (server-side via getPersetujuanSaya sortBy/sortDir). Default = BE default order.
+const sortKey = ref('');
+const sortDir = ref<'asc' | 'desc'>('desc');
 
 const openRowsPerPage = ref(false);
-
-const tabs = [
-  { value: 'menunggu', label: 'Menunggu Persetujuan', icon: 'i-lucide-clock' },
-  { value: 'riwayat', label: 'Riwayat Persetujuan', icon: 'i-lucide-history' },
-] as const;
+const openFilterStatus = ref(false);
 
 const statusOptions = [
   { value: 'all', label: 'Semua' },
+  { value: 'menunggu', label: 'Menunggu Persetujuan Anda' },
   { value: 'approved', label: 'Disetujui' },
   { value: 'rejected', label: 'Ditolak' },
 ] as const;
 
+const statusFilterLabel = computed(
+  () => statusOptions.find((o) => o.value === statusFilter.value)?.label ?? 'Menunggu Persetujuan Anda',
+);
+
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+}
+
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
 }
 
 function selectRowsPerPage(n: number) {
   perPage.value = n;
   openRowsPerPage.value = false;
+}
+
+function selectFilterStatus(val: 'all' | 'menunggu' | 'approved' | 'rejected') {
+  statusFilter.value = val;
+  openFilterStatus.value = false;
+}
+
+function handleSort(key: string) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
 }
 
 function handleDocumentClick(e: MouseEvent) {
@@ -263,33 +281,25 @@ function handleDocumentClick(e: MouseEvent) {
     if (el.contains(target)) return;
   }
   openRowsPerPage.value = false;
+  openFilterStatus.value = false;
 }
 
-const columns = computed(() =>
-  activeTab.value === 'menunggu'
-    ? [
-        { key: 'judulBerkas', label: 'Nama Berkas' },
-        { key: 'kodeBerkas', label: 'Kode Berkas' },
-        { key: 'retensi', label: 'Retensi (A/I)' },
-        { key: 'createdAt', label: 'Tanggal Pengajuan' },
-        { key: 'status', label: 'Status' },
-        { key: 'aksi', label: 'Aksi' },
-      ]
-    : [
-        { key: 'judulBerkas', label: 'Nama Berkas' },
-        { key: 'kodeBerkas', label: 'Kode Berkas' },
-        { key: 'retensi', label: 'Retensi (A/I)' },
-        { key: 'actionAt', label: 'Tanggal Aksi' },
-        { key: 'status', label: 'Status' },
-        { key: 'catatan', label: 'Catatan' },
-        { key: 'aksi', label: 'Aksi' },
-      ]
-);
+const columns = [
+  { key: 'judulBerkas', label: 'Nama Berkas', sortable: true },
+  { key: 'kodeBerkas', label: 'Kode Berkas', sortable: true },
+  { key: 'retensi', label: 'Retensi (A/I)' },
+  { key: 'actionAt', label: 'Tanggal Aksi', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
+  { key: 'catatan', label: 'Catatan' },
+  { key: 'aksi', label: 'Aksi' },
+];
 
 const emptyMessage = computed(() =>
-  activeTab.value === 'menunggu'
-    ? 'Tidak ada pengajuan penutupan yang menunggu persetujuan Anda.'
-    : 'Tidak ada riwayat persetujuan.'
+  statusFilter.value === 'menunggu'
+    ? 'Tidak ada pengajuan yang menunggu persetujuan Anda.'
+    : statusFilter.value === 'approved'
+      ? 'Tidak ada berkas yang Anda setujui.'
+      : 'Tidak ada berkas yang Anda tolak.'
 );
 
 const formatDate = (value?: string) => {
@@ -302,24 +312,21 @@ const formatDate = (value?: string) => {
 };
 
 const statusLabel = (s?: string) =>
-  s === 'approved' ? 'Disetujui' : s === 'rejected' ? 'Ditolak' : s === 'pending' ? 'Menunggu' : s || '-';
+  s === 'approved' ? 'Disetujui' : s === 'rejected' ? 'Ditolak' : s === 'pending' ? 'Menunggu Persetujuan Anda' : s || '-';
+
+const isMenunggu = () => statusFilter.value === 'menunggu';
 
 const fetchData = async () => {
   pending.value = true;
   try {
-    const response =
-      activeTab.value === 'menunggu'
-        ? await getPengajuanPenutupan({
-            search: search.value || undefined,
-            page: currentPage.value,
-            limit: perPage.value,
-          })
-        : await getRiwayatPersetujuan({
-            search: search.value || undefined,
-            status: statusFilter.value,
-            page: currentPage.value,
-            limit: perPage.value,
-          });
+    const response = await getPersetujuanSaya({
+      search: search.value || undefined,
+      status: statusFilter.value,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
+      page: currentPage.value,
+      limit: perPage.value,
+    });
 
     // useApi mengembalikan envelope global `{ success, data }`, sedangkan
     // endpoint ini mengembalikan payload pagination `{ data, meta }`.
@@ -353,19 +360,12 @@ const exportData = async () => {
   }
   isExporting.value = true;
   try {
-    const response: any =
-      activeTab.value === 'menunggu'
-        ? await getPengajuanPenutupan({
-            search: search.value || undefined,
-            page: 1,
-            limit: totalItems.value || 9999,
-          })
-        : await getRiwayatPersetujuan({
-            search: search.value || undefined,
-            status: statusFilter.value,
-            page: 1,
-            limit: totalItems.value || 9999,
-          });
+    const response: any = await getPersetujuanSaya({
+      search: search.value || undefined,
+      status: statusFilter.value,
+      page: 1,
+      limit: totalItems.value || 9999,
+    });
     const payload = response?.data?.data ? response.data : response;
     const list = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
     if (!list.length) {
@@ -373,7 +373,7 @@ const exportData = async () => {
       return;
     }
     const stamp = new Date().toISOString().slice(0, 10);
-    if (activeTab.value === 'menunggu') {
+    if (isMenunggu()) {
       const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
       const csvRows = list.map((r: any) => [
         r.berkas?.judulBerkas,
@@ -422,12 +422,12 @@ watch(search, () => {
   }, 350);
 });
 
-watch(activeTab, () => {
+watch(statusFilter, () => {
   if (currentPage.value !== 1) currentPage.value = 1;
   else fetchData();
 });
 
-watch(statusFilter, () => {
+watch([sortKey, sortDir], () => {
   if (currentPage.value !== 1) currentPage.value = 1;
   else fetchData();
 });
