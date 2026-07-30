@@ -6,14 +6,17 @@ import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAksesBerkas.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
-import { StatusUsulan } from '~/types/usulan-akses-berkas';
+import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
+import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Persetujuan Usulan Akses Berkas' });
 
 const { t } = useI18n();
-const { usulanList, pending, pagination, fetchList } = useUsulanAksesBerkas();
+const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifikasiPemberi, persetujuanPemberi } = useUsulanAksesBerkas();
+const { clearVerifikasiBadge, clearPilihBerkasBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
 
@@ -202,6 +205,16 @@ const formatDate = (dateStr: string) => {
   });
 };
 
+// Format durasi akses: CUSTOM tampilkan tanggal, lainnya tampilkan label
+function formatDurasiLabel(preset: string | undefined | null, customDate?: string | null): string {
+  if (!preset) return '-';
+  if (preset === 'CUSTOM' && customDate) {
+    const tgl = new Date(customDate);
+    return tgl.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  return preset.replace('_', ' ');
+}
+
 // ── Custom dropdown for rows per page (pemberkasan style) ───────
 const openRowsPerPage = ref(false);
 function toggleRowsPerPage() {
@@ -267,9 +280,201 @@ const columns = [
   { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true },
   { key: 'durasiAkses', label: 'Durasi', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
+  { key: 'progress', label: 'Progress', sortable: false },
   { key: 'createdAt', label: 'Dibuat', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
+
+// ── Progress bar: durasi akses yang sudah diterbitkan ────────────
+// Bar merepresentasikan waktu yang sudah berlalu dari tanggalMulai ke tanggalSelesai.
+// 0% = baru mulai, 100% = sudah habis.
+// Warna: hijau (0-50%), kuning (50-80%), merah (80-100%)
+const getProgressPercent = (row: any): number => {
+  if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return 0;
+  if (!row.tanggalMulai || !row.tanggalSelesai) return 0;
+  const mulai = new Date(row.tanggalMulai).getTime();
+  const selesai = new Date(row.tanggalSelesai).getTime();
+  const now = Date.now();
+  if (now <= mulai) return 0;
+  if (now >= selesai) return 100;
+  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
+};
+
+const getProgressBarClass = (percent: number): string => {
+  if (percent < 50) return 'bg-green-500';
+  if (percent < 80) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
+const getProgressLabel = (row: any): string => {
+  if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return '-';
+  const percent = getProgressPercent(row);
+  if (percent >= 100) return 'Habis';
+  if (!row.tanggalSelesai) return '-';
+  const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (sisa <= 0) return 'Habis';
+  return `${sisa} hari lagi`;
+};
+
+// ── Cek apakah user bisa verifikasi usulan ini ──
+const menungguStatuses = [
+  StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL,
+  StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL,
+  StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL,
+  StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI,
+  StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI,
+  StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI,
+  StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI,
+];
+
+const canVerifyRow = (row: any): boolean => {
+  if (!menungguStatuses.includes(row.status)) return false;
+  const userPersnum = Number(user.value?.persnum);
+  // Cek verifikatorPengusul
+  if (row.verifikatorPengusul?.some((v: any) => v.persnum === userPersnum)) return true;
+  // Cek verifikatorPemberi
+  if (row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum)) return true;
+  return false;
+};
+
+const canRejectRow = (row: any): boolean => {
+  return canVerifyRow(row);
+};
+
+// ── Modal Setuju/Tolak (standarisasi) ──────────────
+const showApproveModal = ref(false);
+const showRejectModal = ref(false);
+const actionRow = ref<any>(null);
+const actionNote = ref('');
+const savingAction = ref(false);
+
+const openApproveModal = (row: any) => {
+  actionRow.value = row;
+  actionNote.value = '';
+  showApproveModal.value = true;
+};
+
+const openRejectModal = (row: any) => {
+  actionRow.value = row;
+  actionNote.value = '';
+  showRejectModal.value = true;
+};
+
+// Tentukan jenis verifikasi berdasarkan status & verifikator
+const getVerificationType = (row: any): 'pengusul' | 'pemberi' | 'persetujuan-pemberi' | null => {
+  const userPersnum = Number(user.value?.persnum);
+  const isPengusulVerifier = row.verifikatorPengusul?.some((v: any) => v.persnum === userPersnum);
+  const isPemberiVerifier = row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum);
+
+  if (isPengusulVerifier) {
+    if ([StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL].includes(row.status)) {
+      return 'pengusul';
+    }
+  }
+  if (isPemberiVerifier) {
+    if (row.status === StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI) return 'pemberi';
+    if ([StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI].includes(row.status)) {
+      return 'persetujuan-pemberi';
+    }
+  }
+  return null;
+};
+
+const handleApprove = async (note: string) => {
+  if (!actionRow.value) return;
+  savingAction.value = true;
+  try {
+    const row = actionRow.value;
+    const userPersnum = Number(user.value?.persnum);
+    const type = getVerificationType(row);
+
+    if (type === 'pengusul') {
+      const verifikator = row.verifikatorPengusul.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await verifikasiPengusul(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.SETUJU,
+      });
+    } else if (type === 'pemberi') {
+      await verifikasiPemberi(row.id, {
+        durasiAksesDisetujui: row.durasiAkses,
+        catatanPerubahanDurasi: '',
+        catatan: note,
+        keputusan: Keputusan.LANJUT,
+      });
+    } else if (type === 'persetujuan-pemberi') {
+      const verifikator = row.verifikatorPemberi.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await persetujuanPemberi(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.SETUJU,
+        durasiAksesDisetujui: undefined,
+        catatanPerubahanDurasi: '',
+      });
+    }
+
+    toast.add({ title: 'Berhasil', description: 'Verifikasi terkirim', color: 'success' });
+    showApproveModal.value = false;
+    await loadData();
+    fetchCounts(true);
+  } catch (err: any) {
+    toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
+  } finally {
+    savingAction.value = false;
+  }
+};
+
+const handleReject = async (note: string) => {
+  if (!actionRow.value) return;
+  if (!note.trim() || note.trim().length < 5) {
+    toast.add({ title: 'Alasan penolakan wajib diisi (minimal 5 karakter)', color: 'error' });
+    return;
+  }
+  savingAction.value = true;
+  try {
+    const row = actionRow.value;
+    const userPersnum = Number(user.value?.persnum);
+    const type = getVerificationType(row);
+
+    if (type === 'pengusul') {
+      const verifikator = row.verifikatorPengusul.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await verifikasiPengusul(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.TOLAK,
+      });
+    } else if (type === 'pemberi') {
+      await verifikasiPemberi(row.id, {
+        durasiAksesDisetujui: row.durasiAkses,
+        catatanPerubahanDurasi: '',
+        catatan: note,
+        keputusan: Keputusan.TOLAK,
+      });
+    } else if (type === 'persetujuan-pemberi') {
+      const verifikator = row.verifikatorPemberi.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await persetujuanPemberi(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.TOLAK,
+        durasiAksesDisetujui: undefined,
+        catatanPerubahanDurasi: '',
+      });
+    }
+
+    toast.add({ title: 'Berhasil', description: 'Penolakan terkirim', color: 'success' });
+    showRejectModal.value = false;
+    await loadData();
+    fetchCounts(true);
+  } catch (err: any) {
+    toast.add({ title: 'Gagal Tolak', description: extractErrorMessage(err), color: 'error' });
+  } finally {
+    savingAction.value = false;
+  }
+};
 
 // ── Sort ────────────────────────────────────────────────────────
 const sortKey = ref('createdAt');
@@ -322,7 +527,7 @@ const exportData = async () => {
     const csvRows = rows.map((r: any) => [
       r.nomorUsulan,
       r.jenisBerkas,
-      r.durasiAkses?.replace('_', ' '),
+      formatDurasiLabel(r.durasiAkses, r.customTanggalSelesai),
       r.status,
       formatDate(r.createdAt),
     ]);
@@ -340,6 +545,11 @@ const exportData = async () => {
 
 onMounted(() => {
   loadData();
+  // Clear badge verifikasi & pilih berkas saat halaman dibuka
+  clearVerifikasiBadge();
+  clearPilihBerkasBadge();
+  // Re-fetch counts untuk update badge di sidebar
+  fetchCounts(true);
   document.addEventListener('click', handleDocumentClick);
 });
 
@@ -552,22 +762,54 @@ onBeforeUnmount(() => {
           </span>
         </template>
         <template #cell-durasiAkses="{ row }">
-          <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.durasiAkses?.replace('_', ' ') }}</span>
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDurasiLabel(row.durasiAkses, row.customTanggalSelesai) }}</span>
         </template>
         <template #cell-status="{ row }">
           <UsulanAksesBerkasBadge :status="row.status" />
+        </template>
+        <template #cell-progress="{ row }">
+          <div v-if="row.status === 'AKSES_DITERBITKAN' || row.status === 'SELESAI'" class="flex items-center gap-2 min-w-[140px]">
+            <div class="h-2 w-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all"
+                :class="getProgressBarClass(getProgressPercent(row))"
+                :style="{ width: `${getProgressPercent(row)}%` }"
+              />
+            </div>
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ getProgressLabel(row) }}</span>
+          </div>
+          <span v-else class="text-xs text-gray-400">-</span>
         </template>
         <template #cell-createdAt="{ row }">
           <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.createdAt) }}</span>
         </template>
         <template #cell-aksi="{ row }">
-          <NuxtLink
-            :to="`/usulan-akses-berkas/${row.id}`"
-            class="inline-flex rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
-            title="Lihat Detail"
-          >
-            <UIcon name="i-lucide-eye" class="h-4 w-4" />
-          </NuxtLink>
+          <div class="flex items-center justify-center gap-1.5">
+            <NuxtLink
+              :to="`/usulan-akses-berkas/${row.id}`"
+              class="inline-flex rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
+              title="Lihat Detail"
+            >
+              <UIcon name="i-lucide-eye" class="h-4 w-4" />
+            </NuxtLink>
+            <button
+              v-if="canVerifyRow(row)"
+              @click="openApproveModal(row)"
+              class="inline-flex rounded-md p-1.5 transition-colors hover:opacity-80"
+              style="color: #175FA4"
+              title="Setuju"
+            >
+              <UIcon name="i-lucide-check" class="h-4 w-4" />
+            </button>
+            <button
+              v-if="canRejectRow(row)"
+              @click="openRejectModal(row)"
+              class="inline-flex rounded-md p-1.5 text-red-600 transition-colors hover:bg-red-50 dark:text-red-500 dark:hover:bg-red-900/20"
+              title="Tolak"
+            >
+              <UIcon name="i-lucide-x" class="h-4 w-4" />
+            </button>
+          </div>
         </template>
       </DataTable>
 
@@ -583,5 +825,31 @@ onBeforeUnmount(() => {
     <Teleport to="body">
       <AddUsulanAksesBerkas v-model="openAdd" @created="handleCreated" />
     </Teleport>
+
+    <!-- Modal Setuju (standarisasi) -->
+    <VerifyActionModal
+      v-model="showApproveModal"
+      variant="approve"
+      title="Setujui Usulan Akses Berkas"
+      description="Pastikan usulan sudah sesuai sebelum disetujui."
+      note-placeholder="Keterangan opsional"
+      confirm-label="Setuju"
+      :saving="savingAction"
+      @confirm="handleApprove"
+    />
+
+    <!-- Modal Tolak (standarisasi) -->
+    <VerifyActionModal
+      v-model="showRejectModal"
+      variant="reject"
+      title="Tolak Usulan Akses Berkas"
+      description="Penolakan akan menghentikan alur verifikasi usulan ini."
+      note-placeholder="Masukkan alasan penolakan"
+      confirm-label="Tolak"
+      :saving="savingAction"
+      :require-note="true"
+      :min-note-length="5"
+      @confirm="handleReject"
+    />
   </div>
 </template>

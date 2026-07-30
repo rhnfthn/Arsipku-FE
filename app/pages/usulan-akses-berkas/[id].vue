@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '~/components/PageHeader.vue';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
+import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import {
   StatusUsulan,
   Keputusan,
@@ -37,6 +39,7 @@ const {
   fetchVerifikatorBod,
   verifikatorList,
 } = useUsulanAksesBerkas();
+const { fetchCounts: refetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const toast = useToast();
 
 // Helper: extract error message dari AxiosError (BE return { message: [...] | string })
@@ -55,37 +58,22 @@ const extractErrorMessage = (err: any): string => {
 
 const id = computed(() => route.params.id as string);
 
-// ── Quick confirm (Setuju/Tolak langsung, tanpa modal form) ──
-const showConfirm = ref(false);
-const confirmTitle = ref('');
-const confirmDescription = ref('');
-const confirmVariant = ref<'primary' | 'danger' | 'warning'>('primary');
-const confirmAction = ref<(() => Promise<void>) | null>(null);
+// ── Toggle expand timeline ──
+const timelineExpanded = ref(false);
 
-// ── Reject modal (dengan alasan) ──
-const showReject = ref(false);
+// ── Modal Setuju/Tolak (standarisasi VerifyActionModal) ──
+const showApproveModal = ref(false);
+const showRejectModal = ref(false);
+const approveTitle = ref('');
+const approveDescription = ref('');
 const rejectTitle = ref('');
-const rejectAlasan = ref('');
-const rejectAction = ref<(() => Promise<void>) | null>(null);
+const savingAction = ref(false);
+const pendingApproveAction = ref<((note: string) => Promise<void>) | null>(null);
+const pendingRejectAction = ref<((note: string) => Promise<void>) | null>(null);
 
-const openRejectModal = (title: string, action: () => Promise<void>) => {
-  rejectTitle.value = title;
-  rejectAlasan.value = '';
-  rejectAction.value = action;
-  showReject.value = true;
-};
-
-const handleReject = async () => {
-  if (rejectAlasan.value.trim().length < 5) {
-    toast.add({ title: 'Alasan penolakan wajib diisi (minimal 5 karakter)', color: 'error' });
-    return;
-  }
-  showReject.value = false;
-  if (rejectAction.value) {
-    await rejectAction.value();
-    rejectAction.value = null;
-  }
-};
+// ── Modal Verifikasi Pemberi: custom durasi dropdown ──
+const showVpbDurasiDropdown = ref(false);
+const vpbDurasiDropdownRef = ref<HTMLElement | null>(null);
 
 // ── Verifikasi Pengusul form (checkbox dihapus) ──
 const showVerifikasiPengusul = ref(false);
@@ -98,7 +86,8 @@ const vpForm = ref<VerifikasiPengusulPayload>({
 // ── Verifikasi Pemberi form (checkbox dihapus) ──
 const showVerifikasiPemberi = ref(false);
 const vpbForm = ref<VerifikasiPemberiPayload>({
-  durasiAksesDisetujui: DurasiPreset.SATU_TAHUN,
+  durasiAksesDisetujui: undefined,
+  customTanggalSelesai: '',
   catatanPerubahanDurasi: '',
   catatan: '',
   keputusan: Keputusan.LANJUT,
@@ -130,6 +119,21 @@ const durasiOptions = [
   { label: '1 Tahun', value: DurasiPreset.SATU_TAHUN },
   { label: 'Custom', value: DurasiPreset.CUSTOM },
 ];
+
+// Format tampilan durasi: CUSTOM tampilkan tanggal, lainnya tampilkan label
+function formatDurasiLabel(preset: string, customDate?: string | null): string {
+  if (preset === DurasiPreset.CUSTOM && customDate) {
+    const tgl = new Date(customDate);
+    return tgl.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  return durasiOptions.find(d => d.value === preset)?.label || preset.replace('_', ' ');
+}
+
+// Label durasi dari pengusul (untuk ditampilkan di modal Verifikasi Pemberi)
+const durasiUsulanLabel = computed(() => {
+  if (!usulanDetail.value) return '-';
+  return formatDurasiLabel(usulanDetail.value.durasiAkses, usulanDetail.value.customTanggalSelesai);
+});
 
 // Position status: SE = Sekretaris, null/YBS/PT/PH/PS = Managerial
 const isSekretaris = computed(() => user.value?.position_status === 'SE');
@@ -297,6 +301,15 @@ const loadVerifikatorPemberi = async () => {
     verifikatorPemberiLoading.value = false;
   }
 };
+
+// Reset state saat modal Verifikasi Pemberi dibuka — default kosong
+watch(showVerifikasiPemberi, (newVal) => {
+  if (newVal) {
+    vpbForm.value.durasiAksesDisetujui = undefined;
+    vpbForm.value.customTanggalSelesai = '';
+    vpbForm.value.catatan = '';
+  }
+});
 
 // Reset state saat modal dibuka
 watch(showPilihBerkas, async (newVal) => {
@@ -497,6 +510,10 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       usulanDetail.value.status === StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI ||
       usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN ||
       usulanDetail.value.status === StatusUsulan.SELESAI) {
+    // Ambil timestamp dari step LANJUT terakhir (atau updatedAt sebagai fallback)
+    const lanjutStep = (usulanDetail.value.steps || [])
+      .filter((s: any) => s.keputusan === Keputusan.LANJUT)
+      .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
     entries.push({
       id: 'sent-to-pemberi',
       icon: 'i-lucide-send',
@@ -505,7 +522,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       jabatan: 'Sekretaris Divisi Pemberi',
       action: 'Terkirim ke Pemberi',
       actionColor: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
-      timestamp: usulanDetail.value.updatedAt,
+      timestamp: lanjutStep?.verifiedAt || usulanDetail.value.updatedAt,
     });
   }
 
@@ -526,6 +543,10 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
   // Milestone: Akses diterbitkan
   if (usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN ||
       usulanDetail.value.status === StatusUsulan.SELESAI) {
+    // Timestamp terbitkan = step pemberi terbaru (SETUJU/LANJUT), fallback updatedAt
+    const lastPemberiStep = (usulanDetail.value.steps || [])
+      .filter((s: any) => s.roleTahap && s.roleTahap.includes('_PEMBERI'))
+      .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
     entries.push({
       id: 'akses-diterbitkan',
       icon: 'i-lucide-badge-check',
@@ -534,7 +555,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       jabatan: `${usulanDetail.value.selectedBerkas?.length || 0} berkas diberikan`,
       action: 'Selesai',
       actionColor: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      timestamp: usulanDetail.value.tanggalMulai || usulanDetail.value.updatedAt,
+      timestamp: lastPemberiStep?.verifiedAt || usulanDetail.value.updatedAt,
     });
   }
 
@@ -568,6 +589,41 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     });
   }
 
+  // Sort ascending by timestamp, with tie-breaker that puts:
+  //   - created first (bottom)
+  //   - pengusul verification steps
+  //   - sent-to-pemberi (right after pengusul, before pemberi)
+  //   - pemberi verification steps
+  //   - berkas-selected, akses-diterbitkan, menunggu-berakhir, ditolak (top)
+  const stepRoleTahap = (entry: TimelineEntry): string | null => {
+    if (entry.id === 'created') return null;
+    if (entry.id === 'sent-to-pemberi') return 'SENT_TO_PEMBERI';
+    if (entry.id === 'berkas-selected') return 'BERKAS_SELECTED';
+    if (entry.id === 'akses-diterbitkan') return 'AKSES_DITERBITKAN';
+    if (entry.id === 'menunggu-berakhir') return 'MENUNGGU_BERAKHIR';
+    if (entry.id === 'ditolak') return 'DITOLAK';
+    // verification step: lookup roleTahap by id
+    const step = (usulanDetail.value.steps || []).find((s: any) => s.id === entry.id);
+    return step?.roleTahap || null;
+  };
+  const orderIndex = (entry: TimelineEntry): number => {
+    const role = stepRoleTahap(entry);
+    if (role === null) return 0; // created
+    if (role === 'SENT_TO_PEMBERI') return 2;
+    if (role && role.includes('_PENGUSUL')) return 1;
+    if (role && (role === 'SEKRETARIS_PEMBERI' || role.includes('_PEMBERI'))) return 3;
+    if (role === 'BERKAS_SELECTED') return 4;
+    if (role === 'AKSES_DITERBITKAN') return 5;
+    if (role === 'MENUNGGU_BERAKHIR') return 6;
+    if (role === 'DITOLAK') return 7;
+    return 1;
+  };
+  entries.sort((a, b) => {
+    const ta = new Date(a.timestamp || 0).getTime();
+    const tb = new Date(b.timestamp || 0).getTime();
+    if (ta !== tb) return ta - tb;
+    return orderIndex(a) - orderIndex(b);
+  });
   return entries.reverse();
 });
 
@@ -706,6 +762,11 @@ const submitVerifikasiPengusulRevisi = async () => {
 };
 
 const submitVerifikasiPemberi = async () => {
+  // Validasi: jika CUSTOM, tanggal berakhir wajib diisi
+  if (vpbForm.value.durasiAksesDisetujui === 'CUSTOM' && !vpbForm.value.customTanggalSelesai) {
+    toast.add({ title: 'Tanggal berakhir wajib diisi untuk durasi Custom', color: 'error' });
+    return;
+  }
   try {
     await verifikasiPemberi(id.value, vpbForm.value);
     toast.add({ title: 'Berhasil', description: 'Verifikasi pemberi terkirim', color: 'success' });
@@ -717,9 +778,15 @@ const submitVerifikasiPemberi = async () => {
 };
 
 const submitVerifikasiPemberiLanjut = async () => {
+  // Validasi: jika CUSTOM, tanggal berakhir wajib diisi
+  if (vpbForm.value.durasiAksesDisetujui === 'CUSTOM' && !vpbForm.value.customTanggalSelesai) {
+    toast.add({ title: 'Tanggal berakhir wajib diisi untuk durasi Custom', color: 'error' });
+    return;
+  }
   try {
     await verifikasiPemberi(id.value, {
       durasiAksesDisetujui: vpbForm.value.durasiAksesDisetujui,
+      customTanggalSelesai: vpbForm.value.customTanggalSelesai || undefined,
       catatanPerubahanDurasi: '',
       catatan: vpbForm.value.catatan,
       keputusan: Keputusan.LANJUT,
@@ -730,23 +797,6 @@ const submitVerifikasiPemberiLanjut = async () => {
   } catch (err: any) {
     toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
   }
-};
-
-const quickRejectPemberi = () => {
-  openRejectModal('Tolak Usulan oleh Pemberi', async () => {
-    try {
-      await verifikasiPemberi(id.value, {
-        durasiAksesDisetujui: vpbForm.value.durasiAksesDisetujui,
-        catatanPerubahanDurasi: '',
-        catatan: rejectAlasan.value,
-        keputusan: Keputusan.TOLAK,
-      });
-      toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
-      await loadDetail();
-    } catch (err: any) {
-      toast.add({ title: 'Gagal Menolak', description: extractErrorMessage(err), color: 'error' });
-    }
-  });
 };
 
 const submitPersetujuanPemberi = async () => {
@@ -824,113 +874,118 @@ const submitPilihBerkas = async () => {
   }
 };
 
-// ── Quick verify: Setuju/Tolak langsung dengan confirm modal ──
+// ── Quick verify: Setuju/Tolak langsung dengan VerifyActionModal ──
 const quickVerifyPengusul = (keputusan: Keputusan) => {
-  const doReject = async () => {
-    const userPersnum = Number(user.value?.persnum);
-    const verifikator = usulanDetail.value?.verifikatorPengusul?.find(
-      (v: any) => v.persnum === userPersnum,
-    );
-    if (!verifikator) {
-      toast.add({ title: 'Anda bukan verifikator pengusul', color: 'error' });
-      return;
-    }
-    const jenjang = verifikator.urutan as 1 | 2 | 3;
-    try {
-      await verifikasiPengusul(id.value, jenjang, {
-        catatan: rejectAlasan.value,
-        catatanRevisi: '',
-        keputusan,
-      });
-      toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
-      await loadDetail();
-    } catch (err: any) {
-      toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
-    }
-  };
+  const userPersnum = Number(user.value?.persnum);
+  const verifikator = usulanDetail.value?.verifikatorPengusul?.find(
+    (v: any) => v.persnum === userPersnum,
+  );
+  if (!verifikator) {
+    toast.add({ title: 'Anda bukan verifikator pengusul', color: 'error' });
+    return;
+  }
+  const jenjang = verifikator.urutan as 1 | 2 | 3;
 
   if (keputusan === Keputusan.TOLAK) {
-    openRejectModal('Tolak Usulan (Verifikator Pengusul)', doReject);
+    rejectTitle.value = 'Tolak Usulan (Verifikator Pengusul)';
+    pendingRejectAction.value = async (note: string) => {
+      try {
+        await verifikasiPengusul(id.value, jenjang, {
+          catatan: note,
+          catatanRevisi: '',
+          keputusan,
+        });
+        toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
+        await loadDetail();
+        refetchUsulanCounts(true);
+      } catch (err: any) {
+        toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
+      }
+    };
+    showRejectModal.value = true;
     return;
   }
 
-  // SETUJU: simple confirm
-  confirmTitle.value = 'Konfirmasi Persetujuan';
-  confirmDescription.value = 'Apakah Anda yakin ingin menyetujui usulan akses berkas ini?';
-  confirmVariant.value = 'primary';
-  confirmAction.value = async () => {
-    const userPersnum = Number(user.value?.persnum);
-    const verifikator = usulanDetail.value?.verifikatorPengusul?.find(
-      (v: any) => v.persnum === userPersnum,
-    );
-    if (!verifikator) {
-      toast.add({ title: 'Anda bukan verifikator pengusul', color: 'error' });
-      return;
-    }
-    const jenjang = verifikator.urutan as 1 | 2 | 3;
+  // SETUJU
+  approveTitle.value = 'Setujui Usulan Akses Berkas';
+  approveDescription.value = 'Apakah Anda yakin ingin menyetujui usulan akses berkas ini?';
+  pendingApproveAction.value = async (note: string) => {
     try {
       await verifikasiPengusul(id.value, jenjang, {
-        catatan: '',
+        catatan: note,
         catatanRevisi: '',
         keputusan,
       });
       toast.add({ title: 'Berhasil', description: 'Usulan disetujui', color: 'success' });
       await loadDetail();
+      refetchUsulanCounts(true);
     } catch (err: any) {
       toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
     }
   };
-  showConfirm.value = true;
+  showApproveModal.value = true;
 };
 
-const quickApprovePemberi = (keputusan: Keputusan) => {
-  const doReject = async () => {
-    const userPersnum = Number(user.value?.persnum);
-    const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
-      (v: any) => v.persnum === userPersnum,
-    );
-    if (!verifikator) {
-      toast.add({ title: 'Anda bukan verifikator pemberi', color: 'error' });
-      return;
-    }
-    const jenjang = verifikator.urutan as 1 | 2 | 3;
+const quickRejectPemberi = () => {
+  rejectTitle.value = 'Tolak Usulan oleh Pemberi';
+  pendingRejectAction.value = async (note: string) => {
     try {
-      await persetujuanPemberi(id.value, jenjang, {
-        catatan: rejectAlasan.value,
-        catatanRevisi: '',
-        keputusan,
-        durasiAksesDisetujui: undefined,
+      await verifikasiPemberi(id.value, {
+        durasiAksesDisetujui: usulanDetail.value?.durasiAkses || DurasiPreset.SATU_TAHUN,
         catatanPerubahanDurasi: '',
+        catatan: note,
+        keputusan: Keputusan.TOLAK,
       });
       toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
       await loadDetail();
+      refetchUsulanCounts(true);
     } catch (err: any) {
-      toast.add({ title: 'Gagal Persetujuan', description: extractErrorMessage(err), color: 'error' });
+      toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
     }
   };
+  showRejectModal.value = true;
+};
+
+const quickApprovePemberi = (keputusan: Keputusan) => {
+  const userPersnum = Number(user.value?.persnum);
+  const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
+    (v: any) => v.persnum === userPersnum,
+  );
+  if (!verifikator) {
+    toast.add({ title: 'Anda bukan verifikator pemberi', color: 'error' });
+    return;
+  }
+  const jenjang = verifikator.urutan as 1 | 2 | 3;
 
   if (keputusan === Keputusan.TOLAK) {
-    openRejectModal('Tolak Usulan (Persetujuan Pemberi)', doReject);
+    rejectTitle.value = 'Tolak Usulan (Persetujuan Pemberi)';
+    pendingRejectAction.value = async (note: string) => {
+      try {
+        await persetujuanPemberi(id.value, jenjang, {
+          catatan: note,
+          catatanRevisi: '',
+          keputusan,
+          durasiAksesDisetujui: undefined,
+          catatanPerubahanDurasi: '',
+        });
+        toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
+        await loadDetail();
+        refetchUsulanCounts(true);
+      } catch (err: any) {
+        toast.add({ title: 'Gagal Persetujuan', description: extractErrorMessage(err), color: 'error' });
+      }
+    };
+    showRejectModal.value = true;
     return;
   }
 
-  // SETUJU: simple confirm
-  confirmTitle.value = 'Konfirmasi Persetujuan';
-  confirmDescription.value = 'Apakah Anda yakin ingin menyetujui usulan akses berkas ini?';
-  confirmVariant.value = 'primary';
-  confirmAction.value = async () => {
-    const userPersnum = Number(user.value?.persnum);
-    const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
-      (v: any) => v.persnum === userPersnum,
-    );
-    if (!verifikator) {
-      toast.add({ title: 'Anda bukan verifikator pemberi', color: 'error' });
-      return;
-    }
-    const jenjang = verifikator.urutan as 1 | 2 | 3;
+  // SETUJU
+  approveTitle.value = 'Setujui Usulan Akses Berkas';
+  approveDescription.value = 'Apakah Anda yakin ingin menyetujui usulan akses berkas ini?';
+  pendingApproveAction.value = async (note: string) => {
     try {
       await persetujuanPemberi(id.value, jenjang, {
-        catatan: '',
+        catatan: note,
         catatanRevisi: '',
         keputusan,
         durasiAksesDisetujui: undefined,
@@ -938,23 +993,61 @@ const quickApprovePemberi = (keputusan: Keputusan) => {
       });
       toast.add({ title: 'Berhasil', description: 'Persetujuan terkirim', color: 'success' });
       await loadDetail();
+      refetchUsulanCounts(true);
     } catch (err: any) {
       toast.add({ title: 'Gagal Persetujuan', description: extractErrorMessage(err), color: 'error' });
     }
   };
-  showConfirm.value = true;
+  showApproveModal.value = true;
 };
 
-const handleConfirm = async () => {
-  showConfirm.value = false;
-  if (confirmAction.value) {
-    await confirmAction.value();
-    confirmAction.value = null;
+// Handler untuk VerifyActionModal
+const handleApprove = async (note: string) => {
+  showApproveModal.value = false;
+  if (pendingApproveAction.value) {
+    savingAction.value = true;
+    try {
+      await pendingApproveAction.value(note);
+    } finally {
+      savingAction.value = false;
+    }
+    pendingApproveAction.value = null;
+  }
+};
+
+const handleRejectAction = async (note: string) => {
+  if (!note.trim() || note.trim().length < 5) {
+    toast.add({ title: 'Alasan penolakan wajib diisi (minimal 5 karakter)', color: 'error' });
+    return;
+  }
+  showRejectModal.value = false;
+  if (pendingRejectAction.value) {
+    savingAction.value = true;
+    try {
+      await pendingRejectAction.value(note);
+    } finally {
+      savingAction.value = false;
+    }
+    pendingRejectAction.value = null;
+  }
+};
+
+// Click outside untuk dropdown durasi di modal Verifikasi Pemberi
+const handleClickOutsideVpb = (e: MouseEvent) => {
+  if (vpbDurasiDropdownRef.value && !vpbDurasiDropdownRef.value.contains(e.target as Node)) {
+    showVpbDurasiDropdown.value = false;
   }
 };
 
 onMounted(() => {
   loadDetail();
+  // Re-fetch counts untuk update badge di sidebar
+  refetchUsulanCounts(true);
+  document.addEventListener('click', handleClickOutsideVpb);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutsideVpb);
 });
 </script>
 
@@ -1041,18 +1134,14 @@ onMounted(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Durasi Akses</dt>
-                  <dd v-if="usulanDetail.durasiAkses === 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(tanggalBerakhirDurasi) }}</dd>
-                  <dd v-else class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.durasiAkses?.replace('_', ' ') }}</dd>
-                  <dd v-if="usulanDetail.durasiAkses !== 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 text-[11px] text-gray-400">Berakhir: {{ formatDate(tanggalBerakhirDurasi) }}</dd>
-                </div>
-              </div>
-              <div v-if="usulanDetail.durasiAksesDisetujui" class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
-                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
-                  <UIcon name="i-lucide-check-circle" class="h-4 w-4" />
-                </span>
-                <div class="min-w-0">
-                  <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Durasi Disetujui</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.durasiAksesDisetujui.replace('_', ' ') }}</dd>
+                  <dd v-if="usulanDetail.durasiAksesDisetujui" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">
+                    {{ formatDurasiLabel(usulanDetail.durasiAksesDisetujui, usulanDetail.customTanggalSelesai) }}
+                    <UTooltip v-if="usulanDetail.durasiAkses && usulanDetail.durasiAkses !== usulanDetail.durasiAksesDisetujui" :text="`Durasi usulan: ${formatDurasiLabel(usulanDetail.durasiAkses, usulanDetail.customTanggalSelesai)}`" :delay-duration="0">
+                      <UIcon name="i-lucide-info" class="ml-1 inline-block h-3.5 w-3.5 cursor-help align-middle text-gray-400 hover:text-primary-500" />
+                    </UTooltip>
+                  </dd>
+                  <dd v-else-if="usulanDetail.durasiAkses === 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(tanggalBerakhirDurasi) }}</dd>
+                  <dd v-else class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDurasiLabel(usulanDetail.durasiAkses, usulanDetail.customTanggalSelesai) }}</dd>
                 </div>
               </div>
               <div v-if="usulanDetail.tanggalMulai" class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700 sm:col-span-2">
@@ -1061,7 +1150,7 @@ onMounted(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Periode Akses</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(usulanDetail.tanggalMulai) }} — {{ formatDate(usulanDetail.tanggalSelesai) }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(usulanDetail.tanggalMulai) }} <UIcon name="i-lucide-arrow-right" class="mx-1 inline-block h-4 w-4 align-middle text-primary-500" /> {{ formatDateOnly(usulanDetail.tanggalSelesai) }}</dd>
                 </div>
               </div>
             </dl>
@@ -1106,12 +1195,6 @@ onMounted(() => {
                     <span v-if="b.kodeBerkas">{{ b.kodeBerkas }} · </span>
                     <span>{{ b.klasifikasiTeks || '-' }}</span>
                   </p>
-                  <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                    <span v-for="akses in b.jenisAksesGranted" :key="akses" class="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
-                      {{ akses }}
-                    </span>
-                    <span v-if="b.berlakuHingga" class="text-[10px] text-gray-400">Berlaku s/d {{ formatDate(b.berlakuHingga) }}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1122,16 +1205,17 @@ onMounted(() => {
         <aside class="space-y-4">
           <!-- Timeline Verifikasi -->
           <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+            <button type="button" @click="timelineExpanded = !timelineExpanded" class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30">
               <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <UIcon name="i-lucide-route" class="size-5 text-primary-600 dark:text-primary-400" />
               </span>
-              <div>
+              <div class="flex-1 min-w-0">
                 <h2 class="font-semibold text-gray-900 dark:text-white">Timeline Verifikasi</h2>
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Riwayat alur verifikasi usulan.</p>
               </div>
-            </div>
-            <div class="px-4 py-3">
+              <UIcon :name="timelineExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-5 shrink-0 text-gray-400" />
+            </button>
+            <div v-show="timelineExpanded" class="px-4 py-3">
               <!-- Next Action sebagai timeline node (di atas, status terkini) -->
               <div v-if="nextActionInfo" class="mb-3 flex gap-2.5 pb-3 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex flex-col items-center">
@@ -1236,9 +1320,10 @@ onMounted(() => {
                 </UButton>
                 <UButton
                   icon="i-lucide-circle-check-big"
-                  color="primary"
+                  variant="solid"
                   size="lg"
                   class="flex-1 justify-center"
+                  style="background-color: #175FA4"
                   :loading="pending"
                   @click="quickVerifyPengusul(Keputusan.SETUJU)"
                 >
@@ -1264,9 +1349,9 @@ onMounted(() => {
                 </UButton>
                 <UButton
                   icon="i-lucide-arrow-right"
-                  color="primary"
                   size="lg"
                   class="flex-1 justify-center"
+                  style="background-color: #175FA4"
                   @click="showVerifikasiPemberi = true"
                 >
                   Lanjut
@@ -1306,9 +1391,9 @@ onMounted(() => {
                 </UButton>
                 <UButton
                   icon="i-lucide-circle-check-big"
-                  color="primary"
                   size="lg"
                   class="flex-1 justify-center"
+                  style="background-color: #175FA4"
                   :loading="pending"
                   @click="quickApprovePemberi(Keputusan.SETUJU)"
                 >
@@ -1321,65 +1406,40 @@ onMounted(() => {
       </section>
     </main>
 
-    <!-- Confirm Modal (quick Setuju) -->
-    <ConfirmModal
-      v-model="showConfirm"
-      :title="confirmTitle"
-      :description="confirmDescription"
-      :variant="confirmVariant"
-      confirm-text="Ya, Lanjutkan"
-      cancel-text="Batal"
-      @confirm="handleConfirm"
+    <!-- Modal Setuju (standarisasi) -->
+    <VerifyActionModal
+      v-model="showApproveModal"
+      variant="approve"
+      :title="approveTitle"
+      :description="approveDescription"
+      note-placeholder="Keterangan opsional"
+      confirm-label="Setuju"
+      :saving="savingAction"
+      @confirm="handleApprove"
     />
 
-    <!-- Reject Modal (dengan alasan) -->
-    <Modal v-model="showReject" :hideDefaultFooter="true" size="md">
-      <template #title>
-        <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">{{ rejectTitle }}</Heading>
-      </template>
-
-      <div class="mx-5 mb-3 space-y-3">
-        <!-- Banner warning -->
-        <div class="flex items-start gap-2.5 rounded-lg border border-error-100 bg-error-50 px-4 py-3 text-sm text-error-800 dark:border-error-900/40 dark:bg-error-900/20 dark:text-error-300">
-          <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-4 shrink-0" />
-          <span>Usulan akan ditolak. Tindakan ini tidak dapat dibatalkan.</span>
-        </div>
-
-        <!-- Alasan Reject (full width) -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Alasan Penolakan <span class="text-error-500">*</span>
-          </label>
-          <UTextarea v-model="rejectAlasan" :rows="4" autoresize :maxrows="10" class="w-full" placeholder="Jelaskan alasan penolakan (min 5 karakter)…" />
-          <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-            {{ rejectAlasan.trim().length }}/5 karakter minimum
-          </p>
-        </div>
-      </div>
-
-      <div class="flex gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <UButton variant="outline" color="neutral" size="lg" class="flex-1 justify-center" @click="showReject = false">Batal</UButton>
-        <UButton
-          color="error"
-          icon="i-lucide-x"
-          size="lg"
-          class="flex-1 justify-center"
-          :loading="pending"
-          :disabled="rejectAlasan.trim().length < 5"
-          @click="handleReject"
-        >
-          Tolak Usulan
-        </UButton>
-      </div>
-    </Modal>
+    <!-- Modal Tolak (standarisasi) -->
+    <VerifyActionModal
+      v-model="showRejectModal"
+      variant="reject"
+      :title="rejectTitle"
+      description="Usulan akan ditolak. Tindakan ini tidak dapat dibatalkan."
+      note-placeholder="Masukkan alasan penolakan (min 5 karakter)"
+      confirm-label="Tolak"
+      :saving="savingAction"
+      :require-note="true"
+      :min-note-length="5"
+      @confirm="handleRejectAction"
+    />
 
     <!-- Modal Verifikasi Pengusul (Minta Revisi) -->
-    <Modal v-model="showVerifikasiPengusul" :hideDefaultFooter="true" size="md">
+    <Teleport to="body">
+    <Modal v-model="showVerifikasiPengusul" :hideDefaultFooter="true" size="lg">
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">Minta Revisi Pengusul</Heading>
       </template>
 
-      <div class="mx-5 mb-3 space-y-3">
+      <div class="px-6 pb-6 space-y-4">
         <!-- Banner info revisi -->
         <div class="flex items-start gap-2.5 rounded-lg border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/40 dark:bg-warning-900/20 dark:text-warning-300">
           <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-4 shrink-0" />
@@ -1391,77 +1451,139 @@ onMounted(() => {
           <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Catatan Revisi <span class="text-error-500">*</span>
           </label>
-          <UTextarea v-model="vpForm.catatanRevisi" :rows="4" autoresize :maxrows="10" class="w-full" placeholder="Jelaskan revisi yang diminta (min 5 karakter)…" />
+          <textarea
+            v-model="vpForm.catatanRevisi"
+            rows="4"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            placeholder="Jelaskan revisi yang diminta (min 5 karakter)…"
+          />
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
             {{ (vpForm.catatanRevisi || '').trim().length }}/5 karakter minimum
           </p>
         </div>
-      </div>
 
-      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <UButton variant="ghost" color="neutral" @click="showVerifikasiPengusul = false">Batal</UButton>
-        <UButton
-          color="warning"
-          icon="i-lucide-rotate-ccw"
-          :loading="pending"
-          :disabled="(vpForm.catatanRevisi?.trim().length || 0) < 5"
-          @click="submitVerifikasiPengusulRevisi"
-        >
-          Kirim Revisi
-        </UButton>
+        <div class="flex gap-3 pt-2">
+          <button
+            class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
+            @click="showVerifikasiPengusul = false"
+          >
+            Batal
+          </button>
+          <button
+            class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
+            :disabled="(vpForm.catatanRevisi?.trim().length || 0) < 5 || pending"
+            @click="submitVerifikasiPengusulRevisi"
+          >
+            {{ pending ? 'Memproses...' : 'Kirim Revisi' }}
+          </button>
+        </div>
       </div>
     </Modal>
+    </Teleport>
 
     <!-- Modal Verifikasi Pemberi (Lanjut) -->
-    <Modal v-model="showVerifikasiPemberi" :hideDefaultFooter="true" size="md">
+    <Teleport to="body">
+    <Modal v-model="showVerifikasiPemberi" :hideDefaultFooter="true" size="lg">
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">Verifikasi Pemberi (Sekretaris)</Heading>
       </template>
 
-      <div class="mx-5 mb-3 space-y-3">
+      <div class="px-6 pb-6 space-y-4">
         <!-- Banner info -->
         <div class="flex items-start gap-2.5 rounded-lg border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-800 dark:border-success-900/40 dark:bg-success-900/20 dark:text-success-300">
           <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" />
           <span>Usulan akan diteruskan untuk pemilihan berkas oleh Sekretaris pemberi.</span>
         </div>
 
-        <!-- Durasi Disetujui (full width) -->
+        <!-- Durasi Disetujui -->
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Durasi Disetujui <span class="text-error-500">*</span>
           </label>
-          <USelect v-model="vpbForm.durasiAksesDisetujui" :items="durasiOptions" value-key="value" class="w-full" />
+          <div class="relative" ref="vpbDurasiDropdownRef">
+            <button
+              type="button"
+              @click="showVpbDurasiDropdown = !showVpbDurasiDropdown"
+              class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white transition hover:border-gray-400"
+            >
+              <span :class="vpbForm.durasiAksesDisetujui ? '' : 'text-gray-400 dark:text-gray-500'">{{ vpbForm.durasiAksesDisetujui === 'CUSTOM' && vpbForm.customTanggalSelesai ? formatDurasiLabel('CUSTOM', vpbForm.customTanggalSelesai) : vpbForm.durasiAksesDisetujui ? formatDurasiLabel(vpbForm.durasiAksesDisetujui) : 'Ingin mengubah durasi akses?' }}</span>
+              <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showVpbDurasiDropdown }" />
+            </button>
+            <div
+              v-if="showVpbDurasiDropdown"
+              class="absolute z-60 mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg"
+            >
+              <div class="max-h-[200px] overflow-y-auto">
+                <button
+                  v-for="d in durasiOptions"
+                  :key="d.value"
+                  type="button"
+                  @click="vpbForm.durasiAksesDisetujui = d.value; if (d.value !== 'CUSTOM') vpbForm.customTanggalSelesai = ''; showVpbDurasiDropdown = false"
+                  class="flex w-full items-center px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                  :class="vpbForm.durasiAksesDisetujui === d.value ? 'bg-blue-50 font-medium text-blue-700 dark:bg-gray-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'"
+                >
+                  {{ d.label }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+        <!-- Custom: date picker muncul saat Custom dipilih -->
+        <div v-if="vpbForm.durasiAksesDisetujui === 'CUSTOM'" class="mt-3">
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Tanggal Berakhir <span class="text-error-500">*</span>
+          </label>
+          <input
+            v-model="vpbForm.customTanggalSelesai"
+            type="date"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">
+          Durasi usulan pengusul: <span class="font-medium">{{ durasiUsulanLabel }}</span>
+        </p>
 
-        <!-- Catatan (full width) -->
+        <!-- Catatan -->
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Catatan
           </label>
-          <UTextarea v-model="vpbForm.catatan" :rows="3" autoresize :maxrows="8" class="w-full" placeholder="Catatan verifikasi atau alasan perubahan durasi (opsional)…" />
+          <textarea
+            v-model="vpbForm.catatan"
+            rows="3"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Catatan verifikasi atau alasan perubahan durasi (opsional)…"
+          />
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button
+            class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
+            @click="showVerifikasiPemberi = false"
+          >
+            Batal
+          </button>
+          <button
+            class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
+            style="background-color: #175FA4"
+            :disabled="pending || (vpbForm.durasiAksesDisetujui === 'CUSTOM' && !vpbForm.customTanggalSelesai)"
+            @click="submitVerifikasiPemberiLanjut"
+          >
+            {{ pending ? 'Memproses...' : 'Lanjutkan' }}
+          </button>
         </div>
       </div>
-
-      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <UButton variant="ghost" color="neutral" @click="showVerifikasiPemberi = false">Batal</UButton>
-        <UButton
-          color="primary"
-          icon="i-lucide-arrow-right"
-          :loading="pending"
-          @click="submitVerifikasiPemberiLanjut"
-        >
-          Lanjutkan
-        </UButton>
-      </div>
     </Modal>
+    </Teleport>
 
     <!-- Modal Persetujuan Pemberi (Minta Revisi) -->
-    <Modal v-model="showPersetujuanPemberi" :hideDefaultFooter="true" size="md">
+    <Teleport to="body">
+    <Modal v-model="showPersetujuanPemberi" :hideDefaultFooter="true" size="lg">
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">Minta Revisi Pemberi</Heading>
       </template>
 
-      <div class="mx-5 mb-3 space-y-3">
+      <div class="px-6 pb-6 space-y-4">
         <!-- Banner info revisi -->
         <div class="flex items-start gap-2.5 rounded-lg border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/40 dark:bg-warning-900/20 dark:text-warning-300">
           <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-4 shrink-0" />
@@ -1473,28 +1595,38 @@ onMounted(() => {
           <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Catatan Revisi <span class="text-error-500">*</span>
           </label>
-          <UTextarea v-model="ppForm.catatanRevisi" :rows="4" autoresize :maxrows="10" class="w-full" placeholder="Jelaskan revisi yang diminta (min 5 karakter)…" />
+          <textarea
+            v-model="ppForm.catatanRevisi"
+            rows="4"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            placeholder="Jelaskan revisi yang diminta (min 5 karakter)…"
+          />
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
             {{ (ppForm.catatanRevisi || '').trim().length }}/5 karakter minimum
           </p>
         </div>
-      </div>
 
-      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <UButton variant="ghost" color="neutral" @click="showPersetujuanPemberi = false">Batal</UButton>
-        <UButton
-          color="warning"
-          icon="i-lucide-rotate-ccw"
-          :loading="pending"
-          :disabled="(ppForm.catatanRevisi?.trim().length || 0) < 5"
-          @click="submitPersetujuanPemberiRevisi"
-        >
-          Kirim Revisi
-        </UButton>
+        <div class="flex gap-3 pt-2">
+          <button
+            class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
+            @click="showPersetujuanPemberi = false"
+          >
+            Batal
+          </button>
+          <button
+            class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
+            :disabled="(ppForm.catatanRevisi?.trim().length || 0) < 5 || pending"
+            @click="submitPersetujuanPemberiRevisi"
+          >
+            {{ pending ? 'Memproses...' : 'Kirim Revisi' }}
+          </button>
+        </div>
       </div>
     </Modal>
+    </Teleport>
 
     <!-- Modal Pilih Berkas (SE Pemberi) -->
+    <Teleport to="body">
     <Modal v-model="showPilihBerkas" :hideDefaultFooter="true" size="xl">
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">Pilih Berkas & Verifikator</Heading>
@@ -1622,19 +1754,23 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="flex gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <UButton variant="outline" color="neutral" size="lg" class="flex-1 justify-center" @click="showPilihBerkas = false">Batal</UButton>
-        <UButton
-          color="primary"
-          size="lg"
-          class="flex-1 justify-center"
-          :loading="pending"
-          :disabled="pilihBerkasForm.berkasIds.length === 0 || pilihBerkasForm.verifikatorPemberi.length === 0"
+      <div class="flex gap-3 px-6 pb-6 pt-2">
+        <button
+          class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
+          @click="showPilihBerkas = false"
+        >
+          Batal
+        </button>
+        <button
+          class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
+          style="background-color: #175FA4"
+          :disabled="pilihBerkasForm.berkasIds.length === 0 || pilihBerkasForm.verifikatorPemberi.length === 0 || pending"
           @click="submitPilihBerkas"
         >
-          Kirim
-        </UButton>
+          {{ pending ? 'Memproses...' : 'Kirim' }}
+        </button>
       </div>
     </Modal>
+    </Teleport>
   </div>
 </template>
