@@ -66,7 +66,7 @@ const customTanggalSelesai = ref('');
 const CORPORATE_SECRETARY_ORG_ID = 10002098;
 const todayStr = new Date().toISOString().split('T')[0];
 const jenisAksesSelected = ref<JenisAkses[]>([JenisAkses.LIHAT, JenisAkses.CETAK]);
-const selectedVerifikatorPersnums = ref<number[]>([]);
+const selectedVerifikatorPersnums = ref<{ persnum: number; catatan: string }[]>([]);
 
 // ── Custom divisi dropdown state ──
 const showDivisiDropdown = ref(false);
@@ -211,7 +211,7 @@ const toggleJenisAkses = (val: JenisAkses) => {
 };
 
 const toggleVerifikator = (persnum: number) => {
-  const idx = selectedVerifikatorPersnums.value.indexOf(persnum);
+  const idx = selectedVerifikatorPersnums.value.findIndex((v) => v.persnum === persnum);
   if (idx >= 0) {
     selectedVerifikatorPersnums.value.splice(idx, 1);
   } else {
@@ -219,7 +219,7 @@ const toggleVerifikator = (persnum: number) => {
       toast.add({ title: 'Maksimal 3 verifikator', color: 'error' });
       return;
     }
-    selectedVerifikatorPersnums.value.push(persnum);
+    selectedVerifikatorPersnums.value.push({ persnum, catatan: '' });
   }
 };
 
@@ -249,13 +249,14 @@ const availableVerifikator = computed(() => {
   // Ambil levelJabatan yang sudah dipilih
   const selectedLevels = new Set(
     selectedVerifikatorPersnums.value
-      .map((p) => getVerifikator(p)?.levelJabatan)
+      .map((p) => getVerifikator(p.persnum)?.levelJabatan)
       .filter(Boolean) as string[],
   );
+  const selectedPersnums = new Set(selectedVerifikatorPersnums.value.map((v) => v.persnum));
   return verifikatorList.value
     .filter(
       (v) =>
-        !selectedVerifikatorPersnums.value.includes(v.persnum) &&
+        !selectedPersnums.has(v.persnum) &&
         !selectedLevels.has(v.levelJabatan),
     )
     .sort((a, b) => (LEVEL_ORDER[a.levelJabatan] ?? 99) - (LEVEL_ORDER[b.levelJabatan] ?? 99));
@@ -264,8 +265,8 @@ const availableVerifikator = computed(() => {
 // Chips verifikator yang sudah dipilih, diurutkan dari tertinggi (EVP) ke terendah
 const sortedSelectedVerifikator = computed(() => {
   return [...selectedVerifikatorPersnums.value].sort((a, b) => {
-    const va = getVerifikator(a);
-    const vb = getVerifikator(b);
+    const va = getVerifikator(a.persnum);
+    const vb = getVerifikator(b.persnum);
     const la = va?.levelJabatan ?? '';
     const lb = vb?.levelJabatan ?? '';
     // Normalize BOD-1/2/3 → BOD untuk sorting
@@ -313,12 +314,12 @@ const handleSubmit = async () => {
   }
 
   const verifikatorPengusul = selectedVerifikatorPersnums.value
-    .map((persnum) => {
-      const v = verifikatorList.value.find((x) => x.persnum === persnum);
+    .map((item) => {
+      const v = verifikatorList.value.find((x) => x.persnum === item.persnum);
       if (!v) return null;
-      return { persnum: v.persnum, levelJabatan: v.levelJabatan as LevelJabatan };
+      return { persnum: v.persnum, levelJabatan: v.levelJabatan as LevelJabatan, ...(item.catatan ? { catatan: item.catatan } : {}) };
     })
-    .filter(Boolean) as { persnum: number; levelJabatan: LevelJabatan }[];
+    .filter(Boolean) as { persnum: number; levelJabatan: LevelJabatan; catatan?: string }[];
 
   try {
     await createUsulan({
@@ -575,29 +576,38 @@ onMounted(() => {
           <!-- Selected verifikator chips -->
           <div v-if="selectedVerifikatorPersnums.length > 0" class="mb-2 flex flex-col gap-1.5">
             <div
-              v-for="(persnum, idx) in sortedSelectedVerifikator"
-              :key="persnum"
-              class="flex items-center gap-1.5 rounded border border-gray-200 bg-gray-50 px-1.5 py-1 dark:border-gray-600 dark:bg-gray-700/30"
+              v-for="(item, idx) in sortedSelectedVerifikator"
+              :key="item.persnum"
+              class="rounded border border-gray-200 bg-gray-50 px-1.5 py-1 dark:border-gray-600 dark:bg-gray-700/30"
             >
-              <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
-                {{ idx + 1 }}
-              </span>
-              <div class="flex-1 min-w-0">
-                <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
-                  {{ getVerifikator(persnum)?.nama || `Persnum ${persnum}` }}
+              <div class="flex items-center gap-1.5">
+                <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                  {{ idx + 1 }}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
+                    {{ getVerifikator(item.persnum)?.nama || `Persnum ${item.persnum}` }}
+                  </div>
+                  <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                    {{ getVerifikator(item.persnum)?.jabatan || getVerifikator(item.persnum)?.levelJabatan || '' }}
+                  </div>
                 </div>
-                <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">
-                  {{ getVerifikator(persnum)?.jabatan || getVerifikator(persnum)?.levelJabatan || '' }}
-                </div>
+                <button
+                  type="button"
+                  @click="toggleVerifikator(item.persnum)"
+                  class="ml-0.5 shrink-0 text-gray-400 transition-colors hover:text-red-500"
+                  aria-label="Hapus verifikator"
+                >
+                  <UIcon name="i-lucide-trash-2" class="size-3.5" />
+                </button>
               </div>
-              <button
-                type="button"
-                @click="toggleVerifikator(persnum)"
-                class="ml-0.5 shrink-0 text-gray-400 transition-colors hover:text-red-500"
-                aria-label="Hapus verifikator"
-              >
-                <UIcon name="i-lucide-trash-2" class="size-3.5" />
-              </button>
+              <!-- Catatan per-verifikator dari SE pengusul -->
+              <textarea
+                v-model="item.catatan"
+                rows="2"
+                placeholder="Catatan khusus untuk verifikator ini (opsional)..."
+                class="mt-1 w-full resize-none rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-700 placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-500"
+              />
             </div>
           </div>
 

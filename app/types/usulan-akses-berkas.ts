@@ -79,6 +79,7 @@ export interface VerificationStep {
   keputusan: Keputusan;
   catatan: string | null;
   catatanRevisi: string | null;
+  catatanKeSE: string | null; // catatan khusus dari verifikator ke SE-nya
   checklist: Record<string, boolean>;
   verifiedAt: string;
 }
@@ -146,13 +147,14 @@ export interface CreateUsulanAksesBerkasPayload {
   customTanggalSelesai?: string;
   jenisAkses: JenisAkses[];
   suratUsulanFileId?: string;
-  verifikatorPengusul: { persnum: number; levelJabatan: LevelJabatan }[];
+  verifikatorPengusul: { persnum: number; levelJabatan: LevelJabatan; catatan?: string }[];
   penerimaAksesTambahan?: number[];
 }
 
 export interface VerifikasiPengusulPayload {
   catatan?: string;
   catatanRevisi?: string;
+  catatanKeSE?: string; // catatan khusus dari verifikator ke SE pengusul
   keputusan: Keputusan;
 }
 
@@ -173,6 +175,7 @@ export interface PilihBerkasPayload {
 export interface PersetujuanPemberiPayload {
   catatan?: string;
   catatanRevisi?: string;
+  catatanKeSE?: string; // catatan khusus dari verifikator ke SE pemberi
   keputusan: Keputusan;
   durasiAksesDisetujui?: DurasiPreset;
   catatanPerubahanDurasi?: string;
