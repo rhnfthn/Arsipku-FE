@@ -992,6 +992,18 @@ const adminMenuKelola = computed(() => {
       showIfTuRole: true,
     },
     {
+    {
+      label: 'Penataan Arsip Inaktif',
+      to: '/maintenance/penataan-arsip-inaktif',
+      icon: 'i-lucide-archive',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Persetujuan',
+      to: '/maintenance/verifikasi-persetujuan-tu',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
       label: 'Verifikasi Usulan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
@@ -1081,6 +1093,18 @@ const userMenuKelola = computed(() => {
       showIfTuRole: true,
     },
     {
+    {
+      label: 'Penataan Arsip Inaktif',
+      to: '/maintenance/penataan-arsip-inaktif',
+      icon: 'i-lucide-archive',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Persetujuan',
+      to: '/maintenance/verifikasi-persetujuan-tu',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasan: true,
+    },
       label: 'Verifikasi Usulan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
