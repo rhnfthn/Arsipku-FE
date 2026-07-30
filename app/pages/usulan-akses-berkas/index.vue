@@ -12,7 +12,18 @@ import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
 definePageMeta({ middleware: 'auth' });
-useHead({ title: 'Persetujuan Usulan Akses Berkas' });
+
+// ── Route & query param (deklarasi awal agar bisa dipakai di useHead/breadcrumb) ──
+const route = useRoute();
+const queryTab = route.query.tab as string | undefined;
+
+useHead({
+  title:
+    queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
+    : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
+    : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
+    : 'Usulan Akses Berkas',
+});
 
 const { t } = useI18n();
 const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifikasiPemberi, persetujuanPemberi } = useUsulanAksesBerkas();
@@ -49,7 +60,11 @@ const itemsPerPage = ref(10);
 // SE pemberi: default "Perlu Verifikasi Pemberi" (usulan masuk ke divisinya)
 // Managerial: default "Perlu Verifikasi Saya" (usulan yang harus diverifikasi)
 type TabValue = 'all' | 'mine' | 'verify-pemberi' | 'verify-me';
-const activeTab = ref<TabValue>('all');
+const activeTab = ref<TabValue>(
+  queryTab === 'mine' || queryTab === 'verify-pemberi' || queryTab === 'verify-me' || queryTab === 'all'
+    ? queryTab as TabValue
+    : 'all',
+);
 
 const tabs = computed(() => {
   const ps = user.value?.position_status;
@@ -77,9 +92,9 @@ const tabs = computed(() => {
   return list;
 });
 
-// Auto-select default tab berdasarkan peran
+// Auto-select default tab berdasarkan peran (hanya jika tidak ada query param tab)
 watchEffect(() => {
-  if (activeTab.value === 'all' && tabs.value.length > 1) {
+  if (activeTab.value === 'all' && !queryTab && tabs.value.length > 1) {
     const ps = user.value?.position_status;
     if (ps === 'SE' || ps === 'PS') {
       // SE delegasi: default ke "Perlu Verifikasi Pemberi" (usulan yang masuk ke divisinya)
@@ -111,11 +126,18 @@ const tabStatusFilter = computed(() => {
   }
 });
 
-const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Persetujuan', to: '#' },
-  { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
-]);
+const breadcrumbs = computed(() => {
+  const secondLabel =
+    queryTab === 'mine' ? 'Permintaan'
+    : queryTab === 'verify-pemberi' ? 'Pemberian'
+    : queryTab === 'verify-me' ? 'Persetujuan'
+    : 'Kelola';
+  return [
+    { label: t('beranda') || 'Beranda', to: '/beranda' },
+    { label: secondLabel, to: '#' },
+    { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
+  ];
+});
 
 const statusOptions = [
   { label: 'Semua', value: '' },
@@ -565,7 +587,12 @@ onBeforeUnmount(() => {
       <PageHeader :items="breadcrumbs">
         <template #title>
           <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            Persetujuan Usulan Akses Berkas
+            {{
+              queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
+              : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
+              : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
+              : 'Usulan Akses Berkas'
+            }}
           </h1>
         </template>
       </PageHeader>
