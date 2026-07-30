@@ -5,16 +5,22 @@
       <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Kirim ke Unit Tata Naskah</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Kirim ke TU</h3>
           <button @click="close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <UIcon name="i-lucide-x" class="w-5 h-5" />
           </button>
         </div>
         <!-- Body -->
         <div class="p-6">
-          <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
-            Apakah Anda yakin ingin mengirim usulan ini ke Unit Tata Naskah?
-          </p>
+          <!-- Card konfirmasi -->
+          <div class="bg-[#457fb6]/5 dark:bg-[#457fb6]/10 border border-[#457fb6]/20 dark:border-[#457fb6]/30 rounded-lg p-4 mb-4">
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-help-circle" class="w-5 h-5 text-[#457fb6] mt-0.5 shrink-0" />
+              <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
+                Apakah Anda yakin dan setuju untuk mengirimkannya ke TU?
+              </p>
+            </div>
+          </div>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Pastikan Berkas Fisik dan Berita Acara Serah Terima sudah disiapkan sebelumnya.
           </p>
@@ -42,9 +48,9 @@
           <button @click="close" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             Batal
           </button>
-          <button @click="confirm" :disabled="loading" class="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors">
+          <button @click="confirm" :disabled="loading" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors">
             <UIcon v-if="loading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-            Kirim ke TU
+            Ya, Setujui & Kirim ke TU
           </button>
         </div>
       </div>

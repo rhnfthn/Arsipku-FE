@@ -38,29 +38,11 @@
         </div>
       </div>
 
-      <!-- 2-column layout: info+timeline+aksi (left) + verifikasi ringkas (right) -->
+      <!-- 2-column layout: info+timeline+aksi (left) + timeline (right) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <!-- Left: Informasi Usulan + Timeline + Tombol Aksi (8/12) -->
         <div class="lg:col-span-8 space-y-5">
           <VerifikasiDetail :usulan="usulan" />
-
-          <!-- Card Verifikasi Usulan (ringkas) -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Verifikasi Usulan</h3>
-            <div class="space-y-2 mb-4 text-sm">
-              <p><span class="text-gray-500 dark:text-gray-400">Sekretaris:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.sekretarisName }}</span></p>
-              <p><span class="text-gray-500 dark:text-gray-400">Arsip:</span> <span class="font-medium text-gray-900 dark:text-white">{{ usulan.arsipPerihal }}</span></p>
-            </div>
-            <div class="mb-4">
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi</label>
-              <textarea
-                v-model="catatanVerifikasi"
-                rows="4"
-                placeholder="Catatan verifikasi (opsional)..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
-              ></textarea>
-            </div>
-          </div>
 
           <!-- Berita Acara (hapus dari atasan managerial — hanya di sekretaris) -->
 
@@ -170,32 +152,15 @@
             </div>
           </div>
 
-          <!-- Card Siapkan Berkas Fisik (saat Siap Kirim ke TU) -->
-          <div
-            v-if="canKirimTU"
-            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-          >
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Siapkan Berkas Fisik</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Sebelum mengirim usulan ke Unit Tata Naskah, pastikan:
-            </p>
-            <div class="space-y-3 mb-4">
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="checklistBerkasFisik" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
-                <span class="text-sm text-gray-700 dark:text-gray-300">Berkas Fisik sudah disiapkan</span>
-              </label>
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="checklistBeritaAcara" type="checkbox" class="w-5 h-5 text-[#457fb6] border-gray-300 rounded focus:ring-[#457fb6]" />
-                <span class="text-sm text-gray-700 dark:text-gray-300">Berita Acara Serah Terima sudah disiapkan</span>
-              </label>
-            </div>
+          <!-- Tombol Setujui (Kirim ke TU) — muncul saat verifikasi terakhir selesai -->
+          <div v-if="canKirimTU" class="flex gap-2">
             <button
               @click="onKirimTU"
-              :disabled="!canSendToTU || actionLoading"
-              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
+              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui
             </button>
           </div>
 
@@ -210,7 +175,7 @@
             </button>
             <button
               v-if="canVerify"
-              @click="onApprove(catatanVerifikasi)"
+              @click="onApprove"
               :disabled="actionLoading"
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
@@ -220,7 +185,7 @@
             <!-- Verifikasi Terakhir (dengan Daftar Isi + BA) -->
             <button
               v-if="canFinalVerify"
-              @click="onFinalVerify(catatanVerifikasi)"
+              @click="onFinalVerify"
               :disabled="actionLoading"
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
@@ -359,7 +324,6 @@ const approveMode = ref<'verify' | 'finalVerify'>('verify');
 const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
-const catatanVerifikasi = ref('');
 const daftarIsi = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 const checklistBerkasFisik = ref(false);
@@ -663,21 +627,21 @@ const act = async (fn: () => Promise<any>) => {
   }
 };
 
-const onApprove = (catatan: string) => {
+const onApprove = () => {
   approveMode.value = 'verify';
   isApproveModalOpen.value = true;
 };
 
-const onFinalVerify = (catatan: string) => {
+const onFinalVerify = () => {
   approveMode.value = 'finalVerify';
   isApproveModalOpen.value = true;
 };
 
-const onConfirmApprove = () => {
+const onConfirmApprove = (catatan: string) => {
   if (approveMode.value === 'finalVerify') {
-    act(() => finalVerify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatanVerifikasi.value }));
+    act(() => finalVerify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
   } else {
-    act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatanVerifikasi.value }));
+    act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
   }
 };
 
@@ -697,11 +661,11 @@ const onKirimUsulPindah = () => {
 };
 
 const onKirimTU = () => {
-  if (!canSendToTU.value) return;
   isSendToTUModalOpen.value = true;
 };
 
 const onConfirmKirimTU = () => {
+  isSendToTUModalOpen.value = false;
   act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
 };
 
