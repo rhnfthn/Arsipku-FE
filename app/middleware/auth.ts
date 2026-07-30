@@ -87,6 +87,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/kelola/pemeliharaan/pemberkasan',
     '/kelola/pemeliharaan/persetujuan-pemberkasan',
     '/usulan-akses-berkas',
+    '/penggunaan',
     '/riwayat-aktivitas',
     '/usulan-pindah',
     '/maintenance/transfer-inactive-file',
