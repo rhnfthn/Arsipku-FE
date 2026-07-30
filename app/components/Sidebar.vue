@@ -980,7 +980,7 @@ const adminMenuKelola = computed(() => {
       showIfTuOrSekretaris: true,
     },
     {
-      label: 'Notifikasi Usulan Pindah Arsip',
+      label: 'Penerimaan Usulan',
       to: '/maintenance/notifikasi-usulan-pindah-arsip',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
@@ -1075,7 +1075,7 @@ const userMenuKelola = computed(() => {
       showIfTuOrSekretaris: true,
     },
     {
-      label: 'Notifikasi Usulan Pindah Arsip',
+label: 'Penerimaan Usulan',
       to: '/maintenance/notifikasi-usulan-pindah-arsip',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
