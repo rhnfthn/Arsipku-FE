@@ -65,6 +65,7 @@ export interface VerifikatorItem {
   bodTag?: string;
   isDelegasi?: boolean;
   positionStatus?: string | null;
+  catatan?: string; // catatan personal dari SE pemberi (hanya terlihat oleh verifikator ini)
 }
 
 export interface VerificationStep {
@@ -166,7 +167,7 @@ export interface VerifikasiPemberiPayload {
 export interface PilihBerkasPayload {
   berkasIds: string[];
   catatanPenerusan?: string;
-  verifikatorPemberi: { persnum: number; levelJabatan: LevelJabatan }[];
+  verifikatorPemberi: { persnum: number; levelJabatan: LevelJabatan; catatan?: string }[];
 }
 
 export interface PersetujuanPemberiPayload {
