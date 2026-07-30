@@ -1015,10 +1015,13 @@ const adminMenuKelola = computed(() => {
     },
   ];
 
+  const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
+
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
+      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : null,
       children: pemeliharaanChildren,
     },
   ];
@@ -1063,9 +1066,11 @@ const adminMenuKelola = computed(() => {
   });
 
   if (penggunaanChildren.length > 0) {
+    const penggunaanBadge = penggunaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
     menus.push({
       label: 'Penggunaan',
       icon: 'i-lucide-folder-open',
+      badge: penggunaanBadge > 0 ? penggunaanBadge : null,
       children: penggunaanChildren,
     });
   }
@@ -1113,10 +1118,13 @@ label: 'Penerimaan Usulan',
     },
   ];
 
+  const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
+
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
+      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : null,
       children: pemeliharaanChildren,
     },
   ];
@@ -1155,9 +1163,11 @@ label: 'Penerimaan Usulan',
   });
 
   if (penggunaanChildren.length > 0) {
+    const penggunaanBadge = penggunaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
     menus.push({
       label: 'Penggunaan',
       icon: 'i-lucide-folder-open',
+      badge: penggunaanBadge > 0 ? penggunaanBadge : null,
       children: penggunaanChildren,
     });
   }
