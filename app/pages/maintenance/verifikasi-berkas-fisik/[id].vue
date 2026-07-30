@@ -143,20 +143,21 @@
             </div>
           </div>
 
-          <!-- Status info -->
+          <!-- Status info: Sudah diajukan ke Atasan TU -->
           <div
-            v-if="item.status === 'BERKAS_FISIK_SESUAI'"
-            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
+            v-if="item.tuApprovedAt"
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
           >
             <div class="flex items-start gap-3">
-              <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
               <div>
-                <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Berkas Sesuai</h3>
-                <p class="text-sm text-green-600 dark:text-green-400">Berkas fisik telah diverifikasi sesuai. Silakan ajukan ke Atasan Managerial TU.</p>
+                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Sudah Diajukan ke Atasan TU</h3>
+                <p class="text-sm text-blue-600 dark:text-blue-400">Berkas fisik dan berita acara serah terima telah dikonfirmasi cocok. Usulan telah diajukan ke Atasan Managerial TU.</p>
               </div>
             </div>
           </div>
 
+          <!-- Status info: Berkas dikembalikan -->
           <div
             v-if="item.status === 'BERKAS_FISIK_TIDAK_SESUAI'"
             class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-sm p-5"
@@ -166,19 +167,6 @@
               <div>
                 <h3 class="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Berkas Tidak Sesuai</h3>
                 <p class="text-sm text-red-600 dark:text-red-400">{{ item.physicalVerificationNote || 'Berkas dikembalikan ke pengirim.' }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="item.status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU'"
-            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
-          >
-            <div class="flex items-start gap-3">
-              <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-              <div>
-                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Persetujuan Atasan TU</h3>
-                <p class="text-sm text-blue-600 dark:text-blue-400">Usulan telah diajukan ke Atasan Managerial TU ({{ item.atasanTuName || '-' }}).</p>
               </div>
             </div>
           </div>
@@ -316,7 +304,8 @@ const daftarBerkas = computed(() => {
 
 const isAlreadyVerified = computed(() => {
   if (!item.value) return false
-  return ['BERKAS_FISIK_SESUAI', 'BERKAS_FISIK_TIDAK_SESUAI', 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU'].includes(item.value.status)
+  // Disable form jika sudah diajukan ke atasan TU atau berkas dikembalikan
+  return !!item.value.tuApprovedAt || item.value.status === 'BERKAS_FISIK_TIDAK_SESUAI'
 })
 
 const canAjukan = computed(() => {
@@ -338,8 +327,8 @@ const loadDetail = async () => {
   try {
     const res = await fetchNotifikasiDetail(route.params.id as string)
     item.value = res?.data ?? res
-    // Pre-fill jika sudah diverifikasi
-    if (item.value?.status === 'BERKAS_FISIK_SESUAI') {
+    // Pre-fill jika sudah diverifikasi/diajukan
+    if (item.value?.tuApprovedAt) {
       verifikasiResult.value = 'sesuai'
       catatan.value = item.value.physicalVerificationNote || ''
     } else if (item.value?.status === 'BERKAS_FISIK_TIDAK_SESUAI') {
