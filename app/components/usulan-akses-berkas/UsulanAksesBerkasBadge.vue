@@ -77,7 +77,10 @@ const statusConfig: Record<StatusUsulan, { label: string; class: string }> = {
   },
 };
 
-const config = computed(() => statusConfig[props.status] || statusConfig[StatusUsulan.DRAFT]);
+const config = computed(() => {
+  const s = props.status ?? StatusUsulan.DRAFT;
+  return statusConfig[s] || { label: s, class: 'bg-gray-100 text-gray-600' };
+});
 </script>
 
 <template>

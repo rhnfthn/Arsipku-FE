@@ -5,7 +5,7 @@ export type PemeliharaanAccess = 'pemberkasan' | 'persetujuan';
 
 const PEMBERKASAN_ACTORS = new Set(['SE', 'PS']);
 const PERSETUJUAN_ACTORS = new Set(['PT', 'PH']);
-const MANAGERIAL_TAGS = new Set(['BOD', 'BOD-1', 'BOD-2', 'BOD-3']);
+const MANAGERIAL_TAGS = new Set(['BOD', 'BOD-1', 'BOD-2', 'BOD-3', 'EVP', 'VP', 'AVP']);
 
 export const usePemeliharaanAccess = () => {
   const { user } = useAuth();

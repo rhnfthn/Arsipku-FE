@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ChevronDown, Eye, Plus } from 'lucide-vue-next';
+import { ChevronDown } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAksesBerkas.vue';
@@ -45,27 +45,30 @@ const itemsPerPage = ref(10);
 // SE pengusul: default "Usulan Saya" (usulan yang dia buat)
 // SE pemberi: default "Perlu Verifikasi Pemberi" (usulan masuk ke divisinya)
 // Managerial: default "Perlu Verifikasi Saya" (usulan yang harus diverifikasi)
-const activeTab = ref<'all' | 'mine' | 'verify-pemberi' | 'verify-me'>('all');
+type TabValue = 'all' | 'mine' | 'verify-pemberi' | 'verify-me';
+const activeTab = ref<TabValue>('all');
 
 const tabs = computed(() => {
   const ps = user.value?.position_status;
-  const isSE = ps === 'SE';
+  const isSE = ps === 'SE' || ps === 'PS';
   const isMgr = !isSE && (() => {
     const pos = (user.value?.positionText || '').toUpperCase();
-    return pos.includes('EVP') || pos.includes('AVP') || pos.includes(' VP ') || pos.startsWith('VP ') || pos === 'VP';
+    const hasBod = pos.includes('BOD');
+    const hasLegacy = pos.includes('EVP') || pos.includes('AVP') || pos.includes(' VP ') || pos.startsWith('VP ') || pos === 'VP';
+    return hasBod || hasLegacy;
   })();
 
-  const list = [
-    { label: 'Semua', value: 'all' as const },
+  const list: { label: string; value: TabValue }[] = [
+    { label: 'Semua', value: 'all' },
   ];
 
   if (isSE) {
-    list.push({ label: 'Usulan Saya', value: 'mine' as const });
-    list.push({ label: 'Perlu Verifikasi Pemberi', value: 'verify-pemberi' as const });
+    list.push({ label: 'Usulan Saya', value: 'mine' });
+    list.push({ label: 'Perlu Verifikasi Pemberi', value: 'verify-pemberi' });
   }
 
   if (isMgr) {
-    list.push({ label: 'Perlu Verifikasi Saya', value: 'verify-me' as const });
+    list.push({ label: 'Perlu Verifikasi Saya', value: 'verify-me' });
   }
 
   return list;
@@ -75,11 +78,14 @@ const tabs = computed(() => {
 watchEffect(() => {
   if (activeTab.value === 'all' && tabs.value.length > 1) {
     const ps = user.value?.position_status;
-    if (ps === 'SE') {
-      activeTab.value = 'mine';
+    if (ps === 'SE' || ps === 'PS') {
+      // SE delegasi: default ke "Perlu Verifikasi Pemberi" (usulan yang masuk ke divisinya)
+      activeTab.value = 'verify-pemberi';
     } else {
       const pos = (user.value?.positionText || '').toUpperCase();
-      if (pos.includes('EVP') || pos.includes('AVP') || pos.includes(' VP ') || pos.startsWith('VP ') || pos === 'VP') {
+      const hasBod = pos.includes('BOD');
+      const hasLegacy = pos.includes('EVP') || pos.includes('AVP') || pos.includes(' VP ') || pos.startsWith('VP ') || pos === 'VP';
+      if (hasBod || hasLegacy) {
         activeTab.value = 'verify-me';
       }
     }
@@ -140,6 +146,9 @@ const loadData = async () => {
       scope: scopeMap[activeTab.value],
       page: currentPage.value,
       limit: itemsPerPage.value,
+      search: searchQuery.value || undefined,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
     });
   } catch (err: any) {
     toast.add({
@@ -204,6 +213,43 @@ function selectRowsPerPage(n: number) {
   currentPage.value = 1;
   loadData();
 }
+
+// ── Custom dropdown for scope/tab filter (pemberkasan style) ─────
+const openScopeFilter = ref(false);
+function toggleScopeFilter() {
+  openScopeFilter.value = !openScopeFilter.value;
+}
+function selectScopeFilter(value: TabValue) {
+  activeTab.value = value;
+  openScopeFilter.value = false;
+}
+const scopeLabel = computed(() => {
+  return tabs.value.find((t) => t.value === activeTab.value)?.label || 'Semua';
+});
+
+// ── Custom dropdown for status filter (pemberkasan style) ────────
+const openFilterStatus = ref(false);
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+}
+function selectFilterStatus(value: string) {
+  filterStatus.value = value;
+  openFilterStatus.value = false;
+  currentPage.value = 1;
+  loadData();
+}
+const statusLabel = computed(() => {
+  return statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua';
+});
+
+function resetFilters() {
+  filterStatus.value = '';
+  searchQuery.value = '';
+  activeTab.value = tabs.value.length > 1 ? tabs.value[1].value : 'all';
+  currentPage.value = 1;
+  loadData();
+}
+
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const els = document.querySelectorAll('[data-custom-dropdown]');
@@ -211,18 +257,86 @@ function handleDocumentClick(e: MouseEvent) {
     if (el.contains(target)) return;
   }
   openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+  openScopeFilter.value = false;
 }
 
 // ── DataTable columns (pemberkasan style) ───────────────────────
 const columns = [
-  { key: 'nomorUsulan', label: 'Nomor Usulan' },
-  { key: 'jenisBerkas', label: 'Jenis Berkas' },
-  { key: 'tujuanAkses', label: 'Tujuan Akses' },
-  { key: 'durasiAkses', label: 'Durasi' },
-  { key: 'status', label: 'Status' },
-  { key: 'createdAt', label: 'Dibuat' },
+  { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
+  { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true },
+  { key: 'durasiAkses', label: 'Durasi', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
+  { key: 'createdAt', label: 'Dibuat', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
+
+// ── Sort ────────────────────────────────────────────────────────
+const sortKey = ref('createdAt');
+const sortDir = ref<'asc' | 'desc'>('desc');
+
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
+  currentPage.value = 1;
+  loadData();
+};
+
+// ── Export ──────────────────────────────────────────────────────
+const isExporting = ref(false);
+
+const exportData = async () => {
+  if (pagination.total === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const status = activeTab.value === 'all'
+      ? (filterStatus.value || undefined)
+      : (tabStatusFilter.value || undefined);
+    const scopeMap: Record<string, string> = {
+      mine: 'mine',
+      'verify-pemberi': 'verify-pemberi',
+      'verify-me': 'verify-me',
+    };
+    await fetchList({
+      status,
+      scope: scopeMap[activeTab.value],
+      page: 1,
+      limit: pagination.total || 9999,
+      search: searchQuery.value || undefined,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
+    });
+    const rows = usulanList.value;
+    if (!rows.length) {
+      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      return;
+    }
+    const headers = ['Nomor Usulan', 'Jenis Berkas', 'Durasi', 'Status', 'Dibuat'];
+    const csvRows = rows.map((r: any) => [
+      r.nomorUsulan,
+      r.jenisBerkas,
+      r.durasiAkses?.replace('_', ' '),
+      r.status,
+      formatDate(r.createdAt),
+    ]);
+    downloadCsv(`usulan-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+    // Reload current page
+    await loadData();
+  } catch (e) {
+    console.error('Gagal export:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 onMounted(() => {
   loadData();
@@ -235,51 +349,41 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="bg-gray-50 px-4 pb-10 pt-5 dark:bg-gray-900 sm:px-5 min-h-screen">
-    <PageHeader :items="breadcrumbs">
-      <template #title>
-        <div class="flex flex-wrap items-center gap-3">
+  <div class="min-h-screen bg-gray-50 px-4 pb-10 pt-5 dark:bg-gray-900 sm:px-5">
+    <!-- Header: title kiri + button kanan (pemberkasan style) -->
+    <div class="mb-5">
+      <PageHeader :items="breadcrumbs">
+        <template #title>
           <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
             Persetujuan Usulan Akses Berkas
           </h1>
-          <button
-            v-if="isDelegatedSekretaris"
-            @click="openAdd = true"
-            class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700"
-          >
-            <UIcon name="i-lucide-plus" class="size-4" />
-            Buat Usulan
-          </button>
-        </div>
-      </template>
-    </PageHeader>
+        </template>
+      </PageHeader>
+    </div>
 
-    <!-- Tab Navigasi -->
-    <div v-if="tabs.length > 1" class="mb-4 flex gap-1">
-      <button
-        v-for="tab in tabs"
-        :key="tab.value"
-        @click="activeTab = tab.value"
-        class="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-        :class="activeTab === tab.value
-          ? 'bg-primary text-white shadow-sm dark:bg-primary-600'
-          : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'"
+    <!-- Button Buat Usulan (di atas tabel, di luar card) -->
+    <div v-if="isDelegatedSekretaris" class="mb-4 flex justify-end">
+      <UButton
+        icon="i-lucide-plus"
+        color="primary"
+        size="md"
+        @click="openAdd = true"
       >
-        {{ tab.label }}
-      </button>
+        Buat Usulan Akses
+      </UButton>
     </div>
 
     <!-- Main Card -->
     <div class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
-      <!-- Toolbar -->
-      <div class="flex w-full items-center gap-3 border-b border-gray-200 p-4 dark:border-gray-700">
+      <!-- Toolbar (pemberkasan style: border-gray-300, custom dropdowns, reset) -->
+      <div class="flex w-full items-center gap-3 border-b border-gray-300 p-4 dark:border-gray-700">
         <div class="flex flex-1 flex-wrap items-center gap-3">
-          <!-- Rows per page dropdown (pemberkasan style) -->
+          <!-- Rows per page dropdown -->
           <div class="relative" data-custom-dropdown>
             <button
               type="button"
               @click.stop="toggleRowsPerPage"
-              class="flex min-w-[70px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              class="flex min-w-[70px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               <span>{{ itemsPerPage }}</span>
               <ChevronDown
@@ -290,7 +394,7 @@ onBeforeUnmount(() => {
             <Transition name="filter-dd">
               <div
                 v-if="openRowsPerPage"
-                class="absolute left-0 top-full z-50 min-w-[80px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                class="absolute left-0 top-full z-50 mt-1.5 min-w-[80px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
               >
                 <button
                   v-for="n in [10, 25, 50]"
@@ -310,28 +414,114 @@ onBeforeUnmount(() => {
             </Transition>
           </div>
 
-          <!-- Search (pemberkasan style) -->
-          <div class="relative min-w-[180px] flex-1">
-            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 w-4 h-4 -translate-y-1/2 text-gray-400" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Cari nomor usulan…"
-              class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-500 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:placeholder-gray-400 dark:focus:bg-gray-600"
-            />
+          <!-- Scope filter custom dropdown (only when tabs > 1) -->
+          <div v-if="tabs.length > 1" class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleScopeFilter"
+              class="flex min-w-[130px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            >
+              <span class="truncate">{{ scopeLabel }}</span>
+              <ChevronDown
+                class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': openScopeFilter }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openScopeFilter"
+                class="absolute left-0 top-full z-50 mt-1.5 min-w-[220px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              >
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.value"
+                  type="button"
+                  @click.stop="selectScopeFilter(tab.value)"
+                  :class="[
+                    'w-full border-b border-gray-50 px-4 py-2.5 text-left text-sm transition-colors last:border-0 dark:border-gray-700',
+                    activeTab === tab.value
+                      ? 'bg-primary/5 font-medium text-primary dark:text-primary-400'
+                      : 'text-gray-700 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
+            </Transition>
           </div>
 
-          <!-- Status filter (only on "all" tab) -->
-          <div v-if="activeTab === 'all'" class="relative">
-            <select
-              v-model="filterStatus"
-              class="rounded-lg border border-gray-200 bg-white py-1.5 pl-3 pr-8 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          <!-- Status filter custom dropdown (only on "all" tab) -->
+          <div v-if="activeTab === 'all'" class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterStatus"
+              class="flex min-w-[130px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
-              <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </option>
-            </select>
+              <span class="truncate">{{ statusLabel }}</span>
+              <ChevronDown
+                class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterStatus }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full z-50 mt-1.5 min-w-[220px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              >
+                <button
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(opt.value)"
+                  :class="[
+                    'w-full border-b border-gray-50 px-4 py-2.5 text-left text-sm transition-colors last:border-0 dark:border-gray-700',
+                    filterStatus === opt.value
+                      ? 'bg-primary/5 font-medium text-primary dark:text-primary-400'
+                      : 'text-gray-700 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
           </div>
+
+          <!-- Reset filter -->
+          <UButton
+            type="button"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="resetFilters"
+            title="Reset Filter"
+            aria-label="Reset Filter"
+          />
+
+          <!-- Search -->
+          <UInput
+            v-model="searchQuery"
+            icon="i-lucide-search"
+            placeholder="Cari nomor usulan…"
+            class="min-w-[180px] flex-1"
+          />
+        </div>
+        <!-- Action buttons -->
+        <div class="flex shrink-0 items-center gap-2">
+          <!-- Export button -->
+          <button
+            @click="exportData"
+            :disabled="isExporting"
+            class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+          <UIcon
+            v-if="isExporting"
+            name="i-lucide-loader-circle"
+            class="w-3.5 h-3.5 animate-spin"
+          />
+          <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+          Export
+        </button>
         </div>
       </div>
 
@@ -340,10 +530,13 @@ onBeforeUnmount(() => {
         :columns="columns"
         :rows="usulanList"
         :loading="pending"
-        header-class="bg-primary dark:bg-primary-700 text-left text-white"
+        :sort-key="sortKey"
+        :sort-dir="sortDir"
+        header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
         empty-message="Belum ada usulan akses berkas."
+        @sort="handleSort"
       >
         <template #cell-nomorUsulan="{ row }">
           <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomorUsulan }}</span>
@@ -358,11 +551,6 @@ onBeforeUnmount(() => {
             {{ row.jenisBerkas }}
           </span>
         </template>
-        <template #cell-tujuanAkses="{ row }">
-          <p class="max-w-xs truncate text-gray-700 dark:text-gray-300" :title="row.tujuanAkses">
-            {{ row.tujuanAkses }}
-          </p>
-        </template>
         <template #cell-durasiAkses="{ row }">
           <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.durasiAkses?.replace('_', ' ') }}</span>
         </template>
@@ -375,11 +563,10 @@ onBeforeUnmount(() => {
         <template #cell-aksi="{ row }">
           <NuxtLink
             :to="`/usulan-akses-berkas/${row.id}`"
-            class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
+            class="inline-flex rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
             title="Lihat Detail"
           >
-            <Eye class="h-4 w-4" />
-            Detail
+            <UIcon name="i-lucide-eye" class="h-4 w-4" />
           </NuxtLink>
         </template>
       </DataTable>
