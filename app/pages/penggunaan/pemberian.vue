@@ -5,12 +5,14 @@ import { useI18n } from 'vue-i18n';
 import { FileText, Clock, CheckCircle2, XCircle, ChevronLeft, Eye, Download, Folder } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
 
 const { t } = useI18n();
 const { fetchMyEntitlements, fetchNaskahByBerkas } = useUsulanAksesBerkas();
+const { markEntitlementsRead } = useUsulanAksesBerkasCounts();
 const toast = useToast();
 
 const extractErrorMessage = (err: any): string => {
@@ -146,9 +148,38 @@ const berkasColumns = [
   { key: 'klasifikasi', label: 'Klasifikasi' },
   { key: 'permissions', label: 'Akses' },
   { key: 'periode', label: 'Periode' },
+  { key: 'progress', label: 'Progress' },
   { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi' },
 ];
+
+// ── Progress bar: durasi akses berkas ──────────────
+// Bar merepresentasikan waktu yang sudah berlalu dari tanggalMulai ke tanggalSelesai.
+// 0% = baru mulai, 100% = sudah habis.
+// Warna: hijau (0-50%), kuning (50-80%), merah (80-100%)
+const getProgressPercent = (row: BerkasEntitlement): number => {
+  if (!row.tanggalMulai || !row.tanggalSelesai) return 0;
+  const mulai = new Date(row.tanggalMulai).getTime();
+  const selesai = new Date(row.tanggalSelesai).getTime();
+  const now = Date.now();
+  if (now <= mulai) return 0;
+  if (now >= selesai) return 100;
+  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
+};
+
+const getProgressBarClass = (percent: number): string => {
+  if (percent < 50) return 'bg-green-500';
+  if (percent < 80) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
+const getProgressLabel = (row: BerkasEntitlement): string => {
+  if (row.isExpired) return 'Habis';
+  if (!row.tanggalSelesai) return '-';
+  const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (sisa <= 0) return 'Habis';
+  return `${sisa} hari lagi`;
+};
 
 const naskahColumns = [
   { key: 'perihal', label: 'Perihal' },
@@ -160,6 +191,8 @@ const naskahColumns = [
 
 onMounted(() => {
   loadBerkas();
+  // Clear badge "akses diterbitkan baru" saat halaman dibuka
+  markEntitlementsRead();
 });
 </script>
 
@@ -241,6 +274,18 @@ onMounted(() => {
                   {{ formatDate(row.tanggalMulai) }} — {{ formatDate(row.tanggalSelesai) }}
                 </div>
               </template>
+              <template #cell-progress="{ row }">
+                <div class="flex items-center gap-2 min-w-[140px]">
+                  <div class="h-2 w-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      :class="getProgressBarClass(getProgressPercent(row))"
+                      :style="{ width: `${getProgressPercent(row)}%` }"
+                    />
+                  </div>
+                  <span class="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ getProgressLabel(row) }}</span>
+                </div>
+              </template>
               <template #cell-status="{ row }">
                 <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                   <CheckCircle2 class="size-3" /> Aktif
@@ -293,6 +338,14 @@ onMounted(() => {
                 <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                   <Clock class="size-3" />
                   {{ formatDate(row.tanggalMulai) }} — {{ formatDate(row.tanggalSelesai) }}
+                </div>
+              </template>
+              <template #cell-progress="{ row }">
+                <div class="flex items-center gap-2 min-w-[140px]">
+                  <div class="h-2 w-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    <div class="h-full rounded-full bg-red-500" style="width: 100%" />
+                  </div>
+                  <span class="text-xs font-medium text-gray-400 whitespace-nowrap">Habis</span>
                 </div>
               </template>
               <template #cell-status="{ row }">
