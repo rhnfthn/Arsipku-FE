@@ -986,12 +986,6 @@ const adminMenuKelola = computed(() => {
       showIfTuRole: true,
     },
     {
-      label: 'Verifikasi Berkas Fisik',
-      to: '/maintenance/verifikasi-berkas-fisik',
-      icon: 'i-lucide-file-check',
-      showIfTuRole: true,
-    },
-    {
       label: 'Penataan Arsip Inaktif',
       to: '/maintenance/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
@@ -1084,12 +1078,6 @@ const userMenuKelola = computed(() => {
       label: 'Notifikasi Usulan Pindah Arsip',
       to: '/maintenance/notifikasi-usulan-pindah-arsip',
       icon: 'i-lucide-bell',
-      showIfTuRole: true,
-    },
-    {
-      label: 'Verifikasi Berkas Fisik',
-      to: '/maintenance/verifikasi-berkas-fisik',
-      icon: 'i-lucide-file-check',
       showIfTuRole: true,
     },
     {
