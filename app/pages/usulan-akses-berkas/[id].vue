@@ -241,7 +241,7 @@ const sortedVerifikatorPemberi = computed(() => {
     return (LEVEL_ORDER_PEMBERI[na] ?? 99) - (LEVEL_ORDER_PEMBERI[nb] ?? 99);
   }).map((v) => {
     const item = getVerifikatorPemberiItem(v.persnum);
-    return { ...v, nama: item?.nama, jabatan: item?.jabatan };
+    return { ...v, nama: item?.nama, jabatan: item?.jabatan, catatan: v.catatan };
   });
 });
 
@@ -262,7 +262,7 @@ const onSelectVerifikatorPemberi = (value: any) => {
       toast.add({ title: 'Maksimal 3 verifikator', color: 'error' });
       return;
     }
-    pilihBerkasForm.value.verifikatorPemberi.push({ persnum, levelJabatan: item.levelJabatan });
+    pilihBerkasForm.value.verifikatorPemberi.push({ persnum, levelJabatan: item.levelJabatan, catatan: '' });
   }
 };
 
@@ -1298,13 +1298,20 @@ onBeforeUnmount(() => {
               <div v-if="usulanDetail.verifikatorPemberi?.length" class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
                 <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Pemberi</p>
                 <div class="space-y-2">
-                  <div v-for="(v, idx) in usulanDetail.verifikatorPemberi" :key="idx" class="flex items-center gap-2">
-                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
-                      {{ idx + 1 }}
-                    </span>
-                    <div class="flex-1 min-w-0">
-                      <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
-                      <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                  <div v-for="(v, idx) in usulanDetail.verifikatorPemberi" :key="idx">
+                    <div class="flex items-center gap-2">
+                      <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                        {{ idx + 1 }}
+                      </span>
+                      <div class="flex-1 min-w-0">
+                        <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
+                        <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                      </div>
+                    </div>
+                    <!-- Catatan personal: hanya terlihat oleh verifikator itu sendiri -->
+                    <div v-if="v.catatan && Number(user?.persnum) === v.persnum" class="ml-7 mt-1 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-900/20">
+                      <p class="text-[10px] font-medium text-amber-600 dark:text-amber-400">Catatan untuk Anda:</p>
+                      <p class="text-[11px] text-amber-800 dark:text-amber-300">{{ v.catatan }}</p>
                     </div>
                   </div>
                 </div>
@@ -1708,28 +1715,40 @@ onBeforeUnmount(() => {
             <span class="block text-xs font-normal text-gray-400">(pilih 1-3)</span>
           </span>
           <div class="flex-1">
-            <!-- Selected verifikator chips -->
-            <div v-if="pilihBerkasForm.verifikatorPemberi.length > 0" class="mb-2 flex flex-col gap-1.5">
+            <!-- Selected verifikator chips + per-verifikator catatan -->
+            <div v-if="pilihBerkasForm.verifikatorPemberi.length > 0" class="mb-2 flex flex-col gap-2">
               <div
                 v-for="(v, idx) in sortedVerifikatorPemberi"
                 :key="v.persnum"
-                class="flex items-center gap-1.5 rounded border border-gray-200 bg-gray-50 px-1.5 py-1 dark:border-gray-600 dark:bg-gray-700/30"
+                class="rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/30"
               >
-                <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
-                  {{ idx + 1 }}
-                </span>
-                <div class="flex-1 min-w-0">
-                  <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
-                  <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                <div class="flex items-center gap-1.5 px-1.5 py-1">
+                  <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                    {{ idx + 1 }}
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
+                    <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                  </div>
+                  <button
+                    type="button"
+                    @click="toggleVerifikatorPemberi(v.persnum, v.levelJabatan as LevelJabatan)"
+                    class="ml-0.5 shrink-0 text-gray-400 transition-colors hover:text-red-500"
+                    aria-label="Hapus verifikator"
+                  >
+                    <UIcon name="i-lucide-trash-2" class="size-3.5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  @click="toggleVerifikatorPemberi(v.persnum, v.levelJabatan as LevelJabatan)"
-                  class="ml-0.5 shrink-0 text-gray-400 transition-colors hover:text-red-500"
-                  aria-label="Hapus verifikator"
-                >
-                  <UIcon name="i-lucide-trash-2" class="size-3.5" />
-                </button>
+                <!-- Catatan personal untuk verifikator ini -->
+                <div class="border-t border-gray-200 px-2 py-1.5 dark:border-gray-600">
+                  <textarea
+                    v-model="v.catatan"
+                    rows="1"
+                    maxlength="500"
+                    class="w-full rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    :placeholder="`Catatan untuk ${v.nama || 'verifikator ini'} (opsional)`"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1776,21 +1795,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Catatan -->
-        <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
-          <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-            Catatan
-          </span>
-          <div class="flex-1">
-            <textarea
-              v-model="pilihBerkasForm.catatanPenerusan"
-              rows="2"
-              maxlength="2000"
-              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              placeholder="Catatan penerusan (opsional)"
-            />
-          </div>
-        </div>
+
       </div>
 
       <div class="flex gap-3 px-6 pb-6 pt-2">
