@@ -40,6 +40,15 @@
               <UIcon name="i-lucide-megaphone" class="w-4 h-4" />
               {{ $t("konfig_tab_pengumuman") }}
             </button>
+            <button @click="activeTab = 'unit-tu'" :class="[
+              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+              activeTab === 'unit-tu'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+            ]">
+              <UIcon name="i-lucide-building-2" class="w-4 h-4" />
+              Unit TU
+            </button>
           </div>
         </div>
 
@@ -299,6 +308,11 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- ===================== TAB: UNIT TU ===================== -->
+        <div v-if="activeTab === 'unit-tu'">
+          <UnitTuTab />
         </div>
       </div>
     </div>
