@@ -481,12 +481,14 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
   // Helper: build a step entry
   const buildStepEntry = (step: any): TimelineEntry => {
     const isCatatanOwner = Number(step.verifierPersnum) === userPersnum;
-    const canSeeCatatan = isCatatanOwner || isPengusul;
     const isPengusulStep = step.roleTahap?.includes('PENGUSUL');
-    const isPemberiStep = step.roleTahap?.includes('PEMBERI');
-    const canSeeCatatanKeSE = isCatatanOwner ||
+    const isPemberiStep = step.roleTahap?.includes('PEMBERI') && step.roleTahap !== 'SEKRETARIS_PEMBERI';
+    // catatan verifikasi biasa: hanya verifikator itu + SE terkait (pengusul/pemberi)
+    const canSeeCatatan = isCatatanOwner ||
       (isPengusulStep && isPengusul) ||
       (isPemberiStep && isSekretarisPemberi.value);
+    // catatanKeSE: sama — hanya verifikator itu + SE terkait
+    const canSeeCatatanKeSE = canSeeCatatan;
     return {
       id: step.id,
       icon:
