@@ -139,43 +139,64 @@
     <!-- Modal Ajukan ke Atasan TU -->
     <Teleport to="body">
       <div v-if="showAjukanModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px]" @click="showAjukanModal = false"></div>
-        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-[8px]" @click="showAjukanModal = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[90%] max-w-[560px] max-h-[80vh] flex flex-col overflow-hidden z-[10000]">
+          <!-- Header sticky -->
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ajukan ke Atasan Managerial TU</h3>
             <button @click="showAjukanModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
               <UIcon name="i-lucide-x" class="w-5 h-5" />
             </button>
           </div>
-          <div class="p-6">
+          <!-- Body scrollable -->
+          <div class="px-6 py-4 overflow-y-auto flex-1">
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Pilih Atasan Managerial TU yang akan memverifikasi penerimaan usulan ini.
             </p>
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Atasan Managerial TU *</label>
-            <select
-              v-model="atasanTuInput"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">Pilih Atasan Managerial TU</option>
-              <option value="10010123">HERMANA SOEGIJANTORO — EVP Corporate Secretary (10010123)</option>
-              <option value="10010970">PRIYO HUTOMO PUTRA — VP Corporate Secretary (10010970)</option>
-            </select>
+            <!-- Custom dropdown -->
+            <div class="relative">
+              <button
+                @click="showAtasanDropdown = !showAtasanDropdown"
+                class="w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between min-h-[48px]"
+                :class="{ 'ring-2 ring-[#457fb6] border-[#457fb6]': showAtasanDropdown }"
+              >
+                <span v-if="!selectedAtasanTu" class="text-gray-400">Pilih atasan TU...</span>
+                <span v-else class="font-medium">{{ selectedAtasanTu.name }}</span>
+                <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-gray-400 shrink-0" :class="{ 'rotate-180': showAtasanDropdown }" />
+              </button>
+              <!-- Dropdown items -->
+              <div v-if="showAtasanDropdown" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-[10001] overflow-hidden">
+                <button
+                  v-for="a in atasanTuList"
+                  :key="a.persnum"
+                  @click="selectAtasan(a)"
+                  class="w-full text-left py-3 px-4 border-b border-gray-100 dark:border-gray-600 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  :class="{ 'bg-[#457fb6]/10': atasanTuInput === a.persnum }"
+                >
+                  <p class="text-base font-medium text-gray-900 dark:text-white">{{ a.name }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ a.persnum }} — {{ a.jabatan }}</p>
+                </button>
+              </div>
+            </div>
+            <!-- Catatan -->
             <div class="mt-4">
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Ajuan (opsional)</label>
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan (opsional)</label>
               <textarea
                 v-model="catatanAjuan"
                 rows="3"
                 placeholder="Catatan..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                class="w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
               ></textarea>
             </div>
           </div>
-          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 shrink-0">
             <button @click="showAjukanModal = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Batal</button>
             <button
               @click="onConfirmAjukan"
               :disabled="!atasanTuInput || actionLoading"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               Ajukan
@@ -255,6 +276,19 @@ const showKembalikanModal = ref(false)
 const atasanTuInput = ref('')
 const catatanAjuan = ref('')
 const catatanKembalikan = ref('')
+const showAtasanDropdown = ref(false)
+
+const atasanTuList = [
+  { persnum: '10010123', name: 'HERMANA SOEGIJANTORO', jabatan: 'EVP Corporate Secretary' },
+  { persnum: '10010970', name: 'PRIYO HUTOMO PUTRA', jabatan: 'VP Corporate Secretary' },
+]
+
+const selectedAtasanTu = computed(() => atasanTuList.find((a) => a.persnum === atasanTuInput.value) || null)
+
+const selectAtasan = (a: any) => {
+  atasanTuInput.value = a.persnum
+  showAtasanDropdown.value = false
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -306,6 +340,7 @@ const refresh = async () => {
 const openAjukanModal = () => {
   atasanTuInput.value = ''
   catatanAjuan.value = ''
+  showAtasanDropdown.value = false
   showAjukanModal.value = true
 }
 
