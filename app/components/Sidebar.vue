@@ -1041,6 +1041,7 @@ const adminMenuKelola = computed(() => {
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
@@ -1063,6 +1064,13 @@ const adminMenuKelola = computed(() => {
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
     badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+  });
+
+  penggunaanChildren.push({
+    label: 'Usulan Berkas',
+    to: '/usulan-akses-berkas',
+    icon: 'i-lucide-folder-key',
+    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
   });
 
   if (penggunaanChildren.length > 0) {
@@ -1138,6 +1146,7 @@ label: 'Penerimaan Usulan',
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
@@ -1160,6 +1169,13 @@ label: 'Penerimaan Usulan',
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
     badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+  });
+
+  penggunaanChildren.push({
+    label: 'Usulan Berkas',
+    to: '/usulan-akses-berkas',
+    icon: 'i-lucide-folder-key',
+    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
   });
 
   if (penggunaanChildren.length > 0) {

@@ -49,7 +49,7 @@
           :title="child.label"
           class="flex items-start px-4 py-2.5 my-1 pl-12 rounded-full text-[13px] leading-tight whitespace-pre-line break-words transition-colors dark:text-gray-400 relative"
           :class="
-            isActiveChild(child.to)
+            isActiveChild(child.to, child.activePaths)
               ? 'bg-[#D3E3FD] font-bold text-gray-900 dark:bg-gray-700 dark:text-white'
               : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
@@ -100,14 +100,28 @@ const isActivePath = (path) => {
 // Helper khusus untuk child agar active state akurat.
 // Pakai startsWith agar nested route (mis. /penggunaan/pemberian/123) juga
 // menandai parent dropdown (Penggunaan) sebagai active.
-const isActiveChild = (path) => {
-  return route.path === path || route.path.startsWith(path + '/');
+// Juga support activePaths untuk route yang redirect ke path lain.
+// Jika child.to dan activePaths mengandung path yang sama, gunakan exact match saja
+// untuk child.to (mencegah double-highlight pada route redirect).
+const isActiveChild = (path, activePaths) => {
+  if (route.path === path) return true;
+  // Untuk nested child route (path dengan children), pakai startsWith
+  if (path && route.path.startsWith(path + '/')) return true;
+  if (activePaths && Array.isArray(activePaths)) {
+    return activePaths.some((p) => {
+      // Hanya match jika path yang active berbeda dari path utama
+      // (menghindari double-highlight saat user di /usulan-akses-berkas)
+      if (p === path) return false;
+      return route.path === p || route.path.startsWith(p + '/');
+    });
+  }
+  return false;
 };
 
 // Helper recursive: cek apakah item (atau keturunannya) aktif
 const isItemActiveRecursive = (item) => {
   if (!item) return false;
-  if (item.to && isActiveChild(item.to)) return true;
+  if (item.to && isActiveChild(item.to, item.activePaths)) return true;
   if (item.children && item.children.length > 0) {
     return item.children.some((child) => isItemActiveRecursive(child));
   }
