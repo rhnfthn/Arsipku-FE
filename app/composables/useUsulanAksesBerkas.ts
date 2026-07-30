@@ -50,6 +50,30 @@ export function useUsulanAksesBerkas() {
     }
   };
 
+  // ── GET /usulan-akses-berkas/verifikator-bod ───
+  // Fetch BOD + delegasi aktif (PT/PH/PS) di divisi.
+  // divisiId opsional — kalau kosong, pakai divisi currentUser.
+  const fetchVerifikatorBod = async (divisiId?: number) => {
+    pending.value = true;
+    error.value = null;
+    try {
+      const query = divisiId ? `?divisiId=${divisiId}` : '';
+      const res = await apiGet<{
+        success: boolean;
+        data: VerifikatorItem[];
+        total: number;
+      }>(`/usulan-akses-berkas/verifikator-bod${query}`, undefined, { skipCache: true });
+      verifikatorList.value = res.data || [];
+      return res;
+    } catch (err: any) {
+      error.value = err;
+      console.error('[useUsulanAksesBerkas] fetchVerifikatorBod error:', err);
+      throw err;
+    } finally {
+      pending.value = false;
+    }
+  };
+
   // ── GET /berkas?status=closed_retensi_aktif ────
   // Ambil list berkas yang eligible untuk dipilih saat Pilih Berkas.
   // BE filter by status (closed_retensi_aktif) + isAktif=true.
@@ -123,6 +147,9 @@ export function useUsulanAksesBerkas() {
     scope?: string;
     page?: number;
     limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortDir?: 'asc' | 'desc';
   } = {}) => {
     pending.value = true;
     error.value = null;
@@ -130,6 +157,9 @@ export function useUsulanAksesBerkas() {
       const query = new URLSearchParams();
       if (params.status) query.set('status', params.status);
       if (params.scope) query.set('scope', params.scope);
+      if (params.search) query.set('search', params.search);
+      if (params.sortBy) query.set('sortBy', params.sortBy);
+      if (params.sortDir) query.set('sortDir', params.sortDir);
       query.set('page', String(params.page || pagination.page));
       query.set('limit', String(params.limit || pagination.limit));
 
@@ -303,6 +333,7 @@ export function useUsulanAksesBerkas() {
     pagination,
     // actions
     fetchVerifikator,
+    fetchVerifikatorBod,
     fetchBerkasEligible,
     fetchMyEntitlements,
     fetchBerkasDetail,
