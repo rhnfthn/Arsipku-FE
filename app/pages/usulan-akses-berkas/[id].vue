@@ -178,6 +178,8 @@ const berkasEligibleList = ref<BerkasItem[]>([]);
 const berkasLoading = ref(false);
 const berkasSearch = ref('');
 const showBerkasDropdown = ref(false);
+const showVerikPemberiDropdown = ref(false);
+const verikPemberiDropdownRef = ref<HTMLElement | null>(null);
 
 const filteredBerkas = computed(() => {
   if (!berkasSearch.value.trim()) return berkasEligibleList.value;
@@ -321,6 +323,13 @@ watch(showPilihBerkas, async (newVal) => {
     await Promise.all([loadBerkasEligible(), loadVerifikatorPemberi()]);
   }
 });
+
+// Click outside handler untuk dropdown verifikator pemberi
+const handleClickOutsideVerikPemberi = (e: MouseEvent) => {
+  if (verikPemberiDropdownRef.value && !verikPemberiDropdownRef.value.contains(e.target as Node)) {
+    showVerikPemberiDropdown.value = false;
+  }
+};
 
 // Cek apakah SE ini adalah SE pemberi (divisi user = divisi pemberi usulan)
 const isSekretarisPemberi = computed(() => {
@@ -1044,10 +1053,12 @@ onMounted(() => {
   // Re-fetch counts untuk update badge di sidebar
   refetchUsulanCounts(true);
   document.addEventListener('click', handleClickOutsideVpb);
+  document.addEventListener('click', handleClickOutsideVerikPemberi);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutsideVpb);
+  document.removeEventListener('click', handleClickOutsideVerikPemberi);
 });
 </script>
 
@@ -1640,7 +1651,16 @@ onBeforeUnmount(() => {
             <span class="block text-xs font-normal text-gray-400">({{ berkasEligibleList.length }} tersedia)</span>
           </span>
           <div class="flex-1">
-            <UInput v-model="berkasSearch" icon="i-lucide-search" placeholder="Cari judul / klasifikasi / nomor berkas…" class="mb-2 w-full" />
+            <!-- Search input (native, matching AddUsulanAksesBerkas style) -->
+            <div class="relative mb-2">
+              <UIcon name="i-lucide-search" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+              <input
+                v-model="berkasSearch"
+                type="text"
+                placeholder="Cari judul / klasifikasi / nomor berkas…"
+                class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
 
             <div v-if="berkasLoading" class="flex items-center justify-center py-8">
               <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-primary-500" />
@@ -1654,7 +1674,7 @@ onBeforeUnmount(() => {
                 v-for="b in filteredBerkas"
                 :key="b.id"
                 class="flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                :class="{ 'bg-blue-50 dark:bg-blue-900/20': isBerkasSelected(b.id) }"
+                :class="{ 'bg-primary-50 dark:bg-primary-900/20': isBerkasSelected(b.id) }"
               >
                 <UCheckbox
                   :model-value="isBerkasSelected(b.id)"
@@ -1720,19 +1740,32 @@ onBeforeUnmount(() => {
             <div v-else-if="verifikatorPemberiList.length === 0" class="py-2 text-sm text-gray-400">
               Tidak ada managerial di divisi ini.
             </div>
-            <div v-else-if="availableVerifikatorPemberi.length > 0" class="relative">
-              <USelect
-                :model-value="undefined"
-                :items="availableVerifikatorPemberi.map((v) => ({
-                  label: `${v.nama || `Persnum ${v.persnum}`} — ${v.jabatan || v.levelJabatan}`,
-                  value: String(v.persnum),
-                }))"
-                value-key="value"
-                :placeholder="`+ Pilih verifikator (${pilihBerkasForm.verifikatorPemberi.length}/3)`"
-                class="w-full"
-                :content="{ style: { zIndex: 60 } } as any"
-                @update:model-value="(val) => onSelectVerifikatorPemberi(val)"
-              />
+            <div v-else-if="availableVerifikatorPemberi.length > 0" class="relative" ref="verikPemberiDropdownRef">
+              <button
+                type="button"
+                @click="showVerikPemberiDropdown = !showVerikPemberiDropdown"
+                class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <span class="text-gray-400">+ Pilih verifikator ({{ pilihBerkasForm.verifikatorPemberi.length }}/3)</span>
+                <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showVerikPemberiDropdown }" />
+              </button>
+              <div
+                v-if="showVerikPemberiDropdown"
+                class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+              >
+                <div class="max-h-[200px] overflow-y-auto">
+                  <button
+                    v-for="v in availableVerifikatorPemberi"
+                    :key="v.persnum"
+                    type="button"
+                    @click="onSelectVerifikatorPemberi(String(v.persnum)); showVerikPemberiDropdown = false"
+                    class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
+                    <span class="text-xs text-gray-400">{{ v.jabatan || v.levelJabatan || '' }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
             <p v-else-if="pilihBerkasForm.verifikatorPemberi.length >= 3" class="text-xs text-gray-400">
               Maksimal 3 verifikator. Hapus salah satu untuk mengganti.
@@ -1749,14 +1782,21 @@ onBeforeUnmount(() => {
             Catatan
           </span>
           <div class="flex-1">
-            <UTextarea v-model="pilihBerkasForm.catatanPenerusan" :rows="2" autoresize :maxrows="6" class="w-full" placeholder="Catatan penerusan (opsional)" />
+            <textarea
+              v-model="pilihBerkasForm.catatanPenerusan"
+              rows="2"
+              maxlength="2000"
+              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              placeholder="Catatan penerusan (opsional)"
+            />
           </div>
         </div>
       </div>
 
       <div class="flex gap-3 px-6 pb-6 pt-2">
         <button
-          class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
+          class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white disabled:opacity-50"
+          :disabled="pending"
           @click="showPilihBerkas = false"
         >
           Batal
