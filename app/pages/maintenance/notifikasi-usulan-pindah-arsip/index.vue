@@ -1,0 +1,201 @@
+<template>
+  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="mb-6">
+        <Heading variant="heading6b" class="text-mobile-md">Notifikasi Usulan Pindah Arsip</Heading>
+        <PageHeader :items="breadcrumbs" />
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Daftar usulan pindah arsip yang dikirim oleh Atasan Managerial.
+        </p>
+      </div>
+
+      <!-- Filter & Search -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-4">
+        <div class="relative flex-1">
+          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            v-model="searchInput"
+            type="text"
+            placeholder="Cari nomor/perihal/sekretaris..."
+            class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            @input="onSearchInput"
+          />
+        </div>
+        <select
+          v-model="filterStatus"
+          class="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          @change="fetchData"
+        >
+          <option value="">Semua Status</option>
+          <option value="DIKIRIM">Menunggu Penerimaan</option>
+          <option value="MENUNGGU_VERIFIKASI_BERKAS_FISIK">Menunggu Verifikasi Berkas</option>
+          <option value="BERKAS_FISIK_SESUAI">Berkas Sesuai</option>
+          <option value="BERKAS_FISIK_TIDAK_SESUAI">Berkas Tidak Sesuai</option>
+          <option value="MENUNGGU_VERIFIKASI_PERSETUJUAN_TU">Menunggu Persetujuan TU</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+              <tr>
+                <th class="px-3 py-3 text-left font-medium">No</th>
+                <th class="px-3 py-3 text-left font-medium">Nomor Usulan</th>
+                <th class="px-3 py-3 text-left font-medium">Sekretaris</th>
+                <th class="px-3 py-3 text-left font-medium">Arsip</th>
+                <th class="px-3 py-3 text-left font-medium">Atasan Managerial</th>
+                <th class="px-3 py-3 text-left font-medium">Tgl Dikirim</th>
+                <th class="px-3 py-3 text-left font-medium">Status</th>
+                <th class="px-3 py-3 text-left font-medium">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tr v-if="isLoading">
+                <td colspan="8" class="px-3 py-10 text-center">
+                  <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
+                </td>
+              </tr>
+              <tr v-else-if="list.length === 0">
+                <td colspan="8" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                  Belum ada usulan masuk.
+                </td>
+              </tr>
+              <tr
+                v-for="(item, index) in list"
+                :key="item.id"
+                class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
+              >
+                <td class="px-3 py-3">{{ (page - 1) * limit + index + 1 }}</td>
+                <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.nomorUsulan }}</td>
+                <td class="px-3 py-3">{{ item.sekretarisName }}</td>
+                <td class="px-3 py-3">{{ item.arsipPerihal }}</td>
+                <td class="px-3 py-3">{{ item.atasanName }}</td>
+                <td class="px-3 py-3">{{ formatDate(item.tanggalDikirim) }}</td>
+                <td class="px-3 py-3">
+                  <UBadge :color="statusColor(item.status)" variant="soft">
+                    {{ statusLabel(item.status) }}
+                  </UBadge>
+                </td>
+                <td class="px-3 py-3">
+                  <div class="flex items-center gap-1">
+                    <NuxtLink
+                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
+                      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
+                    >
+                      <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
+                    </NuxtLink>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="mt-4">
+        <Pagination
+          :current-page="page"
+          :total-pages="totalPages"
+          :total-items="total"
+          :rows-per-page="limit"
+          :rows-options="[10, 20, 50]"
+          @update:page="onPageChange"
+          @update:rows-per-page="onLimitChange"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
+import type { TuUsulanItem } from '~/types/tu-verifikasi'
+
+definePageMeta({ middleware: ['auth'] })
+
+const { fetchNotifikasiList } = useTuVerifikasi()
+
+const breadcrumbs = computed(() => [
+  { label: 'Beranda', to: '/beranda' },
+  { label: 'Notifikasi Usulan Pindah Arsip', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
+])
+
+const list = ref<TuUsulanItem[]>([])
+const isLoading = ref(false)
+const page = ref(1)
+const limit = ref(10)
+const total = ref(0)
+const totalPages = ref(1)
+
+const searchInput = ref('')
+const filterStatus = ref('')
+
+let searchDebounce: any = null
+const onSearchInput = () => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    page.value = 1
+    fetchData()
+  }, 400)
+}
+
+const fetchData = async () => {
+  isLoading.value = true
+  try {
+    const res = await fetchNotifikasiList({
+      search: searchInput.value || undefined,
+      status: filterStatus.value || undefined,
+      page: page.value,
+      limit: limit.value,
+    })
+    // Response di-wrap interceptor: { success, data: { data, meta } }
+    const payload = res?.data ?? res
+    list.value = payload?.data || []
+    total.value = payload?.meta?.total || 0
+    totalPages.value = payload?.meta?.totalPages || 1
+  } catch (error: any) {
+    console.error('Fetch notifikasi error:', error)
+    useToast().add({ title: 'Gagal', description: 'Gagal mengambil data notifikasi.', color: 'error' })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const onPageChange = (p: number) => { page.value = p; fetchData() }
+const onLimitChange = (l: number) => { limit.value = l; page.value = 1; fetchData() }
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+const statusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    DIKIRIM: 'Menunggu Penerimaan',
+    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
+    BERKAS_FISIK_SESUAI: 'Berkas Sesuai',
+    BERKAS_FISIK_TIDAK_SESUAI: 'Berkas Tidak Sesuai',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Persetujuan TU',
+  }
+  return labels[status] || status
+}
+
+const statusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    DIKIRIM: 'warning',
+    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'warning',
+    BERKAS_FISIK_SESUAI: 'success',
+    BERKAS_FISIK_TIDAK_SESUAI: 'error',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'primary',
+  }
+  return colors[status] || 'neutral'
+}
+
+onMounted(() => fetchData())
+</script>

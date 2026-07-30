@@ -421,7 +421,10 @@ const saveDelegasi = async () => {
     showAddModal.value = false
     toast.add({
       title: 'Berhasil',
-      description: 'Data delegasi berhasil ditambahkan.',
+      description:
+        newDelegasi.value.sebagai === 'SE'
+          ? 'Delegasi dan role Sekretaris Delegasi berhasil dibuat'
+          : 'Data delegasi berhasil ditambahkan.',
       color: 'success'
     })
     fetchData()

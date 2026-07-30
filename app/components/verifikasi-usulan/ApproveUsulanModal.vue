@@ -29,6 +29,17 @@
               <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.arsipPerihal ?? '-' }}</p>
             </div>
           </div>
+
+          <!-- Catatan Verifikasi (opsional) -->
+          <div class="mt-4">
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi</label>
+            <textarea
+              v-model="catatan"
+              rows="3"
+              placeholder="Catatan verifikasi (opsional)..."
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
+            ></textarea>
+          </div>
         </div>
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
@@ -45,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue';
 import type { VerifikasiUsulanItem } from '~/types/verifikasi-usulan';
 
 const props = defineProps<{
@@ -56,15 +68,24 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [v: boolean];
-  confirm: [];
+  confirm: [catatan: string];
 }>();
 
 const title = props.title ?? 'Konfirmasi Verifikasi';
 const confirmLabel = props.confirmLabel ?? 'Setujui Verifikasi';
+const catatan = ref('');
 
 const close = () => emit('update:modelValue', false);
 const confirm = () => {
-  emit('confirm');
+  emit('confirm', catatan.value.trim());
+  catatan.value = '';
   close();
 };
+
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) catatan.value = '';
+  },
+);
 </script>
