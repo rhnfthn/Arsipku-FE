@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6">
-        <Heading variant="heading6b" class="text-mobile-md">Notifikasi Usulan Pindah Arsip</Heading>
+        <Heading variant="heading6b" class="text-mobile-md">Penerimaan Usulan</Heading>
         <PageHeader :items="breadcrumbs" />
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
           Daftar usulan pindah arsip yang dikirim oleh Atasan Managerial.
@@ -117,7 +117,7 @@ const { fetchNotifikasiList } = useTuVerifikasi()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Notifikasi Usulan Pindah Arsip', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
+  { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
 ])
 
 const list = ref<TuUsulanItem[]>([])
