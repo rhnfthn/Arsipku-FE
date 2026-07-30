@@ -24,6 +24,10 @@ export const useTuVerifikasi = () => {
     return await apiGet<TuUsulanItem>(`/tu/notifikasi-usulan/${id}`);
   };
 
+  const fetchAtasanTuOptions = async () => {
+    return await apiGet<any>('/tu/notifikasi-usulan/atasan-tu-list', {}, { skipCache: true });
+  };
+
   const verifikasiBerkas = async (id: string, payload: VerifikasiBerkasPayload) => {
     return await apiPatch<TuUsulanItem>(`/tu/notifikasi-usulan/${id}/verifikasi-berkas`, payload);
   };
@@ -73,6 +77,7 @@ export const useTuVerifikasi = () => {
   return {
     fetchNotifikasiList,
     fetchNotifikasiDetail,
+    fetchAtasanTuOptions,
     verifikasiBerkas,
     ajukanAtasanTu,
     kembalikanKeAtasan,
