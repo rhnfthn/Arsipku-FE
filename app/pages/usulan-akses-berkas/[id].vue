@@ -67,9 +67,10 @@ const showRejectModal = ref(false);
 const approveTitle = ref('');
 const approveDescription = ref('');
 const rejectTitle = ref('');
+const rejectCatatanKeSELabel = ref(''); // 'Pengusul' atau 'Pemberi' — kosong = tidak tampilkan field
 const savingAction = ref(false);
 const pendingApproveAction = ref<((note: string) => Promise<void>) | null>(null);
-const pendingRejectAction = ref<((note: string) => Promise<void>) | null>(null);
+const pendingRejectAction = ref<((note: string, catatanKeSE?: string) => Promise<void>) | null>(null);
 
 // ── Modal Verifikasi Pemberi: custom durasi dropdown ──
 const showVpbDurasiDropdown = ref(false);
@@ -80,6 +81,7 @@ const showVerifikasiPengusul = ref(false);
 const vpForm = ref<VerifikasiPengusulPayload>({
   catatan: '',
   catatanRevisi: '',
+  catatanKeSE: '',
   keputusan: Keputusan.SETUJU,
 });
 
@@ -98,6 +100,7 @@ const showPersetujuanPemberi = ref(false);
 const ppForm = ref<PersetujuanPemberiPayload>({
   catatan: '',
   catatanRevisi: '',
+  catatanKeSE: '',
   keputusan: Keputusan.SETUJU,
   durasiAksesDisetujui: undefined,
   catatanPerubahanDurasi: '',
@@ -451,6 +454,8 @@ interface TimelineEntry {
   timestamp: string;
   catatan?: string | null;
   catatanRevisi?: string | null;
+  catatanKeSE?: string | null; // catatan khusus dari verifikator ke SE-nya
+  isPengusulStep?: boolean; // true jika step ini dari verifikator pengusul
 }
 
 const timelineEntries = computed<TimelineEntry[]>(() => {
@@ -473,11 +478,16 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     timestamp: usulanDetail.value.createdAt,
   });
 
-  // Verification steps
-  for (const step of usulanDetail.value.steps || []) {
+  // Helper: build a step entry
+  const buildStepEntry = (step: any): TimelineEntry => {
     const isCatatanOwner = Number(step.verifierPersnum) === userPersnum;
     const canSeeCatatan = isCatatanOwner || isPengusul;
-    entries.push({
+    const isPengusulStep = step.roleTahap?.includes('PENGUSUL');
+    const isPemberiStep = step.roleTahap?.includes('PEMBERI');
+    const canSeeCatatanKeSE = isCatatanOwner ||
+      (isPengusulStep && isPengusul) ||
+      (isPemberiStep && isSekretarisPemberi.value);
+    return {
       id: step.id,
       icon:
         step.keputusan === Keputusan.SETUJU || step.keputusan === Keputusan.LANJUT
@@ -508,10 +518,22 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       timestamp: step.verifiedAt,
       catatan: canSeeCatatan ? step.catatan : null,
       catatanRevisi: canSeeCatatan ? step.catatanRevisi : null,
-    });
+      catatanKeSE: canSeeCatatanKeSE ? step.catatanKeSE : null,
+      isPengusulStep,
+    };
+  };
+
+  const allSteps = usulanDetail.value.steps || [];
+
+  // Phase 1: Verifikator Pengusul steps (urut by verifiedAt)
+  const pengusulSteps = allSteps
+    .filter((s: any) => s.roleTahap?.includes('PENGUSUL'))
+    .sort((a: any, b: any) => new Date(a.verifiedAt).getTime() - new Date(b.verifiedAt).getTime());
+  for (const step of pengusulSteps) {
+    entries.push(buildStepEntry(step));
   }
 
-  // Milestone: Usulan terkirim ke pemberi
+  // Phase 2: Milestone — Terkirim ke Pemberi (setelah pengusul approve semua)
   if (usulanDetail.value.status === StatusUsulan.TERKIRIM_KE_PEMBERI ||
       usulanDetail.value.status === StatusUsulan.PEMILIHAN_BERKAS ||
       usulanDetail.value.status === StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI ||
@@ -519,8 +541,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       usulanDetail.value.status === StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI ||
       usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN ||
       usulanDetail.value.status === StatusUsulan.SELESAI) {
-    // Ambil timestamp dari step LANJUT terakhir (atau updatedAt sebagai fallback)
-    const lanjutStep = (usulanDetail.value.steps || [])
+    const lanjutStep = allSteps
       .filter((s: any) => s.keputusan === Keputusan.LANJUT)
       .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
     entries.push({
@@ -535,8 +556,18 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     });
   }
 
-  // Milestone: Berkas dipilih oleh pemberi
+  // Phase 3: SE Pemberi step (LANJUT/TOLAK)
+  const sePemberiSteps = allSteps
+    .filter((s: any) => s.roleTahap === 'SEKRETARIS_PEMBERI')
+    .sort((a: any, b: any) => new Date(a.verifiedAt).getTime() - new Date(b.verifiedAt).getTime());
+  for (const step of sePemberiSteps) {
+    entries.push(buildStepEntry(step));
+  }
+
+  // Phase 4: Milestone — Berkas Dipilih (setelah SE pemberi pilih berkas)
   if (usulanDetail.value.selectedBerkas && usulanDetail.value.selectedBerkas.length > 0) {
+    // Timestamp = step SEKRETARIS_PEMBERI terbaru, atau updatedAt
+    const lastSePemberi = sePemberiSteps[sePemberiSteps.length - 1];
     entries.push({
       id: 'berkas-selected',
       icon: 'i-lucide-folder-check',
@@ -545,17 +576,22 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       jabatan: 'Sekretaris Divisi Pemberi',
       action: 'Berkas Dipilih',
       actionColor: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      timestamp: usulanDetail.value.updatedAt,
+      timestamp: lastSePemberi?.verifiedAt || usulanDetail.value.updatedAt,
     });
   }
 
-  // Milestone: Akses diterbitkan
+  // Phase 5: Verifikator Pemberi steps (urut by verifiedAt)
+  const pemberiSteps = allSteps
+    .filter((s: any) => s.roleTahap?.includes('PEMBERI') && s.roleTahap !== 'SEKRETARIS_PEMBERI')
+    .sort((a: any, b: any) => new Date(a.verifiedAt).getTime() - new Date(b.verifiedAt).getTime());
+  for (const step of pemberiSteps) {
+    entries.push(buildStepEntry(step));
+  }
+
+  // Phase 6: Milestone — Akses Diterbitkan (setelah pemberi approve semua)
   if (usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN ||
       usulanDetail.value.status === StatusUsulan.SELESAI) {
-    // Timestamp terbitkan = step pemberi terbaru (SETUJU/LANJUT), fallback updatedAt
-    const lastPemberiStep = (usulanDetail.value.steps || [])
-      .filter((s: any) => s.roleTahap && s.roleTahap.includes('_PEMBERI'))
-      .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
+    const lastPemberiStep = pemberiSteps[pemberiSteps.length - 1];
     entries.push({
       id: 'akses-diterbitkan',
       icon: 'i-lucide-badge-check',
@@ -759,11 +795,13 @@ const submitVerifikasiPengusulRevisi = async () => {
     await verifikasiPengusul(id.value, jenjang, {
       catatan: '',
       catatanRevisi: vpForm.value.catatanRevisi,
+      catatanKeSE: vpForm.value.catatanKeSE || undefined,
       keputusan: Keputusan.REVISI,
     });
     toast.add({ title: 'Berhasil', description: 'Permintaan revisi terkirim', color: 'success' });
     showVerifikasiPengusul.value = false;
     vpForm.value.catatanRevisi = '';
+    vpForm.value.catatanKeSE = '';
     await loadDetail();
   } catch (err: any) {
     toast.add({ title: 'Gagal Kirim Revisi', description: extractErrorMessage(err), color: 'error' });
@@ -851,6 +889,7 @@ const submitPersetujuanPemberiRevisi = async () => {
     await persetujuanPemberi(id.value, jenjang, {
       catatan: '',
       catatanRevisi: ppForm.value.catatanRevisi,
+      catatanKeSE: ppForm.value.catatanKeSE || undefined,
       keputusan: Keputusan.REVISI,
       durasiAksesDisetujui: undefined,
       catatanPerubahanDurasi: '',
@@ -858,6 +897,7 @@ const submitPersetujuanPemberiRevisi = async () => {
     toast.add({ title: 'Berhasil', description: 'Permintaan revisi terkirim', color: 'success' });
     showPersetujuanPemberi.value = false;
     ppForm.value.catatanRevisi = '';
+    ppForm.value.catatanKeSE = '';
     await loadDetail();
   } catch (err: any) {
     toast.add({ title: 'Gagal Kirim Revisi', description: extractErrorMessage(err), color: 'error' });
@@ -897,11 +937,13 @@ const quickVerifyPengusul = (keputusan: Keputusan) => {
 
   if (keputusan === Keputusan.TOLAK) {
     rejectTitle.value = 'Tolak Usulan (Verifikator Pengusul)';
-    pendingRejectAction.value = async (note: string) => {
+    rejectCatatanKeSELabel.value = 'Pengusul';
+    pendingRejectAction.value = async (note: string, catatanKeSE?: string) => {
       try {
         await verifikasiPengusul(id.value, jenjang, {
           catatan: note,
           catatanRevisi: '',
+          catatanKeSE,
           keputusan,
         });
         toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
@@ -937,7 +979,8 @@ const quickVerifyPengusul = (keputusan: Keputusan) => {
 
 const quickRejectPemberi = () => {
   rejectTitle.value = 'Tolak Usulan oleh Pemberi';
-  pendingRejectAction.value = async (note: string) => {
+  rejectCatatanKeSELabel.value = ''; // SE pemberi tidak butuh catatanKeSE
+  pendingRejectAction.value = async (note: string, _catatanKeSE?: string) => {
     try {
       await verifikasiPemberi(id.value, {
         durasiAksesDisetujui: usulanDetail.value?.durasiAkses || DurasiPreset.SATU_TAHUN,
@@ -968,11 +1011,13 @@ const quickApprovePemberi = (keputusan: Keputusan) => {
 
   if (keputusan === Keputusan.TOLAK) {
     rejectTitle.value = 'Tolak Usulan (Persetujuan Pemberi)';
-    pendingRejectAction.value = async (note: string) => {
+    rejectCatatanKeSELabel.value = 'Pemberi';
+    pendingRejectAction.value = async (note: string, catatanKeSE?: string) => {
       try {
         await persetujuanPemberi(id.value, jenjang, {
           catatan: note,
           catatanRevisi: '',
+          catatanKeSE,
           keputusan,
           durasiAksesDisetujui: undefined,
           catatanPerubahanDurasi: '',
@@ -1024,7 +1069,7 @@ const handleApprove = async (note: string) => {
   }
 };
 
-const handleRejectAction = async (note: string) => {
+const handleRejectAction = async (note: string, catatanKeSE?: string) => {
   if (!note.trim() || note.trim().length < 5) {
     toast.add({ title: 'Alasan penolakan wajib diisi (minimal 5 karakter)', color: 'error' });
     return;
@@ -1033,7 +1078,7 @@ const handleRejectAction = async (note: string) => {
   if (pendingRejectAction.value) {
     savingAction.value = true;
     try {
-      await pendingRejectAction.value(note);
+      await pendingRejectAction.value(note, catatanKeSE);
     } finally {
       savingAction.value = false;
     }
@@ -1265,6 +1310,9 @@ onBeforeUnmount(() => {
                     <p v-if="entry.catatanRevisi" class="mt-1 rounded bg-orange-50 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
                       <span class="font-medium">Revisi:</span> {{ entry.catatanRevisi }}
                     </p>
+                    <p v-if="entry.catatanKeSE" class="mt-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                      <span class="font-medium">Catatan ke SE {{ entry.isPengusulStep ? 'Pengusul' : 'Pemberi' }}:</span> {{ entry.catatanKeSE }}
+                    </p>
                   </div>
                 </li>
               </ol>
@@ -1285,13 +1333,20 @@ onBeforeUnmount(() => {
             <div class="px-4 py-3">
               <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Pengusul</p>
               <div class="space-y-2">
-                <div v-for="(v, idx) in usulanDetail.verifikatorPengusul" :key="idx" class="flex items-center gap-2">
-                  <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
-                    {{ idx + 1 }}
-                  </span>
-                  <div class="flex-1 min-w-0">
-                    <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
-                    <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                <div v-for="(v, idx) in usulanDetail.verifikatorPengusul" :key="idx">
+                  <div class="flex items-center gap-2">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                      {{ idx + 1 }}
+                    </span>
+                    <div class="flex-1 min-w-0">
+                      <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
+                      <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                    </div>
+                  </div>
+                  <!-- Catatan dari SE pengusul: hanya terlihat oleh verifikator itu sendiri & SE pengusul -->
+                  <div v-if="v.catatan && (Number(user?.persnum) === v.persnum || Number(user?.persnum) === Number(usulanDetail.pengusulPersnum))" class="ml-7 mt-1 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-900/20">
+                    <p class="text-[10px] font-medium text-amber-600 dark:text-amber-400">Catatan untuk Verifikator:</p>
+                    <p class="text-[11px] text-amber-800 dark:text-amber-300">{{ v.catatan }}</p>
                   </div>
                 </div>
               </div>
@@ -1308,9 +1363,9 @@ onBeforeUnmount(() => {
                         <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
                       </div>
                     </div>
-                    <!-- Catatan personal: hanya terlihat oleh verifikator itu sendiri -->
-                    <div v-if="v.catatan && Number(user?.persnum) === v.persnum" class="ml-7 mt-1 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-900/20">
-                      <p class="text-[10px] font-medium text-amber-600 dark:text-amber-400">Catatan untuk Anda:</p>
+                    <!-- Catatan dari SE pemberi: hanya terlihat oleh verifikator itu sendiri & SE pemberi -->
+                    <div v-if="v.catatan && (Number(user?.persnum) === v.persnum || isSekretarisPemberi)" class="ml-7 mt-1 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-900/20">
+                      <p class="text-[10px] font-medium text-amber-600 dark:text-amber-400">Catatan untuk Verifikator:</p>
                       <p class="text-[11px] text-amber-800 dark:text-amber-300">{{ v.catatan }}</p>
                     </div>
                   </div>
@@ -1447,6 +1502,8 @@ onBeforeUnmount(() => {
       :saving="savingAction"
       :require-note="true"
       :min-note-length="5"
+      :show-catatan-ke-s-e="!!rejectCatatanKeSELabel"
+      :catatan-ke-s-e-label="rejectCatatanKeSELabel"
       @confirm="handleRejectAction"
     />
 
@@ -1478,6 +1535,20 @@ onBeforeUnmount(() => {
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
             {{ (vpForm.catatanRevisi || '').trim().length }}/5 karakter minimum
           </p>
+        </div>
+
+        <!-- Catatan ke SE Pengusul (opsional) -->
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Catatan ke SE Pengusul
+            <span class="text-xs font-normal text-gray-400">(opsional, hanya terlihat oleh SE Pengusul)</span>
+          </label>
+          <textarea
+            v-model="vpForm.catatanKeSE"
+            rows="2"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Catatan khusus untuk SE Pengusul..."
+          />
         </div>
 
         <div class="flex gap-3 pt-2">
@@ -1622,6 +1693,20 @@ onBeforeUnmount(() => {
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
             {{ (ppForm.catatanRevisi || '').trim().length }}/5 karakter minimum
           </p>
+        </div>
+
+        <!-- Catatan ke SE Pemberi (opsional) -->
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Catatan ke SE Pemberi
+            <span class="text-xs font-normal text-gray-400">(opsional, hanya terlihat oleh SE Pemberi)</span>
+          </label>
+          <textarea
+            v-model="ppForm.catatanKeSE"
+            rows="2"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Catatan khusus untuk SE Pemberi..."
+          />
         </div>
 
         <div class="flex gap-3 pt-2">
