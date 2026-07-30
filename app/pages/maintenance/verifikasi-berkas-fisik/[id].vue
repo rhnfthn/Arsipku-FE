@@ -195,12 +195,15 @@
               Pilih Atasan Managerial TU yang akan memverifikasi penerimaan usulan ini.
             </p>
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Atasan Managerial TU *</label>
-            <input
+            <select
               v-model="atasanTuInput"
-              type="number"
-              placeholder="Masukkan persnum Atasan TU..."
               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
-            />
+            >
+              <option value="">Pilih atasan TU...</option>
+              <option v-for="a in atasanTuOptions" :key="a.persnum" :value="String(a.persnum)">
+                {{ a.displayText }}
+              </option>
+            </select>
             <p class="text-xs text-gray-400 mt-2">
               Atasan TU akan melakukan verifikasi persetujuan penerimaan arsip.
             </p>
@@ -269,7 +272,7 @@ import type { TuUsulanItem } from '~/types/tu-verifikasi'
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchNotifikasiDetail, verifikasiBerkas, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerifikasi()
+const { fetchNotifikasiDetail, verifikasiBerkas, ajukanAtasanTu, kembalikanKeAtasan, fetchAtasanTuOptions } = useTuVerifikasi()
 
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
@@ -281,6 +284,7 @@ const catatan = ref('')
 const showAjukanModal = ref(false)
 const showKembalikanModal = ref(false)
 const atasanTuInput = ref('')
+const atasanTuOptions = ref<any[]>([])
 const alasanKembalikan = ref('')
 
 const breadcrumbs = computed(() => [
@@ -347,8 +351,16 @@ const refresh = async () => {
   await loadDetail()
 }
 
-const openAjukanModal = () => {
+const openAjukanModal = async () => {
   if (!canAjukan.value) return
+  // Fetch atasan TU options
+  try {
+    const res = await fetchAtasanTuOptions()
+    atasanTuOptions.value = res?.data ?? res ?? []
+  } catch (e) {
+    atasanTuOptions.value = []
+  }
+  atasanTuInput.value = ''
   showAjukanModal.value = true
 }
 
