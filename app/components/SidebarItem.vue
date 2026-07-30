@@ -97,10 +97,11 @@ const isActivePath = (path) => {
   return route.path === path || route.path.startsWith(path + '/');
 };
 
-// Helper khusus untuk child agar active state akurat (exact match, tidak startsWith)
-// Menghindari bug: /layanan-email ikut active saat di /layanan-email/log
+// Helper khusus untuk child agar active state akurat.
+// Pakai startsWith agar nested route (mis. /penggunaan/pemberian/123) juga
+// menandai parent dropdown (Penggunaan) sebagai active.
 const isActiveChild = (path) => {
-  return route.path === path;
+  return route.path === path || route.path.startsWith(path + '/');
 };
 
 // Helper recursive: cek apakah item (atau keturunannya) aktif
