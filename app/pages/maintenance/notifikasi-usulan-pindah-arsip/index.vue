@@ -28,11 +28,8 @@
           @change="fetchData"
         >
           <option value="">Semua Status</option>
-          <option value="DIKIRIM">Menunggu Penerimaan</option>
-          <option value="MENUNGGU_VERIFIKASI_BERKAS_FISIK">Menunggu Verifikasi Berkas</option>
-          <option value="BERKAS_FISIK_SESUAI">Berkas Sesuai</option>
+          <option value="DIKIRIM">Menunggu Verifikasi</option>
           <option value="BERKAS_FISIK_TIDAK_SESUAI">Berkas Tidak Sesuai</option>
-          <option value="MENUNGGU_VERIFIKASI_PERSETUJUAN_TU">Menunggu Persetujuan TU</option>
         </select>
       </div>
 
@@ -82,7 +79,13 @@
                 <td class="px-3 py-3">
                   <div class="flex items-center gap-1">
                     <NuxtLink
-                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
+                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}``
+                      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <UIcon name="i-lucide-eye" class="w-3.5 h-3.5" /> Detail
+                    </NuxtLink>
+                    <NuxtLink
+                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}``
                       class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
                     >
                       <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
@@ -176,25 +179,13 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    DIKIRIM: 'Menunggu Penerimaan',
-    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
-    BERKAS_FISIK_SESUAI: 'Berkas Sesuai',
-    BERKAS_FISIK_TIDAK_SESUAI: 'Berkas Tidak Sesuai',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Persetujuan TU',
-  }
-  return labels[status] || status
+  if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'Berkas Tidak Sesuai'
+  return 'Menunggu Verifikasi'
 }
 
 const statusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    DIKIRIM: 'warning',
-    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'warning',
-    BERKAS_FISIK_SESUAI: 'success',
-    BERKAS_FISIK_TIDAK_SESUAI: 'error',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'primary',
-  }
-  return colors[status] || 'neutral'
+  if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'error'
+  return 'warning'
 }
 
 onMounted(() => fetchData())
