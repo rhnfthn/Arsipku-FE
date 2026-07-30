@@ -339,11 +339,24 @@ const loadDetail = async () => {
       verifikasiResult.value = 'tidak_sesuai'
       catatan.value = item.value.physicalVerificationNote || ''
     }
+    // Pre-load atasan TU options
+    await loadAtasanTuOptions()
   } catch (e: any) {
     console.error('Gagal memuat detail:', e)
     useToast().add({ title: 'Gagal', description: 'Gagal memuat detail usulan.', color: 'error' })
   } finally {
     loading.value = false
+  }
+}
+
+const loadAtasanTuOptions = async () => {
+  try {
+    const res = await fetchAtasanTuOptions()
+    // Response di-wrap interceptor: { success, data: [...] }
+    const data = res?.data ?? res
+    atasanTuOptions.value = Array.isArray(data) ? data : (data?.data ?? [])
+  } catch (e) {
+    atasanTuOptions.value = []
   }
 }
 
@@ -353,14 +366,16 @@ const refresh = async () => {
 
 const openAjukanModal = async () => {
   if (!canAjukan.value) return
-  // Fetch atasan TU options
-  try {
-    const res = await fetchAtasanTuOptions()
-    atasanTuOptions.value = res?.data ?? res ?? []
-  } catch (e) {
-    atasanTuOptions.value = []
+  // Ensure atasan TU options are loaded
+  if (atasanTuOptions.value.length === 0) {
+    await loadAtasanTuOptions()
   }
-  atasanTuInput.value = ''
+  // Auto-select if only one option
+  if (atasanTuOptions.value.length === 1) {
+    atasanTuInput.value = String(atasanTuOptions.value[0].persnum)
+  } else {
+    atasanTuInput.value = ''
+  }
   showAjukanModal.value = true
 }
 
