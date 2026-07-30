@@ -6,6 +6,7 @@ import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAksesBerkas.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 
@@ -14,6 +15,7 @@ useHead({ title: 'Persetujuan Usulan Akses Berkas' });
 
 const { t } = useI18n();
 const { usulanList, pending, pagination, fetchList } = useUsulanAksesBerkas();
+const { clearVerifikasiBadge, clearPilihBerkasBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
 
@@ -340,6 +342,11 @@ const exportData = async () => {
 
 onMounted(() => {
   loadData();
+  // Clear badge verifikasi & pilih berkas saat halaman dibuka
+  clearVerifikasiBadge();
+  clearPilihBerkasBadge();
+  // Re-fetch counts untuk update badge di sidebar
+  fetchCounts(true);
   document.addEventListener('click', handleDocumentClick);
 });
 

@@ -334,6 +334,7 @@ import { useRoute } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import { useDelegationMode } from '~/composables/useDelegationMode';
 import { usePenomoran } from '~/composables/usePenomoran';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
@@ -346,6 +347,12 @@ const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
 const { isReadOnly, activePositionStatus } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
+
+// ── Usulan Akses Berkas counts (badge notifikasi) ──
+const {
+  counts: usulanCounts,
+  fetchCounts: fetchUsulanCounts,
+} = useUsulanAksesBerkasCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
@@ -481,6 +488,8 @@ onMounted(async () => {
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
+    // Fetch usulan akses berkas counts untuk badge sidebar
+    fetchUsulanCounts();
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -972,6 +981,7 @@ const adminMenuKelola = computed(() => {
       to: '/usulan-akses-berkas',
       icon: 'i-lucide-folder-key',
       permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     },
     {
       label: 'Pemindahan Arsip',
@@ -1027,6 +1037,7 @@ const adminMenuKelola = computed(() => {
       label: 'Permintaan',
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
+      badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
     });
   }
 
@@ -1035,6 +1046,7 @@ const adminMenuKelola = computed(() => {
       label: 'Persetujuan',
       to: '/penggunaan/persetujuan',
       icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
     penggunaanChildren.push({
       label: 'Pemeriksaan',
@@ -1047,6 +1059,7 @@ const adminMenuKelola = computed(() => {
     label: 'Pemberian',
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
+    badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
 
   if (penggunaanChildren.length > 0) {
@@ -1116,6 +1129,7 @@ label: 'Penerimaan Usulan',
       label: 'Permintaan',
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
+      badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
     });
   }
 
@@ -1124,6 +1138,7 @@ label: 'Penerimaan Usulan',
       label: 'Persetujuan',
       to: '/penggunaan/persetujuan',
       icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
     penggunaanChildren.push({
       label: 'Pemeriksaan',
@@ -1136,6 +1151,7 @@ label: 'Penerimaan Usulan',
     label: 'Pemberian',
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
+    badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
 
   if (penggunaanChildren.length > 0) {

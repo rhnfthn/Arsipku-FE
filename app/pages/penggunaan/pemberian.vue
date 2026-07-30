@@ -5,12 +5,14 @@ import { useI18n } from 'vue-i18n';
 import { FileText, Clock, CheckCircle2, XCircle, ChevronLeft, Eye, Download, Folder } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
 
 const { t } = useI18n();
 const { fetchMyEntitlements, fetchNaskahByBerkas } = useUsulanAksesBerkas();
+const { markEntitlementsRead } = useUsulanAksesBerkasCounts();
 const toast = useToast();
 
 const extractErrorMessage = (err: any): string => {
@@ -160,6 +162,8 @@ const naskahColumns = [
 
 onMounted(() => {
   loadBerkas();
+  // Clear badge "akses diterbitkan baru" saat halaman dibuka
+  markEntitlementsRead();
 });
 </script>
 

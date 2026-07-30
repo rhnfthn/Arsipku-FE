@@ -6,6 +6,7 @@ import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
 import {
   StatusUsulan,
@@ -37,6 +38,7 @@ const {
   fetchVerifikatorBod,
   verifikatorList,
 } = useUsulanAksesBerkas();
+const { fetchCounts: refetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const toast = useToast();
 
 // Helper: extract error message dari AxiosError (BE return { message: [...] | string })
@@ -54,6 +56,9 @@ const extractErrorMessage = (err: any): string => {
 };
 
 const id = computed(() => route.params.id as string);
+
+// ── Toggle expand timeline ──
+const timelineExpanded = ref(false);
 
 // ── Quick confirm (Setuju/Tolak langsung, tanpa modal form) ──
 const showConfirm = ref(false);
@@ -497,6 +502,10 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       usulanDetail.value.status === StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI ||
       usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN ||
       usulanDetail.value.status === StatusUsulan.SELESAI) {
+    // Ambil timestamp dari step LANJUT terakhir (atau updatedAt sebagai fallback)
+    const lanjutStep = (usulanDetail.value.steps || [])
+      .filter((s: any) => s.keputusan === Keputusan.LANJUT)
+      .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
     entries.push({
       id: 'sent-to-pemberi',
       icon: 'i-lucide-send',
@@ -505,7 +514,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       jabatan: 'Sekretaris Divisi Pemberi',
       action: 'Terkirim ke Pemberi',
       actionColor: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
-      timestamp: usulanDetail.value.updatedAt,
+      timestamp: lanjutStep?.verifiedAt || usulanDetail.value.updatedAt,
     });
   }
 
@@ -526,6 +535,10 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
   // Milestone: Akses diterbitkan
   if (usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN ||
       usulanDetail.value.status === StatusUsulan.SELESAI) {
+    // Timestamp terbitkan = step pemberi terbaru (SETUJU/LANJUT), fallback updatedAt
+    const lastPemberiStep = (usulanDetail.value.steps || [])
+      .filter((s: any) => s.roleTahap && s.roleTahap.includes('_PEMBERI'))
+      .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
     entries.push({
       id: 'akses-diterbitkan',
       icon: 'i-lucide-badge-check',
@@ -534,7 +547,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       jabatan: `${usulanDetail.value.selectedBerkas?.length || 0} berkas diberikan`,
       action: 'Selesai',
       actionColor: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      timestamp: usulanDetail.value.tanggalMulai || usulanDetail.value.updatedAt,
+      timestamp: lastPemberiStep?.verifiedAt || usulanDetail.value.updatedAt,
     });
   }
 
@@ -568,6 +581,41 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     });
   }
 
+  // Sort ascending by timestamp, with tie-breaker that puts:
+  //   - created first (bottom)
+  //   - pengusul verification steps
+  //   - sent-to-pemberi (right after pengusul, before pemberi)
+  //   - pemberi verification steps
+  //   - berkas-selected, akses-diterbitkan, menunggu-berakhir, ditolak (top)
+  const stepRoleTahap = (entry: TimelineEntry): string | null => {
+    if (entry.id === 'created') return null;
+    if (entry.id === 'sent-to-pemberi') return 'SENT_TO_PEMBERI';
+    if (entry.id === 'berkas-selected') return 'BERKAS_SELECTED';
+    if (entry.id === 'akses-diterbitkan') return 'AKSES_DITERBITKAN';
+    if (entry.id === 'menunggu-berakhir') return 'MENUNGGU_BERAKHIR';
+    if (entry.id === 'ditolak') return 'DITOLAK';
+    // verification step: lookup roleTahap by id
+    const step = (usulanDetail.value.steps || []).find((s: any) => s.id === entry.id);
+    return step?.roleTahap || null;
+  };
+  const orderIndex = (entry: TimelineEntry): number => {
+    const role = stepRoleTahap(entry);
+    if (role === null) return 0; // created
+    if (role === 'SENT_TO_PEMBERI') return 2;
+    if (role && role.includes('_PENGUSUL')) return 1;
+    if (role && (role === 'SEKRETARIS_PEMBERI' || role.includes('_PEMBERI'))) return 3;
+    if (role === 'BERKAS_SELECTED') return 4;
+    if (role === 'AKSES_DITERBITKAN') return 5;
+    if (role === 'MENUNGGU_BERAKHIR') return 6;
+    if (role === 'DITOLAK') return 7;
+    return 1;
+  };
+  entries.sort((a, b) => {
+    const ta = new Date(a.timestamp || 0).getTime();
+    const tb = new Date(b.timestamp || 0).getTime();
+    if (ta !== tb) return ta - tb;
+    return orderIndex(a) - orderIndex(b);
+  });
   return entries.reverse();
 });
 
@@ -955,6 +1003,8 @@ const handleConfirm = async () => {
 
 onMounted(() => {
   loadDetail();
+  // Re-fetch counts untuk update badge di sidebar
+  refetchUsulanCounts(true);
 });
 </script>
 
@@ -1041,18 +1091,14 @@ onMounted(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Durasi Akses</dt>
-                  <dd v-if="usulanDetail.durasiAkses === 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(tanggalBerakhirDurasi) }}</dd>
+                  <dd v-if="usulanDetail.durasiAksesDisetujui" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">
+                    {{ usulanDetail.durasiAksesDisetujui.replace('_', ' ') }}
+                    <UTooltip v-if="usulanDetail.durasiAkses && usulanDetail.durasiAkses !== usulanDetail.durasiAksesDisetujui" :text="`Durasi usulan: ${usulanDetail.durasiAkses.replace('_', ' ')}`" :delay-duration="0">
+                      <UIcon name="i-lucide-info" class="ml-1 inline-block h-3.5 w-3.5 cursor-help align-middle text-gray-400 hover:text-primary-500" />
+                    </UTooltip>
+                  </dd>
+                  <dd v-else-if="usulanDetail.durasiAkses === 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(tanggalBerakhirDurasi) }}</dd>
                   <dd v-else class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.durasiAkses?.replace('_', ' ') }}</dd>
-                  <dd v-if="usulanDetail.durasiAkses !== 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 text-[11px] text-gray-400">Berakhir: {{ formatDate(tanggalBerakhirDurasi) }}</dd>
-                </div>
-              </div>
-              <div v-if="usulanDetail.durasiAksesDisetujui" class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
-                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
-                  <UIcon name="i-lucide-check-circle" class="h-4 w-4" />
-                </span>
-                <div class="min-w-0">
-                  <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Durasi Disetujui</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.durasiAksesDisetujui.replace('_', ' ') }}</dd>
                 </div>
               </div>
               <div v-if="usulanDetail.tanggalMulai" class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700 sm:col-span-2">
@@ -1061,7 +1107,7 @@ onMounted(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Periode Akses</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(usulanDetail.tanggalMulai) }} — {{ formatDate(usulanDetail.tanggalSelesai) }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(usulanDetail.tanggalMulai) }} <UIcon name="i-lucide-arrow-right" class="mx-1 inline-block h-4 w-4 align-middle text-primary-500" /> {{ formatDateOnly(usulanDetail.tanggalSelesai) }}</dd>
                 </div>
               </div>
             </dl>
@@ -1106,12 +1152,6 @@ onMounted(() => {
                     <span v-if="b.kodeBerkas">{{ b.kodeBerkas }} · </span>
                     <span>{{ b.klasifikasiTeks || '-' }}</span>
                   </p>
-                  <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                    <span v-for="akses in b.jenisAksesGranted" :key="akses" class="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
-                      {{ akses }}
-                    </span>
-                    <span v-if="b.berlakuHingga" class="text-[10px] text-gray-400">Berlaku s/d {{ formatDate(b.berlakuHingga) }}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1122,16 +1162,17 @@ onMounted(() => {
         <aside class="space-y-4">
           <!-- Timeline Verifikasi -->
           <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+            <button type="button" @click="timelineExpanded = !timelineExpanded" class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30">
               <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <UIcon name="i-lucide-route" class="size-5 text-primary-600 dark:text-primary-400" />
               </span>
-              <div>
+              <div class="flex-1 min-w-0">
                 <h2 class="font-semibold text-gray-900 dark:text-white">Timeline Verifikasi</h2>
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Riwayat alur verifikasi usulan.</p>
               </div>
-            </div>
-            <div class="px-4 py-3">
+              <UIcon :name="timelineExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-5 shrink-0 text-gray-400" />
+            </button>
+            <div v-show="timelineExpanded" class="px-4 py-3">
               <!-- Next Action sebagai timeline node (di atas, status terkini) -->
               <div v-if="nextActionInfo" class="mb-3 flex gap-2.5 pb-3 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex flex-col items-center">
