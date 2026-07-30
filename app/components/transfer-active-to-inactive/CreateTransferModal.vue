@@ -543,6 +543,15 @@ const doSubmit = async (asDraft: boolean) => {
       submit: !asDraft,
     };
 
+    // Debug: log payload untuk verifikasi atasan yang dipilih
+    console.log('[CreateTransferModal] doSubmit payload:', {
+      asDraft,
+      editDataId: props.editData?.id,
+      atasanList: payload.atasanList,
+      arsipList: payload.arsipList.map((a) => ({ id: a.id, perihal: a.perihal })),
+      submit: payload.submit,
+    });
+
     if (props.editData) {
       await update(props.editData.id, payload);
       emit('updated');

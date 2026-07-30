@@ -384,6 +384,14 @@ const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
+// Role tambahan dari organization_tu (Unit TU): 'tu' | 'sekretaris'
+const tuRoles = computed(() => {
+  const roles = user.value?.tuRoles;
+  return Array.isArray(roles) ? roles : [];
+});
+const isTuRole = computed(() => tuRoles.value.includes('tu'));
+const isSekretarisRole = computed(() => tuRoles.value.includes('sekretaris'));
+
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
 // Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
 const isAtasanManagerialUsulan = ref(false);
@@ -934,8 +942,11 @@ const isManagerialPosition = computed(() => {
   return false;
 });
 
-// Cek apakah user adalah SE/PS (Sekretaris yang didelegasikan)
-const isSekretarisActor = computed(() => activePositionStatus.value === 'SE' || activePositionStatus.value === 'PS');
+// Cek apakah user adalah SE/PS (Sekretaris yang didelegasikan via switch role)
+// ATAU punya role 'sekretaris' dari organization_tu (Unit TU)
+const isSekretarisActor = computed(
+  () => activePositionStatus.value === 'SE' || activePositionStatus.value === 'PS' || isSekretarisRole.value,
+);
 
 // ── Menu Pemeliharaan (milik Fakhri — JANGAN UBAH) ──
 // Struktur asli Fakhri: Pemberkasan + Persetujuan Pemberkasan
@@ -963,10 +974,22 @@ const adminMenuKelola = computed(() => {
       permission: { resource: 'usulan-akses-berkas', action: 'read' },
     },
     {
-      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
-      hideIfManagerial: true,
+      showIfTuOrSekretaris: true,
+    },
+    {
+      label: 'Notifikasi Usulan Pindah Arsip',
+      to: '/maintenance/notifikasi-usulan-pindah-arsip',
+      icon: 'i-lucide-bell',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Berkas Fisik',
+      to: '/maintenance/verifikasi-berkas-fisik',
+      icon: 'i-lucide-file-check',
+      showIfTuRole: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1040,10 +1063,22 @@ const userMenuKelola = computed(() => {
       permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
     },
     {
-      label: 'Pemindahan Arsip Aktif ke Inaktif',
+      label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
-      hideIfManagerial: true,
+      showIfTuOrSekretaris: true,
+    },
+    {
+      label: 'Notifikasi Usulan Pindah Arsip',
+      to: '/maintenance/notifikasi-usulan-pindah-arsip',
+      icon: 'i-lucide-bell',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Berkas Fisik',
+      to: '/maintenance/verifikasi-berkas-fisik',
+      icon: 'i-lucide-file-check',
+      showIfTuRole: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1149,19 +1184,26 @@ const filterMenuByPermission = (items) => {
     // Cek role-based access
     if (!hasRoleAccess(cloned)) return null;
 
-    // Cek showIfAtasan — tampilkan hanya jika user adalah atasan managerial
-    if (cloned.showIfAtasan && !isAtasanManagerialUsulan.value && !isAdminOrSuperadmin.value) {
+    // Cek showIfAtasan — tampilkan HANYA jika user adalah atasan managerial (usulan).
+    // Superadmin/admin TIDAK otomatis lihat menu ini kecuali memang terdaftar sebagai atasan.
+    if (cloned.showIfAtasan && !isAtasanManagerialUsulan.value) {
+      return null;
+    }
+
+    // Cek showIfTuOrSekretaris — tampilkan HANYA jika user punya role unit_dokumen (tu)
+    // atau sekretaris (delegasi/organization_tu). Superadmin/admin TIDAK otomatis lihat.
+    if (cloned.showIfTuOrSekretaris && !isTuRole.value && !isSekretarisRole.value) {
+      return null;
+    }
+
+    // Cek showIfTuRole — tampilkan HANYA jika user punya role unit_dokumen (tu).
+    // Superadmin/admin TIDAK otomatis lihat.
+    if (cloned.showIfTuRole && !isTuRole.value) {
       return null;
     }
 
     // Cek hideIfAtasan — sembunyikan jika user adalah atasan managerial
     if (cloned.hideIfAtasan && (isAtasanManagerialUsulan.value || isAdminOrSuperadmin.value)) {
-      return null;
-    }
-
-    // Cek hideIfManagerial — sembunyikan jika user adalah Managerial (EVP/VP/AVP)
-    // tapi bukan Sekretaris delegasi (SE) — SE tetap bisa lihat menu pemindahan arsip.
-    if (cloned.hideIfManagerial && isManagerialPosition.value && !isSekretarisActor.value) {
       return null;
     }
 

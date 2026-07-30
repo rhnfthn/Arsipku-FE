@@ -97,6 +97,22 @@
               </div>
             </div>
 
+            <!-- Pengingat: Siapkan berkas fisik & berita acara (saat menunggu dikirim ke TU) -->
+            <div
+              v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' || item.status === 'DIKIRIM'"
+              class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5"
+            >
+              <div class="flex items-start gap-3">
+                <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1">Pengingat Persiapan Berkas</h3>
+                  <p class="text-sm text-amber-600 dark:text-amber-400 leading-relaxed">
+                    Harap siapkan berkas fisik dan berita acara serah terima yang akan dibawa dan diserahkan ke pihak Unit Dokumen.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- Berita Acara (Generate) dihapus — BA format resmi ada di card bawah -->
 
             <!-- DIKIRIM: Menunggu Penerimaan -->
