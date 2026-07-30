@@ -29,6 +29,15 @@ export interface TuUsulanItem {
   atasanTuPersnum: number | null;
   atasanTuName: string | null;
   tanggalDikirim: string | null;
+  tuApprovedAt: string | null;
+  tuFinalApprovedAt: string | null;
+  receivedAt: string | null;
+  arrangedAt: string | null;
+  lokasiPenataan: string | null;
+  rak: string | null;
+  baris: string | null;
+  kolom: string | null;
+  keteranganPenataan: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,4 +70,26 @@ export interface AjukanAtasanTuPayload {
 
 export interface KembalikanPayload {
   alasan: string;
+}
+
+// ─── Atasan TU ───
+export interface SetujuiPenerimaanPayload {
+  catatanVerifikasi?: string;
+}
+
+export interface TolakPenerimaanPayload {
+  alasanPenolakan: string;
+}
+
+export interface SetujuiTerakhirPayload {
+  catatanVerifikasi?: string;
+}
+
+// ─── Penataan Arsip ───
+export interface SelesaiPenataanPayload {
+  lokasi?: string;
+  rak?: string;
+  baris?: string;
+  kolom?: string;
+  keterangan?: string;
 }

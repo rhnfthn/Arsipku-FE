@@ -79,13 +79,13 @@
                 <td class="px-3 py-3">
                   <div class="flex items-center gap-1">
                     <NuxtLink
-                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}``
+                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
                       class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
                       <UIcon name="i-lucide-eye" class="w-3.5 h-3.5" /> Detail
                     </NuxtLink>
                     <NuxtLink
-                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}``
+                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
                       class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
                     >
                       <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
