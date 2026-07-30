@@ -388,9 +388,11 @@ const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 const isAtasanManagerialUsulan = ref(false);
 const checkAtasanManagerialUsulan = async () => {
   try {
-    const res = await apiGet('/transfer-active-to-inactive/is-atasan', {}, { skipCache: true });
+    const res = await apiGet('/transfer-active-to-inactive/is-atasan', {
+      validateStatus: () => true,
+    }, { skipCache: true });
     isAtasanManagerialUsulan.value = res?.data?.isAtasan ?? false;
-  } catch (e) {
+  } catch {
     isAtasanManagerialUsulan.value = false;
   }
 };
@@ -930,8 +932,8 @@ const isManagerialPosition = computed(() => {
   return false;
 });
 
-// Cek apakah user adalah SE (Sekretaris yang didelegasikan)
-const isSekretarisActor = computed(() => activePositionStatus.value === 'SE');
+// Cek apakah user adalah SE/PS (Sekretaris yang didelegasikan)
+const isSekretarisActor = computed(() => activePositionStatus.value === 'SE' || activePositionStatus.value === 'PS');
 
 // ── Menu Pemeliharaan (milik Fakhri — JANGAN UBAH) ──
 // Struktur asli Fakhri: Pemberkasan + Persetujuan Pemberkasan
