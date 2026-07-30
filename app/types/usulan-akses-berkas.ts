@@ -157,6 +157,7 @@ export interface VerifikasiPengusulPayload {
 
 export interface VerifikasiPemberiPayload {
   durasiAksesDisetujui: DurasiPreset;
+  customTanggalSelesai?: string;
   catatanPerubahanDurasi?: string;
   catatan?: string;
   keputusan: Keputusan;

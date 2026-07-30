@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
 import { useApi } from '~/composables/useApi';
@@ -41,8 +41,9 @@ const divisiLoading = ref(false);
 const fetchDivisiList = async () => {
   divisiLoading.value = true;
   try {
-    const res = await apiGet<{ data: DivisiOption[] }>('/organization');
-    divisiList.value = (res?.data || []).filter((d: any) => d.organization != null);
+    const res = await apiGet<any>('/org-data/divisions', undefined, { skipCache: true });
+    // /org-data/divisions return flat list: [{ organization, shortText, longText, abbreviation }]
+    divisiList.value = (res?.data || res || []).filter((d: any) => d.organization != null);
   } catch (err) {
     console.error('[AddUsulanAksesBerkas] fetchDivisiList error:', err);
     divisiList.value = [];
@@ -60,12 +61,87 @@ const isOpen = computed({
 const jenisBerkas = ref<JenisBerkas>(JenisBerkas.AKTIF);
 const divisiPemberiId = ref<number | null>(null);
 const tujuanAkses = ref('');
-const durasiAkses = ref<DurasiPreset>(DurasiPreset.SATU_TAHUN);
+const durasiAkses = ref<DurasiPreset>(DurasiPreset.TUJUH_HARI);
 const customTanggalSelesai = ref('');
 const CORPORATE_SECRETARY_ORG_ID = 10002098;
 const todayStr = new Date().toISOString().split('T')[0];
 const jenisAksesSelected = ref<JenisAkses[]>([JenisAkses.LIHAT, JenisAkses.CETAK]);
 const selectedVerifikatorPersnums = ref<number[]>([]);
+
+// ── Custom divisi dropdown state ──
+const showDivisiDropdown = ref(false);
+const divisiSearchQuery = ref('');
+const divisiPage = ref(1);
+const divisiDropdownRef = ref<HTMLElement | null>(null);
+const divisiSearchRef = ref<HTMLInputElement | null>(null);
+
+// ── Custom durasi dropdown state ──
+const showDurasiDropdown = ref(false);
+const durasiDropdownRef = ref<HTMLElement | null>(null);
+
+// ── Custom verifikator dropdown state ──
+const showVerifikatorDropdown = ref(false);
+const verifikatorDropdownRef = ref<HTMLElement | null>(null);
+
+const filteredDivisi = computed(() => {
+  const q = divisiSearchQuery.value.toLowerCase().trim();
+  if (!q) return divisiList.value;
+  return divisiList.value.filter((d: any) =>
+    (d.shortText || '').toLowerCase().includes(q) ||
+    (d.longText || '').toLowerCase().includes(q) ||
+    (d.abbreviation || '').toLowerCase().includes(q) ||
+    String(d.organization || '').includes(q)
+  );
+});
+
+const paginatedDivisi = computed(() => {
+  const start = (divisiPage.value - 1) * 10;
+  return filteredDivisi.value.slice(start, start + 10);
+});
+
+const selectedDivisiLabel = computed(() => {
+  const d = divisiList.value.find((d: any) => d.organization === divisiPemberiId.value);
+  return d ? (d.shortText || d.longText || d.abbreviation || '-') : '';
+});
+
+const selectDivisi = (d: DivisiOption) => {
+  divisiPemberiId.value = d.organization;
+  showDivisiDropdown.value = false;
+  divisiSearchQuery.value = '';
+  divisiPage.value = 1;
+};
+
+// Close dropdown saat klik di luar
+const handleClickOutsideDivisi = (e: MouseEvent) => {
+  if (divisiDropdownRef.value && !divisiDropdownRef.value.contains(e.target as Node)) {
+    showDivisiDropdown.value = false;
+  }
+  if (durasiDropdownRef.value && !durasiDropdownRef.value.contains(e.target as Node)) {
+    showDurasiDropdown.value = false;
+  }
+  if (verifikatorDropdownRef.value && !verifikatorDropdownRef.value.contains(e.target as Node)) {
+    showVerifikatorDropdown.value = false;
+  }
+};
+
+// Focus search saat dropdown dibuka
+watch(showDivisiDropdown, (val) => {
+  if (val) {
+    nextTick(() => {
+      divisiSearchRef.value?.focus();
+    });
+  } else {
+    divisiSearchQuery.value = '';
+    divisiPage.value = 1;
+  }
+});
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutsideDivisi);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutsideDivisi);
+});
 
 const durasiOptions = [
   { label: '7 Hari', value: DurasiPreset.TUJUH_HARI },
@@ -206,11 +282,15 @@ const onVerifikatorSelectFromUSelect = (value: any) => {
   }
 };
 
+const onVerifikatorSelect = (persnum: number) => {
+  toggleVerifikator(persnum);
+};
+
 const resetForm = () => {
   jenisBerkas.value = JenisBerkas.AKTIF;
   divisiPemberiId.value = null;
   tujuanAkses.value = '';
-  durasiAkses.value = DurasiPreset.SATU_TAHUN;
+  durasiAkses.value = DurasiPreset.TUJUH_HARI;
   customTanggalSelesai.value = '';
   jenisAksesSelected.value = [JenisAkses.LIHAT, JenisAkses.CETAK];
   selectedVerifikatorPersnums.value = [];
@@ -294,6 +374,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <Teleport to="body">
   <Modal v-model="isOpen" :hideDefaultFooter="true" size="xl">
     <template #title>
       <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
@@ -307,11 +388,27 @@ onMounted(() => {
         <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
           Jenis Berkas <span class="text-red-500">*</span>
         </span>
-        <div class="flex-1">
-          <URadioGroup v-model="jenisBerkas" :items="[
-            { label: 'Berkas Aktif', value: JenisBerkas.AKTIF },
-            { label: 'Berkas Inaktif', value: JenisBerkas.INAKTIF },
-          ]" orientation="horizontal" />
+        <div class="flex flex-1 gap-2">
+          <button
+            type="button"
+            @click="jenisBerkas = JenisBerkas.AKTIF"
+            class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
+            :class="jenisBerkas === JenisBerkas.AKTIF
+              ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-400'
+              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
+          >
+            Berkas Aktif
+          </button>
+          <button
+            type="button"
+            @click="jenisBerkas = JenisBerkas.INAKTIF"
+            class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
+            :class="jenisBerkas === JenisBerkas.INAKTIF
+              ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-400'
+              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
+          >
+            Berkas Inaktif
+          </button>
         </div>
       </div>
 
@@ -328,26 +425,71 @@ onMounted(() => {
           </div>
         </div>
         <!-- Aktif: dropdown bisa dipilih -->
-        <div v-else class="flex-1">
-          <USelectMenu
-            v-model="divisiPemberiId"
-            :items="divisiList"
-            value-key="organization"
-            searchable
-            :search-attributes="['shortText', 'longText', 'abbreviation', 'organization']"
-            placeholder="Pilih divisi pemberi..."
-            :search-input="{ placeholder: 'Cari divisi...' }"
-            class="w-full"
-            :content="{ style: { zIndex: 60 } } as any"
-            :ui="{ base: 'w-full' } as any"
+        <div v-else class="flex-1 relative" ref="divisiDropdownRef">
+          <button
+            type="button"
+            @click="showDivisiDropdown = !showDivisiDropdown"
+            class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
-            <template #item="{ item }">
-              <div class="flex flex-col">
-                <span class="text-sm">{{ item.shortText || item.longText || item.abbreviation || '-' }}</span>
-                <span class="text-xs text-gray-400">Org ID: {{ item.organization }}{{ item.abbreviation ? ' · ' + item.abbreviation : '' }}</span>
+            <span v-if="selectedDivisiLabel">{{ selectedDivisiLabel }}</span>
+            <span v-else class="text-gray-400">Pilih divisi pemberi...</span>
+            <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showDivisiDropdown }" />
+          </button>
+
+          <div
+            v-if="showDivisiDropdown"
+            class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+            :content="{ style: { zIndex: 60 } } as any"
+          >
+            <!-- Search input -->
+            <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+              <div class="relative">
+                <UIcon name="i-lucide-search" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  ref="divisiSearchRef"
+                  v-model="divisiSearchQuery"
+                  type="text"
+                  placeholder="Cari divisi..."
+                  class="w-full rounded-md border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  @input="divisiPage = 1"
+                />
               </div>
-            </template>
-          </USelectMenu>
+            </div>
+
+            <!-- Options list (pagination 10) -->
+            <div class="max-h-[240px] overflow-y-auto">
+              <button
+                v-for="d in paginatedDivisi"
+                :key="d.organization"
+                type="button"
+                @click="selectDivisi(d)"
+                class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700"
+                :class="divisiPemberiId === d.organization ? 'bg-primary-50 font-medium dark:bg-gray-700' : 'text-gray-700 dark:text-gray-300'"
+              >
+                <span>{{ d.shortText || d.longText || d.abbreviation || '-' }}</span>
+                <span class="text-xs text-gray-400">{{ d.abbreviation || '' }}</span>
+              </button>
+
+              <div v-if="filteredDivisi.length === 0" class="px-3 py-6 text-center text-sm text-gray-400">
+                Tidak ada divisi ditemukan
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="filteredDivisi.length > 10" class="flex items-center justify-between border-t border-gray-100 px-3 py-2 dark:border-gray-700">
+              <span class="text-xs text-gray-400">
+                {{ (divisiPage - 1) * 10 + 1 }}-{{ Math.min(divisiPage * 10, filteredDivisi.length) }} dari {{ filteredDivisi.length }}
+              </span>
+              <div class="flex gap-1">
+                <button type="button" @click="divisiPage = Math.max(1, divisiPage - 1)" :disabled="divisiPage === 1" class="rounded p-1 text-gray-400 hover:text-primary disabled:opacity-30">
+                  <UIcon name="i-lucide-chevron-left" class="size-4" />
+                </button>
+                <button type="button" @click="divisiPage = Math.min(Math.ceil(filteredDivisi.length / 10), divisiPage + 1)" :disabled="divisiPage >= Math.ceil(filteredDivisi.length / 10)" class="rounded p-1 text-gray-400 hover:text-primary disabled:opacity-30">
+                  <UIcon name="i-lucide-chevron-right" class="size-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -357,13 +499,11 @@ onMounted(() => {
           Tujuan Akses <span class="text-red-500">*</span>
         </span>
         <div class="flex-1">
-          <UTextarea
+          <textarea
             v-model="tujuanAkses"
-            :rows="3"
-            :maxlength="2000"
-            autoresize
-            :maxrows="8"
-            class="w-full"
+            rows="3"
+            maxlength="2000"
+            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             placeholder="Jelaskan tujuan peminjaman akses berkas..."
           />
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -377,8 +517,32 @@ onMounted(() => {
         <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
           Durasi Akses <span class="text-red-500">*</span>
         </span>
-        <div class="flex-1">
-          <USelect v-model="durasiAkses" :items="durasiOptions" value-key="value" class="w-full" :content="{ style: { zIndex: 60 } } as any" />
+        <div class="flex-1 relative" ref="durasiDropdownRef">
+          <button
+            type="button"
+            @click="showDurasiDropdown = !showDurasiDropdown"
+            class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          >
+            <span>{{ durasiOptions.find(d => d.value === durasiAkses)?.label || 'Pilih durasi akses...' }}</span>
+            <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showDurasiDropdown }" />
+          </button>
+          <div
+            v-if="showDurasiDropdown"
+            class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+          >
+            <div class="max-h-[200px] overflow-y-auto">
+              <button
+                v-for="d in durasiOptions"
+                :key="d.value"
+                type="button"
+                @click="durasiAkses = d.value; showDurasiDropdown = false"
+                class="flex w-full items-center px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700"
+                :class="durasiAkses === d.value ? 'bg-primary-50 font-medium text-primary-700 dark:bg-gray-700 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'"
+              >
+                {{ d.label }}
+              </button>
+            </div>
+          </div>
           <!-- Custom: date picker + tanggal berakhir di kanan -->
           <div v-if="durasiAkses === DurasiPreset.CUSTOM" class="mt-2 flex items-center gap-2">
             <UInput
@@ -386,6 +550,7 @@ onMounted(() => {
               type="date"
               :min="todayStr"
               class="flex-1"
+              :ui="{ base: 'rounded-lg border-gray-200 dark:border-gray-600' }"
             />
             <div v-if="customTanggalSelesai" class="flex shrink-0 items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700/40">
               <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0 text-gray-500" />
@@ -439,19 +604,32 @@ onMounted(() => {
           <div v-if="verifikatorList.length === 0" class="py-2 text-sm text-gray-400">
             Tidak ada data managerial. Pastikan Anda memiliki akses.
           </div>
-          <div v-else-if="availableVerifikator.length > 0" class="relative">
-            <USelect
-              :model-value="undefined"
-              :items="availableVerifikator.map((v) => ({
-                label: `${v.nama || `Persnum ${v.persnum}`} — ${v.jabatan || v.levelJabatan}`,
-                value: String(v.persnum),
-              }))"
-              value-key="value"
-              :placeholder="`+ Pilih verifikator (${selectedVerifikatorPersnums.length}/3)`"
-              class="w-full"
-              :content="{ style: { zIndex: 60 } } as any"
-              @update:model-value="onVerifikatorSelectFromUSelect"
-            />
+          <div v-else-if="availableVerifikator.length > 0" class="relative" ref="verifikatorDropdownRef">
+            <button
+              type="button"
+              @click="showVerifikatorDropdown = !showVerifikatorDropdown"
+              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            >
+              <span class="text-gray-400">+ Pilih verifikator ({{ selectedVerifikatorPersnums.length }}/3)</span>
+              <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showVerifikatorDropdown }" />
+            </button>
+            <div
+              v-if="showVerifikatorDropdown"
+              class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+            >
+              <div class="max-h-[200px] overflow-y-auto">
+                <button
+                  v-for="v in availableVerifikator"
+                  :key="v.persnum"
+                  type="button"
+                  @click="onVerifikatorSelect(v.persnum); showVerifikatorDropdown = false"
+                  class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
+                  <span class="text-xs text-gray-400">{{ v.jabatan || v.levelJabatan || '' }}</span>
+                </button>
+              </div>
+            </div>
           </div>
           <p v-else-if="selectedVerifikatorPersnums.length >= 3" class="text-xs text-gray-400">
             Maksimal 3 verifikator. Hapus salah satu untuk mengganti.
@@ -466,17 +644,23 @@ onMounted(() => {
     </div>
 
     <!-- Footer -->
-    <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-      <UButton variant="ghost" color="neutral" size="lg" :disabled="pending" @click="isOpen = false">Batal</UButton>
-      <UButton
-        color="primary"
-        size="lg"
-        :loading="pending"
-        :disabled="!canSubmit"
+    <div class="flex gap-3 px-6 pb-6 pt-2">
+      <button
+        class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white disabled:opacity-50"
+        :disabled="pending"
+        @click="isOpen = false"
+      >
+        Batal
+      </button>
+      <button
+        class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
+        style="background-color: #175FA4"
+        :disabled="!canSubmit || pending"
         @click="handleSubmit"
       >
-        Kirim Usulan
-      </UButton>
+        {{ pending ? 'Memproses...' : 'Kirim Usulan' }}
+      </button>
     </div>
   </Modal>
+  </Teleport>
 </template>
