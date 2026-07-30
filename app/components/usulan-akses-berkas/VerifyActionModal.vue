@@ -21,6 +21,19 @@
           :class="variant === 'reject' ? 'focus:ring-red-500' : 'focus:ring-primary'"
           :placeholder="notePlaceholder"
         />
+        <!-- Catatan ke SE (opsional, untuk verifikator → SE terkait) -->
+        <div v-if="showCatatanKeSE" class="mt-3">
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Catatan ke SE {{ catatanKeSELabel }}
+            <span class="text-xs font-normal text-gray-400">(opsional, hanya terlihat oleh SE {{ catatanKeSELabel }})</span>
+          </label>
+          <textarea
+            v-model="catatanKeSE"
+            rows="2"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            :placeholder="`Catatan khusus untuk SE ${catatanKeSELabel}...`"
+          />
+        </div>
         <div class="flex gap-3 pt-2">
           <button
             class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
@@ -60,6 +73,8 @@ const props = withDefaults(defineProps<{
   saving?: boolean;
   requireNote?: boolean;
   minNoteLength?: number;
+  showCatatanKeSE?: boolean;
+  catatanKeSELabel?: string; // 'Pengusul' atau 'Pemberi'
 }>(), {
   variant: 'approve',
   title: '',
@@ -69,11 +84,13 @@ const props = withDefaults(defineProps<{
   saving: false,
   requireNote: false,
   minNoteLength: 0,
+  showCatatanKeSE: false,
+  catatanKeSELabel: '',
 });
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
-  confirm: [note: string];
+  confirm: [note: string, catatanKeSE?: string];
   cancel: [];
 }>();
 
@@ -83,10 +100,14 @@ const isOpen = computed({
 });
 
 const note = ref('');
+const catatanKeSE = ref('');
 
 // Reset note saat modal dibuka
 watch(() => props.modelValue, (val) => {
-  if (val) note.value = '';
+  if (val) {
+    note.value = '';
+    catatanKeSE.value = '';
+  }
 });
 
 const disabled = computed(() => {
@@ -97,7 +118,7 @@ const disabled = computed(() => {
 });
 
 const handleConfirm = () => {
-  emit('confirm', note.value);
+  emit('confirm', note.value, catatanKeSE.value || undefined);
 };
 
 const handleCancel = () => {
