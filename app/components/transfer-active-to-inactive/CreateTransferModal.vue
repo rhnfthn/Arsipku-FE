@@ -240,7 +240,7 @@
             :disabled="submitting || !canSubmit"
             class="px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50"
           >
-            {{ submitting ? 'Mengirim...' : 'Simpan & Kirim ke Atasan' }}
+            {{ submitting ? 'Mengirim...' : 'Kirim' }}
           </button>
         </div>
       </div>

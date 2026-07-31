@@ -19,7 +19,7 @@
         <select v-model="filterStatus" class="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" @change="fetchData">
           <option value="">Semua Status</option>
           <option value="DIKIRIM">Menunggu Penerimaan</option>
-          <option value="DISETUJUI_PERSETUJUAN_TU">Penerimaan Diterima</option>
+          <option value="DISETUJUI_PERSETUJUAN_TU">Menunggu Penerimaan</option>
           <option value="ARSIP_INAKTIF_DITERIMA">Arsip Diterima</option>
           <option value="SELESAI">Selesai</option>
         </select>
@@ -129,7 +129,9 @@ const onLimitChange = (l: number) => { limit.value = l; page.value = 1; fetchDat
 const statusLabel = (s: string) => {
   const m: Record<string, string> = {
     DIKIRIM: 'Menunggu Penerimaan',
-    DISETUJUI_PERSETUJUAN_TU: 'Penerimaan Diterima',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Persetujuan Terakhir',
     ARSIP_INAKTIF_DITERIMA: 'Arsip Diterima',
     SELESAI: 'Selesai',
     DITOLAK_PERSETUJUAN_TU: 'Ditolak',
@@ -139,7 +141,9 @@ const statusLabel = (s: string) => {
 const statusColor = (s: string) => {
   const m: Record<string, string> = {
     DIKIRIM: 'warning',
-    DISETUJUI_PERSETUJUAN_TU: 'success',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'warning',
+    DISETUJUI_PERSETUJUAN_TU: 'warning',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'info',
     ARSIP_INAKTIF_DITERIMA: 'primary',
     SELESAI: 'success',
     DITOLAK_PERSETUJUAN_TU: 'error',
