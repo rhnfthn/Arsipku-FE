@@ -349,6 +349,7 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
   usePenomoran();
 
 // ── Usulan Akses Berkas counts (badge notifikasi) ──
+// Counts sudah exclude usulan yang viewed (filter di BE service getCounts).
 const {
   counts: usulanCounts,
   fetchCounts: fetchUsulanCounts,
@@ -1016,12 +1017,16 @@ const adminMenuKelola = computed(() => {
   ];
 
   const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
+  // Fallback: kalau child tidak ada badge tapi ada notifikasi global,
+  // tetap tampilkan dot di parent (adminMenuKelola).
+  const pemeliharaanFallback =
+    pemeliharaanBadge === 0 && unreadCount.value > 0 ? 1 : null;
 
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
-      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : null,
+      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : pemeliharaanFallback,
       children: pemeliharaanChildren,
     },
   ];
@@ -1041,6 +1046,7 @@ const adminMenuKelola = computed(() => {
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
@@ -1119,12 +1125,18 @@ label: 'Penerimaan Usulan',
   ];
 
   const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
+  // Fallback: kalau child tidak ada badge tapi ada notifikasi global
+  // (persetujuan TU / verifikasi usulan), tetap tampilkan dot di parent.
+  const pemeliharaanFallback =
+    pemeliharaanBadge === 0 && (rtArsipPersetujuanCount.value > 0 || unreadCount.value > 0)
+      ? 1
+      : null;
 
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
-      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : null,
+      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : pemeliharaanFallback,
       children: pemeliharaanChildren,
     },
   ];
@@ -1138,6 +1150,7 @@ label: 'Penerimaan Usulan',
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
