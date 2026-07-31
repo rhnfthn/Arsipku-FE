@@ -1307,6 +1307,17 @@ onBeforeUnmount(() => {
                     <span>{{ b.klasifikasiTeks || '-' }}</span>
                   </p>
                 </div>
+                <!-- Tombol buka naskah — hanya jika akses sudah diberikan (AKSES_DITERBITKAN) -->
+                <button
+                  v-if="usulanDetail.status === StatusUsulan.AKSES_DITERBITKAN"
+                  type="button"
+                  @click="navigateTo(`/penggunaan/pemberian/${usulanDetail.id}/berkas`)"
+                  class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
+                  title="Buka naskah di berkas ini"
+                >
+                  <UIcon name="i-lucide-file-text" class="size-4" />
+                  <span class="hidden sm:inline">Naskah</span>
+                </button>
               </div>
             </div>
           </div>
