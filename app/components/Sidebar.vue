@@ -334,6 +334,7 @@ import { useRoute } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import { useDelegationMode } from '~/composables/useDelegationMode';
 import { usePenomoran } from '~/composables/usePenomoran';
+import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
@@ -346,6 +347,13 @@ const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
 const { isReadOnly, activePositionStatus } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
+
+// ── Usulan Akses Berkas counts (badge notifikasi) ──
+// Counts sudah exclude usulan yang viewed (filter di BE service getCounts).
+const {
+  counts: usulanCounts,
+  fetchCounts: fetchUsulanCounts,
+} = useUsulanAksesBerkasCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
@@ -481,6 +489,8 @@ onMounted(async () => {
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
+    // Fetch usulan akses berkas counts untuk badge sidebar
+    fetchUsulanCounts();
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -972,24 +982,31 @@ const adminMenuKelola = computed(() => {
       to: '/usulan-akses-berkas',
       icon: 'i-lucide-folder-key',
       permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     },
     {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
-      showIfTuOrSekretaris: true,
+      showIfSekretarisOnly: true,
     },
     {
-      label: 'Notifikasi Usulan Pindah Arsip',
+      label: 'Penerimaan Usulan',
       to: '/maintenance/notifikasi-usulan-pindah-arsip',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
     },
     {
-      label: 'Verifikasi Berkas Fisik',
-      to: '/maintenance/verifikasi-berkas-fisik',
-      icon: 'i-lucide-file-check',
+      label: 'Penataan Arsip Inaktif',
+      to: '/maintenance/penataan-arsip-inaktif',
+      icon: 'i-lucide-archive',
       showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Persetujuan',
+      to: '/maintenance/verifikasi-persetujuan-tu',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasanTu: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -999,10 +1016,17 @@ const adminMenuKelola = computed(() => {
     },
   ];
 
+  const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
+  // Fallback: kalau child tidak ada badge tapi ada notifikasi global,
+  // tetap tampilkan dot di parent (adminMenuKelola).
+  const pemeliharaanFallback =
+    pemeliharaanBadge === 0 && unreadCount.value > 0 ? 1 : null;
+
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
+      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : pemeliharaanFallback,
       children: pemeliharaanChildren,
     },
   ];
@@ -1021,6 +1045,8 @@ const adminMenuKelola = computed(() => {
       label: 'Permintaan',
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
+      badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
@@ -1029,6 +1055,7 @@ const adminMenuKelola = computed(() => {
       label: 'Persetujuan',
       to: '/penggunaan/persetujuan',
       icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
     penggunaanChildren.push({
       label: 'Pemeriksaan',
@@ -1041,12 +1068,15 @@ const adminMenuKelola = computed(() => {
     label: 'Pemberian',
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
+    badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
 
   if (penggunaanChildren.length > 0) {
+    const penggunaanBadge = penggunaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
     menus.push({
       label: 'Penggunaan',
       icon: 'i-lucide-folder-open',
+      badge: penggunaanBadge > 0 ? penggunaanBadge : null,
       children: penggunaanChildren,
     });
   }
@@ -1066,19 +1096,25 @@ const userMenuKelola = computed(() => {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
-      showIfTuOrSekretaris: true,
+      showIfSekretarisOnly: true,
     },
     {
-      label: 'Notifikasi Usulan Pindah Arsip',
+label: 'Penerimaan Usulan',
       to: '/maintenance/notifikasi-usulan-pindah-arsip',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
     },
     {
-      label: 'Verifikasi Berkas Fisik',
-      to: '/maintenance/verifikasi-berkas-fisik',
-      icon: 'i-lucide-file-check',
+      label: 'Penataan Arsip Inaktif',
+      to: '/maintenance/penataan-arsip-inaktif',
+      icon: 'i-lucide-archive',
       showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Persetujuan',
+      to: '/maintenance/verifikasi-persetujuan-tu',
+      icon: 'i-lucide-file-check-2',
+      showIfAtasanTu: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1088,10 +1124,19 @@ const userMenuKelola = computed(() => {
     },
   ];
 
+  const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
+  // Fallback: kalau child tidak ada badge tapi ada notifikasi global
+  // (persetujuan TU / verifikasi usulan), tetap tampilkan dot di parent.
+  const pemeliharaanFallback =
+    pemeliharaanBadge === 0 && (rtArsipPersetujuanCount.value > 0 || unreadCount.value > 0)
+      ? 1
+      : null;
+
   const menus = [
     {
       label: 'Pemeliharaan',
       icon: 'i-lucide-folder-cog',
+      badge: pemeliharaanBadge > 0 ? pemeliharaanBadge : pemeliharaanFallback,
       children: pemeliharaanChildren,
     },
   ];
@@ -1104,6 +1149,8 @@ const userMenuKelola = computed(() => {
       label: 'Permintaan',
       to: '/penggunaan/permintaan',
       icon: 'i-lucide-file-plus',
+      badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
@@ -1112,6 +1159,7 @@ const userMenuKelola = computed(() => {
       label: 'Persetujuan',
       to: '/penggunaan/persetujuan',
       icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
     penggunaanChildren.push({
       label: 'Pemeriksaan',
@@ -1124,12 +1172,15 @@ const userMenuKelola = computed(() => {
     label: 'Pemberian',
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
+    badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
 
   if (penggunaanChildren.length > 0) {
+    const penggunaanBadge = penggunaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
     menus.push({
       label: 'Penggunaan',
       icon: 'i-lucide-folder-open',
+      badge: penggunaanBadge > 0 ? penggunaanBadge : null,
       children: penggunaanChildren,
     });
   }
@@ -1158,7 +1209,11 @@ const filterMenuByPermission = (items) => {
   // Menu lain difilter berdasarkan permission, termasuk superadmin
   // Support nested children (recursive) untuk menu 2+ level.
   // Support role-based filtering via `roles` array on item.
-  const isAtasanManagerialTuPersnum = Number(user.value?.persnum) === 10010123;
+  // Atasan Managerial TU: HERMANA (10010123) atau PRIYO (10010970) — konsisten
+  // dengan AtasanTuGuard di backend (guards/atasan-tu-guard.ts).
+  const isAtasanManagerialTuPersnum =
+    Number(user.value?.persnum) === 10010123 ||
+    Number(user.value?.persnum) === 10010970;
 
   const hasRoleAccess = (item) => {
     if (!item.roles || item.roles.length === 0) return true;
@@ -1190,9 +1245,22 @@ const filterMenuByPermission = (items) => {
       return null;
     }
 
+    // Cek showIfAtasanTu — tampilkan HANYA jika user adalah Atasan Managerial TU
+    // (persnum 10010123 HERMANA atau 10010970 PRIYO). Menu ini untuk verifikasi
+    // persetujuan penerimaan arsip dari TU, bukan verifikasi usulan sekretaris.
+    if (cloned.showIfAtasanTu && !isAtasanManagerialTuPersnum) {
+      return null;
+    }
+
     // Cek showIfTuOrSekretaris — tampilkan HANYA jika user punya role unit_dokumen (tu)
     // atau sekretaris (delegasi/organization_tu). Superadmin/admin TIDAK otomatis lihat.
     if (cloned.showIfTuOrSekretaris && !isTuRole.value && !isSekretarisRole.value) {
+      return null;
+    }
+
+    // Cek showIfSekretarisOnly — tampilkan HANYA jika user adalah sekretaris
+    // (delegasi/organization_tu). TU (unit_dokumen) TIDAK lihat menu ini.
+    if (cloned.showIfSekretarisOnly && !isSekretarisRole.value && !isSekretarisActor.value) {
       return null;
     }
 
@@ -1310,7 +1378,7 @@ const apps = computed(() => {
       label: 'Kelola',
       icon: 'i-lucide-archive',
       menus: filterMenuByPermission(userMenuKelola.value),
-      hasNotification: false,
+      hasNotification: rtArsipPersetujuanCount.value > 0,
     },
     {
       id: 'user-utilitas',

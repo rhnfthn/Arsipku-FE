@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6">
-        <Heading variant="heading6b" class="text-mobile-md">Notifikasi Usulan Pindah Arsip</Heading>
+        <Heading variant="heading6b" class="text-mobile-md">Penerimaan Usulan</Heading>
         <PageHeader :items="breadcrumbs" />
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
           Daftar usulan pindah arsip yang dikirim oleh Atasan Managerial.
@@ -28,11 +28,8 @@
           @change="fetchData"
         >
           <option value="">Semua Status</option>
-          <option value="DIKIRIM">Menunggu Penerimaan</option>
-          <option value="MENUNGGU_VERIFIKASI_BERKAS_FISIK">Menunggu Verifikasi Berkas</option>
-          <option value="BERKAS_FISIK_SESUAI">Berkas Sesuai</option>
+          <option value="DIKIRIM">Menunggu Verifikasi</option>
           <option value="BERKAS_FISIK_TIDAK_SESUAI">Berkas Tidak Sesuai</option>
-          <option value="MENUNGGU_VERIFIKASI_PERSETUJUAN_TU">Menunggu Persetujuan TU</option>
         </select>
       </div>
 
@@ -80,14 +77,12 @@
                   </UBadge>
                 </td>
                 <td class="px-3 py-3">
-                  <div class="flex items-center gap-1">
-                    <NuxtLink
-                      :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
-                      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
-                    >
-                      <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
-                    </NuxtLink>
-                  </div>
+                  <NuxtLink
+                    :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] text-white hover:bg-[#3a6d9c] transition-colors"
+                  >
+                    <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
+                  </NuxtLink>
                 </td>
               </tr>
             </tbody>
@@ -122,7 +117,7 @@ const { fetchNotifikasiList } = useTuVerifikasi()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Notifikasi Usulan Pindah Arsip', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
+  { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
 ])
 
 const list = ref<TuUsulanItem[]>([])
@@ -176,25 +171,15 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    DIKIRIM: 'Menunggu Penerimaan',
-    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
-    BERKAS_FISIK_SESUAI: 'Berkas Sesuai',
-    BERKAS_FISIK_TIDAK_SESUAI: 'Berkas Tidak Sesuai',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Persetujuan TU',
-  }
-  return labels[status] || status
+  if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'Berkas Tidak Sesuai'
+  if (status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'ARSIP_INAKTIF_DITERIMA') return 'Sudah Diajukan ke Atasan TU'
+  return 'Menunggu Verifikasi'
 }
 
 const statusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    DIKIRIM: 'warning',
-    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'warning',
-    BERKAS_FISIK_SESUAI: 'success',
-    BERKAS_FISIK_TIDAK_SESUAI: 'error',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'primary',
-  }
-  return colors[status] || 'neutral'
+  if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'error'
+  if (status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'ARSIP_INAKTIF_DITERIMA') return 'success'
+  return 'warning'
 }
 
 onMounted(() => fetchData())

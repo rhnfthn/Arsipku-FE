@@ -101,6 +101,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/verify-physical-active-to-inactive',
     '/maintenance/final-approval-transfer-active-to-inactive',
     '/maintenance/verifikasi-usulan',
+    '/maintenance/verifikasi-persetujuan-tu',
+    '/maintenance/notifikasi-usulan-pindah-arsip',
+    '/maintenance/verifikasi-berkas-fisik',
+    '/maintenance/penataan-arsip-inaktif',
   ];
 
   if (role === 'user') {

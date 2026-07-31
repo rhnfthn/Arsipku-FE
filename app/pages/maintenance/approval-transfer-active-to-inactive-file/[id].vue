@@ -53,8 +53,10 @@
           />
         </div>
 
-        <!-- Right: Info tambahan -->
+        <!-- Right: Timeline Riwayat + Info tambahan -->
         <div class="space-y-5">
+          <TimelineRiwayat :item="item" />
+
           <!-- Menunggu Verifikasi -->
           <div
             v-if="item.status === 'MENUNGGU_VERIFIKASI_ATASAN'"
@@ -118,6 +120,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferApproval } from '~/composables/useTransferApproval';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 
 definePageMeta({ middleware: ['auth'] });
 

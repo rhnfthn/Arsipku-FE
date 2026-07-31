@@ -9,24 +9,7 @@
       />
     </div>
 
-    <!-- Action Buttons -->
-    <div class="flex items-center justify-end gap-2 mb-4">
-      <button
-        @click="onExport"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
-      >
-        <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
-      </button>
-      <button
-        v-if="isSekretaris"
-        @click="openCreateModal"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shadow-sm"
-      >
-        <UIcon name="i-lucide-plus" class="w-4 h-4" /> Usul Pindah Arsip
-      </button>
-    </div>
-
-    <!-- Filter Bar -->
+    <!-- Filter Bar (1 baris: Search + Status + Export + Usul Pindah Arsip) -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
       <!-- Search -->
       <div class="relative flex-1 min-w-[200px]">
@@ -43,7 +26,7 @@
       <select
         v-model="filter.status"
         @change="reload"
-        class="h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+        class="h-10 w-[160px] shrink-0 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
       >
         <option value="">Semua Status</option>
         <option value="DRAFT">Draft</option>
@@ -55,13 +38,20 @@
         <option value="DIKIRIM">Menunggu Penerimaan</option>
         <option value="SELESAI">Selesai</option>
       </select>
-      <!-- Refresh -->
+      <!-- Export -->
       <button
-        @click="loadGabungan"
-        :disabled="loading"
-        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+        @click="onExport"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shrink-0"
       >
-        <UIcon name="i-lucide-refresh-cw" class="w-4 h-4" :class="loading ? 'animate-spin' : ''" />
+        <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
+      </button>
+      <!-- Usul Pindah Arsip -->
+      <button
+        v-if="isSekretaris"
+        @click="openCreateModal"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shadow-sm shrink-0"
+      >
+        <UIcon name="i-lucide-plus" class="w-4 h-4" /> Usul Pindah Arsip
       </button>
     </div>
 
@@ -76,7 +66,6 @@
               <th class="px-3 py-2.5 font-semibold w-[24%]">Nama Berkas / Perihal</th>
               <th class="px-3 py-2.5 font-semibold w-[14%] hidden lg:table-cell">Klasifikasi</th>
               <th class="px-3 py-2.5 font-semibold w-[12%]">Retensi Habis</th>
-              <th class="px-3 py-2.5 font-semibold w-[14%] hidden md:table-cell">Atasan</th>
               <th class="px-3 py-2.5 font-semibold w-[12%]">Status</th>
               <th class="px-3 py-2.5 font-semibold w-[10%] hidden xl:table-cell">Tanggal</th>
               <th class="px-3 py-2.5 font-semibold text-center w-[8%]">Aksi</th>
@@ -85,13 +74,13 @@
           <tbody>
             <!-- Loading -->
             <tr v-if="loading">
-              <td colspan="9" class="px-3 py-6 text-center text-sm text-gray-400">
+              <td colspan="8" class="px-3 py-6 text-center text-sm text-gray-400">
                 <UIcon name="i-lucide-loader-2" class="w-5 h-5 animate-spin inline mr-1" /> Memuat data...
               </td>
             </tr>
             <!-- Empty -->
             <tr v-else-if="gabunganList.length === 0">
-              <td colspan="9" class="px-3 py-10 text-center text-sm text-gray-400">
+              <td colspan="8" class="px-3 py-10 text-center text-sm text-gray-400">
                 <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>Tidak ada data</p>
                 <p class="text-xs mt-1">Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini.</p>
@@ -116,12 +105,6 @@
                   <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
                 </td>
                 <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden md:table-cell">
-                  <div class="truncate" :title="row.atasanName ?? '-'">
-                    <template v-if="row.isUsulan && row.status !== 'DRAFT'">{{ row.atasanName ?? '-' }}</template>
-                    <template v-else>-</template>
-                  </div>
-                </td>
                 <td class="px-3 py-2">
                   <span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span>
                 </td>
@@ -141,7 +124,7 @@
                     v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
                     @click="onSendUsulan(row)"
                     title="Kirim ke Atasan Managerial"
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                   >
                     <UIcon name="i-lucide-send" class="w-4 h-4" />
                   </button>

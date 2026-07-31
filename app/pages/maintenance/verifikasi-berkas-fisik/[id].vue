@@ -81,82 +81,40 @@
             </div>
           </div>
 
-          <!-- Hasil Verifikasi -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Hasil Verifikasi</h3>
-
-            <!-- Radio -->
-            <div class="flex gap-6 mb-4">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  v-model="verifikasiResult"
-                  type="radio"
-                  value="sesuai"
-                  class="w-4 h-4 text-primary border-gray-300 focus:ring-primary-500"
-                  :disabled="isAlreadyVerified"
-                />
-                <span class="text-sm text-gray-700 dark:text-gray-300">Sesuai</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  v-model="verifikasiResult"
-                  type="radio"
-                  value="tidak_sesuai"
-                  class="w-4 h-4 text-red-500 border-gray-300 focus:ring-red-500"
-                  :disabled="isAlreadyVerified"
-                />
-                <span class="text-sm text-gray-700 dark:text-gray-300">Tidak Sesuai</span>
-              </label>
-            </div>
-
-            <!-- Catatan -->
-            <div class="mb-4">
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Catatan Verifikasi {{ verifikasiResult === 'tidak_sesuai' ? '(wajib)' : '(opsional)' }}
-              </label>
-              <textarea
-                v-model="catatan"
-                rows="3"
-                :placeholder="verifikasiResult === 'tidak_sesuai' ? 'Isi alasan ketidaksesuaian...' : 'Catatan verifikasi (opsional)...'"
-                :disabled="isAlreadyVerified"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none disabled:opacity-60"
-              ></textarea>
-            </div>
-
-            <!-- Tombol Aksi -->
-            <div class="flex gap-2">
-              <button
-                @click="openKembalikanModal"
-                :disabled="!canKembalikan || actionLoading"
-                class="px-5 py-2.5 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <UIcon name="i-lucide-undo-2" class="w-4 h-4 mr-1 inline" /> Kembalikan ke Atasan
-              </button>
-              <button
-                @click="openAjukanModal"
-                :disabled="!canAjukan || actionLoading"
-                class="px-5 py-2.5 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-                <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Ajukan ke Atasan TU
-              </button>
-            </div>
+          <!-- Tombol Aksi langsung di bawah Daftar Berkas Fisik -->
+          <div v-if="!isAlreadyVerified" class="flex gap-2">
+            <button
+              @click="openKembalikanModal"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <UIcon name="i-lucide-undo-2" class="w-4 h-4 mr-1 inline" /> Kembalikan ke Atasan
+            </button>
+            <button
+              @click="openAjukanModal"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Ajukan ke Atasan TU
+            </button>
           </div>
 
-          <!-- Status info -->
+          <!-- Status info: Sudah diajukan ke Atasan TU -->
           <div
-            v-if="item.status === 'BERKAS_FISIK_SESUAI'"
-            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
+            v-if="item.tuApprovedAt"
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
           >
             <div class="flex items-start gap-3">
-              <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
               <div>
-                <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Berkas Sesuai</h3>
-                <p class="text-sm text-green-600 dark:text-green-400">Berkas fisik telah diverifikasi sesuai. Silakan ajukan ke Atasan Managerial TU.</p>
+                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Sudah Diajukan ke Atasan TU</h3>
+                <p class="text-sm text-blue-600 dark:text-blue-400">Berkas fisik dan berita acara serah terima telah dikonfirmasi cocok. Usulan telah diajukan ke Atasan Managerial TU.</p>
               </div>
             </div>
           </div>
 
+          <!-- Status info: Berkas dikembalikan -->
           <div
             v-if="item.status === 'BERKAS_FISIK_TIDAK_SESUAI'"
             class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-sm p-5"
@@ -169,19 +127,11 @@
               </div>
             </div>
           </div>
+        </div>
 
-          <div
-            v-if="item.status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU'"
-            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
-          >
-            <div class="flex items-start gap-3">
-              <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-              <div>
-                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Persetujuan Atasan TU</h3>
-                <p class="text-sm text-blue-600 dark:text-blue-400">Usulan telah diajukan ke Atasan Managerial TU ({{ item.atasanTuName || '-' }}).</p>
-              </div>
-            </div>
-          </div>
+        <!-- Kanan: Timeline Riwayat -->
+        <div class="lg:col-span-4 space-y-5">
+          <TimelineRiwayat :item="item as any" />
         </div>
       </div>
     </template>
@@ -194,35 +144,64 @@
     <!-- Modal Ajukan ke Atasan TU -->
     <Teleport to="body">
       <div v-if="showAjukanModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px]" @click="showAjukanModal = false"></div>
-        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div class="fixed inset-0 bg-black/40" style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" @click="showAjukanModal = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[90%] max-w-[560px] max-h-[80vh] flex flex-col overflow-hidden z-[10000]">
+          <!-- Header sticky -->
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ajukan ke Atasan Managerial TU</h3>
             <button @click="showAjukanModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
               <UIcon name="i-lucide-x" class="w-5 h-5" />
             </button>
           </div>
-          <div class="p-6">
+          <!-- Body scrollable -->
+          <div class="px-6 py-4 overflow-y-auto flex-1">
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Pilih Atasan Managerial TU yang akan memverifikasi penerimaan usulan ini.
             </p>
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Atasan Managerial TU *</label>
-            <input
-              v-model="atasanTuInput"
-              type="number"
-              placeholder="Masukkan persnum Atasan TU..."
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <p class="text-xs text-gray-400 mt-2">
-              Atasan TU akan melakukan verifikasi persetujuan penerimaan arsip.
-            </p>
+            <!-- Custom dropdown -->
+            <div class="relative">
+              <button
+                @click="showAtasanDropdown = !showAtasanDropdown"
+                class="w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between min-h-[48px]"
+                :class="{ 'ring-2 ring-[#457fb6] border-[#457fb6]': showAtasanDropdown }"
+              >
+                <span v-if="!selectedAtasanTu" class="text-gray-400">Pilih atasan TU...</span>
+                <span v-else class="font-medium">{{ selectedAtasanTu.name }}</span>
+                <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-gray-400 shrink-0" :class="{ 'rotate-180': showAtasanDropdown }" />
+              </button>
+              <!-- Dropdown items -->
+              <div v-if="showAtasanDropdown" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-[10001] overflow-hidden">
+                <button
+                  v-for="a in atasanTuList"
+                  :key="a.persnum"
+                  @click="selectAtasan(a)"
+                  class="w-full text-left py-3 px-4 border-b border-gray-100 dark:border-gray-600 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  :class="{ 'bg-[#457fb6]/10': atasanTuInput === a.persnum }"
+                >
+                  <p class="text-base font-medium text-gray-900 dark:text-white">{{ a.name }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ a.persnum }} — {{ a.jabatan }}</p>
+                </button>
+              </div>
+            </div>
+            <!-- Catatan -->
+            <div class="mt-4">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan (opsional)</label>
+              <textarea
+                v-model="catatanAjuan"
+                rows="3"
+                placeholder="Catatan..."
+                class="w-full px-4 py-3 text-sm rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] resize-none"
+              ></textarea>
+            </div>
           </div>
-          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 shrink-0">
             <button @click="showAjukanModal = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Batal</button>
             <button
               @click="onConfirmAjukan"
               :disabled="!atasanTuInput || actionLoading"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               Ajukan
@@ -235,7 +214,7 @@
     <!-- Modal Kembalikan -->
     <Teleport to="body">
       <div v-if="showKembalikanModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px]" @click="showKembalikanModal = false"></div>
+        <div class="fixed inset-0 bg-black/40" style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" @click="showKembalikanModal = false"></div>
         <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Kembalikan ke Atasan</h3>
@@ -245,13 +224,23 @@
           </div>
           <div class="p-6">
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Berkas fisik tidak sesuai. Berikan alasan pengembalian agar Sekretaris dapat memperbaiki.
+              Apakah Anda yakin ingin mengembalikan usulan ini ke Atasan Managerial Sekretaris?
             </p>
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Alasan Pengembalian *</label>
+            <div class="space-y-2 mb-4 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item?.nomorUsulan ?? '-' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item?.sekretarisName ?? '-' }}</p>
+              </div>
+            </div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Pengembalian (opsional)</label>
             <textarea
-              v-model="alasanKembalikan"
-              rows="4"
-              placeholder="Isi alasan pengembalian..."
+              v-model="catatanKembalikan"
+              rows="3"
+              placeholder="Catatan..."
               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-red-500 resize-none"
             ></textarea>
           </div>
@@ -259,7 +248,7 @@
             <button @click="showKembalikanModal = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Batal</button>
             <button
               @click="onConfirmKembalikan"
-              :disabled="!alasanKembalikan.trim() || actionLoading"
+              :disabled="actionLoading"
               class="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white disabled:opacity-50"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
@@ -277,23 +266,35 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchNotifikasiDetail, verifikasiBerkas, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerifikasi()
+const { fetchNotifikasiDetail, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerifikasi()
 
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
 
-const verifikasiResult = ref<'sesuai' | 'tidak_sesuai' | ''>('')
-const catatan = ref('')
-
 const showAjukanModal = ref(false)
 const showKembalikanModal = ref(false)
 const atasanTuInput = ref('')
-const alasanKembalikan = ref('')
+const catatanAjuan = ref('')
+const catatanKembalikan = ref('')
+const showAtasanDropdown = ref(false)
+
+const atasanTuList = [
+  { persnum: '10010123', name: 'HERMANA SOEGIJANTORO', jabatan: 'EVP Corporate Secretary' },
+  { persnum: '10010970', name: 'PRIYO HUTOMO PUTRA', jabatan: 'VP Corporate Secretary' },
+]
+
+const selectedAtasanTu = computed(() => atasanTuList.find((a) => a.persnum === atasanTuInput.value) || null)
+
+const selectAtasan = (a: any) => {
+  atasanTuInput.value = a.persnum
+  showAtasanDropdown.value = false
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -316,15 +317,7 @@ const daftarBerkas = computed(() => {
 
 const isAlreadyVerified = computed(() => {
   if (!item.value) return false
-  return ['BERKAS_FISIK_SESUAI', 'BERKAS_FISIK_TIDAK_SESUAI', 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU'].includes(item.value.status)
-})
-
-const canAjukan = computed(() => {
-  return verifikasiResult.value === 'sesuai'
-})
-
-const canKembalikan = computed(() => {
-  return verifikasiResult.value === 'tidak_sesuai'
+  return !!item.value.tuApprovedAt || item.value.status === 'BERKAS_FISIK_TIDAK_SESUAI'
 })
 
 const formatDate = (dateStr: string | null) => {
@@ -338,14 +331,6 @@ const loadDetail = async () => {
   try {
     const res = await fetchNotifikasiDetail(route.params.id as string)
     item.value = res?.data ?? res
-    // Pre-fill jika sudah diverifikasi
-    if (item.value?.status === 'BERKAS_FISIK_SESUAI') {
-      verifikasiResult.value = 'sesuai'
-      catatan.value = item.value.physicalVerificationNote || ''
-    } else if (item.value?.status === 'BERKAS_FISIK_TIDAK_SESUAI') {
-      verifikasiResult.value = 'tidak_sesuai'
-      catatan.value = item.value.physicalVerificationNote || ''
-    }
   } catch (e: any) {
     console.error('Gagal memuat detail:', e)
     useToast().add({ title: 'Gagal', description: 'Gagal memuat detail usulan.', color: 'error' })
@@ -359,12 +344,14 @@ const refresh = async () => {
 }
 
 const openAjukanModal = () => {
-  if (!canAjukan.value) return
+  atasanTuInput.value = ''
+  catatanAjuan.value = ''
+  showAtasanDropdown.value = false
   showAjukanModal.value = true
 }
 
 const openKembalikanModal = () => {
-  if (!canKembalikan.value) return
+  catatanKembalikan.value = ''
   showKembalikanModal.value = true
 }
 
@@ -372,7 +359,6 @@ const onConfirmAjukan = async () => {
   if (!item.value || !atasanTuInput.value) return
   actionLoading.value = true
   try {
-    // Satu API call: backend akan verifikasi sesuai + ajukan ke Atasan TU sekaligus
     await ajukanAtasanTu(item.value.id, { atasanTuPersnum: atasanTuInput.value })
     showAjukanModal.value = false
     useToast().add({ title: 'Berhasil', description: 'Usulan diajukan ke Atasan Managerial TU.', color: 'success' })
@@ -386,12 +372,11 @@ const onConfirmAjukan = async () => {
 }
 
 const onConfirmKembalikan = async () => {
-  if (!item.value || !alasanKembalikan.value.trim()) return
+  if (!item.value) return
   actionLoading.value = true
   try {
-    await kembalikanKeAtasan(item.value.id, { alasan: alasanKembalikan.value.trim() })
+    await kembalikanKeAtasan(item.value.id, { alasan: catatanKembalikan.value.trim() || 'Dikembalikan oleh TU' })
     showKembalikanModal.value = false
-    alasanKembalikan.value = ''
     useToast().add({ title: 'Berhasil', description: 'Berkas dikembalikan ke pengirim.', color: 'success' })
     await refresh()
   } catch (e: any) {
