@@ -58,8 +58,36 @@
             <textarea v-model="form.keterangan" rows="3" placeholder="Keterangan penataan..."
               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
           </div>
+
+          <!-- Foto Lampiran Penataan (Max 5MB) -->
           <div class="mt-4">
-            <button @click="onSelesai" :disabled="actionLoading"
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+              Foto Lampiran Penataan <span class="text-gray-400">(Max 5MB, JPEG/PNG/WebP/GIF)</span>
+            </label>
+            <div v-if="fotoPreview" class="relative inline-block mb-2">
+              <img :src="fotoPreview" alt="Foto penataan" class="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600" />
+              <button type="button" @click="removeFoto"
+                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div v-else>
+              <label
+                class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div class="flex flex-col items-center justify-center pt-4 pb-5">
+                  <UIcon name="i-lucide-upload-cloud" class="w-8 h-8 text-gray-400 mb-2" />
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Klik untuk upload foto</p>
+                  <p class="text-xs text-gray-400 mt-1">Max 5MB</p>
+                </div>
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" @change="onFotoChange" />
+              </label>
+            </div>
+            <p v-if="fotoError" class="text-xs text-red-500 mt-1">{{ fotoError }}</p>
+            <p v-if="uploadingFoto" class="text-xs text-blue-500 mt-1">Mengupload foto...</p>
+          </div>
+
+          <div class="mt-4">
+            <button @click="onSelesai" :disabled="actionLoading || uploadingFoto"
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50 transition-colors">
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               <UIcon v-else name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Selesai Penataan
@@ -77,6 +105,11 @@
                 <p>Lokasi: {{ item.lokasiPenataan || '-' }}</p>
                 <p>Rak: {{ item.rak || '-' }} | Baris: {{ item.baris || '-' }} | Kolom: {{ item.kolom || '-' }}</p>
                 <p v-if="item.keteranganPenataan">Keterangan: {{ item.keteranganPenataan }}</p>
+                <div v-if="item.fotoPenataan" class="mt-2">
+                  <a :href="fotoUrl(item.fotoPenataan)" target="_blank">
+                    <img :src="fotoUrl(item.fotoPenataan)" alt="Foto penataan" class="w-32 h-32 object-cover rounded-lg border border-green-300" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -97,7 +130,7 @@ import type { TuUsulanItem } from '~/types/tu-verifikasi'
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchPenataanDetail, selesaiPenataan } = useTuVerifikasi()
+const { fetchPenataanDetail, selesaiPenataan, uploadFotoPenataan } = useTuVerifikasi()
 
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
@@ -110,6 +143,64 @@ const form = reactive({
   kolom: '',
   keterangan: '',
 })
+
+// Foto lampiran penataan
+const fotoFile = ref<File | null>(null)
+const fotoPreview = ref<string | null>(null)
+const fotoKey = ref<string | null>(null)
+const uploadingFoto = ref(false)
+const fotoError = ref('')
+
+/** Base URL API untuk foto penataan. */
+const fotoUrl = (key: string) => {
+  const base = useApi().api.defaults.baseURL || ''
+  return `${base}/tu/penataan-arsip/foto?key=${encodeURIComponent(key)}`
+}
+
+const onFotoChange = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  fotoError.value = ''
+
+  // Validasi ukuran (Max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    fotoError.value = 'Ukuran file melebihi 5MB.'
+    input.value = ''
+    return
+  }
+  // Validasi tipe
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  if (!allowed.includes(file.type)) {
+    fotoError.value = 'Tipe file tidak diizinkan. Hanya JPEG, PNG, WebP, GIF.'
+    input.value = ''
+    return
+  }
+
+  fotoFile.value = file
+  fotoPreview.value = URL.createObjectURL(file)
+
+  // Upload langsung ke server
+  uploadingFoto.value = true
+  try {
+    const res: any = await uploadFotoPenataan(file)
+    fotoKey.value = res?.data?.key ?? null
+  } catch (err: any) {
+    fotoError.value = err?.data?.message || 'Gagal upload foto.'
+    fotoFile.value = null
+    fotoPreview.value = null
+    fotoKey.value = null
+  } finally {
+    uploadingFoto.value = false
+  }
+}
+
+const removeFoto = () => {
+  fotoFile.value = null
+  fotoPreview.value = null
+  fotoKey.value = null
+  fotoError.value = ''
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -133,6 +224,11 @@ const loadDetail = async () => {
       form.baris = item.value.baris || ''
       form.kolom = item.value.kolom || ''
       form.keterangan = item.value.keteranganPenataan || ''
+      // Jika sudah ada foto penataan (status SELESAI), tampilkan preview
+      if (item.value.fotoPenataan) {
+        fotoKey.value = item.value.fotoPenataan
+        fotoPreview.value = fotoUrl(item.value.fotoPenataan)
+      }
     }
   } catch (e: any) {
     useToast().add({ title: 'Gagal', description: 'Gagal memuat detail.', color: 'error' })
@@ -149,6 +245,7 @@ const onSelesai = async () => {
       baris: form.baris || undefined,
       kolom: form.kolom || undefined,
       keterangan: form.keterangan || undefined,
+      fotoPenataan: fotoKey.value || undefined,
     })
     useToast().add({ title: 'Berhasil', description: 'Penataan arsip selesai.', color: 'success' })
     await loadDetail()
