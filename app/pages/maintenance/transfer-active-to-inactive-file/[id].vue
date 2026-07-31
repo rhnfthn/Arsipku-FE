@@ -193,58 +193,49 @@
         </div>
       </div>
 
-      <!-- Berita Acara Serah Terima (full width, di bawah grid) -->
-      <div v-if="showBeritaAcara" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6 mt-5">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
+      <!-- Berita Acara Serah Terima (di bawah grid, lebar sama dengan kolom kiri) -->
+      <div v-if="showBeritaAcara" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
           <div class="flex gap-2">
-            <button
-              @click="printBeritaAcara"
-              class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <UIcon name="i-lucide-printer" class="w-4 h-4" /> Print
+            <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
             </button>
-            <button
-              @click="downloadBeritaAcara"
-              class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-            >
-              <UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF
+            <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
+              <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
             </button>
           </div>
         </div>
 
         <!-- Berita Acara Content -->
-        <div id="berita-acara-print" class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
-          <div class="text-center mb-4">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">BERITA ACARA SERAH TERIMA PEKERJAAN</h2>
-            <p class="text-xs text-gray-500 mt-1">Pemindahan Arsip Aktif ke Inaktif</p>
-            <p class="text-xs text-gray-500 mt-0.5">Nomor: {{ beritaAcaraData?.nomorUsulan ?? item.nomorUsulan }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">Tanggal: {{ formatBaDate(item.tanggalUsulan) }}</p>
-          </div>
+        <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
+          <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
+          <p class="text-center text-xs text-gray-500 mb-1">Pemindahan Arsip Aktif ke Inaktif</p>
+          <p class="text-center text-xs mb-3">Nomor: {{ beritaAcaraData?.nomorUsulan ?? item.nomorUsulan }}</p>
+          <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatBaDate(item.tanggalUsulan) }}</p>
 
-          <p class="text-sm leading-relaxed">
+          <p class="text-xs leading-relaxed mb-4">
             Pada hari ini {{ formatBaDay(item.tanggalUsulan) }} tanggal {{ formatBaDate(item.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
           </p>
 
-          <!-- Pihak Pertama (Atasan Managerial) -->
-          <div class="space-y-1">
-            <p class="font-medium">1. Nama &nbsp;&nbsp; : {{ beritaAcaraData?.atasan?.nama ?? item.atasanName }}</p>
-            <p class="font-medium">&nbsp;&nbsp;&nbsp; Jabatan : {{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
+          <div class="space-y-3 mb-4 text-xs">
+            <div>
+              <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData?.atasan?.nama ?? item.atasanName ?? '-' }}</p>
+              <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
+              <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
+            </div>
+            <div>
+              <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName ?? '-' }}</p>
+              <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
+              <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
+            </div>
           </div>
-          <p class="text-sm">Selanjutnya disebut pihak pertama</p>
 
-          <!-- Pihak Kedua (Sekretaris) -->
-          <div class="space-y-1">
-            <p class="font-medium">2. Nama &nbsp;&nbsp; : {{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName }}</p>
-            <p class="font-medium">&nbsp;&nbsp;&nbsp; Jabatan : {{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
-          </div>
-          <p class="text-sm">Selanjutnya disebut pihak kedua</p>
-
-          <p class="text-sm leading-relaxed">Dengan ini menerangkan bahwa:</p>
-          <p class="text-sm leading-relaxed">Pihak pertama telah menyerahkan kepada pihak kedua berupa:</p>
-
-          <!-- Daftar Arsip -->
-          <ol class="list-decimal list-inside space-y-1 text-sm">
+          <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
+          <p class="text-xs leading-relaxed mb-3">
+            Pihak pertama telah menyerahkan kepada pihak kedua berupa:
+          </p>
+          <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
             <li v-for="(arsip, idx) in (beritaAcaraData?.daftarArsip ?? [])" :key="idx">
               {{ arsip.kode ?? '-' }} — {{ arsip.perihal }}
             </li>
@@ -253,27 +244,22 @@
             </li>
           </ol>
 
-          <p class="text-sm leading-relaxed mt-3">
+          <p class="text-xs leading-relaxed mb-6">
             Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
           </p>
 
-          <p class="text-sm text-right mt-4">Jakarta, {{ formatBaDate(item.tanggalUsulan) }}</p>
+          <p class="text-xs text-right mb-6">Jakarta, {{ formatBaDate(item.tanggalUsulan) }}</p>
 
-          <!-- Tanda Tangan -->
-          <div class="grid grid-cols-2 gap-8 mt-4">
+          <div class="grid grid-cols-2 gap-8 text-xs">
             <div class="text-center">
-              <p class="text-sm font-medium mb-16">Pihak Pertama</p>
-              <div class="border-t border-gray-300 dark:border-gray-600 pt-1">
-                <p class="font-medium">{{ beritaAcaraData?.atasan?.nama ?? item.atasanName }}</p>
-                <p class="text-xs text-gray-400">{{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
-              </div>
+              <p class="font-semibold mb-16">Pihak Pertama</p>
+              <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData?.atasan?.nama ?? item.atasanName ?? '-' }}</p>
+              <p class="text-gray-500">{{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
             </div>
             <div class="text-center">
-              <p class="text-sm font-medium mb-16">Pihak Kedua</p>
-              <div class="border-t border-gray-300 dark:border-gray-600 pt-1">
-                <p class="font-medium">{{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName }}</p>
-                <p class="text-xs text-gray-400">{{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
-              </div>
+              <p class="font-semibold mb-16">Pihak Kedua</p>
+              <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName ?? '-' }}</p>
+              <p class="text-gray-500">{{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
             </div>
           </div>
         </div>

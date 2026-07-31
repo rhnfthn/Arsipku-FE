@@ -44,6 +44,32 @@
         <div class="lg:col-span-8 space-y-5">
           <VerifikasiDetail :usulan="usulan" />
 
+          <!-- ─── Card: Riwayat ─── -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Riwayat</h3>
+              <button @click="showRiwayat = !showRiwayat" class="text-xs text-[#457fb6] hover:underline">
+                {{ showRiwayat ? 'Sembunyikan' : 'Tampilkan' }}
+              </button>
+            </div>
+            <div v-if="showRiwayat" class="space-y-2">
+              <div
+                v-for="(r, idx) in riwayatList"
+                :key="idx"
+                class="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+              >
+                <div class="w-2 h-2 rounded-full bg-[#457fb6] mt-1.5 shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-gray-900 dark:text-white">{{ r.label }}</span>
+                    <span class="text-xs text-gray-400">{{ r.tanggal }}</span>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Oleh: {{ r.oleh }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Berita Acara (hapus dari atasan managerial — hanya di sekretaris) -->
 
           <!-- ─── Card: Daftar Isi ─── -->
@@ -317,6 +343,7 @@ const {
 const usulan = ref<VerifikasiUsulanItem | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
+const showRiwayat = ref(true);
 const isRejectModalOpen = ref(false);
 const isApproveModalOpen = ref(false);
 const isSendToTUModalOpen = ref(false);
@@ -464,6 +491,68 @@ const items = computed(() => [
 const showBeritaAcara = computed(() => {
   if (!usulan.value) return false;
   return ['MENUNGGU_VERIFIKASI_TERAKHIR', 'DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(usulan.value.status);
+});
+
+/** Riwayat aktor yang terlibat dalam usulan. */
+const riwayatList = computed(() => {
+  if (!usulan.value) return [];
+  const u = usulan.value;
+  const items: { label: string; oleh: string; tanggal: string }[] = [];
+
+  // 1. Draft — Sekretaris
+  items.push({
+    label: 'Draft',
+    oleh: u.sekretarisName ?? '-',
+    tanggal: formatDate(u.tanggalUsulan),
+  });
+
+  // 2. Menunggu Persetujuan — Atasan Managerial Sekretaris
+  if (u.approvalLevels && u.approvalLevels.length > 0) {
+    for (const level of u.approvalLevels) {
+      if (level.status === 'DISETUJUI' || u.status !== 'DRAFT') {
+        items.push({
+          label: level.status === 'DISETUJUI' ? 'Disetujui' : 'Menunggu Persetujuan',
+          oleh: level.atasanName ?? '-',
+          tanggal: level.verifiedAt ? formatDate(level.verifiedAt) : '-',
+        });
+      }
+    }
+  } else if (u.atasanName) {
+    items.push({
+      label: 'Menunggu Persetujuan',
+      oleh: u.atasanName,
+      tanggal: '-',
+    });
+  }
+
+  // 3. Menunggu Verifikasi — Atasan Managerial Sekretaris (verifikasi terakhir)
+  if (['MENUNGGU_VERIFIKASI_TERAKHIR', 'DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(u.status)) {
+    items.push({
+      label: 'Menunggu Verifikasi',
+      oleh: u.atasanName ?? '-',
+      tanggal: '-',
+    });
+  }
+
+  // 4. Menunggu Penerimaan — TU
+  if (u.tuName && ['DIKIRIM', 'SELESAI'].includes(u.status)) {
+    items.push({
+      label: 'Menunggu Penerimaan',
+      oleh: u.tuName,
+      tanggal: u.tanggalDikirim ? formatDate(u.tanggalDikirim) : '-',
+    });
+  }
+
+  // 5. Atasan Managerial TU
+  if (u.atasanTuName) {
+    items.push({
+      label: 'Verifikasi Atasan TU',
+      oleh: u.atasanTuName,
+      tanggal: '-',
+    });
+  }
+
+  return items;
 });
 
 /** True jika usulan ini dibuat oleh user yang login sebagai Sekretaris. */
