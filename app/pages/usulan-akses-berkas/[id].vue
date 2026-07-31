@@ -473,6 +473,14 @@ const tanggalBerakhirDurasi = computed(() => {
   return base.toISOString();
 });
 
+// True jika akses sudah lewat tanggal selesai (durasi habis).
+const isAccessExpired = computed(() => {
+  if (!usulanDetail.value) return false;
+  const end = tanggalBerakhirDurasi.value;
+  if (!end) return false;
+  return new Date(end).getTime() < Date.now();
+});
+
 // ── Timeline: gabungkan step "Dibuat" + verification steps ──
 // Catatan hanya bisa dilihat oleh pembuat catatan (verifierPersnum) dan pengusul.
 interface TimelineEntry {
@@ -1313,9 +1321,10 @@ onBeforeUnmount(() => {
                     <span>{{ b.klasifikasiTeks || '-' }}</span>
                   </p>
                 </div>
-                <!-- Tombol buka naskah — hanya jika akses sudah diberikan (AKSES_DITERBITKAN) -->
+                <!-- Tombol buka naskah — hanya jika akses sudah diberikan (AKSES_DITERBITKAN)
+                 dan belum lewat tanggal selesai (durasi masih berlaku) -->
                 <button
-                  v-if="usulanDetail.status === StatusUsulan.AKSES_DITERBITKAN"
+                  v-if="usulanDetail.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired"
                   type="button"
                   @click="navigateTo(`/penggunaan/pemberian/${usulanDetail.id}/berkas`)"
                   class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
