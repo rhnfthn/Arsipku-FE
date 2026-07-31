@@ -80,7 +80,7 @@ export function useUsulanAksesBerkas() {
   const fetchBerkasEligible = async (status = 'closed_retensi_aktif') => {
     try {
       const res = await apiGet<any[]>(
-        `/berkas?status=${status}`,
+        '/usulan-akses-berkas/eligible-berkas',
         undefined,
         { skipCache: true },
       );

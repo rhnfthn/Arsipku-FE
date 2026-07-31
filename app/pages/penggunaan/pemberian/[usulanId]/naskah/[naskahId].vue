@@ -1,26 +1,35 @@
 <script setup lang="ts">
-// Detail naskah untuk SE pengusul yang punya entitlement
-// Pakai endpoint khusus yang cek entitlement, bukan ownership
+// Detail naskah untuk SE pengusul yang punya entitlement akses berkas.
+// Pakai endpoint /usulan-akses-berkas/naskah/:naskahId (cek entitlement) dan
+// render dengan komponen DetailNaskah yang sama dengan halaman kelola
+// pemeliharaan pemberkasan.
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ChevronLeft, FileText, Download } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
+import DetailNaskah from '@/components/DetailNaskah.vue';
 import { useApi } from '~/composables/useApi';
+import { useAuth } from '~/composables/useAuth';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Detail Naskah' });
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { apiGet } = useApi();
+const { user } = useAuth();
 const toast = useToast();
 
-const naskahId = computed(() => route.params.naskahId as string);
 const usulanId = computed(() => route.params.usulanId as string);
+const naskahId = computed(() => route.params.naskahId as string);
 
-const naskah = ref<any>(null);
-const loading = ref(false);
+const details = ref<any[]>([]);
+const pending = ref(true);
+
+const positionId = computed(
+  () => user.value?.position?.id || user.value?.position_id || user.value?.position || '',
+);
 
 const extractErrorMessage = (err: any): string => {
   const beMessage = err?.response?.data?.message;
@@ -29,136 +38,179 @@ const extractErrorMessage = (err: any): string => {
   return err?.message || 'Terjadi kesalahan';
 };
 
-const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Penggunaan', to: '#' },
-  { label: 'Pemberian', to: '/penggunaan/pemberian' },
-  { label: 'Berkas', to: `/penggunaan/pemberian/${usulanId.value}/berkas` },
-  { label: naskah.value?.perihal || 'Naskah', to: '#' },
-]);
+const pageTitle = computed(() => 'Detail Naskah');
 
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-};
+// Mapping response entitlement → shape DetailNaskah (menyamakan halaman kelola)
+function mapFlowToDetail(item: any) {
+  return {
+    id: item.id,
+    sifat: item.sifat,
+    aksi: 'read',
+    jenis: item.jenis,
+    jenis_label: item.jenis_label || item.jenis,
+    nomor: item.nomor || '-',
+    tanggal: item.tanggal || item.created_at,
+    created_at: item.created_at,
+    perihal: item.perihal,
+    pengirim: item.pengirim || null,
+    from: item.pengirim || null,
+    to: Array.isArray(item.penerima) ? item.penerima : [],
+    cc: Array.isArray(item.tembusan) ? item.tembusan : [],
+    // Render konten rich text sebagai v-html di blok isi surat.
+    rich_content: item.konten || '',
+    mainDisplayContentHtml: item.konten || '',
+    lampiran_files: item.lampiran_files || [],
+    final_pdf_url: item.final_pdf_url || item.final_pdf || '',
+    pdf_snapshot: item.final_pdf_url || item.final_pdf || '',
+    _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
+    _hasNewer: false,
+    _hasOlder: false,
+  };
+}
 
-const hasPermission = (perms: string[], action: string) => {
-  return perms?.some((p: string) => p.toUpperCase() === action.toUpperCase()) ?? false;
-};
+function goBack() {
+  router.push(`/penggunaan/pemberian/${usulanId.value}/berkas`);
+}
 
-const loadNaskah = async () => {
-  loading.value = true;
+// ── Preview PDF via slideover (sama dengan halaman kelola) ───────
+const isPreviewOpen = ref(false);
+const isPdfLoading = ref(false);
+const activePdfUrl = ref<string | null>(null);
+const previewTitle = ref('Dokumen');
+
+async function openDocumentPreview(url: string, title = 'Dokumen') {
+  if (!url) {
+    toast.add({ title: 'URL dokumen tidak valid', color: 'error' });
+    return;
+  }
+  previewTitle.value = title;
+  isPreviewOpen.value = true;
+  isPdfLoading.value = true;
+  activePdfUrl.value = null;
   try {
-    const res = await apiGet<any>(`/usulan-akses-berkas/naskah/${naskahId.value}`, undefined, { skipCache: true });
-    naskah.value = (res as any)?.data ?? res;
-  } catch (err: any) {
-    toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
+    const res = await fetch(url);
+    const blob = new Blob([await res.arrayBuffer()], { type: 'application/pdf' });
+    activePdfUrl.value = URL.createObjectURL(blob);
+  } catch {
+    activePdfUrl.value = url;
   } finally {
-    loading.value = false;
+    isPdfLoading.value = false;
   }
-};
+}
 
-const downloadPdf = () => {
-  if (naskah.value?.final_pdf) {
-    const pdfUrl = naskah.value.final_pdf.startsWith('http')
-      ? naskah.value.final_pdf
-      : `${useRuntimeConfig().public.apiBase || 'http://localhost:3011'}/${naskah.value.final_pdf.replace(/^\//, '')}`;
-    window.open(pdfUrl, '_blank');
+function openPreviewFile(file: any) {
+  openDocumentPreview(file.file_url || file.file_pdf || file.file_path, file.file_name || 'Lampiran');
+}
+
+onMounted(async () => {
+  if (!naskahId.value) {
+    pending.value = false;
+    return;
   }
-};
-
-const pdfUrl = computed(() => {
-  if (!naskah.value?.final_pdf) return null;
-  const path = naskah.value.final_pdf;
-  return path.startsWith('http') ? path : `${useRuntimeConfig().public.apiBase || 'http://localhost:3011'}/${path.replace(/^\//, '')}`;
+  try {
+    const res = await apiGet<any>(
+      `/usulan-akses-berkas/naskah/${naskahId.value}`,
+      undefined,
+      { skipCache: true },
+    );
+    const rawData: any = (res as any)?.data ?? res;
+    const item = Array.isArray(rawData) ? rawData[0] : rawData;
+    details.value = item ? [mapFlowToDetail(item)] : [];
+  } catch (error: any) {
+    details.value = [];
+    toast.add({
+      title: 'Detail naskah gagal dimuat',
+      description: extractErrorMessage(error),
+      color: 'error',
+    });
+  } finally {
+    pending.value = false;
+  }
 });
-
-onMounted(() => { loadNaskah(); });
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 px-4 pb-10 pt-5 dark:bg-gray-900 sm:px-5">
-    <PageHeader :items="breadcrumbs">
-      <template #title>
-        <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-          {{ naskah?.perihal || 'Detail Naskah' }}
-        </h1>
-      </template>
-    </PageHeader>
+    <PageHeader
+      :title="pageTitle"
+      :items="[
+        { label: t('beranda') || 'Beranda', to: '/beranda' },
+        { label: 'Penggunaan', to: '#' },
+        { label: 'Pemberian', to: '/penggunaan/pemberian' },
+        { label: 'Berkas', to: `/penggunaan/pemberian/${usulanId}/berkas` },
+        { label: 'Detail Naskah' },
+      ]"
+    />
 
-    <button @click="$router.back()"
-      class="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-      <ChevronLeft class="size-4" /> Kembali
-    </button>
-
-    <div v-if="loading" class="flex min-h-96 items-center justify-center">
+    <div v-if="pending" class="flex min-h-96 items-center justify-center">
       <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary-500" />
     </div>
 
-    <main v-else-if="naskah" class="mx-auto max-w-4xl space-y-5">
-      <!-- Info Naskah -->
-      <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
-          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
-            <FileText class="size-5 text-primary-600 dark:text-primary-400" />
-          </span>
-          <div>
-            <h2 class="font-semibold text-gray-900 dark:text-white">Informasi Naskah</h2>
-          </div>
-          <div v-if="hasPermission(naskah.permissions, 'UNDUH') && naskah.final_pdf" class="ml-auto">
-            <button @click="downloadPdf"
-              class="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 dark:bg-primary-600">
-              <Download class="size-4" /> Download
-            </button>
-          </div>
+    <template v-else-if="details.length">
+      <div class="space-y-4">
+        <div
+          v-for="(detail, index) in details"
+          :key="detail.id || index"
+          :id="`card-${detail.id || index}`"
+        >
+          <DetailNaskah
+            context="inbox"
+            read-only
+            :data="detail"
+            :is-head="index === 0"
+            :user-position-id="positionId"
+            @back="goBack"
+            @preview="openDocumentPreview($event, detail.perihal || 'Naskah')"
+            @preview-file="openPreviewFile"
+          />
         </div>
-        <dl class="grid grid-cols-1 gap-x-8 gap-y-5 px-5 py-5 sm:grid-cols-2">
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Perihal</dt>
-            <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ naskah.perihal }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Nomor</dt>
-            <dd class="mt-0.5 font-mono text-sm text-gray-900 dark:text-white">{{ naskah.nomor || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Jenis</dt>
-            <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ naskah.jenis || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Sifat</dt>
-            <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ naskah.sifat || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Tanggal</dt>
-            <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(naskah.tanggal) }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium uppercase text-gray-500">Klasifikasi</dt>
-            <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ naskah.klasifikasi_text || naskah.klasifikasi || '-' }}</dd>
-          </div>
-        </dl>
-      </section>
+      </div>
+    </template>
 
-      <!-- Konten Naskah -->
-      <section v-if="naskah.konten" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div class="border-b border-gray-100 px-5 py-4 dark:border-gray-700">
-          <h2 class="font-semibold text-gray-900 dark:text-white">Isi Naskah</h2>
-        </div>
-        <div class="px-5 py-5">
-          <div class="prose prose-sm max-w-none dark:prose-invert" v-html="naskah.konten"></div>
-        </div>
-      </section>
+    <div
+      v-else
+      class="flex min-h-96 flex-col items-center justify-center gap-2 text-gray-500 dark:text-gray-400"
+    >
+      <UIcon name="i-lucide-file-question" class="size-10" />
+      <p>Naskah tidak ditemukan.</p>
+    </div>
 
-      <!-- PDF Viewer -->
-      <section v-if="pdfUrl" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div class="border-b border-gray-100 px-5 py-4 dark:border-gray-700">
-          <h2 class="font-semibold text-gray-900 dark:text-white">Dokumen PDF</h2>
+    <!-- Preview dokumen (slideover bawah, menyamakan halaman detail naskah kelola) -->
+    <USlideover
+      v-model:open="isPreviewOpen"
+      :title="previewTitle"
+      :description="previewTitle"
+      side="bottom"
+      :ui="{
+        content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+        body: 'p-0',
+        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+      }"
+    >
+      <template #body>
+        <div class="relative flex h-full w-full flex-col bg-gray-100 dark:bg-gray-900">
+          <div
+            v-if="isPdfLoading"
+            class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90"
+          >
+            <UIcon name="i-lucide-loader-circle" class="mb-2 size-10 animate-spin text-primary-500" />
+            <span class="text-xs text-gray-500 dark:text-gray-400">Memuat Dokumen...</span>
+          </div>
+          <iframe
+            v-if="activePdfUrl"
+            :src="activePdfUrl"
+            class="h-full w-full flex-1 border-none"
+            title="Preview dokumen"
+          />
+          <div
+            v-else-if="!isPdfLoading"
+            class="flex h-full flex-col items-center justify-center gap-2 text-gray-500"
+          >
+            <UIcon name="i-lucide-file-text" class="size-12 opacity-30" />
+            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
+          </div>
         </div>
-        <div class="p-5">
-          <iframe :src="pdfUrl" class="h-[600px] w-full rounded-lg border border-gray-200 dark:border-gray-700" frameborder="0"></iframe>
-        </div>
-      </section>
-    </main>
+      </template>
+    </USlideover>
   </div>
 </template>

@@ -8,17 +8,30 @@ import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAkse
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
+import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasViewed';
 import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
 definePageMeta({ middleware: 'auth' });
-useHead({ title: 'Persetujuan Usulan Akses Berkas' });
+
+// ── Route & query param (deklarasi awal agar bisa dipakai di useHead/breadcrumb) ──
+const route = useRoute();
+const queryTab = route.query.tab as string | undefined;
+
+useHead({
+  title:
+    queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
+    : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
+    : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
+    : 'Usulan Akses Berkas',
+});
 
 const { t } = useI18n();
 const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifikasiPemberi, persetujuanPemberi } = useUsulanAksesBerkas();
 const { clearVerifikasiBadge, clearPilihBerkasBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
+const { isViewed, markViewed } = useUsulanAksesBerkasViewed();
 
 // Helper: extract error message dari AxiosError (BE return { message: [...] | string })
 const extractErrorMessage = (err: any): string => {
@@ -49,7 +62,11 @@ const itemsPerPage = ref(10);
 // SE pemberi: default "Perlu Verifikasi Pemberi" (usulan masuk ke divisinya)
 // Managerial: default "Perlu Verifikasi Saya" (usulan yang harus diverifikasi)
 type TabValue = 'all' | 'mine' | 'verify-pemberi' | 'verify-me';
-const activeTab = ref<TabValue>('all');
+const activeTab = ref<TabValue>(
+  queryTab === 'mine' || queryTab === 'verify-pemberi' || queryTab === 'verify-me' || queryTab === 'all'
+    ? queryTab as TabValue
+    : 'all',
+);
 
 const tabs = computed(() => {
   const ps = user.value?.position_status;
@@ -77,9 +94,9 @@ const tabs = computed(() => {
   return list;
 });
 
-// Auto-select default tab berdasarkan peran
+// Auto-select default tab berdasarkan peran (hanya jika tidak ada query param tab)
 watchEffect(() => {
-  if (activeTab.value === 'all' && tabs.value.length > 1) {
+  if (activeTab.value === 'all' && !queryTab && tabs.value.length > 1) {
     const ps = user.value?.position_status;
     if (ps === 'SE' || ps === 'PS') {
       // SE delegasi: default ke "Perlu Verifikasi Pemberi" (usulan yang masuk ke divisinya)
@@ -111,21 +128,28 @@ const tabStatusFilter = computed(() => {
   }
 });
 
-const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Persetujuan', to: '#' },
-  { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
-]);
+const breadcrumbs = computed(() => {
+  const secondLabel =
+    queryTab === 'mine' ? 'Permintaan'
+    : queryTab === 'verify-pemberi' ? 'Pemberian'
+    : queryTab === 'verify-me' ? 'Persetujuan'
+    : 'Kelola';
+  return [
+    { label: t('beranda') || 'Beranda', to: '/beranda' },
+    { label: secondLabel, to: '#' },
+    { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
+  ];
+});
 
 const statusOptions = [
   { label: 'Semua', value: '' },
   { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
-  { label: 'Revisi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
-  { label: 'Terkirim ke Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-  { label: 'Pemilihan Berkas', value: StatusUsulan.PEMILIHAN_BERKAS },
+  { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
+  { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
   { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-  { label: 'Akses Diterbitkan', value: StatusUsulan.AKSES_DITERBITKAN },
-  { label: 'Ditolak', value: StatusUsulan.DITOLAK_PENGUSUL },
+  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
+  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
 ];
 
 const totalPages = computed(() =>
@@ -193,6 +217,7 @@ const handleCreated = () => {
 };
 
 const goToDetail = (id: string) => {
+  markViewed(id);
   navigateTo(`/usulan-akses-berkas/${id}`);
 };
 
@@ -328,18 +353,46 @@ const menungguStatuses = [
 ];
 
 const canVerifyRow = (row: any): boolean => {
-  if (!menungguStatuses.includes(row.status)) return false;
   const userPersnum = Number(user.value?.persnum);
-  // Cek verifikatorPengusul
-  if (row.verifikatorPengusul?.some((v: any) => v.persnum === userPersnum)) return true;
-  // Cek verifikatorPemberi
-  if (row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum)) return true;
+  // Tentukan urutan aktif berdasarkan status (hanya urutan yang sedang menunggu)
+  let expectedUrutanPengusul: number | null = null;
+  let expectedUrutanPemberi: number | null = null;
+  switch (row.status) {
+    case StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL: expectedUrutanPengusul = 1; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL: expectedUrutanPengusul = 2; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL: expectedUrutanPengusul = 3; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI: expectedUrutanPemberi = 0; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI: expectedUrutanPemberi = 1; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI: expectedUrutanPemberi = 2; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI: expectedUrutanPemberi = 3; break;
+    default: return false;
+  }
+  // Cek verifikatorPengusul — hanya urutan aktif yang boleh approve
+  if (expectedUrutanPengusul !== null) {
+    return row.verifikatorPengusul?.some(
+      (v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPengusul,
+    ) ?? false;
+  }
+  // Cek verifikatorPemberi — hanya urutan aktif (SE=0, AVP=1, VP=2, EVP=3)
+  if (expectedUrutanPemberi !== null) {
+    return row.verifikatorPemberi?.some(
+      (v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPemberi,
+    ) ?? false;
+  }
   return false;
 };
 
 const canRejectRow = (row: any): boolean => {
   return canVerifyRow(row);
 };
+
+// Filter list: saat tab verify-me, hanya tampilkan usulan yang sudah giliran user untuk approve
+const displayList = computed(() => {
+  if (activeTab.value === 'verify-me') {
+    return usulanList.value.filter((row: any) => canVerifyRow(row));
+  }
+  return usulanList.value;
+});
 
 // ── Modal Setuju/Tolak (standarisasi) ──────────────
 const showApproveModal = ref(false);
@@ -565,7 +618,12 @@ onBeforeUnmount(() => {
       <PageHeader :items="breadcrumbs">
         <template #title>
           <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            Persetujuan Usulan Akses Berkas
+            {{
+              queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
+              : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
+              : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
+              : 'Usulan Akses Berkas'
+            }}
           </h1>
         </template>
       </PageHeader>
@@ -738,7 +796,7 @@ onBeforeUnmount(() => {
       <!-- DataTable (pemberkasan style) -->
       <DataTable
         :columns="columns"
-        :rows="usulanList"
+        :rows="displayList"
         :loading="pending"
         :sort-key="sortKey"
         :sort-dir="sortDir"
@@ -787,28 +845,18 @@ onBeforeUnmount(() => {
           <div class="flex items-center justify-center gap-1.5">
             <NuxtLink
               :to="`/usulan-akses-berkas/${row.id}`"
-              class="inline-flex rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
-              title="Lihat Detail"
+              :class="[
+                'relative inline-flex rounded-md p-1.5 transition-colors',
+                isViewed(row)
+                  ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+                  : 'hover:bg-[#457FB6]/10'
+              ]"
+              :style="!isViewed(row) ? { color: '#457FB6' } : {}"
+              :title="isViewed(row) ? 'Sudah dilihat' : 'Lihat Detail'"
+              @click="markViewed(row.id)"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </NuxtLink>
-            <button
-              v-if="canVerifyRow(row)"
-              @click="openApproveModal(row)"
-              class="inline-flex rounded-md p-1.5 transition-colors hover:opacity-80"
-              style="color: #175FA4"
-              title="Setuju"
-            >
-              <UIcon name="i-lucide-check" class="h-4 w-4" />
-            </button>
-            <button
-              v-if="canRejectRow(row)"
-              @click="openRejectModal(row)"
-              class="inline-flex rounded-md p-1.5 text-red-600 transition-colors hover:bg-red-50 dark:text-red-500 dark:hover:bg-red-900/20"
-              title="Tolak"
-            >
-              <UIcon name="i-lucide-x" class="h-4 w-4" />
-            </button>
           </div>
         </template>
       </DataTable>
