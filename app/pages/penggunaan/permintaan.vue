@@ -1,11 +1,10 @@
 <script setup lang="ts">
 // Permintaan — SE buat usulan akses berkas
-// Menggunakan page yang sama dengan /usulan-akses-berkas (redirect)
+// Redirect ke page usulan-akses-berkas dengan tab=mine (Usulan Saya)
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Permintaan Usulan Akses Berkas' });
 
-// Redirect ke page usulan-akses-berkas yang sudah ada
-await navigateTo('/usulan-akses-berkas', { replace: true });
+await navigateTo('/usulan-akses-berkas?tab=verify-pemberi', { replace: true });
 </script>
 
 <template>
