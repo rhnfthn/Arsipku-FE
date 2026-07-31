@@ -484,12 +484,16 @@ const isAccessExpired = computed(() => {
 // True jika berkas bisa dilihat (tombol Naskah tampil):
 // - Sudah diterbitkan (AKSES_DITERBITKAN) & durasi masih berlaku → pengusul/penerima akses bisa lihat
 // - ATAU user adalah verifikator pemberi yang sedang aktif (status menunggu persetujuan pemberi)
+// - ATAU user adalah SE pemberi yang sedang memilih berkas / menerima revisi
 const isBerkasViewable = computed(() => {
   if (!usulanDetail.value || !usulanDetail.value.selectedBerkas?.length) return false;
   // Case 1: Sudah diterbitkan dan belum expired
   if (usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired.value) return true;
   // Case 2: User adalah verifikator pemberi yang sedang aktif
-  return isVerifikatorPemberiAktif.value;
+  if (isVerifikatorPemberiAktif.value) return true;
+  // Case 3: User adalah SE pemberi — bisa lihat naskah saat pemilihan berkas / revisi
+  if (isSekretarisPemberi.value) return true;
+  return false;
 });
 
 // ── Timeline: gabungkan step "Dibuat" + verification steps ──
