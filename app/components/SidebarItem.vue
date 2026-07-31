@@ -5,11 +5,16 @@
       <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
 
       <span
-        v-if="item?.badge"
+        v-if="item?.badge && !effectiveBadgeAsDot"
         class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm min-w-[20px] h-5 flex items-center justify-center leading-none"
       >
         {{ item.badge }}
       </span>
+
+      <div
+        v-else-if="item?.badge && effectiveBadgeAsDot"
+        class="w-2 h-2 bg-red-600 rounded-full shadow-sm animate-pulse"
+      ></div>
 
       <div
         v-else-if="hasChildrenWithBadges"
@@ -71,11 +76,25 @@
 <script setup>
 const props = defineProps({
   item: { type: Object, required: true },
-  collapsed: Boolean
+  collapsed: Boolean,
+  // Tampilkan badge sebagai dot merah saja (tanpa angka).
+  // Default: otomatis dot jika punya children (parent menu di sidebar utama),
+  //          angka jika leaf (submenu di dropdown).
+  badgeAsDot: { type: Boolean, default: null },
 });
 
 const route = useRoute();
 const isOpen = ref(false);
+
+// Effective badge style:
+// - Kalau prop badgeAsDot di-set eksplisit (true/false) → pakai itu
+// - Kalau null/undefined → otomatis: parent (hasChildren) = dot, leaf = angka
+const effectiveBadgeAsDot = computed(() => {
+  if (props.badgeAsDot === true || props.badgeAsDot === false) {
+    return props.badgeAsDot;
+  }
+  return hasChildren.value;
+});
 
 // Check if has children
 const hasChildren = computed(() => props.item?.children && props.item.children.length > 0);

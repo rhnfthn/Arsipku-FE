@@ -7,6 +7,7 @@ import Heading from '~/components/Heading.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
+import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasViewed';
 import { useAuth } from '~/composables/useAuth';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import {
@@ -40,6 +41,7 @@ const {
   verifikatorList,
 } = useUsulanAksesBerkas();
 const { fetchCounts: refetchUsulanCounts } = useUsulanAksesBerkasCounts();
+const { markViewed: markUsulanViewed } = useUsulanAksesBerkasViewed();
 const toast = useToast();
 
 // Helper: extract error message dari AxiosError (BE return { message: [...] | string })
@@ -68,6 +70,7 @@ const approveTitle = ref('');
 const approveDescription = ref('');
 const rejectTitle = ref('');
 const rejectCatatanKeSELabel = ref(''); // 'Pengusul' atau 'Pemberi' — kosong = tidak tampilkan field
+const rejectWarning = ref(''); // Banner warning (untuk tolak yang bersifat terminal/closed)
 const savingAction = ref(false);
 const pendingApproveAction = ref<((note: string) => Promise<void>) | null>(null);
 const pendingRejectAction = ref<((note: string, catatanKeSE?: string) => Promise<void>) | null>(null);
@@ -272,9 +275,7 @@ const onSelectVerifikatorPemberi = (value: any) => {
 const loadBerkasEligible = async () => {
   berkasLoading.value = true;
   try {
-    // Filter berdasarkan jenisBerkas usulan:
-    // - AKTIF: berkas closed_retensi_aktif di divisi pemberi
-    // - INAKTIF: berkas closed_retensi_aktif di divisi TU (Corporate Secretary)
+    // Tampilkan semua berkas berstatus closed_retensi_aktif (tertutup).
     const status = 'closed_retensi_aktif';
     berkasEligibleList.value = await fetchBerkasEligible(status);
   } catch (err: any) {
@@ -1035,6 +1036,7 @@ const quickRejectPemberi = () => {
 const rejectPemberiClosed = () => {
   rejectTitle.value = 'Tolak & Tutup Usulan';
   rejectCatatanKeSELabel.value = '';
+  rejectWarning.value = 'Tindakan ini akan menutup usulan akses berkas secara permanen. Usulan yang sudah ditutup tidak dapat diproses lebih lanjut.';
   pendingRejectAction.value = async (note: string, _catatanKeSE?: string) => {
     try {
       await verifikasiPemberi(id.value, {
@@ -1130,6 +1132,7 @@ const handleRejectAction = async (note: string, catatanKeSE?: string) => {
     return;
   }
   showRejectModal.value = false;
+  rejectWarning.value = '';
   if (pendingRejectAction.value) {
     savingAction.value = true;
     try {
@@ -1152,6 +1155,9 @@ onMounted(() => {
   loadDetail();
   // Re-fetch counts untuk update badge di sidebar
   refetchUsulanCounts(true);
+  // Mark usulan ini sebagai viewed (sinkron dengan BE → counts badge
+  // akan exclude usulan ini pada next fetchCounts).
+  markUsulanViewed(id.value);
   document.addEventListener('click', handleClickOutsideVpb);
   document.addEventListener('click', handleClickOutsideVerikPemberi);
 });
@@ -1601,6 +1607,7 @@ onBeforeUnmount(() => {
       variant="reject"
       :title="rejectTitle"
       description="Usulan akan ditolak. Tindakan ini tidak dapat dibatalkan."
+      :warning="rejectWarning"
       note-placeholder="Masukkan alasan penolakan (min 5 karakter)"
       confirm-label="Tolak"
       :saving="savingAction"

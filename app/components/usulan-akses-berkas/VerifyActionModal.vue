@@ -14,6 +14,14 @@
         <p class="text-sm text-gray-700 dark:text-gray-300">
           {{ description }}
         </p>
+        <!-- Banner warning (untuk tolak yang bersifat terminal/closed) -->
+        <div
+          v-if="warning"
+          class="flex items-start gap-2.5 rounded-lg border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-900/40 dark:bg-warning-900/20 dark:text-warning-300"
+        >
+          <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-4 shrink-0" />
+          <span>{{ warning }}</span>
+        </div>
         <textarea
           v-if="!showCatatanKeSE"
           v-model="note"
@@ -70,6 +78,7 @@ const props = withDefaults(defineProps<{
   variant?: 'approve' | 'reject';
   title?: string;
   description?: string;
+  warning?: string;
   notePlaceholder?: string;
   confirmLabel?: string;
   saving?: boolean;
@@ -81,6 +90,7 @@ const props = withDefaults(defineProps<{
   variant: 'approve',
   title: '',
   description: '',
+  warning: '',
   notePlaceholder: 'Keterangan opsional',
   confirmLabel: 'Setuju',
   saving: false,
