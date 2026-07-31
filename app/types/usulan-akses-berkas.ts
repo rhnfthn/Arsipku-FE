@@ -128,6 +128,9 @@ export interface UsulanAksesBerkas {
   // Joined (di findOne)
   steps?: VerificationStep[];
   selectedBerkas?: UsulanBerkasItem[];
+  // Tracking viewed oleh user saat ini (untuk badge notifikasi).
+  // true = sudah dibuka/dilihat; false = belum.
+  isViewedByMe?: boolean;
 }
 
 export interface UsulanAksesBerkasListResponse {
@@ -136,8 +139,6 @@ export interface UsulanAksesBerkasListResponse {
   page: number;
   limit: number;
 }
-
-// ── Payloads ──────────────────────────────────────
 
 export interface CreateUsulanAksesBerkasPayload {
   jenisBerkas: JenisBerkas;

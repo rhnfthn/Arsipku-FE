@@ -8,6 +8,7 @@ import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAkse
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
+import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasViewed';
 import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
@@ -30,6 +31,7 @@ const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifika
 const { clearVerifikasiBadge, clearPilihBerkasBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
+const { isViewed, markViewed } = useUsulanAksesBerkasViewed();
 
 // Helper: extract error message dari AxiosError (BE return { message: [...] | string })
 const extractErrorMessage = (err: any): string => {
@@ -215,6 +217,7 @@ const handleCreated = () => {
 };
 
 const goToDetail = (id: string) => {
+  markViewed(id);
   navigateTo(`/usulan-akses-berkas/${id}`);
 };
 
@@ -842,8 +845,15 @@ onBeforeUnmount(() => {
           <div class="flex items-center justify-center gap-1.5">
             <NuxtLink
               :to="`/usulan-akses-berkas/${row.id}`"
-              class="inline-flex rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
-              title="Lihat Detail"
+              :class="[
+                'relative inline-flex rounded-md p-1.5 transition-colors',
+                isViewed(row)
+                  ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+                  : 'hover:bg-[#457FB6]/10'
+              ]"
+              :style="!isViewed(row) ? { color: '#457FB6' } : {}"
+              :title="isViewed(row) ? 'Sudah dilihat' : 'Lihat Detail'"
+              @click="markViewed(row.id)"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </NuxtLink>
