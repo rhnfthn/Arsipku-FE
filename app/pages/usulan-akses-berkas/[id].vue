@@ -63,6 +63,16 @@ const id = computed(() => route.params.id as string);
 // ── Toggle expand timeline ──
 const timelineExpanded = ref(false);
 
+// ── Toggle expand naskah per berkas ──
+const expandedBerkasNaskah = ref<Set<string>>(new Set());
+const toggleBerkasNaskah = (berkasId: string) => {
+  if (expandedBerkasNaskah.value.has(berkasId)) {
+    expandedBerkasNaskah.value.delete(berkasId);
+  } else {
+    expandedBerkasNaskah.value.add(berkasId);
+  }
+};
+
 // ── Modal Setuju/Tolak (standarisasi VerifyActionModal) ──
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
@@ -1312,27 +1322,59 @@ onBeforeUnmount(() => {
               <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selectedBerkas.length }} berkas</span>
             </div>
             <div class="divide-y divide-gray-100 dark:divide-gray-700">
-              <div v-for="b in usulanDetail.selectedBerkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
-                <UIcon name="i-lucide-file" class="mt-0.5 size-4 shrink-0 text-gray-400" />
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judulBerkas || b.berkasId }}</p>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span v-if="b.kodeBerkas">{{ b.kodeBerkas }} · </span>
-                    <span>{{ b.klasifikasiTeks || '-' }}</span>
-                  </p>
+              <div v-for="b in usulanDetail.selectedBerkas" :key="b.id">
+                <div class="flex items-start gap-3 px-4 py-2.5">
+                  <UIcon name="i-lucide-file" class="mt-0.5 size-4 shrink-0 text-gray-400" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judulBerkas || b.berkasId }}</p>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      <span v-if="b.kodeBerkas">{{ b.kodeBerkas }} · </span>
+                      <span>{{ b.klasifikasiTeks || '-' }}</span>
+                    </p>
+                  </div>
+                  <!-- Tombol expand naskah — jika ada naskah di berkas ini -->
+                  <button
+                    v-if="b.naskahList?.length > 0"
+                    type="button"
+                    @click="toggleBerkasNaskah(b.berkasId)"
+                    class="ml-auto inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                    :title="expandedBerkasNaskah.has(b.berkasId) ? 'Sembunyikan naskah' : 'Lihat naskah'"
+                  >
+                    <UIcon name="i-lucide-file-text" class="size-4" />
+                    <span class="hidden sm:inline">{{ b.naskahList.length }} naskah</span>
+                    <UIcon :name="expandedBerkasNaskah.has(b.berkasId) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3.5" />
+                  </button>
+                  <!-- Tombol buka naskah — hanya jika akses sudah diberikan (AKSES_DITERBITKAN)
+                   dan belum lewat tanggal selesai (durasi masih berlaku) -->
+                  <button
+                    v-if="usulanDetail.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired"
+                    type="button"
+                    @click="navigateTo(`/penggunaan/pemberian/${usulanDetail.id}/berkas`)"
+                    class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
+                    title="Buka naskah di berkas ini"
+                  >
+                    <UIcon name="i-lucide-file-text" class="size-4" />
+                    <span class="hidden sm:inline">Naskah</span>
+                  </button>
                 </div>
-                <!-- Tombol buka naskah — hanya jika akses sudah diberikan (AKSES_DITERBITKAN)
-                 dan belum lewat tanggal selesai (durasi masih berlaku) -->
-                <button
-                  v-if="usulanDetail.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired"
-                  type="button"
-                  @click="navigateTo(`/penggunaan/pemberian/${usulanDetail.id}/berkas`)"
-                  class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
-                  title="Buka naskah di berkas ini"
-                >
-                  <UIcon name="i-lucide-file-text" class="size-4" />
-                  <span class="hidden sm:inline">Naskah</span>
-                </button>
+                <!-- Naskah list (expandable) -->
+                <div v-if="b.naskahList?.length > 0 && expandedBerkasNaskah.has(b.berkasId)" class="border-t border-gray-50 bg-gray-50/50 px-4 py-2 dark:border-gray-700/50 dark:bg-gray-700/20">
+                  <p class="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Daftar Naskah</p>
+                  <div class="space-y-1">
+                    <div v-for="(n, nIdx) in b.naskahList" :key="n.naskahId || nIdx" class="flex items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700/40">
+                      <span class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">{{ nIdx + 1 }}</span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate font-medium text-gray-800 dark:text-gray-200">{{ n.perihal || '(Tanpa perihal)' }}</p>
+                        <div class="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-gray-500 dark:text-gray-400">
+                          <span v-if="n.nomorSurat">{{ n.nomorSurat }}</span>
+                          <span v-if="n.tanggalNaskah">{{ formatDateOnly(n.tanggalNaskah) }}</span>
+                          <span v-if="n.jenis" class="rounded bg-gray-100 px-1 dark:bg-gray-600">{{ n.jenis }}</span>
+                          <span v-if="n.sumber" class="text-gray-400">{{ n.sumber }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
