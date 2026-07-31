@@ -73,8 +73,14 @@ watch(searchQuery, () => {
   }, 400);
 });
 
-const goToDetail = (berkasId: string) => {
-  navigateTo(`/penggunaan/pemberian/${berkasId}/berkas`);
+const goToDetail = (row: any) => {
+  // Ambil usulanId pertama dari daftar usulan yang terkait berkas ini
+  const usulanId = row?.usulanIds?.[0];
+  if (!usulanId) {
+    toast.add({ title: 'Error', description: 'Usulan tidak ditemukan untuk berkas ini', color: 'error' });
+    return;
+  }
+  navigateTo(`/usulan-akses-berkas/${usulanId}`);
 };
 
 const formatDate = (dateStr: string) => {
@@ -278,7 +284,7 @@ onBeforeUnmount(() => {
           <div class="flex items-center justify-center gap-1.5">
             <button
               type="button"
-              @click="goToDetail(row.berkasId)"
+              @click="goToDetail(row)"
               class="inline-flex rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
               title="Lihat Naskah"
             >
