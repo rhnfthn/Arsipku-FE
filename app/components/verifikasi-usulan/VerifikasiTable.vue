@@ -50,10 +50,11 @@
               <td class="px-4 py-3 text-center">
                 <button
                   @click="$emit('detail', row)"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap"
+                  :title="needsVerification(row.status) ? 'Verifikasi' : 'Detail'"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                 >
-                  <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5" />
-                  {{ needsVerification(row.status) ? 'Verifikasi' : 'Detail' }}
+                  <UIcon v-if="needsVerification(row.status)" name="i-lucide-file-check-2" class="w-4 h-4" />
+                  <UIcon v-else name="i-heroicons-eye" class="w-4 h-4" />
                 </button>
               </td>
             </tr>
