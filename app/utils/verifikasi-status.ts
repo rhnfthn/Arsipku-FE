@@ -73,9 +73,10 @@ export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
 
 /** Badge class untuk jenis usulan. */
 export const jenisBadgeClass = (j: JenisUsulan): string => {
-  return j === 'aktif_ke_inaktif'
+  const color = j === 'aktif_ke_inaktif'
     ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
     : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
+  return `px-2 py-0.5 text-xs rounded-full font-medium ${color}`;
 };
 
 /** Label jenis usulan. */
