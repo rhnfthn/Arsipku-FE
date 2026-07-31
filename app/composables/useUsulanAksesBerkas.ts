@@ -74,6 +74,23 @@ export function useUsulanAksesBerkas() {
     }
   };
 
+  // ── GET /usulan-akses-berkas/eligible-penerima-tambahan ───
+  // List orang di divisi pengusul yang eligible sebagai penerima akses tambahan
+  const fetchEligiblePenerimaTambahan = async (divisiId?: number) => {
+    try {
+      const query = divisiId ? `?divisiId=${divisiId}` : '';
+      const res = await apiGet<{
+        success: boolean;
+        data: { persnum: number; nama: string; positionText: string; organizationText: string }[];
+        total: number;
+      }>(`/usulan-akses-berkas/eligible-penerima-tambahan${query}`, undefined, { skipCache: true });
+      return (res as any)?.data ?? [];
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchEligiblePenerimaTambahan error:', err);
+      throw err;
+    }
+  };
+
   // ── GET /berkas?status=closed_retensi_aktif ────
   // Ambil list berkas yang eligible untuk dipilih saat Pilih Berkas.
   // BE filter by status (closed_retensi_aktif) + isAktif=true.
@@ -334,6 +351,7 @@ export function useUsulanAksesBerkas() {
     // actions
     fetchVerifikator,
     fetchVerifikatorBod,
+    fetchEligiblePenerimaTambahan,
     fetchBerkasEligible,
     fetchMyEntitlements,
     fetchBerkasDetail,
