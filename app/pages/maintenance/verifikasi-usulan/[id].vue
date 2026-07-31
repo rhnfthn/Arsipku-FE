@@ -152,7 +152,7 @@
             </div>
           </div>
 
-          <!-- Tombol Setujui (Kirim ke TU) — muncul saat verifikasi terakhir selesai -->
+          <!-- Tombol Pindah Usulan — muncul saat verifikasi terakhir selesai -->
           <div v-if="canKirimTU" class="flex gap-2">
             <button
               @click="onKirimTU"
@@ -160,7 +160,7 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Pindah Usulan
             </button>
           </div>
 
@@ -180,7 +180,7 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim
             </button>
             <!-- Verifikasi Terakhir (dengan Daftar Isi + BA) -->
             <button
@@ -190,7 +190,7 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Setujui Verifikasi Terakhir
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Pindah Usulan
             </button>
           </div>
 
@@ -266,7 +266,7 @@
       v-model="isApproveModalOpen"
       :usulan="usulan"
       :title="approveMode === 'finalVerify' ? 'Konfirmasi Verifikasi Terakhir' : 'Konfirmasi Verifikasi'"
-      :confirm-label="approveMode === 'finalVerify' ? 'Setujui Verifikasi Terakhir' : 'Setujui Verifikasi'"
+      :confirm-label="approveMode === 'finalVerify' ? 'Pindah Usulan' : 'Kirim'"
       @confirm="onConfirmApprove"
     />
 
