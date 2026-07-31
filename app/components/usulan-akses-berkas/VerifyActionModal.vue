@@ -15,6 +15,7 @@
           {{ description }}
         </p>
         <textarea
+          v-if="!showCatatanKeSE"
           v-model="note"
           rows="3"
           class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
@@ -22,16 +23,17 @@
           :placeholder="notePlaceholder"
         />
         <!-- Catatan ke SE (opsional, untuk verifikator → SE terkait) -->
-        <div v-if="showCatatanKeSE" class="mt-3">
+        <div v-if="showCatatanKeSE" class="mt-0">
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Catatan ke SE {{ catatanKeSELabel }}
-            <span class="text-xs font-normal text-gray-400">(opsional, hanya terlihat oleh SE {{ catatanKeSELabel }})</span>
+            <span class="text-xs font-normal text-gray-400">(wajib, hanya terlihat oleh SE {{ catatanKeSELabel }})</span>
           </label>
           <textarea
             v-model="catatanKeSE"
-            rows="2"
-            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :placeholder="`Catatan khusus untuk SE ${catatanKeSELabel}...`"
+            rows="3"
+            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+            :class="variant === 'reject' ? 'focus:ring-red-500' : 'focus:ring-primary'"
+            :placeholder="`Catatan untuk SE ${catatanKeSELabel}...`"
           />
         </div>
         <div class="flex gap-3 pt-2">
@@ -112,13 +114,24 @@ watch(() => props.modelValue, (val) => {
 
 const disabled = computed(() => {
   if (props.saving) return true;
+  // Saat showCatatanKeSE, validasi pakai catatanKeSE (bukan note)
+  if (props.showCatatanKeSE) {
+    if (props.requireNote && !catatanKeSE.value.trim()) return true;
+    if (props.minNoteLength > 0 && catatanKeSE.value.trim().length < props.minNoteLength) return true;
+    return false;
+  }
   if (props.requireNote && !note.value.trim()) return true;
   if (props.minNoteLength > 0 && note.value.trim().length < props.minNoteLength) return true;
   return false;
 });
 
 const handleConfirm = () => {
-  emit('confirm', note.value, catatanKeSE.value || undefined);
+  // Saat showCatatanKeSE, catatanKeSE adalah catatan utama (tidak ada textarea note)
+  if (props.showCatatanKeSE) {
+    emit('confirm', catatanKeSE.value, catatanKeSE.value || undefined);
+  } else {
+    emit('confirm', note.value, catatanKeSE.value || undefined);
+  }
 };
 
 const handleCancel = () => {

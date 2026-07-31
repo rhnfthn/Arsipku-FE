@@ -1066,13 +1066,6 @@ const adminMenuKelola = computed(() => {
     badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
 
-  penggunaanChildren.push({
-    label: 'Usulan Berkas',
-    to: '/usulan-akses-berkas',
-    icon: 'i-lucide-folder-key',
-    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-  });
-
   if (penggunaanChildren.length > 0) {
     const penggunaanBadge = penggunaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
     menus.push({
@@ -1169,13 +1162,6 @@ label: 'Penerimaan Usulan',
     to: '/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
     badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
-  });
-
-  penggunaanChildren.push({
-    label: 'Usulan Berkas',
-    to: '/usulan-akses-berkas',
-    icon: 'i-lucide-folder-key',
-    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
   });
 
   if (penggunaanChildren.length > 0) {

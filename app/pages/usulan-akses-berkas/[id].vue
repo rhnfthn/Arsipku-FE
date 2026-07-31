@@ -316,11 +316,18 @@ watch(showVerifikasiPemberi, (newVal) => {
   }
 });
 
-// Reset state saat modal dibuka
+// Reset state saat modal dibuka — saat revisi/re-verify, pre-fill dengan berkas & verifikator sebelumnya
 watch(showPilihBerkas, async (newVal) => {
   if (newVal) {
-    pilihBerkasForm.value.berkasIds = [];
-    pilihBerkasForm.value.verifikatorPemberi = [];
+    // Pre-fill berkas yang sudah dipilih sebelumnya (jika ada — revisi case)
+    const prevBerkas = (usulanDetail.value?.selectedBerkas || []).map((b: any) => b.berkasId);
+    const prevVerifikator = (usulanDetail.value?.verifikatorPemberi || []).map((v: any) => ({
+      persnum: v.persnum,
+      levelJabatan: v.levelJabatan,
+      catatan: v.catatan || '',
+    }));
+    pilihBerkasForm.value.berkasIds = prevBerkas;
+    pilihBerkasForm.value.verifikatorPemberi = prevVerifikator;
     pilihBerkasForm.value.catatanPenerusan = '';
     berkasSearch.value = '';
     await Promise.all([loadBerkasEligible(), loadVerifikatorPemberi()]);
@@ -386,7 +393,31 @@ const canVerifyPemberi = computed(() => {
 
 const canSelectBerkas = computed(() => {
   if (!isSekretarisPemberi.value) return false;
-  return usulanDetail.value?.status === StatusUsulan.PEMILIHAN_BERKAS;
+  return usulanDetail.value?.status === StatusUsulan.PEMILIHAN_BERKAS ||
+         usulanDetail.value?.status === StatusUsulan.REVISI_PEMBERI;
+});
+
+// SE pemberi bisa tolak (closed) saat usulan dikembalikan oleh verifikator pemberi
+const canRejectPemberiClosed = computed(() => {
+  if (!isSekretarisPemberi.value) return false;
+  return (usulanDetail.value?.status === StatusUsulan.REVISI_PEMBERI ||
+          usulanDetail.value?.status === StatusUsulan.TERKIRIM_KE_PEMBERI) &&
+         !!usulanDetail.value?.catatanRevisiPemberi;
+});
+
+// Nama & jabatan verifikator pemberi yang memberikan revisi (step pemberi terbaru dengan TOLAK/REVISI)
+const revisiPemberiVerifier = computed(() => {
+  const steps = usulanDetail.value?.steps || [];
+  const pemberiRejectSteps = steps
+    .filter((s: any) => s.roleTahap?.includes('PEMBERI') && s.roleTahap !== 'SEKRETARIS_PEMBERI' &&
+            (s.keputusan === Keputusan.TOLAK || s.keputusan === Keputusan.REVISI))
+    .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime());
+  const step = pemberiRejectSteps[0];
+  if (!step) return null;
+  return {
+    nama: step.verifierNama || null,
+    jabatan: step.verifierJabatan || null,
+  };
 });
 
 const canApprovePemberi = computed(() => {
@@ -1000,6 +1031,28 @@ const quickRejectPemberi = () => {
   showRejectModal.value = true;
 };
 
+// Tolak & tutup usulan (closed) — SE pemberi menutup usulan saat revisi dari verifikator
+const rejectPemberiClosed = () => {
+  rejectTitle.value = 'Tolak & Tutup Usulan';
+  rejectCatatanKeSELabel.value = '';
+  pendingRejectAction.value = async (note: string, _catatanKeSE?: string) => {
+    try {
+      await verifikasiPemberi(id.value, {
+        durasiAksesDisetujui: usulanDetail.value?.durasiAkses || DurasiPreset.SATU_TAHUN,
+        catatanPerubahanDurasi: '',
+        catatan: note,
+        keputusan: Keputusan.TOLAK,
+      });
+      toast.add({ title: 'Berhasil', description: 'Usulan ditolak dan ditutup', color: 'success' });
+      await loadDetail();
+      refetchUsulanCounts(true);
+    } catch (err: any) {
+      toast.add({ title: 'Gagal Menolak', description: extractErrorMessage(err), color: 'error' });
+    }
+  };
+  showRejectModal.value = true;
+};
+
 const quickApprovePemberi = (keputusan: Keputusan) => {
   const userPersnum = Number(user.value?.persnum);
   const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
@@ -1309,9 +1362,6 @@ onBeforeUnmount(() => {
                     <p v-if="entry.catatan" class="mt-1 rounded bg-gray-50 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700/50 dark:text-gray-300">
                       <span class="font-medium">Catatan:</span> {{ entry.catatan }}
                     </p>
-                    <p v-if="entry.catatanRevisi" class="mt-1 rounded bg-orange-50 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
-                      <span class="font-medium">Revisi:</span> {{ entry.catatanRevisi }}
-                    </p>
                     <p v-if="entry.catatanKeSE" class="mt-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                       <span class="font-medium">Catatan ke SE {{ entry.isPengusulStep ? 'Pengusul' : 'Pemberi' }}:</span> {{ entry.catatanKeSE }}
                     </p>
@@ -1376,8 +1426,30 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
+          <!-- Banner Revisi Pemberi -->
+          <div v-if="usulanDetail?.catatanRevisiPemberi && isSekretarisPemberi && (usulanDetail?.status === StatusUsulan.REVISI_PEMBERI || usulanDetail?.status === StatusUsulan.TERKIRIM_KE_PEMBERI)" class="rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-900/20">
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-5 shrink-0 text-orange-600 dark:text-orange-400" />
+              <div>
+                <p class="text-sm font-semibold text-orange-800 dark:text-orange-300">
+                  Usulan Ditolak oleh Verifikator Pemberi
+                </p>
+                <p v-if="revisiPemberiVerifier" class="mt-1 text-xs">
+                  <span class="font-semibold text-red-700 dark:text-red-400">{{ revisiPemberiVerifier.nama }}</span>
+                  <span v-if="revisiPemberiVerifier.jabatan" class="text-gray-600 dark:text-gray-400"> — {{ revisiPemberiVerifier.jabatan }}</span>
+                </p>
+                <p class="mt-1 text-xs text-orange-700 dark:text-orange-400">
+                  Verifikator pemberi menolak usulan ini. Silakan verifikasi ulang dan/atau revisi berkas.
+                </p>
+                <p v-if="usulanDetail?.catatanRevisiPemberi" class="mt-2 rounded-md bg-white px-3 py-2 text-xs text-orange-800 dark:bg-gray-800 dark:text-orange-300">
+                  <span class="font-medium">Catatan dari Verifikator:</span> {{ usulanDetail.catatanRevisiPemberi }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Action Buttons -->
-          <div v-if="canVerifyPengusul || canVerifyPemberi || canSelectBerkas || canApprovePemberi" class="space-y-3">
+          <div v-if="canVerifyPengusul || canVerifyPemberi || canSelectBerkas || canApprovePemberi || canRejectPemberiClosed" class="space-y-3">
             <!-- Verifikasi Pengusul: Tolak + Setuju -->
             <div v-if="canVerifyPengusul" class="space-y-2">
               <p class="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Verifikasi Pengusul</p>
@@ -1436,7 +1508,9 @@ onBeforeUnmount(() => {
 
             <!-- Pilih Berkas (SE): buka modal form (berkas + verifikator) -->
             <div v-if="canSelectBerkas" class="space-y-2">
-              <p class="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Pilih Berkas</p>
+              <p class="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                {{ (usulanDetail?.selectedBerkas?.length ?? 0) > 0 ? 'Revisi Berkas' : 'Pilih Berkas' }}
+              </p>
               <UButton
                 icon="i-lucide-folder-search"
                 color="primary"
@@ -1445,7 +1519,24 @@ onBeforeUnmount(() => {
                 class="justify-center"
                 @click="showPilihBerkas = true"
               >
-                Pilih Berkas & Verifikator
+                {{ (usulanDetail?.selectedBerkas?.length ?? 0) > 0 ? 'Revisi Berkas & Verifikator' : 'Pilih Berkas & Verifikator' }}
+              </UButton>
+            </div>
+
+            <!-- Tolak Usulan (Closed) — SE pemberi menutup usulan saat revisi -->
+            <div v-if="canRejectPemberiClosed" class="space-y-2">
+              <p class="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Tutup Usulan</p>
+              <UButton
+                icon="i-lucide-circle-x"
+                color="error"
+                variant="solid"
+                size="lg"
+                block
+                class="justify-center"
+                :loading="pending"
+                @click="rejectPemberiClosed"
+              >
+                Tolak & Tutup Usulan
               </UButton>
             </div>
 
