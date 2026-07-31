@@ -142,12 +142,12 @@ const breadcrumbs = computed(() => {
 const statusOptions = [
   { label: 'Semua', value: '' },
   { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
-  { label: 'Revisi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
-  { label: 'Terkirim ke Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-  { label: 'Pemilihan Berkas', value: StatusUsulan.PEMILIHAN_BERKAS },
+  { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
+  { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
   { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-  { label: 'Akses Diterbitkan', value: StatusUsulan.AKSES_DITERBITKAN },
-  { label: 'Ditolak', value: StatusUsulan.DITOLAK_PENGUSUL },
+  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
+  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
 ];
 
 const totalPages = computed(() =>
@@ -350,18 +350,46 @@ const menungguStatuses = [
 ];
 
 const canVerifyRow = (row: any): boolean => {
-  if (!menungguStatuses.includes(row.status)) return false;
   const userPersnum = Number(user.value?.persnum);
-  // Cek verifikatorPengusul
-  if (row.verifikatorPengusul?.some((v: any) => v.persnum === userPersnum)) return true;
-  // Cek verifikatorPemberi
-  if (row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum)) return true;
+  // Tentukan urutan aktif berdasarkan status (hanya urutan yang sedang menunggu)
+  let expectedUrutanPengusul: number | null = null;
+  let expectedUrutanPemberi: number | null = null;
+  switch (row.status) {
+    case StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL: expectedUrutanPengusul = 1; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL: expectedUrutanPengusul = 2; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL: expectedUrutanPengusul = 3; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI: expectedUrutanPemberi = 0; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI: expectedUrutanPemberi = 1; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI: expectedUrutanPemberi = 2; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI: expectedUrutanPemberi = 3; break;
+    default: return false;
+  }
+  // Cek verifikatorPengusul — hanya urutan aktif yang boleh approve
+  if (expectedUrutanPengusul !== null) {
+    return row.verifikatorPengusul?.some(
+      (v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPengusul,
+    ) ?? false;
+  }
+  // Cek verifikatorPemberi — hanya urutan aktif (SE=0, AVP=1, VP=2, EVP=3)
+  if (expectedUrutanPemberi !== null) {
+    return row.verifikatorPemberi?.some(
+      (v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPemberi,
+    ) ?? false;
+  }
   return false;
 };
 
 const canRejectRow = (row: any): boolean => {
   return canVerifyRow(row);
 };
+
+// Filter list: saat tab verify-me, hanya tampilkan usulan yang sudah giliran user untuk approve
+const displayList = computed(() => {
+  if (activeTab.value === 'verify-me') {
+    return usulanList.value.filter((row: any) => canVerifyRow(row));
+  }
+  return usulanList.value;
+});
 
 // ── Modal Setuju/Tolak (standarisasi) ──────────────
 const showApproveModal = ref(false);
@@ -765,7 +793,7 @@ onBeforeUnmount(() => {
       <!-- DataTable (pemberkasan style) -->
       <DataTable
         :columns="columns"
-        :rows="usulanList"
+        :rows="displayList"
         :loading="pending"
         :sort-key="sortKey"
         :sort-dir="sortDir"
@@ -819,23 +847,6 @@ onBeforeUnmount(() => {
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </NuxtLink>
-            <button
-              v-if="canVerifyRow(row)"
-              @click="openApproveModal(row)"
-              class="inline-flex rounded-md p-1.5 transition-colors hover:opacity-80"
-              style="color: #175FA4"
-              title="Setuju"
-            >
-              <UIcon name="i-lucide-check" class="h-4 w-4" />
-            </button>
-            <button
-              v-if="canRejectRow(row)"
-              @click="openRejectModal(row)"
-              class="inline-flex rounded-md p-1.5 text-red-600 transition-colors hover:bg-red-50 dark:text-red-500 dark:hover:bg-red-900/20"
-              title="Tolak"
-            >
-              <UIcon name="i-lucide-x" class="h-4 w-4" />
-            </button>
           </div>
         </template>
       </DataTable>

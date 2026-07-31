@@ -4,7 +4,7 @@
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Permintaan Usulan Akses Berkas' });
 
-await navigateTo('/usulan-akses-berkas?tab=mine', { replace: true });
+await navigateTo('/usulan-akses-berkas?tab=verify-pemberi', { replace: true });
 </script>
 
 <template>
