@@ -988,7 +988,7 @@ const adminMenuKelola = computed(() => {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
-      showIfTuOrSekretaris: true,
+      showIfSekretarisOnly: true,
     },
     {
       label: 'Penerimaan Usulan',
@@ -1006,7 +1006,7 @@ const adminMenuKelola = computed(() => {
       label: 'Verifikasi Persetujuan',
       to: '/maintenance/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
-      showIfAtasan: true,
+      showIfAtasanTu: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1096,7 +1096,7 @@ const userMenuKelola = computed(() => {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
-      showIfTuOrSekretaris: true,
+      showIfSekretarisOnly: true,
     },
     {
 label: 'Penerimaan Usulan',
@@ -1114,7 +1114,7 @@ label: 'Penerimaan Usulan',
       label: 'Verifikasi Persetujuan',
       to: '/maintenance/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
-      showIfAtasan: true,
+      showIfAtasanTu: true,
     },
     {
       label: 'Verifikasi Usulan',
@@ -1209,7 +1209,11 @@ const filterMenuByPermission = (items) => {
   // Menu lain difilter berdasarkan permission, termasuk superadmin
   // Support nested children (recursive) untuk menu 2+ level.
   // Support role-based filtering via `roles` array on item.
-  const isAtasanManagerialTuPersnum = Number(user.value?.persnum) === 10010123;
+  // Atasan Managerial TU: HERMANA (10010123) atau PRIYO (10010970) — konsisten
+  // dengan AtasanTuGuard di backend (guards/atasan-tu-guard.ts).
+  const isAtasanManagerialTuPersnum =
+    Number(user.value?.persnum) === 10010123 ||
+    Number(user.value?.persnum) === 10010970;
 
   const hasRoleAccess = (item) => {
     if (!item.roles || item.roles.length === 0) return true;
@@ -1241,9 +1245,22 @@ const filterMenuByPermission = (items) => {
       return null;
     }
 
+    // Cek showIfAtasanTu — tampilkan HANYA jika user adalah Atasan Managerial TU
+    // (persnum 10010123 HERMANA atau 10010970 PRIYO). Menu ini untuk verifikasi
+    // persetujuan penerimaan arsip dari TU, bukan verifikasi usulan sekretaris.
+    if (cloned.showIfAtasanTu && !isAtasanManagerialTuPersnum) {
+      return null;
+    }
+
     // Cek showIfTuOrSekretaris — tampilkan HANYA jika user punya role unit_dokumen (tu)
     // atau sekretaris (delegasi/organization_tu). Superadmin/admin TIDAK otomatis lihat.
     if (cloned.showIfTuOrSekretaris && !isTuRole.value && !isSekretarisRole.value) {
+      return null;
+    }
+
+    // Cek showIfSekretarisOnly — tampilkan HANYA jika user adalah sekretaris
+    // (delegasi/organization_tu). TU (unit_dokumen) TIDAK lihat menu ini.
+    if (cloned.showIfSekretarisOnly && !isSekretarisRole.value && !isSekretarisActor.value) {
       return null;
     }
 

@@ -192,6 +192,116 @@
           </div>
         </div>
       </div>
+
+      <!-- Berita Acara Serah Terima (full width, di bawah grid) -->
+      <div v-if="showBeritaAcara" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-6 mt-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
+          <div class="flex gap-2">
+            <button
+              @click="printBeritaAcara"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <UIcon name="i-lucide-printer" class="w-4 h-4" /> Print
+            </button>
+            <button
+              @click="downloadBeritaAcara"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+            >
+              <UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Berita Acara Content -->
+        <div id="berita-acara-print" class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+          <div class="text-center mb-4">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">BERITA ACARA SERAH TERIMA PEKERJAAN</h2>
+            <p class="text-xs text-gray-500 mt-1">Pemindahan Arsip Aktif ke Inaktif</p>
+            <p class="text-xs text-gray-500 mt-0.5">Nomor: {{ beritaAcaraData?.nomorUsulan ?? item.nomorUsulan }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">Tanggal: {{ formatBaDate(item.tanggalUsulan) }}</p>
+          </div>
+
+          <p class="text-sm leading-relaxed">
+            Pada hari ini {{ formatBaDay(item.tanggalUsulan) }} tanggal {{ formatBaDate(item.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
+          </p>
+
+          <!-- Pihak Pertama (Atasan Managerial) -->
+          <div class="space-y-1">
+            <p class="font-medium">1. Nama &nbsp;&nbsp; : {{ beritaAcaraData?.atasan?.nama ?? item.atasanName }}</p>
+            <p class="font-medium">&nbsp;&nbsp;&nbsp; Jabatan : {{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
+          </div>
+          <p class="text-sm">Selanjutnya disebut pihak pertama</p>
+
+          <!-- Pihak Kedua (Sekretaris) -->
+          <div class="space-y-1">
+            <p class="font-medium">2. Nama &nbsp;&nbsp; : {{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName }}</p>
+            <p class="font-medium">&nbsp;&nbsp;&nbsp; Jabatan : {{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
+          </div>
+          <p class="text-sm">Selanjutnya disebut pihak kedua</p>
+
+          <p class="text-sm leading-relaxed">Dengan ini menerangkan bahwa:</p>
+          <p class="text-sm leading-relaxed">Pihak pertama telah menyerahkan kepada pihak kedua berupa:</p>
+
+          <!-- Daftar Arsip -->
+          <ol class="list-decimal list-inside space-y-1 text-sm">
+            <li v-for="(arsip, idx) in (beritaAcaraData?.daftarArsip ?? [])" :key="idx">
+              {{ arsip.kode ?? '-' }} — {{ arsip.perihal }}
+            </li>
+            <li v-if="beritaAcaraData?.keterangan || item.keterangan">
+              {{ beritaAcaraData?.keterangan ?? item.keterangan }}
+            </li>
+          </ol>
+
+          <p class="text-sm leading-relaxed mt-3">
+            Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
+          </p>
+
+          <p class="text-sm text-right mt-4">Jakarta, {{ formatBaDate(item.tanggalUsulan) }}</p>
+
+          <!-- Tanda Tangan -->
+          <div class="grid grid-cols-2 gap-8 mt-4">
+            <div class="text-center">
+              <p class="text-sm font-medium mb-16">Pihak Pertama</p>
+              <div class="border-t border-gray-300 dark:border-gray-600 pt-1">
+                <p class="font-medium">{{ beritaAcaraData?.atasan?.nama ?? item.atasanName }}</p>
+                <p class="text-xs text-gray-400">{{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-sm font-medium mb-16">Pihak Kedua</p>
+              <div class="border-t border-gray-300 dark:border-gray-600 pt-1">
+                <p class="font-medium">{{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName }}</p>
+                <p class="text-xs text-gray-400">{{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Persetujuan Terakhir Atasan TU (untuk atasan managerial TU) -->
+      <div
+        v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTu"
+        class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5"
+      >
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-check-check" class="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+          <div class="flex-1">
+            <h3 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-1">Persetujuan Terakhir Diperlukan</h3>
+            <p class="text-sm text-emerald-600 dark:text-emerald-400 mb-3">
+              Penerimaan usulan telah disetujui. Berikan persetujuan terakhir agar TU dapat melanjutkan ke penataan arsip inaktif.
+            </p>
+            <button
+              @click="onSetujuiTerakhir"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" /> Setujui Persetujuan Terakhir
+            </button>
+          </div>
+        </div>
+      </div>
     </template>
 
     <!-- Not Found -->
@@ -208,25 +318,87 @@
     />
 
     <!-- Resubmit Confirm Modal -->
-    <div v-if="isResubmitModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="fixed inset-0 bg-black/50" @click="isResubmitModalOpen = false"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden z-10">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ajukan Kembali Usulan</h3>
-        </div>
-        <div class="p-6">
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            Usulan akan diajukan ulang ke Atasan Managerial untuk verifikasi.
-          </p>
-        </div>
-        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-          <button @click="isResubmitModalOpen = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Batal</button>
-          <button @click="confirmResubmit" :disabled="actionLoading" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50">
-            {{ actionLoading ? 'Mengirim...' : 'Ajukan Kembali' }}
-          </button>
+    <Teleport to="body">
+      <div v-if="isResubmitModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40" style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" @click="isResubmitModalOpen = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden z-[10000]">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ajukan Kembali Usulan</h3>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Usulan akan diajukan ulang ke Atasan Managerial untuk verifikasi.
+            </p>
+          </div>
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+            <button @click="isResubmitModalOpen = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Batal</button>
+            <button @click="confirmResubmit" :disabled="actionLoading" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50">
+              {{ actionLoading ? 'Mengirim...' : 'Ajukan Kembali' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
+
+    <!-- Modal Setujui Persetujuan Terakhir -->
+    <Teleport to="body">
+      <div v-if="isSetujuiTerakhirModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40" style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" @click="isSetujuiTerakhirModalOpen = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Persetujuan Terakhir</h3>
+          <button @click="isSetujuiTerakhirModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <UIcon name="i-lucide-x" class="w-5 h-5" />
+          </button>
+        </div>
+        <!-- Body -->
+        <div class="p-6">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+              <UIcon name="i-lucide-check-check" class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div class="flex-1">
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                Apakah Anda yakin ingin menyetujui persetujuan terakhir untuk usulan ini?
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                Arsip akan diterima dan TU dapat melanjutkan ke penataan arsip inaktif.
+              </p>
+            </div>
+          </div>
+          <!-- Info usulan -->
+          <div class="space-y-2 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ item?.nomorUsulan ?? '-' }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ item?.sekretarisName ?? '-' }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Arsip</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ item?.arsipPerihal ?? '-' }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+          <button @click="isSetujuiTerakhirModalOpen = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Batal</button>
+          <button
+            @click="onConfirmSetujuiTerakhir"
+            :disabled="actionLoading"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors"
+          >
+            <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+            <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" />
+            Setujui Persetujuan Terakhir
+          </button>
+        </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -253,10 +425,12 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
+import { useTuVerifikasi } from '~/composables/useTuVerifikasi';
 import { useApi } from '~/composables/useApi';
+import { useAuth } from '~/composables/useAuth';
 import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
@@ -266,6 +440,8 @@ definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const { apiGet } = useApi();
+const { user } = useAuth();
+const { setujuiTerakhir: tuSetujuiTerakhir } = useTuVerifikasi();
 const {
   fetchDetail,
   send,
@@ -276,11 +452,18 @@ const {
   selesaikanUsulan,
 } = useTransferActiveToInactive();
 
+// Atasan Managerial TU: HERMANA (10010123) atau PRIYO (10010970)
+const isAtasanTu = computed(() => {
+  const persnum = Number(user.value?.persnum);
+  return persnum === 10010123 || persnum === 10010970;
+});
+
 const item = ref<TransferActiveToInactive | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
 const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
+const isSetujuiTerakhirModalOpen = ref(false);
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
 const daftarIsi = ref<any[]>([]);
@@ -294,8 +477,37 @@ const items = computed(() => [
 
 const showBeritaAcara = computed(() => {
   if (!item.value) return false;
-  return ['DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(item.value.status);
+  return [
+    'DISETUJUI_ATASAN',
+    'DISETUJUI_VERIFIKASI_TERAKHIR',
+    'DIKIRIM',
+    'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
+    'BERKAS_FISIK_SESUAI',
+    'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
+    'DISETUJUI_PERSETUJUAN_TU',
+    'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
+    'DISETUJUI_PERSETUJUAN_TERAKHIR_TU',
+    'ARSIP_INAKTIF_DITERIMA',
+    'PENATAAN_ARSIP_INAKTIF',
+    'SELESAI',
+  ].includes(item.value.status);
 });
+
+/** Format tanggal untuk Berita Acara: "31 Juli 2026" */
+const formatBaDate = (dateStr: string | null) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+/** Format hari untuk Berita Acara: "Jumat" */
+const formatBaDay = (dateStr: string | null) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  return days[d.getDay()];
+};
 
 const loadDetail = async () => {
   loading.value = true;
@@ -495,6 +707,33 @@ const onSelesai = () => {
   if (!confirm('Selesaikan usulan? Pastikan berkas fisik sudah disiapkan.')) return;
   act(() => selesaikanUsulan(item.value!.id));
 };
+
+/** Setujui Persetujuan Terakhir oleh Atasan TU → ARSIP_INAKTIF_DITERIMA. */
+const onSetujuiTerakhir = () => {
+  isSetujuiTerakhirModalOpen.value = true;
+};
+
+const onConfirmSetujuiTerakhir = async () => {
+  if (!item.value) return;
+  actionLoading.value = true;
+  try {
+    await tuSetujuiTerakhir(item.value.id, {});
+    isSetujuiTerakhirModalOpen.value = false;
+    await loadDetail();
+  } catch (e: any) {
+    console.error('Gagal menyetujui terakhir:', e);
+    alert(e?.data?.message || 'Gagal menyetujui persetujuan terakhir.');
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
+// Body scroll lock saat modal terbuka
+watch([isResubmitModalOpen, isSetujuiTerakhirModalOpen, isEditModalOpen], ([a, b, c]) => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = a || b || c ? 'hidden' : '';
+  }
+});
 
 onMounted(() => loadDetail());
 </script>
