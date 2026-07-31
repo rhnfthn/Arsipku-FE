@@ -28,7 +28,10 @@
         <div class="lg:col-span-8 space-y-5">
           <!-- Informasi Usulan -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Informasi Usulan</h3>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
+              <span :class="statusBadgeClass(item.status)" class="text-xs">{{ statusLabel(item.status) }}</span>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
@@ -45,6 +48,32 @@
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Dikirim ke TU</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggalDikirim) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── Card: Riwayat ─── -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Riwayat</h3>
+              <button @click="showRiwayat = !showRiwayat" class="text-xs text-[#457fb6] hover:underline">
+                {{ showRiwayat ? 'Sembunyikan' : 'Tampilkan' }}
+              </button>
+            </div>
+            <div v-if="showRiwayat" class="space-y-2">
+              <div
+                v-for="(r, idx) in riwayatList"
+                :key="idx"
+                class="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+              >
+                <div class="w-2 h-2 rounded-full bg-[#457fb6] mt-1.5 shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-gray-900 dark:text-white">{{ r.label }}</span>
+                    <span class="text-xs text-gray-400">{{ r.tanggal }}</span>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Oleh: {{ r.oleh }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -276,6 +305,7 @@ const { fetchNotifikasiDetail, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerif
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
+const showRiwayat = ref(true)
 
 const showAjukanModal = ref(false)
 const showKembalikanModal = ref(false)
@@ -320,10 +350,88 @@ const isAlreadyVerified = computed(() => {
   return !!item.value.tuApprovedAt || item.value.status === 'BERKAS_FISIK_TIDAK_SESUAI'
 })
 
+/** Riwayat aktor yang terlibat dalam usulan. */
+const riwayatList = computed(() => {
+  if (!item.value) return []
+  const u = item.value
+  const items: { label: string; oleh: string; tanggal: string }[] = []
+
+  // 1. Draft — Sekretaris
+  items.push({
+    label: 'Draft',
+    oleh: u.sekretarisName ?? '-',
+    tanggal: formatDate(u.tanggalUsulan ?? u.createdAt),
+  })
+
+  // 2. Menunggu Persetujuan — Atasan Managerial Sekretaris
+  if (u.atasanName) {
+    items.push({
+      label: 'Menunggu Persetujuan',
+      oleh: u.atasanName,
+      tanggal: '-',
+    })
+  }
+
+  // 3. Menunggu Verifikasi — Atasan Managerial Sekretaris
+  items.push({
+    label: 'Menunggu Verifikasi',
+    oleh: u.atasanName ?? '-',
+    tanggal: '-',
+  })
+
+  // 4. Menunggu Penerimaan — TU
+  if (u.tuName) {
+    items.push({
+      label: 'Menunggu Penerimaan',
+      oleh: u.tuName,
+      tanggal: u.tanggalDikirim ? formatDate(u.tanggalDikirim) : '-',
+    })
+  }
+
+  // 5. Verifikasi Atasan TU
+  if (u.atasanTuName) {
+    items.push({
+      label: 'Verifikasi Atasan TU',
+      oleh: u.atasanTuName,
+      tanggal: '-',
+    })
+  }
+
+  return items
+})
+
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+const statusLabel = (s: string) => {
+  const m: Record<string, string> = {
+    DIKIRIM: 'Menunggu Verifikasi',
+    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
+    BERKAS_FISIK_SESUAI: 'Berkas Sesuai',
+    BERKAS_FISIK_TIDAK_SESUAI: 'Berkas Tidak Sesuai',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Persetujuan TU',
+    DISETUJUI_PERSETUJUAN_TU: 'Disetujui TU',
+    ARSIP_INAKTIF_DITERIMA: 'Arsip Diterima',
+    SELESAI: 'Selesai',
+  }
+  return m[s] || s
+}
+
+const statusBadgeClass = (s: string) => {
+  const m: Record<string, string> = {
+    DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    BERKAS_FISIK_SESUAI: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    BERKAS_FISIK_TIDAK_SESUAI: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    DISETUJUI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    ARSIP_INAKTIF_DITERIMA: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    SELESAI: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+  }
+  return m[s] || 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
 const loadDetail = async () => {

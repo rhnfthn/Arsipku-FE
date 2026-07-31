@@ -4,13 +4,36 @@
     <div class="mb-5">
       <PageHeader
         title="Pemindahan Arsip Aktif ke Inaktif"
-        subtitle="Kelola usulan pemindahan arsip aktif ke inaktif."
         :items="items"
       />
     </div>
 
     <!-- Filter Bar (1 baris: Search + Status + Export + Usul Pindah Arsip) -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
+      <!-- Items per page (custom dropdown — di kiri search) -->
+      <div ref="pageSizeRef" class="relative shrink-0 z-30">
+        <button
+          @click="pageSizeOpen = !pageSizeOpen"
+          class="h-10 w-[80px] px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
+        >
+          <span>{{ itemsPerPage }}</span>
+          <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400" :class="{ 'rotate-180': pageSizeOpen }" />
+        </button>
+        <div
+          v-if="pageSizeOpen"
+          class="absolute top-full left-0 mt-1.5 z-50 min-w-[80px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden"
+        >
+          <button
+            v-for="size in [10, 30, 50]"
+            :key="size"
+            @click="itemsPerPage = size; currentPage = 1; pageSizeOpen = false"
+            class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+            :class="itemsPerPage === size ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
+          >
+            {{ size }}
+          </button>
+        </div>
+      </div>
       <!-- Search -->
       <div class="relative flex-1 min-w-[200px]">
         <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -22,26 +45,34 @@
           class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
         />
       </div>
-      <!-- Status Filter -->
-      <select
-        v-model="filter.status"
-        @change="reload"
-        class="h-10 w-[160px] shrink-0 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-      >
-        <option value="">Semua Status</option>
-        <option value="DRAFT">Draft</option>
-        <option value="MENUNGGU_VERIFIKASI_ATASAN">Menunggu Persetujuan</option>
-        <option value="DITOLAK_ATASAN">Tolak</option>
-        <option value="DISETUJUI_ATASAN">Menunggu Verifikasi</option>
-        <option value="MENUNGGU_VERIFIKASI_TERAKHIR">Menunggu Verifikasi</option>
-        <option value="DISETUJUI_VERIFIKASI_TERAKHIR">Menunggu Penerimaan</option>
-        <option value="DIKIRIM">Menunggu Penerimaan</option>
-        <option value="SELESAI">Selesai</option>
-      </select>
+      <!-- Status Filter (custom dropdown) -->
+      <div ref="statusRef" class="relative shrink-0 z-30">
+        <button
+          @click="statusOpen = !statusOpen"
+          class="h-10 w-[180px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
+        >
+          <span class="truncate">{{ statusOptions.find(o => o.value === filter.status)?.label ?? 'Semua Status' }}</span>
+          <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': statusOpen }" />
+        </button>
+        <div
+          v-if="statusOpen"
+          class="absolute top-full left-0 mt-1.5 z-50 min-w-[180px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden max-h-[300px] overflow-y-auto"
+        >
+          <button
+            v-for="opt in statusOptions"
+            :key="opt.value"
+            @click="filter.status = opt.value; reload(); statusOpen = false"
+            class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
+            :class="filter.status === opt.value ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
       <!-- Export -->
       <button
         @click="onExport"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shrink-0"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shrink-0"
       >
         <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
       </button>
@@ -88,12 +119,12 @@
             </tr>
             <!-- Rows -->
             <tr
-              v-for="(row, idx) in gabunganList"
+              v-for="(row, idx) in paginatedList"
               :key="row.id"
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
               @click="openDetail(row)"
             >
-                <td class="px-3 py-2 text-gray-500">{{ idx + 1 }}</td>
+                <td class="px-3 py-2 text-gray-500">{{ (currentPage - 1) * itemsPerPage + idx + 1 }}</td>
                 <td class="px-3 py-2 font-medium text-gray-700 dark:text-gray-200">
                   <div class="truncate" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
                   <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
@@ -106,7 +137,7 @@
                 </td>
                 <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
                 <td class="px-3 py-2">
-                  <span :class="statusBadgeClass(row.status)" class="text-[11px]">{{ statusLabel(row.status) }}</span>
+                  <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{ statusLabel(row.status as any) }}</span>
                 </td>
                 <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap hidden xl:table-cell">{{ formatDate(row.tanggal) }}</td>
                 <td class="px-3 py-2 text-center" @click.stop>
@@ -142,6 +173,32 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <div v-if="!loading && gabunganList.length > 0" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-sm">
+        <div class="text-gray-500 dark:text-gray-400">
+          Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }}–{{ Math.min(currentPage * itemsPerPage, gabunganList.length) }} dari {{ gabunganList.length }} data
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage <= 1"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <UIcon name="i-lucide-chevron-left" class="w-4 h-4" />
+          </button>
+          <span class="text-gray-600 dark:text-gray-300 px-2">
+            Hal {{ currentPage }} / {{ totalPages }}
+          </span>
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage >= totalPages"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal Wizard -->
@@ -158,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useApi } from '~/composables/useApi';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useAuth } from '~/composables/useAuth';
@@ -220,6 +277,45 @@ const filter = reactive({
   status: '',
 });
 
+// Pagination (client-side)
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+const pageSizeOpen = ref(false);
+const pageSizeRef = ref<HTMLElement | null>(null);
+const statusOpen = ref(false);
+const statusRef = ref<HTMLElement | null>(null);
+
+const statusOptions = [
+  { value: '', label: 'Semua Status' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'MENUNGGU_VERIFIKASI_ATASAN', label: 'Menunggu Persetujuan' },
+  { value: 'MENUNGGU_VERIFIKASI_TERAKHIR', label: 'Menunggu Verifikasi' },
+  { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
+  { value: 'SELESAI', label: 'Selesai' },
+  { value: 'DITOLAK_ATASAN', label: 'Ditolak' },
+];
+
+const onClickOutsidePageSize = (e: MouseEvent) => {
+  if (pageSizeRef.value && !pageSizeRef.value.contains(e.target as Node)) {
+    pageSizeOpen.value = false;
+  }
+  if (statusRef.value && !statusRef.value.contains(e.target as Node)) {
+    statusOpen.value = false;
+  }
+};
+
+const totalPages = computed(() => Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value)));
+
+const paginatedList = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return gabunganList.value.slice(start, start + itemsPerPage.value);
+});
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+};
+
 const isSekretaris = computed(() => {
   const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
   return role === 'USER' || isAdmin.value || isSuperadmin.value;
@@ -248,6 +344,7 @@ const loadGabungan = async () => {
 };
 
 const reload = () => {
+  currentPage.value = 1;
   loadGabungan();
 };
 
@@ -309,5 +406,12 @@ const onTransferUpdated = async () => {
   await loadGabungan();
 };
 
-onMounted(() => loadGabungan());
+onMounted(() => {
+  document.addEventListener('click', onClickOutsidePageSize);
+  loadGabungan();
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onClickOutsidePageSize);
+});
 </script>

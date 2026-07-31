@@ -4,7 +4,6 @@
     <div class="mb-5">
       <PageHeader
         title="Verifikasi Usulan"
-        subtitle="Verifikasi usulan pemindahan arsip dari Sekretaris."
         :items="items"
       />
     </div>
@@ -23,49 +22,48 @@
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="flex items-center justify-end gap-2 mb-4">
-      <button
-        @click="onExport"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
-      >
-        <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
-      </button>
-    </div>
-
     <!-- Filter Bar -->
     <VerifikasiFilterBar
       v-model="filter"
       @apply="reload"
-      @reset="resetFilter"
+      @export="onExport"
     />
 
     <!-- Table -->
-    <VerifikasiTable
-      :data="list"
-      :loading="loading"
-      @detail="openDetail"
-    />
+    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
+      <VerifikasiTable
+        :data="list"
+        :loading="loading"
+        @detail="openDetail"
+      />
 
-    <!-- Pagination -->
-    <div
-      v-if="meta && meta.total > 0"
-      class="flex items-center justify-between px-4 py-3 mt-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-    >
-      <div class="text-sm text-gray-500">
-        Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }} dari {{ meta.total }} usulan
-      </div>
-      <div v-if="meta.totalPages > 1" class="flex gap-1">
-        <button
-          :disabled="meta.page <= 1"
-          @click="goPage(meta.page - 1)"
-          class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700"
-        >Prev</button>
-        <button
-          :disabled="meta.page >= meta.totalPages"
-          @click="goPage(meta.page + 1)"
-          class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700"
-        >Next</button>
+      <!-- Pagination -->
+      <div
+        v-if="meta && meta.total > 0"
+        class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-sm"
+      >
+        <div class="text-gray-500 dark:text-gray-400">
+          Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }} dari {{ meta.total }} usulan
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="goPage(meta.page - 1)"
+            :disabled="meta.page <= 1"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <UIcon name="i-lucide-chevron-left" class="w-4 h-4" />
+          </button>
+          <span class="text-gray-600 dark:text-gray-300 px-2">
+            Hal {{ meta.page }} / {{ meta.totalPages }}
+          </span>
+          <button
+            @click="goPage(meta.page + 1)"
+            :disabled="meta.page >= meta.totalPages"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -136,14 +134,6 @@ const loadData = async () => {
 };
 
 const reload = () => {
-  filter.page = 1;
-  loadData();
-};
-
-const resetFilter = () => {
-  filter.status = '';
-  filter.search = '';
-  filter.startDate = '';
   filter.page = 1;
   loadData();
 };
