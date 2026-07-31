@@ -729,7 +729,7 @@ onMounted(() => {
           </div>
           <!-- Empty -->
           <div v-else-if="eligiblePenerimaTambahan.length === 0" class="py-2 text-sm text-gray-400">
-            Tidak ada orang tambahan di divisi Anda.
+            Tidak ada orang tambahan di direktorat Anda.
           </div>
           <template v-else>
             <!-- Selected chips -->
