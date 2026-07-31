@@ -302,6 +302,30 @@
           </div>
         </div>
       </div>
+
+      <!-- Tombol Lanjutkan Penataan (untuk ARSIP_INAKTIF_DITERIMA — kirim ke TU untuk penataan) -->
+      <div
+        v-if="item && item.status === 'ARSIP_INAKTIF_DITERIMA' && !isAtasanTu"
+        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5 mt-5"
+      >
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-archive" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+          <div class="flex-1">
+            <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Lanjutkan Penataan</h3>
+            <p class="text-sm text-blue-600 dark:text-blue-400 mb-3">
+              Arsip telah diterima oleh Atasan TU. Silakan lanjutkan ke penataan arsip inaktif.
+            </p>
+            <button
+              @click="onLanjutkanPenataan"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-arrow-right" class="w-4 h-4 mr-1 inline" /> Lanjutkan Penataan
+            </button>
+          </div>
+        </div>
+      </div>
     </template>
 
     <!-- Not Found -->
@@ -711,6 +735,12 @@ const onSelesai = () => {
 /** Setujui Persetujuan Terakhir oleh Atasan TU → ARSIP_INAKTIF_DITERIMA. */
 const onSetujuiTerakhir = () => {
   isSetujuiTerakhirModalOpen.value = true;
+};
+
+/** Lanjutkan Penataan — redirect ke halaman penataan arsip inaktif. */
+const onLanjutkanPenataan = () => {
+  if (!item.value) return;
+  navigateTo(`/maintenance/penataan-arsip-inaktif/${item.value.id}`);
 };
 
 const onConfirmSetujuiTerakhir = async () => {

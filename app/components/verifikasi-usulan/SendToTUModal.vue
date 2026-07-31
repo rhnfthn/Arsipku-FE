@@ -50,7 +50,7 @@
           </button>
           <button @click="confirm" :disabled="loading" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors">
             <UIcon v-if="loading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-            Ya, Setujui & Kirim ke TU
+            Pindah Usulan
           </button>
         </div>
       </div>
