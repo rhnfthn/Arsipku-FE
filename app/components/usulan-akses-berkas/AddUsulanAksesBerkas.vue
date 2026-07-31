@@ -12,7 +12,7 @@ const emit = defineEmits<{
   created: [];
 }>();
 
-const { fetchVerifikatorBod, verifikatorList, createUsulan, pending } = useUsulanAksesBerkas();
+const { fetchVerifikatorBod, fetchEligiblePenerimaTambahan, verifikatorList, createUsulan, pending } = useUsulanAksesBerkas();
 const { apiGet } = useApi();
 const toast = useToast();
 
@@ -68,6 +68,20 @@ const todayStr = new Date().toISOString().split('T')[0];
 const jenisAksesSelected = ref<JenisAkses[]>([JenisAkses.LIHAT, JenisAkses.CETAK]);
 const selectedVerifikatorPersnums = ref<{ persnum: number; catatan: string }[]>([]);
 
+// ── Penerima akses tambahan state ──
+interface PenerimaTambahanItem {
+  persnum: number;
+  nama: string;
+  positionText: string;
+  organizationText: string;
+}
+const eligiblePenerimaTambahan = ref<PenerimaTambahanItem[]>([]);
+const selectedPenerimaTambahan = ref<number[]>([]);
+const penerimaTambahanLoading = ref(false);
+const showPenerimaTambahanDropdown = ref(false);
+const penerimaTambahanDropdownRef = ref<HTMLElement | null>(null);
+const penerimaTambahanSearchQuery = ref('');
+
 // ── Custom divisi dropdown state ──
 const showDivisiDropdown = ref(false);
 const divisiSearchQuery = ref('');
@@ -121,6 +135,9 @@ const handleClickOutsideDivisi = (e: MouseEvent) => {
   }
   if (verifikatorDropdownRef.value && !verifikatorDropdownRef.value.contains(e.target as Node)) {
     showVerifikatorDropdown.value = false;
+  }
+  if (penerimaTambahanDropdownRef.value && !penerimaTambahanDropdownRef.value.contains(e.target as Node)) {
+    showPenerimaTambahanDropdown.value = false;
   }
 };
 
@@ -287,6 +304,31 @@ const onVerifikatorSelect = (persnum: number) => {
   toggleVerifikator(persnum);
 };
 
+// ── Penerima akses tambahan logic ──
+const togglePenerimaTambahan = (persnum: number) => {
+  const idx = selectedPenerimaTambahan.value.indexOf(persnum);
+  if (idx >= 0) {
+    selectedPenerimaTambahan.value.splice(idx, 1);
+  } else {
+    selectedPenerimaTambahan.value.push(persnum);
+  }
+};
+
+const filteredPenerimaTambahan = computed(() => {
+  const q = penerimaTambahanSearchQuery.value.toLowerCase().trim();
+  const selectedSet = new Set(selectedPenerimaTambahan.value);
+  const verifikatorSet = new Set(selectedVerifikatorPersnums.value.map((v) => v.persnum));
+  return eligiblePenerimaTambahan.value
+    .filter((p) => !verifikatorSet.has(p.persnum)) // exclude verifikator yang sudah dipilih
+    .filter((p) => {
+      if (!q) return true;
+      return (
+        (p.nama || '').toLowerCase().includes(q) ||
+        (p.positionText || '').toLowerCase().includes(q)
+      );
+    });
+});
+
 const resetForm = () => {
   jenisBerkas.value = JenisBerkas.AKTIF;
   divisiPemberiId.value = null;
@@ -295,6 +337,8 @@ const resetForm = () => {
   customTanggalSelesai.value = '';
   jenisAksesSelected.value = [JenisAkses.LIHAT, JenisAkses.CETAK];
   selectedVerifikatorPersnums.value = [];
+  selectedPenerimaTambahan.value = [];
+  penerimaTambahanSearchQuery.value = '';
 };
 
 const canSubmit = computed(() => {
@@ -333,6 +377,9 @@ const handleSubmit = async () => {
           : undefined,
       jenisAkses: jenisAksesSelected.value,
       verifikatorPengusul,
+      ...(selectedPenerimaTambahan.value.length > 0
+        ? { penerimaAksesTambahan: selectedPenerimaTambahan.value }
+        : {}),
     });
     resetForm();
     emit('created');
@@ -356,6 +403,16 @@ watch(isOpen, (val) => {
       });
     });
     fetchDivisiList();
+    // Fetch eligible penerima akses tambahan
+    penerimaTambahanLoading.value = true;
+    fetchEligiblePenerimaTambahan().then((data) => {
+      eligiblePenerimaTambahan.value = data || [];
+    }).catch((err) => {
+      console.error('[AddUsulanAksesBerkas] fetchEligiblePenerimaTambahan failed:', err);
+      eligiblePenerimaTambahan.value = [];
+    }).finally(() => {
+      penerimaTambahanLoading.value = false;
+    });
   }
 });
 
@@ -370,6 +427,15 @@ onMounted(() => {
       });
     });
     fetchDivisiList();
+    penerimaTambahanLoading.value = true;
+    fetchEligiblePenerimaTambahan().then((data) => {
+      eligiblePenerimaTambahan.value = data || [];
+    }).catch((err) => {
+      console.error('[AddUsulanAksesBerkas] fetchEligiblePenerimaTambahan failed:', err);
+      eligiblePenerimaTambahan.value = [];
+    }).finally(() => {
+      penerimaTambahanLoading.value = false;
+    });
   }
 });
 </script>
@@ -647,6 +713,96 @@ onMounted(() => {
           <p v-else class="text-xs text-gray-400">
             Semua verifikator tersedia sudah dipilih.
           </p>
+        </div>
+      </div>
+
+      <!-- Penerima Akses Tambahan -->
+      <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
+        <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+          Orang Tambahan
+          <span class="ml-1 text-xs text-gray-400">(opsional)</span>
+        </span>
+        <div class="flex-1">
+          <!-- Loading -->
+          <div v-if="penerimaTambahanLoading" class="py-2 text-sm text-gray-400">
+            Memuat data orang...
+          </div>
+          <!-- Empty -->
+          <div v-else-if="eligiblePenerimaTambahan.length === 0" class="py-2 text-sm text-gray-400">
+            Tidak ada orang tambahan di divisi Anda.
+          </div>
+          <template v-else>
+            <!-- Selected chips -->
+            <div v-if="selectedPenerimaTambahan.length > 0" class="mb-2 flex flex-wrap gap-1.5">
+              <span
+                v-for="persnum in selectedPenerimaTambahan"
+                :key="persnum"
+                class="inline-flex items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+              >
+                {{ eligiblePenerimaTambahan.find(p => p.persnum === persnum)?.nama || `Persnum ${persnum}` }}
+                <button
+                  type="button"
+                  @click="togglePenerimaTambahan(persnum)"
+                  class="ml-0.5 rounded-full p-0.5 text-primary-400 transition-colors hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-800"
+                >
+                  <UIcon name="i-lucide-x" class="size-3" />
+                </button>
+              </span>
+            </div>
+
+            <!-- Dropdown -->
+            <div class="relative" ref="penerimaTambahanDropdownRef">
+              <button
+                type="button"
+                @click="showPenerimaTambahanDropdown = !showPenerimaTambahanDropdown"
+                class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <span class="text-gray-400">+ Pilih orang tambahan ({{ selectedPenerimaTambahan.length }})</span>
+                <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showPenerimaTambahanDropdown }" />
+              </button>
+              <div
+                v-if="showPenerimaTambahanDropdown"
+                class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+              >
+                <!-- Search -->
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon name="i-lucide-search" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      v-model="penerimaTambahanSearchQuery"
+                      type="text"
+                      placeholder="Cari nama atau jabatan..."
+                      class="w-full rounded-md border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <!-- Options -->
+                <div class="max-h-[200px] overflow-y-auto">
+                  <button
+                    v-for="p in filteredPenerimaTambahan"
+                    :key="p.persnum"
+                    type="button"
+                    @click="togglePenerimaTambahan(p.persnum)"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700"
+                    :class="selectedPenerimaTambahan.includes(p.persnum) ? 'bg-primary-50 dark:bg-gray-700' : 'text-gray-700 dark:text-gray-300'"
+                  >
+                    <UIcon
+                      :name="selectedPenerimaTambahan.includes(p.persnum) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                      class="size-4 shrink-0"
+                      :class="selectedPenerimaTambahan.includes(p.persnum) ? 'text-primary-500' : 'text-gray-300'"
+                    />
+                    <div class="min-w-0 flex-1">
+                      <div class="truncate text-sm font-medium">{{ p.nama || `Persnum ${p.persnum}` }}</div>
+                      <div class="truncate text-xs text-gray-400">{{ p.positionText || '' }}</div>
+                    </div>
+                  </button>
+                  <div v-if="filteredPenerimaTambahan.length === 0" class="px-3 py-4 text-center text-sm text-gray-400">
+                    Tidak ada orang ditemukan
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
 
