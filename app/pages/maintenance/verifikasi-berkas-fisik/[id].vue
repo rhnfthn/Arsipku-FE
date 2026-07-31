@@ -128,6 +128,11 @@
             </div>
           </div>
         </div>
+
+        <!-- Kanan: Timeline Riwayat -->
+        <div class="lg:col-span-4 space-y-5">
+          <TimelineRiwayat :item="item as any" />
+        </div>
       </div>
     </template>
 
@@ -139,7 +144,7 @@
     <!-- Modal Ajukan ke Atasan TU -->
     <Teleport to="body">
       <div v-if="showAjukanModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-[8px]" @click="showAjukanModal = false"></div>
+        <div class="fixed inset-0 bg-black/40" style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" @click="showAjukanModal = false"></div>
         <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[90%] max-w-[560px] max-h-[80vh] flex flex-col overflow-hidden z-[10000]">
           <!-- Header sticky -->
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
@@ -209,7 +214,7 @@
     <!-- Modal Kembalikan -->
     <Teleport to="body">
       <div v-if="showKembalikanModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px]" @click="showKembalikanModal = false"></div>
+        <div class="fixed inset-0 bg-black/40" style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" @click="showKembalikanModal = false"></div>
         <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Kembalikan ke Atasan</h3>
@@ -261,6 +266,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue'
 
 definePageMeta({ middleware: ['auth'] })
 
