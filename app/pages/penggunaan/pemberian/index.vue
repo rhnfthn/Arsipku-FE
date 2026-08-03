@@ -4,11 +4,12 @@
 // Data dari endpoint /my-entitlements (akses yang diterima user)
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, RotateCw } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
+import { downloadCsv } from '~/utils/csv-export';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
@@ -28,6 +29,11 @@ const extractErrorMessage = (err: any): string => {
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
+const filterStatus = ref('Semua');
+const sortKey = ref('tanggalSelesai');
+const sortDir = ref<'asc' | 'desc'>('desc');
+const isRefreshing = ref(false);
+const isExporting = ref(false);
 
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
@@ -49,9 +55,49 @@ const activeEntitlements = computed(() => {
   });
 });
 
+// Filter status: Semua / Aktif / Habis
+const filteredEntitlements = computed(() => {
+  let rows = activeEntitlements.value;
+  if (filterStatus.value === 'Aktif') {
+    rows = rows.filter((e: any) => getProgressPercent(e) < 100);
+  } else if (filterStatus.value === 'Habis') {
+    rows = rows.filter((e: any) => getProgressPercent(e) >= 100);
+  }
+  // Search
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase();
+    rows = rows.filter(
+      (e: any) =>
+        (e.judulBerkas || '').toLowerCase().includes(q) ||
+        (e.nomorUsulanTerbaru || '').toLowerCase().includes(q),
+    );
+  }
+  // Sort
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  rows = [...rows].sort((a: any, b: any) => {
+    if (sortKey.value === 'judulBerkas') {
+      return (a.judulBerkas || '').localeCompare(b.judulBerkas || '') * dir;
+    }
+    if (sortKey.value === 'nomorUsulan') {
+      return (a.nomorUsulanTerbaru || '').localeCompare(b.nomorUsulanTerbaru || '') * dir;
+    }
+    // default: tanggalSelesai
+    const ta = new Date(a.tanggalSelesai || 0).getTime();
+    const tb = new Date(b.tanggalSelesai || 0).getTime();
+    return (ta - tb) * dir;
+  });
+  return rows;
+});
+
 const totalPages = computed(() =>
-  Math.ceil(activeEntitlements.value.length / itemsPerPage.value) || 1,
+  Math.ceil(filteredEntitlements.value.length / itemsPerPage.value) || 1,
 );
+
+// Paginated rows
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return filteredEntitlements.value.slice(start, start + itemsPerPage.value);
+});
 
 const loadData = async () => {
   loading.value = true;
@@ -65,6 +111,51 @@ const loadData = async () => {
   }
 };
 
+const handleRefresh = async () => {
+  isRefreshing.value = true;
+  try {
+    await loadData();
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
+  currentPage.value = 1;
+};
+
+const exportData = async () => {
+  if (filteredEntitlements.value.length === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const headers = ['Nomor Usulan', 'Judul Berkas', 'Klasifikasi', 'Divisi Pemberi', 'Berlaku s/d', 'Status'];
+    const csvRows = filteredEntitlements.value.map((r: any) => [
+      r.nomorUsulanTerbaru || '-',
+      r.judulBerkas || '-',
+      r.klasifikasiTeks || r.klasifikasi || '-',
+      r.divisiPemberiNama || r.divisiPemberiId || '-',
+      formatDate(r.tanggalSelesai),
+      getProgressPercent(r) >= 100 ? 'Habis' : 'Aktif',
+    ]);
+    downloadCsv(`pemberian-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+  } catch (e) {
+    console.error('Gagal export:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 watch(searchQuery, () => {
   if (searchTimeout) clearTimeout(searchTimeout);
@@ -72,6 +163,8 @@ watch(searchQuery, () => {
     currentPage.value = 1;
   }, 400);
 });
+watch(filterStatus, () => { currentPage.value = 1; });
+watch(itemsPerPage, () => { currentPage.value = 1; });
 
 const goToDetail = (row: any) => {
   // Ambil usulanId pertama dari daftar usulan yang terkait berkas ini
@@ -105,6 +198,7 @@ function formatDurasiLabel(preset: string | undefined | null, customDate?: strin
 
 // ── Custom dropdown for rows per page ───────
 const openRowsPerPage = ref(false);
+const openStatusFilter = ref(false);
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
 }
@@ -121,6 +215,7 @@ function handleDocumentClick(e: MouseEvent) {
     if (el.contains(target)) return;
   }
   openRowsPerPage.value = false;
+  openStatusFilter.value = false;
 }
 
 // ── Progress bar ──
@@ -149,11 +244,11 @@ const getProgressLabel = (row: any): string => {
 
 // ── Columns ──
 const columns = [
-  { key: 'nomorUsulan', label: 'Nomor Usulan' },
-  { key: 'judulBerkas', label: 'Judul Berkas' },
+  { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
+  { key: 'judulBerkas', label: 'Judul Berkas', sortable: true },
   { key: 'klasifikasiTeks', label: 'Klasifikasi' },
   { key: 'divisiPemberi', label: 'Divisi Pemberi' },
-  { key: 'tanggalSelesai', label: 'Berlaku s/d' },
+  { key: 'tanggalSelesai', label: 'Berlaku s/d', sortable: true },
   { key: 'progress', label: 'Progress' },
   { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi' },
@@ -231,18 +326,83 @@ onBeforeUnmount(() => {
             placeholder="Cari judul berkas atau nomor usulan…"
             class="min-w-[180px] flex-1"
           />
+
+          <!-- Status filter -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="openStatusFilter = !openStatusFilter"
+              class="flex min-w-[110px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            >
+              <span>{{ filterStatus }}</span>
+              <ChevronDown
+                class="h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': openStatusFilter }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openStatusFilter"
+                class="absolute left-0 top-full z-50 mt-1.5 min-w-[110px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              >
+                <button
+                  v-for="opt in ['Semua', 'Aktif', 'Habis']"
+                  :key="opt"
+                  type="button"
+                  @click.stop="filterStatus = opt; openStatusFilter = false"
+                  :class="[
+                    'w-full border-b border-gray-50 px-4 py-2.5 text-left text-sm transition-colors last:border-0 dark:border-gray-700',
+                    filterStatus === opt
+                      ? 'bg-primary/5 font-medium text-primary dark:text-primary-400'
+                      : 'text-gray-700 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ opt }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+        </div>
+        <!-- Action buttons -->
+        <div class="flex shrink-0 items-center gap-2">
+          <!-- Refresh -->
+          <button
+            @click="handleRefresh"
+            :disabled="isRefreshing"
+            class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <RotateCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
+            Refresh
+          </button>
+          <!-- Export -->
+          <button
+            @click="exportData"
+            :disabled="isExporting"
+            class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <UIcon
+              v-if="isExporting"
+              name="i-lucide-loader-circle"
+              class="w-3.5 h-3.5 animate-spin"
+            />
+            <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+            Export
+          </button>
         </div>
       </div>
 
       <!-- DataTable -->
       <DataTable
         :columns="columns"
-        :rows="activeEntitlements"
+        :rows="paginatedRows"
         :loading="loading"
         header-class="bg-primary dark:bg-primary-700 text-left text-white"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
         empty-message="Belum ada akses berkas yang diberikan kepada Anda."
+        @sort="handleSort"
       >
         <template #cell-nomorUsulan="{ row }">
           <span class="font-mono text-xs font-medium text-primary-600 dark:text-primary-400">{{ row.nomorUsulanTerbaru || '-' }}</span>
@@ -298,7 +458,7 @@ onBeforeUnmount(() => {
       <!-- Pagination -->
       <DataPagination
         v-model:current-page="currentPage"
-        :total-items="activeEntitlements.length"
+        :total-items="filteredEntitlements.length"
         :per-page="itemsPerPage"
       />
     </div>
