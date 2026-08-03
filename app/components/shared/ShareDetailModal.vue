@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import { ShieldOff } from 'lucide-vue-next';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
@@ -8,14 +9,22 @@ import { getCategoryStyle, getCategoryFullName, formatFullDateTime } from '~/uti
 const props = defineProps<{
   share: ShareItem;
   isSender?: boolean;
+  userPosition?: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'revoke-recipient', payload: { share: ShareItem; recipientId: string; recipientName: string }): void;
+  (e: 'revoke-all', share: ShareItem): void;
 }>();
 
 const isOpen = ref(true);
+
+// Cari recipient milik user saat ini (untuk status request)
+// Status gabungan: Aktif / Berakhir
+const displayStatus = computed<'AKTIF' | 'BERAKHIR'>(() => {
+  return props.share.status === 'BERAKHIR' ? 'BERAKHIR' : 'AKTIF';
+});
 
 const handleClose = () => {
   isOpen.value = false;
@@ -58,7 +67,7 @@ watch(isOpen, (val) => {
               <span v-if="share.naskahNomor" class="text-[11px] text-gray-400 dark:text-gray-500 font-mono">
                 {{ share.naskahNomor }}
               </span>
-              <SharedShareBadge :status="share.status" size="xs" />
+              <SharedShareBadge :status="displayStatus" size="xs" />
             </div>
           </div>
 
@@ -150,6 +159,17 @@ watch(isOpen, (val) => {
           </div>
         </div>
 
+        <!-- Cabut Semua Akses (pemberi, share AKTIF) -->
+        <div v-if="props.isSender && share.status === 'AKTIF'" class="mt-4 mb-5 flex justify-end">
+          <button
+            @click="emit('revoke-all', share)"
+            class="px-4 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition inline-flex items-center gap-1.5"
+          >
+            <ShieldOff class="w-3.5 h-3.5" />
+            Cabut Semua Akses
+          </button>
+        </div>
+
         <!-- Info Berakhir -->
         <div v-if="share.status === 'BERAKHIR'" class="mt-4 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
           <p class="text-sm font-medium text-red-800 dark:text-red-300">Akses Berakhir</p>
@@ -158,6 +178,7 @@ watch(isOpen, (val) => {
             <span v-if="share.revokedReason"> — {{ share.revokedReason }}</span>
           </p>
         </div>
+
       </div>
 
       <!-- Footer -->

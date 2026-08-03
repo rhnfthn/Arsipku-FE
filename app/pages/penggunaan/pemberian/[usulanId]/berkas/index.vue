@@ -4,9 +4,10 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User, Key } from 'lucide-vue-next';
+import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User, Key, RotateCw } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
+import { downloadCsv } from '~/utils/csv-export';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Berkas yang Diberikan' });
@@ -33,15 +34,54 @@ const perPage = ref(10);
 const currentPage = ref(1);
 const total = ref(0);
 
+// Multiple berkas support
+const berkasItems = ref<any[]>([]);
+const activeBerkasId = ref<string | null>(null);
+
 const openRowsPerPage = ref(false);
+const isRefreshing = ref(false);
+const isExporting = ref(false);
 function toggleRowsPerPage() { openRowsPerPage.value = !openRowsPerPage.value; }
-function selectRowsPerPage(n: number) { perPage.value = n; openRowsPerPage.value = false; currentPage.value = 1; loadNaskah(); }
+function selectRowsPerPage(n: number) { perPage.value = n; openRowsPerPage.value = false; currentPage.value = 1; }
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const els = document.querySelectorAll('[data-custom-dropdown]');
   for (const el of Array.from(els)) { if (el.contains(target)) return; }
   openRowsPerPage.value = false;
 }
+
+const handleRefresh = async () => {
+  isRefreshing.value = true;
+  try {
+    await loadAll();
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
+const exportData = () => {
+  if (filteredNaskah.value.length === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const headers = ['Perihal', 'Tipe', 'Nomor Surat', 'Tanggal'];
+    const csvRows = filteredNaskah.value.map((n: any) => [
+      n.perihal || '(Tanpa perihal)',
+      n.naskahTipe || '-',
+      n.nomorSurat || '-',
+      formatDate(n.tanggalNaskah),
+    ]);
+    downloadCsv(`naskah-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+  } catch (e) {
+    console.error('Gagal export:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
@@ -67,20 +107,38 @@ const loadAll = async () => {
   try {
     // 1. Fetch usulan detail untuk dapat selectedBerkas
     await fetchDetail(usulanId.value);
-    const berkasItems = (usulanDetail.value as any)?.selectedBerkas || [];
-    if (berkasItems.length === 0) {
+    const items = (usulanDetail.value as any)?.selectedBerkas || [];
+    if (items.length === 0) {
       toast.add({ title: 'Tidak Ada Berkas', description: 'Usulan ini belum memiliki berkas.', color: 'error' });
       return;
     }
 
-    // 2. Fetch detail berkas pertama (atau semua — untuk simplicity ambil pertama)
-    const firstBerkasId = berkasItems[0].berkasId;
-    berkasDetail.value = await fetchBerkasDetail(firstBerkasId);
+    // 2. Simpan semua berkas items untuk selector
+    berkasItems.value = items;
+    activeBerkasId.value = items[0].berkasId;
 
-    // 3. Load naskah di dalam berkas
-    await loadNaskah(firstBerkasId);
+    // 3. Fetch detail berkas pertama
+    berkasDetail.value = await fetchBerkasDetail(items[0].berkasId);
+
+    // 4. Load naskah di dalam berkas
+    await loadNaskah(items[0].berkasId);
   } catch (err: any) {
     toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
+  }
+};
+
+const switchBerkas = async (berkasId: string) => {
+  activeBerkasId.value = berkasId;
+  currentPage.value = 1;
+  search.value = '';
+  naskahLoading.value = true;
+  try {
+    berkasDetail.value = await fetchBerkasDetail(berkasId);
+    await loadNaskah(berkasId);
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
+  } finally {
+    naskahLoading.value = false;
   }
 };
 
@@ -103,10 +161,6 @@ const openNaskah = (row: any) => {
 };
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-watch(search, () => {
-  if (searchTimeout) clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => { currentPage.value = 1; }, 400);
-});
 
 const filteredNaskah = computed(() => {
   if (!search.value.trim()) return naskahList.value;
@@ -114,6 +168,19 @@ const filteredNaskah = computed(() => {
   return naskahList.value.filter(
     (n) => (n.perihal || '').toLowerCase().includes(q) || (n.nomorSurat || '').toLowerCase().includes(q),
   );
+});
+
+// Pagination: slice filteredNaskah berdasarkan currentPage dan perPage
+const totalPages = computed(() => Math.ceil(filteredNaskah.value.length / perPage.value) || 1);
+
+const paginatedNaskah = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  return filteredNaskah.value.slice(start, start + perPage.value);
+});
+
+watch(search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => { currentPage.value = 1; }, 400);
 });
 
 onMounted(() => {
@@ -207,6 +274,27 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <!-- Berkas Selector (jika ada multiple berkas) -->
+      <div v-if="berkasItems.length > 1" class="mt-5 flex items-center gap-3">
+        <span class="text-xs font-medium uppercase text-gray-500">Berkas:</span>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="b in berkasItems"
+            :key="b.berkasId"
+            type="button"
+            @click="switchBerkas(b.berkasId)"
+            :class="[
+              'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border',
+              activeBerkasId === b.berkasId
+                ? 'border-primary bg-primary/10 text-primary dark:text-primary-400'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
+            ]"
+          >
+            {{ b.judulBerkas || b.berkasId }}
+          </button>
+        </div>
+      </div>
+
       <!-- Info Berkas Section -->
       <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
@@ -274,9 +362,37 @@ onBeforeUnmount(() => {
                 class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition" />
             </div>
           </div>
+          <!-- Action buttons -->
+          <div class="flex shrink-0 items-center gap-2">
+            <!-- Refresh -->
+            <button
+              @click="handleRefresh"
+              :disabled="isRefreshing"
+              class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Refresh"
+              aria-label="Refresh"
+            >
+              <RotateCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
+              Refresh
+            </button>
+            <!-- Export -->
+            <button
+              @click="exportData"
+              :disabled="isExporting"
+              class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <UIcon
+                v-if="isExporting"
+                name="i-lucide-loader-circle"
+                class="w-3.5 h-3.5 animate-spin"
+              />
+              <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+              Export
+            </button>
+          </div>
         </div>
 
-        <DataTable :columns="columns" :rows="filteredNaskah" :loading="naskahLoading"
+        <DataTable :columns="columns" :rows="paginatedNaskah" :loading="naskahLoading"
           header-class="bg-primary dark:bg-primary-700 text-white text-left"
           body-class="divide-y divide-gray-100 dark:divide-gray-700"
           row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -304,6 +420,13 @@ onBeforeUnmount(() => {
             </button>
           </template>
         </DataTable>
+
+        <!-- Pagination -->
+        <DataPagination
+          v-model:current-page="currentPage"
+          :total-items="filteredNaskah.length"
+          :per-page="perPage"
+        />
       </div>
     </template>
   </div>
