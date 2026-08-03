@@ -725,7 +725,26 @@ onMounted(async () => {
     // Verifikator hanya boleh atasan managerial pengaju (rantai parent strict:
     // AVP/VP/EVP/Direktur di garis pelaporan) — GET /org-data/atasan-managerial/:positionId
     if (!user.value) await getProfile();
-    const positionId = Number(user.value?.position);
+    // KHUSUS delegasi SE (Sekretaris): user.position adalah jabatan yang
+    // didelegasikan (mis. EVP), BUKAN jabatan asli pengaju. Verifikator harus
+    // diambil dari jabatan ASLI pengaju (Annisa) di divisinya, jadi resolve
+    // jabatan asli via persnum (persnum selalu milik pengguna asli di JWT).
+    // Untuk delegasi lain (PT/PH/PS/VI) tetap pakai jabatan yang didelegasikan.
+    let positionId = Number(user.value?.position);
+    if (user.value?.position_status === 'SE') {
+      try {
+        const myPos: any = await apiGet(
+          `/org-data/my-position?persnum=${user.value.persnum}`
+        );
+        const row = myPos?.data ?? myPos;
+        if (row?.position) positionId = Number(row.position);
+      } catch (e) {
+        console.warn(
+          '[tutup] Gagal resolve posisi asli, fallback ke posisi delegasi:',
+          e
+        );
+      }
+    }
     const atasanRes: any = await apiGet(`/org-data/atasan-managerial/${positionId}`);
     const atasans: any[] = Array.isArray(atasanRes?.data) ? atasanRes.data : [];
     verifikatorOptions.value = atasans.map((r: any) => ({
