@@ -13,6 +13,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'revoke-recipient', payload: { share: ShareItem; recipientId: string; recipientName: string }): void;
+  (e: 'revoke-all', share: ShareItem): void;
 }>();
 
 const isOpen = ref(true);
@@ -161,7 +162,17 @@ watch(isOpen, (val) => {
       </div>
 
       <!-- Footer -->
-      <div class="flex justify-end px-5 py-3 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex justify-between px-5 py-3 border-t border-gray-200 dark:border-gray-700">
+        <!-- Cabut Semua Akses (hanya untuk pengirim, share masih AKTIF) -->
+        <button
+          v-if="props.isSender && share.status === 'AKTIF'"
+          @click="emit('revoke-all', share)"
+          class="px-4 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition inline-flex items-center gap-1.5"
+        >
+          <ShieldOff class="w-3.5 h-3.5" />
+          Cabut Semua Akses
+        </button>
+        <span v-else></span>
         <button
           @click="handleClose"
           class="px-4 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"

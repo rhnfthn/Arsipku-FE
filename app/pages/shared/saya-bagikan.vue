@@ -140,6 +140,26 @@ const handleViewDetail = async (share: any) => {
 
 const handleRevoked = () => loadData();
 
+const handleRevokeAll = async (share: any) => {
+  try {
+    const { revokeShare } = useNaskahShare();
+    await revokeShare(share.id);
+    useToast().add({
+      title: 'Berhasil',
+      description: 'Semua akses share berhasil diakhiri',
+      color: 'success',
+    });
+    showDetailModal.value = false;
+    loadData();
+  } catch (err: any) {
+    useToast().add({
+      title: 'Gagal',
+      description: err?.response?.data?.message || err?.message || 'Gagal mencabut akses',
+      color: 'error',
+    });
+  }
+};
+
 const handleOpenPdf = async (share: any) => {
   isLoadingPdf.value = true;
   pdfViewerTitle.value = share.naskahPerihal || 'Dokumen';
@@ -345,6 +365,7 @@ onMounted(() => { loadData(); });
       :is-sender="true"
       @close="showDetailModal = false"
       @revoke-recipient="handleRevoke"
+      @revoke-all="handleRevokeAll"
     />
 
     <!-- PDF Viewer Full Page -->
