@@ -314,17 +314,6 @@
         <div v-if="activeTab === 'unit-tu'">
           <!-- Komponen Unit TU (CRUD assignment organization_tu) -->
           <UnitTuTab />
-
-          <!-- Pindah Profile Unit Dokumen (hanya untuk user dengan delegasi unit_dokumen) -->
-          <div class="p-6">
-            <PindahProfileCard
-              v-if="hasUnitDokumenDelegation"
-              profile-value="unit_dokumen"
-              profile-label="Unit Dokumen"
-              profile-badge="Unit Dokumen"
-              profile-description="Beralih ke profile Unit Dokumen"
-            />
-          </div>
         </div>
       </div>
     </div>
@@ -393,7 +382,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
@@ -405,42 +394,12 @@ definePageMeta({ middleware: "auth" });
 const { t } = useI18n();
 
 const { hasPermission, isSuperadmin, user } = useAuth();
-const { checkUser } = useOrganizationTu();
 
 const canViewKonfigurasi = computed(() => hasPermission('konfigurasi', 'read'));
-
-// Deteksi delegasi unit_dokumen.
-// Prioritas: dari JWT tuRoles (cepat), fallback: query endpoint check-user (akurat).
-const hasUnitDokumenDelegation = ref(false);
-
-const detectUnitDokumenDelegation = async () => {
-  if (!user.value?.persnum) return;
-  // 1. Cek dari JWT tuRoles dulu (jika sudah ada).
-  const roles = user.value?.tuRoles;
-  if (Array.isArray(roles) && roles.includes('tu')) {
-    hasUnitDokumenDelegation.value = true;
-    return;
-  }
-  // 2. Fallback: query endpoint check-user untuk akurasi (JWT lama belum punya tuRoles).
-  try {
-    const result = await checkUser(user.value.persnum);
-    if (result?.has_unit_dokumen) {
-      hasUnitDokumenDelegation.value = true;
-    }
-  } catch (e) {
-    console.error('[konfigurasi-sistem] detectUnitDokumenDelegation error:', e);
-  }
-};
 
 onMounted(() => {
   fetchDigsig();
   fetchMessages(true);
-  detectUnitDokumenDelegation();
-});
-
-// Re-detect saat user value berubah (mis. setelah getProfile selesai).
-watch(() => user.value?.persnum, (newPersnum) => {
-  if (newPersnum) detectUnitDokumenDelegation();
 });
 
 // ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────

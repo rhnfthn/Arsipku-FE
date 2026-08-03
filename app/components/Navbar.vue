@@ -221,7 +221,7 @@
                   size="xs"
                   variant="subtle"
                   color="primary"
-                  class="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize leading-none"
+                  class="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize leading-none whitespace-nowrap"
                 >
                   {{ item.uiBadge }}
                 </UBadge>
@@ -242,6 +242,30 @@
                 <UIcon name="i-lucide-map-pin" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500" />
                 <span class="truncate">{{ item.uiArea }}</span>
               </div>
+            </div>
+          </div>
+        </template>
+
+        <template #profile-item="{ item }: { item: any }">
+          <div class="flex items-center justify-between w-full gap-3">
+            <span class="text-sm text-gray-900 dark:text-gray-100 truncate">
+              {{ item.label }}
+            </span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <UBadge
+                v-if="item.uiBadge"
+                size="xs"
+                variant="subtle"
+                color="primary"
+                class="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize leading-none"
+              >
+                {{ item.uiBadge }}
+              </UBadge>
+              <UIcon
+                v-if="item.isActive"
+                name="i-heroicons-check-circle-20-solid"
+                class="w-4 h-4 text-primary-600 dark:text-primary-400"
+              />
             </div>
           </div>
         </template>
@@ -954,6 +978,7 @@ import type { DropdownMenuItem } from '#ui/types';
 // --- INIT COMPOSABLES ---
 const { user, getProfile, logout, hasPermission, hasRole } = useAuth();
 const { getAvailableRoles, switchRole } = useDelegasi();
+const { checkUser } = useOrganizationTu();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
@@ -1625,11 +1650,105 @@ const fetchDelegationRoles = async () => {
   }
 };
 
+// ─── Pindah Profile (Sekretaris + Unit Dokumen) ───────────────────────────────
+// Deteksi delegasi: dari JWT tuRoles (cepat), fallback checkUser endpoint (akurat).
+// Dideklarasikan SEBELUM watch(user) agar bisa dipanggil dari watcher immediate.
+const hasUnitDokumenDelegation = ref(false);
+const hasSecretaryDelegation = ref(false);
+// Simpan data assignment untuk label jabatan/lokasi.
+const unitDokumenAssignment = ref<any>(null);
+const sekretarisAssignment = ref<any>(null);
+
+// Label jabatan untuk card profile.
+// Sekretaris: "{jabatan_delegator} - Sekretaris" (dari delegasi SE) atau fallback.
+// Unit Dokumen: "{jabatan_delegator} - Unit Dokumen" atau fallback jabatan asli user.
+const sekretarisPositionLabel = computed(() => {
+  // Cek dari delegationRoles (delegasi SE) — ambil jabatan delegator.
+  const seDelegasi = (delegationRoles.value || []).find(
+    (r: any) => r?.delegated_role?.position_status === 'SE'
+  );
+  if (seDelegasi?.delegated_from?.position_text) {
+    return `${seDelegasi.delegated_from.position_text} - Sekretaris`;
+  }
+  // Fallback dari organization_tu assignment.
+  if (sekretarisAssignment.value?.organization_text) {
+    return `${sekretarisAssignment.value.organization_text} - Sekretaris`;
+  }
+  return 'Sekretaris';
+});
+const unitDokumenPositionLabel = computed(() => {
+  // Dari organization_tu assignment — ambil organization_text sebagai jabatan.
+  if (unitDokumenAssignment.value?.organization_text) {
+    return `${unitDokumenAssignment.value.organization_text} - Unit Dokumen`;
+  }
+  // Fallback: jabatan asli user + "Unit Dokumen".
+  if (user.value?.positionText) {
+    return `${user.value.positionText} - Unit Dokumen`;
+  }
+  return 'Unit Dokumen';
+});
+
+const detectUnitDokumenDelegation = async () => {
+  if (!user.value?.persnum) return;
+  // 1. Cek dari JWT tuRoles dulu.
+  const roles = user.value?.tuRoles;
+  if (Array.isArray(roles)) {
+    if (roles.includes('tu')) hasUnitDokumenDelegation.value = true;
+    if (roles.includes('sekretaris')) hasSecretaryDelegation.value = true;
+  }
+  // 2. Fallback: query endpoint check-user (akurat, untuk JWT lama).
+  try {
+    const result = await checkUser(user.value.persnum) as any;
+    if (result?.has_unit_dokumen) {
+      hasUnitDokumenDelegation.value = true;
+      // Simpan assignment unit_dokumen untuk label.
+      const assignment = (result?.active_assignments || []).find(
+        (a: any) => a.role === 'unit_dokumen'
+      );
+      if (assignment) unitDokumenAssignment.value = assignment;
+    }
+    if (result?.has_sekretaris_delegasi) {
+      hasSecretaryDelegation.value = true;
+      // Simpan assignment sekretaris untuk label.
+      const assignment = (result?.active_assignments || []).find(
+        (a: any) => a.role === 'sekretaris_delegasi'
+      );
+      if (assignment) sekretarisAssignment.value = assignment;
+    }
+  } catch (e) {
+    console.error('[Navbar] detectUnitDokumenDelegation error:', e);
+  }
+};
+
+// Baca active_profile dari localStorage (sumber utama), default 'akun_asli'.
+const readStoredProfile = (): 'akun_asli' | 'unit_dokumen' | 'sekretaris' => {
+  if (process.client) {
+    const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (stored === 'akun_asli' || stored === 'unit_dokumen' || stored === 'sekretaris') return stored;
+  }
+  return 'akun_asli';
+};
+const currentProfile = ref(readStoredProfile());
+
+const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris') => {
+  if (profile === currentProfile.value) return;
+  if (process.client) {
+    localStorage.setItem('active_profile', profile);
+    localStorage.setItem('arsipku_active_profile', profile);
+    window.dispatchEvent(new Event('active_profile_changed'));
+    window.dispatchEvent(new Event('profile-changed'));
+    currentProfile.value = profile;
+    // Reload agar sidebar & menu update konsisten.
+    window.location.reload();
+  }
+};
+
 watch(
   user,
   (newUser) => {
     if (!newUser) return;
     fetchDelegationRoles();
+    detectUnitDokumenDelegation();
     // Capture the original (YBS) role only when NOT delegated — use the
     // authoritative position_status (Spec A), not the activeDelegationId
     // localStorage proxy (racy: initActiveState runs in onMounted, which may
@@ -1802,15 +1921,15 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   const mainAccountItem = {
     uiName: user.value?.nama || 'User',
-    uiBadge: hasDelegationData ? 'Akun Asli' : (user.value?.role || 'User'),
+    uiBadge: user.value?.role || 'User',
     uiPosition: originalRoleLabel.value,
     uiArea: user.value?.areaText || user.value?.companyText || '',
     label: originalRoleLabel.value,
     slot: 'delegation-item',
-    isActive: isMainAccountActive,
-    disabled: !hasDelegationData,
-    click: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined,
-    onSelect: hasDelegationData ? () => handleSwitchRole({ type: 'reset' }) : undefined
+    isActive: currentProfile.value === 'akun_asli',
+    disabled: false,
+    click: () => handleSwitchProfile('akun_asli'),
+    onSelect: () => handleSwitchProfile('akun_asli')
   };
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
@@ -1828,8 +1947,42 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     };
   });
 
+  // Profile cards: Akun Asli + delegasi (Sekretaris/Unit Dokumen) dalam satu group.
+  // Tidak ada label "PINDAH PROFILE" — langsung card berturut-turut.
+  const profileCards: any[] = [mainAccountItem, ...delegasiItems];
+
+  // Tambahkan card Sekretaris jika punya delegasi sekretaris (bukan dari delegasi SE biasa).
+  if (hasSecretaryDelegation.value) {
+    profileCards.push({
+      uiName: user.value?.nama || 'User',
+      uiBadge: 'Sekretaris',
+      uiPosition: sekretarisPositionLabel.value,
+      uiArea: user.value?.areaText || user.value?.companyText || '',
+      label: 'Sekretaris',
+      slot: 'delegation-item',
+      isActive: currentProfile.value === 'sekretaris',
+      click: () => handleSwitchProfile('sekretaris'),
+      onSelect: () => handleSwitchProfile('sekretaris'),
+    });
+  }
+
+  // Tambahkan card Unit Dokumen jika punya delegasi unit_dokumen.
+  if (hasUnitDokumenDelegation.value) {
+    profileCards.push({
+      uiName: user.value?.nama || 'User',
+      uiBadge: 'Unit Dokumen',
+      uiPosition: unitDokumenPositionLabel.value,
+      uiArea: user.value?.areaText || user.value?.companyText || '',
+      label: 'Unit Dokumen',
+      slot: 'delegation-item',
+      isActive: currentProfile.value === 'unit_dokumen',
+      click: () => handleSwitchProfile('unit_dokumen'),
+      onSelect: () => handleSwitchProfile('unit_dokumen'),
+    });
+  }
+
   return [
-    [mainAccountItem, ...delegasiItems],
+    profileCards,
     [
       {
         label: 'Profil & Pengaturan AI',
