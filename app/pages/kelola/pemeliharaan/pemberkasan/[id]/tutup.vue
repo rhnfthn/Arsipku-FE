@@ -418,7 +418,11 @@
             v-if="!canSubmit && ['aktif', 'ditolak'].includes(berkas?.status)"
             class="mt-3 text-center text-xs text-amber-600 dark:text-amber-400"
           >
-            Pilih minimal satu verifikator yang berbeda.
+            {{
+              naskahTotal < 1
+                ? 'Berkas belum memiliki naskah. Tambahkan minimal 1 naskah sebelum mengajukan penutupan.'
+                : 'Pilih minimal satu verifikator yang berbeda.'
+            }}
           </p>
           <p
             v-else-if="berkas?.status === 'menunggu_verifikasi'"
@@ -484,6 +488,7 @@ const selectedPersnums = computed(() =>
 const canSubmit = computed(
   () =>
     ['aktif', 'ditolak'].includes(berkas.value?.status) &&
+    naskahTotal.value >= 1 &&
     verifikatorList.value.every((v) => v.verifikator_persnum) &&
     new Set(selectedPersnums.value).size === selectedPersnums.value.length
 );
