@@ -271,7 +271,7 @@ onBeforeUnmount(() => {
     <div class="mb-5">
       <PageHeader :items="breadcrumbs">
         <template #title>
-          <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+          <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             Pemberian Akses Berkas
           </h1>
         </template>
