@@ -481,6 +481,21 @@ const isAccessExpired = computed(() => {
   return new Date(end).getTime() < Date.now();
 });
 
+// True jika berkas bisa dilihat (tombol Naskah tampil):
+// - Sudah diterbitkan (AKSES_DITERBITKAN) & durasi masih berlaku → pengusul/penerima akses bisa lihat
+// - ATAU user adalah verifikator pemberi yang sedang aktif (status menunggu persetujuan pemberi)
+// - ATAU user adalah SE pemberi yang sedang memilih berkas / menerima revisi
+const isBerkasViewable = computed(() => {
+  if (!usulanDetail.value || !usulanDetail.value.selectedBerkas?.length) return false;
+  // Case 1: Sudah diterbitkan dan belum expired
+  if (usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired.value) return true;
+  // Case 2: User adalah verifikator pemberi yang sedang aktif
+  if (isVerifikatorPemberiAktif.value) return true;
+  // Case 3: User adalah SE pemberi — bisa lihat naskah saat pemilihan berkas / revisi
+  if (isSekretarisPemberi.value) return true;
+  return false;
+});
+
 // ── Timeline: gabungkan step "Dibuat" + verification steps ──
 // Catatan hanya bisa dilihat oleh pembuat catatan (verifierPersnum) dan pengusul.
 interface TimelineEntry {
@@ -1321,14 +1336,14 @@ onBeforeUnmount(() => {
                     <span>{{ b.klasifikasiTeks || '-' }}</span>
                   </p>
                 </div>
-                <!-- Tombol buka naskah — hanya jika akses sudah diberikan (AKSES_DITERBITKAN)
-                 dan belum lewat tanggal selesai (durasi masih berlaku) -->
+                <!-- Tombol buka naskah — tampil jika berkas sudah dipilih
+                 (status selain sebelum pemilihan berkas) -->
                 <button
-                  v-if="usulanDetail.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired"
+                  v-if="isBerkasViewable"
                   type="button"
                   @click="navigateTo(`/penggunaan/pemberian/${usulanDetail.id}/berkas`)"
                   class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
-                  title="Buka naskah di berkas ini"
+                  title="Lihat naskah di berkas ini"
                 >
                   <UIcon name="i-lucide-file-text" class="size-4" />
                   <span class="hidden sm:inline">Naskah</span>

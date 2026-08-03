@@ -1612,6 +1612,19 @@ const activeDelegationId = ref<string | null>(null);
 const initActiveState = () => {
   if (process.client) {
     activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
+    // Sinkronkan active_profile dengan position_status user (dari JWT).
+    // Jika user sedang delegated sebagai SE (Sekretaris) → 'sekretaris',
+    // selain itu → 'akun_asli'. Ini memastikan sidebar menampilkan menu Kelola
+    // dengan benar setelah reload.
+    const posStatus = user.value?.position_status;
+    if (posStatus === 'SE') {
+      localStorage.setItem('active_profile', 'sekretaris');
+      localStorage.setItem('arsipku_active_profile', 'sekretaris');
+    } else if (!activeDelegationId.value) {
+      // Tidak ada delegasi aktif → akun asli.
+      localStorage.setItem('active_profile', 'akun_asli');
+      localStorage.setItem('arsipku_active_profile', 'akun_asli');
+    }
   }
 };
 
@@ -1664,10 +1677,22 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
         localStorage.setItem('arsipku_active_delegation_id', target.id);
         if (res.data?.user?.role)
           localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
+        // Sinkronkan active_profile: delegasi SE (Sekretaris) → 'sekretaris',
+        // delegasi lain (VI/PT/dll) → tetap 'akun_asli' (bukan sekretaris).
+        const newPosStatus = res.data?.user?.position_status;
+        const profile = newPosStatus === 'SE' ? 'sekretaris' : 'akun_asli';
+        localStorage.setItem('active_profile', profile);
+        localStorage.setItem('arsipku_active_profile', profile);
       } else {
         localStorage.removeItem('arsipku_active_delegation_id');
         localStorage.removeItem('arsipku_active_delegation_role');
+        // Reset ke akun asli → profile 'akun_asli'.
+        localStorage.setItem('active_profile', 'akun_asli');
+        localStorage.setItem('arsipku_active_profile', 'akun_asli');
       }
+      // Beri tahu sidebar agar update tanpa reload manual.
+      window.dispatchEvent(new Event('active_profile_changed'));
+      window.dispatchEvent(new Event('profile-changed'));
       localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.');
       window.location.reload();
     } else {
@@ -1689,6 +1714,8 @@ const confirmLogout = async () => {
     localStorage.removeItem('arsipku_original_position');
     localStorage.removeItem('arsipku_active_delegation_id');
     localStorage.removeItem('arsipku_active_delegation_role');
+    localStorage.removeItem('active_profile');
+    localStorage.removeItem('arsipku_active_profile');
   }
   isLoggingOut.value = true;
   await logout();
@@ -1815,10 +1842,23 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
     const details = role.delegated_role || {};
+    const from = role.delegated_from || {};
+    // Untuk delegasi SE (Sekretaris), tampilkan jabatan delegator + "Sekretaris".
+    // Contoh: "EVP of Air Navigation Services - Sekretaris".
+    // Untuk delegasi lain, tampilkan position_text delegasi seperti biasa.
+    let uiPosition = details.position_text || 'Jabatan Tidak Tersedia';
+    if (details.position_status === 'SE') {
+      const delegatorPosition = from.position_text;
+      if (delegatorPosition) {
+        uiPosition = `${delegatorPosition} - Sekretaris`;
+      } else {
+        uiPosition = 'Sekretaris';
+      }
+    }
     return {
       uiName: details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
-      uiPosition: details.position_text || 'Jabatan Tidak Tersedia',
+      uiPosition,
       uiArea: details.area_text || details.company_text || '',
       label: details.position_text || 'Delegasi',
       slot: 'delegation-item',
