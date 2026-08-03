@@ -404,17 +404,14 @@ const isTuRole = computed(() => tuRoles.value.includes('tu'));
 const isSekretarisRole = computed(() => tuRoles.value.includes('sekretaris'));
 
 // Deteksi delegasi: user punya role sekretaris ATAU unit_dokumen (tu).
-const hasDelegationProfile = computed(() => {
-  const result = isSekretarisRole.value || isTuRole.value || !!user.value?.has_secretary_delegation;
-  console.log('[Sidebar] hasDelegationProfile:', { isSekretarisRole: isSekretarisRole.value, isTuRole: isTuRole.value, has_secretary_delegation: user.value?.has_secretary_delegation, result });
-  return result;
-});
+const hasDelegationProfile = computed(
+  () => isSekretarisRole.value || isTuRole.value || !!user.value?.has_secretary_delegation
+);
 
 // Baca active_profile dari localStorage (sumber utama), default 'akun_asli'.
 const readStoredProfile = () => {
   if (process.client) {
     const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
-    console.log('[Sidebar] readStoredProfile:', { active_profile: localStorage.getItem('active_profile'), arsipku_active_profile: localStorage.getItem('arsipku_active_profile'), resolved: stored });
     if (stored === 'akun_asli' || stored === 'sekretaris' || stored === 'unit_dokumen') return stored;
   }
   return 'akun_asli';
@@ -435,11 +432,9 @@ const activeProfile = computed(() => {
 
 // Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
 // ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
-const showKelolaMenu = computed(() => {
-  const result = !hasDelegationProfile.value || activeProfile.value === 'sekretaris' || activeProfile.value === 'unit_dokumen';
-  console.log('[Sidebar] showKelolaMenu:', { hasDelegationProfile: hasDelegationProfile.value, activeProfile: activeProfile.value, isTuRole: isTuRole.value, isSekretarisRole: isSekretarisRole.value, tuRoles: tuRoles.value, result });
-  return result;
-});
+const showKelolaMenu = computed(
+  () => !hasDelegationProfile.value || activeProfile.value === 'sekretaris' || activeProfile.value === 'unit_dokumen'
+);
 
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
 // Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
@@ -639,7 +634,7 @@ const userMenuUtama = computed(() => [
   },
   {
     label: t('berbagi', 'Berbagi'),
-    icon: 'i-heroicons-share',
+    icon: 'i-lucide-share-2',
     permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
@@ -801,7 +796,7 @@ const adminMenuUtama = computed(() => [
   },
   {
     label: t('berbagi', 'Berbagi'),
-    icon: 'i-heroicons-share',
+    icon: 'i-lucide-share-2',
     permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },

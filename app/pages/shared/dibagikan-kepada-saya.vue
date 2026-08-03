@@ -2,6 +2,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { RotateCcw, ChevronDown, Search } from 'lucide-vue-next';
 import SharedToMeTab from '~/components/shared/SharedToMeTab.vue';
+import { downloadCsv } from '~/utils/csv-export';
+import { formatShortDate } from '~/utils/mail-helpers';
 
 definePageMeta({
   layout: 'default',
@@ -10,6 +12,7 @@ definePageMeta({
 
 useHead({ title: 'Dibagikan Kepada Saya' });
 const { t } = useI18n();
+const { user } = useAuth();
 
 const {
   sharedToMe,
@@ -23,7 +26,7 @@ const {
 // ── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Berbagi', to: '/shared/saya-bagikan' },
+  { label: 'Berbagi', to: '#' },
   { label: 'Dibagikan Kepada Saya', to: '#' },
 ]);
 
@@ -102,6 +105,49 @@ watch(searchQuery, () => {
 // ── Handlers ─────────────────────────────────────────────────────────────────
 const handleRefresh = () => loadData();
 
+const isExporting = ref(false);
+const exportData = async () => {
+  if (pagination.total === 0) {
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    // Fetch SEMUA data (bukan hanya halaman saat ini) dengan filter yang sama
+    await fetchShares({
+      tab: 'shared-to-me',
+      page: 1,
+      limit: pagination.total || 9999,
+      search: searchQuery.value || undefined,
+      status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
+      sort: activeSortLabel.value === 'Terlama' ? 'ASC' : 'DESC',
+    });
+    const rows = sharedToMe.value;
+    if (!rows.length) {
+      useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      return;
+    }
+    const headers = ['Perihal', 'Jenis', 'Nomor', 'Dari', 'Akses', 'Tanggal'];
+    const csvRows = rows.map((s: any) => [
+      s.naskahPerihal || '(Tanpa perihal)',
+      s.naskahJenis || '-',
+      s.naskahNomor || '-',
+      s.pemberiNama || '-',
+      s.accessType === 'SEKALI_LIHAT' ? 'Sekali Lihat' : `${s.durationDays || '-'} hari`,
+      formatShortDate(s.createdAt),
+    ]);
+    downloadCsv(`dibagikan-kepada-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    useToast().add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+    // Reload halaman saat ini
+    await loadData();
+  } catch (e) {
+    console.error('Gagal export:', e);
+    useToast().add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
+
 const selectSortOption = (v: string) => {
   activeSortLabel.value = v;
   showSortMenu.value = false;
@@ -124,15 +170,6 @@ const handleViewDetail = async (share: any) => {
   showDetailModal.value = true;
 };
 
-const handleOpenShare = async (share: any) => {
-  try {
-    const freshData = await getShareDetail(share.id);
-    detailShare.value = freshData || share;
-  } catch {
-    detailShare.value = share;
-  }
-  showDetailModal.value = true;
-};
 
 const handleOpenPdf = async (share: any) => {
   isLoadingPdf.value = true;
@@ -186,7 +223,7 @@ onMounted(() => { loadData(); });
               <button
                 type="button"
                 @click.stop="showPageMenu = !showPageMenu"
-                class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+                class="flex min-w-[70px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
                 <span>{{ itemsPerPage }}</span>
                 <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showPageMenu }" />
@@ -220,7 +257,7 @@ onMounted(() => { loadData(); });
             <button
               type="button"
               @click.stop="showStatusDropdown = !showStatusDropdown"
-              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[130px] justify-between hover:border-primary transition-all"
+              class="flex min-w-[130px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               <span>{{ filterStatusLabel }}</span>
               <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showStatusDropdown }" />
@@ -267,7 +304,7 @@ onMounted(() => { loadData(); });
             <button
               type="button"
               @click.stop="showSortMenu = !showSortMenu"
-              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[100px] justify-between hover:border-primary transition-all"
+              class="flex min-w-[100px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               <span>{{ activeSortLabel }}</span>
               <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showSortMenu }" />
@@ -304,6 +341,21 @@ onMounted(() => { loadData(); });
             <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
             Refresh
           </button>
+
+          <!-- EXPORT BUTTON -->
+          <button
+            @click="exportData"
+            :disabled="isExporting"
+            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <UIcon
+              v-if="isExporting"
+              name="i-lucide-loader-circle"
+              class="w-4 h-4 animate-spin"
+            />
+            <UIcon v-else name="i-lucide-download" class="w-4 h-4" />
+            Export
+          </button>
         </div>
       </div>
 
@@ -315,8 +367,8 @@ onMounted(() => { loadData(); });
           :total="pagination.total"
           :page="currentPage"
           :limit="itemsPerPage"
+          :user-position="user?.position"
           @update:page="currentPage = $event"
-          @open="handleOpenShare"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
           @refresh="handleRefresh"
@@ -328,6 +380,7 @@ onMounted(() => { loadData(); });
     <SharedShareDetailModal
       v-if="showDetailModal && detailShare"
       :share="detailShare"
+      :user-position="user?.position"
       @close="showDetailModal = false"
     />
 

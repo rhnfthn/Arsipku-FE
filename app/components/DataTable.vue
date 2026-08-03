@@ -86,10 +86,10 @@ withDefaults(
     skeletonRows: 5,
     emptyMessage: 'Tidak ada data yang cocok dengan pencarian.',
     sortDir: 'asc',
-    headerClass: 'bg-primary-400 dark:bg-primary-700 text-white text-left',
+    headerClass: 'bg-primary dark:bg-primary-700 text-white text-left',
     bodyClass: '',
     rowClass:
-      'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
+      'border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors',
   }
 );
 

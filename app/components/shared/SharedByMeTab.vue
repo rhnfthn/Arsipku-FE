@@ -27,9 +27,14 @@ const columns = computed(() => [
   { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'status', label: 'Status', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
-  { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
+  { key: 'aksi', label: 'Action', headerClass: 'text-center', class: 'text-center' },
 ]);
 
+// Status gabungan: Aktif / Berakhir
+const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
+  if (share.status === 'BERAKHIR') return 'BERAKHIR';
+  return 'AKTIF';
+};
 
 </script>
 
@@ -107,7 +112,7 @@ const columns = computed(() => [
       </template>
 
       <template #cell-status="{ row }">
-        <SharedShareBadge :status="row.status" size="xs" />
+        <SharedShareBadge :status="getDisplayStatus(row as ShareItem)" size="xs" />
       </template>
 
       <template #cell-createdAt="{ row }">
@@ -124,7 +129,7 @@ const columns = computed(() => [
               color="primary"
               variant="ghost"
               size="xs"
-              @click="emit('view', row)"
+              @click="emit('view', row as ShareItem)"
             />
           </UTooltip>
           <UTooltip text="Buka PDF">
@@ -133,7 +138,7 @@ const columns = computed(() => [
               color="success"
               variant="ghost"
               size="xs"
-              @click="emit('open-pdf', row)"
+              @click="emit('open-pdf', row as ShareItem)"
             />
           </UTooltip>
         </div>

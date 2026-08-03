@@ -106,9 +106,16 @@ export function useNaskahShare() {
     catatan?: string,
     accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU',
     durationDays?: number,
+    naskahIds?: string[],
   ) => {
     try {
-      const payload: any = { naskahId, recipientIds, catatan: catatan || undefined };
+      const payload: any = { recipientIds, catatan: catatan || undefined };
+      // Multi-naskah: kirim naskahIds; single: kirim naskahId (backward compat)
+      if (naskahIds?.length) {
+        payload.naskahIds = naskahIds;
+      } else {
+        payload.naskahId = naskahId;
+      }
       if (accessType) payload.accessType = accessType;
       if (accessType === 'RENTANG_WAKTU' && durationDays) payload.durationDays = durationDays;
       const res = await apiPost<{
@@ -116,7 +123,7 @@ export function useNaskahShare() {
         data: any;
         message: string;
       }>('/naskah-share', payload);
-      clearApiCache('/naskah-share');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useNaskahShare] createShare error:', err);
@@ -131,7 +138,7 @@ export function useNaskahShare() {
       const res = await apiDelete<{
         success: boolean; message: string; data: any;
       }>(`/naskah-share/${shareId}/recipients/${recipientId}${reasonParam}`);
-      clearApiCache('/naskah-share');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useNaskahShare] revokeRecipient error:', err);
@@ -148,7 +155,7 @@ export function useNaskahShare() {
         message: string;
         data: any;
       }>(`/naskah-share/${shareId}${reasonParam}`);
-      clearApiCache('/naskah-share');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useNaskahShare] revokeShare error:', err);
@@ -224,6 +231,8 @@ export function useNaskahShare() {
     try {
       const res = await apiGet<{ success: boolean; data: ShareItem }>(
         `/naskah-share/${shareId}`,
+        undefined,
+        { skipCache: true },
       );
       return res.data;
     } catch (err: any) {
