@@ -10,6 +10,7 @@ definePageMeta({
 
 useHead({ title: 'Dibagikan Kepada Saya' });
 const { t } = useI18n();
+const { user } = useAuth();
 
 const {
   sharedToMe,
@@ -23,7 +24,7 @@ const {
 // ── Breadcrumbs ──────────────────────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Berbagi', to: '/shared/saya-bagikan' },
+  { label: 'Berbagi', to: '#' },
   { label: 'Dibagikan Kepada Saya', to: '#' },
 ]);
 
@@ -115,16 +116,6 @@ const selectPageSize = (v: number) => {
 };
 
 const handleViewDetail = async (share: any) => {
-  try {
-    const freshData = await getShareDetail(share.id);
-    detailShare.value = freshData || share;
-  } catch {
-    detailShare.value = share;
-  }
-  showDetailModal.value = true;
-};
-
-const handleOpenShare = async (share: any) => {
   try {
     const freshData = await getShareDetail(share.id);
     detailShare.value = freshData || share;
@@ -315,8 +306,8 @@ onMounted(() => { loadData(); });
           :total="pagination.total"
           :page="currentPage"
           :limit="itemsPerPage"
+          :user-position="user?.position"
           @update:page="currentPage = $event"
-          @open="handleOpenShare"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
           @refresh="handleRefresh"
