@@ -106,9 +106,16 @@ export function useNaskahShare() {
     catatan?: string,
     accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU',
     durationDays?: number,
+    naskahIds?: string[],
   ) => {
     try {
-      const payload: any = { naskahId, recipientIds, catatan: catatan || undefined };
+      const payload: any = { recipientIds, catatan: catatan || undefined };
+      // Multi-naskah: kirim naskahIds; single: kirim naskahId (backward compat)
+      if (naskahIds?.length) {
+        payload.naskahIds = naskahIds;
+      } else {
+        payload.naskahId = naskahId;
+      }
       if (accessType) payload.accessType = accessType;
       if (accessType === 'RENTANG_WAKTU' && durationDays) payload.durationDays = durationDays;
       const res = await apiPost<{
