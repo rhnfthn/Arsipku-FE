@@ -18,6 +18,7 @@ const emit = defineEmits<{
 }>();
 
 const { createShare, searchUsers, searchResults, searchPending, clearSearchResults } = useNaskahShare();
+const { t } = useI18n();
 
 const isOpen = ref(true);
 const catatan = ref('');
@@ -33,13 +34,14 @@ const durationDays = ref<number | 'CUSTOM'>(7);
 const customTanggalSelesai = ref('');
 const todayStr = new Date().toISOString().split('T')[0];
 
-const durationOptions = [
-  { label: '2 hari', value: 2 },
-  { label: '7 hari', value: 7 },
-  { label: '14 hari', value: 14 },
-  { label: '30 hari', value: 30 },
+/** Duration options for RENTANG_WAKTU. 'Custom' shows date picker. */
+const durationOptions = computed(() => [
+  { label: `2 ${t('share_hari')}`, value: 2 },
+  { label: `7 ${t('share_hari')}`, value: 7 },
+  { label: `14 ${t('share_hari')}`, value: 14 },
+  { label: `30 ${t('share_hari')}`, value: 30 },
   { label: 'Custom', value: 'CUSTOM' as const },
-];
+]);
 
 const formatTanggalID = (tgl: string) => {
   if (!tgl) return '';
@@ -47,6 +49,7 @@ const formatTanggalID = (tgl: string) => {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+/** Calculate end date: preset = today + N days, custom = manual date. */
 const tanggalSelesaiStr = computed(() => {
   if (durationDays.value === 'CUSTOM') return customTanggalSelesai.value || '';
   const hari = durationDays.value;
@@ -56,6 +59,7 @@ const tanggalSelesaiStr = computed(() => {
   return d.toISOString().split('T')[0];
 });
 
+/** Debounce search 300ms, min 2 chars before API query. */
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 watch(searchQuery, (val) => {
@@ -69,6 +73,7 @@ watch(searchQuery, (val) => {
   }, 300);
 });
 
+/** Filter out already-selected recipients from search results. */
 const filteredResults = computed(() => {
   const selectedIds = selectedRecipients.value.map((r) => r.id);
   return searchResults.value.filter((r) => !selectedIds.includes(r.id));
@@ -86,18 +91,19 @@ const removeRecipient = (id: string) => {
   selectedRecipients.value = selectedRecipients.value.filter((r) => r.id !== id);
 };
 
-// Clear error saat user memilih penerima
+  // Clear error when recipient selected
 watch(selectedRecipients, () => {
   if (errors.value.recipients && selectedRecipients.value.length > 0) delete errors.value.recipients;
 }, { deep: true });
 
-// Clear error saat user mengubah custom tanggal
+// Clear error when custom date changed
 watch(customTanggalSelesai, () => {
   if (errors.value.customTanggal) delete errors.value.customTanggal;
 });
 
+/** Validate fields on submit. Errors show inline, button stays active. */
 const handleSubmit = async () => {
-  // Resolve naskah list: multi (naskahItems) atau single (naskahId)
+  // Resolve naskah list: multi (naskahItems) or single (naskahId)
   const items = props.naskahItems?.length
     ? props.naskahItems
     : props.naskahId
@@ -108,14 +114,14 @@ const handleSubmit = async () => {
   errors.value = {};
 
   if (items.length === 0) {
-    errorMsg.value = 'ID Naskah tidak valid';
+    errorMsg.value = t('share_id_invalid');
     return;
   }
   if (selectedRecipients.value.length === 0) {
-    errors.value.recipients = 'Pilih minimal 1 penerima';
+    errors.value.recipients = t('share_pilih_penerima');
   }
   if (accessType.value === 'RENTANG_WAKTU' && durationDays.value === 'CUSTOM' && !customTanggalSelesai.value) {
-    errors.value.customTanggal = 'Tanggal selesai wajib diisi';
+    errors.value.customTanggal = t('share_tanggal_wajib');
   }
   if (Object.keys(errors.value).length > 0) return;
 
@@ -133,15 +139,15 @@ const handleSubmit = async () => {
       items.length > 1 ? items.map((i) => i.naskahId) : undefined,
     );
     useToast().add({
-      title: 'Berhasil',
-      description: `${items.length} naskah berhasil dibagikan ke ${selectedRecipients.value.length} penerima`,
+      title: t('share_berhasil'),
+      description: t('share_berhasil_dibagikan', { count: items.length, recipients: selectedRecipients.value.length }),
       color: 'success',
     });
     emit('shared');
     isOpen.value = false;
   } catch (err: any) {
     const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
-    errorMsg.value = serverMsg || err?.message || 'Gagal membagikan naskah';
+    errorMsg.value = serverMsg || err?.message || t('share_gagal_dibagikan');
   } finally {
     isSubmitting.value = false;
   }
@@ -162,7 +168,7 @@ watch(isOpen, (val) => {
   <Modal v-model="isOpen" :hideDefaultFooter="true" size="xl">
     <template #title>
       <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
-        Bagikan Naskah
+        {{ t('share_modal_title') }}
       </Heading>
     </template>
 
@@ -170,8 +176,8 @@ watch(isOpen, (val) => {
       <!-- Info Naskah -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-          Naskah
-          <span v-if="naskahItems?.length" class="text-gray-400 font-normal">({{ naskahItems.length }} dipilih)</span>
+          {{ t('share_naskah') }}
+          <span v-if="naskahItems?.length" class="text-gray-400 font-normal">({{ naskahItems.length }} {{ t('share_dipilih') }})</span>
         </span>
         <div class="flex-1">
           <!-- Multi-naskah -->
@@ -182,7 +188,7 @@ watch(isOpen, (val) => {
               class="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 px-3 py-2 rounded-lg text-sm"
             >
               <p class="font-medium text-gray-900 dark:text-white">
-                <span class="text-gray-400 mr-1.5">{{ idx + 1 }}.</span>{{ item.perihal || '(Tanpa perihal)' }}
+                <span class="text-gray-400 mr-1.5">{{ idx + 1 }}.</span>{{ item.perihal || t('share_tanpa_perihal') }}
               </p>
               <p v-if="item.nomor" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-mono">
                 {{ item.nomor }}
@@ -192,7 +198,7 @@ watch(isOpen, (val) => {
           <!-- Single naskah -->
           <div v-else class="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 px-3 py-2 rounded-lg text-sm">
             <p class="font-medium text-gray-900 dark:text-white">
-              {{ naskahPerihal || '(Tanpa perihal)' }}
+              {{ naskahPerihal || t('share_tanpa_perihal') }}
             </p>
             <p v-if="naskahNomor" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-mono">
               {{ naskahNomor }}
@@ -204,7 +210,7 @@ watch(isOpen, (val) => {
       <!-- Jenis Akses -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-          Jenis Akses <span class="text-red-500">*</span>
+          {{ t('share_jenis_akses') }} <span class="text-red-500">*</span>
         </span>
         <div class="flex-1">
           <div class="flex flex-1 gap-2">
@@ -217,7 +223,7 @@ watch(isOpen, (val) => {
                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
             >
               <UIcon name="i-lucide-eye" class="w-4 h-4 inline mr-1.5" />
-              Sekali Lihat
+              {{ t('share_sekali_lihat') }}
             </button>
             <button
               type="button"
@@ -228,15 +234,15 @@ watch(isOpen, (val) => {
                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
             >
               <UIcon name="i-lucide-calendar" class="w-4 h-4 inline mr-1.5" />
-              Rentang Waktu
+              {{ t('share_rentang_waktu') }}
             </button>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             <template v-if="accessType === 'SEKALI_LIHAT'">
-              Penerima hanya dapat membuka naskah satu kali.
+              {{ t('share_sekali_lihat_desc') }}
             </template>
             <template v-else>
-              Penerima dapat membuka naskah selama rentang waktu yang dipilih.
+              {{ t('share_rentang_waktu_desc') }}
             </template>
           </p>
 
@@ -285,7 +291,7 @@ watch(isOpen, (val) => {
       <!-- Penerima -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-          Penerima <span class="text-red-500">*</span>
+          {{ t('share_penerima') }} <span class="text-red-500">*</span>
         </span>
         <div class="flex-1">
           <div class="relative">
@@ -293,7 +299,7 @@ watch(isOpen, (val) => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Ketik nama atau persnum..."
+              :placeholder="t('share_cari_penerima')"
               class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 pl-9 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -341,8 +347,8 @@ watch(isOpen, (val) => {
       <!-- Catatan -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-          Catatan
-          <span class="text-xs font-normal text-gray-400">(opsional)</span>
+          {{ t('share_catatan') }}
+          <span class="text-xs font-normal text-gray-400">{{ t('share_opsional') }}</span>
         </span>
         <div class="flex-1">
           <textarea
@@ -350,7 +356,7 @@ watch(isOpen, (val) => {
             rows="3"
             maxlength="2000"
             class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            placeholder="Tambahkan catatan untuk penerima..."
+            :placeholder="t('share_catatan_placeholder')"
           />
         </div>
       </div>
@@ -368,7 +374,7 @@ watch(isOpen, (val) => {
         :disabled="isSubmitting"
         @click="handleClose"
       >
-        Batal
+        {{ t('share_batal') }}
       </button>
       <button
         class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
@@ -376,7 +382,7 @@ watch(isOpen, (val) => {
         :disabled="isSubmitting"
         @click="handleSubmit"
       >
-        {{ isSubmitting ? 'Memproses...' : 'Bagikan' }}
+        {{ isSubmitting ? t('share_memproses') : t('share_bagikan') }}
       </button>
     </div>
   </Modal>
