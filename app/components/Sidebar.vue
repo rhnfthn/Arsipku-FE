@@ -382,6 +382,50 @@ const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADM
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
+// ─── Pindah Profile (Sekretaris / Unit Dokumen) ──────────────────────────────
+// User dengan delegasi di organization_tu (sekretaris_delegasi / unit_dokumen)
+// bisa beralih profile. Menu "Kelola" hanya tampil saat profile aktif
+// 'sekretaris' atau 'unit_dokumen'; disembunyikan saat 'akun_asli'.
+const tuRoles = computed(() => {
+  const roles = user.value?.tuRoles;
+  return Array.isArray(roles) ? roles : [];
+});
+const isTuRole = computed(() => tuRoles.value.includes('tu'));
+const isSekretarisRole = computed(() => tuRoles.value.includes('sekretaris'));
+
+// Deteksi delegasi: user punya role sekretaris ATAU unit_dokumen (tu).
+const hasDelegationProfile = computed(
+  () => isSekretarisRole.value || isTuRole.value || !!user.value?.has_secretary_delegation
+);
+
+// Baca active_profile dari localStorage (sumber utama), default 'akun_asli'.
+const readStoredProfile = () => {
+  if (process.client) {
+    const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (stored === 'akun_asli' || stored === 'sekretaris' || stored === 'unit_dokumen') return stored;
+  }
+  return 'akun_asli';
+};
+const currentProfile = ref(readStoredProfile());
+const syncProfileFromStorage = () => {
+  currentProfile.value = readStoredProfile();
+};
+
+const activeProfile = computed(() => {
+  if (currentProfile.value === 'akun_asli' || currentProfile.value === 'sekretaris' || currentProfile.value === 'unit_dokumen') {
+    return currentProfile.value;
+  }
+  const fromUser = user.value?.active_profile;
+  if (fromUser === 'akun_asli' || fromUser === 'sekretaris' || fromUser === 'unit_dokumen') return fromUser;
+  return 'akun_asli';
+});
+
+// Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
+// ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
+const showKelolaMenu = computed(
+  () => !hasDelegationProfile.value || activeProfile.value === 'sekretaris' || activeProfile.value === 'unit_dokumen'
+);
+
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
 // Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
 const isAtasanManagerialUsulan = ref(false);
@@ -468,6 +512,11 @@ onMounted(async () => {
     await nextTick();
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
+    // Sinkronkan profile aktif dari localStorage + listen perubahan (tanpa reload).
+    syncProfileFromStorage();
+    window.addEventListener('storage', syncProfileFromStorage);
+    window.addEventListener('profile-changed', syncProfileFromStorage);
+    window.addEventListener('active_profile_changed', syncProfileFromStorage);
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
@@ -477,6 +526,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', checkScreenSize);
+    window.removeEventListener('storage', syncProfileFromStorage);
+    window.removeEventListener('profile-changed', syncProfileFromStorage);
+    window.removeEventListener('active_profile_changed', syncProfileFromStorage);
   }
   // Socket cleanup di-handle oleh watch(token) saat logout.
   // Jangan rtDestroy() di sini karena Sidebar bisa unmount/remount
@@ -1095,13 +1147,17 @@ const apps = computed(() => {
         menus: filterMenuByPermission(adminMenuUtama.value),
         hasNotification: hasInboxUnread.value,
       },
-      {
-        id: 'admin-kelola',
-        label: 'Kelola',
-        icon: 'i-lucide-archive',
-        menus: filterMenuByPermission(adminMenuKelola.value),
-        hasNotification: false,
-      },
+      ...(showKelolaMenu.value
+        ? [
+            {
+              id: 'admin-kelola',
+              label: 'Kelola',
+              icon: 'i-lucide-archive',
+              menus: filterMenuByPermission(adminMenuKelola.value),
+              hasNotification: false,
+            },
+          ]
+        : []),
       {
         id: 'admin-utilitas',
         label: t('utilitas'),
@@ -1144,13 +1200,17 @@ const apps = computed(() => {
       menus: filterMenuByPermission(userMenuUtama.value),
       hasNotification: hasInboxUnread.value,
     },
-    {
-      id: 'user-kelola',
-      label: 'Kelola',
-      icon: 'i-lucide-archive',
-      menus: filterMenuByPermission(userMenuKelola.value),
-      hasNotification: false,
-    },
+    ...(showKelolaMenu.value
+      ? [
+          {
+            id: 'user-kelola',
+            label: 'Kelola',
+            icon: 'i-lucide-archive',
+            menus: filterMenuByPermission(userMenuKelola.value),
+            hasNotification: false,
+          },
+        ]
+      : []),
     {
       id: 'user-utilitas',
       label: t('utilitas'),
