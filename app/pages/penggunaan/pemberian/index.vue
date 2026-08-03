@@ -80,7 +80,8 @@ const goToDetail = (row: any) => {
     toast.add({ title: 'Error', description: 'Usulan tidak ditemukan untuk berkas ini', color: 'error' });
     return;
   }
-  navigateTo(`/usulan-akses-berkas/${usulanId}`);
+  // Langsung ke halaman berkas (table naskah), bukan usulan detail
+  navigateTo(`/penggunaan/pemberian/${usulanId}/berkas`);
 };
 
 const formatDate = (dateStr: string) => {
