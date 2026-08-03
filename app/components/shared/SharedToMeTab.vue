@@ -9,6 +9,7 @@ const props = defineProps<{
   total: number;
   page: number;
   limit: number;
+  userPosition?: string;
 }>();
 
 const emit = defineEmits<{
@@ -30,7 +31,9 @@ const columns = computed(() => [
 ]);
 
 const getMyRecipientStatus = (share: ShareItem) => {
-  return share.recipients?.[0]?.status || 'TERKIRIM';
+  // Cari recipient yang match dengan user position, bukan recipients[0]
+  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+  return myRecipient?.status || 'TERKIRIM';
 };
 </script>
 
