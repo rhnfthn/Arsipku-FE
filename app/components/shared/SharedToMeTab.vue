@@ -37,8 +37,10 @@ const getMyRecipientStatus = (share: ShareItem) => {
   return myRecipient?.status || 'TERKIRIM';
 };
 
-// Status gabungan: Aktif / Berakhir / Minta ulang
+// Status gabungan: Aktif / Berakhir
 const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
+  // Jika share sudah BERAKHIR (auto-expire / revoke all), tampilkan BERAKHIR
+  if (share.status === 'BERAKHIR') return 'BERAKHIR';
   const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
   if (!myRecipient) return 'AKTIF';
   if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
