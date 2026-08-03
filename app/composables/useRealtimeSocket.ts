@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
+import { useAuth } from '~/composables/useAuth';
 
 /**
  * useRealtimeSocket
@@ -112,9 +113,27 @@ const connectSocket = async (): Promise<void> => {
       console.log('[useRealtimeSocket] Socket disconnected');
     });
 
-    socket.on('connect_error', (err: any) => {
+    socket.on('connect_error', async (err: any) => {
       clearTimeout(timeout);
       isConnected.value = false;
+      const msg = err?.message || '';
+      // JWT expired → refresh token lalu reconnect dengan token baru
+      if (msg.includes('jwt expired') || msg.includes('TokenExpiredError')) {
+        try {
+          const { refreshToken } = useAuth();
+          const newToken = await refreshToken();
+          if (newToken && socket) {
+            socket.auth = { token: newToken };
+            socket.connect();
+            // Safety timeout — pastikan done() tetap dipanggil jika reconnect
+            // tidak kunjung memicu 'connect' maupun 'connect_error' non-expired.
+            setTimeout(done, 5000);
+            return;
+          }
+        } catch (e) {
+          console.warn('[useRealtimeSocket] Token refresh failed:', e);
+        }
+      }
       console.warn('[useRealtimeSocket] Socket connect_error:', err?.message);
       done();
     });

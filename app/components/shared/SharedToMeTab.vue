@@ -9,6 +9,7 @@ const props = defineProps<{
   total: number;
   page: number;
   limit: number;
+  userPosition?: string;
 }>();
 
 const emit = defineEmits<{
@@ -25,12 +26,25 @@ const columns = computed(() => [
   { key: 'naskahNomor', label: 'Nomor', sortable: false },
   { key: 'pemberi', label: 'Dari', sortable: false },
   { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
+  { key: 'status', label: 'Status', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
-  { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
+  { key: 'aksi', label: 'Action', headerClass: 'text-center', class: 'text-center' },
 ]);
 
 const getMyRecipientStatus = (share: ShareItem) => {
-  return share.recipients?.[0]?.status || 'TERKIRIM';
+  // Cari recipient yang match dengan user position, bukan recipients[0]
+  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+  return myRecipient?.status || 'TERKIRIM';
+};
+
+// Status gabungan: Aktif / Berakhir
+const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
+  // Jika share sudah BERAKHIR (auto-expire / revoke all), tampilkan BERAKHIR
+  if (share.status === 'BERAKHIR') return 'BERAKHIR';
+  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+  if (!myRecipient) return 'AKTIF';
+  if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
+  return 'AKTIF';
 };
 </script>
 
@@ -99,6 +113,12 @@ const getMyRecipientStatus = (share: ShareItem) => {
             <UIcon name="i-lucide-calendar" class="w-3 h-3" />
             {{ row.durationDays || '-' }} hari
           </span>
+        </div>
+      </template>
+
+      <template #cell-status="{ row }">
+        <div class="flex items-center justify-center">
+          <SharedShareBadge :status="getMyDisplayStatus(row)" size="xs" />
         </div>
       </template>
 
