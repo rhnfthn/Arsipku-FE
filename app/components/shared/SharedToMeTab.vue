@@ -114,13 +114,20 @@ const getMyRecipientStatus = (share: ShareItem) => {
       <template #cell-aksi="{ row }">
         <div class="flex items-center justify-center gap-1">
           <UTooltip text="Lihat detail">
-            <UButton
-              icon="i-lucide-eye"
-              color="primary"
-              variant="ghost"
-              size="xs"
-              @click="emit('view', row)"
-            />
+            <div class="relative">
+              <UButton
+                icon="i-lucide-eye"
+                color="primary"
+                variant="ghost"
+                size="xs"
+                @click="emit('view', row)"
+              />
+              <!-- Dot merah: request akses ulang MENUNGGU -->
+              <span
+                v-if="row.recipients?.some((r: any) => r.recipientId === props.userPosition && r.requestStatus === 'MENUNGGU')"
+                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"
+              />
+            </div>
           </UTooltip>
           <UTooltip text="Buka PDF">
             <UButton

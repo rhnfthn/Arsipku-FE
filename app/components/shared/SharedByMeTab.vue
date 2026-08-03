@@ -25,7 +25,6 @@ const columns = computed(() => [
   { key: 'naskahNomor', label: 'Nomor', sortable: false },
   { key: 'penerima', label: 'Dibagikan Kepada', sortable: false },
   { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
-  { key: 'expiresAt', label: 'Berlaku Hingga', sortable: false },
   { key: 'status', label: 'Status', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
   { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
@@ -107,13 +106,6 @@ const columns = computed(() => [
         </div>
       </template>
 
-      <template #cell-expiresAt="{ row }">
-        <span v-if="row.expiresAt" class="text-xs text-gray-500 dark:text-gray-400">
-          {{ formatShortDate(row.expiresAt) }}
-        </span>
-        <span v-else class="text-xs text-gray-400">-</span>
-      </template>
-
       <template #cell-status="{ row }">
         <SharedShareBadge :status="row.status" size="xs" />
       </template>
@@ -127,13 +119,20 @@ const columns = computed(() => [
       <template #cell-aksi="{ row }">
         <div class="flex items-center justify-center gap-1">
           <UTooltip text="Lihat detail">
-            <UButton
-              icon="i-lucide-eye"
-              color="primary"
-              variant="ghost"
-              size="xs"
-              @click="emit('view', row)"
-            />
+            <div class="relative">
+              <UButton
+                icon="i-lucide-eye"
+                color="primary"
+                variant="ghost"
+                size="xs"
+                @click="emit('view', row)"
+              />
+              <!-- Dot merah: ada request akses ulang MENUNGGU -->
+              <span
+                v-if="row.recipients?.some((r: any) => r.requestStatus === 'MENUNGGU')"
+                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"
+              />
+            </div>
           </UTooltip>
           <UTooltip text="Buka PDF">
             <UButton
