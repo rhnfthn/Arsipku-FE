@@ -46,7 +46,7 @@
                 ? 'bg-primary text-white shadow-lg'
                 : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
             ]">
-              <UIcon name="i-lucide-building-2" class="w-4 h-4" />
+              <UIcon name="i-lucide-archive" class="w-4 h-4" />
               Unit TU
             </button>
           </div>
@@ -312,6 +312,7 @@
 
         <!-- ===================== TAB: UNIT TU ===================== -->
         <div v-if="activeTab === 'unit-tu'">
+          <!-- Komponen Unit TU (CRUD assignment organization_tu) -->
           <UnitTuTab />
         </div>
       </div>
@@ -392,9 +393,14 @@ definePageMeta({ middleware: "auth" });
 
 const { t } = useI18n();
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission, isSuperadmin, user } = useAuth();
 
 const canViewKonfigurasi = computed(() => hasPermission('konfigurasi', 'read'));
+
+onMounted(() => {
+  fetchDigsig();
+  fetchMessages(true);
+});
 
 // ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────
 const breadcrumbs = computed(() => [
@@ -449,11 +455,6 @@ const saveDigsig = async () => {
     isSavingDigsig.value = false;
   }
 };
-
-onMounted(() => {
-  fetchDigsig();
-  fetchMessages(true);
-});
 
 // ================================
 // DIGSIG - Dropdown Options
