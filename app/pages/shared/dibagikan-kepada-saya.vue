@@ -170,6 +170,27 @@ const handleViewDetail = async (share: any) => {
   showDetailModal.value = true;
 };
 
+// ── Request akses ulang (penerima) ──
+const handleRequestReopen = async (share: any) => {
+  try {
+    const { requestReopen } = useNaskahShare();
+    await requestReopen(share.id);
+    useToast().add({
+      title: 'Berhasil',
+      description: 'Permintaan akses ulang terkirim ke pemberi',
+      color: 'success',
+    });
+    showDetailModal.value = false;
+    loadData();
+  } catch (err: any) {
+    useToast().add({
+      title: 'Gagal',
+      description: err?.response?.data?.message || err?.message || 'Gagal mengirim permintaan',
+      color: 'error',
+    });
+  }
+};
+
 const handleOpenPdf = async (share: any) => {
   isLoadingPdf.value = true;
   pdfViewerTitle.value = share.naskahPerihal || 'Dokumen';
@@ -379,7 +400,9 @@ onMounted(() => { loadData(); });
     <SharedShareDetailModal
       v-if="showDetailModal && detailShare"
       :share="detailShare"
+      :user-position="user?.position"
       @close="showDetailModal = false"
+      @request-reopen="handleRequestReopen"
     />
 
     <!-- PDF Viewer Full Page -->

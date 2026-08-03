@@ -206,6 +206,41 @@ const handleRevokeAll = async (share: any) => {
   }
 };
 
+// ── Reopen (akses ulang) — pemberi ──
+const showReopenModal = ref(false);
+const reopenShare = ref<any>(null);
+
+const handleApproveReopen = (share: any) => {
+  reopenShare.value = share;
+  showReopenModal.value = true;
+};
+
+const handleReopenApproved = () => {
+  showReopenModal.value = false;
+  showDetailModal.value = false;
+  loadData();
+};
+
+const handleRejectReopen = async (share: any) => {
+  try {
+    const { rejectReopen } = useNaskahShare();
+    await rejectReopen(share.id);
+    useToast().add({
+      title: 'Berhasil',
+      description: 'Permintaan akses ulang ditolak',
+      color: 'success',
+    });
+    showDetailModal.value = false;
+    loadData();
+  } catch (err: any) {
+    useToast().add({
+      title: 'Gagal',
+      description: err?.response?.data?.message || err?.message || 'Gagal menolak permintaan',
+      color: 'error',
+    });
+  }
+};
+
 const handleOpenPdf = async (share: any) => {
   isLoadingPdf.value = true;
   pdfViewerTitle.value = share.naskahPerihal || 'Dokumen';
@@ -427,6 +462,18 @@ onMounted(() => { loadData(); });
       @close="showDetailModal = false"
       @revoke-recipient="handleRevoke"
       @revoke-all="handleRevokeAll"
+      @approve-reopen="handleApproveReopen"
+      @reject-reopen="handleRejectReopen"
+    />
+
+    <!-- Reopen Share Modal (pemberi setujui akses ulang) -->
+    <SharedReopenShareModal
+      v-if="showReopenModal && reopenShare"
+      :share-id="reopenShare.id"
+      :naskah-perihal="reopenShare.naskahPerihal"
+      :recipient-name="reopenShare.recipients?.find((r: any) => r.requestStatus === 'MENUNGGU')?.nama"
+      @close="showReopenModal = false"
+      @approved="handleReopenApproved"
     />
 
     <!-- PDF Viewer Full Page -->
