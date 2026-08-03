@@ -27,9 +27,14 @@ const columns = computed(() => [
   { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'status', label: 'Status', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
-  { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
+  { key: 'aksi', label: 'Action', headerClass: 'text-center', class: 'text-center' },
 ]);
 
+// Status gabungan: Aktif / Berakhir
+const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
+  if (share.status === 'BERAKHIR') return 'BERAKHIR';
+  return 'AKTIF';
+};
 
 </script>
 
@@ -107,7 +112,7 @@ const columns = computed(() => [
       </template>
 
       <template #cell-status="{ row }">
-        <SharedShareBadge :status="row.status" size="xs" />
+        <SharedShareBadge :status="getDisplayStatus(row as ShareItem)" size="xs" />
       </template>
 
       <template #cell-createdAt="{ row }">
@@ -119,20 +124,13 @@ const columns = computed(() => [
       <template #cell-aksi="{ row }">
         <div class="flex items-center justify-center gap-1">
           <UTooltip text="Lihat detail">
-            <div class="relative">
-              <UButton
-                icon="i-lucide-eye"
-                color="primary"
-                variant="ghost"
-                size="xs"
-                @click="emit('view', row)"
-              />
-              <!-- Dot merah: ada request akses ulang MENUNGGU -->
-              <span
-                v-if="row.recipients?.some((r: any) => r.requestStatus === 'MENUNGGU')"
-                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"
-              />
-            </div>
+            <UButton
+              icon="i-lucide-eye"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              @click="emit('view', row as ShareItem)"
+            />
           </UTooltip>
           <UTooltip text="Buka PDF">
             <UButton
@@ -140,7 +138,7 @@ const columns = computed(() => [
               color="success"
               variant="ghost"
               size="xs"
-              @click="emit('open-pdf', row)"
+              @click="emit('open-pdf', row as ShareItem)"
             />
           </UTooltip>
         </div>

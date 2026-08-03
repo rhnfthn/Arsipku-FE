@@ -9,8 +9,6 @@ export interface ShareRecipient {
   orgText?: string;
   status?: string;
   openedAt?: string | null;
-  requestedAt?: string | null;
-  requestStatus?: 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK' | null;
 }
 
 export interface ShareItem {
@@ -125,7 +123,7 @@ export function useNaskahShare() {
         data: any;
         message: string;
       }>('/naskah-share', payload);
-      clearApiCache('/naskah-share');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useNaskahShare] createShare error:', err);
@@ -140,7 +138,7 @@ export function useNaskahShare() {
       const res = await apiDelete<{
         success: boolean; message: string; data: any;
       }>(`/naskah-share/${shareId}/recipients/${recipientId}${reasonParam}`);
-      clearApiCache('/naskah-share');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useNaskahShare] revokeRecipient error:', err);
@@ -157,7 +155,7 @@ export function useNaskahShare() {
         message: string;
         data: any;
       }>(`/naskah-share/${shareId}${reasonParam}`);
-      clearApiCache('/naskah-share');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useNaskahShare] revokeShare error:', err);
@@ -233,60 +231,12 @@ export function useNaskahShare() {
     try {
       const res = await apiGet<{ success: boolean; data: ShareItem }>(
         `/naskah-share/${shareId}`,
+        undefined,
+        { skipCache: true },
       );
       return res.data;
     } catch (err: any) {
       console.error('[useNaskahShare] getShareDetail error:', err);
-      throw err;
-    }
-  };
-
-  // ── Request akses ulang (penerima, SEKALI_LIHAT) ──
-  const requestReopen = async (shareId: string) => {
-    try {
-      const res = await apiPost<{ success: boolean; message: string; data: any }>(
-        `/naskah-share/${shareId}/request-reopen`,
-      );
-      return res;
-    } catch (err: any) {
-      console.error('[useNaskahShare] requestReopen error:', err);
-      throw err;
-    }
-  };
-
-  // ── Approve akses ulang (pemberi) ──
-  const approveReopen = async (
-    shareId: string,
-    accessType: 'SEKALI_LIHAT' | 'RENTANG_WAKTU',
-    durationDays?: number,
-    catatan?: string,
-  ) => {
-    try {
-      const payload: any = { accessType };
-      if (accessType === 'RENTANG_WAKTU' && durationDays) payload.durationDays = durationDays;
-      if (catatan) payload.catatan = catatan;
-      const res = await apiPost<{ success: boolean; message: string; data: any }>(
-        `/naskah-share/${shareId}/approve-reopen`,
-        payload,
-      );
-      clearApiCache('/naskah-share');
-      return res;
-    } catch (err: any) {
-      console.error('[useNaskahShare] approveReopen error:', err);
-      throw err;
-    }
-  };
-
-  // ── Reject akses ulang (pemberi) ──
-  const rejectReopen = async (shareId: string) => {
-    try {
-      const res = await apiPost<{ success: boolean; message: string; data: any }>(
-        `/naskah-share/${shareId}/reject-reopen`,
-      );
-      clearApiCache('/naskah-share');
-      return res;
-    } catch (err: any) {
-      console.error('[useNaskahShare] rejectReopen error:', err);
       throw err;
     }
   };
@@ -310,8 +260,5 @@ export function useNaskahShare() {
     searchUsers,
     clearSearchResults,
     getShareDetail,
-    requestReopen,
-    approveReopen,
-    rejectReopen,
   };
 }
