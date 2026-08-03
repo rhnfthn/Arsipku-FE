@@ -26,14 +26,23 @@ const columns = computed(() => [
   { key: 'naskahNomor', label: 'Nomor', sortable: false },
   { key: 'pemberi', label: 'Dari', sortable: false },
   { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
+  { key: 'status', label: 'Status', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
-  { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
+  { key: 'aksi', label: 'Action', headerClass: 'text-center', class: 'text-center' },
 ]);
 
 const getMyRecipientStatus = (share: ShareItem) => {
   // Cari recipient yang match dengan user position, bukan recipients[0]
   const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
   return myRecipient?.status || 'TERKIRIM';
+};
+
+// Status gabungan: Aktif / Berakhir / Minta ulang
+const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
+  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+  if (!myRecipient) return 'AKTIF';
+  if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
+  return 'AKTIF';
 };
 </script>
 
@@ -105,6 +114,12 @@ const getMyRecipientStatus = (share: ShareItem) => {
         </div>
       </template>
 
+      <template #cell-status="{ row }">
+        <div class="flex items-center justify-center">
+          <SharedShareBadge :status="getMyDisplayStatus(row)" size="xs" />
+        </div>
+      </template>
+
       <template #cell-createdAt="{ row }">
         <span class="text-xs text-gray-500 dark:text-gray-400">
           {{ formatShortDate(row.createdAt) }}
@@ -114,20 +129,13 @@ const getMyRecipientStatus = (share: ShareItem) => {
       <template #cell-aksi="{ row }">
         <div class="flex items-center justify-center gap-1">
           <UTooltip text="Lihat detail">
-            <div class="relative">
-              <UButton
-                icon="i-lucide-eye"
-                color="primary"
-                variant="ghost"
-                size="xs"
-                @click="emit('view', row)"
-              />
-              <!-- Dot merah: request akses ulang MENUNGGU -->
-              <span
-                v-if="row.recipients?.some((r: any) => r.recipientId === props.userPosition && r.requestStatus === 'MENUNGGU')"
-                class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"
-              />
-            </div>
+            <UButton
+              icon="i-lucide-eye"
+              color="primary"
+              variant="ghost"
+              size="xs"
+              @click="emit('view', row)"
+            />
           </UTooltip>
           <UTooltip text="Buka PDF">
             <UButton
