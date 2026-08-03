@@ -1637,16 +1637,11 @@ const activeDelegationId = ref<string | null>(null);
 const initActiveState = () => {
   if (process.client) {
     activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
-    // Sinkronkan active_profile dengan position_status user (dari JWT).
-    // Jika user sedang delegated sebagai SE (Sekretaris) → 'sekretaris',
-    // selain itu → 'akun_asli'. Ini memastikan sidebar menampilkan menu Kelola
-    // dengan benar setelah reload.
-    const posStatus = user.value?.position_status;
-    if (posStatus === 'SE') {
-      localStorage.setItem('active_profile', 'sekretaris');
-      localStorage.setItem('arsipku_active_profile', 'sekretaris');
-    } else if (!activeDelegationId.value) {
-      // Tidak ada delegasi aktif → akun asli.
+    // JANGAN overwrite active_profile jika user sudah pilih profile manual
+    // (unit_dokumen / sekretaris / akun_asli). Hanya set default jika belum ada.
+    const currentStored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (!currentStored) {
+      // Default: akun_asli
       localStorage.setItem('active_profile', 'akun_asli');
       localStorage.setItem('arsipku_active_profile', 'akun_asli');
     }
@@ -1991,8 +1986,15 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   // Tidak ada label "PINDAH PROFILE" — langsung card berturut-turut.
   const profileCards: any[] = [mainAccountItem, ...delegasiItems];
 
-  // Tambahkan card Sekretaris jika punya delegasi sekretaris (bukan dari delegasi SE biasa).
-  if (hasSecretaryDelegation.value) {
+  // Cek apakah delegasi SE (Sekretaris) sudah ada di delegasiItems (dari tabel delegasi).
+  // Jika sudah ada, jangan push card Sekretaris lagi (hindari duplikat).
+  const hasSekretarisInDelegasiItems = (delegationRoles.value || []).some(
+    (r: any) => r?.delegated_role?.position_status === 'SE',
+  );
+
+  // Tambahkan card Sekretaris hanya jika punya delegasi sekretaris dari organization_tu
+  // DAN belum ada di delegasiItems (hindari duplikat).
+  if (hasSecretaryDelegation.value && !hasSekretarisInDelegasiItems) {
     profileCards.push({
       uiName: user.value?.nama || 'User',
       uiBadge: 'Sekretaris',
