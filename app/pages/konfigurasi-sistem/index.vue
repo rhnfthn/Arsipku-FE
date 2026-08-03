@@ -49,6 +49,15 @@
               <UIcon name="i-lucide-building-2" class="w-4 h-4" />
               Unit TU
             </button>
+            <button @click="activeTab = 'search'" :class="[
+              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+              activeTab === 'search'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+            ]">
+              <UIcon name="i-lucide-search" class="w-4 h-4" />
+              {{ $t("konfig_tab_search") }}
+            </button>
           </div>
         </div>
 
@@ -314,6 +323,100 @@
         <div v-if="activeTab === 'unit-tu'">
           <UnitTuTab />
         </div>
+
+        <!-- ===================== TAB: SEARCH ENGINE ===================== -->
+        <div v-if="activeTab === 'search'" class="p-6">
+          <Heading variant="heading9sb" class="text-mobile-md">
+            {{ $t("konfig_search_title") }}
+          </Heading>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-7 mt-1">
+            {{ $t("konfig_search_desc") }}
+          </p>
+
+          <div v-if="isLoadingSearchConfig" class="space-y-3">
+            <div v-for="i in 2" :key="i"
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-5 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div class="space-y-2">
+                <USkeleton class="h-4 w-40 rounded" />
+                <USkeleton class="h-3 w-56 rounded" />
+              </div>
+              <USkeleton class="h-9 w-full sm:w-[380px] rounded-lg shrink-0" />
+            </div>
+          </div>
+
+          <div v-else class="space-y-3">
+            <!-- Mode V3 (SQL) -->
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div class="flex items-start gap-3">
+                <span
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+                  <UIcon name="i-lucide-database" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                </span>
+                <div>
+                  <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                    {{ $t("konfig_search_v3_title") }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {{ $t("konfig_search_v3_desc") }}
+                  </p>
+                </div>
+              </div>
+              <button type="button" @click="handleSetSearchMode('v3')" :disabled="isSavingSearchConfig"
+                :class="[
+                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all shrink-0',
+                  searchConfig?.mode === 'v3'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
+                ]">
+                <UIcon :name="searchConfig?.mode === 'v3' ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                  class="w-4 h-4" />
+                {{ searchConfig?.mode === 'v3' ? $t("konfig_search_aktif") : $t("konfig_search_pilih") }}
+              </button>
+            </div>
+
+            <!-- Mode Meilisearch -->
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div class="flex items-start gap-3">
+                <span
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+                  <UIcon name="i-lucide-search" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                </span>
+                <div>
+                  <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                    {{ $t("konfig_search_meili_title") }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {{ $t("konfig_search_meili_desc") }}
+                  </p>
+                </div>
+              </div>
+              <button type="button" @click="handleSetSearchMode('meili')" :disabled="isSavingSearchConfig"
+                :class="[
+                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all shrink-0',
+                  searchConfig?.mode === 'meili'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
+                ]">
+                <UIcon :name="searchConfig?.mode === 'meili' ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                  class="w-4 h-4" />
+                {{ searchConfig?.mode === 'meili' ? $t("konfig_search_aktif") : $t("konfig_search_pilih") }}
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="mt-6 flex items-start gap-3 p-4 bg-primary-50 dark:bg-primary-950/40 rounded-xl border border-primary-100 dark:border-primary-900">
+            <UIcon name="i-lucide-info" class="w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+            <div class="text-sm text-primary-800 dark:text-primary-200 leading-relaxed">
+              <span class="font-semibold block mb-1">Informasi</span>
+              <p>
+                {{ $t("konfig_search_info") }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -436,6 +539,11 @@ const {
   updateMessage,
   toggleBanner,
   deleteMessage,
+  searchConfig,
+  isLoadingSearchConfig,
+  isSavingSearchConfig,
+  fetchSearchConfig,
+  updateSearchConfig,
   showToastSaveDigsig,
 } = useKonfigurasi();
 
@@ -453,7 +561,16 @@ const saveDigsig = async () => {
 onMounted(() => {
   fetchDigsig();
   fetchMessages(true);
+  fetchSearchConfig();
 });
+
+// ================================
+// SEARCH ENGINE - Mode Handler
+// ================================
+const handleSetSearchMode = async (mode: "v3" | "meili") => {
+  if (isSavingSearchConfig.value) return;
+  await updateSearchConfig({ mode });
+};
 
 // ================================
 // DIGSIG - Dropdown Options
