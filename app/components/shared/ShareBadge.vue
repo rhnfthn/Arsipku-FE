@@ -1,4 +1,6 @@
 <script setup lang="ts">
+/** Status badge for share feature: AKTIF (green) / BERAKHIR (red). */
+const { t } = useI18n();
 defineProps<{
   status: 'AKTIF' | 'BERAKHIR';
   size?: 'xs' | 'sm' | 'md';
@@ -14,7 +16,7 @@ defineProps<{
     ]"
   >
     <UIcon name="i-lucide-check-circle" class="w-3 h-3 mr-0.5" />
-    Aktif
+    {{ t('share_aktif') }}
   </span>
   <span
     v-else
@@ -24,6 +26,6 @@ defineProps<{
     ]"
   >
     <UIcon name="i-lucide-x-circle" class="w-3 h-3 mr-0.5" />
-    Berakhir
+    {{ t('share_berakhir') }}
   </span>
 </template>
