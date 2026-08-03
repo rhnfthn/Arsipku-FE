@@ -26,10 +26,11 @@
           v-if="!showCatatanKeSE"
           v-model="note"
           rows="3"
-          class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-          :class="variant === 'reject' ? 'focus:ring-red-500' : 'focus:ring-primary'"
+          class="w-full border bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+          :class="errors.note ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
           :placeholder="notePlaceholder"
         />
+        <p v-if="errors.note" class="text-xs text-red-500">{{ errors.note }}</p>
         <!-- Catatan ke SE (opsional, untuk verifikator → SE terkait) -->
         <div v-if="showCatatanKeSE" class="mt-0">
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -39,10 +40,11 @@
           <textarea
             v-model="catatanKeSE"
             rows="3"
-            class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            :class="variant === 'reject' ? 'focus:ring-red-500' : 'focus:ring-primary'"
+            class="w-full border bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+            :class="errors.catatanKeSE ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
             :placeholder="`Catatan untuk SE ${catatanKeSELabel}...`"
           />
+          <p v-if="errors.catatanKeSE" class="text-xs text-red-500 mt-1">{{ errors.catatanKeSE }}</p>
         </div>
         <div class="flex gap-3 pt-2">
           <button
@@ -57,7 +59,7 @@
               ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
               : 'hover:opacity-90 dark:hover:opacity-90'"
             :style="variant === 'approve' ? 'background-color: #175FA4' : {}"
-            :disabled="disabled"
+            :disabled="saving"
             @click="handleConfirm"
           >
             {{ saving ? 'Memproses...' : confirmLabel }}
@@ -113,29 +115,39 @@ const isOpen = computed({
 
 const note = ref('');
 const catatanKeSE = ref('');
+const errors = ref<Record<string, string>>({});
+const triedSubmit = ref(false);
 
 // Reset note saat modal dibuka
 watch(() => props.modelValue, (val) => {
   if (val) {
     note.value = '';
     catatanKeSE.value = '';
+    errors.value = {};
+    triedSubmit.value = false;
   }
 });
 
-const disabled = computed(() => {
-  if (props.saving) return true;
-  // Saat showCatatanKeSE, validasi pakai catatanKeSE (bukan note)
+// Clear error saat user mengetik
+watch(note, () => { if (errors.value.note) delete errors.value.note; });
+watch(catatanKeSE, () => { if (errors.value.catatanKeSE) delete errors.value.catatanKeSE; });
+
+const validate = (): boolean => {
+  const e: Record<string, string> = {};
   if (props.showCatatanKeSE) {
-    if (props.requireNote && !catatanKeSE.value.trim()) return true;
-    if (props.minNoteLength > 0 && catatanKeSE.value.trim().length < props.minNoteLength) return true;
-    return false;
+    if (props.requireNote && !catatanKeSE.value.trim()) e.catatanKeSE = 'Catatan wajib diisi';
+    if (props.minNoteLength > 0 && catatanKeSE.value.trim().length < props.minNoteLength) e.catatanKeSE = `Minimal ${props.minNoteLength} karakter`;
+  } else {
+    if (props.requireNote && !note.value.trim()) e.note = 'Catatan wajib diisi';
+    if (props.minNoteLength > 0 && note.value.trim().length < props.minNoteLength) e.note = `Minimal ${props.minNoteLength} karakter`;
   }
-  if (props.requireNote && !note.value.trim()) return true;
-  if (props.minNoteLength > 0 && note.value.trim().length < props.minNoteLength) return true;
-  return false;
-});
+  errors.value = e;
+  return Object.keys(e).length === 0;
+};
 
 const handleConfirm = () => {
+  triedSubmit.value = true;
+  if (!validate()) return;
   // Saat showCatatanKeSE, catatanKeSE adalah catatan utama (tidak ada textarea note)
   if (props.showCatatanKeSE) {
     emit('confirm', catatanKeSE.value, catatanKeSE.value || undefined);

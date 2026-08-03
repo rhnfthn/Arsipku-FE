@@ -234,7 +234,7 @@ export function useUsulanAksesBerkas() {
         '/usulan-akses-berkas',
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] createUsulan error:', err);
@@ -259,7 +259,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/${suffix}`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] verifikasiPengusul error:', err);
@@ -277,7 +277,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/verifikasi-pemberi`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] verifikasiPemberi error:', err);
@@ -292,7 +292,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/pilih-berkas`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] pilihBerkas error:', err);
@@ -317,7 +317,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/${suffix}`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] persetujuanPemberi error:', err);
