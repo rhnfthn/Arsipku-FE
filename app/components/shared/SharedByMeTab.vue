@@ -25,6 +25,7 @@ const columns = computed(() => [
   { key: 'naskahNomor', label: 'Nomor', sortable: false },
   { key: 'penerima', label: 'Dibagikan Kepada', sortable: false },
   { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
+  { key: 'expiresAt', label: 'Berlaku Hingga', sortable: false },
   { key: 'status', label: 'Status', sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: 'Tanggal', sortable: false },
   { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
@@ -104,6 +105,13 @@ const columns = computed(() => [
             {{ row.durationDays || '-' }} hari
           </span>
         </div>
+      </template>
+
+      <template #cell-expiresAt="{ row }">
+        <span v-if="row.expiresAt" class="text-xs text-gray-500 dark:text-gray-400">
+          {{ formatShortDate(row.expiresAt) }}
+        </span>
+        <span v-else class="text-xs text-gray-400">-</span>
       </template>
 
       <template #cell-status="{ row }">
