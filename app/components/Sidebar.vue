@@ -400,6 +400,50 @@ const tuRoles = computed(() => {
 const isTuRole = computed(() => tuRoles.value.includes('tu'));
 const isSekretarisRole = computed(() => tuRoles.value.includes('sekretaris'));
 
+// ─── Pindah Profile (Sekretaris Delegasi) ────────────────────────────────────
+// User yang punya delegasi sekretaris bisa beralih antara "Akun Asli" dan "Sekretaris".
+// Saat profile aktif "akun_asli", menu "Kelola" disembunyikan.
+// Saat profile aktif "sekretaris", menu "Kelola" (termasuk Pemindahan Arsip) muncul.
+//
+// Deteksi delegasi sekretaris pakai `tuRoles` (sudah reliable dari buildTuRoles)
+// sebagai sumber utama, dengan fallback ke field JWT `has_secretary_delegation`.
+// Ini penting agar user dengan token lama (belum punya field JWT baru) tetap
+// dianggap punya delegasi sekretaris.
+const hasSecretaryDelegation = computed(
+  () => isSekretarisRole.value || !!user.value?.has_secretary_delegation
+);
+
+// Reactive state profile aktif. Di-update oleh event listener (storage + active_profile_changed)
+// agar sidebar ikut berubah tanpa reload manual saat user pindah profile.
+// Sumber: localStorage key 'active_profile' (fallback 'arsipku_active_profile').
+const readStoredProfile = () => {
+  if (process.client) {
+    const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (stored === 'akun_asli' || stored === 'sekretaris') return stored;
+  }
+  return 'akun_asli';
+};
+const currentProfile = ref(readStoredProfile());
+const syncProfileFromStorage = () => {
+  currentProfile.value = readStoredProfile();
+};
+
+const activeProfile = computed(() => {
+  // Sumber utama: localStorage (sesuai requirement — sidebar baca dari localStorage).
+  // JWT active_profile hanya fallback jika localStorage belum terisi.
+  if (currentProfile.value === 'akun_asli' || currentProfile.value === 'sekretaris') {
+    return currentProfile.value;
+  }
+  const fromUser = user.value?.active_profile;
+  if (fromUser === 'akun_asli' || fromUser === 'sekretaris') return fromUser;
+  return 'akun_asli';
+});
+// Menu "Kelola" hanya tampil jika user TIDAK punya delegasi sekretaris (perilaku normal),
+// ATAU jika punya delegasi sekretaris dan profile aktif = 'sekretaris'.
+const showKelolaMenu = computed(
+  () => !hasSecretaryDelegation.value || activeProfile.value === 'sekretaris'
+);
+
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
 // Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
 const isAtasanManagerialUsulan = ref(false);
@@ -488,6 +532,11 @@ onMounted(async () => {
     await nextTick();
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
+    // Sinkronkan profile aktif dari localStorage + listen perubahan (tanpa reload).
+    syncProfileFromStorage();
+    window.addEventListener('storage', syncProfileFromStorage);
+    window.addEventListener('profile-changed', syncProfileFromStorage);
+    window.addEventListener('active_profile_changed', syncProfileFromStorage);
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
     // Fetch usulan akses berkas counts untuk badge sidebar
     fetchUsulanCounts();
@@ -499,6 +548,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', checkScreenSize);
+    window.removeEventListener('storage', syncProfileFromStorage);
+    window.removeEventListener('profile-changed', syncProfileFromStorage);
+    window.removeEventListener('active_profile_changed', syncProfileFromStorage);
   }
   // Socket cleanup di-handle oleh watch(token) saat logout.
   // Jangan rtDestroy() di sini karena Sidebar bisa unmount/remount
@@ -1324,13 +1376,17 @@ const apps = computed(() => {
         menus: filterMenuByPermission(adminMenuUtama.value),
         hasNotification: hasInboxUnread.value,
       },
-      {
-        id: 'admin-kelola',
-        label: 'Kelola',
-        icon: 'i-lucide-archive',
-        menus: filterMenuByPermission(adminMenuKelola.value),
-        hasNotification: rtArsipPersetujuanCount.value > 0,
-      },
+      ...(showKelolaMenu.value
+        ? [
+            {
+              id: 'admin-kelola',
+              label: 'Kelola',
+              icon: 'i-lucide-archive',
+              menus: filterMenuByPermission(adminMenuKelola.value),
+              hasNotification: rtArsipPersetujuanCount.value > 0,
+            },
+          ]
+        : []),
       {
         id: 'admin-utilitas',
         label: t('utilitas'),
@@ -1373,13 +1429,17 @@ const apps = computed(() => {
       menus: filterMenuByPermission(userMenuUtama.value),
       hasNotification: hasInboxUnread.value,
     },
-    {
-      id: 'user-kelola',
-      label: 'Kelola',
-      icon: 'i-lucide-archive',
-      menus: filterMenuByPermission(userMenuKelola.value),
-      hasNotification: rtArsipPersetujuanCount.value > 0,
-    },
+    ...(showKelolaMenu.value
+      ? [
+          {
+            id: 'user-kelola',
+            label: 'Kelola',
+            icon: 'i-lucide-archive',
+            menus: filterMenuByPermission(userMenuKelola.value),
+            hasNotification: rtArsipPersetujuanCount.value > 0,
+          },
+        ]
+      : []),
     {
       id: 'user-utilitas',
       label: t('utilitas'),
