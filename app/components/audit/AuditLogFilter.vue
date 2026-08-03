@@ -81,22 +81,22 @@
         </div>
       </div>
       <!-- Row 2: Tombol Aksi -->
-      <div class="flex items-end gap-2 h-full">
+      <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2 h-full">
         <button
           @click="reset"
-          class="flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
+          class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
         >
           Reset
         </button>
         <button
           @click="apply"
-          class="flex-1 px-3 py-2 text-sm rounded-md bg-primary hover:bg-primary-700 text-white transition-colors whitespace-nowrap"
+          class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md bg-primary hover:bg-primary-700 text-white transition-colors whitespace-nowrap"
         >
           Terapkan
         </button>
         <button
           @click="$emit('export')"
-          class="flex-1 px-3 py-2 text-sm rounded-md border border-green-500 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors inline-flex items-center justify-center gap-1 whitespace-nowrap"
+          class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md bg-primary hover:bg-primary-700 text-white transition-colors inline-flex items-center justify-center gap-1 whitespace-nowrap"
         >
           <UIcon name="i-lucide-download" class="w-4 h-4" />
           Export
