@@ -2,6 +2,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { RotateCcw, ChevronDown, Search } from 'lucide-vue-next';
 import SharedToMeTab from '~/components/shared/SharedToMeTab.vue';
+import { downloadCsv } from '~/utils/csv-export';
+import { formatShortDate } from '~/utils/mail-helpers';
 
 definePageMeta({
   layout: 'default',
@@ -102,6 +104,33 @@ watch(searchQuery, () => {
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 const handleRefresh = () => loadData();
+
+const isExporting = ref(false);
+const exportData = () => {
+  if (sharedToMe.value.length === 0) {
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const headers = ['Perihal', 'Jenis', 'Nomor', 'Dari', 'Akses', 'Tanggal'];
+    const csvRows = sharedToMe.value.map((s: any) => [
+      s.naskahPerihal || '(Tanpa perihal)',
+      s.naskahJenis || '-',
+      s.naskahNomor || '-',
+      s.pemberiNama || '-',
+      s.accessType === 'SEKALI_LIHAT' ? 'Sekali Lihat' : `${s.durationDays || '-'} hari`,
+      formatShortDate(s.createdAt),
+    ]);
+    downloadCsv(`dibagikan-kepada-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    useToast().add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+  } catch (e) {
+    console.error('Gagal export:', e);
+    useToast().add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 const selectSortOption = (v: string) => {
   activeSortLabel.value = v;
@@ -294,6 +323,21 @@ onMounted(() => { loadData(); });
           >
             <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
             Refresh
+          </button>
+
+          <!-- EXPORT BUTTON -->
+          <button
+            @click="exportData"
+            :disabled="isExporting"
+            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <UIcon
+              v-if="isExporting"
+              name="i-lucide-loader-circle"
+              class="w-4 h-4 animate-spin"
+            />
+            <UIcon v-else name="i-lucide-download" class="w-4 h-4" />
+            Export
           </button>
         </div>
       </div>
