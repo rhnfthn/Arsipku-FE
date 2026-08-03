@@ -1,5 +1,5 @@
 // composables/useAuth.ts
-import type { UserProfile, ActivePermission } from "~/types/auth";
+import type { UserProfile, ActivePermission } from '~/types/auth';
 
 // ── Inflight guard untuk getProfile — mencegah duplicate /auth/profile calls ──
 let inflightProfile: Promise<UserProfile | null> | null = null;
@@ -8,19 +8,19 @@ const PROFILE_DEDUP_MS = 5_000; // 5 detik — jangan fetch ulang jika baru saja
 
 export const useAuth = () => {
   const { apiGet, apiPost, clearApiCache } = useApi();
-  const tokenCookie = useCookie<string | null>("token", {
-    sameSite: "lax",
-    path: "/",
+  const tokenCookie = useCookie<string | null>('token', {
+    sameSite: 'lax',
+    path: '/',
   });
-  const roleCookie = useCookie<string | null>("auth_role", {
-    sameSite: "lax",
-    path: "/",
+  const roleCookie = useCookie<string | null>('auth_role', {
+    sameSite: 'lax',
+    path: '/',
   });
-  const sessionCookie = useCookie<string | null>("sessionId", {
-    sameSite: "lax",
-    path: "/",
+  const sessionCookie = useCookie<string | null>('sessionId', {
+    sameSite: 'lax',
+    path: '/',
   });
-  const user = useState<UserProfile | null>("user", () => null);
+  const user = useState<UserProfile | null>('user', () => null);
   const setUser = (data: UserProfile | null) => {
     user.value = data;
   };
@@ -34,7 +34,7 @@ export const useAuth = () => {
       return user.value;
     }
 
-    const token = process.client ? localStorage.getItem("token") : tokenCookie.value;
+    const token = process.client ? localStorage.getItem('token') : tokenCookie.value;
     if (!token) {
       if (force) {
         setUser(null);
@@ -49,7 +49,7 @@ export const useAuth = () => {
         tokenCookie.value = token;
 
         const res: any = await apiGet(
-          "/auth/profile",
+          '/auth/profile',
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -68,11 +68,24 @@ export const useAuth = () => {
           profileData = {
             ...profileData,
             alamatInfo: alamatData || profileData.alamatInfo,
-            delegations: delegationsData || profileData.delegations
+            delegations: delegationsData || profileData.delegations,
           };
 
           // Casting ke UserProfile
           const normalizedProfile = profileData as UserProfile;
+
+          // Sinkronkan active_profile dari localStorage (pola sama dgn delegasi).
+          // Ini memastikan profile aktif tetap konsisten setelah reload, meski
+          // JWT round-trip belum selesai.
+          if (process.client) {
+            const storedProfile = localStorage.getItem('arsipku_active_profile');
+            if (
+              storedProfile &&
+              (storedProfile === 'akun_asli' || storedProfile === 'sekretaris')
+            ) {
+              normalizedProfile.active_profile = storedProfile as 'akun_asli' | 'sekretaris';
+            }
+          }
 
           // Simpan ke state global
           setUser(normalizedProfile);
@@ -84,7 +97,7 @@ export const useAuth = () => {
 
         return null;
       } catch (error) {
-        console.error("[AUTH] getProfile error:", error);
+        console.error('[AUTH] getProfile error:', error);
         return null;
       }
     })();
@@ -103,29 +116,31 @@ export const useAuth = () => {
   const getSSORedirectUrl = async () => {
     try {
       // Gunakan sso-redirect-local saat development (localhost) agar redirect ke localhost:3000/autharsipku
-      const isLocal = process.client && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const endpoint = isLocal ? "/auth/sso-redirect-local" : "/auth/sso-redirect";
+      const isLocal =
+        process.client &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const endpoint = isLocal ? '/auth/sso-redirect-local' : '/auth/sso-redirect';
       const res: any = await apiGet(endpoint);
       return (res?.url as string) ?? null;
     } catch (error) {
-      console.error("[AUTH] getSSORedirectUrl error:", error);
+      console.error('[AUTH] getSSORedirectUrl error:', error);
       return null;
     }
   };
 
   const verifyToken = async (token: string) => {
     try {
-      return await apiPost("/auth/verify-token", { token });
+      return await apiPost('/auth/verify-token', { token });
     } catch (error) {
-      console.error("[AUTH] verifyToken error:", error);
+      console.error('[AUTH] verifyToken error:', error);
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      const sessionId = process.client ? localStorage.getItem("sessionId") : null;
-      const token = process.client ? localStorage.getItem("token") : null;
+      const sessionId = process.client ? localStorage.getItem('sessionId') : null;
+      const token = process.client ? localStorage.getItem('token') : null;
 
       // 1️⃣ Logout internal (hapus sessionId)
       if (sessionId && token) {
@@ -137,13 +152,14 @@ export const useAuth = () => {
         });
       }
     } catch (error) {
-      console.warn("[AUTH] logout-v2 error (ignored):", error);
+      console.warn('[AUTH] logout-v2 error (ignored):', error);
     }
 
     // 2️⃣ Bersihkan state lokal
     if (process.client) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("sessionId");
+      localStorage.removeItem('token');
+      localStorage.removeItem('sessionId');
+      localStorage.removeItem('arsipku_active_profile');
     }
     tokenCookie.value = null;
     sessionCookie.value = null;
@@ -154,11 +170,11 @@ export const useAuth = () => {
 
     // 3️⃣ Redirect ke SSO AirNav
     if (process.client) {
-      const redirectTarget = window.location.origin + "/autharsipku"; // Lebih dinamis
+      const redirectTarget = window.location.origin + '/autharsipku'; // Lebih dinamis
       const encodedRedirect = btoa(redirectTarget);
 
       // Pastikan URL logout sesuai environment
-      const ssoLogoutUrl = "https://auth.airnavindonesia.co.id/user/logout";
+      const ssoLogoutUrl = 'https://auth.airnavindonesia.co.id/user/logout';
       window.location.href = `${ssoLogoutUrl}?redirect_uri=${encodedRedirect}`;
     }
 
@@ -167,17 +183,17 @@ export const useAuth = () => {
 
   const refreshToken = async () => {
     if (!process.client) return null;
-    const sessionId = localStorage.getItem("sessionId");
-    if (!sessionId) throw new Error("No sessionId");
+    const sessionId = localStorage.getItem('sessionId');
+    if (!sessionId) throw new Error('No sessionId');
 
-    const res: any = await apiPost("/auth/refresh-token", {
+    const res: any = await apiPost('/auth/refresh-token', {
       sessionId,
     });
 
     const newAccessToken = res?.data?.accessToken;
-    if (!newAccessToken) throw new Error("Refresh token failed");
+    if (!newAccessToken) throw new Error('Refresh token failed');
 
-    localStorage.setItem("token", newAccessToken);
+    localStorage.setItem('token', newAccessToken);
     tokenCookie.value = newAccessToken;
     clearApiCache();
     return newAccessToken as string;
@@ -206,21 +222,21 @@ export const useAuth = () => {
 
   const hasAnyRole = (roleNames: string[]): boolean => roleNames.some(hasRole);
 
-  const isSuperadmin = computed(() => hasRole("SUPERADMIN"));
-  const isAdmin = computed(() => hasRole("ADMIN"));
+  const isSuperadmin = computed(() => hasRole('SUPERADMIN'));
+  const isAdmin = computed(() => hasRole('ADMIN'));
 
   const switchRole = async (roleId: string) => {
     if (!process.client) return;
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     const res: any = await apiPost(
-      "/rbac/switch-role",
+      '/rbac/switch-role',
       { roleId },
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const data = res?.data ?? res;
     const newToken = data?.accessToken;
     if (newToken) {
-      localStorage.setItem("token", newToken);
+      localStorage.setItem('token', newToken);
       tokenCookie.value = newToken;
       clearApiCache();
     }
@@ -229,34 +245,74 @@ export const useAuth = () => {
         ...(user.value as UserProfile),
         activeRole: data.activeRole,
         activePermissions: data.activePermissions || user.value?.activePermissions,
-        role: (data.activeRole.name || "").toLowerCase() || user.value?.role || "user",
+        role: (data.activeRole.name || '').toLowerCase() || user.value?.role || 'user',
       };
       setUser(updated);
       roleCookie.value = updated.role ?? null;
     }
   };
 
+  /**
+   * Ganti profile aktif user antara 'akun_asli' dan 'sekretaris' (delegasi sekretaris).
+   * Endpoint backend re-sign JWT baru dengan active_profile terbaru.
+   */
+  const switchProfile = async (profile: 'akun_asli' | 'sekretaris') => {
+    if (!process.client) return;
+    const token = localStorage.getItem('token');
+    const res: any = await apiPost(
+      '/auth/switch-profile',
+      { profile },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = res?.data ?? res;
+    const newToken = data?.accessToken;
+    if (newToken) {
+      localStorage.setItem('token', newToken);
+      tokenCookie.value = newToken;
+      clearApiCache();
+    }
+    if (data?.active_profile) {
+      const updated: UserProfile = {
+        ...(user.value as UserProfile),
+        active_profile: data.active_profile,
+        has_secretary_delegation:
+          data.has_secretary_delegation ?? user.value?.has_secretary_delegation,
+        available_profiles: data.available_profiles ?? user.value?.available_profiles,
+      };
+      setUser(updated);
+      // Persist ke localStorage agar konsisten setelah reload (pola sama dgn delegasi).
+      if (process.client) {
+        localStorage.setItem('arsipku_active_profile', data.active_profile);
+        // Beri tahu sidebar agar update tanpa reload manual.
+        window.dispatchEvent(new Event('profile-changed'));
+      }
+    }
+    return res;
+  };
+
   const refreshPermissions = async (): Promise<void> => {
     try {
-      const token = process.client ? localStorage.getItem("token") : null;
+      const token = process.client ? localStorage.getItem('token') : null;
       if (!token) return;
 
       clearApiCache();
       const res: any = await apiGet(
-        "/auth/refresh-permissions",
+        '/auth/refresh-permissions',
         { headers: { Authorization: `Bearer ${token}` } },
-        { skipCache: true },
+        { skipCache: true }
       );
       const data = res?.data ?? res;
       const newToken = data?.accessToken;
       if (newToken) {
-        localStorage.setItem("token", newToken);
+        localStorage.setItem('token', newToken);
         tokenCookie.value = newToken;
       }
       if (data?.activePermissions) {
         const updated: UserProfile = {
           ...(user.value as UserProfile),
-          activePermissions: Array.isArray(data.activePermissions) ? [...data.activePermissions] : [],
+          activePermissions: Array.isArray(data.activePermissions)
+            ? [...data.activePermissions]
+            : [],
           activeRole: data.activeRole ?? user.value?.activeRole,
           role: data.role ?? user.value?.role,
         };
@@ -264,7 +320,7 @@ export const useAuth = () => {
         roleCookie.value = updated.role ?? null;
       }
     } catch (error) {
-      console.error("[AUTH] refreshPermissions error:", error);
+      console.error('[AUTH] refreshPermissions error:', error);
     }
   };
 
@@ -284,5 +340,6 @@ export const useAuth = () => {
     isSuperadmin,
     isAdmin,
     switchRole,
+    switchProfile,
   };
 };
