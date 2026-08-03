@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { ShieldOff, RefreshCw, Check, X } from 'lucide-vue-next';
+import { ShieldOff } from 'lucide-vue-next';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
 import type { ShareItem } from '~/composables/useNaskahShare';
@@ -16,36 +16,14 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'revoke-recipient', payload: { share: ShareItem; recipientId: string; recipientName: string }): void;
   (e: 'revoke-all', share: ShareItem): void;
-  (e: 'request-reopen', share: ShareItem): void;
-  (e: 'approve-reopen', share: ShareItem): void;
-  (e: 'reject-reopen', share: ShareItem): void;
 }>();
 
 const isOpen = ref(true);
 
 // Cari recipient milik user saat ini (untuk status request)
-const myRecipient = computed(() => {
-  if (!props.userPosition) return null;
-  return props.share.recipients?.find((r) => r.recipientId === props.userPosition) || null;
-});
-
-// Penerima: bisa minta akses ulang jika SEKALI_LIHAT & sudah BERAKHIR & belum ada request MENUNGGU
-const canRequestReopen = computed(() => {
-  if (props.isSender) return false;
-  if (props.share.accessType !== 'SEKALI_LIHAT') return false;
-  if (myRecipient.value?.status !== 'BERAKHIR') return false;
-  if (myRecipient.value?.requestStatus === 'MENUNGGU') return false;
-  return true;
-});
-
-// Penerima: request sedang MENUNGGU
-const isRequestPending = computed(() => {
-  return myRecipient.value?.requestStatus === 'MENUNGGU';
-});
-
-// Pemberi: ada request MENUNGGU dari salah satu penerima
-const hasPendingRequest = computed(() => {
-  return props.share.recipients?.some((r) => r.requestStatus === 'MENUNGGU') || false;
+// Status gabungan: Aktif / Berakhir
+const displayStatus = computed<'AKTIF' | 'BERAKHIR'>(() => {
+  return props.share.status === 'BERAKHIR' ? 'BERAKHIR' : 'AKTIF';
 });
 
 const handleClose = () => {
@@ -89,7 +67,7 @@ watch(isOpen, (val) => {
               <span v-if="share.naskahNomor" class="text-[11px] text-gray-400 dark:text-gray-500 font-mono">
                 {{ share.naskahNomor }}
               </span>
-              <SharedShareBadge :status="share.status" size="xs" />
+              <SharedShareBadge :status="displayStatus" size="xs" />
             </div>
           </div>
 
@@ -181,6 +159,17 @@ watch(isOpen, (val) => {
           </div>
         </div>
 
+        <!-- Cabut Semua Akses (pemberi, share AKTIF) -->
+        <div v-if="props.isSender && share.status === 'AKTIF'" class="mt-4 mb-5 flex justify-end">
+          <button
+            @click="emit('revoke-all', share)"
+            class="px-4 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition inline-flex items-center gap-1.5"
+          >
+            <ShieldOff class="w-3.5 h-3.5" />
+            Cabut Semua Akses
+          </button>
+        </div>
+
         <!-- Info Berakhir -->
         <div v-if="share.status === 'BERAKHIR'" class="mt-4 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
           <p class="text-sm font-medium text-red-800 dark:text-red-300">Akses Berakhir</p>
@@ -190,60 +179,10 @@ watch(isOpen, (val) => {
           </p>
         </div>
 
-        <!-- Banner Request Akses Ulang (untuk PEMBERI) -->
-        <div v-if="props.isSender && hasPendingRequest" class="mt-4 mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-          <p class="text-sm font-medium text-amber-800 dark:text-amber-300">Permintaan Akses Ulang</p>
-          <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">
-            Ada penerima yang meminta akses ulang untuk naskah ini.
-          </p>
-          <div class="flex gap-2 mt-3">
-            <button
-              @click="emit('approve-reopen', share)"
-              class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary-700 transition inline-flex items-center gap-1.5"
-            >
-              <Check class="w-3.5 h-3.5" />
-              Setujui
-            </button>
-            <button
-              @click="emit('reject-reopen', share)"
-              class="px-3 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition inline-flex items-center gap-1.5"
-            >
-              <X class="w-3.5 h-3.5" />
-              Tolak
-            </button>
-          </div>
-        </div>
-
-        <!-- Status Request (untuk PENERIMA) -->
-        <div v-if="!props.isSender && isRequestPending" class="mt-4 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-          <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Permintaan Akses Ulang Terkirim</p>
-          <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">
-            Permintaan Anda sedang menunggu persetujuan pemberi.
-          </p>
-        </div>
       </div>
 
       <!-- Footer -->
-      <div class="flex justify-between px-5 py-3 border-t border-gray-200 dark:border-gray-700">
-        <!-- Cabut Semua Akses (hanya untuk pengirim, share masih AKTIF) -->
-        <button
-          v-if="props.isSender && share.status === 'AKTIF'"
-          @click="emit('revoke-all', share)"
-          class="px-4 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition inline-flex items-center gap-1.5"
-        >
-          <ShieldOff class="w-3.5 h-3.5" />
-          Cabut Semua Akses
-        </button>
-        <!-- Minta Akses Ulang (hanya untuk penerima, SEKALI_LIHAT & BERAKHIR) -->
-        <button
-          v-else-if="canRequestReopen"
-          @click="emit('request-reopen', share)"
-          class="px-4 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary-700 transition inline-flex items-center gap-1.5"
-        >
-          <RefreshCw class="w-3.5 h-3.5" />
-          Minta Akses Ulang
-        </button>
-        <span v-else></span>
+      <div class="flex justify-end px-5 py-3 border-t border-gray-200 dark:border-gray-700">
         <button
           @click="handleClose"
           class="px-4 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
