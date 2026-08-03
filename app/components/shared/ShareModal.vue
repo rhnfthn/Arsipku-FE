@@ -5,9 +5,11 @@ import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
 
 const props = defineProps<{
-  naskahId: string;
+  naskahId?: string;
   naskahPerihal?: string;
   naskahNomor?: string;
+  // Multi-naskah: array of { naskahId, perihal, nomor }
+  naskahItems?: Array<{ naskahId: string; perihal?: string; nomor?: string }>;
 }>();
 
 const emit = defineEmits<{
@@ -65,7 +67,14 @@ const removeRecipient = (id: string) => {
 };
 
 const handleSubmit = async () => {
-  if (!props.naskahId) {
+  // Resolve naskah list: multi (naskahItems) atau single (naskahId)
+  const items = props.naskahItems?.length
+    ? props.naskahItems
+    : props.naskahId
+      ? [{ naskahId: props.naskahId, perihal: props.naskahPerihal, nomor: props.naskahNomor }]
+      : [];
+
+  if (items.length === 0) {
     errorMsg.value = 'ID Naskah tidak valid';
     return;
   }
@@ -77,15 +86,16 @@ const handleSubmit = async () => {
   errorMsg.value = '';
   try {
     await createShare(
-      props.naskahId,
+      items[0].naskahId,
       selectedRecipients.value.map((r) => r.id),
       catatan.value || undefined,
       accessType.value,
       accessType.value === 'RENTANG_WAKTU' ? durationDays.value : undefined,
+      items.length > 1 ? items.map((i) => i.naskahId) : undefined,
     );
     useToast().add({
       title: 'Berhasil',
-      description: `Naskah berhasil dibagikan ke ${selectedRecipients.value.length} penerima`,
+      description: `${items.length} naskah berhasil dibagikan ke ${selectedRecipients.value.length} penerima`,
       color: 'success',
     });
     emit('shared');
@@ -124,9 +134,25 @@ watch(isOpen, (val) => {
           <!-- Info Naskah -->
           <div>
             <Heading variant="body2m" class="dark:text-gray-200">
-              Naskah
+              Naskah <span v-if="naskahItems?.length" class="text-gray-400 font-normal">({{ naskahItems.length }} dipilih)</span>
             </Heading>
-            <div class="mt-2 w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md text-sm">
+            <!-- Multi-naskah -->
+            <div v-if="naskahItems?.length" class="mt-2 space-y-1.5">
+              <div
+                v-for="(item, idx) in naskahItems"
+                :key="item.naskahId"
+                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md text-sm"
+              >
+                <p class="font-medium text-gray-900 dark:text-white">
+                  <span class="text-gray-400 mr-1.5">{{ idx + 1 }}.</span>{{ item.perihal || '(Tanpa perihal)' }}
+                </p>
+                <p v-if="item.nomor" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-mono">
+                  {{ item.nomor }}
+                </p>
+              </div>
+            </div>
+            <!-- Single naskah -->
+            <div v-else class="mt-2 w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md text-sm">
               <p class="font-medium text-gray-900 dark:text-white">
                 {{ naskahPerihal || '(Tanpa perihal)' }}
               </p>

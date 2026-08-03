@@ -634,7 +634,7 @@ const userMenuUtama = computed(() => [
   },
   {
     label: t('berbagi', 'Berbagi'),
-    icon: 'i-heroicons-share',
+    icon: 'i-lucide-share-2',
     permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
@@ -796,7 +796,7 @@ const adminMenuUtama = computed(() => [
   },
   {
     label: t('berbagi', 'Berbagi'),
-    icon: 'i-heroicons-share',
+    icon: 'i-lucide-share-2',
     permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
