@@ -85,6 +85,14 @@ export interface UserProfile {
   activePermissions?: ActivePermission[];
   roles?: ActiveRoleInfo[]; // semua role milik user (untuk switcher)
 
+  // Role tambahan dari tabel organization_tu (Unit TU): 'tu' | 'sekretaris'
+  tuRoles?: string[];
+
+  // Profile switching (sekretaris / unit dokumen)
+  has_secretary_delegation?: boolean;
+  available_profiles?: string[];
+  active_profile?: 'akun_asli' | 'sekretaris' | 'unit_dokumen';
+
   // Opsional: Jika ingin menyimpan list delegasi di user profile
   delegations?: UserDelegation[];
 }
