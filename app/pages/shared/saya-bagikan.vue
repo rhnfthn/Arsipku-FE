@@ -111,15 +111,29 @@ watch(searchQuery, () => {
 const handleRefresh = () => loadData();
 
 const isExporting = ref(false);
-const exportData = () => {
-  if (sharedByMe.value.length === 0) {
+const exportData = async () => {
+  if (pagination.total === 0) {
     useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
   isExporting.value = true;
   try {
+    // Fetch SEMUA data (bukan hanya halaman saat ini) dengan filter yang sama
+    await fetchShares({
+      tab: 'shared-by-me',
+      page: 1,
+      limit: pagination.total || 9999,
+      search: searchQuery.value || undefined,
+      status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
+      sort: activeSortLabel.value === 'Terlama' ? 'ASC' : 'DESC',
+    });
+    const rows = sharedByMe.value;
+    if (!rows.length) {
+      useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      return;
+    }
     const headers = ['Perihal', 'Jenis', 'Nomor', 'Dibagikan Kepada', 'Akses', 'Status', 'Tanggal'];
-    const csvRows = sharedByMe.value.map((s: any) => [
+    const csvRows = rows.map((s: any) => [
       s.naskahPerihal || '(Tanpa perihal)',
       s.naskahJenis || '-',
       s.naskahNomor || '-',
@@ -130,6 +144,8 @@ const exportData = () => {
     ]);
     downloadCsv(`saya-bagikan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
     useToast().add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+    // Reload halaman saat ini
+    await loadData();
   } catch (e) {
     console.error('Gagal export:', e);
     useToast().add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
