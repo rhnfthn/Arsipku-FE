@@ -776,6 +776,21 @@ onBeforeUnmount(() => {
         </div>
         <!-- Action buttons -->
         <div class="flex shrink-0 items-center gap-2">
+          <!-- Refresh button -->
+          <button
+            @click="loadData"
+            :disabled="pending"
+            class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <UIcon
+              name="i-lucide-rotate-cw"
+              class="w-3.5 h-3.5"
+              :class="{ 'animate-spin': pending }"
+            />
+            Refresh
+          </button>
           <!-- Export button -->
           <button
             @click="exportData"
