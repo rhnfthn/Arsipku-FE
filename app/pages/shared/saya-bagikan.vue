@@ -10,7 +10,7 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-useHead({ title: 'Saya Bagikan' });
+useHead({ title: () => t('share_title') });
 const { t } = useI18n();
 
 const {
@@ -22,16 +22,16 @@ const {
   getShareDetail,
 } = useNaskahShare();
 
-// ── Breadcrumbs ──────────────────────────────────────────────────────────────
+// ── Breadcrumbs (locale-reactive) ────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Berbagi', to: '/shared/saya-bagikan' },
-  { label: 'Saya Bagikan', to: '#' },
+  { label: t('berbagi'), to: '/shared/saya-bagikan' },
+  { label: t('share_title'), to: '#' },
 ]);
 
 // ── Search & Filter ──────────────────────────────────────────────────────────
 const searchQuery = ref('');
-const activeSortLabel = ref('Terbaru');
+const activeSortLabel = ref(t('share_terbaru'));
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
@@ -40,14 +40,14 @@ const showPageMenu = ref(false);
 const showStatusDropdown = ref(false);
 
 const filterStatus = ref('Semua');
-const statusOptions = [
-  { label: 'Semua Status', value: 'Semua' },
-  { label: 'Aktif', value: 'AKTIF' },
-  { label: 'Berakhir', value: 'BERAKHIR' },
-];
+const statusOptions = computed(() => [
+  { label: t('share_semua_status'), value: 'Semua' },
+  { label: t('share_aktif'), value: 'AKTIF' },
+  { label: t('share_berakhir'), value: 'BERAKHIR' },
+]);
 
 const filterStatusLabel = computed(() =>
-  statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
+  statusOptions.value.find((s) => s.value === filterStatus.value)?.label ?? t('share_semua_status')
 );
 
 const selectStatus = (val: string) => {
@@ -57,10 +57,10 @@ const selectStatus = (val: string) => {
   loadData();
 };
 
-const sortOptions = [
-  { label: 'Terbaru', value: 'Terbaru' },
-  { label: 'Terlama', value: 'Terlama' },
-];
+const sortOptions = computed(() => [
+  { label: t('share_terbaru'), value: t('share_terbaru') },
+  { label: t('share_terlama'), value: t('share_terlama') },
+]);
 const pageOptions = [10, 25, 50, 100];
 
 // ── Modals ───────────────────────────────────────────────────────────────────
@@ -110,10 +110,11 @@ watch(searchQuery, () => {
 // ── Handlers ─────────────────────────────────────────────────────────────────
 const handleRefresh = () => loadData();
 
+/** Export all data to CSV (fetch with limit = total, then format). */
 const isExporting = ref(false);
 const exportData = async () => {
   if (pagination.total === 0) {
-    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    useToast().add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
     return;
   }
   isExporting.value = true;
@@ -125,30 +126,30 @@ const exportData = async () => {
       limit: pagination.total || 9999,
       search: searchQuery.value || undefined,
       status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
-      sort: activeSortLabel.value === 'Terlama' ? 'ASC' : 'DESC',
+      sort: activeSortLabel.value === t('share_terlama') ? 'ASC' : 'DESC',
     });
     const rows = sharedByMe.value;
     if (!rows.length) {
-      useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      useToast().add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
       return;
     }
-    const headers = ['Perihal', 'Jenis', 'Nomor', 'Dibagikan Kepada', 'Akses', 'Status', 'Tanggal'];
+    const headers = [t('share_perihal'), t('share_jenis'), t('share_nomor'), t('share_dibagikan_kepada'), t('share_akses'), t('share_status'), t('share_tanggal')];
     const csvRows = rows.map((s: any) => [
-      s.naskahPerihal || '(Tanpa perihal)',
+      s.naskahPerihal || t('share_tanpa_perihal'),
       s.naskahJenis || '-',
       s.naskahNomor || '-',
       s.recipients?.map((r: any) => r.nama).join('; ') || '-',
-      s.accessType === 'SEKALI_LIHAT' ? 'Sekali Lihat' : `${s.durationDays || '-'} hari`,
-      s.status === 'AKTIF' ? 'Aktif' : 'Berakhir',
+      s.accessType === 'SEKALI_LIHAT' ? t('share_sekali_lihat') : `${s.durationDays || '-'} ${t('share_hari')}`,
+      s.status === 'AKTIF' ? t('share_aktif') : t('share_berakhir'),
       formatShortDate(s.createdAt),
     ]);
     downloadCsv(`saya-bagikan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    useToast().add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+    useToast().add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
     // Reload halaman saat ini
     await loadData();
   } catch (e) {
     console.error('Gagal export:', e);
-    useToast().add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+    useToast().add({ title: t('share_gagal_export'), description: t('share_coba_lagi'), color: 'error' });
   } finally {
     isExporting.value = false;
   }
@@ -191,16 +192,16 @@ const handleRevokeAll = async (share: any) => {
     const { revokeShare } = useNaskahShare();
     await revokeShare(share.id);
     useToast().add({
-      title: 'Berhasil',
-      description: 'Semua akses share berhasil diakhiri',
+      title: t('share_berhasil'),
+      description: t('share_berhasil_revoke'),
       color: 'success',
     });
     showDetailModal.value = false;
     loadData();
   } catch (err: any) {
     useToast().add({
-      title: 'Gagal',
-      description: err?.response?.data?.message || err?.message || 'Gagal mencabut akses',
+      title: t('share_gagal'),
+      description: err?.response?.data?.message || err?.message || t('share_gagal_cabut'),
       color: 'error',
     });
   }
@@ -209,7 +210,7 @@ const handleRevokeAll = async (share: any) => {
 
 const handleOpenPdf = async (share: any) => {
   isLoadingPdf.value = true;
-  pdfViewerTitle.value = share.naskahPerihal || 'Dokumen';
+  pdfViewerTitle.value = share.naskahPerihal || t('share_dokumen');
   showPdfViewer.value = true;
   try {
     const res = await openNaskah(share.id);
@@ -223,10 +224,10 @@ const handleOpenPdf = async (share: any) => {
     pdfViewerUrl.value = '';
     showPdfViewer.value = false;
     useToast().add({
-      title: 'Tidak dapat membuka',
+      title: t('share_tidak_bisa_buka'),
       description: msg.includes('sekali') || msg.includes('ditutup')
-        ? 'Anda hanya dapat membuka naskah ini sekali. Akses sudah ditutup.'
-        : msg || 'Gagal membuka naskah',
+        ? t('share_sekali_lihat_error')
+        : msg || t('share_gagal_buka'),
       color: 'error',
     });
   } finally {
@@ -240,7 +241,7 @@ onMounted(() => { loadData(); });
 <template>
   <div>
     <!-- Breadcrumb -->
-    <PageHeader title="Saya Bagikan" :items="breadcrumbs" />
+    <PageHeader :title="t('share_title')" :items="breadcrumbs" />
 
     <!-- Main Container -->
     <div
@@ -323,7 +324,7 @@ onMounted(() => { loadData(); });
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari perihal atau nomor..."
+              :placeholder="t('share_cari')"
               class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -372,7 +373,7 @@ onMounted(() => { loadData(); });
             class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
-            Refresh
+            {{ t('share_refresh') }}
           </button>
 
           <!-- EXPORT BUTTON -->
@@ -387,7 +388,7 @@ onMounted(() => { loadData(); });
               class="w-4 h-4 animate-spin"
             />
             <UIcon v-else name="i-lucide-download" class="w-4 h-4" />
-            Export
+            {{ t('share_export') }}
           </button>
         </div>
       </div>
@@ -454,13 +455,13 @@ onMounted(() => { loadData(); });
           <div v-if="isLoadingPdf" class="absolute inset-0 flex items-center justify-center z-10">
             <div class="flex flex-col items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg">
               <Icon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary-500" />
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen...</p>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('share_memuat_dokumen') }}</p>
             </div>
           </div>
           <iframe v-if="pdfViewerUrl" :key="pdfViewerUrl" :src="pdfViewerUrl" class="w-full h-full border-none" />
           <div v-else-if="!isLoadingPdf" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
             <Icon name="i-lucide-file-text" class="w-12 h-12 opacity-30" />
-            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
+            <span class="text-sm">{{ t('share_dokumen_error') }}</span>
           </div>
         </div>
       </div>

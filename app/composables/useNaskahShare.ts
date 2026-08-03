@@ -35,10 +35,12 @@ export interface ShareSearchParams {
   q: string;
 }
 
+/** Composable for share feature: state, API calls, helpers. */
 export function useNaskahShare() {
   const { apiGet, apiPost, apiDelete, apiPatch, clearApiCache } = useApi();
 
   // ── State ───────────────────────────────────────
+  // sharedByMe: shares sent by user | sharedToMe: shares received by user
   const sharedByMe = ref<ShareItem[]>([]);
   const sharedToMe = ref<ShareItem[]>([]);
   const pending = ref(false);
@@ -49,11 +51,11 @@ export function useNaskahShare() {
     limit: 20,
   });
 
-  // Search results for user dropdown
+  // Search results for recipient dropdown
   const searchResults = ref<ShareRecipient[]>([]);
   const searchPending = ref(false);
 
-  // ── Fetch shares (tab: shared-by-me | shared-to-me) ──────────
+  /** Fetch shares with filter & pagination. Stores to sharedByMe or sharedToMe by tab. */
   const fetchShares = async (params: {
     tab?: 'shared-by-me' | 'shared-to-me';
     page?: number;
