@@ -1735,6 +1735,13 @@ const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris
   if (process.client) {
     localStorage.setItem('active_profile', profile);
     localStorage.setItem('arsipku_active_profile', profile);
+    // Reset state delegasi (sumber kebenaran kedua) agar tidak ada centang
+    // ganda saat beralih via path Pindah Profile. Satu sumber kebenaran:
+    // active_profile. Tanpa ini, card delegasi lama tetap centang karena
+    // arsipku_active_delegation_id belum di-clear.
+    localStorage.removeItem('arsipku_active_delegation_id');
+    localStorage.removeItem('arsipku_active_delegation_role');
+    activeDelegationId.value = null;
     window.dispatchEvent(new Event('active_profile_changed'));
     window.dispatchEvent(new Event('profile-changed'));
     currentProfile.value = profile;
@@ -1783,9 +1790,20 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
         localStorage.setItem('arsipku_active_delegation_id', target.id);
         if (res.data?.user?.role)
           localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
+        // Sinkronkan active_profile: delegasi SE (Sekretaris) → 'sekretaris',
+        // delegasi lain (VI/PT/dll) → tetap 'akun_asli' (bukan sekretaris).
+        // Tanpa ini, setelah reload currentProfile tidak sinkron dengan delegasi
+        // aktif → centang kembali ke Akun Asli.
+        const newPosStatus = res.data?.user?.position_status;
+        const profile = newPosStatus === 'SE' ? 'sekretaris' : 'akun_asli';
+        localStorage.setItem('active_profile', profile);
+        localStorage.setItem('arsipku_active_profile', profile);
       } else {
         localStorage.removeItem('arsipku_active_delegation_id');
         localStorage.removeItem('arsipku_active_delegation_role');
+        // Reset ke akun asli → profile 'akun_asli'.
+        localStorage.setItem('active_profile', 'akun_asli');
+        localStorage.setItem('arsipku_active_profile', 'akun_asli');
       }
       localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.');
       window.location.reload();
@@ -1808,6 +1826,8 @@ const confirmLogout = async () => {
     localStorage.removeItem('arsipku_original_position');
     localStorage.removeItem('arsipku_active_delegation_id');
     localStorage.removeItem('arsipku_active_delegation_role');
+    localStorage.removeItem('active_profile');
+    localStorage.removeItem('arsipku_active_profile');
   }
   isLoggingOut.value = true;
   await logout();
@@ -1934,14 +1954,23 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
     const details = role.delegated_role || {};
+    const isSekretarisDelegasi = details.position_status === 'SE';
     return {
       uiName: details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
-      uiPosition: details.position_text || 'Jabatan Tidak Tersedia',
+      uiPosition: isSekretarisDelegasi ? 'Sekretaris' : (details.position_text || 'Jabatan Tidak Tersedia'),
       uiArea: details.area_text || details.company_text || '',
       label: details.position_text || 'Delegasi',
       slot: 'delegation-item',
-      isActive: currentId === role.id,
+      // Samakan sumber kebenaran dengan card profile lain: pakai currentProfile.
+      // Delegasi SE (Sekretaris) → aktif saat currentProfile === 'sekretaris'.
+      // Delegasi non-SE (VI/PT/dll) → aktif saat currentProfile === 'akun_asli'
+      // DAN sedang dalam mode delegasi (activeDelegationId === role.id).
+      // Sebelumnya pakai currentId === role.id saja, yang tidak sinkron dengan
+      // active_profile sehingga bisa muncul centang ganda.
+      isActive: isSekretarisDelegasi
+        ? currentProfile.value === 'sekretaris'
+        : currentProfile.value === 'akun_asli' && currentId === role.id,
       click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
       onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
     };
@@ -1951,8 +1980,15 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   // Tidak ada label "PINDAH PROFILE" — langsung card berturut-turut.
   const profileCards: any[] = [mainAccountItem, ...delegasiItems];
 
-  // Tambahkan card Sekretaris jika punya delegasi sekretaris (bukan dari delegasi SE biasa).
-  if (hasSecretaryDelegation.value) {
+  // Cek apakah delegasi SE (Sekretaris) sudah ada di delegasiItems (dari tabel delegasi).
+  // Jika sudah ada, jangan push card Sekretaris lagi (hindari duplikat).
+  const hasSekretarisInDelegasiItems = (delegationRoles.value || []).some(
+    (r: any) => r?.delegated_role?.position_status === 'SE',
+  );
+
+  // Tambahkan card Sekretaris hanya jika punya delegasi sekretaris dari organization_tu
+  // DAN belum ada di delegasiItems (hindari duplikat).
+  if (hasSecretaryDelegation.value && !hasSekretarisInDelegasiItems) {
     profileCards.push({
       uiName: user.value?.nama || 'User',
       uiBadge: 'Sekretaris',
