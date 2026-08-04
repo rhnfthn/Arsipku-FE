@@ -91,6 +91,7 @@ const statusRef = ref<HTMLElement | null>(null);
 
 const statusOptions: { value: VerifikasiStatus; label: string }[] = [
   { value: 'MENUNGGU_VERIFIKASI_ATASAN', label: 'Menunggu Persetujuan' },
+  { value: 'DISETUJUI_ATASAN', label: 'Menunggu Verifikasi (Level Berikutnya)' },
   { value: 'MENUNGGU_VERIFIKASI_TERAKHIR', label: 'Menunggu Verifikasi' },
   { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
   { value: 'SELESAI', label: 'Selesai' },

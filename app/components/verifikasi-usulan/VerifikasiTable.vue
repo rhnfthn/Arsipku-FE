@@ -94,5 +94,7 @@ watch(
 );
 
 const needsVerification = (s: VerifikasiStatus) =>
-  s === 'MENUNGGU_VERIFIKASI_ATASAN' || s === 'MENUNGGU_VERIFIKASI_TERAKHIR';
+  s === 'MENUNGGU_VERIFIKASI_ATASAN' ||
+  s === 'DISETUJUI_ATASAN' ||
+  s === 'MENUNGGU_VERIFIKASI_TERAKHIR';
 </script>
