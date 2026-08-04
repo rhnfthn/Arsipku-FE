@@ -632,17 +632,8 @@
             <button
               type="button"
               :disabled="isSubmitting || isUploading"
-              class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 text-primary hover:bg-primary-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="onSubmitBerkas('draft')"
-            >
-              Simpan Draft
-            </button>
-
-            <button
-              type="button"
-              :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-80 disabled:cursor-not-allowed"
-              @click="onSubmitBerkas('aktif')"
+              @click="onSubmitBerkas()"
             >
               <span v-if="isSubmitting || isUploading" class="inline-flex items-center gap-2">
                 <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -664,7 +655,7 @@
                 </svg>
                 {{ isUploading ? 'Mengunggah...' : 'Menyimpan...' }}
               </span>
-              <span v-else>Simpan & Aktifkan</span>
+              <span v-else>Simpan</span>
             </button>
           </div>
         </template>
@@ -689,10 +680,10 @@ import {
 const {
   getBerkasList,
   createBerkas,
-  activateBerkas,
   getKlasifikasiDenganRetensi,
   uploadBerkasFile,
 } = useArsipDinamis();
+const { apiPost } = useApi();
 const toast = useToast();
 
 // ── State ────────────────────────────────────────────────────────
@@ -716,11 +707,10 @@ const filterTahun = ref('');
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'aktif', label: 'Aktif' },
-  { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi' },
-  { value: 'ditolak', label: 'Ditolak' },
-  { value: 'closed_retensi_aktif', label: 'Closed — Retensi Aktif' },
+  { value: 'aktif', label: 'Terbuka' },
+  { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi Managerial' },
+  { value: 'ditolak', label: 'Verifikasi Ditolak Managerial' },
+  { value: 'closed_retensi_aktif', label: 'Tertutup' },
 ];
 const currentYear = new Date().getFullYear();
 const tahunOptions = [
@@ -844,11 +834,11 @@ const retensiInaktifLabel = computed(() =>
 
 const columns = [
   { key: 'judulBerkas', label: 'Nama Berkas', sortable: true },
-  { key: 'kodeBerkas', label: 'Kode Berkas' },
-  { key: 'klasifikasiTeks', label: 'Klasifikasi' },
+  { key: 'kodeBerkas', label: 'Kode Berkas', sortable: true },
+  { key: 'klasifikasiTeks', label: 'Klasifikasi', sortable: true },
   { key: 'retensi', label: 'Retensi (A/I)' },
-  { key: 'lokasi', label: 'Lokasi Fisik' },
-  { key: 'status', label: 'Status' },
+  { key: 'lokasi', label: 'Lokasi Fisik', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
   { key: 'updatedAt', label: 'Updated', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
@@ -857,15 +847,15 @@ const columns = [
 
 // ── Status color standard (berkas-saya only) ───────────────────
 const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
-  draft: { label: 'Draft', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' },
-  aktif: { label: 'Aktif', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
-  menunggu_verifikasi: { label: 'Menunggu Verifikasi', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
-  ditolak: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
-  closed_retensi_aktif: { label: 'Closed — Retensi Aktif', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  aktif: { label: 'Terbuka', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi Managerial', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
+  ditolak: { label: 'Verifikasi Ditolak Managerial', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
+  closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
 };
 const statusStyle = (status: string) => {
   const key = (status || '').toLowerCase().replace(/[\s-]+/g, '_');
-  const s = STATUS_STYLE[key] || STATUS_STYLE.draft;
+  const s =
+    STATUS_STYLE[key] || { label: 'Tidak Diketahui', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' };
   return { label: s.label, backgroundColor: s.bg, color: s.text, borderColor: s.border, dot: s.dot };
 };
 
@@ -937,7 +927,7 @@ const onFotoLokasiChange = (e: Event) => {
 
 // ── Submit ───────────────────────────────────────────────────────
 
-const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
+const onSubmitBerkas = async () => {
   modalErrors.klasifikasi = !form.klasifikasi;
   modalErrors.judul_berkas = !form.judul_berkas;
   modalErrors.lokasi = !form.lokasi;
@@ -1004,12 +994,7 @@ const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
       throw new Error('ID berkas tidak ditemukan pada respons server.');
     }
 
-    if (mode === 'aktif') {
-      await activateBerkas(createdBerkas.id);
-      toast.add({ title: 'Berkas berhasil dibuat & diaktifkan', color: 'success' });
-    } else {
-      toast.add({ title: 'Berkas disimpan sebagai draft', color: 'success' });
-    }
+    toast.add({ title: 'Berkas berhasil dibuat', color: 'success' });
     showCreateModal.value = false;
     resetForm();
     await fetchData();
@@ -1051,6 +1036,8 @@ const fetchData = async () => {
       tahun: filterTahun.value || undefined,
       page: currentPage.value,
       limit: perPage.value,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
     });
     const normalizedList = normalizePaginatedResponse(list);
     berkasList.value = normalizedList.data;
@@ -1151,11 +1138,22 @@ watch([currentPage, perPage], ([, newPerPage], [, oldPerPage]) => {
   fetchData();
 });
 
+// Sort changes -> reset to page 1 (currentPage watcher fetches; if on page 1, fetch directly).
+watch([sortKey, sortDir], () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
+});
+
 // ── Init ─────────────────────────────────────────────────────────
 
 onMounted(() => {
   fetchData();
   fetchKlasifikasi();
+  // Auto-sync: berkas Tertutup dengan retensi aktif habis → buat usulan DRAFT
+  // otomatis di pemindahan arsip. Fire-and-forget (tidak block UI).
+  apiPost('/transfer-active-to-inactive/sync-draft', {}).catch((e: any) =>
+    console.warn('[berkas-saya] sync-draft error:', e?.message),
+  );
   document.addEventListener('click', handleDocumentClick);
 });
 

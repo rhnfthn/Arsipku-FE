@@ -3,7 +3,7 @@
  * Endpoint: /arsip-dinamis/*
  */
 export const useArsipDinamis = () => {
-  const { apiGet, apiPost, apiPut, apiPatch, apiDelete } = useApi();
+  const { apiGet, apiPost, apiPut, apiDelete } = useApi();
 
   // ── Berkas CRUD ─────────────────────────────────────────────────
 
@@ -25,10 +25,6 @@ export const useArsipDinamis = () => {
 
   const updateBerkas = async (id: string, data: Record<string, any>) => {
     return await apiPut(`/arsip-dinamis/berkas/${id}`, data);
-  };
-
-  const activateBerkas = async (id: string) => {
-    return await apiPatch(`/arsip-dinamis/berkas/${id}/activate`);
   };
 
   const deleteBerkas = async (id: string) => {
@@ -63,6 +59,16 @@ export const useArsipDinamis = () => {
     return await apiGet(
       `/arsip-dinamis/berkas/${berkasId}/naskah`,
       { params },
+      { skipCache: true }
+    );
+  };
+
+  // Detail naskah TUNGGAL dalam konteks berkas (sebagai anggota pemberkasan/
+  // persetujuan) — tanpa cek peserta korespondensi. Return envelope { data }.
+  const getNaskahDetailInBerkas = async (berkasId: string, naskahId: string) => {
+    return await apiGet(
+      `/arsip-dinamis/berkas/${berkasId}/naskah/${naskahId}/detail`,
+      {},
       { skipCache: true }
     );
   };
@@ -123,6 +129,14 @@ export const useArsipDinamis = () => {
     return await apiGet('/arsip-dinamis/persetujuan', { params }, { skipCache: true });
   };
 
+  const getRiwayatPersetujuan = async (params?: Record<string, any>) => {
+    return await apiGet('/arsip-dinamis/persetujuan/riwayat', { params }, { skipCache: true });
+  };
+
+  const getPersetujuanSaya = async (params?: Record<string, any>) => {
+    return await apiGet('/arsip-dinamis/persetujuan/saya', { params }, { skipCache: true });
+  };
+
   const getRiwayatRetensi = async (params?: Record<string, any>) => {
     return await apiGet('/arsip-dinamis/riwayat-retensi', { params }, { skipCache: true });
   };
@@ -146,7 +160,6 @@ export const useArsipDinamis = () => {
     getBerkasById,
     createBerkas,
     updateBerkas,
-    activateBerkas,
     deleteBerkas,
     uploadBerkasFile,
     fetchBerkasFileBlob,
@@ -154,6 +167,7 @@ export const useArsipDinamis = () => {
     getKlasifikasiDenganRetensi,
     // Naskah
     getDaftarNaskah,
+    getNaskahDetailInBerkas,
     addNaskahToBerkas,
     removeNaskahFromBerkas,
     getNaskahSiapArsip,
@@ -164,6 +178,8 @@ export const useArsipDinamis = () => {
     rejectVerifikasi,
     // Manager
     getPengajuanPenutupan,
+    getRiwayatPersetujuan,
+    getPersetujuanSaya,
     getRiwayatRetensi,
     getNaskahSaya,
     getStatistikPersetujuan,

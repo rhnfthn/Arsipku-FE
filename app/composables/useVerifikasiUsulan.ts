@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
+import { useAuth } from './useAuth';
 import type {
   VerifikasiUsulanItem,
   VerifikasiFilter,
@@ -15,6 +16,7 @@ import type {
  */
 export const useVerifikasiUsulan = () => {
   const { apiGet, apiPatch, apiPost } = useApi();
+  const { user } = useAuth();
 
   const list = ref<VerifikasiUsulanItem[]>([]);
   const summary = ref<VerifikasiSummary | null>(null);
@@ -26,7 +28,11 @@ export const useVerifikasiUsulan = () => {
   /** Cek apakah user login pernah dipilih sebagai atasan managerial. */
   const checkIsAtasan = async (): Promise<boolean> => {
     try {
-      const res: any = await apiGet('/transfer-active-to-inactive/is-atasan', {}, { skipCache: true });
+      const res: any = await apiGet(
+        '/transfer-active-to-inactive/is-atasan',
+        {},
+        { skipCache: true }
+      );
       isAtasan.value = res?.data?.isAtasan ?? false;
       return isAtasan.value;
     } catch {
@@ -48,7 +54,8 @@ export const useVerifikasiUsulan = () => {
     arsipId: raw.arsipId ?? raw.arsip_id ?? '',
     arsipPerihal: raw.arsipPerihal ?? raw.arsip_perihal ?? '-',
     arsipKode: raw.arsipKode ?? raw.arsip_kode ?? null,
-    tanggalRetensiAktifHabis: raw.tanggalRetensiAktifHabis ?? raw.tanggal_retensi_aktif_habis ?? null,
+    tanggalRetensiAktifHabis:
+      raw.tanggalRetensiAktifHabis ?? raw.tanggal_retensi_aktif_habis ?? null,
     keterangan: raw.keterangan ?? null,
     status: raw.status,
     rejectedNote: raw.rejectedNote ?? raw.rejected_note ?? null,
@@ -60,6 +67,20 @@ export const useVerifikasiUsulan = () => {
     finalVerifiedAt: raw.finalVerifiedAt ?? raw.final_verified_at ?? null,
     createdAt: raw.createdAt ?? raw.created_at,
     updatedAt: raw.updatedAt ?? raw.updated_at,
+    currentApprovalLevel: raw.currentApprovalLevel ?? raw.current_approval_level ?? 1,
+    totalApprovalLevels: raw.totalApprovalLevels ?? raw.total_approval_levels ?? 1,
+    approvalLevels: Array.isArray(raw.approvalLevels)
+      ? raw.approvalLevels.map((l: any) => ({
+          id: l.id,
+          atasanPersnum: l.atasanPersnum ?? l.atasan_persnum,
+          atasanName: l.atasanName ?? l.atasan_name ?? '-',
+          atasanPositionText: l.atasanPositionText ?? l.atasan_position_text ?? null,
+          urutan: l.urutan,
+          status: l.status,
+          verifiedAt: l.verifiedAt ?? l.verified_at ?? null,
+          catatan: l.catatan ?? null,
+        }))
+      : undefined,
   });
 
   /** Fetch gabungan dari 2 endpoint. */
@@ -75,47 +96,43 @@ export const useVerifikasiUsulan = () => {
       const jenis = params.jenis;
       delete params.jenis;
 
+      // Pagination dilakukan di frontend (setelah filter DRAFT)
+      const page = params.page ?? 1;
+      const limit = params.limit ?? 10;
+      delete params.page;
+      delete params.limit;
+
+      // Ambil semua data dari backend (limit besar) untuk filter DRAFT di frontend
+      params.limit = 999;
+
       const tasks: Promise<{ data: any[]; meta?: any; jenis: JenisUsulan }>[] = [];
 
       // Hanya panggil endpoint Pemindahan Arsip Aktif ke Inaktif
-      // (Sekretaris hanya menggunakan fitur ini, bukan transfer-inactive-file)
       if (!jenis || jenis === 'aktif_ke_inaktif') {
         tasks.push(
           apiGet('/transfer-active-to-inactive', { params }, { skipCache: true })
             .then((r: any) => {
-              console.log('[useVerifikasiUsulan] Raw response aktif_ke_inaktif:', r);
               const data = Array.isArray(r) ? r : (r?.data ?? []);
-              const meta = Array.isArray(r) ? { total: r.length } : r?.meta;
-              return { data, meta, jenis: 'aktif_ke_inaktif' as JenisUsulan };
+              return { data, meta: null, jenis: 'aktif_ke_inaktif' as JenisUsulan };
             })
             .catch((e) => {
-              console.error('[useVerifikasiUsulan] Error aktif_ke_inaktif:', e);
+              console.error('[useVerifikasiUsulan] Error:', e);
               return { data: [], meta: null, jenis: 'aktif_ke_inaktif' as JenisUsulan };
-            }),
+            })
         );
       }
 
       const results = await Promise.all(tasks);
 
-      // Debug: log hasil dari setiap endpoint
-      for (const r of results) {
-        console.log(`[useVerifikasiUsulan] Endpoint ${r.jenis}: ${r.data.length} items, meta:`, r.meta);
-        if (r.data.length > 0) {
-          console.log(`[useVerifikasiUsulan] Sample ${r.jenis} item:`, r.data[0]);
-        }
-      }
-
-      // Gabungkan dan normalisasi
+      // Gabungkan dan normalisasi, filter DRAFT
       const combined: VerifikasiUsulanItem[] = [];
-      let totalAll = 0;
       for (const r of results) {
         for (const raw of r.data) {
-          combined.push(normalize(raw, r.jenis));
+          const item = normalize(raw, r.jenis);
+          if (item.status === 'DRAFT') continue;
+          combined.push(item);
         }
-        totalAll += r.meta?.total ?? r.data.length;
       }
-
-      console.log('[useVerifikasiUsulan] Combined:', combined.length, 'items, total:', totalAll);
 
       // Sort by createdAt DESC
       combined.sort((a, b) => {
@@ -124,15 +141,36 @@ export const useVerifikasiUsulan = () => {
         return dateB - dateA;
       });
 
-      list.value = combined;
+      // Pagination di frontend
+      const totalAll = combined.length;
+      const startIdx = (page - 1) * limit;
+      const pagedData = combined.slice(startIdx, startIdx + limit);
+
+      // Enrich: cek isCurrentTurn
+      const userPersnum = (user as any)?.persnum;
+      if (userPersnum) {
+        await Promise.all(
+          pagedData.map(async (item) => {
+            if (
+              item.jenis === 'aktif_ke_inaktif' &&
+              (item.status === 'MENUNGGU_VERIFIKASI_ATASAN' || item.status === 'DISETUJUI_ATASAN')
+            ) {
+              item.isCurrentTurn = await checkIsCurrentTurn(item.id, item.jenis);
+            } else {
+              item.isCurrentTurn = false;
+            }
+          })
+        );
+      }
+
+      list.value = pagedData;
       meta.value = {
-        page: params.page ?? 1,
-        limit: params.limit ?? 10,
+        page,
+        limit,
         total: totalAll,
-        totalPages: Math.ceil(totalAll / (params.limit ?? 10)),
+        totalPages: Math.ceil(totalAll / limit),
       };
-      console.log('[useVerifikasiUsulan] list.value set to:', list.value.length, 'items');
-      return { data: combined, meta: meta.value };
+      return { data: pagedData, meta: meta.value };
     } catch (e: any) {
       console.error('[useVerifikasiUsulan] fetchList error:', e);
       error.value = e?.message || 'Gagal memuat data';
@@ -141,14 +179,17 @@ export const useVerifikasiUsulan = () => {
       throw e;
     } finally {
       loading.value = false;
-      console.log('[useVerifikasiUsulan] loading set to false, list:', list.value.length, 'items');
     }
   };
 
   /** Summary hanya dari endpoint Pemindahan Arsip Aktif ke Inaktif. */
   const fetchSummary = async (): Promise<VerifikasiSummary | null> => {
     try {
-      const activeRes: any = await apiGet('/transfer-active-to-inactive/summary', {}, { skipCache: true }).catch(() => null);
+      const activeRes: any = await apiGet(
+        '/transfer-active-to-inactive/summary',
+        {},
+        { skipCache: true }
+      ).catch(() => null);
 
       const a = activeRes?.data ?? {};
 
@@ -169,11 +210,13 @@ export const useVerifikasiUsulan = () => {
   };
 
   /** Detail usulan berdasarkan jenis. */
-  const fetchDetail = async (id: string, jenis: JenisUsulan): Promise<VerifikasiUsulanItem | null> => {
+  const fetchDetail = async (
+    id: string,
+    jenis: JenisUsulan
+  ): Promise<VerifikasiUsulanItem | null> => {
     try {
-      const endpoint = jenis === 'aktif_ke_inaktif'
-        ? '/transfer-active-to-inactive'
-        : '/transfer-inactive-file';
+      const endpoint =
+        jenis === 'aktif_ke_inaktif' ? '/transfer-active-to-inactive' : '/transfer-inactive-file';
       const res: any = await apiGet(`${endpoint}/${id}`, {}, { skipCache: true });
       return normalize(res?.data, jenis);
     } catch (e: any) {
@@ -182,38 +225,57 @@ export const useVerifikasiUsulan = () => {
     }
   };
 
-  /** Verifikasi awal → DISETUJUI_ATASAN. */
+  /** Verifikasi (approve) — gunakan endpoint /verify (multi-level berjenjang). */
   const verify = async (id: string, jenis: JenisUsulan, payload: VerifikasiActionPayload) => {
-    const endpoint = jenis === 'aktif_ke_inaktif'
-      ? `/transfer-active-to-inactive/${id}/approve`
-      : `/transfer-inactive-file/${id}/approve`;
+    const endpoint =
+      jenis === 'aktif_ke_inaktif'
+        ? `/transfer-active-to-inactive/${id}/verify`
+        : `/transfer-inactive-file/${id}/approve`;
     const r: any = await apiPatch(endpoint, { verifyNote: payload.catatanVerifikasi });
     return r?.data;
   };
 
+  /** Cek apakah user login sedang giliran verifikasi. */
+  const checkIsCurrentTurn = async (id: string, jenis: JenisUsulan): Promise<boolean> => {
+    if (jenis !== 'aktif_ke_inaktif') return false;
+    try {
+      const r: any = await apiGet(
+        `/transfer-active-to-inactive/${id}/is-current-turn`,
+        {},
+        { skipCache: true }
+      );
+      return r?.data?.isCurrentTurn ?? false;
+    } catch {
+      return false;
+    }
+  };
+
   /** Verifikasi terakhir → DISETUJUI_VERIFIKASI_TERAKHIR. */
   const finalVerify = async (id: string, jenis: JenisUsulan, payload: VerifikasiActionPayload) => {
-    const endpoint = jenis === 'aktif_ke_inaktif'
-      ? `/transfer-active-to-inactive/${id}/final-verify`
-      : `/transfer-inactive-file/${id}/final-verify`;
+    const endpoint =
+      jenis === 'aktif_ke_inaktif'
+        ? `/transfer-active-to-inactive/${id}/final-verify`
+        : `/transfer-inactive-file/${id}/final-verify`;
     const r: any = await apiPatch(endpoint, { finalVerifyNote: payload.catatanVerifikasi });
     return r?.data;
   };
 
   /** Tolak usulan → DITOLAK_ATASAN (wajib alasan). */
   const reject = async (id: string, jenis: JenisUsulan, payload: RejectPayload) => {
-    const endpoint = jenis === 'aktif_ke_inaktif'
-      ? `/transfer-active-to-inactive/${id}/reject`
-      : `/transfer-inactive-file/${id}/reject`;
+    const endpoint =
+      jenis === 'aktif_ke_inaktif'
+        ? `/transfer-active-to-inactive/${id}/reject`
+        : `/transfer-inactive-file/${id}/reject`;
     const r: any = await apiPatch(endpoint, { rejectedNote: payload.alasanPenolakan });
     return r?.data;
   };
 
   /** Generate Berita Acara. */
   const generateBeritaAcara = async (id: string, jenis: JenisUsulan) => {
-    const endpoint = jenis === 'aktif_ke_inaktif'
-      ? `/transfer-active-to-inactive/${id}/berita-acara`
-      : `/transfer-inactive-file/${id}/berita-acara`;
+    const endpoint =
+      jenis === 'aktif_ke_inaktif'
+        ? `/transfer-active-to-inactive/${id}/berita-acara`
+        : `/transfer-inactive-file/${id}/berita-acara`;
     const r: any = await apiPost(endpoint, {});
     return r?.data;
   };
@@ -233,15 +295,26 @@ export const useVerifikasiUsulan = () => {
   };
 
   /** Upload Berkas Fisik & Berita Acara */
-  const uploadBerkas = async (id: string, jenis: JenisUsulan, payload: { berkasFisikUrl?: string; beritaAcaraSerahTerimaUrl?: string }) => {
+  const uploadBerkas = async (
+    id: string,
+    jenis: JenisUsulan,
+    payload: { berkasFisikUrl?: string; beritaAcaraSerahTerimaUrl?: string }
+  ) => {
     const endpoint = `/transfer-active-to-inactive/${id}/upload-berkas`;
     const r: any = await apiPatch(endpoint, payload);
     return r?.data;
   };
 
-  /** Selesaikan usulan → SELESAI */
+  /** Selesaikan usulan → kirim ke TU (MENUNGGU_PENERIMAAN) */
   const selesaikanUsulan = async (id: string, jenis: JenisUsulan) => {
     const endpoint = `/transfer-active-to-inactive/${id}/selesai`;
+    const r: any = await apiPatch(endpoint, {});
+    return r?.data;
+  };
+
+  /** Atasan Managerial TU setujui penerimaan → SELESAI */
+  const approveReceipt = async (id: string, jenis: JenisUsulan) => {
+    const endpoint = `/transfer-active-to-inactive/${id}/approve-receipt`;
     const r: any = await apiPatch(endpoint, {});
     return r?.data;
   };
@@ -265,5 +338,7 @@ export const useVerifikasiUsulan = () => {
     siapkanBerkasFisik,
     uploadBerkas,
     selesaikanUsulan,
+    approveReceipt,
+    checkIsCurrentTurn,
   };
 };

@@ -32,7 +32,11 @@ export const useTransferActiveToInactive = () => {
       Object.keys(params).forEach((k) => {
         if (params[k] === undefined || params[k] === null || params[k] === '') delete params[k];
       });
-      const res: any = await apiGet('/transfer-active-to-inactive', { params }, { skipCache: true });
+      const res: any = await apiGet(
+        '/transfer-active-to-inactive',
+        { params },
+        { skipCache: true }
+      );
       list.value = res?.data ?? [];
       meta.value = res?.meta ?? null;
       return res;
@@ -48,7 +52,11 @@ export const useTransferActiveToInactive = () => {
 
   const fetchSummary = async (): Promise<TransferSummary | null> => {
     try {
-      const res: any = await apiGet('/transfer-active-to-inactive/summary', {}, { skipCache: true });
+      const res: any = await apiGet(
+        '/transfer-active-to-inactive/summary',
+        {},
+        { skipCache: true }
+      );
       summary.value = res?.data ?? null;
       return res?.data ?? null;
     } catch (e: any) {
@@ -72,7 +80,10 @@ export const useTransferActiveToInactive = () => {
     return res?.data;
   };
 
-  const update = async (id: string, payload: UpdateTransferPayload): Promise<TransferActiveToInactive> => {
+  const update = async (
+    id: string,
+    payload: UpdateTransferPayload
+  ): Promise<TransferActiveToInactive> => {
     const res: any = await apiPatch(`/transfer-active-to-inactive/${id}`, payload);
     return res?.data;
   };
@@ -115,6 +126,10 @@ export const useTransferActiveToInactive = () => {
   };
   const selesaikanUsulan = async (id: string) => {
     const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/selesai`, {});
+    return r?.data;
+  };
+  const approveReceipt = async (id: string) => {
+    const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/approve-receipt`, {});
     return r?.data;
   };
   const verifyPhysical = async (id: string, p: VerifyPhysicalPayload) => {
@@ -175,6 +190,7 @@ export const useTransferActiveToInactive = () => {
     kirimUsulPindah,
     siapkanBerkasFisik,
     selesaikanUsulan,
+    approveReceipt,
     verifyPhysical,
     tuApprove,
     tuReject,

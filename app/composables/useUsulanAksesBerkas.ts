@@ -27,15 +27,18 @@ export function useUsulanAksesBerkas() {
   });
 
   // ── GET /usulan-akses-berkas/verifikator ────────
-  const fetchVerifikator = async () => {
+  // divisiId opsional — kalau diisi, fetch managerial di divisi tersebut
+  // (untuk Pilih Berkas: pakai divisiPemberiId dari usulan)
+  const fetchVerifikator = async (divisiId?: number) => {
     pending.value = true;
     error.value = null;
     try {
+      const query = divisiId ? `?divisiId=${divisiId}` : '';
       const res = await apiGet<{
         success: boolean;
         data: VerifikatorItem[];
         total: number;
-      }>('/usulan-akses-berkas/verifikator', undefined, { skipCache: true });
+      }>(`/usulan-akses-berkas/verifikator${query}`, undefined, { skipCache: true });
       verifikatorList.value = res.data || [];
       return res;
     } catch (err: any) {
@@ -47,17 +50,133 @@ export function useUsulanAksesBerkas() {
     }
   };
 
+  // ── GET /usulan-akses-berkas/verifikator-bod ───
+  // Fetch BOD + delegasi aktif (PT/PH/PS) di divisi.
+  // divisiId opsional — kalau kosong, pakai divisi currentUser.
+  const fetchVerifikatorBod = async (divisiId?: number) => {
+    pending.value = true;
+    error.value = null;
+    try {
+      const query = divisiId ? `?divisiId=${divisiId}` : '';
+      const res = await apiGet<{
+        success: boolean;
+        data: VerifikatorItem[];
+        total: number;
+      }>(`/usulan-akses-berkas/verifikator-bod${query}`, undefined, { skipCache: true });
+      verifikatorList.value = res.data || [];
+      return res;
+    } catch (err: any) {
+      error.value = err;
+      console.error('[useUsulanAksesBerkas] fetchVerifikatorBod error:', err);
+      throw err;
+    } finally {
+      pending.value = false;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/eligible-penerima-tambahan ───
+  // List orang di divisi pengusul yang eligible sebagai penerima akses tambahan
+  const fetchEligiblePenerimaTambahan = async (divisiId?: number) => {
+    try {
+      const query = divisiId ? `?divisiId=${divisiId}` : '';
+      const res = await apiGet<{
+        success: boolean;
+        data: { persnum: number; nama: string; positionText: string; organizationText: string }[];
+        total: number;
+      }>(`/usulan-akses-berkas/eligible-penerima-tambahan${query}`, undefined, { skipCache: true });
+      return (res as any)?.data ?? [];
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchEligiblePenerimaTambahan error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /berkas?status=closed_retensi_aktif ────
+  // Ambil list berkas yang eligible untuk dipilih saat Pilih Berkas.
+  // BE filter by status (closed_retensi_aktif) + isAktif=true.
+  const fetchBerkasEligible = async (status = 'closed_retensi_aktif') => {
+    try {
+      const res = await apiGet<any[]>(
+        '/usulan-akses-berkas/eligible-berkas',
+        undefined,
+        { skipCache: true },
+      );
+      const payload = (res as any)?.data ?? res;
+      return Array.isArray(payload) ? payload : [];
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchBerkasEligible error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/my-entitlements ────
+  // List akses berkas yang sudah diterbitkan untuk user yang login.
+  const fetchMyEntitlements = async () => {
+    try {
+      const res = await apiGet<{
+        success: boolean;
+        data: any[];
+        total: number;
+      }>('/usulan-akses-berkas/my-entitlements', undefined, { skipCache: true });
+      return (res as any)?.data ?? res ?? [];
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchMyEntitlements error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/berkas/:berkasId ──
+  // Detail berkas untuk SE pengusul (cek entitlement)
+  const fetchBerkasDetail = async (berkasId: string) => {
+    try {
+      const res = await apiGet<any>(
+        `/usulan-akses-berkas/berkas/${berkasId}`,
+        undefined,
+        { skipCache: true },
+      );
+      return (res as any)?.data ?? res;
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchBerkasDetail error:', err);
+      throw err;
+    }
+  };
+
+  // ── GET /usulan-akses-berkas/berkas/:berkasId/naskah ──
+  // List naskah di dalam berkas (cek entitlement, bukan permission pemeliharaan)
+  const fetchNaskahByBerkas = async (berkasId: string) => {
+    try {
+      const res = await apiGet<any>(
+        `/usulan-akses-berkas/berkas/${berkasId}/naskah`,
+        undefined,
+        { skipCache: true },
+      );
+      const payload = (res as any)?.data ?? res;
+      return Array.isArray(payload) ? payload : (payload?.data ?? []);
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] fetchNaskahByBerkas error:', err);
+      throw err;
+    }
+  };
+
   // ── GET /usulan-akses-berkas (list) ─────────────
   const fetchList = async (params: {
     status?: string;
+    scope?: string;
     page?: number;
     limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortDir?: 'asc' | 'desc';
   } = {}) => {
     pending.value = true;
     error.value = null;
     try {
       const query = new URLSearchParams();
       if (params.status) query.set('status', params.status);
+      if (params.scope) query.set('scope', params.scope);
+      if (params.search) query.set('search', params.search);
+      if (params.sortBy) query.set('sortBy', params.sortBy);
+      if (params.sortDir) query.set('sortDir', params.sortDir);
       query.set('page', String(params.page || pagination.page));
       query.set('limit', String(params.limit || pagination.limit));
 
@@ -93,8 +212,12 @@ export function useUsulanAksesBerkas() {
         undefined,
         { skipCache: true },
       );
-      usulanDetail.value = res;
-      return res;
+      // BE interceptor wraps response: { success, data: { ...usulan, steps, selectedBerkas } }
+      // apiGet returns res.data which is { success, data: {...} }
+      // So the actual usulan object is at res.data (the inner data)
+      const payload = (res as any)?.data ?? res;
+      usulanDetail.value = payload;
+      return payload;
     } catch (err: any) {
       error.value = err;
       console.error('[useUsulanAksesBerkas] fetchDetail error:', err);
@@ -111,7 +234,7 @@ export function useUsulanAksesBerkas() {
         '/usulan-akses-berkas',
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] createUsulan error:', err);
@@ -136,7 +259,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/${suffix}`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] verifikasiPengusul error:', err);
@@ -154,7 +277,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/verifikasi-pemberi`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] verifikasiPemberi error:', err);
@@ -169,7 +292,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/pilih-berkas`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] pilihBerkas error:', err);
@@ -194,7 +317,7 @@ export function useUsulanAksesBerkas() {
         `/usulan-akses-berkas/${id}/${suffix}`,
         payload,
       );
-      clearApiCache('/usulan-akses-berkas');
+      clearApiCache();
       return res;
     } catch (err: any) {
       console.error('[useUsulanAksesBerkas] persetujuanPemberi error:', err);
@@ -227,6 +350,12 @@ export function useUsulanAksesBerkas() {
     pagination,
     // actions
     fetchVerifikator,
+    fetchVerifikatorBod,
+    fetchEligiblePenerimaTambahan,
+    fetchBerkasEligible,
+    fetchMyEntitlements,
+    fetchBerkasDetail,
+    fetchNaskahByBerkas,
     fetchList,
     fetchDetail,
     createUsulan,

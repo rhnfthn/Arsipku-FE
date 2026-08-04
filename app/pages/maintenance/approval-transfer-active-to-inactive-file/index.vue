@@ -3,7 +3,6 @@
     <div class="mb-5">
       <PageHeader
         title="Persetujuan Pemindahan Arsip Aktif ke Inaktif"
-        subtitle="Verifikasi usulan pemindahan arsip dari Sekretaris."
         :items="items"
       />
     </div>

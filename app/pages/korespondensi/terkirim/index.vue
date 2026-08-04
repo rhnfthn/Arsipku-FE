@@ -33,7 +33,7 @@ import {
   X,
   FolderPlus,
   Folder,
-  Share,
+  Share2,
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { useSirkulasi } from '~/composables/useTerkirim';
@@ -85,6 +85,35 @@ const handleShare = (mail: any) => {
 const handleShareClose = () => {
   showShareModal.value = false;
   shareNaskah.value = null;
+};
+
+// ── Bulk Share (multi-naskah) ────────────────────────────────────────────────
+const showBulkShareModal = ref(false);
+const bulkShareNaskahs = ref<any[]>([]);
+
+const handleBulkShare = () => {
+  const selectedNaskahs: any[] = [];
+  selectedIds.value.forEach((id) => {
+    const item = items.value.find((e) => e.id === id);
+    if (item?.naskahId) {
+      selectedNaskahs.push({
+        naskahId: item.naskahId,
+        perihal: item.perihal || item.judul || item.subject,
+        nomor: item.nomor,
+      });
+    }
+  });
+  if (selectedNaskahs.length === 0) {
+    toast.add({ title: 'Tidak bisa membagikan', description: 'Tidak ada naskah valid yang dipilih', color: 'error' });
+    return;
+  }
+  bulkShareNaskahs.value = selectedNaskahs;
+  showBulkShareModal.value = true;
+};
+
+const handleBulkShareClose = () => {
+  showBulkShareModal.value = false;
+  bulkShareNaskahs.value = [];
 };
 
 // ── Masukkan ke Berkas ───────────────────────────────────────────────────────
@@ -989,7 +1018,7 @@ onUnmounted(() => {
 
 <template>
   <AccessDenied v-if="!canAccessPage()" />
-  <template v-else>
+  <div v-else>
   <PageHeader :title="$t('terkirim')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue"
@@ -1098,6 +1127,14 @@ onUnmounted(() => {
                 class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary rounded transition-colors"
               >
                 <Tag class="w-4 h-4" />
+              </button>
+            </UTooltip>
+            <UTooltip :text="$t('berbagi', 'Bagikan')">
+              <button
+                @click="handleBulkShare"
+                class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-500 rounded transition-colors"
+              >
+                <Share2 class="w-4 h-4" />
               </button>
             </UTooltip>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2"
@@ -1681,9 +1718,8 @@ onUnmounted(() => {
                       />
                     </UTooltip>
                     <UTooltip :text="$t('berbagi', 'Bagikan')">
-                      <UIcon
-                        name="i-heroicons-share"
-                        class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600 font-bold"
+                      <Share2
+                        class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600"
                         @click.stop="handleShare(mail)"
                       />
                     </UTooltip>
@@ -1704,6 +1740,14 @@ onUnmounted(() => {
       :naskah-nomor="shareNaskah.nomor"
       @close="handleShareClose"
       @shared="handleShareClose"
+    />
+
+    <!-- Bulk Share Modal (multi-naskah) -->
+    <SharedShareModal
+      v-if="showBulkShareModal && bulkShareNaskahs.length"
+      :naskah-items="bulkShareNaskahs"
+      @close="handleBulkShareClose"
+      @shared="handleBulkShareClose"
     />
 
     <!-- ── MODALS ─────────────────────────────────────────────────────────── -->
@@ -2366,7 +2410,7 @@ onUnmounted(() => {
       </Teleport>
     </ClientOnly>
   </div>
-  </template>
+  </div>
 </template>
 
 <style scoped>

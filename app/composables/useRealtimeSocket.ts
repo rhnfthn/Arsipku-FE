@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
+import { useAuth } from '~/composables/useAuth';
 
 /**
  * useRealtimeSocket
@@ -40,6 +41,7 @@ const nomorCounts = ref<{
   user?: Record<string, any>;
 }>({});
 const naskahDinasVerifikatorWaitingCount = ref<number>(0);
+const arsipPersetujuanWaitingCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
 
@@ -111,9 +113,27 @@ const connectSocket = async (): Promise<void> => {
       console.log('[useRealtimeSocket] Socket disconnected');
     });
 
-    socket.on('connect_error', (err: any) => {
+    socket.on('connect_error', async (err: any) => {
       clearTimeout(timeout);
       isConnected.value = false;
+      const msg = err?.message || '';
+      // JWT expired → refresh token lalu reconnect dengan token baru
+      if (msg.includes('jwt expired') || msg.includes('TokenExpiredError')) {
+        try {
+          const { refreshToken } = useAuth();
+          const newToken = await refreshToken();
+          if (newToken && socket) {
+            socket.auth = { token: newToken };
+            socket.connect();
+            // Safety timeout — pastikan done() tetap dipanggil jika reconnect
+            // tidak kunjung memicu 'connect' maupun 'connect_error' non-expired.
+            setTimeout(done, 5000);
+            return;
+          }
+        } catch (e) {
+          console.warn('[useRealtimeSocket] Token refresh failed:', e);
+        }
+      }
       console.warn('[useRealtimeSocket] Socket connect_error:', err?.message);
       done();
     });
@@ -140,6 +160,11 @@ const connectSocket = async (): Promise<void> => {
       if (payload.naskahDinasVerifikatorWaitingCount != null) {
         naskahDinasVerifikatorWaitingCount.value = Number(
           payload.naskahDinasVerifikatorWaitingCount
+        );
+      }
+      if (payload.arsipPersetujuanWaitingCount != null) {
+        arsipPersetujuanWaitingCount.value = Number(
+          payload.arsipPersetujuanWaitingCount
         );
       }
       if (payload.nomorCounts && typeof payload.nomorCounts === 'object') {
@@ -177,6 +202,12 @@ const connectSocket = async (): Promise<void> => {
     socket.on('naskah-dinas:verifikator-count', (payload: any) => {
       if (payload && typeof payload.waiting === 'number') {
         naskahDinasVerifikatorWaitingCount.value = payload.waiting;
+      }
+    });
+
+    socket.on('arsip:persetujuan-count', (payload: any) => {
+      if (payload && typeof payload.waiting === 'number') {
+        arsipPersetujuanWaitingCount.value = payload.waiting;
       }
     });
 
@@ -250,6 +281,7 @@ export function useRealtimeSocket() {
     bsreAlert,
     nomorCounts,
     naskahDinasVerifikatorWaitingCount,
+    arsipPersetujuanWaitingCount,
     isConnected,
     hasBsreAlert,
     // Socket reference (for custom event listeners)

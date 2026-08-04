@@ -112,4 +112,5 @@ export interface AuthComposable {
   isSuperadmin: ComputedRef<boolean>;
   isAdmin: ComputedRef<boolean>;
   switchRole: (roleId: string) => Promise<void>;
+  switchProfile: (profile: 'akun_asli' | 'sekretaris') => Promise<any>;
 }

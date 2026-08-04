@@ -51,6 +51,25 @@ export interface VerifikasiUsulanItem {
   finalVerifiedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Multi-level approval fields. */
+  currentApprovalLevel?: number;
+  totalApprovalLevels?: number;
+  /** Daftar level approval (dari detail). */
+  approvalLevels?: VerifikasiApprovalLevel[];
+  /** True jika user login sedang giliran verifikasi. */
+  isCurrentTurn?: boolean;
+}
+
+/** Level approval berjenjang (untuk verifikasi-usulan). */
+export interface VerifikasiApprovalLevel {
+  id: string;
+  atasanPersnum: number;
+  atasanName: string;
+  atasanPositionText: string | null;
+  urutan: number;
+  status: 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK';
+  verifiedAt: string | null;
+  catatan: string | null;
 }
 
 export interface VerifikasiFilter {

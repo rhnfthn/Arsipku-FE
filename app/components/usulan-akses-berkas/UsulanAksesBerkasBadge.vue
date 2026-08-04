@@ -16,60 +16,60 @@ const statusConfig: Record<StatusUsulan, { label: string; class: string }> = {
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL]: {
-    label: 'Menunggu Verifikasi VP Pengusul',
+    label: 'Menunggu Verifikasi Pengusul',
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL]: {
-    label: 'Menunggu Verifikasi EVP Pengusul',
+    label: 'Menunggu Verifikasi Pengusul',
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.REVISI_PENGUSUL]: {
-    label: 'Revisi Pengusul',
-    class: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    label: 'Ditolak Verifikasi Pengusul',
+    class: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
   },
   [StatusUsulan.DITOLAK_PENGUSUL]: {
-    label: 'Ditolak Pengusul',
+    label: 'Ditolak Verifikasi Pengusul',
     class: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
   },
   [StatusUsulan.TERKIRIM_KE_PEMBERI]: {
-    label: 'Terkirim ke Pemberi',
-    class: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+    label: 'Menunggu Verifikasi Pemberi',
+    class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI]: {
     label: 'Menunggu Verifikasi Pemberi',
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.PEMILIHAN_BERKAS]: {
-    label: 'Pemilihan Berkas',
-    class: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+    label: 'Menunggu Verifikasi Pemberi',
+    class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI]: {
     label: 'Menunggu Persetujuan Pemberi',
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI]: {
-    label: 'Menunggu Persetujuan VP Pemberi',
+    label: 'Menunggu Persetujuan Pemberi',
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI]: {
-    label: 'Menunggu Persetujuan EVP Pemberi',
+    label: 'Menunggu Persetujuan Pemberi',
     class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   },
   [StatusUsulan.REVISI_PEMBERI]: {
-    label: 'Revisi Pemberi',
-    class: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    label: 'Ditolak Persetujuan Pemberi',
+    class: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
   },
   [StatusUsulan.DITOLAK_PEMBERI]: {
-    label: 'Ditolak Pemberi',
+    label: 'Ditolak Persetujuan Pemberi',
     class: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
   },
   [StatusUsulan.AKSES_DITERBITKAN]: {
-    label: 'Akses Diterbitkan',
+    label: 'Akses Diberikan',
     class: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   },
   [StatusUsulan.SELESAI]: {
-    label: 'Selesai',
-    class: 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400',
+    label: 'Akses Diberikan',
+    class: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   },
   [StatusUsulan.AKSES_KADALUARSA]: {
     label: 'Akses Kadaluarsa',
@@ -77,7 +77,10 @@ const statusConfig: Record<StatusUsulan, { label: string; class: string }> = {
   },
 };
 
-const config = computed(() => statusConfig[props.status] || statusConfig[StatusUsulan.DRAFT]);
+const config = computed(() => {
+  const s = props.status ?? StatusUsulan.DRAFT;
+  return statusConfig[s] || { label: s, class: 'bg-gray-100 text-gray-600' };
+});
 </script>
 
 <template>
