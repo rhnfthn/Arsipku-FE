@@ -47,6 +47,30 @@ const loadDetail = async () => {
 };
 
 onMounted(() => { loadDetail(); });
+
+// ── Progress & Status helpers (sinkron dengan tabel pemberian) ──
+const getProgressPercent = (detail: any): number => {
+  if (!detail?.tanggalMulai || !detail?.tanggalSelesai) return 0;
+  const mulai = new Date(detail.tanggalMulai).getTime();
+  const selesai = new Date(detail.tanggalSelesai).getTime();
+  const now = Date.now();
+  if (now <= mulai) return 0;
+  if (now >= selesai) return 100;
+  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
+};
+
+const getProgressBarClass = (percent: number): string => {
+  if (percent < 50) return 'bg-green-500';
+  if (percent < 80) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
+const getProgressLabel = (detail: any): string => {
+  if (!detail?.tanggalSelesai) return '-';
+  const sisa = Math.ceil((new Date(detail.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (sisa <= 0) return 'Habis';
+  return `${sisa} hari`;
+};
 </script>
 
 <template>
@@ -97,6 +121,14 @@ onMounted(() => { loadDetail(); });
             <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenisAkses?.join(', ') }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><FileText class="size-4 text-gray-500" /></span>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judulUsulan || '-' }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><FileText class="size-4 text-gray-500" /></span>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Clock class="size-4 text-gray-500" /></span>
             <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(usulanDetail.tanggalMulai) }} — {{ formatDate(usulanDetail.tanggalSelesai) }}</dd></div>
           </div>
@@ -104,6 +136,56 @@ onMounted(() => { loadDetail(); });
         <div class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
           <p class="mb-1 text-xs font-medium uppercase text-gray-500">Tujuan Akses</p>
           <p class="text-sm text-gray-800 dark:text-gray-200">{{ usulanDetail.tujuanAkses }}</p>
+        </div>
+        <!-- Penerima Akses Tambahan (jika ada) -->
+        <div v-if="usulanDetail.penerimaAksesTambahan?.length" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
+          <p class="mb-2 text-xs font-medium uppercase text-gray-500">Penerima Akses Tambahan</p>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="p in usulanDetail.penerimaAksesTambahan"
+              :key="p.persnum"
+              class="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+            >
+              <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-200 text-[9px] font-semibold text-primary-700 dark:bg-primary-800 dark:text-primary-300">
+                {{ (p.nama || String(p.persnum)).charAt(0).toUpperCase() }}
+              </span>
+              <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
+              <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Progress & Status (sinkron dengan tabel pemberian) -->
+      <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+            <Clock class="size-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Progress & Status</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Sisa waktu akses berkas.</p>
+          </div>
+        </div>
+        <div class="px-5 py-5">
+          <div class="flex items-center gap-3">
+            <div class="h-2.5 w-40 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all"
+                :class="getProgressBarClass(getProgressPercent(usulanDetail))"
+                :style="{ width: `${getProgressPercent(usulanDetail)}%` }"
+              />
+            </div>
+            <span class="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ getProgressLabel(usulanDetail) }}</span>
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+              :class="getProgressPercent(usulanDetail) >= 100
+                ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'"
+            >
+              {{ getProgressPercent(usulanDetail) >= 100 ? 'Habis' : 'Aktif' }}
+            </span>
+          </div>
         </div>
       </section>
 

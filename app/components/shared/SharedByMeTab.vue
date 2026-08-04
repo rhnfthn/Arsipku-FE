@@ -32,9 +32,14 @@ const columns = computed(() => [
   { key: 'aksi', label: t('share_action'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
-/** Display status for sender: based on share.status only. */
+/** Display status for sender: check share.status, then per-recipient for SEKALI_LIHAT. */
 const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   if (share.status === 'BERAKHIR') return 'BERAKHIR';
+  // For SEKALI_LIHAT: if all recipients are BERAKHIR, show as BERAKHIR
+  if (share.accessType === 'SEKALI_LIHAT' && share.recipients?.length) {
+    const allEnded = share.recipients.every((r) => r.status === 'BERAKHIR');
+    if (allEnded) return 'BERAKHIR';
+  }
   return 'AKTIF';
 };
 
