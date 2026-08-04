@@ -143,6 +143,7 @@ export interface UsulanAksesBerkasListResponse {
 export interface CreateUsulanAksesBerkasPayload {
   jenisBerkas: JenisBerkas;
   divisiPemberiId?: number;
+  judulUsulan: string;
   tujuanAkses: string;
   durasiAkses: DurasiPreset;
   customTanggalSelesai?: string;
