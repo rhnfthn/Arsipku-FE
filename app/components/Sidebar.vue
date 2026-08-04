@@ -340,6 +340,7 @@ import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
 import { useDigsig } from '~/composables/useDigsig';
+import { usePemeliharaanAccess } from '~/composables/usePemeliharaanAccess';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
