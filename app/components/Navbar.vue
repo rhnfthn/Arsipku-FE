@@ -1800,6 +1800,8 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
           localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
         // Sinkronkan active_profile: delegasi SE (Sekretaris) → 'sekretaris',
         // delegasi lain (VI/PT/dll) → tetap 'akun_asli' (bukan sekretaris).
+        // Tanpa ini, setelah reload currentProfile tidak sinkron dengan delegasi
+        // aktif → centang kembali ke Akun Asli.
         const newPosStatus = res.data?.user?.position_status;
         const profile = newPosStatus === 'SE' ? 'sekretaris' : 'akun_asli';
         localStorage.setItem('active_profile', profile);
