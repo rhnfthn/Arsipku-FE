@@ -56,6 +56,7 @@ const searchQuery = ref('');
 const filterStatus = ref<string>('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
+const isRefreshing = ref(false);
 
 // ── Tab navigasi ─────────────────────────────────
 // SE pengusul: default "Usulan Saya" (usulan yang dia buat)
@@ -183,6 +184,15 @@ const loadData = async () => {
       description: extractErrorMessage(err),
       color: 'error',
     });
+  }
+};
+
+const handleRefresh = async () => {
+  isRefreshing.value = true;
+  try {
+    await loadData();
+  } finally {
+    isRefreshing.value = false;
   }
 };
 
@@ -617,7 +627,7 @@ onBeforeUnmount(() => {
     <div class="mb-5">
       <PageHeader :items="breadcrumbs">
         <template #title>
-          <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+          <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             {{
               queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
               : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
@@ -776,6 +786,21 @@ onBeforeUnmount(() => {
         </div>
         <!-- Action buttons -->
         <div class="flex shrink-0 items-center gap-2">
+          <!-- Refresh button -->
+          <button
+            @click="handleRefresh"
+            :disabled="isRefreshing"
+            class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <UIcon
+              name="i-lucide-rotate-cw"
+              class="w-3.5 h-3.5"
+              :class="{ 'animate-spin': isRefreshing }"
+            />
+            Refresh
+          </button>
           <!-- Export button -->
           <button
             @click="exportData"

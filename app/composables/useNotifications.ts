@@ -1,6 +1,7 @@
 // fe/app/composables/useNotifications.ts
 import { ref, readonly, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
+import { useAuth } from '~/composables/useAuth';
 import type {
   NotificationFetchOptions,
   NotificationItem,
@@ -333,9 +334,27 @@ export const useNotifications = () => {
         console.log('[useNotifications] Socket disconnected');
       });
 
-      socket.on('connect_error', (err: any) => {
+      socket.on('connect_error', async (err: any) => {
         clearTimeout(timeout);
         isConnected.value = false;
+        const msg = err?.message || '';
+        // JWT expired → refresh token lalu reconnect dengan token baru
+        if (msg.includes('jwt expired') || msg.includes('TokenExpiredError')) {
+          try {
+            const { refreshToken } = useAuth();
+            const newToken = await refreshToken();
+            if (newToken && socket) {
+              socket.auth = { token: newToken };
+              socket.connect();
+              // Safety timeout — pastikan done() tetap dipanggil jika reconnect
+              // tidak kunjung memicu 'connect' maupun 'connect_error' non-expired.
+              setTimeout(done, 5000);
+              return;
+            }
+          } catch (e) {
+            console.warn('[useNotifications] Token refresh failed:', e);
+          }
+        }
         console.warn('[useNotifications] Socket connect_error:', err?.message);
         done(); // Don't block init() forever on connection error
       });

@@ -683,6 +683,7 @@ const {
   getKlasifikasiDenganRetensi,
   uploadBerkasFile,
 } = useArsipDinamis();
+const { apiPost } = useApi();
 const toast = useToast();
 
 // ── State ────────────────────────────────────────────────────────
@@ -1148,6 +1149,11 @@ watch([sortKey, sortDir], () => {
 onMounted(() => {
   fetchData();
   fetchKlasifikasi();
+  // Auto-sync: berkas Tertutup dengan retensi aktif habis → buat usulan DRAFT
+  // otomatis di pemindahan arsip. Fire-and-forget (tidak block UI).
+  apiPost('/transfer-active-to-inactive/sync-draft', {}).catch((e: any) =>
+    console.warn('[berkas-saya] sync-draft error:', e?.message),
+  );
   document.addEventListener('click', handleDocumentClick);
 });
 

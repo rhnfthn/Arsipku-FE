@@ -62,9 +62,9 @@
         </div>
       </div>
 
-      <!-- Daftar Arsip (Multi-arsip) -->
-      <div v-if="transfer.arsipIds && transfer.arsipIds.length > 1" class="md:col-span-2">
-        <span class="text-gray-500 dark:text-gray-400 text-xs">Daftar Arsip ({{ transfer.arsipIds.length }})</span>
+      <!-- Daftar Arsip -->
+      <div v-if="transfer.arsipIds && transfer.arsipIds.length > 0" class="md:col-span-2">
+        <span class="text-gray-500 dark:text-gray-400 text-xs">Daftar Arsip yang Akan Dipindahkan ({{ transfer.arsipIds.length }})</span>
         <div class="mt-2 space-y-1.5">
           <div
             v-for="(a, idx) in transfer.arsipIds"
@@ -75,6 +75,14 @@
             <div class="flex-1 min-w-0">
               <p class="text-sm text-gray-900 dark:text-white truncate">{{ a.kode ?? '-' }} — {{ a.perihal }}</p>
             </div>
+            <!-- Icon mata: lihat detail berkas -->
+            <NuxtLink
+              :to="`/kelola/pemeliharaan/pemberkasan/${a.id}`"
+              class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 shrink-0"
+              title="Lihat detail berkas"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4" />
+            </NuxtLink>
           </div>
         </div>
       </div>

@@ -392,7 +392,10 @@ const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
-// Role tambahan dari organization_tu (Unit TU): 'tu' | 'sekretaris'
+// ─── Pindah Profile (Sekretaris / Unit Dokumen) ──────────────────────────────
+// User dengan delegasi di organization_tu (sekretaris_delegasi / unit_dokumen)
+// bisa beralih profile. Menu "Kelola" hanya tampil saat profile aktif
+// 'sekretaris' atau 'unit_dokumen'; disembunyikan saat 'akun_asli'.
 const tuRoles = computed(() => {
   const roles = user.value?.tuRoles;
   return Array.isArray(roles) ? roles : [];
@@ -400,26 +403,16 @@ const tuRoles = computed(() => {
 const isTuRole = computed(() => tuRoles.value.includes('tu'));
 const isSekretarisRole = computed(() => tuRoles.value.includes('sekretaris'));
 
-// ─── Pindah Profile (Sekretaris Delegasi) ────────────────────────────────────
-// User yang punya delegasi sekretaris bisa beralih antara "Akun Asli" dan "Sekretaris".
-// Saat profile aktif "akun_asli", menu "Kelola" disembunyikan.
-// Saat profile aktif "sekretaris", menu "Kelola" (termasuk Pemindahan Arsip) muncul.
-//
-// Deteksi delegasi sekretaris pakai `tuRoles` (sudah reliable dari buildTuRoles)
-// sebagai sumber utama, dengan fallback ke field JWT `has_secretary_delegation`.
-// Ini penting agar user dengan token lama (belum punya field JWT baru) tetap
-// dianggap punya delegasi sekretaris.
-const hasSecretaryDelegation = computed(
-  () => isSekretarisRole.value || !!user.value?.has_secretary_delegation
+// Deteksi delegasi: user punya role sekretaris ATAU unit_dokumen (tu).
+const hasDelegationProfile = computed(
+  () => isSekretarisRole.value || isTuRole.value || !!user.value?.has_secretary_delegation
 );
 
-// Reactive state profile aktif. Di-update oleh event listener (storage + active_profile_changed)
-// agar sidebar ikut berubah tanpa reload manual saat user pindah profile.
-// Sumber: localStorage key 'active_profile' (fallback 'arsipku_active_profile').
+// Baca active_profile dari localStorage (sumber utama), default 'akun_asli'.
 const readStoredProfile = () => {
   if (process.client) {
     const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
-    if (stored === 'akun_asli' || stored === 'sekretaris') return stored;
+    if (stored === 'akun_asli' || stored === 'sekretaris' || stored === 'unit_dokumen') return stored;
   }
   return 'akun_asli';
 };
@@ -429,19 +422,18 @@ const syncProfileFromStorage = () => {
 };
 
 const activeProfile = computed(() => {
-  // Sumber utama: localStorage (sesuai requirement — sidebar baca dari localStorage).
-  // JWT active_profile hanya fallback jika localStorage belum terisi.
-  if (currentProfile.value === 'akun_asli' || currentProfile.value === 'sekretaris') {
+  if (currentProfile.value === 'akun_asli' || currentProfile.value === 'sekretaris' || currentProfile.value === 'unit_dokumen') {
     return currentProfile.value;
   }
   const fromUser = user.value?.active_profile;
-  if (fromUser === 'akun_asli' || fromUser === 'sekretaris') return fromUser;
+  if (fromUser === 'akun_asli' || fromUser === 'sekretaris' || fromUser === 'unit_dokumen') return fromUser;
   return 'akun_asli';
 });
-// Menu "Kelola" hanya tampil jika user TIDAK punya delegasi sekretaris (perilaku normal),
-// ATAU jika punya delegasi sekretaris dan profile aktif = 'sekretaris'.
+
+// Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
+// ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
 const showKelolaMenu = computed(
-  () => !hasSecretaryDelegation.value || activeProfile.value === 'sekretaris'
+  () => !hasDelegationProfile.value || activeProfile.value === 'sekretaris' || activeProfile.value === 'unit_dokumen'
 );
 
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
@@ -642,7 +634,7 @@ const userMenuUtama = computed(() => [
   },
   {
     label: t('berbagi', 'Berbagi'),
-    icon: 'i-heroicons-share',
+    icon: 'i-lucide-share-2',
     permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
@@ -804,7 +796,7 @@ const adminMenuUtama = computed(() => [
   },
   {
     label: t('berbagi', 'Berbagi'),
-    icon: 'i-heroicons-share',
+    icon: 'i-lucide-share-2',
     permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
