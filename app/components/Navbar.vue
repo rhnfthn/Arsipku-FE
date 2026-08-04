@@ -1741,6 +1741,17 @@ const currentProfile = ref(readStoredProfile());
 const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris') => {
   if (profile === currentProfile.value) return;
   if (process.client) {
+    // Balik ke akun asli dari mode delegasi JWT: JWT masih membawa jabatan &
+    // konteks delegasi (position_status/delegator_persnum), jadi harus di-reset
+    // lewat API (re-sign JWT dengan jabatan asli dari org_data), bukan sekadar
+    // toggle localStorage. Tanpa reset ini, setelah reload jabatan delegasi
+    // masih tampil di profile utama. `position_status` adalah sinyal otoritatif
+    // (Spec A); delegasi organization_tu (unit_dokumen/sekretaris) tidak pernah
+    // mengubah JWT, jadi untuk kasus itu tetap toggle localStorage.
+    if (profile === 'akun_asli' && user.value?.position_status) {
+      handleSwitchRole({ type: 'reset' });
+      return;
+    }
     localStorage.setItem('active_profile', profile);
     localStorage.setItem('arsipku_active_profile', profile);
     // Reset state delegasi (sumber kebenaran kedua) agar tidak ada centang
