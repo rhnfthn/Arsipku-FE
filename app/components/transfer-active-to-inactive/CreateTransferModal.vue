@@ -33,7 +33,7 @@
                 icon="i-lucide-user-round-plus"
                 variant="outline"
                 size="xs"
-                @click="focusAtasanInput"
+                @click="openAtasanInput"
               >Tambah</UButton>
             </div>
             <div class="px-5 py-5">
@@ -68,8 +68,8 @@
                 </div>
               </div>
 
-              <!-- Input pencarian di bawah daftar (sembunyi jika sudah 3 atasan) -->
-              <div v-if="selectedAtasanList.length < 3" ref="atasanDropdownRef" class="relative">
+              <!-- Input pencarian di bawah daftar (sembunyi setelah pilih, muncul lagi via tombol Tambah) -->
+              <div v-if="selectedAtasanList.length < 3 && showAtasanInput" ref="atasanDropdownRef" class="relative">
                 <input
                   v-model="atasanSearch"
                   type="text"
@@ -331,6 +331,7 @@ const atasanSearch = ref('');
 const atasanDropdownOpen = ref(false);
 const selectedAtasanList = ref<AtasanManagerialOption[]>([]);
 const atasanDropdownRef = ref<HTMLElement | null>(null);
+const showAtasanInput = ref(true);
 
 // Arsip — multi select
 const arsipOptions = ref<ArsipRetensiHabisOption[]>([]);
@@ -344,7 +345,11 @@ const filteredAtasan = computed(() => {
   const q = atasanSearch.value.trim().toLowerCase();
   if (!q) return atasanOptions.value.slice(0, 50);
   return atasanOptions.value
-    .filter((a) => a.name.toLowerCase().includes(q) || String(a.persnum).includes(q) || a.positionText.toLowerCase().includes(q))
+    .filter((a) =>
+      String(a.name ?? '').toLowerCase().includes(q) ||
+      String(a.persnum ?? '').includes(q) ||
+      String(a.positionText ?? '').toLowerCase().includes(q)
+    )
     .slice(0, 50);
 });
 
@@ -368,10 +373,13 @@ const openAtasanDropdown = () => {
   atasanDropdownOpen.value = true;
 };
 
-/** Fokus ke input pencarian atasan (dipanggil dari tombol Tambah). */
-const focusAtasanInput = () => {
-  const input = atasanDropdownRef.value?.querySelector('input');
-  if (input) input.focus();
+const openAtasanInput = () => {
+  showAtasanInput.value = true;
+  atasanDropdownOpen.value = true;
+  nextTick(() => {
+    const input = atasanDropdownRef.value?.querySelector('input');
+    if (input) input.focus();
+  });
 };
 
 const openArsipDropdown = () => {
@@ -399,7 +407,9 @@ const toggleAtasan = (a: AtasanManagerialOption) => {
     selectedAtasanList.value.push({ ...a });
   }
   atasanSearch.value = '';
-  atasanDropdownOpen.value = true;
+  atasanDropdownOpen.value = false;
+  // Sembunyikan dropdown setelah memilih; user tekan tombol Tambah untuk atasan berikutnya
+  if (idx < 0) showAtasanInput.value = false;
 };
 
 const toggleArsip = async (a: ArsipRetensiHabisOption) => {
@@ -417,6 +427,8 @@ const toggleArsip = async (a: ArsipRetensiHabisOption) => {
 
 const removeAtasan = (idx: number) => {
   selectedAtasanList.value.splice(idx, 1);
+  // Jika tidak ada atasan tersisa, tampilkan kembali dropdown input
+  if (selectedAtasanList.value.length === 0) showAtasanInput.value = true;
 };
 
 const removeArsip = (idx: number) => {
@@ -452,14 +464,17 @@ const loadAtasanManagerial = async () => {
   try {
     const tgl = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     const res: any = await apiGet(`/org-data/pengirim/managerial?tgl=${tgl}`, {}, { skipCache: true });
-    if (res?.success && Array.isArray(res.data)) {
-      atasanOptions.value = res.data.map((r: any) => ({
-        position: Number(r.position),
-        persnum: Number(r.persnum ?? r.persnum_person ?? 0),
-        name: r.persnum_person_text ?? r.name ?? '-',
-        positionText: r.position_text ?? '-',
+    const data = res?.data?.data ?? res?.data ?? [];
+    if (res?.success && Array.isArray(data)) {
+      atasanOptions.value = data.map((r: any) => ({
+        position: Number(r.position ?? r.position_id ?? 0),
+        persnum: Number(r.persnum ?? r.persnum_person ?? r.relation_persnum ?? 0),
+        name: r.persnum_person_text ?? r.name ?? r.label ?? '-',
+        positionText: r.position_text ?? r.positionText ?? r.labelJob ?? '-',
       }));
-    } else { atasanOptions.value = []; }
+    } else {
+      atasanOptions.value = [];
+    }
   } catch (e) {
     console.error('Gagal memuat atasan managerial:', e);
     atasanOptions.value = [];
@@ -493,6 +508,7 @@ const resetForm = () => {
   form.keterangan = '';
   selectedAtasanList.value = [];
   atasanSearch.value = '';
+  showAtasanInput.value = true;
   selectedArsipList.value = [];
   arsipSearch.value = '';
   atasanDropdownOpen.value = false;
@@ -509,13 +525,21 @@ const fillFromEdit = (data: TransferActiveToInactive) => {
       positionText: l.atasanPositionText ?? '',
     }));
   } else {
-    selectedAtasanList.value = [{
-      position: data.atasanPositionId ?? 0,
-      persnum: data.atasanPersnum,
-      name: data.atasanName,
-      positionText: '',
-    }];
+    const hasLegacyAtasan =
+      Number(data.atasanPersnum) > 0 &&
+      String(data.atasanName ?? '').trim() !== '' &&
+      String(data.atasanName ?? '').trim() !== '-';
+
+    selectedAtasanList.value = hasLegacyAtasan
+      ? [{
+          position: data.atasanPositionId ?? 0,
+          persnum: data.atasanPersnum,
+          name: data.atasanName,
+          positionText: '',
+        }]
+      : [];
   }
+  showAtasanInput.value = selectedAtasanList.value.length === 0;
   // Arsip: reconstruct from arsipIds if available, else from legacy fields
   if (data.arsipIds && data.arsipIds.length > 0) {
     selectedArsipList.value = data.arsipIds.map((a) => ({
