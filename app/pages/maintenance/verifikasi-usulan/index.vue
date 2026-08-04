@@ -38,32 +38,16 @@
       />
 
       <!-- Pagination -->
-      <div
-        v-if="meta && meta.total > 0"
-        class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-sm"
-      >
-        <div class="text-gray-500 dark:text-gray-400">
-          Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }} dari {{ meta.total }} usulan
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            @click="goPage(meta.page - 1)"
-            :disabled="meta.page <= 1"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-lucide-chevron-left" class="w-4 h-4" />
-          </button>
-          <span class="text-gray-600 dark:text-gray-300 px-2">
-            Hal {{ meta.page }} / {{ meta.totalPages }}
-          </span>
-          <button
-            @click="goPage(meta.page + 1)"
-            :disabled="meta.page >= meta.totalPages"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
+      <div class="mt-4" v-if="meta">
+        <Pagination
+          :current-page="meta.page"
+          :total-pages="meta.totalPages"
+          :total-items="meta.total"
+          :rows-per-page="filter.limit ?? 10"
+          :rows-options="[10, 20, 50]"
+          @update:page="goPage"
+          @update:rows-per-page="onLimitChange"
+        />
       </div>
     </div>
   </div>
@@ -140,6 +124,12 @@ const reload = () => {
 
 const goPage = (p: number) => {
   filter.value.page = p;
+  loadData();
+};
+
+const onLimitChange = (l: number) => {
+  filter.value.limit = l;
+  filter.value.page = 1;
   loadData();
 };
 
