@@ -8,7 +8,10 @@ import type {
   KonfigurasiMessageResponse,
   KonfigurasiMessageSingleResponse,
   CreateMessagePayload,
-  UpdateMessagePayload
+  UpdateMessagePayload,
+  KonfigurasiSearchItem,
+  KonfigurasiSearchResponse,
+  UpdateSearchConfigPayload
 } from '@/types/konfigurasi'
 import { useApi } from '@/composables/useApi'
 
@@ -234,6 +237,72 @@ export const useKonfigurasi = () => {
     })
   }
 
+  // ==========================================
+  //   SEARCH ENGINE
+  // ==========================================
+  const searchConfig = ref<KonfigurasiSearchItem | null>(null)
+  const isLoadingSearchConfig = ref(false)
+  const isSavingSearchConfig = ref(false)
+
+  // GET konfigurasi mesin pencarian
+  const fetchSearchConfig = async () => {
+    try {
+      isLoadingSearchConfig.value = true
+      const res = await apiGet<KonfigurasiSearchResponse>(
+        '/admin/config/search',
+        {},
+        { skipCache: true }
+      )
+      if (res.success) {
+        searchConfig.value = res.data
+      }
+    } catch (error: any) {
+      if (error?.statusCode === 403 || error?.status === 403) {
+        console.warn('fetchSearchConfig: akses ditolak (role user).')
+        return
+      }
+      console.error('Fetch search config error:', error)
+      useToast().add({
+        title: 'Gagal',
+        description: 'Gagal mengambil konfigurasi mesin pencarian.',
+        color: 'error'
+      })
+    } finally {
+      isLoadingSearchConfig.value = false
+    }
+  }
+
+  // PUT update konfigurasi mesin pencarian
+  const updateSearchConfig = async (payload: UpdateSearchConfigPayload) => {
+    try {
+      isSavingSearchConfig.value = true
+      const res = await apiPut<KonfigurasiSearchResponse>(
+        '/admin/config/search',
+        payload
+      )
+      if (res.success) {
+        searchConfig.value = res.data
+        useToast().add({
+          title: 'Berhasil',
+          description: 'Konfigurasi mesin pencarian berhasil disimpan.',
+          color: 'success'
+        })
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Update search config error:', error)
+      useToast().add({
+        title: 'Gagal',
+        description: 'Gagal menyimpan konfigurasi mesin pencarian.',
+        color: 'error'
+      })
+      return false
+    } finally {
+      isSavingSearchConfig.value = false
+    }
+  }
+
   return {
     // digsig
     digsigList,
@@ -254,6 +323,13 @@ export const useKonfigurasi = () => {
     updateMessage,
     toggleBanner,
     deleteMessage,
+
+    // search engine
+    searchConfig,
+    isLoadingSearchConfig,
+    isSavingSearchConfig,
+    fetchSearchConfig,
+    updateSearchConfig,
 
     // toast helpers
     showToastSaveDigsig

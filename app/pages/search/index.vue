@@ -156,13 +156,29 @@
                 <p
                   class="text-gray-600 dark:text-gray-300 text-sm leading-snug line-clamp-2 md:line-clamp-1 group-hover:text-primary-600 transition-colors font-medium"
                 >
-                  {{ item.perihal || '(Tanpa Perihal)' }}
+                  <span
+                    v-if="item._formatted?.perihal"
+                    v-html="item._formatted.perihal"
+                  ></span>
+                  <span
+                    v-else-if="searchKeyword"
+                    v-html="highlightText(item.perihal, searchKeyword)"
+                  ></span>
+                  <template v-else>{{ item.perihal || '(Tanpa Perihal)' }}</template>
                 </p>
                 <div class="flex items-center gap-2 mt-1.5">
                   <span
                     class="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700"
                   >
-                    {{ item.nomor }}
+                    <span
+                      v-if="item._formatted?.nomor"
+                      v-html="item._formatted.nomor"
+                    ></span>
+                    <span
+                      v-else-if="searchKeyword"
+                      v-html="highlightText(item.nomor, searchKeyword)"
+                    ></span>
+                    <template v-else>{{ item.nomor }}</template>
                   </span>
                   <UIcon
                     v-if="item.hasAttachment"
@@ -400,4 +416,51 @@ const searchFilters = computed(() => {
 
   return result;
 });
+
+// --- HIGHLIGHT KATA YANG DICARI (client-side, berlaku untuk mode v3 & meili) ---
+const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const highlightText = (text: string | null | undefined, keyword?: string): string => {
+  if (!text) return '';
+  // Jika backend sudah mengirim _formatted (dengan <em>), pakai langsung.
+  // Jika tidak, highlight manual dari keyword di route query.
+  const words = (keyword || '')
+    .split(' ')
+    .map((w) => w.trim())
+    .filter(Boolean);
+  if (words.length === 0) return text;
+  let result = text;
+  words.forEach((word) => {
+    const regex = new RegExp(`(${escapeRegex(word)})`, 'gi');
+    result = result.replace(regex, '<em>$1</em>');
+  });
+  return result;
+};
+
+const searchKeyword = computed(() => {
+  const q = route.query;
+  // Gabungkan semua parameter pencarian teks yang relevan untuk highlight.
+  const parts = [
+    q.keyword,
+    q.perihal,
+    q.hasWords,
+    q.from,
+    q.to,
+    q.nomor,
+    q.klasifikasi,
+  ];
+  return parts.filter((p) => typeof p === 'string' && p.trim()).join(' ');
+});
 </script>
+
+<style scoped>
+/* Highlight kata yang dicari (dari _formatted.perihal / _formatted.nomor) */
+:deep(em) {
+  font-style: normal;
+  background-color: #fde68a; /* amber-200 */
+  color: #92400e; /* amber-800 */
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 600;
+}
+</style>
