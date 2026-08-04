@@ -30,7 +30,7 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const filterStatus = ref('Semua');
-const sortKey = ref('tanggalSelesai');
+const sortKey = ref('tanggalMulai');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const isRefreshing = ref(false);
 const isExporting = ref(false);
@@ -68,18 +68,31 @@ const filteredEntitlements = computed(() => {
     const q = searchQuery.value.toLowerCase();
     rows = rows.filter(
       (e: any) =>
-        (e.judulBerkas || '').toLowerCase().includes(q) ||
-        (e.nomorUsulanTerbaru || '').toLowerCase().includes(q),
+        (e.judulUsulan || '').toLowerCase().includes(q) ||
+        (e.nomorUsulanTerbaru || '').toLowerCase().includes(q) ||
+        (e.divisiPemberiNama || '').toLowerCase().includes(q) ||
+        (e.judulBerkas || '').toLowerCase().includes(q),
     );
   }
   // Sort
   const dir = sortDir.value === 'asc' ? 1 : -1;
   rows = [...rows].sort((a: any, b: any) => {
-    if (sortKey.value === 'judulBerkas') {
-      return (a.judulBerkas || '').localeCompare(b.judulBerkas || '') * dir;
+    if (sortKey.value === 'judulUsulan') {
+      return (a.judulUsulan || '').localeCompare(b.judulUsulan || '') * dir;
+    }
+    if (sortKey.value === 'jenisBerkas') {
+      return (a.jenisBerkas || '').localeCompare(b.jenisBerkas || '') * dir;
     }
     if (sortKey.value === 'nomorUsulan') {
       return (a.nomorUsulanTerbaru || '').localeCompare(b.nomorUsulanTerbaru || '') * dir;
+    }
+    if (sortKey.value === 'divisiPemberi') {
+      return (a.divisiPemberiNama || '').localeCompare(b.divisiPemberiNama || '') * dir;
+    }
+    if (sortKey.value === 'tanggalMulai') {
+      const ta = new Date(a.tanggalMulai || 0).getTime();
+      const tb = new Date(b.tanggalMulai || 0).getTime();
+      return (ta - tb) * dir;
     }
     // default: tanggalSelesai
     const ta = new Date(a.tanggalSelesai || 0).getTime();
@@ -137,13 +150,14 @@ const exportData = async () => {
   }
   isExporting.value = true;
   try {
-    const headers = ['Nomor Usulan', 'Judul Berkas', 'Klasifikasi', 'Divisi Pemberi', 'Berlaku s/d', 'Status'];
+    const headers = ['Tanggal', 'Nomor Usulan', 'Divisi Pemberi', 'Jenis Berkas', 'Judul Usulan', 'Progress', 'Status'];
     const csvRows = filteredEntitlements.value.map((r: any) => [
+      formatDate(r.tanggalMulai),
       r.nomorUsulanTerbaru || '-',
-      r.judulBerkas || '-',
-      r.klasifikasiTeks || r.klasifikasi || '-',
       r.divisiPemberiNama || r.divisiPemberiId || '-',
-      formatDate(r.tanggalSelesai),
+      r.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif',
+      r.judulUsulan || '-',
+      getProgressPercent(r) >= 100 ? 'Habis' : `${getProgressPercent(r)}%`,
       getProgressPercent(r) >= 100 ? 'Habis' : 'Aktif',
     ]);
     downloadCsv(`pemberian-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
@@ -243,12 +257,13 @@ const getProgressLabel = (row: any): string => {
 };
 
 // ── Columns ──
+// Urutan: Tanggal, Nomor Usulan, Divisi Pemberi, Jenis Berkas, Judul Usulan, Progress, Status, Aksi
 const columns = [
+  { key: 'tanggalMulai', label: 'Tanggal', sortable: true },
   { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
-  { key: 'judulBerkas', label: 'Judul Berkas', sortable: true },
-  { key: 'klasifikasiTeks', label: 'Klasifikasi' },
-  { key: 'divisiPemberi', label: 'Divisi Pemberi' },
-  { key: 'tanggalSelesai', label: 'Berlaku s/d', sortable: true },
+  { key: 'divisiPemberi', label: 'Divisi Pemberi', sortable: true },
+  { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true, headerClass: 'text-center', class: 'text-center' },
+  { key: 'judulUsulan', label: 'Judul Usulan', sortable: true },
   { key: 'progress', label: 'Progress' },
   { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi' },
@@ -404,17 +419,31 @@ onBeforeUnmount(() => {
         empty-message="Belum ada akses berkas yang diberikan kepada Anda."
         @sort="handleSort"
       >
+        <template #cell-tanggalMulai="{ row }">
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalMulai) }}</span>
+        </template>
         <template #cell-nomorUsulan="{ row }">
           <span class="font-mono text-xs font-medium text-primary-600 dark:text-primary-400">{{ row.nomorUsulanTerbaru || '-' }}</span>
         </template>
-        <template #cell-judulBerkas="{ row }">
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ row.judulBerkas || '-' }}</span>
-        </template>
-        <template #cell-klasifikasiTeks="{ row }">
-          <span class="text-xs text-gray-500 dark:text-gray-400">{{ row.klasifikasiTeks || row.klasifikasi || '-' }}</span>
-        </template>
         <template #cell-divisiPemberi="{ row }">
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ row.divisiPemberiNama || row.divisiPemberiId || '-' }}</span>
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisiPemberiNama || row.divisiPemberiId || '-' }}</span>
+        </template>
+        <template #cell-jenisBerkas="{ row }">
+          <span
+            :class="[
+              row.jenisBerkas === 'AKTIF'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
+                : 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800',
+              'inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border whitespace-nowrap',
+            ]"
+          >
+            {{ row.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}
+          </span>
+        </template>
+        <template #cell-judulUsulan="{ row }">
+          <div class="max-w-[260px]">
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ row.judulUsulan || '-' }}</p>
+          </div>
         </template>
         <template #cell-tanggalSelesai="{ row }">
           <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalSelesai) }}</span>

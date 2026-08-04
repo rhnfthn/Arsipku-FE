@@ -60,6 +60,7 @@ const isOpen = computed({
 // ── Form state ───────────────────────────────────
 const jenisBerkas = ref<JenisBerkas>(JenisBerkas.AKTIF);
 const divisiPemberiId = ref<number | null>(null);
+const judulUsulan = ref('');
 const tujuanAkses = ref('');
 const durasiAkses = ref<DurasiPreset>(DurasiPreset.TUJUH_HARI);
 const customTanggalSelesai = ref('');
@@ -96,6 +97,8 @@ const durasiDropdownRef = ref<HTMLElement | null>(null);
 // ── Custom verifikator dropdown state ──
 const showVerifikatorDropdown = ref(false);
 const verifikatorDropdownRef = ref<HTMLElement | null>(null);
+const verifikatorSearchQuery = ref('');
+const verifikatorSearchRef = ref<HTMLInputElement | null>(null);
 
 const filteredDivisi = computed(() => {
   const q = divisiSearchQuery.value.toLowerCase().trim();
@@ -150,6 +153,17 @@ watch(showDivisiDropdown, (val) => {
   } else {
     divisiSearchQuery.value = '';
     divisiPage.value = 1;
+  }
+});
+
+// Focus search saat dropdown verifikator dibuka
+watch(showVerifikatorDropdown, (val) => {
+  if (val) {
+    nextTick(() => {
+      verifikatorSearchRef.value?.focus();
+    });
+  } else {
+    verifikatorSearchQuery.value = '';
   }
 });
 
@@ -276,6 +290,18 @@ const availableVerifikator = computed(() => {
     .sort((a, b) => (LEVEL_ORDER[a.levelJabatan] ?? 99) - (LEVEL_ORDER[b.levelJabatan] ?? 99));
 });
 
+// Filtered verifikator dengan search query
+const filteredAvailableVerifikator = computed(() => {
+  const q = verifikatorSearchQuery.value.toLowerCase().trim();
+  if (!q) return availableVerifikator.value;
+  return availableVerifikator.value.filter((v) =>
+    (v.nama || '').toLowerCase().includes(q) ||
+    (v.jabatan || '').toLowerCase().includes(q) ||
+    (v.levelJabatan || '').toLowerCase().includes(q) ||
+    String(v.persnum || '').includes(q),
+  );
+});
+
 // Chips verifikator yang sudah dipilih, diurutkan dari tertinggi (EVP) ke terendah
 const sortedSelectedVerifikator = computed(() => {
   return [...selectedVerifikatorPersnums.value].sort((a, b) => {
@@ -329,6 +355,7 @@ const filteredPenerimaTambahan = computed(() => {
 const resetForm = () => {
   jenisBerkas.value = JenisBerkas.AKTIF;
   divisiPemberiId.value = null;
+  judulUsulan.value = '';
   tujuanAkses.value = '';
   durasiAkses.value = DurasiPreset.TUJUH_HARI;
   customTanggalSelesai.value = '';
@@ -346,6 +373,7 @@ const triedSubmit = ref(false);
 
 const validate = (): boolean => {
   const e: Record<string, string> = {};
+  if (judulUsulan.value.trim().length === 0) e.judulUsulan = 'Judul usulan wajib diisi';
   if (tujuanAkses.value.trim().length === 0) e.tujuanAkses = 'Tujuan akses wajib diisi';
   if (jenisAksesSelected.value.length === 0) e.jenisAkses = 'Pilih minimal 1 jenis akses';
   if (selectedVerifikatorPersnums.value.length === 0) e.verifikator = 'Pilih minimal 1 verifikator';
@@ -356,6 +384,7 @@ const validate = (): boolean => {
 };
 
 // Clear error saat user mengubah field
+watch(judulUsulan, () => { if (errors.value.judulUsulan) delete errors.value.judulUsulan; });
 watch(tujuanAkses, () => { if (errors.value.tujuanAkses) delete errors.value.tujuanAkses; });
 watch(jenisAksesSelected, () => { if (errors.value.jenisAkses) delete errors.value.jenisAkses; });
 watch(selectedVerifikatorPersnums, () => { if (errors.value.verifikator) delete errors.value.verifikator; }, { deep: true });
@@ -380,6 +409,7 @@ const handleSubmit = async () => {
     await createUsulan({
       jenisBerkas: jenisBerkas.value,
       divisiPemberiId: isINAKTIF.value ? undefined : Number(divisiPemberiId.value),
+      judulUsulan: judulUsulan.value.trim(),
       tujuanAkses: tujuanAkses.value.trim(),
       durasiAkses: durasiAkses.value,
       customTanggalSelesai:
@@ -424,6 +454,10 @@ watch(isOpen, (val) => {
     }).finally(() => {
       penerimaTambahanLoading.value = false;
     });
+  } else {
+    // Reset error state saat modal ditutup agar border kembali abu (default)
+    errors.value = {};
+    triedSubmit.value = false;
   }
 });
 
@@ -573,6 +607,24 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Judul Usulan -->
+      <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-center sm:gap-0">
+        <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+          Judul Usulan <span class="text-red-500">*</span>
+        </span>
+        <div class="flex-1">
+          <input
+            v-model="judulUsulan"
+            type="text"
+            maxlength="255"
+            class="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            :class="errors.judulUsulan ? 'border-red-500' : 'border-gray-200'"
+            placeholder="Masukkan judul usulan..."
+          />
+          <p v-if="errors.judulUsulan" class="mt-1 text-xs text-red-500">{{ errors.judulUsulan }}</p>
+        </div>
+      </div>
+
       <!-- Tujuan Akses -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
@@ -710,9 +762,23 @@ onMounted(() => {
               v-if="showVerifikatorDropdown"
               class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
             >
+              <!-- Search -->
+              <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                <div class="relative">
+                  <UIcon name="i-lucide-search" class="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    ref="verifikatorSearchRef"
+                    v-model="verifikatorSearchQuery"
+                    type="text"
+                    placeholder="Cari nama atau jabatan..."
+                    class="w-full rounded-md border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+              <!-- Options -->
               <div class="max-h-[200px] overflow-y-auto">
                 <button
-                  v-for="v in availableVerifikator"
+                  v-for="v in filteredAvailableVerifikator"
                   :key="v.persnum"
                   type="button"
                   @click="onVerifikatorSelect(v.persnum); showVerifikatorDropdown = false"
@@ -721,6 +787,9 @@ onMounted(() => {
                   <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
                   <span class="text-xs text-gray-400">{{ v.jabatan || v.levelJabatan || '' }}</span>
                 </button>
+                <div v-if="filteredAvailableVerifikator.length === 0" class="px-3 py-4 text-center text-sm text-gray-400">
+                  Tidak ada verifikator ditemukan
+                </div>
               </div>
             </div>
           </div>
@@ -737,7 +806,7 @@ onMounted(() => {
       <!-- Penerima Akses Tambahan -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-          Orang Tambahan
+          Penerima Akses Tambahan
           <span class="ml-1 text-xs text-gray-400">(opsional)</span>
         </span>
         <div class="flex-1">
@@ -747,7 +816,7 @@ onMounted(() => {
           </div>
           <!-- Empty -->
           <div v-else-if="eligiblePenerimaTambahan.length === 0" class="py-2 text-sm text-gray-400">
-            Tidak ada orang tambahan di direktorat Anda.
+            Tidak ada penerima akses tambahan di direktorat Anda.
           </div>
           <template v-else>
             <!-- Selected chips -->
@@ -775,7 +844,7 @@ onMounted(() => {
                 @click="showPenerimaTambahanDropdown = !showPenerimaTambahanDropdown"
                 class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
-                <span class="text-gray-400">+ Pilih orang tambahan ({{ selectedPenerimaTambahan.length }})</span>
+                <span class="text-gray-400">+ Pilih penerima akses tambahan ({{ selectedPenerimaTambahan.length }})</span>
                 <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showPenerimaTambahanDropdown }" />
               </button>
               <div

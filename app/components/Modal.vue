@@ -136,7 +136,7 @@ const modalSizeClass = computed(() => {
     case 'lg':
       return 'w-[570px] max-h-[90vh]';
     case 'xl':
-      return 'w-[630px] max-w-[90vw] max-h-[90vh]';
+      return 'w-[700px] max-w-[90vw] max-h-[90vh]';
     case 'full':
       return 'w-[95vw] max-w-none max-h-[90vh]';
     default:
