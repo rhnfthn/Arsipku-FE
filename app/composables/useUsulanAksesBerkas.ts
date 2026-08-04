@@ -93,11 +93,20 @@ export function useUsulanAksesBerkas() {
 
   // ── GET /berkas?status=closed_retensi_aktif ────
   // Ambil list berkas yang eligible untuk dipilih saat Pilih Berkas.
-  // BE filter by status (closed_retensi_aktif) + isAktif=true.
-  const fetchBerkasEligible = async (status = 'closed_retensi_aktif') => {
+  // BE filter by status (closed_retensi_aktif) + jenisBerkas + divisiPemberiId.
+  const fetchBerkasEligible = async (
+    status = 'closed_retensi_aktif',
+    jenisBerkas?: string,
+    divisiPemberiId?: number,
+  ) => {
     try {
+      const params = new URLSearchParams();
+      if (status) params.set('status', status);
+      if (jenisBerkas) params.set('jenisBerkas', jenisBerkas);
+      if (divisiPemberiId) params.set('divisiPemberiId', String(divisiPemberiId));
+      const query = params.toString() ? `?${params.toString()}` : '';
       const res = await apiGet<any[]>(
-        '/usulan-akses-berkas/eligible-berkas',
+        `/usulan-akses-berkas/eligible-berkas${query}`,
         undefined,
         { skipCache: true },
       );
