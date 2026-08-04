@@ -1231,6 +1231,27 @@ onBeforeUnmount(() => {
               <UsulanAksesBerkasBadge :status="usulanDetail.status" class="ml-auto" />
             </div>
             <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
+              <!-- Judul Usulan -->
+              <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700 sm:col-span-2">
+                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+                  <UIcon name="i-lucide-heading" class="h-4 w-4" />
+                </span>
+                <div class="min-w-0">
+                  <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Judul Usulan</dt>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judulUsulan || '-' }}</dd>
+                </div>
+              </div>
+              <!-- Nomor Usulan -->
+              <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
+                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+                  <UIcon name="i-lucide-hash" class="h-4 w-4" />
+                </span>
+                <div class="min-w-0">
+                  <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Nomor Usulan</dt>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.nomorUsulan || '-' }}</dd>
+                </div>
+              </div>
+              <!-- Jenis Berkas -->
               <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
                 <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
                   <UIcon name="i-lucide-file-text" class="h-4 w-4" />
@@ -1311,6 +1332,34 @@ onBeforeUnmount(() => {
               <p class="whitespace-pre-line border-l-2 border-primary-300 pl-3 text-sm leading-5 text-gray-600 dark:border-primary-700 dark:text-gray-300">
                 {{ usulanDetail.tujuanAkses || 'Tidak ada tujuan akses diisi.' }}
               </p>
+            </div>
+          </div>
+
+          <!-- Penerima Akses Tambahan (jika ada) -->
+          <div v-if="usulanDetail.penerimaAksesTambahan?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+              <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+                <UIcon name="i-lucide-users" class="size-5 text-primary-600 dark:text-primary-400" />
+              </span>
+              <div>
+                <h2 class="font-semibold text-gray-900 dark:text-white">Penerima Akses Tambahan</h2>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Anggota divisi pengusul yang juga menerima akses.</p>
+              </div>
+            </div>
+            <div class="px-5 py-4">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="p in usulanDetail.penerimaAksesTambahan"
+                  :key="p.persnum"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                >
+                  <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-200 text-[9px] font-semibold text-primary-700 dark:bg-primary-800 dark:text-primary-300">
+                    {{ (p.nama || String(p.persnum)).charAt(0).toUpperCase() }}
+                  </span>
+                  <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
+                  <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
+                </span>
+              </div>
             </div>
           </div>
 
