@@ -1,10 +1,10 @@
 <script setup lang="ts">
-// Usulan Saya — SE melihat usulan yang dia buat (scope=mine)
-// Redirect ke page usulan-akses-berkas dengan tab=mine
+// Usulan Saya — SE melihat usulan yang dia buat
+// Redirect ke page usulan-akses-berkas (tab "Semua" by default)
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Usulan Saya' });
 
-await navigateTo('/usulan-akses-berkas?tab=mine', { replace: true });
+await navigateTo('/usulan-akses-berkas', { replace: true });
 </script>
 
 <template>
