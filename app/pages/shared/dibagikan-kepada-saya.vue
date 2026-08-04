@@ -10,8 +10,9 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-useHead({ title: () => t('share_to_me_title') });
 const { t } = useI18n();
+useHead({ title: () => t('share_to_me_title') });
+const toast = useToast();
 const { user } = useAuth();
 
 const {
@@ -109,7 +110,7 @@ const handleRefresh = () => loadData();
 const isExporting = ref(false);
 const exportData = async () => {
   if (pagination.total === 0) {
-    useToast().add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
+    toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
     return;
   }
   isExporting.value = true;
@@ -125,7 +126,7 @@ const exportData = async () => {
     });
     const rows = sharedToMe.value;
     if (!rows.length) {
-      useToast().add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
+      toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
       return;
     }
     const headers = [t('share_perihal'), t('share_jenis'), t('share_nomor'), t('share_dari'), t('share_akses'), t('share_tanggal')];
@@ -138,12 +139,12 @@ const exportData = async () => {
       formatShortDate(s.createdAt),
     ]);
     downloadCsv(`dibagikan-kepada-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    useToast().add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
+    toast.add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
     // Reload halaman saat ini
     await loadData();
   } catch (e) {
     console.error('Gagal export:', e);
-    useToast().add({ title: t('share_gagal_export'), description: t('share_coba_lagi'), color: 'error' });
+    toast.add({ title: t('share_gagal_export'), description: t('share_coba_lagi'), color: 'error' });
   } finally {
     isExporting.value = false;
   }
@@ -189,7 +190,7 @@ const handleOpenPdf = async (share: any) => {
     const msg = err?.response?.data?.message || err?.message || '';
     pdfViewerUrl.value = '';
     showPdfViewer.value = false;
-    useToast().add({
+    toast.add({
       title: t('share_tidak_bisa_buka'),
       description: msg.includes('sekali') || msg.includes('ditutup')
         ? t('share_sekali_lihat_error')
