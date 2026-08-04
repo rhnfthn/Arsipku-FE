@@ -50,6 +50,10 @@ const props = defineProps<{
   isTinjut?: boolean;
   isLocked?: boolean;
   isNote?: boolean;
+  // Mode read-only (mis. dilihat sebagai anggota berkas): sembunyikan navigasi
+  // pesan & flag pribadi (favorit/tindak lanjut/kunci/catatan). Back & pratinjau
+  // dokumen tetap aktif.
+  readOnly?: boolean;
 }>();
 
 // --- EMITS ---
@@ -380,6 +384,7 @@ const removeNote = () => {
       </div>
       <!-- {{ data }} -->
       <div class="flex items-center gap-1 shrink-0 pl-2">
+        <template v-if="!readOnly">
         <!-- Navigasi pesan lebih baru (<) -->
         <UTooltip v-if="isHead" text="Pesan lebih baru">
           <button
@@ -486,6 +491,7 @@ const removeNote = () => {
 
         <!-- Divider: aksi vs utilitas -->
         <div v-if="isHead" class="w-px h-5 bg-gray-200 dark:bg-gray-600 mx-1" />
+        </template>
 
         <!-- Collapse toggle for non-head cards -->
         <button

@@ -1637,6 +1637,14 @@ const activeDelegationId = ref<string | null>(null);
 const initActiveState = () => {
   if (process.client) {
     activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
+    // JANGAN overwrite active_profile jika user sudah pilih profile manual
+    // (unit_dokumen / sekretaris / akun_asli). Hanya set default jika belum ada.
+    const currentStored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (!currentStored) {
+      // Default: akun_asli
+      localStorage.setItem('active_profile', 'akun_asli');
+      localStorage.setItem('arsipku_active_profile', 'akun_asli');
+    }
   }
 };
 
@@ -1805,6 +1813,9 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
         localStorage.setItem('active_profile', 'akun_asli');
         localStorage.setItem('arsipku_active_profile', 'akun_asli');
       }
+      // Beri tahu sidebar agar update tanpa reload manual.
+      window.dispatchEvent(new Event('active_profile_changed'));
+      window.dispatchEvent(new Event('profile-changed'));
       localStorage.setItem('switch_role_message', res.message || 'Berhasil mengganti role.');
       window.location.reload();
     } else {
@@ -1954,11 +1965,23 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
     const details = role.delegated_role || {};
-    const isSekretarisDelegasi = details.position_status === 'SE';
+    const from = role.delegated_from || {};
+    // Untuk delegasi SE (Sekretaris), tampilkan jabatan delegator + "Sekretaris".
+    // Contoh: "EVP of Air Navigation Services - Sekretaris".
+    // Untuk delegasi lain, tampilkan position_text delegasi seperti biasa.
+    let uiPosition = details.position_text || 'Jabatan Tidak Tersedia';
+    if (details.position_status === 'SE') {
+      const delegatorPosition = from.position_text;
+      if (delegatorPosition) {
+        uiPosition = `${delegatorPosition} - Sekretaris`;
+      } else {
+        uiPosition = 'Sekretaris';
+      }
+    }
     return {
       uiName: details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
-      uiPosition: isSekretarisDelegasi ? 'Sekretaris' : (details.position_text || 'Jabatan Tidak Tersedia'),
+      uiPosition,
       uiArea: details.area_text || details.company_text || '',
       label: details.position_text || 'Delegasi',
       slot: 'delegation-item',
@@ -1968,9 +1991,10 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       // DAN sedang dalam mode delegasi (activeDelegationId === role.id).
       // Sebelumnya pakai currentId === role.id saja, yang tidak sinkron dengan
       // active_profile sehingga bisa muncul centang ganda.
-      isActive: isSekretarisDelegasi
-        ? currentProfile.value === 'sekretaris'
-        : currentProfile.value === 'akun_asli' && currentId === role.id,
+      isActive:
+        details.position_status === 'SE'
+          ? currentProfile.value === 'sekretaris'
+          : currentProfile.value === 'akun_asli' && currentId === role.id,
       click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
       onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
     };

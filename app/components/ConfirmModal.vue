@@ -4,7 +4,7 @@
       enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100"
       leave-to-class="opacity-0">
       <div v-if="modelValue" class="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center p-4"
-        :class="backdropClass" @click.self="onCancel">
+        @click.self="onCancel">
         <div
           class="bg-white dark:bg-gray-900 rounded-[var(--radius-modal)] shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800"
           :class="contentClass">
@@ -17,11 +17,11 @@
             <div class="text-sm text-gray-500 mb-6">
               <slot name="description">{{ description }}</slot>
             </div>
-            <div class="flex gap-3 justify-center">
-              <UButton color="neutral" variant="outline" :disabled="loading" @click="onCancel">
+            <div class="flex gap-3">
+              <UButton color="neutral" variant="outline" size="lg" class="flex-1 justify-center" :disabled="loading" @click="onCancel">
                 {{ cancelText }}
               </UButton>
-              <UButton :color="confirmColor" :loading="loading" :disabled="loading" @click="onConfirm">
+              <UButton :color="confirmColor" size="lg" class="flex-1 justify-center" :loading="loading" :disabled="loading" @click="onConfirm">
                 {{ loading ? loadingText : confirmText }}
               </UButton>
             </div>
@@ -89,7 +89,6 @@ const iconBgClass = computed(() => variantConfig.value.iconBg);
 const iconColorClass = computed(() => variantConfig.value.iconColor);
 const confirmColor = computed(() => variantConfig.value.confirmColor as any);
 
-const backdropClass = computed(() => props.backdrop ? 'bg-black/40 backdrop-blur-sm' : '');
 const contentClass = computed(() => 'animate-in zoom-in-95 duration-200');
 
 const onConfirm = () => emit('confirm');

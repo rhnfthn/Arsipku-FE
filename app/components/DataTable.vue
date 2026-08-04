@@ -13,13 +13,15 @@
             ]"
             @click="col.sortable && $emit('sort', col.key)"
           >
-            {{ col.label }}
-            <UIcon
-              v-if="col.sortable"
-              name="i-lucide-arrow-up-down"
-              class="ml-1 w-3.5 h-3.5 inline-flex align-middle transition-opacity"
-              :class="sortKey === col.key ? 'opacity-100' : 'opacity-50'"
-            />
+            <span class="inline-flex items-center gap-1 whitespace-nowrap">
+              {{ col.label }}
+              <UIcon
+                v-if="col.sortable"
+                name="i-lucide-arrow-up-down"
+                class="w-3.5 h-3.5 transition-opacity"
+                :class="sortKey === col.key ? 'opacity-100' : 'opacity-50'"
+              />
+            </span>
           </th>
         </tr>
       </thead>
@@ -84,10 +86,10 @@ withDefaults(
     skeletonRows: 5,
     emptyMessage: 'Tidak ada data yang cocok dengan pencarian.',
     sortDir: 'asc',
-    headerClass: 'bg-primary-400 dark:bg-primary-700 text-white text-left',
+    headerClass: 'bg-primary dark:bg-primary-700 text-white text-left',
     bodyClass: '',
     rowClass:
-      'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
+      'border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors',
   }
 );
 

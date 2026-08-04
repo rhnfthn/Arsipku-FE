@@ -38,209 +38,242 @@
         </div>
       </div>
 
-      <!-- 2-column layout: info (left) + aksi (right sticky) -->
+      <!-- 2-column layout: info+timeline+aksi (left) + timeline (right) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Left: Informasi Usulan (8/12) -->
-        <div class="lg:col-span-8">
+        <!-- Left: Informasi Usulan + Timeline + Tombol Aksi (8/12) -->
+        <div class="lg:col-span-8 space-y-5">
           <VerifikasiDetail :usulan="usulan" />
-        </div>
 
-        <!-- Right: Card Verifikasi / Aksi (4/12, sticky) -->
-        <div class="lg:col-span-4">
-          <div class="lg:sticky lg:top-5 space-y-5">
-            <!-- MENUNGGU_VERIFIKASI_ATASAN: Verifikasi Usulan -->
-            <VerifikasiCard
-              v-if="canVerify"
-              :usulan="usulan"
-              :submitting="actionLoading"
-              @approve="onApprove"
-              @reject="openRejectModal"
-            />
-
-            <!-- MENUNGGU_VERIFIKASI_TERAKHIR: Verifikasi Terakhir -->
-            <FinalVerifikasiCard
-              v-if="canFinalVerify"
-              :submitting="actionLoading"
-              @approve="onFinalVerify"
-              @reject="openRejectModal"
-            />
-
-            <!-- DISETUJUI_ATASAN / DISETUJUI_VERIFIKASI_TERAKHIR / DIKIRIM / SELESAI: Berita Acara -->
-            <BeritaAcaraCard
-              v-if="showBeritaAcara"
-              :usulan="usulan"
-              :generating="actionLoading"
-              @generate="onGenerateBA"
-            />
-
-            <!-- Status info cards (read-only) -->
-            <div
-              v-if="usulan.status === 'MENUNGGU_VERIFIKASI_ATASAN' && !canVerify"
-              class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">Menunggu Verifikasi</h3>
-                  <p class="text-sm text-yellow-600 dark:text-yellow-400">
-                    Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DITOLAK_ATASAN' || usulan.status === 'DITOLAK_VERIFIKASI_TERAKHIR'"
-              class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-x-circle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Usulan Ditolak</h3>
-                  <p class="text-sm text-red-600 dark:text-red-400">{{ usulan.rejectedNote ?? 'Tidak ada catatan' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DISETUJUI_VERIFIKASI_TERAKHIR'"
-              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Verifikasi Selesai</h3>
-                  <p class="text-sm text-green-600 dark:text-green-400">
-                    Usulan lolos verifikasi. Sekretaris dapat mengirim ke Unit Tata Naskah.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="usulan.status === 'DISETUJUI_VERIFIKASI_TERAKHIR'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Kirim Usul Pindah Arsip Inaktif</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Kirim usulan ke Unit Tata Naskah untuk proses selanjutnya.
-              </p>
-              <button
-                @click="onKirimUsulPindah"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim Usul Pindah
+          <!-- ─── Card: Riwayat ─── -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Riwayat</h3>
+              <button @click="showRiwayat = !showRiwayat" class="text-xs text-[#457fb6] hover:underline">
+                {{ showRiwayat ? 'Sembunyikan' : 'Tampilkan' }}
               </button>
             </div>
-
-            <div
-              v-if="usulan.status === 'USUL_PINDAH_DIKIRIM'"
-              class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-send" class="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Usul Pindah Arsip Inaktif Dikirim</h3>
-                  <p class="text-sm text-purple-600 dark:text-purple-400">
-                    Usulan sudah dikirim. Siapkan Berkas Fisik dan Berita Acara Serah Terima untuk penyelesaian.
-                  </p>
+            <div v-if="showRiwayat" class="space-y-2">
+              <div
+                v-for="(r, idx) in riwayatList"
+                :key="idx"
+                class="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+              >
+                <div class="w-2 h-2 rounded-full bg-[#457fb6] mt-1.5 shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-gray-900 dark:text-white">{{ r.label }}</span>
+                    <span class="text-xs text-gray-400">{{ r.tanggal }}</span>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Oleh: {{ r.oleh }}</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- USUL_PINDAH_DIKIRIM: Tombol Lanjutkan Siapkan Berkas Fisik -->
-            <div
-              v-if="usulan.status === 'USUL_PINDAH_DIKIRIM'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Siapkan Berkas Fisik</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Upload Berkas Fisik dan Berita Acara Serah Terima untuk menyelesaikan usulan.
-              </p>
-              <button
-                @click="onSiapkanBerkasFisik"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-file-check" class="w-4 h-4 mr-1 inline" /> Lanjutkan Siapkan Berkas Fisik
+          <!-- Berita Acara (hapus dari atasan managerial — hanya di sekretaris) -->
+
+          <!-- ─── Card: Daftar Isi ─── -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
+              <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
               </button>
             </div>
+            <div id="daftar-isi-print" class="text-sm">
+              <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ usulan.nomorUsulan }}</p>
+              <table class="w-full border-collapse text-xs">
+                <thead>
+                  <tr class="border-b-2 border-gray-300 dark:border-gray-500">
+                    <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
+                    <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
+                    <td class="text-center py-2 px-2">
+                      <input type="checkbox" class="w-4 h-4 text-[#457fb6] border-gray-300 rounded" />
+                    </td>
+                    <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
+                    <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
+                  </tr>
+                  <tr v-if="daftarIsi.length === 0">
+                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-            <!-- SIAPKAN_BERKAS_FISIK: Upload form + Selesaikan -->
-            <div
-              v-if="usulan.status === 'SIAPKAN_BERKAS_FISIK'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Upload Berkas Fisik</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Upload Berkas Fisik dan Berita Acara Serah Terima, lalu klik Selesaikan Proses.
-              </p>
-              <div class="space-y-4">
-                <!-- Berkas Fisik -->
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Berkas Fisik (PDF)</label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    @change="onUploadBerkasFisik"
-                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#457fb6] file:text-white hover:file:bg-[#3a6d9c]"
-                  />
-                  <p v-if="berkasFisikUrl" class="text-xs text-green-600 mt-1">✓ {{ berkasFisikUrl }}</p>
-                </div>
-                <!-- Berita Acara Serah Terima -->
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Berita Acara Serah Terima (PDF)</label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    @change="onUploadBeritaAcara"
-                    class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#457fb6] file:text-white hover:file:bg-[#3a6d9c]"
-                  />
-                  <p v-if="beritaAcaraUrl" class="text-xs text-green-600 mt-1">✓ {{ beritaAcaraUrl }}</p>
-                </div>
-                <!-- Tombol Selesaikan -->
-                <button
-                  @click="onSelesaikan"
-                  :disabled="actionLoading"
-                  class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-                >
-                  <UIcon name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Selesaikan Proses
+          <!-- Berita Acara Serah Terima (hanya tampil setelah verifikasi disetujui) -->
+          <div
+            v-if="showBeritaAcara"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
+              <div class="flex gap-2">
+                <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
+                </button>
+                <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
+                  <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
                 </button>
               </div>
             </div>
+            <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
+              <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
+              <p class="text-center text-xs mb-3">Nomor: {{ usulan.nomorUsulan }}</p>
+              <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(usulan.tanggalUsulan) }}</p>
 
-            <div
-              v-if="usulan.status === 'SIAPKAN_BERKAS_FISIK' || usulan.status === 'SELESAI'"
-              class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <p class="text-xs leading-relaxed mb-4">
+                Pada hari ini {{ hariIni }} tanggal {{ formatTanggalLengkap(usulan.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
+              </p>
+
+              <div class="space-y-3 mb-4 text-xs">
                 <div>
-                  <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">
-                    {{ usulan.status === 'SELESAI' ? 'Usulan Selesai' : 'Berkas Fisik Disiapkan' }}
-                  </h3>
-                  <p class="text-sm text-green-600 dark:text-green-400">
-                    {{ usulan.status === 'SELESAI' ? 'Proses pemindahan arsip selesai.' : 'Sekretaris sedang menyiapkan berkas fisik.' }}
-                  </p>
+                  <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
+                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
+                  <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
+                </div>
+                <div>
+                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
+                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                  <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
+                </div>
+              </div>
+
+              <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
+              <p class="text-xs leading-relaxed mb-3">
+                Pihak pertama telah menyerahkan kepada pihak kedua berupa:
+              </p>
+              <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
+                <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">
+                  {{ a.kode ?? '-' }} — {{ a.perihal }}
+                </li>
+                <li v-if="beritaAcaraData.keterangan">{{ beritaAcaraData.keterangan }}</li>
+              </ol>
+
+              <p class="text-xs leading-relaxed mb-6">
+                Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
+              </p>
+
+              <p class="text-xs text-right mb-6">{{ kotaIni }}, {{ formatTanggalLengkap(usulan.tanggalUsulan) }}</p>
+
+              <div class="grid grid-cols-2 gap-8 text-xs">
+                <div class="text-center">
+                  <p class="font-semibold mb-16">Pihak Pertama</p>
+                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
+                  <p class="text-gray-500">{{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
+                </div>
+                <div class="text-center">
+                  <p class="font-semibold mb-16">Pihak Kedua</p>
+                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
+                  <p class="text-gray-500">{{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div
-              v-if="usulan.status === 'DIKIRIM'"
-              class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
+          <!-- Tombol Pindah Usulan — muncul saat verifikasi terakhir selesai -->
+          <div v-if="canKirimTU" class="flex gap-2">
+            <button
+              @click="onKirimTU"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-send" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Usulan Dikirim</h3>
-                  <p class="text-sm text-blue-600 dark:text-blue-400">
-                    Usulan telah dikirim ke Unit Tata Naskah untuk verifikasi berkas fisik.
-                  </p>
-                </div>
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Pindah Usulan
+            </button>
+          </div>
+
+          <!-- Tombol Aksi di bawah card verifikasi -->
+          <div v-if="canVerify || canFinalVerify" class="flex gap-2">
+            <button
+              @click="openRejectModal"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon name="i-lucide-x" class="w-4 h-4 mr-1 inline" /> Tolak
+            </button>
+            <button
+              v-if="canVerify"
+              @click="onApprove"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim
+            </button>
+            <!-- Verifikasi Terakhir (dengan Daftar Isi + BA) -->
+            <button
+              v-if="canFinalVerify"
+              @click="onFinalVerify"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Pindah Usulan
+            </button>
+          </div>
+
+          <!-- Status info (read-only) -->
+          <div
+            v-if="usulan.status === 'MENUNGGU_VERIFIKASI_ATASAN' && !canVerify"
+            class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+                  {{ (isCurrentTurn || isCurrentTurnFromLevels) ? 'Menunggu Verifikasi Anda' : 'Menunggu Verifikasi Atasan Lain' }}
+                </h3>
+                <p class="text-sm text-yellow-600 dark:text-yellow-400">
+                  <template v-if="isCurrentTurn || isCurrentTurnFromLevels">
+                    Usulan dari {{ usulan.sekretarisName }} menunggu verifikasi Anda.
+                  </template>
+                  <template v-else>
+                    Usulan dari {{ usulan.sekretarisName }} sedang menunggu verifikasi atasan tahap {{ usulan.currentApprovalLevel }} dari {{ usulan.totalApprovalLevels }}.
+                  </template>
+                </p>
               </div>
             </div>
+          </div>
+
+          <div
+            v-if="usulan.status === 'DITOLAK_ATASAN' || usulan.status === 'DITOLAK_VERIFIKASI_TERAKHIR'"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-x-circle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Usulan Ditolak</h3>
+                <p class="text-sm text-red-600 dark:text-red-400">{{ usulan.rejectedNote ?? 'Tidak ada catatan' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="usulan.status === 'SELESAI'"
+            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-green-700 dark:text-green-300 mb-1">Usulan Selesai</h3>
+                <p class="text-sm text-green-600 dark:text-green-400">Proses pemindahan arsip selesai.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Timeline Riwayat (4/12, sticky) -->
+        <div class="lg:col-span-4">
+          <div class="lg:sticky lg:top-5 space-y-5">
+            <TimelineRiwayat :item="usulanToTransfer" />
           </div>
         </div>
       </div>
@@ -253,6 +286,23 @@
 
     <!-- Reject Modal -->
     <RejectModal v-model="isRejectModalOpen" @confirm="onReject" />
+
+    <!-- Approve Modal -->
+    <ApproveUsulanModal
+      v-model="isApproveModalOpen"
+      :usulan="usulan"
+      :title="approveMode === 'finalVerify' ? 'Konfirmasi Verifikasi Terakhir' : 'Konfirmasi Verifikasi'"
+      :confirm-label="approveMode === 'finalVerify' ? 'Pindah Usulan' : 'Kirim'"
+      @confirm="onConfirmApprove"
+    />
+
+    <!-- Send to TU Modal -->
+    <SendToTUModal
+      v-model="isSendToTUModalOpen"
+      :usulan="usulan"
+      :loading="actionLoading"
+      @confirm="onConfirmKirimTU"
+    />
   </div>
 </template>
 
@@ -261,12 +311,16 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
+import { useApi } from '~/composables/useApi';
 import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vue';
-import VerifikasiCard from '~/components/verifikasi-usulan/VerifikasiCard.vue';
-import FinalVerifikasiCard from '~/components/verifikasi-usulan/FinalVerifikasiCard.vue';
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import BeritaAcaraCard from '~/components/verifikasi-usulan/BeritaAcaraCard.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
+import ApproveUsulanModal from '~/components/verifikasi-usulan/ApproveUsulanModal.vue';
+import SendToTUModal from '~/components/verifikasi-usulan/SendToTUModal.vue';
 import type { VerifikasiUsulanItem, JenisUsulan } from '~/types/verifikasi-usulan';
+import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
+import { formatDate } from '~/utils/transfer-status';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -282,14 +336,146 @@ const {
   siapkanBerkasFisik,
   uploadBerkas,
   selesaikanUsulan,
+  approveReceipt,
+  checkIsCurrentTurn,
 } = useVerifikasiUsulan();
 
 const usulan = ref<VerifikasiUsulanItem | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
+const showRiwayat = ref(true);
 const isRejectModalOpen = ref(false);
+const isApproveModalOpen = ref(false);
+const isSendToTUModalOpen = ref(false);
+const approveMode = ref<'verify' | 'finalVerify'>('verify');
 const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
+const isCurrentTurn = ref(false);
+const daftarIsi = ref<any[]>([]);
+const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
+const checklistBerkasFisik = ref(false);
+const checklistBeritaAcara = ref(false);
+
+const canSendToTU = computed(() => checklistBerkasFisik.value && checklistBeritaAcara.value);
+
+const { apiGet } = useApi();
+
+const hariIni = computed(() => {
+  const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  return hari[new Date().getDay()];
+});
+const kotaIni = 'Jakarta';
+const formatTanggalLengkap = (d: string | Date | null): string => {
+  if (!d) return '-';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const loadDaftarIsi = async () => {
+  try {
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
+    daftarIsi.value = res?.data?.daftarIsi ?? [];
+  } catch { daftarIsi.value = []; }
+};
+const loadBeritaAcaraData = async () => {
+  try {
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true });
+    beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] };
+  } catch { beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] }; }
+};
+
+const printDaftarIsi = () => {
+  const el = document.getElementById('daftar-isi-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title><style>
+    body{font-family:Arial,sans-serif;padding:30px;color:#111}
+    .text-sm{font-size:13px}.text-xs{font-size:12px}.font-semibold{font-weight:600}
+    .mb-3{margin-bottom:12px}.text-gray-500{color:#6b7280}.text-gray-600{color:#4b5563}
+    .text-gray-700{color:#374151}.text-gray-400{color:#9ca3af}.text-center{text-align:center}
+    .italic{font-style:italic}.w-full{width:100%}.w-8{width:32px}.w-10{width:40px}
+    table{width:100%;border-collapse:collapse}
+    th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}
+    td{border-bottom:1px solid #f3f4f6;padding:8px}
+    .px-2{padding-left:8px;padding-right:8px}.py-2{padding-top:8px;padding-bottom:8px}
+    .py-4{padding-top:16px;padding-bottom:16px}input[type=checkbox]{width:16px;height:16px}p{margin:0}
+  </style></head><body>${el.innerHTML}</body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250);
+};
+const printBeritaAcara = () => {
+  const el = document.getElementById('berita-acara-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title><style>
+    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:40px;max-width:800px;margin:0 auto;color:#111}
+    .text-sm{font-size:13px}.text-xs{font-size:12px}.text-base{font-size:16px}
+    .text-center{text-align:center}.text-right{text-align:right}
+    .font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}
+    .mb-1{margin-bottom:4px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+    .mb-6{margin-bottom:24px}.mb-16{margin-bottom:64px}.space-y-3>*+*{margin-top:12px}
+    .space-y-1>*+*{margin-top:4px}.leading-relaxed{line-height:1.625}
+    .text-gray-500{color:#6b7280}.ml-2{margin-left:8px}
+    .grid{display:grid}.grid-cols-2{grid-template-columns:1fr 1fr}
+    .gap-8{gap:32px}.border-t{border-top:1px solid #9ca3af}.pt-1{padding-top:4px}
+    ol{padding-left:20px;margin:0}li{margin-bottom:4px}p{margin:0}
+  </style></head><body>${el.innerHTML}</body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250);
+};
+const downloadBeritaAcara = () => {
+  window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
+};
+
+/** Mapping usulan ke format TransferActiveToInactive untuk TimelineRiwayat. */
+const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
+  id: usulan.value?.id ?? '',
+  nomorUsulan: usulan.value?.nomorUsulan ?? '',
+  tanggalUsulan: usulan.value?.tanggalUsulan ?? '',
+  sekretarisPersnum: usulan.value?.sekretarisPersnum ?? 0,
+  sekretarisName: usulan.value?.sekretarisName ?? '',
+  divisiId: null,
+  divisiName: null,
+  atasanPersnum: usulan.value?.atasanPersnum ?? 0,
+  atasanName: usulan.value?.atasanName ?? '',
+  atasanPositionId: null,
+  currentApprovalLevel: usulan.value?.currentApprovalLevel ?? 1,
+  totalApprovalLevels: usulan.value?.totalApprovalLevels ?? 1,
+  tuPersnum: null,
+  tuName: null,
+  atasanTuPersnum: null,
+  atasanTuName: null,
+  arsipId: usulan.value?.arsipId ?? '',
+  arsipPerihal: usulan.value?.arsipPerihal ?? '',
+  arsipKode: usulan.value?.arsipKode ?? null,
+  tanggalRetensiAktifHabis: usulan.value?.tanggalRetensiAktifHabis ?? null,
+  arsipIds: null,
+  keterangan: usulan.value?.keterangan ?? null,
+  status: usulan.value?.status as any ?? 'DRAFT',
+  rejectedNote: usulan.value?.rejectedNote ?? null,
+  verifyNote: usulan.value?.verifyNote ?? null,
+  approvedBy: null,
+  approvedAt: usulan.value?.approvedAt ?? null,
+  finalVerifiedBy: null,
+  finalVerifiedAt: usulan.value?.finalVerifiedAt ?? null,
+  finalVerifyNote: null,
+  beritaAcaraUrl: usulan.value?.beritaAcaraUrl ?? null,
+  beritaAcaraNomor: usulan.value?.beritaAcaraNomor ?? null,
+  tanggalDikirim: null,
+  physicalChecklist: null,
+  physicalVerifiedBy: null,
+  physicalVerifiedAt: null,
+  physicalVerificationNote: null,
+  tuApprovedBy: null,
+  tuApprovedAt: null,
+  tuFinalApprovedBy: null,
+  tuFinalApprovedAt: null,
+  receivedAt: null,
+  arrangedAt: null,
+  createdAt: usulan.value?.createdAt ?? '',
+  updatedAt: usulan.value?.updatedAt ?? '',
+}));
 
 const jenis = computed<JenisUsulan>(() => {
   const j = route.query.jenis as string;
@@ -304,7 +490,69 @@ const items = computed(() => [
 
 const showBeritaAcara = computed(() => {
   if (!usulan.value) return false;
-  return ['DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(usulan.value.status);
+  return ['MENUNGGU_VERIFIKASI_TERAKHIR', 'DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(usulan.value.status);
+});
+
+/** Riwayat aktor yang terlibat dalam usulan. */
+const riwayatList = computed(() => {
+  if (!usulan.value) return [];
+  const u = usulan.value;
+  const items: { label: string; oleh: string; tanggal: string }[] = [];
+
+  // 1. Draft — Sekretaris
+  items.push({
+    label: 'Draft',
+    oleh: u.sekretarisName ?? '-',
+    tanggal: formatDate(u.tanggalUsulan),
+  });
+
+  // 2. Menunggu Persetujuan — Atasan Managerial Sekretaris
+  if (u.approvalLevels && u.approvalLevels.length > 0) {
+    for (const level of u.approvalLevels) {
+      if (level.status === 'DISETUJUI' || u.status !== 'DRAFT') {
+        items.push({
+          label: level.status === 'DISETUJUI' ? 'Disetujui' : 'Menunggu Persetujuan',
+          oleh: level.atasanName ?? '-',
+          tanggal: level.verifiedAt ? formatDate(level.verifiedAt) : '-',
+        });
+      }
+    }
+  } else if (u.atasanName) {
+    items.push({
+      label: 'Menunggu Persetujuan',
+      oleh: u.atasanName,
+      tanggal: '-',
+    });
+  }
+
+  // 3. Menunggu Verifikasi — Atasan Managerial Sekretaris (verifikasi terakhir)
+  if (['MENUNGGU_VERIFIKASI_TERAKHIR', 'DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(u.status)) {
+    items.push({
+      label: 'Menunggu Verifikasi',
+      oleh: u.atasanName ?? '-',
+      tanggal: '-',
+    });
+  }
+
+  // 4. Menunggu Penerimaan — TU
+  if (u.tuName && ['DIKIRIM', 'SELESAI'].includes(u.status)) {
+    items.push({
+      label: 'Menunggu Penerimaan',
+      oleh: u.tuName,
+      tanggal: u.tanggalDikirim ? formatDate(u.tanggalDikirim) : '-',
+    });
+  }
+
+  // 5. Atasan Managerial TU
+  if (u.atasanTuName) {
+    items.push({
+      label: 'Verifikasi Atasan TU',
+      oleh: u.atasanTuName,
+      tanggal: '-',
+    });
+  }
+
+  return items;
 });
 
 /** True jika usulan ini dibuat oleh user yang login sebagai Sekretaris. */
@@ -313,22 +561,112 @@ const isOwnUsulan = computed(() => {
   return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
 });
 
-/** Bisa verifikasi hanya jika status sesuai DAN bukan usulan sendiri. */
-const canVerify = computed(() => {
-  if (!usulan.value || isOwnUsulan.value) return false;
-  return usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN';
+/** True jika user login ada di daftar atasan berjenjang (approvalLevels). */
+const isAtasanInLevels = computed(() => {
+  if (!usulan.value || !user.value) return false;
+  const levels = usulan.value.approvalLevels;
+  if (!levels || levels.length === 0) return false;
+  return levels.some((l) => Number(l.atasanPersnum) === Number(user.value.persnum));
 });
 
-/** Bisa verifikasi terakhir hanya jika status sesuai DAN bukan usulan sendiri. */
+/**
+ * Cek giliran dari approvalLevels (fallback jika checkIsCurrentTurn gagal).
+ * User sedang giliran jika ada level dengan urutan = currentApprovalLevel,
+ * status MENUNGGU, dan atasanPersnum = user login.
+ * Jika approvalLevels tidak ada (legacy), cek atasanPersnum langsung untuk 1-level.
+ */
+const isCurrentTurnFromLevels = computed(() => {
+  if (!usulan.value || !user.value) return false;
+  const levels = usulan.value.approvalLevels;
+  const currentLevel = usulan.value.currentApprovalLevel ?? 1;
+  // Jika ada approvalLevels, cek dari sana
+  if (levels && levels.length > 0) {
+    const level = levels.find((l) => l.urutan === currentLevel);
+    if (!level) return false;
+    return (
+      level.status === 'MENUNGGU' &&
+      Number(level.atasanPersnum) === Number(user.value.persnum)
+    );
+  }
+  // Fallback: jika tidak ada approvalLevels (legacy/single atasan),
+  // cek atasanPersnum langsung dari usulan
+  if (usulan.value.atasanPersnum) {
+    return Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+  }
+  return false;
+});
+
+/** Bisa verifikasi hanya jika status Menunggu Persetujuan/Verifikasi, bukan usulan sendiri, DAN sedang giliran. */
+const canVerify = computed(() => {
+  if (!usulan.value || isOwnUsulan.value) return false;
+  if (
+    usulan.value.status !== 'MENUNGGU_VERIFIKASI_ATASAN' &&
+    usulan.value.status !== 'DISETUJUI_ATASAN'
+  ) return false;
+  // Gunakan isCurrentTurn dari API, fallback ke cek dari approvalLevels
+  return isCurrentTurn.value || isCurrentTurnFromLevels.value;
+});
+
+/** Verifikasi terakhir: atasan managerial saat status MENUNGGU_VERIFIKASI_TERAKHIR.
+ * Hanya atasan level terakhir yang bisa final verify. */
 const canFinalVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
-  return usulan.value.status === 'MENUNGGU_VERIFIKASI_TERAKHIR';
+  if (usulan.value.status !== 'MENUNGGU_VERIFIKASI_TERAKHIR') return false;
+  // Cek apakah user login adalah atasan level terakhir
+  const levels = usulan.value.approvalLevels;
+  if (levels && levels.length > 0 && user.value) {
+    const lastLevel = levels[levels.length - 1];
+    return Number(lastLevel.atasanPersnum) === Number(user.value.persnum);
+  }
+  // Fallback: jika tidak ada approvalLevels, izinkan (backward compat)
+  return true;
+});
+
+/** Atasan Managerial TU bisa approve penerimaan saat status DIKIRIM (Menunggu Penerimaan). */
+const canApproveReceipt = computed(() => {
+  if (!usulan.value || isOwnUsulan.value) return false;
+  if (usulan.value.status !== 'DIKIRIM') return false;
+  // Hanya ADMIN/SUPERADMIN (Atasan TU) yang bisa approve receipt
+  const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
+  return role === 'ADMIN' || role === 'SUPERADMIN';
+});
+
+/** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR). */
+const canKirimTU = computed(() => {
+  if (!usulan.value || isOwnUsulan.value) return false;
+  return usulan.value.status === 'DISETUJUI_VERIFIKASI_TERAKHIR';
 });
 
 const loadDetail = async () => {
   loading.value = true;
   try {
     usulan.value = await fetchDetail(route.params.id as string, jenis.value);
+    // Cek apakah user sedang giliran
+    if (
+      usulan.value &&
+      jenis.value === 'aktif_ke_inaktif' &&
+      (usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN' ||
+       usulan.value.status === 'DISETUJUI_ATASAN')
+    ) {
+      isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
+      // Fallback: jika API return false, cek dari approvalLevels atau atasanPersnum langsung
+      if (!isCurrentTurn.value && user.value) {
+        const levels = usulan.value.approvalLevels;
+        const currentLevel = usulan.value.currentApprovalLevel ?? 1;
+        if (levels && levels.length > 0) {
+          const level = levels.find((l) => l.urutan === currentLevel);
+          if (level && level.status === 'MENUNGGU') {
+            isCurrentTurn.value = Number(level.atasanPersnum) === Number(user.value.persnum);
+          }
+        } else if (usulan.value.atasanPersnum) {
+          // Legacy: tidak ada approvalLevels, cek atasanPersnum langsung
+          isCurrentTurn.value = Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+        }
+      }
+    } else {
+      isCurrentTurn.value = false;
+    }
+    await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -338,6 +676,31 @@ const loadDetail = async () => {
 
 const refresh = async () => {
   usulan.value = await fetchDetail(route.params.id as string, jenis.value);
+  if (
+    usulan.value &&
+    jenis.value === 'aktif_ke_inaktif' &&
+    (usulan.value.status === 'MENUNGGU_VERIFIKASI_ATASAN' ||
+     usulan.value.status === 'DISETUJUI_ATASAN')
+  ) {
+    isCurrentTurn.value = await checkIsCurrentTurn(usulan.value.id, jenis.value);
+    // Fallback: jika API return false, cek dari approvalLevels atau atasanPersnum langsung
+    if (!isCurrentTurn.value && user.value) {
+      const levels = usulan.value.approvalLevels;
+      const currentLevel = usulan.value.currentApprovalLevel ?? 1;
+      if (levels && levels.length > 0) {
+        const level = levels.find((l) => l.urutan === currentLevel);
+        if (level && level.status === 'MENUNGGU') {
+          isCurrentTurn.value = Number(level.atasanPersnum) === Number(user.value.persnum);
+        }
+      } else if (usulan.value.atasanPersnum) {
+        // Legacy: tidak ada approvalLevels, cek atasanPersnum langsung
+        isCurrentTurn.value = Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+      }
+    }
+  } else {
+    isCurrentTurn.value = false;
+  }
+  await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
 };
 
 const act = async (fn: () => Promise<any>) => {
@@ -353,14 +716,22 @@ const act = async (fn: () => Promise<any>) => {
   }
 };
 
-const onApprove = (catatan: string) => {
-  if (!confirm('Setujui verifikasi usulan ini?')) return;
-  act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
+const onApprove = () => {
+  approveMode.value = 'verify';
+  isApproveModalOpen.value = true;
 };
 
-const onFinalVerify = (catatan: string) => {
-  if (!confirm('Setujui verifikasi terakhir usulan ini?')) return;
-  act(() => finalVerify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
+const onFinalVerify = () => {
+  approveMode.value = 'finalVerify';
+  isApproveModalOpen.value = true;
+};
+
+const onConfirmApprove = (catatan: string) => {
+  if (approveMode.value === 'finalVerify') {
+    act(() => finalVerify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
+  } else {
+    act(() => verify(usulan.value!.id, jenis.value, { catatanVerifikasi: catatan }));
+  }
 };
 
 const openRejectModal = () => {
@@ -375,6 +746,15 @@ const onGenerateBA = () => act(() => generateBeritaAcara(usulan.value!.id, jenis
 
 const onKirimUsulPindah = () => {
   if (!confirm('Kirim usul pindah arsip inaktif ke Unit Tata Naskah?')) return;
+  act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
+};
+
+const onKirimTU = () => {
+  isSendToTUModalOpen.value = true;
+};
+
+const onConfirmKirimTU = () => {
+  isSendToTUModalOpen.value = false;
   act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
 };
 
@@ -404,6 +784,11 @@ const onUploadBeritaAcara = (e: Event) => {
 const onSelesaikan = () => {
   if (!confirm('Selesaikan proses? Pastikan berkas fisik dan berita acara sudah diupload.')) return;
   act(() => selesaikanUsulan(usulan.value!.id, jenis.value));
+};
+
+const onApproveReceipt = () => {
+  if (!confirm('Setujui penerimaan usulan ini? Usulan akan diselesaikan.')) return;
+  act(() => approveReceipt(usulan.value!.id, jenis.value));
 };
 
 onMounted(() => loadDetail());

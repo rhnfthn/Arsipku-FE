@@ -60,6 +60,42 @@
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
+
+          <!-- FILTER STATUS — custom dropdown -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterStatus"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[150px] justify-between"
+            >
+              <span class="truncate">{{ statusFilterLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterStatus }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[170px]"
+              >
+                <button
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    statusFilter === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
         <button
           @click="exportData"
@@ -74,12 +110,15 @@
 
       <DataTable
         :columns="columns"
-        :rows="pengajuanList"
+        :rows="rows"
         :loading="pending"
+        :sort-key="sortKey"
+        :sort-dir="sortDir"
+        @sort="handleSort"
         header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        empty-message="Tidak ada pengajuan penutupan yang menunggu persetujuan Anda."
+        :empty-message="emptyMessage"
       >
         <template #cell-judulBerkas="{ row }">
           <div class="min-w-52">
@@ -100,27 +139,61 @@
             {{ row.berkas?.retensiInaktifTahun || 0 }}I</span
           >
         </template>
-        <template #cell-createdAt="{ row }">
+        <template #cell-actionAt="{ row }">
           <span class="text-xs text-gray-500 dark:text-gray-400">{{
-            formatDate(row.createdAt)
+            formatDate(row.actionAt || row.createdAt)
           }}</span>
         </template>
-        <template #cell-status>
+        <template #cell-status="{ row }">
           <span
+            v-if="row.status === 'pending'"
             class="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 dark:bg-warning-950/40 dark:text-warning-300"
           >
             <span class="h-1.5 w-1.5 rounded-full bg-warning-500" />
-            Menunggu Anda
+            Menunggu Persetujuan Anda
+          </span>
+          <span
+            v-else-if="row.status === 'approved'"
+            class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-1 text-xs font-medium text-success-700 dark:bg-success-950/40 dark:text-success-300"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-success-500" />
+            Disetujui
+          </span>
+          <span
+            v-else-if="row.status === 'rejected'"
+            class="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-1 text-xs font-medium text-error-700 dark:bg-error-950/40 dark:text-error-300"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-error-500" />
+            Ditolak
+          </span>
+          <span v-else class="text-xs text-gray-500 dark:text-gray-400">{{ row.status || '-' }}</span>
+        </template>
+        <template #cell-catatan="{ row }">
+          <span
+            class="block max-w-[220px] truncate text-xs text-gray-600 dark:text-gray-300"
+            :title="row.catatan || ''"
+          >
+            {{ row.catatan || '-' }}
           </span>
         </template>
         <template #cell-aksi="{ row }">
           <NuxtLink
+            v-if="row.status === 'pending'"
             :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review`"
             class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
             title="Review Pengajuan"
           >
             <Eye class="h-4 w-4" />
             Review
+          </NuxtLink>
+          <NuxtLink
+            v-else
+            :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review?riwayat=1`"
+            class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
+            title="Lihat Keputusan"
+          >
+            <Eye class="h-4 w-4" />
+            Lihat
           </NuxtLink>
         </template>
       </DataTable>
@@ -135,13 +208,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { ChevronDown, Eye } from 'lucide-vue-next';
 
-const { getPengajuanPenutupan } = useArsipDinamis();
+const { getPersetujuanSaya } = useArsipDinamis();
 const toast = useToast();
 
-const pengajuanList = ref<any[]>([]);
+const rows = ref<any[]>([]);
 const pending = ref(false);
 const search = ref('');
 const perPage = ref(10);
@@ -149,15 +222,56 @@ const currentPage = ref(1);
 const totalItems = ref(0);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
+// Satu tabel, filter status: Semua / Menunggu Persetujuan Anda (default) / Disetujui / Ditolak.
+// Semua = menunggu+approved+rejected. Menunggu Persetujuan Anda = pending & giliran Anda.
+// Disetujui/Ditolak = keputusan lampau Anda. Semua via getPersetujuanSaya({status}).
+const statusFilter = ref<'all' | 'menunggu' | 'approved' | 'rejected'>('menunggu');
+
+// Sort state (server-side via getPersetujuanSaya sortBy/sortDir). Default = BE default order.
+const sortKey = ref('');
+const sortDir = ref<'asc' | 'desc'>('desc');
+
 const openRowsPerPage = ref(false);
+const openFilterStatus = ref(false);
+
+const statusOptions = [
+  { value: 'all', label: 'Semua' },
+  { value: 'menunggu', label: 'Menunggu Persetujuan Anda' },
+  { value: 'approved', label: 'Disetujui' },
+  { value: 'rejected', label: 'Ditolak' },
+] as const;
+
+const statusFilterLabel = computed(
+  () => statusOptions.find((o) => o.value === statusFilter.value)?.label ?? 'Menunggu Persetujuan Anda',
+);
 
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+}
+
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
 }
 
 function selectRowsPerPage(n: number) {
   perPage.value = n;
   openRowsPerPage.value = false;
+}
+
+function selectFilterStatus(val: 'all' | 'menunggu' | 'approved' | 'rejected') {
+  statusFilter.value = val;
+  openFilterStatus.value = false;
+}
+
+function handleSort(key: string) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
 }
 
 function handleDocumentClick(e: MouseEvent) {
@@ -167,16 +281,26 @@ function handleDocumentClick(e: MouseEvent) {
     if (el.contains(target)) return;
   }
   openRowsPerPage.value = false;
+  openFilterStatus.value = false;
 }
 
 const columns = [
-  { key: 'judulBerkas', label: 'Nama Berkas' },
-  { key: 'kodeBerkas', label: 'Kode Berkas' },
+  { key: 'judulBerkas', label: 'Nama Berkas', sortable: true },
+  { key: 'kodeBerkas', label: 'Kode Berkas', sortable: true },
   { key: 'retensi', label: 'Retensi (A/I)' },
-  { key: 'createdAt', label: 'Tanggal Pengajuan' },
-  { key: 'status', label: 'Status' },
+  { key: 'actionAt', label: 'Tanggal Aksi', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
+  { key: 'catatan', label: 'Catatan' },
   { key: 'aksi', label: 'Aksi' },
 ];
+
+const emptyMessage = computed(() =>
+  statusFilter.value === 'menunggu'
+    ? 'Tidak ada pengajuan yang menunggu persetujuan Anda.'
+    : statusFilter.value === 'approved'
+      ? 'Tidak ada berkas yang Anda setujui.'
+      : 'Tidak ada berkas yang Anda tolak.'
+);
 
 const formatDate = (value?: string) => {
   if (!value) return '-';
@@ -187,11 +311,19 @@ const formatDate = (value?: string) => {
   });
 };
 
+const statusLabel = (s?: string) =>
+  s === 'approved' ? 'Disetujui' : s === 'rejected' ? 'Ditolak' : s === 'pending' ? 'Menunggu Persetujuan Anda' : s || '-';
+
+const isMenunggu = () => statusFilter.value === 'menunggu';
+
 const fetchData = async () => {
   pending.value = true;
   try {
-    const response = await getPengajuanPenutupan({
+    const response = await getPersetujuanSaya({
       search: search.value || undefined,
+      status: statusFilter.value,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
       page: currentPage.value,
       limit: perPage.value,
     });
@@ -199,18 +331,18 @@ const fetchData = async () => {
     // useApi mengembalikan envelope global `{ success, data }`, sedangkan
     // endpoint ini mengembalikan payload pagination `{ data, meta }`.
     const payload = response?.data?.data ? response.data : response;
-    pengajuanList.value = Array.isArray(payload?.data)
+    rows.value = Array.isArray(payload?.data)
       ? payload.data
       : Array.isArray(payload)
         ? payload
         : [];
-    totalItems.value = Number(payload?.meta?.total ?? pengajuanList.value.length);
+    totalItems.value = Number(payload?.meta?.total ?? rows.value.length);
   } catch (e: any) {
-    console.error('Gagal memuat pengajuan:', e);
-    pengajuanList.value = [];
+    console.error('Gagal memuat data:', e);
+    rows.value = [];
     totalItems.value = 0;
     toast.add({
-      title: 'Gagal memuat persetujuan',
+      title: 'Gagal memuat data',
       description: e?.data?.message || e?.message || 'Silakan coba kembali.',
       color: 'error',
     });
@@ -218,6 +350,19 @@ const fetchData = async () => {
     pending.value = false;
   }
 };
+
+// Realtime: auto-refetch saat count "menunggu persetujuan Anda" berubah
+// (berkas diajukan/di-approve/di-reject) — tanpa refresh manual.
+const route = useRoute();
+const { arsipPersetujuanWaitingCount } = useRealtimeSocket();
+watch(arsipPersetujuanWaitingCount, () => {
+  if (
+    route.path.startsWith('/kelola/pemeliharaan/persetujuan-pemberkasan') &&
+    !pending.value
+  ) {
+    fetchData();
+  }
+});
 
 const isExporting = ref(false);
 
@@ -228,28 +373,44 @@ const exportData = async () => {
   }
   isExporting.value = true;
   try {
-    const response: any = await getPengajuanPenutupan({
+    const response: any = await getPersetujuanSaya({
       search: search.value || undefined,
+      status: statusFilter.value,
       page: 1,
       limit: totalItems.value || 9999,
     });
     const payload = response?.data?.data ? response.data : response;
-    const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-    if (!rows.length) {
+    const list = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+    if (!list.length) {
       toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
       return;
     }
-    const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
-    const csvRows = rows.map((r: any) => [
-      r.berkas?.judulBerkas,
-      r.berkas?.kodeBerkas,
-      r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
-      `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
-      r.createdAt,
-      r.status || 'Menunggu',
-    ]);
-    downloadCsv(`persetujuan-pemberkasan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (isMenunggu()) {
+      const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
+      const csvRows = list.map((r: any) => [
+        r.berkas?.judulBerkas,
+        r.berkas?.kodeBerkas,
+        r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
+        `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
+        r.createdAt,
+        statusLabel(r.status),
+      ]);
+      downloadCsv(`persetujuan-pemberkasan_${stamp}.csv`, headers, csvRows);
+    } else {
+      const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Aksi', 'Status', 'Catatan'];
+      const csvRows = list.map((r: any) => [
+        r.berkas?.judulBerkas,
+        r.berkas?.kodeBerkas,
+        r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
+        `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
+        r.actionAt,
+        statusLabel(r.status),
+        r.catatan,
+      ]);
+      downloadCsv(`riwayat-persetujuan_${stamp}.csv`, headers, csvRows);
+    }
+    toast.add({ title: 'Berhasil', description: `${list.length} data berhasil diexport`, color: 'success' });
   } catch (e) {
     console.error('Gagal export:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
@@ -272,6 +433,16 @@ watch(search, () => {
     if (currentPage.value !== 1) currentPage.value = 1;
     else fetchData();
   }, 350);
+});
+
+watch(statusFilter, () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
+});
+
+watch([sortKey, sortDir], () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
 });
 
 onMounted(fetchData);

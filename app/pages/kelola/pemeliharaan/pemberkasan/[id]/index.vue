@@ -54,21 +54,21 @@
             Edit Berkas
           </UButton>
           <UButton
-            v-if="canActivate"
-            color="primary"
-            icon="i-lucide-circle-play"
-            :loading="isActivating"
-            @click="handleActivateBerkas"
-          >
-            Aktifkan Berkas
-          </UButton>
-          <UButton
             v-if="canClose"
             color="primary"
             icon="i-lucide-lock-keyhole"
             :to="`${detailPath}/tutup`"
           >
             Ajukan Penutupan
+          </UButton>
+          <UButton
+            v-if="canDelete"
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash-2"
+            @click="showDeleteModal = true"
+          >
+            Hapus
           </UButton>
         </div>
       </div>
@@ -94,11 +94,11 @@
           </span>
           <div class="min-w-0">
             <h3 class="font-semibold text-gray-900 dark:text-white">
-              Berkas Ditolak — Perlu Revisi
+              Verifikasi Ditolak Managerial — Perlu Revisi
             </h3>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Berkas ini ditolak verifikator. Revisi metadata dan/atau daftar naskah, lalu ajukan
-              ulang penutupan.
+              Verifikasi penutupan berkas ini ditolak manager. Revisi metadata dan/atau daftar
+              naskah, lalu ajukan ulang penutupan.
             </p>
             <div
               v-if="alasanPenolakan"
@@ -1069,6 +1069,35 @@
       >
     </UModal>
 
+    <UModal v-model:open="showDeleteModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <template #header
+        ><h3 class="text-base font-semibold text-error-700 dark:text-error-400">Hapus Berkas</h3
+        ></template>
+      <template #body>
+        <div class="space-y-3 p-4 text-sm text-gray-600 dark:text-gray-300">
+          <p>
+            Berkas <strong>{{ berkas?.judulBerkas }}</strong> akan dihapus. Hanya berkas
+            <span class="font-medium">Terbuka tanpa naskah</span> yang dapat dihapus.
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Aksi ini tidak dapat dibatalkan.
+          </p>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton variant="ghost" @click="showDeleteModal = false">Batal</UButton>
+          <UButton
+            color="error"
+            icon="i-lucide-trash-2"
+            :loading="isDeleting"
+            @click="handleDeleteBerkas"
+            >Hapus Berkas</UButton
+          >
+        </div>
+      </template>
+    </UModal>
+
     <UModal
       v-model:open="lightboxOpen"
       :ui="{ content: 'max-w-4xl', overlay: 'bg-black/80 backdrop-blur-sm' }"
@@ -1128,8 +1157,8 @@ definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const {
-  activateBerkas,
   addNaskahToBerkas,
+  deleteBerkas,
   getBerkasById,
   getBerkasStatusByNaskah,
   getDaftarNaskah,
@@ -1186,7 +1215,8 @@ const addNaskahTabs = [
 const showRemoveModal = ref(false);
 const selectedNaskah = ref<Record<string, any> | null>(null);
 const isRemovingNaskah = ref(false);
-const isActivating = ref(false);
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
 let naskahSearchTimer: ReturnType<typeof setTimeout> | undefined;
 let candidateSearchTimer: ReturnType<typeof setTimeout> | undefined;
 let naskahRequestId = 0;
@@ -1251,8 +1281,10 @@ function resetCandidateFilters() {
 const canAddNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canRemoveNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canClose = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
-const canEdit = computed(() => ['draft', 'aktif', 'ditolak'].includes(berkas.value?.status));
-const canActivate = computed(() => berkas.value?.status === 'draft');
+const canEdit = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
+const canDelete = computed(
+  () => berkas.value?.status === 'aktif' && naskahList.value.length === 0,
+);
 const quickInfoCards = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-', icon: Hash },
   { label: 'Jumlah Naskah', value: String(naskahTotal.value), icon: Files },
@@ -1460,8 +1492,10 @@ function sourceBadgeClass(value?: string) {
     : 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400';
 }
 function getNaskahDetailLink(row: Record<string, any>) {
-  const section = row.sumber === 'terkirim' ? 'terkirim' : 'kotak-masuk';
-  return `/korespondensi/${section}/${row.naskahId}?jenis=${encodeURIComponent(row.naskahTipe || '')}`;
+  // Buka naskah dalam konteks berkas (sebagai anggota pemberkasan/persetujuan),
+  // bukan sebagai peserta korespondensi — hindari 403 saat viewer bukan
+  // pengirim/penerima naskah yg ditambahkan orang lain ke berkas ini.
+  return `/kelola/pemeliharaan/pemberkasan/${berkasId.value}/naskah/${row.naskahId}`;
 }
 
 async function fetchBerkas() {
@@ -1703,24 +1737,25 @@ async function fetchCandidates() {
     if (requestId === candidateRequestId) candidatePending.value = false;
   }
 }
-async function handleActivateBerkas() {
-  isActivating.value = true;
+async function handleDeleteBerkas() {
+  isDeleting.value = true;
   try {
-    await activateBerkas(berkasId.value);
-    await fetchBerkas();
+    await deleteBerkas(berkasId.value);
     toast.add({
-      title: 'Berkas berhasil diaktifkan',
-      description: 'Aksi Tambah Naskah dan Ajukan Penutupan kini tersedia.',
+      title: 'Berkas berhasil dihapus',
+      description: 'Berkas telah dihapus secara permanen.',
       color: 'success',
     });
+    showDeleteModal.value = false;
+    navigateTo(backPath);
   } catch (error) {
     toast.add({
-      title: 'Gagal mengaktifkan berkas',
+      title: 'Gagal menghapus berkas',
       description: getErrorMessage(error, 'Silakan coba kembali.'),
       color: 'error',
     });
   } finally {
-    isActivating.value = false;
+    isDeleting.value = false;
   }
 }
 function openAddNaskahModal() {
