@@ -175,29 +175,16 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="!loading && gabunganList.length > 0" class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-sm">
-        <div class="text-gray-500 dark:text-gray-400">
-          Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }}–{{ Math.min(currentPage * itemsPerPage, gabunganList.length) }} dari {{ gabunganList.length }} data
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            @click="goToPage(currentPage - 1)"
-            :disabled="currentPage <= 1"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-lucide-chevron-left" class="w-4 h-4" />
-          </button>
-          <span class="text-gray-600 dark:text-gray-300 px-2">
-            Hal {{ currentPage }} / {{ totalPages }}
-          </span>
-          <button
-            @click="goToPage(currentPage + 1)"
-            :disabled="currentPage >= totalPages"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
+      <div v-if="!loading && gabunganList.length > 0" class="mt-4">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :total-items="gabunganList.length"
+          :rows-per-page="itemsPerPage"
+          :rows-options="[10, 20, 50]"
+          @update:page="goToPage"
+          @update:rows-per-page="onItemsPerPageChange"
+        />
       </div>
     </div>
 
@@ -314,6 +301,11 @@ const paginatedList = computed(() => {
 const goToPage = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
+};
+
+const onItemsPerPageChange = (size: number) => {
+  itemsPerPage.value = size;
+  currentPage.value = 1;
 };
 
 const isSekretaris = computed(() => {

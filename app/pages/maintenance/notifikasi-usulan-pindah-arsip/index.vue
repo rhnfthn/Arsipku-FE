@@ -133,19 +133,19 @@
             </tbody>
           </table>
         </div>
-      </div>
 
-      <!-- Pagination -->
-      <div class="mt-4">
-        <Pagination
-          :current-page="page"
-          :total-pages="totalPages"
-          :total-items="total"
-          :rows-per-page="limit"
-          :rows-options="[10, 20, 50]"
-          @update:page="onPageChange"
-          @update:rows-per-page="onLimitChange"
-        />
+        <!-- Pagination -->
+        <div v-if="total > 0">
+          <Pagination
+            :current-page="page"
+            :total-pages="totalPages"
+            :total-items="total"
+            :rows-per-page="limit"
+            :rows-options="[10, 20, 50]"
+            @update:page="onPageChange"
+            @update:rows-per-page="onLimitChange"
+          />
+        </div>
       </div>
     </div>
   </div>
