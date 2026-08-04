@@ -988,11 +988,11 @@ const adminMenuLaporan = computed(() => [
 const isManagerialPosition = computed(() => {
   const ps = activePositionStatus.value;
   if (ps === 'SE' || ps === 'PS' || ps === 'VI') return false;
-  if (hasBodTag.value) return false; // BOD punya menu sendiri (Persetujuan)
   const posText = (user.value?.positionText || '').toUpperCase();
   if (posText.includes('EVP')) return true;
   if (posText.includes('AVP')) return true;
   if (posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP') return true;
+  if (hasBodTag.value) return true; // BOD juga managerial
   return false;
 });
 
@@ -1080,8 +1080,7 @@ const adminMenuKelola = computed(() => {
   // Tiap child tampil berdasarkan actor:
   //   - Usulan Saya: SE (buat usulan)
   //   - Verifikasi Usulan: SE (verifikasi usulan masuk ke divisinya)
-  //   - Persetujuan: BOD (verifikasi level managerial BOD-1/2/3)
-  //   - Verifikasi Usulan: EVP/AVP/VP (verifikasi usulan yang harus dia approve)
+  //   - Verifikasi Usulan: Managerial (EVP/AVP/VP/BOD — verifikasi usulan yang harus dia approve)
   //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
   const penggunaanChildren = [];
 
@@ -1101,18 +1100,7 @@ const adminMenuKelola = computed(() => {
     });
   }
 
-  // BOD (bodTag ada) — verifikasi level managerial BOD-1/2/3
-  if (hasBodTag.value) {
-    penggunaanChildren.push({
-      label: 'Persetujuan',
-      to: '/usulan-akses-berkas?tab=verify-me',
-      icon: 'i-lucide-file-check',
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      activePaths: ['/usulan-akses-berkas'],
-    });
-  }
-
-  // Managerial non-BOD (EVP/AVP/VP) — verifikasi usulan yang harus dia approve
+  // Managerial (EVP/AVP/VP/BOD) — verifikasi usulan yang harus dia approve
   if (isManagerialPosition.value) {
     penggunaanChildren.push({
       label: 'Verifikasi Usulan',
@@ -1219,18 +1207,7 @@ label: 'Penerimaan Usulan',
     });
   }
 
-  // BOD (bodTag ada) — verifikasi level managerial BOD-1/2/3
-  if (hasBodTag.value) {
-    penggunaanChildren.push({
-      label: 'Persetujuan',
-      to: '/usulan-akses-berkas?tab=verify-me',
-      icon: 'i-lucide-file-check',
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      activePaths: ['/usulan-akses-berkas'],
-    });
-  }
-
-  // Managerial non-BOD (EVP/AVP/VP) — verifikasi usulan yang harus dia approve
+  // Managerial (EVP/AVP/VP/BOD) — verifikasi usulan yang harus dia approve
   if (isManagerialPosition.value) {
     penggunaanChildren.push({
       label: 'Verifikasi Usulan',
