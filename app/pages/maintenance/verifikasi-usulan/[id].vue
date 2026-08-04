@@ -633,16 +633,13 @@ const canApproveReceipt = computed(() => {
   return role === 'ADMIN' || role === 'SUPERADMIN';
 });
 
-/** Kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
- * Sekretaris pengusul ATAU atasan managerial bisa kirim. */
+/** Sekretaris bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
+ * Hanya sekretaris pengusul yang bisa kirim, bukan atasan managerial. */
 const canKirimTU = computed(() => {
   if (!usulan.value || !user.value) return false;
   if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
-  // Sekretaris pengusul atau atasan managerial yang ditunjuk
-  return (
-    Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum) ||
-    Number(usulan.value.atasanPersnum) === Number(user.value.persnum)
-  );
+  // Hanya sekretaris pengusul yang bisa kirim ke TU (bukan atasan)
+  return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
 });
 
 const loadDetail = async () => {
