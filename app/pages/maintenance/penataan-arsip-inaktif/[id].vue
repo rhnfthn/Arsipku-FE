@@ -25,12 +25,31 @@
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span><p class="text-gray-900 dark:text-white font-medium">{{ item.sekretarisName }}</p></div>
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Arsip</span><p class="text-gray-900 dark:text-white font-medium">{{ item.arsipPerihal }}</p></div>
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Diterima</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.receivedAt) }}</p></div>
+            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Status</span><p class="text-gray-900 dark:text-white font-medium">{{ statusLabel(item.status) }}</p></div>
+          </div>
+
+          <!-- Action Buttons ( disembunyikan saat masuk via ?mode=penataan ) -->
+          <div v-if="item.status === 'ARSIP_INAKTIF_DITERIMA' && !fromPenataanQuery" class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button
+              @click="mode = 'detail'"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+              :class="mode === 'detail' ? 'bg-[#457fb6] text-white' : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4" /> Detail
+            </button>
+            <button
+              @click="mode = 'penataan'"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+              :class="mode === 'penataan' ? 'bg-[#457fb6] text-white' : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >
+              <UIcon name="i-lucide-archive" class="w-4 h-4" /> Penataan
+            </button>
           </div>
         </div>
 
-        <!-- Penataan Arsip -->
-        <div v-if="item.status === 'ARSIP_INAKTIF_DITERIMA'" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Penataan Arsip</h3>
+        <!-- Penataan Arsip (form) -->
+        <div v-if="item.status === 'ARSIP_INAKTIF_DITERIMA' && mode === 'penataan'" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Form Penataan Arsip</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Lokasi Penyimpanan</label>
@@ -105,10 +124,18 @@
                 <p>Lokasi: {{ item.lokasiPenataan || '-' }}</p>
                 <p>Rak: {{ item.rak || '-' }} | Baris: {{ item.baris || '-' }} | Kolom: {{ item.kolom || '-' }}</p>
                 <p v-if="item.keteranganPenataan">Keterangan: {{ item.keteranganPenataan }}</p>
-                <div v-if="item.fotoPenataan" class="mt-2">
+                <div v-if="item.fotoPenataan && !fotoLoadError" class="mt-2">
                   <a :href="fotoUrl(item.fotoPenataan)" target="_blank">
-                    <img :src="fotoUrl(item.fotoPenataan)" alt="Foto penataan" class="w-32 h-32 object-cover rounded-lg border border-green-300" />
+                    <img
+                      :src="fotoUrl(item.fotoPenataan)"
+                      alt="Foto penataan"
+                      class="w-32 h-32 object-cover rounded-lg border border-green-300"
+                      @error="onFotoError"
+                    />
                   </a>
+                </div>
+                <div v-else class="mt-2 text-xs text-green-500 dark:text-green-400 italic">
+                  Foto tidak tersedia
                 </div>
               </div>
             </div>
@@ -131,10 +158,24 @@ definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
 const { fetchPenataanDetail, selesaiPenataan, uploadFotoPenataan } = useTuVerifikasi()
+const { api } = useApi()
 
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
+const mode = ref<'detail' | 'penataan'>('detail')
+const fromPenataanQuery = route.query.mode === 'penataan'
+
+const statusLabel = (s: string) => {
+  if (s === 'SELESAI') return 'Selesai'
+  if (s === 'ARSIP_INAKTIF_DITERIMA') return 'Diterima'
+  return s
+}
+
+// Jika ada query ?mode=penataan, langsung buka mode penataan
+if (fromPenataanQuery) {
+  mode.value = 'penataan'
+}
 
 const form = reactive({
   lokasi: '',
@@ -152,9 +193,15 @@ const uploadingFoto = ref(false)
 const fotoError = ref('')
 
 /** Base URL API untuk foto penataan. */
+const apiBaseUrl = api.defaults.baseURL || ''
 const fotoUrl = (key: string) => {
-  const base = useApi().api.defaults.baseURL || ''
-  return `${base}/tu/penataan-arsip/foto?key=${encodeURIComponent(key)}`
+  return `${apiBaseUrl}/tu/penataan-arsip/foto?key=${encodeURIComponent(key)}`
+}
+
+/** Fallback saat foto gagal load (broken image). */
+const fotoLoadError = ref(false)
+const onFotoError = () => {
+  fotoLoadError.value = true
 }
 
 const onFotoChange = async (e: Event) => {
@@ -184,9 +231,15 @@ const onFotoChange = async (e: Event) => {
   uploadingFoto.value = true
   try {
     const res: any = await uploadFotoPenataan(file)
-    fotoKey.value = res?.data?.key ?? null
+    fotoKey.value = res?.data?.key ?? res?.key ?? null
   } catch (err: any) {
-    fotoError.value = err?.data?.message || 'Gagal upload foto.'
+    // Axios error: err.response.data.message; atau err.message
+    const msg =
+      err?.response?.data?.message ||
+      err?.data?.message ||
+      err?.message ||
+      'Gagal upload foto.'
+    fotoError.value = typeof msg === 'string' ? msg : 'Gagal upload foto.'
     fotoFile.value = null
     fotoPreview.value = null
     fotoKey.value = null
