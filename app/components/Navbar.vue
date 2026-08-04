@@ -1743,6 +1743,13 @@ const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris
   if (process.client) {
     localStorage.setItem('active_profile', profile);
     localStorage.setItem('arsipku_active_profile', profile);
+    // Reset state delegasi (sumber kebenaran kedua) agar tidak ada centang
+    // ganda saat beralih via path Pindah Profile. Satu sumber kebenaran:
+    // active_profile. Tanpa ini, card delegasi lama tetap centang karena
+    // arsipku_active_delegation_id belum di-clear.
+    localStorage.removeItem('arsipku_active_delegation_id');
+    localStorage.removeItem('arsipku_active_delegation_role');
+    activeDelegationId.value = null;
     window.dispatchEvent(new Event('active_profile_changed'));
     window.dispatchEvent(new Event('profile-changed'));
     currentProfile.value = profile;
@@ -1793,6 +1800,8 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
           localStorage.setItem('arsipku_active_delegation_role', res.data.user.role);
         // Sinkronkan active_profile: delegasi SE (Sekretaris) → 'sekretaris',
         // delegasi lain (VI/PT/dll) → tetap 'akun_asli' (bukan sekretaris).
+        // Tanpa ini, setelah reload currentProfile tidak sinkron dengan delegasi
+        // aktif → centang kembali ke Akun Asli.
         const newPosStatus = res.data?.user?.position_status;
         const profile = newPosStatus === 'SE' ? 'sekretaris' : 'akun_asli';
         localStorage.setItem('active_profile', profile);
@@ -1976,7 +1985,16 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       uiArea: details.area_text || details.company_text || '',
       label: details.position_text || 'Delegasi',
       slot: 'delegation-item',
-      isActive: currentId === role.id,
+      // Samakan sumber kebenaran dengan card profile lain: pakai currentProfile.
+      // Delegasi SE (Sekretaris) → aktif saat currentProfile === 'sekretaris'.
+      // Delegasi non-SE (VI/PT/dll) → aktif saat currentProfile === 'akun_asli'
+      // DAN sedang dalam mode delegasi (activeDelegationId === role.id).
+      // Sebelumnya pakai currentId === role.id saja, yang tidak sinkron dengan
+      // active_profile sehingga bisa muncul centang ganda.
+      isActive:
+        details.position_status === 'SE'
+          ? currentProfile.value === 'sekretaris'
+          : currentProfile.value === 'akun_asli' && currentId === role.id,
       click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
       onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
     };
