@@ -10,8 +10,9 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-useHead({ title: () => t('share_title') });
 const { t } = useI18n();
+useHead({ title: () => t('share_title') });
+const toast = useToast();
 
 const {
   sharedByMe,
@@ -114,7 +115,7 @@ const handleRefresh = () => loadData();
 const isExporting = ref(false);
 const exportData = async () => {
   if (pagination.total === 0) {
-    useToast().add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
+    toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
     return;
   }
   isExporting.value = true;
@@ -130,7 +131,7 @@ const exportData = async () => {
     });
     const rows = sharedByMe.value;
     if (!rows.length) {
-      useToast().add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
+      toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
       return;
     }
     const headers = [t('share_perihal'), t('share_jenis'), t('share_nomor'), t('share_dibagikan_kepada'), t('share_akses'), t('share_status'), t('share_tanggal')];
@@ -144,12 +145,12 @@ const exportData = async () => {
       formatShortDate(s.createdAt),
     ]);
     downloadCsv(`saya-bagikan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    useToast().add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
+    toast.add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
     // Reload halaman saat ini
     await loadData();
   } catch (e) {
     console.error('Gagal export:', e);
-    useToast().add({ title: t('share_gagal_export'), description: t('share_coba_lagi'), color: 'error' });
+    toast.add({ title: t('share_gagal_export'), description: t('share_coba_lagi'), color: 'error' });
   } finally {
     isExporting.value = false;
   }
@@ -191,7 +192,7 @@ const handleRevokeAll = async (share: any) => {
   try {
     const { revokeShare } = useNaskahShare();
     await revokeShare(share.id);
-    useToast().add({
+    toast.add({
       title: t('share_berhasil'),
       description: t('share_berhasil_revoke'),
       color: 'success',
@@ -199,7 +200,7 @@ const handleRevokeAll = async (share: any) => {
     showDetailModal.value = false;
     loadData();
   } catch (err: any) {
-    useToast().add({
+    toast.add({
       title: t('share_gagal'),
       description: err?.response?.data?.message || err?.message || t('share_gagal_cabut'),
       color: 'error',
@@ -223,7 +224,7 @@ const handleOpenPdf = async (share: any) => {
     const msg = err?.response?.data?.message || err?.message || '';
     pdfViewerUrl.value = '';
     showPdfViewer.value = false;
-    useToast().add({
+    toast.add({
       title: t('share_tidak_bisa_buka'),
       description: msg.includes('sekali') || msg.includes('ditutup')
         ? t('share_sekali_lihat_error')
