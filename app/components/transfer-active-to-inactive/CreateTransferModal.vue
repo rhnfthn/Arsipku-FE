@@ -16,75 +16,105 @@
 
         <!-- Body -->
         <div class="p-6 space-y-5 overflow-y-auto">
-          <!-- Atasan Managerial — Multi Select -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Atasan Managerial <span class="text-red-500">*</span>
-            </label>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi (berjenjang).
-            </p>
-
-            <!-- Chips for selected atasan -->
-            <div v-if="selectedAtasanList.length > 0" class="flex flex-wrap gap-2 mb-2">
-              <div
-                v-for="(a, idx) in selectedAtasanList"
-                :key="a.persnum"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#457fb6] text-white text-xs rounded-full"
-              >
-                <span class="font-semibold">{{ idx + 1 }}.</span>
-                <span>{{ a.name }} — {{ a.positionText }}</span>
-                <button type="button" @click="removeAtasan(idx)" class="hover:bg-white/20 rounded-full p-0.5">
-                  <UIcon name="i-lucide-x" class="w-3 h-3" />
-                </button>
+          <!-- Atasan Managerial — Alur Verifikasi (max 3) -->
+          <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+              <div class="flex items-center gap-2">
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+                  <UIcon name="i-lucide-users" class="size-5 text-primary-600 dark:text-primary-400" />
+                </span>
+                <div>
+                  <h2 class="font-semibold text-gray-900 dark:text-white">Atasan Managerial <span class="text-red-500">*</span></h2>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi (berjenjang).</p>
+                </div>
               </div>
+              <UButton
+                v-if="selectedAtasanList.length < 3"
+                icon="i-lucide-user-round-plus"
+                variant="outline"
+                size="xs"
+                @click="focusAtasanInput"
+              >Tambah</UButton>
             </div>
-
-            <div ref="atasanDropdownRef" class="relative">
-              <input
-                v-model="atasanSearch"
-                type="text"
-                :placeholder="atasanLoading ? 'Memuat data atasan...' : 'Ketik nama atau persnum atasan...'"
-                :disabled="atasanLoading"
-                @focus="openAtasanDropdown"
-                @input="onAtasanSearchInput"
-                @keydown.escape="atasanDropdownOpen = false"
-                class="w-full h-11 px-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-              />
-              <div
-                v-if="atasanDropdownOpen && filteredAtasan.length > 0"
-                class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl max-h-[240px] overflow-y-auto"
-              >
-                <button
-                  v-for="a in filteredAtasan"
-                  :key="a.position"
-                  type="button"
-                  @click="toggleAtasan(a)"
-                  class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
+            <div class="px-5 py-5">
+              <!-- Timeline daftar atasan yang sudah dipilih -->
+              <div v-if="selectedAtasanList.length > 0" class="mb-4">
+                <div
+                  v-for="(a, idx) in selectedAtasanList"
+                  :key="a.persnum"
+                  class="relative flex gap-3 pb-4 last:pb-0"
                 >
-                  <div>
-                    <div class="font-medium text-gray-900 dark:text-white">{{ a.name }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ a.persnum }} — {{ a.positionText }}</div>
+                  <div
+                    v-if="idx < selectedAtasanList.length - 1"
+                    class="absolute left-4 top-8 h-[calc(100%-1.5rem)] w-px bg-primary-200 dark:bg-primary-900/40"
+                  />
+                  <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-500 text-sm font-bold text-white shadow-sm">
+                    {{ idx + 1 }}
                   </div>
-                  <UIcon v-if="isAtasanSelected(a)" name="i-lucide-check-circle" class="w-5 h-5 text-green-500 shrink-0" />
-                </button>
+                  <div class="min-w-0 flex-1 flex items-start justify-between gap-2 pt-1">
+                    <div class="min-w-0">
+                      <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ a.name }}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ a.positionText }}</p>
+                    </div>
+                    <button
+                      type="button"
+                      @click="removeAtasan(idx)"
+                      class="text-red-500 hover:text-red-600 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                      title="Hapus atasan"
+                    >
+                      <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div
-                v-if="atasanDropdownOpen && filteredAtasan.length === 0 && !atasanLoading"
-                class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 text-center text-sm text-gray-400"
-              >
-                Tidak ada atasan ditemukan
+
+              <!-- Input pencarian di bawah daftar (sembunyi jika sudah 3 atasan) -->
+              <div v-if="selectedAtasanList.length < 3" ref="atasanDropdownRef" class="relative">
+                <input
+                  v-model="atasanSearch"
+                  type="text"
+                  :placeholder="atasanLoading ? 'Memuat data atasan...' : 'Ketik nama atau persnum atasan...'"
+                  :disabled="atasanLoading"
+                  @focus="openAtasanDropdown"
+                  @input="onAtasanSearchInput"
+                  @keydown.escape="atasanDropdownOpen = false"
+                  class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+                />
+                <div
+                  v-if="atasanDropdownOpen && filteredAtasan.length > 0"
+                  class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl max-h-[240px] overflow-y-auto"
+                >
+                  <button
+                    v-for="a in filteredAtasan"
+                    :key="a.position"
+                    type="button"
+                    @click="toggleAtasan(a)"
+                    class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
+                  >
+                    <div>
+                      <div class="font-medium text-gray-900 dark:text-white">{{ a.name }}</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ a.persnum }} — {{ a.positionText }}</div>
+                    </div>
+                    <UIcon v-if="isAtasanSelected(a)" name="i-lucide-check-circle" class="w-5 h-5 text-green-500 shrink-0" />
+                  </button>
+                </div>
+                <div
+                  v-if="atasanDropdownOpen && filteredAtasan.length === 0 && !atasanLoading"
+                  class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 text-center text-sm text-gray-400"
+                >
+                  Tidak ada atasan ditemukan
+                </div>
+                <div
+                  v-if="atasanDropdownOpen && atasanLoading"
+                  class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 text-center text-sm text-gray-400"
+                >
+                  <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin inline mr-1" /> Memuat...
+                </div>
               </div>
-              <div
-                v-if="atasanDropdownOpen && atasanLoading"
-                class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 text-center text-sm text-gray-400"
-              >
-                <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin inline mr-1" /> Memuat...
-              </div>
+              <p v-if="selectedAtasanList.length > 0" class="text-xs text-gray-500 mt-2">
+                {{ selectedAtasanList.length }} atasan dipilih. Verifikasi: {{ selectedAtasanList.map(a => a.name).join(' → ') }}
+              </p>
             </div>
-            <p v-if="selectedAtasanList.length > 0" class="text-xs text-gray-500 mt-1">
-              {{ selectedAtasanList.length }} atasan dipilih. Verifikasi: {{ selectedAtasanList.map(a => a.name).join(' → ') }}
-            </p>
           </div>
 
           <!-- Arsip Aktif — Multi Select -->
@@ -92,21 +122,42 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Arsip Aktif <span class="text-red-500">*</span>
             </label>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
               Pilih arsip dengan retensi aktif habis. Bisa pilih lebih dari satu.
             </p>
 
-            <!-- Chips for selected arsip -->
-            <div v-if="selectedArsipList.length > 0" class="flex flex-wrap gap-2 mb-2">
+            <!-- Timeline daftar arsip yang dipilih -->
+            <div v-if="selectedArsipList.length > 0" class="mb-3">
               <div
                 v-for="(a, idx) in selectedArsipList"
                 :key="a.id"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs rounded-full"
+                class="relative flex gap-3 pb-3 last:pb-0"
               >
-                <span>{{ a.kodeBerkas ?? a.judulBerkas }}</span>
-                <button type="button" @click="removeArsip(idx)" class="hover:bg-white/20 rounded-full p-0.5">
-                  <UIcon name="i-lucide-x" class="w-3 h-3" />
-                </button>
+                <!-- Garis penghubung -->
+                <div
+                  v-if="idx < selectedArsipList.length - 1"
+                  class="absolute left-4 top-8 h-[calc(100%-1.5rem)] w-px bg-green-600/30"
+                />
+                <!-- Icon arsip (bukan angka) -->
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-white shadow-sm">
+                  <UIcon name="i-lucide-file-text" class="w-4 h-4" />
+                </div>
+                <!-- Konten arsip -->
+                <div class="min-w-0 flex-1 flex items-start justify-between gap-2 pt-1">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ a.kodeBerkas ?? a.judulBerkas }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ a.judulBerkas }}</p>
+                    <p v-if="a.tanggalRetensiAktifBerakhir" class="text-xs text-gray-400 mt-0.5">Retensi habis: {{ formatDate(a.tanggalRetensiAktifBerakhir) }}</p>
+                  </div>
+                  <button
+                    type="button"
+                    @click="removeArsip(idx)"
+                    class="text-red-500 hover:text-red-600 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                    title="Hapus arsip"
+                  >
+                    <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -139,17 +190,12 @@
                   v-for="a in filteredArsip"
                   :key="a.id"
                   type="button"
-                  :disabled="a.sedangDiproses && !isArsipSelected(a)"
                   @click="toggleArsip(a)"
-                  class="w-full text-left px-4 py-3 text-sm transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
-                  :class="a.sedangDiproses && !isArsipSelected(a) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-700'"
+                  class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
                 >
                   <div class="min-w-0">
                     <div class="font-medium text-gray-900 dark:text-white truncate">{{ a.kodeBerkas ?? '-' }} — {{ a.judulBerkas }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      Retensi habis: {{ formatDate(a.tanggalRetensiAktifBerakhir) }}
-                      <span v-if="a.sedangDiproses" class="ml-2 text-yellow-600 dark:text-yellow-400 font-medium">Sedang Diproses</span>
-                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Retensi habis: {{ formatDate(a.tanggalRetensiAktifBerakhir) }}</div>
                   </div>
                   <UIcon v-if="isArsipSelected(a)" name="i-lucide-check-circle" class="w-5 h-5 text-green-500 shrink-0" />
                 </button>
@@ -240,20 +286,11 @@
             :disabled="submitting || !canSubmit"
             class="px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50"
           >
-            {{ submitting ? 'Mengirim...' : 'Kirim' }}
+            {{ submitting ? 'Mengirim...' : 'Simpan & Kirim ke Atasan' }}
           </button>
         </div>
       </div>
     </div>
-
-    <!-- Modal Konfirmasi Kirim -->
-    <KirimUsulanModal
-      v-model="isKirimModalOpen"
-      :atasan-list="selectedAtasanList"
-      :arsip-list="selectedArsipList"
-      :loading="submitting"
-      @confirm="onConfirmKirim"
-    />
   </Teleport>
 </template>
 
@@ -262,7 +299,6 @@ import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useApi } from '~/composables/useApi';
 import { useArsipDinamis } from '~/composables/useArsipDinamis';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
-import KirimUsulanModal from '~/components/transfer-active-to-inactive/KirimUsulanModal.vue';
 import type {
   TransferActiveToInactive,
   AtasanManagerialOption,
@@ -273,9 +309,6 @@ import { formatDate } from '~/utils/transfer-status';
 const props = defineProps<{
   modelValue: boolean;
   editData?: TransferActiveToInactive | null;
-  preselectedArsip?: any | null;
-  /** Pre-fill atasan dari editData? Default true. Set false untuk tombol Kirim dari Draft. */
-  prefillAtasan?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -289,7 +322,6 @@ const { create, update } = useTransferActiveToInactive();
 const { getDaftarNaskah } = useArsipDinamis();
 
 const submitting = ref(false);
-const isKirimModalOpen = ref(false);
 const form = reactive({ keterangan: '' });
 
 // Atasan — multi select
@@ -301,7 +333,7 @@ const selectedAtasanList = ref<AtasanManagerialOption[]>([]);
 const atasanDropdownRef = ref<HTMLElement | null>(null);
 
 // Arsip — multi select
-const arsipOptions = ref<(ArsipRetensiHabisOption & { sedangDiproses?: boolean })[]>([]);
+const arsipOptions = ref<ArsipRetensiHabisOption[]>([]);
 const arsipLoading = ref(false);
 const arsipSearch = ref('');
 const arsipDropdownOpen = ref(false);
@@ -336,6 +368,12 @@ const openAtasanDropdown = () => {
   atasanDropdownOpen.value = true;
 };
 
+/** Fokus ke input pencarian atasan (dipanggil dari tombol Tambah). */
+const focusAtasanInput = () => {
+  const input = atasanDropdownRef.value?.querySelector('input');
+  if (input) input.focus();
+};
+
 const openArsipDropdown = () => {
   arsipDropdownOpen.value = true;
   if (arsipOptions.value.length === 0 && !arsipLoading.value) loadArsipRetensiHabis();
@@ -356,15 +394,15 @@ const toggleAtasan = (a: AtasanManagerialOption) => {
   if (idx >= 0) {
     selectedAtasanList.value.splice(idx, 1);
   } else {
+    // Batasi maksimal 3 atasan
+    if (selectedAtasanList.value.length >= 3) return;
     selectedAtasanList.value.push({ ...a });
   }
   atasanSearch.value = '';
   atasanDropdownOpen.value = true;
 };
 
-const toggleArsip = async (a: ArsipRetensiHabisOption & { sedangDiproses?: boolean }) => {
-  // Block arsip yang sedang diproses di usulan lain
-  if (a.sedangDiproses && !isArsipSelected(a)) return;
+const toggleArsip = async (a: ArsipRetensiHabisOption) => {
   const idx = selectedArsipList.value.findIndex((s) => s.id === a.id);
   if (idx >= 0) {
     selectedArsipList.value.splice(idx, 1);
@@ -433,16 +471,15 @@ const loadAtasanManagerial = async () => {
 const loadArsipRetensiHabis = async () => {
   arsipLoading.value = true;
   try {
-    // Ambil dari endpoint arsip-tersedia (Berkas Saya: Tertutup + retensi habis)
-    const res: any = await apiGet('/transfer-active-to-inactive/arsip-tersedia', {}, { skipCache: true });
-    const data = res?.data ?? [];
+    const { getBerkasList } = useArsipDinamis();
+    const res: any = await getBerkasList({ status: 'closed_retensi_aktif', limit: 100 });
+    const data = res?.data?.data ?? res?.data ?? res ?? [];
     arsipOptions.value = (Array.isArray(data) ? data : []).map((b: any) => ({
       id: b.id,
-      judulBerkas: b.perihal ?? b.judulBerkas ?? '-',
-      kodeBerkas: b.kodeBerkas ?? null,
-      tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifHabis ?? null,
-      kategoriBerkas: b.klasifikasi ?? null,
-      sedangDiproses: b.sedangDiproses ?? false,
+      judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
+      kodeBerkas: b.kodeBerkas ?? b.kode_berkas ?? null,
+      tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifBerakhir ?? b.tanggal_retensi_aktif_berakhir ?? null,
+      kategoriBerkas: b.kategoriBerkas ?? b.kategori_berkas ?? null,
     }));
   } catch (e) {
     console.error('Gagal memuat arsip retensi habis:', e);
@@ -463,24 +500,21 @@ const resetForm = () => {
 };
 
 const fillFromEdit = (data: TransferActiveToInactive) => {
-  // Atasan: hanya pre-fill jika prefillAtasan !== false
-  // (tombol Kirim dari Draft → atasan kosong, user pilih sendiri)
-  if (props.prefillAtasan !== false) {
-    if (data.approvalLevels && data.approvalLevels.length > 0) {
-      selectedAtasanList.value = data.approvalLevels.map((l) => ({
-        position: l.atasanPositionId ?? 0,
-        persnum: l.atasanPersnum,
-        name: l.atasanName,
-        positionText: l.atasanPositionText ?? '',
-      }));
-    } else {
-      selectedAtasanList.value = [{
-        position: data.atasanPositionId ?? 0,
-        persnum: data.atasanPersnum,
-        name: data.atasanName,
-        positionText: '',
-      }];
-    }
+  // Atasan: reconstruct from approvalLevels if available, else from legacy fields
+  if (data.approvalLevels && data.approvalLevels.length > 0) {
+    selectedAtasanList.value = data.approvalLevels.map((l) => ({
+      position: l.atasanPositionId ?? 0,
+      persnum: l.atasanPersnum,
+      name: l.atasanName,
+      positionText: l.atasanPositionText ?? '',
+    }));
+  } else {
+    selectedAtasanList.value = [{
+      position: data.atasanPositionId ?? 0,
+      persnum: data.atasanPersnum,
+      name: data.atasanName,
+      positionText: '',
+    }];
   }
   // Arsip: reconstruct from arsipIds if available, else from legacy fields
   if (data.arsipIds && data.arsipIds.length > 0) {
@@ -509,19 +543,6 @@ const fillFromEdit = (data: TransferActiveToInactive) => {
 
 const submit = async (asDraft: boolean) => {
   if (selectedAtasanList.value.length === 0 || selectedArsipList.value.length === 0) return;
-  if (asDraft) {
-    await doSubmit(true);
-  } else {
-    isKirimModalOpen.value = true;
-  }
-};
-
-const onConfirmKirim = async () => {
-  await doSubmit(false);
-};
-
-const doSubmit = async (asDraft: boolean) => {
-  if (selectedAtasanList.value.length === 0 || selectedArsipList.value.length === 0) return;
   submitting.value = true;
   try {
     const payload = {
@@ -543,15 +564,6 @@ const doSubmit = async (asDraft: boolean) => {
       submit: !asDraft,
     };
 
-    // Debug: log payload untuk verifikasi atasan yang dipilih
-    console.log('[CreateTransferModal] doSubmit payload:', {
-      asDraft,
-      editDataId: props.editData?.id,
-      atasanList: payload.atasanList,
-      arsipList: payload.arsipList.map((a) => ({ id: a.id, perihal: a.perihal })),
-      submit: payload.submit,
-    });
-
     if (props.editData) {
       await update(props.editData.id, payload);
       emit('updated');
@@ -566,7 +578,6 @@ const doSubmit = async (asDraft: boolean) => {
     alert(msg);
   } finally {
     submitting.value = false;
-    isKirimModalOpen.value = false;
   }
 };
 
@@ -594,22 +605,7 @@ watch(
       resetForm();
       loadAtasanManagerial();
       loadArsipRetensiHabis();
-      if (props.editData) {
-        fillFromEdit(props.editData);
-      } else if (props.preselectedArsip) {
-        // Pre-select arsip dari tombol "Pindahkan" di dashboard
-        const a = props.preselectedArsip;
-        const item = {
-          id: a.id,
-          judulBerkas: a.perihal ?? '-',
-          kodeBerkas: a.kodeBerkas ?? null,
-          tanggalRetensiAktifBerakhir: a.tanggalRetensiAktifHabis ?? null,
-          kategoriBerkas: a.klasifikasi ?? null,
-          files: [] as any[],
-        };
-        selectedArsipList.value.push(item);
-        loadArsipFiles(item);
-      }
+      if (props.editData) fillFromEdit(props.editData);
       document.addEventListener('keydown', onKeydown);
     } else {
       document.removeEventListener('keydown', onKeydown);
