@@ -85,7 +85,6 @@ const tabs = computed(() => {
 
   if (isSE) {
     list.push({ label: 'Usulan Saya', value: 'mine' });
-    list.push({ label: 'Perlu Verifikasi Pemberi', value: 'verify-pemberi' });
   }
 
   if (isMgr) {
@@ -100,8 +99,8 @@ watchEffect(() => {
   if (activeTab.value === 'all' && !queryTab && tabs.value.length > 1) {
     const ps = user.value?.position_status;
     if (ps === 'SE' || ps === 'PS') {
-      // SE delegasi: default ke "Perlu Verifikasi Pemberi" (usulan yang masuk ke divisinya)
-      activeTab.value = 'verify-pemberi';
+      // SE delegasi: default ke "Usulan Saya"
+      activeTab.value = 'mine';
     } else {
       const pos = (user.value?.positionText || '').toUpperCase();
       const hasBod = pos.includes('BOD');
@@ -142,16 +141,23 @@ const breadcrumbs = computed(() => {
   ];
 });
 
-const statusOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
-  { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
-  { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
-  { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
-  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
-];
+// Hide "Akses Diberikan" from status filter when tab=mine (BE already excludes it)
+const statusOptions = computed(() => {
+  const base = [
+    { label: 'Semua', value: '' },
+    { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
+    { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
+    { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+    { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
+    { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
+    { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
+  ];
+  // Only show "Akses Diberikan" when not on "mine" tab
+  if (activeTab.value !== 'mine') {
+    base.push({ label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN });
+  }
+  return base;
+});
 
 const totalPages = computed(() =>
   Math.ceil(pagination.total / itemsPerPage.value) || 1,
@@ -287,7 +293,7 @@ function selectFilterStatus(value: string) {
   loadData();
 }
 const statusLabel = computed(() => {
-  return statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua';
+  return statusOptions.value.find((s) => s.value === filterStatus.value)?.label || 'Semua';
 });
 
 function resetFilters() {

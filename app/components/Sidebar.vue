@@ -636,7 +636,6 @@ const userMenuUtama = computed(() => [
   {
     label: t('berbagi', 'Berbagi'),
     icon: 'i-lucide-share-2',
-    permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
       { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
@@ -798,7 +797,6 @@ const adminMenuUtama = computed(() => [
   {
     label: t('berbagi', 'Berbagi'),
     icon: 'i-lucide-share-2',
-    permission: { resource: 'naskah-share', action: 'read' },
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
       { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
@@ -989,7 +987,8 @@ const adminMenuLaporan = computed(() => [
 
 const isManagerialPosition = computed(() => {
   const ps = activePositionStatus.value;
-  if (ps === 'SE' || ps === 'VI') return false;
+  if (ps === 'SE' || ps === 'PS' || ps === 'VI') return false;
+  if (hasBodTag.value) return false; // BOD punya menu sendiri (Persetujuan)
   const posText = (user.value?.positionText || '').toUpperCase();
   if (posText.includes('EVP')) return true;
   if (posText.includes('AVP')) return true;
@@ -1079,33 +1078,48 @@ const adminMenuKelola = computed(() => {
   // ── Menu Penggunaan (scope kita) ──
   // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
   // Tiap child tampil berdasarkan actor:
-  //   - Permintaan: SE (buat usulan)
-  //   - Persetujuan: Managerial (verifikasi)
-  //   - Pemeriksaan: Managerial (placeholder)
+  //   - Usulan Saya: SE (buat usulan)
+  //   - Verifikasi Usulan: SE (verifikasi usulan masuk ke divisinya)
+  //   - Persetujuan: BOD (verifikasi level managerial BOD-1/2/3)
+  //   - Verifikasi Usulan: EVP/AVP/VP (verifikasi usulan yang harus dia approve)
   //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
   const penggunaanChildren = [];
 
   if (isSekretarisActor.value) {
     penggunaanChildren.push({
-      label: 'Permintaan',
-      to: '/penggunaan/permintaan',
+      label: 'Usulan Saya',
+      to: '/penggunaan/usulan-saya',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       activePaths: ['/usulan-akses-berkas'],
     });
-  }
-
-  if (isManagerialPosition.value) {
     penggunaanChildren.push({
-      label: 'Persetujuan',
-      to: '/penggunaan/persetujuan',
+      label: 'Verifikasi Usulan',
+      to: '/penggunaan/verifikasi-usulan',
       icon: 'i-lucide-file-check',
       badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
+  }
+
+  // BOD (bodTag ada) — verifikasi level managerial BOD-1/2/3
+  if (hasBodTag.value) {
     penggunaanChildren.push({
-      label: 'Pemeriksaan',
-      to: '/penggunaan/pemeriksaan',
-      icon: 'i-lucide-search-check',
+      label: 'Persetujuan',
+      to: '/usulan-akses-berkas?tab=verify-me',
+      icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      activePaths: ['/usulan-akses-berkas'],
+    });
+  }
+
+  // Managerial non-BOD (EVP/AVP/VP) — verifikasi usulan yang harus dia approve
+  if (isManagerialPosition.value) {
+    penggunaanChildren.push({
+      label: 'Verifikasi Usulan',
+      to: '/usulan-akses-berkas?tab=verify-me',
+      icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
@@ -1191,25 +1205,39 @@ label: 'Penerimaan Usulan',
 
   if (isSekretarisActor.value) {
     penggunaanChildren.push({
-      label: 'Permintaan',
-      to: '/penggunaan/permintaan',
+      label: 'Usulan Saya',
+      to: '/penggunaan/usulan-saya',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       activePaths: ['/usulan-akses-berkas'],
     });
-  }
-
-  if (isManagerialPosition.value) {
     penggunaanChildren.push({
-      label: 'Persetujuan',
-      to: '/penggunaan/persetujuan',
+      label: 'Verifikasi Usulan',
+      to: '/penggunaan/verifikasi-usulan',
       icon: 'i-lucide-file-check',
       badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
+  }
+
+  // BOD (bodTag ada) — verifikasi level managerial BOD-1/2/3
+  if (hasBodTag.value) {
     penggunaanChildren.push({
-      label: 'Pemeriksaan',
-      to: '/penggunaan/pemeriksaan',
-      icon: 'i-lucide-search-check',
+      label: 'Persetujuan',
+      to: '/usulan-akses-berkas?tab=verify-me',
+      icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      activePaths: ['/usulan-akses-berkas'],
+    });
+  }
+
+  // Managerial non-BOD (EVP/AVP/VP) — verifikasi usulan yang harus dia approve
+  if (isManagerialPosition.value) {
+    penggunaanChildren.push({
+      label: 'Verifikasi Usulan',
+      to: '/usulan-akses-berkas?tab=verify-me',
+      icon: 'i-lucide-file-check',
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      activePaths: ['/usulan-akses-berkas'],
     });
   }
 
