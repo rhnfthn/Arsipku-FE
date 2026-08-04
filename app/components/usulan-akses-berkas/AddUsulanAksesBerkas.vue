@@ -164,10 +164,7 @@ const durasiOptions = [
   { label: '7 Hari', value: DurasiPreset.TUJUH_HARI },
   { label: '14 Hari', value: DurasiPreset.EMPAT_BELAS_HARI },
   { label: '1 Bulan', value: DurasiPreset.SATU_BULAN },
-  { label: '2 Bulan', value: DurasiPreset.DUA_BULAN },
-  { label: '3 Bulan', value: DurasiPreset.TIGA_BULAN },
   { label: '6 Bulan', value: DurasiPreset.ENAM_BULAN },
-  { label: '1 Tahun', value: DurasiPreset.SATU_TAHUN },
   { label: 'Custom', value: DurasiPreset.CUSTOM },
 ];
 
@@ -339,21 +336,35 @@ const resetForm = () => {
   selectedVerifikatorPersnums.value = [];
   selectedPenerimaTambahan.value = [];
   penerimaTambahanSearchQuery.value = '';
+  errors.value = {};
+  triedSubmit.value = false;
 };
 
-const canSubmit = computed(() => {
-  if (tujuanAkses.value.trim().length === 0) return false;
-  if (jenisAksesSelected.value.length === 0) return false;
-  if (selectedVerifikatorPersnums.value.length === 0) return false;
-  if (!isINAKTIF.value && !divisiPemberiId.value) return false;
-  if (durasiAkses.value === DurasiPreset.CUSTOM && !customTanggalSelesai.value) return false;
-  return true;
-});
+// ── Field-level validation errors ──
+const errors = ref<Record<string, string>>({});
+const triedSubmit = ref(false);
 
-// Debug: tampilkan kondisi yang belum terpenuhi (sudah dihapus, lihat revisi UI)
+const validate = (): boolean => {
+  const e: Record<string, string> = {};
+  if (tujuanAkses.value.trim().length === 0) e.tujuanAkses = 'Tujuan akses wajib diisi';
+  if (jenisAksesSelected.value.length === 0) e.jenisAkses = 'Pilih minimal 1 jenis akses';
+  if (selectedVerifikatorPersnums.value.length === 0) e.verifikator = 'Pilih minimal 1 verifikator';
+  if (!isINAKTIF.value && !divisiPemberiId.value) e.divisiPemberi = 'Divisi pemberi wajib dipilih';
+  if (durasiAkses.value === DurasiPreset.CUSTOM && !customTanggalSelesai.value) e.customTanggal = 'Tanggal selesai wajib diisi';
+  errors.value = e;
+  return Object.keys(e).length === 0;
+};
+
+// Clear error saat user mengubah field
+watch(tujuanAkses, () => { if (errors.value.tujuanAkses) delete errors.value.tujuanAkses; });
+watch(jenisAksesSelected, () => { if (errors.value.jenisAkses) delete errors.value.jenisAkses; });
+watch(selectedVerifikatorPersnums, () => { if (errors.value.verifikator) delete errors.value.verifikator; }, { deep: true });
+watch(divisiPemberiId, () => { if (errors.value.divisiPemberi) delete errors.value.divisiPemberi; });
+watch(customTanggalSelesai, () => { if (errors.value.customTanggal) delete errors.value.customTanggal; });
+
 const handleSubmit = async () => {
-  if (!canSubmit.value) {
-    toast.add({ title: 'Lengkapi semua field wajib', color: 'error' });
+  triedSubmit.value = true;
+  if (!validate()) {
     return;
   }
 
@@ -496,12 +507,14 @@ onMounted(() => {
           <button
             type="button"
             @click="showDivisiDropdown = !showDivisiDropdown"
-            class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            class="w-full flex items-center justify-between rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            :class="errors.divisiPemberi ? 'border-red-500' : 'border-gray-200'"
           >
             <span v-if="selectedDivisiLabel">{{ selectedDivisiLabel }}</span>
             <span v-else class="text-gray-400">Pilih divisi pemberi...</span>
             <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showDivisiDropdown }" />
           </button>
+          <p v-if="errors.divisiPemberi" class="mt-1 text-xs text-red-500">{{ errors.divisiPemberi }}</p>
 
           <div
             v-if="showDivisiDropdown"
@@ -570,10 +583,12 @@ onMounted(() => {
             v-model="tujuanAkses"
             rows="3"
             maxlength="2000"
-            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            class="w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            :class="errors.tujuanAkses ? 'border-red-500' : 'border-gray-200'"
             placeholder="Jelaskan tujuan peminjaman akses berkas..."
           />
-          <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <p v-if="errors.tujuanAkses" class="mt-1 text-xs text-red-500">{{ errors.tujuanAkses }}</p>
+          <p v-else class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
             {{ tujuanAkses.length }} / 2000 karakter
           </p>
         </div>
@@ -624,6 +639,7 @@ onMounted(() => {
               <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ formatTanggalID(customTanggalSelesai) }}</span>
             </div>
           </div>
+          <p v-if="errors.customTanggal" class="mt-1 text-xs text-red-500">{{ errors.customTanggal }}</p>
           <!-- Preset: tanggal berakhir di bawah -->
           <div v-else-if="tanggalSelesaiStr" class="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700/40">
             <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0 text-gray-500" />
@@ -684,7 +700,8 @@ onMounted(() => {
             <button
               type="button"
               @click="showVerifikatorDropdown = !showVerifikatorDropdown"
-              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              class="w-full flex items-center justify-between rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="errors.verifikator ? 'border-red-500' : 'border-gray-200'"
             >
               <span class="text-gray-400">+ Pilih verifikator ({{ selectedVerifikatorPersnums.length }}/3)</span>
               <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showVerifikatorDropdown }" />
@@ -713,6 +730,7 @@ onMounted(() => {
           <p v-else class="text-xs text-gray-400">
             Semua verifikator tersedia sudah dipilih.
           </p>
+          <p v-if="errors.verifikator" class="mt-1 text-xs text-red-500">{{ errors.verifikator }}</p>
         </div>
       </div>
 
@@ -821,7 +839,7 @@ onMounted(() => {
       <button
         class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
         style="background-color: #175FA4"
-        :disabled="!canSubmit || pending"
+        :disabled="pending"
         @click="handleSubmit"
       >
         {{ pending ? 'Memproses...' : 'Kirim Usulan' }}

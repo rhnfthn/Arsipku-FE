@@ -88,10 +88,10 @@ export interface UserProfile {
   // Role tambahan dari tabel organization_tu (Unit TU): 'tu' | 'sekretaris'
   tuRoles?: string[];
 
-  // Profile switching (sekretaris delegasi)
+  // Profile switching (sekretaris / unit dokumen)
   has_secretary_delegation?: boolean;
   available_profiles?: string[];
-  active_profile?: 'akun_asli' | 'sekretaris';
+  active_profile?: 'akun_asli' | 'sekretaris' | 'unit_dokumen';
 
   // Opsional: Jika ingin menyimpan list delegasi di user profile
   delegations?: UserDelegation[];

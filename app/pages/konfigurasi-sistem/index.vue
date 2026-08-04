@@ -46,7 +46,7 @@
                 ? 'bg-primary text-white shadow-lg'
                 : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
             ]">
-              <UIcon name="i-lucide-building-2" class="w-4 h-4" />
+              <UIcon name="i-lucide-archive" class="w-4 h-4" />
               Unit TU
             </button>
             <button @click="activeTab = 'search'" :class="[
@@ -321,7 +321,19 @@
 
         <!-- ===================== TAB: UNIT TU ===================== -->
         <div v-if="activeTab === 'unit-tu'">
+          <!-- Komponen Unit TU (CRUD assignment organization_tu) -->
           <UnitTuTab />
+
+          <!-- Pindah Profile Unit Dokumen (hanya untuk user dengan delegasi unit_dokumen) -->
+          <div class="p-6">
+            <PindahProfileCard
+              v-if="hasUnitDokumenDelegation"
+              profile-value="unit_dokumen"
+              profile-label="Unit Dokumen"
+              profile-badge="Unit Dokumen"
+              profile-description="Beralih ke profile Unit Dokumen"
+            />
+          </div>
         </div>
 
         <!-- ===================== TAB: SEARCH ENGINE ===================== -->
@@ -484,7 +496,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
@@ -495,9 +507,45 @@ definePageMeta({ middleware: "auth" });
 
 const { t } = useI18n();
 
-const { hasPermission, isSuperadmin } = useAuth();
+const { hasPermission, isSuperadmin, user } = useAuth();
+const { checkUser } = useOrganizationTu();
 
 const canViewKonfigurasi = computed(() => hasPermission('konfigurasi', 'read'));
+
+// Deteksi delegasi unit_dokumen.
+// Prioritas: dari JWT tuRoles (cepat), fallback: query endpoint check-user (akurat).
+const hasUnitDokumenDelegation = ref(false);
+
+const detectUnitDokumenDelegation = async () => {
+  if (!user.value?.persnum) return;
+  // 1. Cek dari JWT tuRoles dulu (jika sudah ada).
+  const roles = user.value?.tuRoles;
+  if (Array.isArray(roles) && roles.includes('tu')) {
+    hasUnitDokumenDelegation.value = true;
+    return;
+  }
+  // 2. Fallback: query endpoint check-user untuk akurasi (JWT lama belum punya tuRoles).
+  try {
+    const result = await checkUser(user.value.persnum);
+    if (result?.has_unit_dokumen) {
+      hasUnitDokumenDelegation.value = true;
+    }
+  } catch (e) {
+    console.error('[konfigurasi-sistem] detectUnitDokumenDelegation error:', e);
+  }
+};
+
+onMounted(() => {
+  fetchDigsig();
+  fetchMessages(true);
+  fetchSearchConfig();
+  detectUnitDokumenDelegation();
+});
+
+// Re-detect saat user value berubah (mis. setelah getProfile selesai).
+watch(() => user.value?.persnum, (newPersnum) => {
+  if (newPersnum) detectUnitDokumenDelegation();
+});
 
 // ─── Computed breadcrumbs (locale-reactive) ───────────────────────────────────
 const breadcrumbs = computed(() => [
@@ -557,12 +605,6 @@ const saveDigsig = async () => {
     isSavingDigsig.value = false;
   }
 };
-
-onMounted(() => {
-  fetchDigsig();
-  fetchMessages(true);
-  fetchSearchConfig();
-});
 
 // ================================
 // SEARCH ENGINE - Mode Handler

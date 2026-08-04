@@ -181,6 +181,8 @@ const statusRef = ref<HTMLElement | null>(null)
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
+  { value: 'USUL_PINDAH_DIKIRIM', label: 'Menunggu Siapkan Berkas' },
+  { value: 'SIAPKAN_BERKAS_FISIK', label: 'Siapkan Berkas Fisik' },
   { value: 'DIKIRIM', label: 'Menunggu Verifikasi' },
   { value: 'BERKAS_FISIK_TIDAK_SESUAI', label: 'Berkas Tidak Sesuai' },
 ];
@@ -235,14 +237,21 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
+  if (status === 'USUL_PINDAH_DIKIRIM') return 'Menunggu Siapkan Berkas'
+  if (status === 'SIAPKAN_BERKAS_FISIK') return 'Siapkan Berkas Fisik'
   if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'Berkas Tidak Sesuai'
   if (status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'ARSIP_INAKTIF_DITERIMA') return 'Sudah Diajukan ke Atasan TU'
+  if (status === 'MENUNGGU_VERIFIKASI_BERKAS_FISIK') return 'Menunggu Verifikasi Berkas'
+  if (status === 'BERKAS_FISIK_SESUAI') return 'Berkas Sesuai'
+  if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU') return 'Menunggu Persetujuan TU'
   return 'Menunggu Verifikasi'
 }
 
 const statusBadgeClass = (status: string) => {
   if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
   if (status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'ARSIP_INAKTIF_DITERIMA') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+  if (status === 'USUL_PINDAH_DIKIRIM' || status === 'SIAPKAN_BERKAS_FISIK') return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
+  if (status === 'BERKAS_FISIK_SESUAI') return 'px-2 py-0.5 rounded-full font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
   return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
 }
 

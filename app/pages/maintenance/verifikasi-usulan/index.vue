@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
@@ -110,7 +110,7 @@ const items = [
   { label: 'Verifikasi Usulan', to: '/maintenance/verifikasi-usulan' },
 ];
 
-const filter = reactive<VerifikasiFilter>({
+const filter = ref<VerifikasiFilter>({
   jenis: '',
   status: '',
   search: '',
@@ -125,7 +125,7 @@ const filter = reactive<VerifikasiFilter>({
 const loadData = async () => {
   try {
     await Promise.all([
-      fetchList({ ...filter }),
+      fetchList({ ...filter.value }),
       fetchSummary(),
     ]);
   } catch (e) {
@@ -134,12 +134,12 @@ const loadData = async () => {
 };
 
 const reload = () => {
-  filter.page = 1;
+  filter.value.page = 1;
   loadData();
 };
 
 const goPage = (p: number) => {
-  filter.page = p;
+  filter.value.page = p;
   loadData();
 };
 
