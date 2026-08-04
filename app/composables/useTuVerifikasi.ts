@@ -13,7 +13,7 @@ import type {
 } from '~/types/tu-verifikasi';
 
 export const useTuVerifikasi = () => {
-  const { apiGet, apiPatch } = useApi();
+  const { apiGet, apiPatch, apiPost } = useApi();
 
   // ─── TU: Notifikasi & Verifikasi Berkas ───
   const fetchNotifikasiList = async (params: TuFilterParams) => {
