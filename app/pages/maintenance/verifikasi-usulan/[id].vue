@@ -608,18 +608,20 @@ const canVerify = computed(() => {
 });
 
 /** Verifikasi terakhir: atasan managerial saat status MENUNGGU_VERIFIKASI_TERAKHIR.
- * Hanya atasan level terakhir yang bisa final verify. */
+ * Hanya atasan LEVEL 1 (urutan=1) yang bisa final verify — bukan level terakhir.
+ * Setelah semua level approve, usulan kembali ke level 1 untuk verifikasi final. */
 const canFinalVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
   if (usulan.value.status !== 'MENUNGGU_VERIFIKASI_TERAKHIR') return false;
-  // Cek apakah user login adalah atasan level terakhir
+  // Cek apakah user login adalah atasan level 1 (urutan=1)
   const levels = usulan.value.approvalLevels;
   if (levels && levels.length > 0 && user.value) {
-    const lastLevel = levels[levels.length - 1];
-    return Number(lastLevel.atasanPersnum) === Number(user.value.persnum);
+    const firstLevel = levels.find((l) => l.urutan === 1);
+    if (!firstLevel) return false;
+    return Number(firstLevel.atasanPersnum) === Number(user.value.persnum);
   }
-  // Fallback: jika tidak ada approvalLevels, izinkan (backward compat)
-  return true;
+  // Fallback: single-atasan (totalApprovalLevels <= 1) — izinkan
+  return (usulan.value.totalApprovalLevels ?? 1) <= 1;
 });
 
 /** Atasan Managerial TU bisa approve penerimaan saat status DIKIRIM (Menunggu Penerimaan). */
@@ -631,10 +633,13 @@ const canApproveReceipt = computed(() => {
   return role === 'ADMIN' || role === 'SUPERADMIN';
 });
 
-/** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR). */
+/** Sekretaris bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
+ * Hanya sekretaris pengusul yang bisa kirim, bukan atasan managerial. */
 const canKirimTU = computed(() => {
-  if (!usulan.value || isOwnUsulan.value) return false;
-  return usulan.value.status === 'DISETUJUI_VERIFIKASI_TERAKHIR';
+  if (!usulan.value || !user.value) return false;
+  if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
+  // Hanya sekretaris pengusul yang bisa kirim ke TU (bukan atasan)
+  return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
 });
 
 const loadDetail = async () => {
