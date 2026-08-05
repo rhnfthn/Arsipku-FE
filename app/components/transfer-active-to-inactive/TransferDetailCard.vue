@@ -77,7 +77,7 @@
             </div>
             <!-- Icon mata: lihat detail berkas -->
             <NuxtLink
-              :to="`/kelola/pemeliharaan/pemberkasan/${a.id}`"
+              :to="`/maintenance/preview-berkas/${a.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}`"
               class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 shrink-0"
               title="Lihat detail berkas"
             >

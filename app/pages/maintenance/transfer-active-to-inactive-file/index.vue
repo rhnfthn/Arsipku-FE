@@ -88,91 +88,66 @@
 
     <!-- Tabel Gabungan -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-[13px] table-fixed">
-          <thead class="bg-[#457fb6] text-white text-left">
-            <tr>
-              <th class="px-3 py-2.5 font-semibold w-[5%]">No</th>
-              <th class="px-3 py-2.5 font-semibold w-[15%]">Kode / No. Usulan</th>
-              <th class="px-3 py-2.5 font-semibold w-[24%]">Nama Berkas / Perihal</th>
-              <th class="px-3 py-2.5 font-semibold w-[14%] hidden lg:table-cell">Klasifikasi</th>
-              <th class="px-3 py-2.5 font-semibold w-[12%]">Retensi Habis</th>
-              <th class="px-3 py-2.5 font-semibold w-[12%]">Status</th>
-              <th class="px-3 py-2.5 font-semibold w-[10%] hidden xl:table-cell">Tanggal</th>
-              <th class="px-3 py-2.5 font-semibold text-center w-[8%]">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Loading -->
-            <tr v-if="loading">
-              <td colspan="8" class="px-3 py-6 text-center text-sm text-gray-400">
-                <UIcon name="i-lucide-loader-2" class="w-5 h-5 animate-spin inline mr-1" /> Memuat data...
-              </td>
-            </tr>
-            <!-- Empty -->
-            <tr v-else-if="gabunganList.length === 0">
-              <td colspan="8" class="px-3 py-10 text-center text-sm text-gray-400">
-                <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>Tidak ada data</p>
-                <p class="text-xs mt-1">Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini.</p>
-              </td>
-            </tr>
-            <!-- Rows -->
-            <tr
-              v-for="(row, idx) in paginatedList"
-              :key="row.id"
-              class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
-              @click="openDetail(row)"
+      <DataTable
+        :columns="columns"
+        :rows="paginatedList"
+        :loading="loading"
+        :sort-key="sortKey"
+        :sort-dir="sortDir"
+        header-class="bg-[#457fb6] text-white text-left"
+        body-class="divide-y divide-gray-100 dark:divide-gray-700"
+        row-class="hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+        empty-message="Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini."
+        @sort="handleSort"
+      >
+        <template #cell-perihal="{ row }">
+          <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
+        </template>
+        <template #cell-kodeBerkas="{ row }">
+          <div class="truncate font-medium text-gray-700 dark:text-gray-200" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
+          <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
+        </template>
+        <template #cell-klasifikasi="{ row }">
+          <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
+        </template>
+        <template #cell-tanggalRetensiAktifHabis="{ row }">
+          <span class="whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</span>
+        </template>
+        <template #cell-status="{ row }">
+          <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{ statusLabel(row.status as any) }}</span>
+        </template>
+        <template #cell-aksi="{ row }">
+          <div class="text-center" @click.stop>
+            <!-- Arsip belum jadi usulan → tombol Pindahkan -->
+            <button
+              v-if="!row.isUsulan && isSekretaris"
+              @click="openCreateModalWithArsip(row)"
+              title="Pindahkan"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
             >
-                <td class="px-3 py-2 text-gray-500">{{ (currentPage - 1) * itemsPerPage + idx + 1 }}</td>
-                <td class="px-3 py-2 font-medium text-gray-700 dark:text-gray-200">
-                  <div class="truncate" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
-                  <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300">
-                  <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell">
-                  <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</td>
-                <td class="px-3 py-2">
-                  <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{ statusLabel(row.status as any) }}</span>
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap hidden xl:table-cell">{{ formatDate(row.tanggal) }}</td>
-                <td class="px-3 py-2 text-center" @click.stop>
-                  <!-- Arsip belum jadi usulan → tombol Pindahkan -->
-                  <button
-                    v-if="!row.isUsulan && isSekretaris"
-                    @click="openCreateModalWithArsip(row)"
-                    title="Pindahkan"
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                  >
-                    <UIcon name="i-lucide-file-up" class="w-4 h-4" />
-                  </button>
-                  <!-- Usulan DRAFT → tombol Kirim Usulan -->
-                  <button
-                    v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
-                    @click="onSendUsulan(row)"
-                    title="Kirim ke Atasan Managerial"
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                  >
-                    <UIcon name="i-lucide-send" class="w-4 h-4" />
-                  </button>
-                  <!-- Usulan sudah dibuat → tombol Detail -->
-                  <button
-                    v-else-if="row.isUsulan"
-                    @click="openDetail(row)"
-                    title="Detail"
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                  >
-                    <UIcon name="i-heroicons-eye" class="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-          </tbody>
-        </table>
-      </div>
+              <UIcon name="i-lucide-file-up" class="w-4 h-4" />
+            </button>
+            <!-- Usulan DRAFT → tombol Kirim Usulan -->
+            <button
+              v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
+              @click="onSendUsulan(row)"
+              title="Kirim ke Atasan Managerial"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+            >
+              <UIcon name="i-lucide-send" class="w-4 h-4" />
+            </button>
+            <!-- Usulan sudah dibuat → tombol Detail -->
+            <button
+              v-else-if="row.isUsulan"
+              @click="openDetail(row)"
+              title="Detail"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+            >
+              <UIcon name="i-heroicons-eye" class="w-4 h-4" />
+            </button>
+          </div>
+        </template>
+      </DataTable>
 
       <!-- Pagination -->
       <div v-if="!loading && gabunganList.length > 0" class="mt-4">
@@ -207,6 +182,7 @@ import { useApi } from '~/composables/useApi';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useAuth } from '~/composables/useAuth';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
+import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
@@ -237,6 +213,27 @@ const preselectedArsip = ref<any | null>(null);
 const expandedId = ref<string | null>(null);
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
+
+// ── Table Columns (dengan sort arrow, menyamakan berkas-saya) ───
+const columns = [
+  { key: 'perihal', label: 'Nama Berkas / Perihal', sortable: true },
+  { key: 'kodeBerkas', label: 'Kode Berkas / No. Usulan', sortable: true },
+  { key: 'klasifikasi', label: 'Klasifikasi', sortable: true },
+  { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
+  { key: 'aksi', label: 'Aksi' },
+];
+const sortKey = ref('');
+const sortDir = ref<'asc' | 'desc'>('asc');
+
+const handleSort = (key: string) => {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
+};
 
 const toggleExpand = (id: string) => {
   expandedId.value = expandedId.value === id ? null : id;
@@ -294,8 +291,18 @@ const onClickOutsidePageSize = (e: MouseEvent) => {
 const totalPages = computed(() => Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value)));
 
 const paginatedList = computed(() => {
+  let list = gabunganList.value;
+  if (sortKey.value) {
+    const key = sortKey.value as keyof GabunganRow;
+    const dir = sortDir.value === 'asc' ? 1 : -1;
+    list = [...list].sort((a, b) => {
+      const va = (a[key] ?? '') as string;
+      const vb = (b[key] ?? '') as string;
+      return va.localeCompare(vb) * dir;
+    });
+  }
   const start = (currentPage.value - 1) * itemsPerPage.value;
-  return gabunganList.value.slice(start, start + itemsPerPage.value);
+  return list.slice(start, start + itemsPerPage.value);
 });
 
 const goToPage = (page: number) => {
