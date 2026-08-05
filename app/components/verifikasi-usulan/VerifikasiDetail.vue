@@ -56,6 +56,34 @@
           </div>
         </div>
       </div>
+
+      <!-- Daftar Arsip yang Akan Dipindahkan -->
+      <div v-if="daftarArsip && daftarArsip.length > 0" class="md:col-span-2">
+        <span class="text-gray-500 dark:text-gray-400 text-xs">Daftar Arsip yang Akan Dipindahkan ({{ daftarArsip.length }})</span>
+        <div class="mt-2 space-y-1.5">
+          <div
+            v-for="(a, idx) in daftarArsip"
+            :key="idx"
+            class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+          >
+            <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-900 dark:text-white truncate">
+                <span v-if="a.kode" class="font-mono text-xs text-gray-500">{{ a.kode }}</span>
+                — {{ a.namaBerkas }}
+              </p>
+            </div>
+            <NuxtLink
+              v-if="a.id"
+              :to="`/maintenance/preview-berkas/${a.id}?nomor_usulan=${usulan.nomorUsulan}&usulan_id=${usulan.id}`"
+              class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 shrink-0"
+              title="Lihat detail berkas"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4" />
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
       <div v-if="usulan.tanggalRetensiAktifHabis">
         <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
         <p class="text-gray-900 dark:text-white font-medium">{{ formatVerifikasiDate(usulan.tanggalRetensiAktifHabis) }}</p>
@@ -86,7 +114,10 @@ import {
   formatVerifikasiDate,
 } from '~/utils/verifikasi-status';
 
-defineProps<{ usulan: VerifikasiUsulanItem }>();
+defineProps<{
+  usulan: VerifikasiUsulanItem;
+  daftarArsip?: any[];
+}>();
 
 const levelStatusClass = (level: VerifikasiApprovalLevel): string => {
   if (level.status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
