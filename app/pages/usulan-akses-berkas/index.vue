@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ChevronDown } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
@@ -94,23 +94,8 @@ const tabs = computed(() => {
   return list;
 });
 
-// Auto-select default tab berdasarkan peran (hanya jika tidak ada query param tab)
-watchEffect(() => {
-  if (activeTab.value === 'all' && !queryTab && tabs.value.length > 1) {
-    const ps = user.value?.position_status;
-    if (ps === 'SE' || ps === 'PS') {
-      // SE delegasi: default ke "Usulan Saya"
-      activeTab.value = 'mine';
-    } else {
-      const pos = (user.value?.positionText || '').toUpperCase();
-      const hasBod = pos.includes('BOD');
-      const hasLegacy = pos.includes('EVP') || pos.includes('AVP') || pos.includes(' VP ') || pos.startsWith('VP ') || pos === 'VP';
-      if (hasBod || hasLegacy) {
-        activeTab.value = 'verify-me';
-      }
-    }
-  }
-});
+// Auto-select default tab: "Semua" — user bisa pilih tab lain manual
+// (sebelumnya auto-select ke 'mine'/'verify-me' berdasarkan peran)
 
 // Status filter otomatis berdasarkan tab
 const tabStatusFilter = computed(() => {

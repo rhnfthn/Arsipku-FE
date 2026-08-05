@@ -35,8 +35,8 @@ const breadcrumbs = computed(() => [
 ]);
 
 const searchQuery = ref('');
-// Default filter: "Menunggu Verifikasi Pemberi" (usulan yang perlu diverifikasi SE pemberi)
-const filterStatus = ref<string>(StatusUsulan.TERKIRIM_KE_PEMBERI);
+// Default filter: "Semua" — tampilkan semua usulan masuk ke divisi pemberi
+const filterStatus = ref<string>('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const isRefreshing = ref(false);
