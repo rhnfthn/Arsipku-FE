@@ -157,7 +157,28 @@ const loadNaskah = async (berkasId?: string) => {
 };
 
 const openNaskah = (row: any) => {
-  navigateTo(`/penggunaan/pemberian/${usulanId.value}/naskah/${row.naskahId}`);
+  // Buka PDF naskah langsung (bukan halaman detail)
+  const pdfUrl = row.finalPdf || row.final_pdf;
+  if (!pdfUrl) {
+    toast.add({ title: 'PDF tidak tersedia', description: 'Naskah ini belum memiliki file PDF.', color: 'warning' });
+    return;
+  }
+  pdfViewerTitle.value = row.perihal || 'Naskah';
+  pdfViewerUrl.value = pdfUrl;
+  isLoadingPdf.value = true;
+  showPdfViewer.value = true;
+};
+
+// ── PDF Viewer state ──
+const showPdfViewer = ref(false);
+const pdfViewerUrl = ref<string | null>(null);
+const pdfViewerTitle = ref('Naskah');
+const isLoadingPdf = ref(false);
+
+const closePdfViewer = () => {
+  showPdfViewer.value = false;
+  pdfViewerUrl.value = '';
+  isLoadingPdf.value = false;
 };
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -398,5 +419,47 @@ onBeforeUnmount(() => {
         />
       </div>
     </template>
+
+    <!-- PDF Viewer Full Page -->
+    <Teleport to="body">
+      <div
+        v-if="showPdfViewer"
+        class="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-gray-950"
+      >
+        <!-- Top Bar -->
+        <div class="h-12 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500 shrink-0" />
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ pdfViewerTitle }}</p>
+          </div>
+          <button
+            @click="closePdfViewer"
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors shrink-0"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <!-- PDF Content -->
+        <div class="flex-1 relative bg-gray-100 dark:bg-gray-900 min-h-0">
+          <div v-if="isLoadingPdf" class="absolute inset-0 flex items-center justify-center z-10">
+            <div class="flex flex-col items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg">
+              <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary-500" />
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen…</p>
+            </div>
+          </div>
+          <iframe
+            v-if="pdfViewerUrl"
+            :key="pdfViewerUrl"
+            :src="pdfViewerUrl"
+            class="w-full h-full border-none"
+            @load="isLoadingPdf = false"
+          />
+          <div v-else-if="!isLoadingPdf" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
+            <UIcon name="i-lucide-file-text" class="w-12 h-12 opacity-30" />
+            <span class="text-sm">PDF tidak tersedia.</span>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
