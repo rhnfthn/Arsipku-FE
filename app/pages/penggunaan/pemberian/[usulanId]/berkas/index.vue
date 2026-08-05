@@ -157,7 +157,28 @@ const loadNaskah = async (berkasId?: string) => {
 };
 
 const openNaskah = (row: any) => {
-  navigateTo(`/penggunaan/pemberian/${usulanId.value}/naskah/${row.naskahId}`);
+  // Buka PDF naskah langsung (bukan halaman detail)
+  const pdfUrl = row.finalPdf || row.final_pdf;
+  if (!pdfUrl) {
+    toast.add({ title: 'PDF tidak tersedia', description: 'Naskah ini belum memiliki file PDF.', color: 'warning' });
+    return;
+  }
+  pdfViewerTitle.value = row.perihal || 'Naskah';
+  pdfViewerUrl.value = pdfUrl;
+  isLoadingPdf.value = true;
+  showPdfViewer.value = true;
+};
+
+// ── PDF Viewer state ──
+const showPdfViewer = ref(false);
+const pdfViewerUrl = ref<string | null>(null);
+const pdfViewerTitle = ref('Naskah');
+const isLoadingPdf = ref(false);
+
+const closePdfViewer = () => {
+  showPdfViewer.value = false;
+  pdfViewerUrl.value = '';
+  isLoadingPdf.value = false;
 };
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -215,63 +236,32 @@ onBeforeUnmount(() => {
     </div>
 
     <template v-else-if="berkasDetail">
-      <!-- Quick Info Cards (seperti pemberkasan) -->
-      <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Folder class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Klasifikasi</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasiTeks || berkasDetail.klasifikasi || '-' }}</p>
-            </div>
-          </div>
+      <!-- Informasi Pengusul -->
+      <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+            <User class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <h2 class="font-semibold text-gray-900 dark:text-white">Informasi Pengusul</h2>
         </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Building2 class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Divisi Pemberi</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPemberiNama || '-' }}</p>
-            </div>
+        <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <User class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.pengusulInfo?.nama || '-' }}</dd></div>
           </div>
-        </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <User class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">EVP Pemberi</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evpPemberiNama || '-' }}</p>
-            </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Building2 class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPengusulNama || '-' }}</dd></div>
           </div>
-        </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Key class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Akses</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.permissions?.join(', ') || '-' }}</p>
-            </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <FileText class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judulUsulan || '-' }}</dd></div>
           </div>
-        </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Clock class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Berakhir</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggalSelesai) }}</p>
-            </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Folder class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
           </div>
-        </div>
+        </dl>
       </div>
 
       <!-- Berkas Selector (jika ada multiple berkas) -->
@@ -429,5 +419,47 @@ onBeforeUnmount(() => {
         />
       </div>
     </template>
+
+    <!-- PDF Viewer Full Page -->
+    <Teleport to="body">
+      <div
+        v-if="showPdfViewer"
+        class="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-gray-950"
+      >
+        <!-- Top Bar -->
+        <div class="h-12 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500 shrink-0" />
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ pdfViewerTitle }}</p>
+          </div>
+          <button
+            @click="closePdfViewer"
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors shrink-0"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <!-- PDF Content -->
+        <div class="flex-1 relative bg-gray-100 dark:bg-gray-900 min-h-0">
+          <div v-if="isLoadingPdf" class="absolute inset-0 flex items-center justify-center z-10">
+            <div class="flex flex-col items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg">
+              <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary-500" />
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen…</p>
+            </div>
+          </div>
+          <iframe
+            v-if="pdfViewerUrl"
+            :key="pdfViewerUrl"
+            :src="pdfViewerUrl"
+            class="w-full h-full border-none"
+            @load="isLoadingPdf = false"
+          />
+          <div v-else-if="!isLoadingPdf" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
+            <UIcon name="i-lucide-file-text" class="w-12 h-12 opacity-30" />
+            <span class="text-sm">PDF tidak tersedia.</span>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
