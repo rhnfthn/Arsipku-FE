@@ -88,11 +88,18 @@
             >
               <div class="flex items-start gap-3">
                 <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                <div>
+                <div class="flex-1">
                   <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Verifikasi</h3>
-                  <p class="text-sm text-blue-600 dark:text-blue-400">
+                  <p class="text-sm text-blue-600 dark:text-blue-400 mb-3">
                     Verifikasi terakhir selesai. Atasan Managerial akan mengirim usulan ke Unit Tata Naskah.
                   </p>
+                  <button
+                    @click="onDispatch"
+                    :disabled="actionLoading"
+                    class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
+                  >
+                    <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
+                  </button>
                 </div>
               </div>
             </div>
