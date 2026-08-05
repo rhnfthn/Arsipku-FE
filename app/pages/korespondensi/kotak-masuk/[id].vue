@@ -24,6 +24,7 @@ import {
 import { pickKorespondensiListQuery } from '~/utils/korespondensi-list-state';
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
+import NaskahDetailPopup from '~/components/NaskahDetailPopup.vue';
 import SdeMasalModal from '@/components/korespondensi/sde-masal/SdeMasalModal.vue';
 
 definePageMeta({ middleware: 'auth' });
@@ -34,6 +35,39 @@ const router = useRouter();
 // SDE Masal modal state
 const sdeMasalModalOpen = ref(false);
 const sdeMasalParentId = ref<string>('');
+// Popup detail naskah sederhana
+const showNaskahPopup = ref(false);
+const popupNaskah = ref<any>(null);
+const popupDetail = ref<any>(null);
+
+const openNaskahPopup = () => {
+  const detail = visibleDetails.value?.[0] || details.value?.[0];
+  if (!detail) return;
+  popupNaskah.value = {
+    nomorSurat: detail.nomorSurat || detail.nomor || detail.nomor_surat,
+    tanggalNaskah: detail.tanggalNaskah || detail.tanggal || detail.tanggal_naskah,
+    perihal: detail.perihal || detail.subject,
+    jenis: detail.jenis || detail.jenis_kode || detail.jenis_label,
+    sumber: isTerkirim.value ? 'terkirim' : 'inbox',
+  };
+  // Pass data lengkap untuk popup (pengirim, tertuju, tembusan, isi, sifat, TTD)
+  popupDetail.value = {
+    perihal: detail.perihal,
+    nomor: detail.nomor,
+    tanggal: detail.tanggal,
+    created_at: detail.created_at,
+    sifat: detail.sifat,
+    jenis: detail.jenis,
+    jenis_label: detail.jenis_label,
+    ttd: detail.ttd,
+    pengirim: detail.pengirim,
+    from: detail.from,
+    to: detail.to || detail.penerima,
+    cc: detail.cc,
+    konten: detail.rich_content || detail.konten,
+  };
+  showNaskahPopup.value = true;
+};
 const { t } = useI18n();
 const { user, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -1281,7 +1315,16 @@ const konsepOptions = computed(() => [
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
-  <PageHeader title="Detail Surat" :items="breadcrumbs" />
+  <div class="flex items-center justify-between gap-4">
+    <PageHeader title="Detail Surat" :items="breadcrumbs" />
+    <button
+      v-if="!isLoading && visibleDetails.length > 0"
+      @click="openNaskahPopup"
+      class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
+    >
+      <UIcon name="i-lucide-eye" class="w-4 h-4" /> Preview Naskah
+    </button>
+  </div>
 
   <div class="w-full flex gap-4 pt-4 relative">
     <!-- Main content -->
@@ -1703,6 +1746,17 @@ const konsepOptions = computed(() => [
       v-model="sdeMasalModalOpen"
       :parent-naskah-id="sdeMasalParentId"
       @success="onSdeMasalSuccess"
+    />
+
+    <!-- Popup Detail Naskah (sama dengan preview-berkas) -->
+    <NaskahDetailPopup
+      v-model="showNaskahPopup"
+      :nomor-surat="popupNaskah?.nomorSurat || popupNaskah?.nomor"
+      :tanggal-naskah="popupNaskah?.tanggalNaskah || popupNaskah?.tanggal"
+      :perihal="popupNaskah?.perihal"
+      :jenis="popupNaskah?.jenis || popupNaskah?.jenis_kode"
+      :sumber="popupNaskah?.sumber || (isTerkirim ? 'terkirim' : 'inbox')"
+      :detail="popupDetail"
     />
   </div>
   </template>
