@@ -275,9 +275,17 @@ const onSelectVerifikatorPemberi = (value: any) => {
 const loadBerkasEligible = async () => {
   berkasLoading.value = true;
   try {
-    // Tampilkan semua berkas berstatus closed_retensi_aktif (tertutup).
+    // Tampilkan berkas berstatus closed_retensi_aktif (tertutup).
+    // Untuk jenisBerkas AKTIF: BE filter hanya berkas milik divisi pemberi.
+    // Untuk jenisBerkas INAKTIF: semua berkas tertutup (tidak filter unit).
     const status = 'closed_retensi_aktif';
-    berkasEligibleList.value = await fetchBerkasEligible(status);
+    const jenisBerkas = usulanDetail.value?.jenisBerkas;
+    const divisiPemberiId = Number(usulanDetail.value?.divisiPemberiId);
+    berkasEligibleList.value = await fetchBerkasEligible(
+      status,
+      jenisBerkas,
+      divisiPemberiId || undefined,
+    );
   } catch (err: any) {
     toast.add({
       title: 'Gagal Memuat Berkas',
@@ -1358,6 +1366,7 @@ onBeforeUnmount(() => {
                   </span>
                   <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
                   <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
+                  <span v-if="p.divisiNama" class="text-[10px] text-gray-400 dark:text-gray-500">· {{ p.divisiNama }}</span>
                 </span>
               </div>
             </div>

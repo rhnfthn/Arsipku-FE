@@ -68,6 +68,13 @@ export interface VerifikatorItem {
   catatan?: string; // catatan personal dari SE pemberi (hanya terlihat oleh verifikator ini)
 }
 
+export interface PenerimaAksesTambahan {
+  persnum: number;
+  nama: string | null;
+  jabatan: string | null;
+  divisiNama: string | null;
+}
+
 export interface VerificationStep {
   id: string;
   usulanId: string;
@@ -116,7 +123,7 @@ export interface UsulanAksesBerkas {
   tanggalSelesai: string | null;
   customTanggalSelesai: string | null;
   jenisAkses: string[];
-  penerimaAksesTambahan: number[] | null;
+  penerimaAksesTambahan: PenerimaAksesTambahan[] | null;
   suratUsulanFileId: string | null;
   verifikatorPengusul: VerifikatorItem[];
   verifikatorPemberi: VerifikatorItem[] | null;
