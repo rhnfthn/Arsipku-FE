@@ -3,7 +3,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ChevronLeft, FileText, Building2, User, Clock, Key, CheckCircle2, XCircle, AlertTriangle } from 'lucide-vue-next';
+import { ChevronLeft, FileText, Building2, User, Clock, Key, CheckCircle2, XCircle, AlertTriangle, Users, Paperclip } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
@@ -117,6 +117,10 @@ const getProgressLabel = (detail: any): string => {
             <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisiPemberiNama || usulanDetail.divisiPemberiId }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Building2 class="size-4 text-gray-500" /></span>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisiPengusulNama || usulanDetail.divisiPengusulId }}</dd></div>
+          </div>
+          <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Key class="size-4 text-gray-500" /></span>
             <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenisAkses?.join(', ') }}</dd></div>
           </div>
@@ -151,6 +155,7 @@ const getProgressLabel = (detail: any): string => {
               </span>
               <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
               <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
+              <span v-if="p.divisiNama" class="text-[10px] text-gray-400 dark:text-gray-500">· {{ p.divisiNama }}</span>
             </span>
           </div>
         </div>
@@ -185,6 +190,78 @@ const getProgressLabel = (detail: any): string => {
             >
               {{ getProgressPercent(usulanDetail) >= 100 ? 'Habis' : 'Aktif' }}
             </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Verifikator Pengusul & Pemberi -->
+      <section v-if="usulanDetail.verifikatorPengusul?.length || usulanDetail.verifikatorPemberi?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+            <Users class="size-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Verifikator</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Jenjang yang memverifikasi usulan ini.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2">
+          <!-- Verifikator Pengusul -->
+          <div v-if="usulanDetail.verifikatorPengusul?.length">
+            <p class="mb-2 text-xs font-medium uppercase text-gray-500">Verifikator Pengusul</p>
+            <div class="space-y-2">
+              <div v-for="v in usulanDetail.verifikatorPengusul" :key="v.persnum" class="flex items-center gap-2">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
+                  {{ (v.nama || String(v.persnum)).charAt(0).toUpperCase() }}
+                </span>
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `Persnum ${v.persnum}` }}</p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.levelJabatan }}<span v-if="v.divisiNama"> · {{ v.divisiNama }}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Verifikator Pemberi -->
+          <div v-if="usulanDetail.verifikatorPemberi?.length">
+            <p class="mb-2 text-xs font-medium uppercase text-gray-500">Verifikator Pemberi</p>
+            <div class="space-y-2">
+              <div v-for="v in usulanDetail.verifikatorPemberi" :key="v.persnum" class="flex items-center gap-2">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
+                  {{ (v.nama || String(v.persnum)).charAt(0).toUpperCase() }}
+                </span>
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `Persnum ${v.persnum}` }}</p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.levelJabatan }}<span v-if="v.divisiNama"> · {{ v.divisiNama }}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Berkas Dipilih -->
+      <section v-if="usulanDetail.selectedBerkas?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+            <Paperclip class="size-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Berkas Dipilih</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Berkas yang dipilih oleh Sekretaris pemberi.</p>
+          </div>
+          <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selectedBerkas.length }} berkas</span>
+        </div>
+        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+          <div v-for="b in usulanDetail.selectedBerkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
+            <UIcon name="i-lucide-file" class="mt-0.5 size-4 shrink-0 text-gray-400" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judulBerkas || b.berkasId }}</p>
+              <p class="text-[10px] text-gray-500 dark:text-gray-400">
+                <span v-if="b.kodeBerkas">{{ b.kodeBerkas }}</span>
+                <span v-if="b.klasifikasiTeks"> · {{ b.klasifikasiTeks }}</span>
+                <span v-if="b.berkasStatus"> · {{ b.berkasStatus }}</span>
+              </p>
+            </div>
           </div>
         </div>
       </section>

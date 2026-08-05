@@ -33,12 +33,6 @@ const columns = computed(() => [
   { key: 'aksi', label: t('share_action'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
-/** Get recipient status matching current user's position. */
-const getMyRecipientStatus = (share: ShareItem) => {
-  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
-  return myRecipient?.status || 'TERKIRIM';
-};
-
 /** Display status for recipient: check share.status first, then recipient.status. */
 const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   // Share ended (auto-expire / revoke all)
@@ -143,7 +137,6 @@ const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
           </UTooltip>
           <UTooltip :text="t('share_buka_pdf')">
             <UButton
-              v-if="row.accessType !== 'SEKALI_LIHAT' || getMyRecipientStatus(row) === 'TERKIRIM'"
               icon="i-lucide-file-text"
               color="success"
               variant="ghost"
