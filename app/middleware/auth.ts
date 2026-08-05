@@ -106,6 +106,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/notifikasi-usulan-pindah-arsip',
     '/maintenance/verifikasi-berkas-fisik',
     '/maintenance/penataan-arsip-inaktif',
+    '/maintenance/preview-berkas',
   ];
 
   if (role === 'user') {
