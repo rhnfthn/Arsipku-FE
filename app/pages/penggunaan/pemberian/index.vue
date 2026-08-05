@@ -257,7 +257,7 @@ const getProgressLabel = (row: any): string => {
 };
 
 // ── Columns ──
-// Urutan: Tanggal, Nomor Usulan, Divisi Pemberi, Jenis Berkas, Judul Usulan, Progress, Status, Aksi
+// Urutan: Tanggal, Nomor Usulan, Divisi Pemberi, Jenis Berkas, Judul Usulan, Progress, Aksi
 const columns = [
   { key: 'tanggalMulai', label: 'Tanggal', sortable: true },
   { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
@@ -265,7 +265,6 @@ const columns = [
   { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true, headerClass: 'text-center', class: 'text-center' },
   { key: 'judulUsulan', label: 'Judul Usulan', sortable: true },
   { key: 'progress', label: 'Progress' },
-  { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi' },
 ];
 
@@ -459,16 +458,6 @@ onBeforeUnmount(() => {
             </div>
             <span class="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ getProgressLabel(row) }}</span>
           </div>
-        </template>
-        <template #cell-status="{ row }">
-          <span
-            class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-            :class="getProgressPercent(row) >= 100
-              ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-              : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'"
-          >
-            {{ getProgressPercent(row) >= 100 ? 'Habis' : 'Aktif' }}
-          </span>
         </template>
         <template #cell-aksi="{ row }">
           <div class="flex items-center justify-center gap-1.5">
