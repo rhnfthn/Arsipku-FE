@@ -215,63 +215,32 @@ onBeforeUnmount(() => {
     </div>
 
     <template v-else-if="berkasDetail">
-      <!-- Quick Info Cards (seperti pemberkasan) -->
-      <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Folder class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Klasifikasi</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasiTeks || berkasDetail.klasifikasi || '-' }}</p>
-            </div>
-          </div>
+      <!-- Informasi Pengusul -->
+      <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
+            <User class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <h2 class="font-semibold text-gray-900 dark:text-white">Informasi Pengusul</h2>
         </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Building2 class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Divisi Pemberi</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPemberiNama || '-' }}</p>
-            </div>
+        <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <User class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.pengusulInfo?.nama || '-' }}</dd></div>
           </div>
-        </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <User class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">EVP Pemberi</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evpPemberiNama || '-' }}</p>
-            </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Building2 class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPengusulNama || '-' }}</dd></div>
           </div>
-        </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Key class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Akses</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.permissions?.join(', ') || '-' }}</p>
-            </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <FileText class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judulUsulan || '-' }}</dd></div>
           </div>
-        </div>
-        <div class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              <Clock class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium uppercase text-gray-500">Berakhir</p>
-              <p class="mt-0.5 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggalSelesai) }}</p>
-            </div>
+          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
+            <Folder class="mt-0.5 h-4 w-4 text-gray-500" />
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
           </div>
-        </div>
+        </dl>
       </div>
 
       <!-- Berkas Selector (jika ada multiple berkas) -->
