@@ -489,7 +489,31 @@ const loadArsipRetensiHabis = async () => {
     const { getBerkasList } = useArsipDinamis();
     const res: any = await getBerkasList({ status: 'closed_retensi_aktif', limit: 100 });
     const data = res?.data?.data ?? res?.data ?? res ?? [];
-    arsipOptions.value = (Array.isArray(data) ? data : []).map((b: any) => ({
+    let arsipList = Array.isArray(data) ? data : [];
+
+    // Ambil daftar arsip yang sudah ada usulan transfer (semua status kecuali DITOLAK)
+    // agar arsip yang sudah diusulkan tidak bisa dipilih lagi.
+    try {
+      const gabunganRes: any = await apiGet('/transfer-active-to-inactive/gabungan', {}, { skipCache: true });
+      const gabunganRows = gabunganRes?.data ?? [];
+      // Kumpulkan arsip ID dari usulan yang sudah dibuat (isUsulan=true, status bukan DITOLAK)
+      const arsipSudahUsulan = new Set<string>();
+      for (const row of gabunganRows) {
+        if (row.isUsulan && row.status !== 'DITOLAK_ATASAN') {
+          // row.id adalah usulan ID, bukan arsip ID — perlu cek arsipIds
+          // Tapi gabungan tidak return arsipId langsung, jadi kita exclude by kodeBerkas
+          if (row.kodeBerkas) arsipSudahUsulan.add(row.kodeBerkas);
+        }
+      }
+      arsipList = arsipList.filter((b: any) => {
+        const kode = b.kodeBerkas ?? b.kode_berkas ?? null;
+        return !kode || !arsipSudahUsulan.has(kode);
+      });
+    } catch (e) {
+      console.warn('Gagal memuat data usulan existing, menampilkan semua arsip:', e);
+    }
+
+    arsipOptions.value = arsipList.map((b: any) => ({
       id: b.id,
       judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
       kodeBerkas: b.kodeBerkas ?? b.kode_berkas ?? null,

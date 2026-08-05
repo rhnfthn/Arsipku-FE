@@ -42,7 +42,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <!-- Left: Informasi Usulan + Timeline + Tombol Aksi (8/12) -->
         <div class="lg:col-span-8 space-y-5">
-          <VerifikasiDetail :usulan="usulan" />
+          <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarIsi" />
 
           <!-- ─── Card: Riwayat ─── -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
@@ -89,6 +89,7 @@
                     <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
                     <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
                     <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
+                    <th class="text-center py-2 px-2 text-gray-500 w-16">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -97,11 +98,24 @@
                       <input type="checkbox" class="w-4 h-4 text-[#457fb6] border-gray-300 rounded" />
                     </td>
                     <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
+                      <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
+                      {{ d.namaBerkas }}
+                    </td>
                     <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
+                    <td class="text-center py-2 px-2">
+                      <NuxtLink
+                        v-if="d.id"
+                        :to="`/maintenance/preview-berkas/${d.id}?nomor_usulan=${usulan?.nomorUsulan ?? ''}&usulan_id=${usulan?.id ?? ''}`"
+                        class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
+                        title="Lihat detail berkas"
+                      >
+                        <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                      </NuxtLink>
+                    </td>
                   </tr>
                   <tr v-if="daftarIsi.length === 0">
-                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
+                    <td colspan="5" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
                   </tr>
                 </tbody>
               </table>
