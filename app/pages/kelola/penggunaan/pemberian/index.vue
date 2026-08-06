@@ -32,7 +32,6 @@ const itemsPerPage = ref(10);
 const filterStatus = ref('Semua');
 const sortKey = ref('tanggalMulai');
 const sortDir = ref<'asc' | 'desc'>('desc');
-const isRefreshing = ref(false);
 const isExporting = ref(false);
 
 const breadcrumbs = computed(() => [
@@ -125,13 +124,10 @@ const loadData = async () => {
   }
 };
 
-const handleRefresh = async () => {
-  isRefreshing.value = true;
-  try {
-    await loadData();
-  } finally {
-    isRefreshing.value = false;
-  }
+const resetFilters = () => {
+  searchQuery.value = '';
+  filterStatus.value = 'Semua';
+  currentPage.value = 1;
 };
 
 const handleSort = (key: string) => {
@@ -340,14 +336,6 @@ onBeforeUnmount(() => {
             </Transition>
           </div>
 
-          <!-- Search -->
-          <UInput
-            v-model="searchQuery"
-            icon="i-lucide-search"
-            placeholder="Cari judul berkas atau nomor usulan…"
-            class="min-w-[180px] flex-1"
-          />
-
           <!-- Status filter -->
           <div class="relative" data-custom-dropdown>
             <button
@@ -383,20 +371,32 @@ onBeforeUnmount(() => {
               </div>
             </Transition>
           </div>
+
+          <!-- Reset filter (kiri search) -->
+          <UButton
+            type="button"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="resetFilters"
+            title="Reset Filter"
+            aria-label="Reset Filter"
+          />
+
+          <!-- Search -->
+          <div class="relative flex-1 min-w-[180px]">
+            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari judul berkas atau nomor usulan…"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
         </div>
         <!-- Action buttons -->
         <div class="flex shrink-0 items-center gap-2">
-          <!-- Refresh -->
-          <button
-            @click="handleRefresh"
-            :disabled="isRefreshing"
-            class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RotateCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
-            Refresh
-          </button>
           <!-- Export -->
           <button
             @click="exportData"
