@@ -38,7 +38,7 @@ const isExporting = ref(false);
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
-  { label: 'Pemberian', to: '/penggunaan/pemberian' },
+  { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
 ]);
 
 // Data dari my-entitlements — list akses yang diterima user
@@ -189,7 +189,7 @@ const goToDetail = (row: any) => {
     return;
   }
   // Langsung ke halaman berkas (table naskah), bukan usulan detail
-  navigateTo(`/penggunaan/pemberian/${usulanId}/berkas`);
+  navigateTo(`/kelola/penggunaan/pemberian/${usulanId}/berkas`);
 };
 
 const formatDate = (dateStr: string) => {
