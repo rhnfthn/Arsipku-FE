@@ -69,7 +69,7 @@ function mapFlowToDetail(item: any) {
 }
 
 function goBack() {
-  router.push(`/penggunaan/pemberian/${usulanId.value}/berkas`);
+  router.push(`/kelola/penggunaan/pemberian/${usulanId.value}/berkas`);
 }
 
 // ── Preview PDF via slideover (sama dengan halaman kelola) ───────
@@ -136,8 +136,8 @@ onMounted(async () => {
       :items="[
         { label: 'Kelola', to: '#' },
         { label: 'Penggunaan', to: '#' },
-        { label: 'Pemberian', to: '/penggunaan/pemberian' },
-        { label: 'Berkas', to: `/penggunaan/pemberian/${usulanId}/berkas` },
+        { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
+        { label: 'Berkas', to: `/kelola/penggunaan/pemberian/${usulanId}/berkas` },
         { label: 'Detail Naskah' },
       ]"
     />

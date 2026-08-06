@@ -29,7 +29,7 @@ const usulanId = computed(() => route.params.usulanId as string);
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
-  { label: 'Pemberian', to: '/penggunaan/pemberian' },
+  { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
   { label: usulanDetail.value?.nomorUsulan || 'Detail', to: '#' },
 ]);
 
@@ -86,7 +86,7 @@ const getProgressLabel = (detail: any): string => {
       </template>
     </PageHeader>
 
-    <button @click="navigateTo('/penggunaan/pemberian')"
+    <button @click="navigateTo('/kelola/penggunaan/pemberian')"
       class="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
       <ChevronLeft class="size-4" /> Kembali
     </button>
@@ -307,7 +307,7 @@ const getProgressLabel = (detail: any): string => {
 
       <!-- CTA: Lihat Berkas -->
       <div class="flex justify-center">
-        <NuxtLink :to="`/penggunaan/pemberian/${usulanId}/berkas`"
+        <NuxtLink :to="`/kelola/penggunaan/pemberian/${usulanId}/berkas`"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700">
           <FileText class="size-4" /> Lihat Berkas yang Diberikan
         </NuxtLink>

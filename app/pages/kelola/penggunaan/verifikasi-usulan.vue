@@ -36,8 +36,8 @@ const breadcrumbs = computed(() => [
 ]);
 
 const searchQuery = ref('');
-// Default filter: "Semua" — tampilkan semua usulan masuk ke divisi pemberi
-const filterStatus = ref<string>('');
+// Default filter: "Menunggu Verifikasi Pemberi" — usulan yang perlu diverifikasi
+const filterStatus = ref<string>(StatusUsulan.TERKIRIM_KE_PEMBERI);
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const isRefreshing = ref(false);
@@ -48,10 +48,6 @@ const sortDir = ref<'asc' | 'desc'>('desc');
 const statusOptions = [
   { label: 'Semua', value: '' },
   { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
-  { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
-  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
 ];
 
 const loadData = async () => {
@@ -112,7 +108,7 @@ watch(filterStatus, () => { currentPage.value = 1; loadData(); });
 
 const goToDetail = (id: string) => {
   markViewed(id);
-  navigateTo(`/usulan-akses-berkas/${id}`);
+  navigateTo(`/kelola/penggunaan/usulan-akses-berkas/${id}`);
 };
 
 const formatDate = (dateStr: string) => {
@@ -141,7 +137,7 @@ function selectFilterStatus(value: string) { filterStatus.value = value; openFil
 const statusLabel = computed(() => statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua');
 
 function resetFilters() {
-  filterStatus.value = '';
+  filterStatus.value = StatusUsulan.TERKIRIM_KE_PEMBERI;
   searchQuery.value = '';
   currentPage.value = 1;
   loadData();
@@ -414,7 +410,7 @@ const getProgressLabel = (row: any): string => {
           </template>
           <template #cell-aksi="{ row }">
             <div class="flex items-center justify-center gap-1.5">
-              <NuxtLink :to="`/usulan-akses-berkas/${row.id}`"
+              <NuxtLink :to="`/kelola/penggunaan/usulan-akses-berkas/${row.id}`"
                 :class="['relative inline-flex rounded-md p-1.5 transition-colors', isViewed(row) ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300' : 'hover:bg-[#457FB6]/10']"
                 :style="!isViewed(row) ? { color: '#457FB6' } : {}"
                 :title="isViewed(row) ? 'Sudah dilihat' : 'Lihat Detail'"
