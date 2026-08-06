@@ -36,7 +36,8 @@ const isRefreshing = ref(false);
 const isExporting = ref(false);
 
 const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '#' },
+  { label: 'Penggunaan', to: '#' },
   { label: 'Pemberian', to: '/penggunaan/pemberian' },
 ]);
 
@@ -422,21 +423,19 @@ onBeforeUnmount(() => {
           <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalMulai) }}</span>
         </template>
         <template #cell-nomorUsulan="{ row }">
-          <span class="font-mono text-xs font-medium text-primary-600 dark:text-primary-400">{{ row.nomorUsulanTerbaru || '-' }}</span>
+          <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomorUsulanTerbaru || '-' }}</span>
         </template>
         <template #cell-divisiPemberi="{ row }">
           <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisiPemberiNama || row.divisiPemberiId || '-' }}</span>
         </template>
         <template #cell-jenisBerkas="{ row }">
           <span
-            :class="[
-              row.jenisBerkas === 'AKTIF'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
-                : 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800',
-              'inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border whitespace-nowrap',
-            ]"
+            class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+            :class="row.jenisBerkas === 'AKTIF'
+              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+              : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
           >
-            {{ row.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}
+            {{ row.jenisBerkas }}
           </span>
         </template>
         <template #cell-judulUsulan="{ row }">
@@ -464,7 +463,8 @@ onBeforeUnmount(() => {
             <button
               type="button"
               @click="goToDetail(row)"
-              class="inline-flex rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
+              class="relative inline-flex rounded-md p-1.5 transition-colors hover:bg-[#457FB6]/10"
+              style="color: #457FB6"
               title="Lihat Naskah"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />

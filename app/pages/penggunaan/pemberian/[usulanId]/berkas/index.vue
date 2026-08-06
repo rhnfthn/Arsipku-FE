@@ -84,7 +84,7 @@ const exportData = () => {
 };
 
 const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Pemberian', to: '/penggunaan/pemberian' },
   { label: berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
