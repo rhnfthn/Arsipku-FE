@@ -1737,8 +1737,8 @@ onUnmounted(() => {
     <SharedShareModal
       v-if="showShareModal && shareNaskah"
       :naskah-id="shareNaskah.naskahId"
-      :naskah-perihal="shareNaskah.perihal || shareNaskah.judul"
-      :naskah-nomor="shareNaskah.nomor"
+      :naskah-perihal="shareNaskah.subject || shareNaskah.perihal || shareNaskah.judul"
+      :naskah-nomor="shareNaskah.body || shareNaskah.nomor"
       @close="handleShareClose"
       @shared="handleShareClose"
     />

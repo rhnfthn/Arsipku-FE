@@ -288,17 +288,6 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
           <div class="flex flex-1 gap-2">
             <button
               type="button"
-              @click="accessType = 'SEKALI_LIHAT'"
-              class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
-              :class="accessType === 'SEKALI_LIHAT'
-                ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-400'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
-            >
-              <UIcon name="i-lucide-eye" class="w-4 h-4 inline mr-1.5" />
-              {{ t('share_sekali_lihat') }}
-            </button>
-            <button
-              type="button"
               @click="accessType = 'RENTANG_WAKTU'"
               class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
               :class="accessType === 'RENTANG_WAKTU'
@@ -307,6 +296,17 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
             >
               <UIcon name="i-lucide-calendar" class="w-4 h-4 inline mr-1.5" />
               {{ t('share_rentang_waktu') }}
+            </button>
+            <button
+              type="button"
+              @click="accessType = 'SEKALI_LIHAT'"
+              class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
+              :class="accessType === 'SEKALI_LIHAT'
+                ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-400'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4 inline mr-1.5" />
+              {{ t('share_sekali_lihat') }}
             </button>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
