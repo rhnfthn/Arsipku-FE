@@ -15,7 +15,7 @@ definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
 
 const { t } = useI18n();
-const { fetchMyEntitlements } = useUsulanAksesBerkas();
+const { fetchMyEntitlements, markBerkasRead } = useUsulanAksesBerkas();
 const { fetchCounts } = useUsulanAksesBerkasCounts();
 const toast = useToast();
 
@@ -187,6 +187,12 @@ const goToDetail = (row: any) => {
   if (!usulanId) {
     toast.add({ title: 'Error', description: 'Usulan tidak ditemukan untuk berkas ini', color: 'error' });
     return;
+  }
+  // Tandai berkas sebagai sudah dibaca (isRead=true) + update badge sidebar
+  if (row?.berkasId && !row?.isRead) {
+    row.isRead = true; // optimistic UI
+    markBerkasRead(row.berkasId);
+    fetchCounts(true);
   }
   // Langsung ke halaman berkas (table naskah), bukan usulan detail
   navigateTo(`/kelola/penggunaan/pemberian/${usulanId}/berkas`);
@@ -463,9 +469,14 @@ onBeforeUnmount(() => {
             <button
               type="button"
               @click="goToDetail(row)"
-              class="relative inline-flex rounded-md p-1.5 transition-colors hover:bg-[#457FB6]/10"
-              style="color: #457FB6"
-              title="Lihat Naskah"
+              :class="[
+                'relative inline-flex rounded-md p-1.5 transition-colors',
+                row.isRead
+                  ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+                  : 'hover:bg-[#457FB6]/10'
+              ]"
+              :style="!row.isRead ? { color: '#457FB6' } : {}"
+              :title="row.isRead ? 'Sudah dibaca' : 'Lihat Naskah'"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </button>
