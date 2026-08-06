@@ -26,7 +26,6 @@ definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Detail Usulan Akses Berkas' });
 
 const route = useRoute();
-const { t } = useI18n();
 const { user } = useAuth();
 const {
   usulanDetail,
@@ -110,8 +109,9 @@ const ppForm = ref<PersetujuanPemberiPayload>({
 });
 
 const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
+  { label: 'Kelola', to: '#' },
+  { label: 'Penggunaan', to: '#' },
+  { label: 'Usulan Saya', to: '/usulan-akses-berkas' },
   { label: usulanDetail.value?.nomorUsulan || 'Detail', to: '#' },
 ]);
 

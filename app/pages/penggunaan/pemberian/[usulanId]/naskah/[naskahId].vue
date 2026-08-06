@@ -134,7 +134,7 @@ onMounted(async () => {
     <PageHeader
       :title="pageTitle"
       :items="[
-        { label: t('beranda') || 'Beranda', to: '/beranda' },
+        { label: 'Kelola', to: '#' },
         { label: 'Penggunaan', to: '#' },
         { label: 'Pemberian', to: '/penggunaan/pemberian' },
         { label: 'Berkas', to: `/penggunaan/pemberian/${usulanId}/berkas` },
