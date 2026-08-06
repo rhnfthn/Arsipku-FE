@@ -9,6 +9,7 @@ import { useAuth } from '~/composables/useAuth';
 import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasViewed';
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import { downloadCsv } from '~/utils/csv-export';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -29,27 +30,24 @@ const extractErrorMessage = (err: any): string => {
 };
 
 const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Verifikasi Usulan', to: '#' },
 ]);
 
 const searchQuery = ref('');
-// Default filter: "Semua" — tampilkan semua usulan masuk ke divisi pemberi
-const filterStatus = ref<string>('');
+// Default filter: "Menunggu Verifikasi Pemberi" — usulan yang perlu diverifikasi
+const filterStatus = ref<string>(StatusUsulan.TERKIRIM_KE_PEMBERI);
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const isRefreshing = ref(false);
+const isExporting = ref(false);
 const sortKey = ref('createdAt');
 const sortDir = ref<'asc' | 'desc'>('desc');
 
 const statusOptions = [
   { label: 'Semua', value: '' },
   { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
-  { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
-  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
 ];
 
 const loadData = async () => {
@@ -73,6 +71,33 @@ const handleRefresh = async () => {
   try { await loadData(); } finally { isRefreshing.value = false; }
 };
 
+const exportData = () => {
+  const rows = usulanList.value;
+  if (rows.length === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const headers = ['Tanggal', 'Nomor Usulan', 'Divisi Pengusul', 'Jenis Berkas', 'Judul Usulan', 'Status'];
+    const csvRows = rows.map((r: any) => [
+      formatDate(r.createdAt),
+      r.nomorUsulan || '-',
+      r.divisiPengusulNama || '-',
+      r.jenisBerkas || '-',
+      r.judulUsulan || '-',
+      r.status || '-',
+    ]);
+    downloadCsv(`verifikasi-usulan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+  } catch (e) {
+    console.error('Gagal export:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 watch(searchQuery, () => {
   if (searchTimeout) clearTimeout(searchTimeout);
@@ -83,7 +108,7 @@ watch(filterStatus, () => { currentPage.value = 1; loadData(); });
 
 const goToDetail = (id: string) => {
   markViewed(id);
-  navigateTo(`/usulan-akses-berkas/${id}`);
+  navigateTo(`/kelola/penggunaan/usulan-akses-berkas/${id}`);
 };
 
 const formatDate = (dateStr: string) => {
@@ -112,7 +137,7 @@ function selectFilterStatus(value: string) { filterStatus.value = value; openFil
 const statusLabel = computed(() => statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua');
 
 function resetFilters() {
-  filterStatus.value = '';
+  filterStatus.value = StatusUsulan.TERKIRIM_KE_PEMBERI;
   searchQuery.value = '';
   currentPage.value = 1;
   loadData();
@@ -236,8 +261,8 @@ const getProgressLabel = (row: any): string => {
 </script>
 
 <template>
-  <div class="p-6">
-    <div class="mb-4">
+  <div class="min-h-screen bg-gray-50 px-4 pb-10 pt-5 dark:bg-gray-900 sm:px-5">
+    <div class="mb-5">
       <PageHeader title="Verifikasi Usulan" :items="breadcrumbs" />
     </div>
 
@@ -286,29 +311,47 @@ const getProgressLabel = (row: any): string => {
             </Transition>
           </div>
 
+          <!-- Reset filter (kiri search) -->
+          <UButton
+            type="button"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="resetFilters"
+            title="Reset Filter"
+            aria-label="Reset Filter"
+          />
+
           <!-- Search -->
-          <div class="relative flex-1 min-w-[200px]">
+          <div class="relative flex-1 min-w-[180px]">
+            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari nomor usulan, judul, atau tujuan..."
-              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 pl-9 text-sm text-gray-700 outline-none transition-all focus:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              placeholder="Cari nomor usulan…"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
-            <UIcon name="i-lucide-search" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-
-          <!-- Reset -->
-          <button @click="resetFilters" class="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
-            Reset
-          </button>
         </div>
 
-        <!-- Refresh -->
-        <button @click="handleRefresh" :disabled="isRefreshing"
-          class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-          <UIcon name="i-lucide-refresh-cw" class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
-          Refresh
-        </button>
+        <!-- Action buttons -->
+        <div class="flex shrink-0 items-center gap-2">
+          <!-- Export -->
+          <button
+            @click="exportData"
+            :disabled="isExporting"
+            class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <UIcon
+              v-if="isExporting"
+              name="i-lucide-loader-circle"
+              class="w-3.5 h-3.5 animate-spin"
+            />
+            <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+            Export
+          </button>
+        </div>
       </div>
 
       <!-- Table -->
@@ -317,6 +360,9 @@ const getProgressLabel = (row: any): string => {
           :columns="columns"
           :rows="usulanList"
           :loading="pending"
+          header-class="bg-primary dark:bg-primary-700 text-white text-left"
+          body-class="divide-y divide-gray-100 dark:divide-gray-700"
+          row-class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           empty-message="Belum ada usulan masuk."
           @sort="handleSort"
         >
@@ -352,7 +398,7 @@ const getProgressLabel = (row: any): string => {
           </template>
           <template #cell-aksi="{ row }">
             <div class="flex items-center justify-center gap-1.5">
-              <NuxtLink :to="`/usulan-akses-berkas/${row.id}`"
+              <NuxtLink :to="`/kelola/penggunaan/usulan-akses-berkas/${row.id}`"
                 :class="['relative inline-flex rounded-md p-1.5 transition-colors', isViewed(row) ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300' : 'hover:bg-[#457FB6]/10']"
                 :style="!isViewed(row) ? { color: '#457FB6' } : {}"
                 :title="isViewed(row) ? 'Sudah dilihat' : 'Lihat Detail'"
