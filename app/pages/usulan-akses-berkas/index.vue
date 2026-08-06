@@ -97,51 +97,29 @@ const tabs = computed(() => {
 // Auto-select default tab: "Semua" — user bisa pilih tab lain manual
 // (sebelumnya auto-select ke 'mine'/'verify-me' berdasarkan peran)
 
-// Status filter otomatis berdasarkan tab
-const tabStatusFilter = computed(() => {
-  switch (activeTab.value) {
-    case 'verify-pemberi':
-      // SE pemberi: semua usulan yang masuk ke divisinya (semua status)
-      // BE sudah filter via scope=verify-pemberi (divisiPemberiId = userOrgId)
-      return undefined;
-    case 'verify-me':
-      return undefined; // Managerial: semua usulan yang dia verifikator (BE sudah filter via findAll scope)
-    case 'mine':
-      return undefined; // SE pengusul: usulan yang dia buat (BE filter via pengusulPersnum)
-    default:
-      return undefined;
-  }
-});
-
 const breadcrumbs = computed(() => {
-  const secondLabel =
-    queryTab === 'mine' ? 'Permintaan'
+  const label =
+    queryTab === 'verify-me' ? 'Verifikasi Usulan'
     : queryTab === 'verify-pemberi' ? 'Pemberian'
-    : queryTab === 'verify-me' ? 'Persetujuan'
-    : null;
-  const crumbs = [{ label: 'Kelola', to: '#' }];
-  if (secondLabel) crumbs.push({ label: secondLabel, to: '#' });
-  crumbs.push({ label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' });
-  return crumbs;
+    : 'Usulan Saya';
+  return [
+    { label: 'Kelola', to: '#' },
+    { label: 'Penggunaan', to: '#' },
+    { label, to: '#' },
+  ];
 });
 
-// Hide "Akses Diberikan" from status filter when tab=mine (BE already excludes it)
-const statusOptions = computed(() => {
-  const base = [
-    { label: 'Semua', value: '' },
-    { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
-    { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
-    { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-    { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
-    { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-    { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
-  ];
-  // Only show "Akses Diberikan" when not on "mine" tab
-  if (activeTab.value !== 'mine') {
-    base.push({ label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN });
-  }
-  return base;
-});
+// Tampilkan semua opsi status di semua tab — user bebas memilih
+const statusOptions = [
+  { label: 'Semua', value: '' },
+  { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
+  { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
+  { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
+  { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
+  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
+  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
+];
 
 const totalPages = computed(() =>
   Math.ceil(pagination.total / itemsPerPage.value) || 1,
@@ -149,18 +127,15 @@ const totalPages = computed(() =>
 
 const loadData = async () => {
   try {
-    // Tab filter override status filter (kecuali "Semua" yang pakai filterStatus manual)
-    const status = activeTab.value === 'all'
-      ? (filterStatus.value || undefined)
-      : (tabStatusFilter.value || undefined);
-    // Map tab ke scope BE
+    // Status filter selalu dikirim dari dropdown (kosong = semua)
+    // Scope BE menambahkan filter tambahan berdasarkan tab aktif
     const scopeMap: Record<string, string> = {
       mine: 'mine',
       'verify-pemberi': 'verify-pemberi',
       'verify-me': 'verify-me',
     };
     await fetchList({
-      status,
+      status: filterStatus.value || undefined,
       scope: scopeMap[activeTab.value],
       page: currentPage.value,
       limit: itemsPerPage.value,
