@@ -277,13 +277,13 @@ function selectFilterStatus(value: string) {
   loadData();
 }
 const statusLabel = computed(() => {
-  return statusOptions.value.find((s) => s.value === filterStatus.value)?.label || 'Semua';
+  return statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua';
 });
 
 function resetFilters() {
   filterStatus.value = '';
   searchQuery.value = '';
-  activeTab.value = tabs.value.length > 1 ? tabs.value[1].value : 'all';
+  activeTab.value = 'all';
   currentPage.value = 1;
   loadData();
 }
@@ -554,16 +554,14 @@ const exportData = async () => {
   }
   isExporting.value = true;
   try {
-    const status = activeTab.value === 'all'
-      ? (filterStatus.value || undefined)
-      : (tabStatusFilter.value || undefined);
+
     const scopeMap: Record<string, string> = {
       mine: 'mine',
       'verify-pemberi': 'verify-pemberi',
       'verify-me': 'verify-me',
     };
     await fetchList({
-      status,
+      status: filterStatus.value || undefined,
       scope: scopeMap[activeTab.value],
       page: 1,
       limit: pagination.total || 9999,
@@ -718,8 +716,8 @@ onBeforeUnmount(() => {
             </Transition>
           </div>
 
-          <!-- Status filter custom dropdown (only on "all" tab) -->
-          <div v-if="activeTab === 'all'" class="relative" data-custom-dropdown>
+          <!-- Status filter custom dropdown (tampil di semua tab) -->
+          <div class="relative" data-custom-dropdown>
             <button
               type="button"
               @click.stop="toggleFilterStatus"
