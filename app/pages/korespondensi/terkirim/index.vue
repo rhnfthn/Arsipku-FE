@@ -1657,31 +1657,19 @@ onUnmounted(() => {
                   </div>
 
                   <div
-                    class="shrink-0 w-full md:w-[160px] flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-0 pt-0.5"
+                    class="shrink-0 w-full md:w-[160px] flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-0 pt-0.5 pr-12"
                   >
                     <span
                       class="text-caption2b text-neutral-500 dark:text-gray-400 text-[12px] whitespace-nowrap order-1"
                     >
                       {{ formatShortDate(mail.fullDate) }}
                     </span>
-                    <!-- Viewer count — nonaktif untuk SDE -->
-                    <UTooltip :text="$t('tk_status_pembaca_tinjut')">
-                      <div
-                        class="flex items-center gap-1 rounded py-0.5 px-1.5 text-neutral-500 dark:text-gray-400 transition-colors w-auto order-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
-                        @click.stop="openReaderModal(mail)"
-                      >
-                        <Eye class="w-3.5 h-3.5 text-primary dark:text-primary-400" />
-                        <span class="text-[12px] font-medium text-primary dark:text-primary-400">
-                          {{ mail.viewCount || 0 }}
-                        </span>
-                      </div>
-                    </UTooltip>
                   </div>
                 </div>
 
                 <!-- Hover Quick Actions -->
                 <div
-                  class="absolute right-4 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
+                  class="absolute right-6 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-2 bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
                 >
                   <div class="flex items-center gap-2 p-1">
                     <UTooltip :text="mail.isNote ? $t('tk_catatan_ada') : $t('tk_catatan_tambah')">
@@ -1722,6 +1710,19 @@ onUnmounted(() => {
                         class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600"
                         @click.stop="handleShare(mail)"
                       />
+                    </UTooltip>
+                    <!-- Divider pemisah aksi lihat detail -->
+                    <div class="w-px h-5 bg-gray-200 dark:bg-gray-600" />
+                    <UTooltip :text="$t('tk_status_pembaca_tinjut')">
+                      <div
+                        class="flex items-center gap-1 rounded text-neutral-500 dark:text-gray-400 transition-colors cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                        @click.stop="openReaderModal(mail)"
+                      >
+                        <Eye class="w-4 h-4 text-primary dark:text-primary-400" />
+                        <span class="text-[12px] font-medium text-primary dark:text-primary-400">
+                          {{ mail.viewCount || 0 }}
+                        </span>
+                      </div>
                     </UTooltip>
                   </div>
                 </div>
