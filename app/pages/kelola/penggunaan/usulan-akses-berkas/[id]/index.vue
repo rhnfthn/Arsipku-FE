@@ -1366,7 +1366,6 @@ onBeforeUnmount(() => {
                   </span>
                   <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
                   <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
-                  <span v-if="p.divisiNama" class="text-[10px] text-gray-400 dark:text-gray-500">· {{ p.divisiNama }}</span>
                 </span>
               </div>
             </div>
