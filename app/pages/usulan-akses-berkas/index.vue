@@ -109,17 +109,24 @@ const breadcrumbs = computed(() => {
   ];
 });
 
-// Tampilkan semua opsi status di semua tab — user bebas memilih
-const statusOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
-  { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
-  { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-  { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
-  { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
-  { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
-  { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
-];
+// Opsi status. "Akses Diberikan" disembunyikan di tab "Usulan Saya" (mine)
+// karena BE selalu mengecualikan AKSES_DITERBITKAN di scope=mine
+// (usulan yang sudah diterbitkan hanya tampil di halaman Pemberian).
+const statusOptions = computed(() => {
+  const base = [
+    { label: 'Semua', value: '' },
+    { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
+    { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
+    { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+    { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
+    { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
+    { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
+  ];
+  if (activeTab.value !== 'mine') {
+    base.push({ label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN });
+  }
+  return base;
+});
 
 const totalPages = computed(() =>
   Math.ceil(pagination.total / itemsPerPage.value) || 1,
@@ -176,6 +183,11 @@ watch(filterStatus, () => {
   loadData();
 });
 watch(activeTab, () => {
+  // Reset status filter jika nilai tidak valid di tab baru
+  // (mis. "Akses Diberikan" tidak tersedia di tab "Usulan Saya")
+  if (filterStatus.value && !statusOptions.value.some((s) => s.value === filterStatus.value)) {
+    filterStatus.value = '';
+  }
   currentPage.value = 1;
   loadData();
 });
@@ -252,7 +264,7 @@ function selectFilterStatus(value: string) {
   loadData();
 }
 const statusLabel = computed(() => {
-  return statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua';
+  return statusOptions.value.find((s) => s.value === filterStatus.value)?.label || 'Semua';
 });
 
 function resetFilters() {
