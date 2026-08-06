@@ -134,6 +134,16 @@ export function useUsulanAksesBerkas() {
     }
   };
 
+  // ── PATCH /usulan-akses-berkas/berkas/:berkasId/mark-read ──
+  // Tandai entitlement user untuk satu berkas sebagai sudah dibaca (isRead=true).
+  const markBerkasRead = async (berkasId: string) => {
+    try {
+      await apiPatch(`/usulan-akses-berkas/berkas/${berkasId}/mark-read`, {});
+    } catch (err: any) {
+      console.error('[useUsulanAksesBerkas] markBerkasRead error:', err);
+    }
+  };
+
   // ── GET /usulan-akses-berkas/berkas/:berkasId ──
   // Detail berkas untuk SE pengusul (cek entitlement)
   const fetchBerkasDetail = async (berkasId: string) => {
@@ -363,6 +373,7 @@ export function useUsulanAksesBerkas() {
     fetchEligiblePenerimaTambahan,
     fetchBerkasEligible,
     fetchMyEntitlements,
+    markBerkasRead,
     fetchBerkasDetail,
     fetchNaskahByBerkas,
     fetchList,
