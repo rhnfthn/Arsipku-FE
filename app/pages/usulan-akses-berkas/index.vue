@@ -97,36 +97,21 @@ const tabs = computed(() => {
 // Auto-select default tab: "Semua" — user bisa pilih tab lain manual
 // (sebelumnya auto-select ke 'mine'/'verify-me' berdasarkan peran)
 
-// Status filter otomatis berdasarkan tab
-const tabStatusFilter = computed(() => {
-  switch (activeTab.value) {
-    case 'verify-pemberi':
-      // SE pemberi: semua usulan yang masuk ke divisinya (semua status)
-      // BE sudah filter via scope=verify-pemberi (divisiPemberiId = userOrgId)
-      return undefined;
-    case 'verify-me':
-      return undefined; // Managerial: semua usulan yang dia verifikator (BE sudah filter via findAll scope)
-    case 'mine':
-      return undefined; // SE pengusul: usulan yang dia buat (BE filter via pengusulPersnum)
-    default:
-      return undefined;
-  }
-});
-
 const breadcrumbs = computed(() => {
-  const secondLabel =
-    queryTab === 'mine' ? 'Permintaan'
+  const label =
+    queryTab === 'verify-me' ? 'Verifikasi Usulan'
     : queryTab === 'verify-pemberi' ? 'Pemberian'
-    : queryTab === 'verify-me' ? 'Persetujuan'
-    : 'Kelola';
+    : 'Usulan Saya';
   return [
-    { label: t('beranda') || 'Beranda', to: '/beranda' },
-    { label: secondLabel, to: '#' },
-    { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
+    { label: 'Kelola', to: '#' },
+    { label: 'Penggunaan', to: '#' },
+    { label, to: '#' },
   ];
 });
 
-// Hide "Akses Diberikan" from status filter when tab=mine (BE already excludes it)
+// Opsi status. "Akses Diberikan" disembunyikan di tab "Usulan Saya" (mine)
+// karena BE selalu mengecualikan AKSES_DITERBITKAN di scope=mine
+// (usulan yang sudah diterbitkan hanya tampil di halaman Pemberian).
 const statusOptions = computed(() => {
   const base = [
     { label: 'Semua', value: '' },
@@ -137,7 +122,6 @@ const statusOptions = computed(() => {
     { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
     { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
   ];
-  // Only show "Akses Diberikan" when not on "mine" tab
   if (activeTab.value !== 'mine') {
     base.push({ label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN });
   }
@@ -150,18 +134,15 @@ const totalPages = computed(() =>
 
 const loadData = async () => {
   try {
-    // Tab filter override status filter (kecuali "Semua" yang pakai filterStatus manual)
-    const status = activeTab.value === 'all'
-      ? (filterStatus.value || undefined)
-      : (tabStatusFilter.value || undefined);
-    // Map tab ke scope BE
+    // Status filter selalu dikirim dari dropdown (kosong = semua)
+    // Scope BE menambahkan filter tambahan berdasarkan tab aktif
     const scopeMap: Record<string, string> = {
       mine: 'mine',
       'verify-pemberi': 'verify-pemberi',
       'verify-me': 'verify-me',
     };
     await fetchList({
-      status,
+      status: filterStatus.value || undefined,
       scope: scopeMap[activeTab.value],
       page: currentPage.value,
       limit: itemsPerPage.value,
@@ -202,6 +183,11 @@ watch(filterStatus, () => {
   loadData();
 });
 watch(activeTab, () => {
+  // Reset status filter jika nilai tidak valid di tab baru
+  // (mis. "Akses Diberikan" tidak tersedia di tab "Usulan Saya")
+  if (filterStatus.value && !statusOptions.value.some((s) => s.value === filterStatus.value)) {
+    filterStatus.value = '';
+  }
   currentPage.value = 1;
   loadData();
 });
@@ -284,7 +270,7 @@ const statusLabel = computed(() => {
 function resetFilters() {
   filterStatus.value = '';
   searchQuery.value = '';
-  activeTab.value = tabs.value.length > 1 ? tabs.value[1].value : 'all';
+  activeTab.value = 'all';
   currentPage.value = 1;
   loadData();
 }
@@ -555,16 +541,14 @@ const exportData = async () => {
   }
   isExporting.value = true;
   try {
-    const status = activeTab.value === 'all'
-      ? (filterStatus.value || undefined)
-      : (tabStatusFilter.value || undefined);
+
     const scopeMap: Record<string, string> = {
       mine: 'mine',
       'verify-pemberi': 'verify-pemberi',
       'verify-me': 'verify-me',
     };
     await fetchList({
-      status,
+      status: filterStatus.value || undefined,
       scope: scopeMap[activeTab.value],
       page: 1,
       limit: pagination.total || 9999,
@@ -618,28 +602,28 @@ onBeforeUnmount(() => {
     <div class="mb-5">
       <PageHeader :items="breadcrumbs">
         <template #title>
-          <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            {{
-              queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
-              : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
-              : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
-              : 'Usulan Akses Berkas'
-            }}
-          </h1>
+          <div class="flex w-full flex-wrap items-center justify-between gap-3">
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {{
+                queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
+                : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
+                : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
+                : 'Usulan Akses Berkas'
+              }}
+            </h1>
+            <!-- Button Buat Usulan (sejajar dengan breadcrumb) -->
+            <UButton
+              v-if="isDelegatedSekretaris"
+              icon="i-lucide-plus"
+              color="primary"
+              size="md"
+              @click="openAdd = true"
+            >
+              Buat Usulan Akses
+            </UButton>
+          </div>
         </template>
       </PageHeader>
-    </div>
-
-    <!-- Button Buat Usulan (di atas tabel, di luar card) -->
-    <div v-if="isDelegatedSekretaris" class="mb-4 flex justify-end">
-      <UButton
-        icon="i-lucide-plus"
-        color="primary"
-        size="md"
-        @click="openAdd = true"
-      >
-        Buat Usulan Akses
-      </UButton>
     </div>
 
     <!-- Main Card -->
@@ -719,8 +703,8 @@ onBeforeUnmount(() => {
             </Transition>
           </div>
 
-          <!-- Status filter custom dropdown (only on "all" tab) -->
-          <div v-if="activeTab === 'all'" class="relative" data-custom-dropdown>
+          <!-- Status filter custom dropdown (tampil di semua tab) -->
+          <div class="relative" data-custom-dropdown>
             <button
               type="button"
               @click.stop="toggleFilterStatus"
