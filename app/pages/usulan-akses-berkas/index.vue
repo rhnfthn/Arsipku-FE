@@ -118,12 +118,11 @@ const breadcrumbs = computed(() => {
     queryTab === 'mine' ? 'Permintaan'
     : queryTab === 'verify-pemberi' ? 'Pemberian'
     : queryTab === 'verify-me' ? 'Persetujuan'
-    : 'Kelola';
-  return [
-    { label: t('beranda') || 'Beranda', to: '/beranda' },
-    { label: secondLabel, to: '#' },
-    { label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' },
-  ];
+    : null;
+  const crumbs = [{ label: 'Kelola', to: '#' }];
+  if (secondLabel) crumbs.push({ label: secondLabel, to: '#' });
+  crumbs.push({ label: 'Usulan Akses Berkas', to: '/usulan-akses-berkas' });
+  return crumbs;
 });
 
 // Hide "Akses Diberikan" from status filter when tab=mine (BE already excludes it)
@@ -618,28 +617,28 @@ onBeforeUnmount(() => {
     <div class="mb-5">
       <PageHeader :items="breadcrumbs">
         <template #title>
-          <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            {{
-              queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
-              : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
-              : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
-              : 'Usulan Akses Berkas'
-            }}
-          </h1>
+          <div class="flex w-full flex-wrap items-center justify-between gap-3">
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {{
+                queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
+                : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
+                : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
+                : 'Usulan Akses Berkas'
+              }}
+            </h1>
+            <!-- Button Buat Usulan (sejajar dengan breadcrumb) -->
+            <UButton
+              v-if="isDelegatedSekretaris"
+              icon="i-lucide-plus"
+              color="primary"
+              size="md"
+              @click="openAdd = true"
+            >
+              Buat Usulan Akses
+            </UButton>
+          </div>
         </template>
       </PageHeader>
-    </div>
-
-    <!-- Button Buat Usulan (di atas tabel, di luar card) -->
-    <div v-if="isDelegatedSekretaris" class="mb-4 flex justify-end">
-      <UButton
-        icon="i-lucide-plus"
-        color="primary"
-        size="md"
-        @click="openAdd = true"
-      >
-        Buat Usulan Akses
-      </UButton>
     </div>
 
     <!-- Main Card -->

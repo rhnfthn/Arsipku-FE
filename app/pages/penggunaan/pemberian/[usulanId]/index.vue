@@ -27,7 +27,7 @@ const extractErrorMessage = (err: any): string => {
 const usulanId = computed(() => route.params.usulanId as string);
 
 const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Pemberian', to: '/penggunaan/pemberian' },
   { label: usulanDetail.value?.nomorUsulan || 'Detail', to: '#' },
