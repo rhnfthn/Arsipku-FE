@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Search } from 'lucide-vue-next';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
@@ -33,6 +33,22 @@ const accessType = ref<'RENTANG_WAKTU' | 'SEKALI_LIHAT'>('RENTANG_WAKTU');
 const durationDays = ref<number | 'CUSTOM'>(7);
 const customTanggalSelesai = ref('');
 const todayStr = new Date().toISOString().split('T')[0];
+
+// Metode berbagi naskah: via ArsipKu, Email, atau WhatsApp
+const shareMethod = ref<'ARSIPKU' | 'EMAIL' | 'WHATSAPP'>('ARSIPKU');
+const shareMethodOptions = [
+  { value: 'ARSIPKU', label: 'ArsipKu', icon: 'i-lucide-folder-open' },
+  { value: 'EMAIL', label: 'Email', icon: 'i-lucide-mail' },
+  { value: 'WHATSAPP', label: 'WhatsApp', icon: 'i-lucide-message-circle' },
+];
+// Dropdown custom (gaya verifikator berjenjang)
+const showShareMethodDropdown = ref(false);
+const shareMethodDropdownRef = ref<HTMLElement | null>(null);
+const shareMethodLabel = computed(
+  () => shareMethodOptions.find((o) => o.value === shareMethod.value)?.label || 'ArsipKu',
+);
+// Fitur selain ArsipKu belum tersedia
+const isShareMethodComingSoon = computed(() => shareMethod.value !== 'ARSIPKU');
 
 /** Duration options for RENTANG_WAKTU. 'Custom' shows date picker. */
 const durationOptions = computed(() => [
@@ -161,6 +177,15 @@ const handleClose = () => {
 watch(isOpen, (val) => {
   if (!val) handleClose();
 });
+
+// Tutup dropdown share method saat klik di luar
+const handleDocumentClick = (e: MouseEvent) => {
+  if (shareMethodDropdownRef.value && !shareMethodDropdownRef.value.contains(e.target as Node)) {
+    showShareMethodDropdown.value = false;
+  }
+};
+onMounted(() => document.addEventListener('click', handleDocumentClick));
+onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
 </script>
 
 <template>
@@ -207,6 +232,53 @@ watch(isOpen, (val) => {
         </div>
       </div>
 
+      <!-- Tipe Berbagi (metode bagi naskah) -->
+      <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
+        <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+          Tipe Berbagi <span class="text-red-500">*</span>
+        </span>
+        <div class="flex-1">
+          <div class="relative" ref="shareMethodDropdownRef">
+            <button
+              type="button"
+              @click.stop="showShareMethodDropdown = !showShareMethodDropdown"
+              class="w-full flex items-center justify-between rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :class="showShareMethodDropdown ? 'border-primary' : 'border-gray-200'"
+            >
+              <span>{{ shareMethodLabel }}</span>
+              <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showShareMethodDropdown }" />
+            </button>
+            <div
+              v-if="showShareMethodDropdown"
+              class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+            >
+              <div class="max-h-[200px] overflow-y-auto">
+                <button
+                  v-for="opt in shareMethodOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click="shareMethod = opt.value; showShareMethodDropdown = false"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700"
+                  :class="shareMethod === opt.value ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'"
+                >
+                  <UIcon :name="opt.icon" class="size-4 shrink-0" />
+                  <span class="font-medium">{{ opt.label }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Coming soon untuk metode selain ArsipKu -->
+          <div v-if="isShareMethodComingSoon" class="mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center dark:border-gray-600 dark:bg-gray-700/30">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Feature coming soon
+            </p>
+            <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              Metode berbagi via {{ shareMethodLabel }} akan segera tersedia.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Jenis Akses -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
@@ -214,17 +286,6 @@ watch(isOpen, (val) => {
         </span>
         <div class="flex-1">
           <div class="flex flex-1 gap-2">
-            <button
-              type="button"
-              @click="accessType = 'SEKALI_LIHAT'"
-              class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
-              :class="accessType === 'SEKALI_LIHAT'
-                ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-400'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
-            >
-              <UIcon name="i-lucide-eye" class="w-4 h-4 inline mr-1.5" />
-              {{ t('share_sekali_lihat') }}
-            </button>
             <button
               type="button"
               @click="accessType = 'RENTANG_WAKTU'"
@@ -235,6 +296,17 @@ watch(isOpen, (val) => {
             >
               <UIcon name="i-lucide-calendar" class="w-4 h-4 inline mr-1.5" />
               {{ t('share_rentang_waktu') }}
+            </button>
+            <button
+              type="button"
+              @click="accessType = 'SEKALI_LIHAT'"
+              class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
+              :class="accessType === 'SEKALI_LIHAT'
+                ? 'border-primary bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-400'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4 inline mr-1.5" />
+              {{ t('share_sekali_lihat') }}
             </button>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -379,7 +451,7 @@ watch(isOpen, (val) => {
       <button
         class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
         style="background-color: #175FA4"
-        :disabled="isSubmitting"
+        :disabled="isSubmitting || isShareMethodComingSoon"
         @click="handleSubmit"
       >
         {{ isSubmitting ? t('share_memproses') : t('share_bagikan') }}

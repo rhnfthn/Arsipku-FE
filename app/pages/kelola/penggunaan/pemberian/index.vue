@@ -15,7 +15,7 @@ definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
 
 const { t } = useI18n();
-const { fetchMyEntitlements } = useUsulanAksesBerkas();
+const { fetchMyEntitlements, markBerkasRead } = useUsulanAksesBerkas();
 const { fetchCounts } = useUsulanAksesBerkasCounts();
 const toast = useToast();
 
@@ -32,12 +32,12 @@ const itemsPerPage = ref(10);
 const filterStatus = ref('Semua');
 const sortKey = ref('tanggalMulai');
 const sortDir = ref<'asc' | 'desc'>('desc');
-const isRefreshing = ref(false);
 const isExporting = ref(false);
 
 const breadcrumbs = computed(() => [
-  { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Pemberian', to: '/penggunaan/pemberian' },
+  { label: 'Kelola', to: '#' },
+  { label: 'Penggunaan', to: '#' },
+  { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
 ]);
 
 // Data dari my-entitlements — list akses yang diterima user
@@ -124,13 +124,10 @@ const loadData = async () => {
   }
 };
 
-const handleRefresh = async () => {
-  isRefreshing.value = true;
-  try {
-    await loadData();
-  } finally {
-    isRefreshing.value = false;
-  }
+const resetFilters = () => {
+  searchQuery.value = '';
+  filterStatus.value = 'Semua';
+  currentPage.value = 1;
 };
 
 const handleSort = (key: string) => {
@@ -187,8 +184,14 @@ const goToDetail = (row: any) => {
     toast.add({ title: 'Error', description: 'Usulan tidak ditemukan untuk berkas ini', color: 'error' });
     return;
   }
+  // Tandai berkas sebagai sudah dibaca (isRead=true) + update badge sidebar
+  if (row?.berkasId && !row?.isRead) {
+    row.isRead = true; // optimistic UI
+    markBerkasRead(row.berkasId);
+    fetchCounts(true);
+  }
   // Langsung ke halaman berkas (table naskah), bukan usulan detail
-  navigateTo(`/penggunaan/pemberian/${usulanId}/berkas`);
+  navigateTo(`/kelola/penggunaan/pemberian/${usulanId}/berkas`);
 };
 
 const formatDate = (dateStr: string) => {
@@ -333,14 +336,6 @@ onBeforeUnmount(() => {
             </Transition>
           </div>
 
-          <!-- Search -->
-          <UInput
-            v-model="searchQuery"
-            icon="i-lucide-search"
-            placeholder="Cari judul berkas atau nomor usulan…"
-            class="min-w-[180px] flex-1"
-          />
-
           <!-- Status filter -->
           <div class="relative" data-custom-dropdown>
             <button
@@ -376,20 +371,32 @@ onBeforeUnmount(() => {
               </div>
             </Transition>
           </div>
+
+          <!-- Reset filter (kiri search) -->
+          <UButton
+            type="button"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="resetFilters"
+            title="Reset Filter"
+            aria-label="Reset Filter"
+          />
+
+          <!-- Search -->
+          <div class="relative flex-1 min-w-[180px]">
+            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari judul berkas atau nomor usulan…"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
         </div>
         <!-- Action buttons -->
         <div class="flex shrink-0 items-center gap-2">
-          <!-- Refresh -->
-          <button
-            @click="handleRefresh"
-            :disabled="isRefreshing"
-            class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RotateCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
-            Refresh
-          </button>
           <!-- Export -->
           <button
             @click="exportData"
@@ -422,21 +429,19 @@ onBeforeUnmount(() => {
           <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalMulai) }}</span>
         </template>
         <template #cell-nomorUsulan="{ row }">
-          <span class="font-mono text-xs font-medium text-primary-600 dark:text-primary-400">{{ row.nomorUsulanTerbaru || '-' }}</span>
+          <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomorUsulanTerbaru || '-' }}</span>
         </template>
         <template #cell-divisiPemberi="{ row }">
           <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisiPemberiNama || row.divisiPemberiId || '-' }}</span>
         </template>
         <template #cell-jenisBerkas="{ row }">
           <span
-            :class="[
-              row.jenisBerkas === 'AKTIF'
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
-                : 'bg-gray-50 dark:bg-gray-900/20 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800',
-              'inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border whitespace-nowrap',
-            ]"
+            class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+            :class="row.jenisBerkas === 'AKTIF'
+              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+              : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
           >
-            {{ row.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}
+            {{ row.jenisBerkas }}
           </span>
         </template>
         <template #cell-judulUsulan="{ row }">
@@ -464,8 +469,14 @@ onBeforeUnmount(() => {
             <button
               type="button"
               @click="goToDetail(row)"
-              class="inline-flex rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400"
-              title="Lihat Naskah"
+              :class="[
+                'relative inline-flex rounded-md p-1.5 transition-colors',
+                row.isRead
+                  ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+                  : 'hover:bg-[#457FB6]/10'
+              ]"
+              :style="!row.isRead ? { color: '#457FB6' } : {}"
+              :title="row.isRead ? 'Sudah dibaca' : 'Lihat Naskah'"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </button>
