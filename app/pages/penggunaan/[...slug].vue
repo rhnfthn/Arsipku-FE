@@ -1,10 +1,8 @@
 <script setup lang="ts">
-// Usulan Saya — SE melihat usulan yang dia buat
-// Redirect ke page usulan-akses-berkas (tab "Semua" by default)
+// Redirect lama /penggunaan/* → /kelola/penggunaan/*
 definePageMeta({ middleware: 'auth' });
-useHead({ title: 'Usulan Saya' });
-
-await navigateTo('/usulan-akses-berkas', { replace: true });
+const route = useRoute();
+await navigateTo(`/kelola/penggunaan${route.path.replace('/penggunaan', '')}`, { replace: true });
 </script>
 
 <template>
