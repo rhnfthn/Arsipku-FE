@@ -5,6 +5,7 @@ import Heading from '~/components/Heading.vue';
 import { useApi } from '~/composables/useApi';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { JenisBerkas, DurasiPreset, JenisAkses, type LevelJabatan } from '~/types/usulan-akses-berkas';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
@@ -15,18 +16,6 @@ const emit = defineEmits<{
 const { fetchVerifikatorBod, fetchEligiblePenerimaTambahan, verifikatorList, createUsulan, pending } = useUsulanAksesBerkas();
 const { apiGet } = useApi();
 const toast = useToast();
-
-// Helper: extract error message dari AxiosError (BE return { message: [...] | string })
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) {
-    return beMessage.join(', ');
-  }
-  if (typeof beMessage === 'string' && beMessage.trim()) {
-    return beMessage;
-  }
-  return err?.message || 'Terjadi kesalahan';
-};
 
 // ── Divisi list ───────────────────────────────────
 interface DivisiOption {
@@ -315,13 +304,6 @@ const sortedSelectedVerifikator = computed(() => {
     return (LEVEL_ORDER[na] ?? 99) - (LEVEL_ORDER[nb] ?? 99);
   });
 });
-
-const onVerifikatorSelectFromUSelect = (value: any) => {
-  const persnum = Number(value);
-  if (persnum && !isNaN(persnum)) {
-    toggleVerifikator(persnum);
-  }
-};
 
 const onVerifikatorSelect = (persnum: number) => {
   toggleVerifikator(persnum);
