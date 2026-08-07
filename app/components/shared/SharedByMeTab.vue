@@ -43,6 +43,23 @@ const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   return 'AKTIF';
 };
 
+const getFirstActiveRecipient = (share: ShareItem) =>
+  share.recipients?.find((r) => r.status !== 'BERAKHIR') || share.recipients?.[0];
+
+const canRevokeRecipient = (share: ShareItem) =>
+  share.status === 'AKTIF' && !!share.recipients?.some((r) => r.status !== 'BERAKHIR');
+
+const handleRevokeRecipient = (share: ShareItem) => {
+  const recipient = getFirstActiveRecipient(share);
+  if (!recipient) return;
+
+  emit('revoke', {
+    share,
+    recipientId: recipient.recipientId || recipient.id,
+    recipientName: recipient.nama,
+  });
+};
+
 </script>
 
 <template>
@@ -146,6 +163,15 @@ const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
               variant="ghost"
               size="xs"
               @click="emit('open-pdf', row as ShareItem)"
+            />
+          </UTooltip>
+          <UTooltip v-if="canRevokeRecipient(row as ShareItem)" :text="t('share_akhiri')">
+            <UButton
+              icon="i-lucide-shield-off"
+              color="danger"
+              variant="ghost"
+              size="xs"
+              @click="handleRevokeRecipient(row as ShareItem)"
             />
           </UTooltip>
         </div>
