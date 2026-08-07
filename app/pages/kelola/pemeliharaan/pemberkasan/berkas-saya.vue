@@ -20,84 +20,205 @@
       </button>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div
-        v-for="card in summaryCards"
-        :key="card.key"
-        class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg"
-            :class="[card.iconBg, card.iconColor]"
-          >
-            <component :is="card.icon" class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ card.label }}</p>
-            <p class="text-xl font-semibold" :class="card.valueColor">
-              {{ statistik?.[card.key] ?? 0 }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filter Toolbar -->
-    <div class="mb-4 flex flex-wrap items-end gap-3">
-      <div class="flex flex-col">
-        <label class="mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Jenis</label>
-        <select
-          v-model="filterStatus"
-          class="w-44 border rounded-lg px-3 py-2 text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-        >
-          <option v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="flex flex-col">
-        <label class="mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Klasifikasi</label>
-        <select
-          v-model="filterKlasifikasi"
-          class="w-56 border rounded-lg px-3 py-2 text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-        >
-          <option value="">Semua Klasifikasi</option>
-          <option v-for="k in klasifikasiList" :key="k.klasifikasi" :value="k.klasifikasi">
-            {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
-          </option>
-        </select>
-      </div>
-      <div class="flex flex-col">
-        <label class="mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Tahun</label>
-        <select
-          v-model="filterTahun"
-          class="w-32 border rounded-lg px-3 py-2 text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-        >
-          <option v-for="o in tahunOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-        @click="resetFilters"
-      >
-        <RotateCcw class="h-4 w-4" /> Reset Filter
-      </button>
-    </div>
-
     <!-- Table Card -->
     <div
-      class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
+      class="rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
-      <!-- Toolbar -->
-      <DataToolbar
-        v-model="perPage"
-        v-model:search="search"
-        search-placeholder="Cari Berkas…"
-        :rows-choices="[10, 25, 50]"
-        :show-export="false"
-        @refresh="fetchData"
-      />
+      <!-- Toolbar (delegasi-style: perPage + filters + search + export in one row) -->
+      <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
+        <div class="flex items-center gap-3 flex-wrap flex-1">
+          <!-- ROWS PER PAGE — custom dropdown -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleRowsPerPage"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
+            >
+              <span>{{ perPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openRowsPerPage }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openRowsPerPage"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]"
+              >
+                <button
+                  v-for="n in [10, 25, 50]"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    perPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- FILTER STATUS -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterStatus"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
+            >
+              <span class="truncate">{{ statusLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterStatus }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]"
+              >
+                <button
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filterStatus === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- FILTER KLASIFIKASI -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterKlasifikasi"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
+            >
+              <span class="truncate">{{ klasifikasiLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterKlasifikasi }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterKlasifikasi"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
+              >
+                <button
+                  type="button"
+                  @click.stop="selectFilterKlasifikasi('')"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
+                    filterKlasifikasi === ''
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  Semua Klasifikasi
+                </button>
+                <button
+                  v-for="k in klasifikasiList"
+                  :key="k.klasifikasi"
+                  type="button"
+                  @click.stop="selectFilterKlasifikasi(k.klasifikasi)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filterKlasifikasi === k.klasifikasi
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- FILTER TAHUN -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterTahun"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
+            >
+              <span class="truncate">{{ tahunLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterTahun }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterTahun"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]"
+              >
+                <button
+                  v-for="opt in tahunOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectFilterTahun(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filterTahun === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <button
+            type="button"
+            @click="resetFilters"
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
+            title="Reset Filter"
+          >
+            <RotateCcw class="w-4 h-4" />
+          </button>
+
+          <div class="relative flex-1 min-w-[180px]">
+            <UIcon
+              name="i-lucide-search"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            />
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari Berkas…"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
+        </div>
+        <button
+          @click="exportData"
+          :disabled="isExporting"
+          class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          <UIcon
+            v-if="isExporting"
+            name="i-lucide-loader-circle"
+            class="w-3.5 h-3.5 animate-spin"
+          />
+          <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+          Export
+        </button>
+      </div>
 
       <!-- Table -->
       <DataTable
@@ -106,6 +227,9 @@
         :loading="pending"
         :sort-key="sortKey"
         :sort-dir="sortDir"
+        header-class="bg-primary dark:bg-primary-700 text-white text-left"
+        body-class="divide-y divide-gray-100 dark:divide-gray-700"
+        row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         empty-message="Belum ada berkas. Klik 'Buat Berkas' untuk memulai."
         @sort="handleSort"
       >
@@ -118,7 +242,16 @@
           </span>
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :status="row.status" />
+          <span
+            class="px-2.5 py-0.5 text-xs rounded-full font-medium inline-flex items-center gap-1 w-fit border"
+            :style="statusStyle(row.status)"
+          >
+            <span
+              class="w-1.5 h-1.5 rounded-full"
+              :style="{ backgroundColor: statusStyle(row.status).dot }"
+            />
+            {{ statusStyle(row.status).label }}
+          </span>
         </template>
         <template #cell-updatedAt="{ row }">
           <span class="text-xs text-gray-500">{{ formatDate(row.updatedAt) }}</span>
@@ -144,124 +277,179 @@
 
     <!-- Modal Tambah Berkas -->
     <Teleport to="body">
-      <Modal
-        v-model="showCreateModal"
-        :saving="isSubmitting"
-        size="xl"
-        :hide-default-footer="true"
-      >
+      <Modal v-model="showCreateModal" :saving="isSubmitting" size="xl" :hide-default-footer="true">
         <template #title>
           <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
             Tambah Berkas Arsip Aktif
           </Heading>
         </template>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <!-- Kiri kolom -->
-          <div class="space-y-4">
-            <!-- Klasifikasi -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-                Klasifikasi <span class="text-red-500">*</span>
-              </Heading>
-              <select
+        <div class="space-y-1">
+          <!-- Klasifikasi -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Klasifikasi <span class="text-red-500">*</span>
+            </span>
+            <div class="flex-1 w-full">
+              <USelectMenu
                 v-model="form.klasifikasi"
-                @change="onKlasifikasiChange"
-                :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                  modalErrors.klasifikasi
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600',
-                ]"
+                :items="klasifikasiItems"
+                value-key="klasifikasi"
+                label-key="klasifikasi_text"
+                searchable
+                :search-attributes="['klasifikasi', 'klasifikasi_text']"
+                placeholder="Pilih klasifikasi arsip"
+                :search-input="{ placeholder: 'Cari klasifikasi…' }"
+                variant="none"
+                class="w-full"
+                :ui="{
+                  base: '!px-0 !bg-transparent w-full dark:text-white',
+                  ring: 'ring-0',
+                  shadow: 'shadow-none',
+                  width: 'w-full max-w-[calc(100vw-2rem)]',
+                  content: 'z-[100]',
+                } as any"
+                @update:model-value="onKlasifikasiChange"
               >
-                <option value="" disabled>Pilih klasifikasi arsip</option>
-                <option v-for="k in klasifikasiList" :key="k.klasifikasi" :value="k.klasifikasi">
-                  {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
-                </option>
-              </select>
+                <template #item="{ item }">
+                  <div v-if="item.isParent" class="w-full py-1 overflow-hidden">
+                    <span
+                      class="text-xs font-bold text-primary-500 dark:text-primary-400 uppercase tracking-widest block w-full truncate"
+                    >
+                      {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
+                    </span>
+                  </div>
+                  <div v-else class="flex flex-col min-w-0 w-full overflow-hidden py-1">
+                    <span
+                      class="text-sm font-medium text-gray-900 dark:text-white block w-full truncate"
+                    >
+                      {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
+                    </span>
+                  </div>
+                </template>
+                <template #default>
+                  <span
+                    v-if="klasifikasiSelected"
+                    class="truncate text-sm block w-full text-left dark:text-white"
+                  >
+                    {{ klasifikasiSelected.klasifikasi }} —
+                    {{ klasifikasiSelected.klasifikasi_text || '' }}
+                  </span>
+                  <span
+                    v-else
+                    class="text-gray-400 dark:text-gray-500 text-sm block w-full text-left"
+                  >
+                    Pilih klasifikasi arsip
+                  </span>
+                </template>
+              </USelectMenu>
               <p v-if="modalErrors.klasifikasi" class="text-xs text-red-500 mt-1">
                 Klasifikasi wajib dipilih
               </p>
             </div>
+          </div>
 
-            <!-- Nama Berkas -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-                Nama Berkas <span class="text-red-500">*</span>
-              </Heading>
+          <!-- Nama Berkas -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Nama Berkas <span class="text-red-500">*</span>
+            </span>
+            <div class="flex-1 w-full">
               <input
                 v-model="form.judul_berkas"
                 type="text"
                 placeholder="Masukkan nama berkas"
-                :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                  modalErrors.judul_berkas
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600',
-                ]"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 @input="modalErrors.judul_berkas = false"
               />
               <p v-if="modalErrors.judul_berkas" class="text-xs text-red-500 mt-1">
                 Nama berkas wajib diisi
               </p>
             </div>
+          </div>
 
-            <!-- Retensi Aktif & Inaktif -->
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col">
-                <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
-                  >Retensi Aktif</Heading
-                >
-                <input
-                  :value="retensiAktifLabel"
-                  type="text"
-                  disabled
-                  placeholder="Otomatis"
-                  class="mt-1 w-full text-left border bg-gray-100 border-gray-100 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-                />
-              </div>
-              <div class="flex flex-col">
-                <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
-                  >Retensi Inaktif</Heading
-                >
-                <input
-                  :value="retensiInaktifLabel"
-                  type="text"
-                  disabled
-                  placeholder="Otomatis"
-                  class="mt-1 w-full text-left border bg-gray-100 border-gray-100 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-                />
-              </div>
+          <!-- Retensi Aktif -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Retensi Aktif
+            </span>
+            <div class="flex-1 w-full">
+              <input
+                :value="retensiAktifLabel"
+                type="text"
+                disabled
+                placeholder="Otomatis"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full opacity-75 cursor-default"
+              />
             </div>
+          </div>
 
-            <!-- Kategori Berkas -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
-                >Kategori Berkas</Heading
-              >
+          <!-- Retensi Inaktif -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Retensi Inaktif
+            </span>
+            <div class="flex-1 w-full">
+              <input
+                :value="retensiInaktifLabel"
+                type="text"
+                disabled
+                placeholder="Otomatis"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full opacity-75 cursor-default"
+              />
+            </div>
+          </div>
+
+          <!-- Kategori Berkas -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Kategori Berkas
+            </span>
+            <div class="flex-1 w-full">
               <input
                 v-model="form.kategori_berkas"
                 type="text"
                 placeholder="Contoh: Pengadaan IT"
-                class="mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
               />
             </div>
+          </div>
 
-            <!-- Lokasi Fisik -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-                Lokasi Fisik <span class="text-red-500">*</span>
-              </Heading>
+          <!-- Lokasi Fisik -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Lokasi Fisik <span class="text-red-500">*</span>
+            </span>
+            <div class="flex-1 w-full">
               <input
                 v-model="form.lokasi"
                 type="text"
                 placeholder="Contoh: Rak A, Baris 2"
-                :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                  modalErrors.lokasi
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600',
-                ]"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 @input="modalErrors.lokasi = false"
               />
               <p v-if="modalErrors.lokasi" class="text-xs text-red-500 mt-1">
@@ -270,64 +458,16 @@
             </div>
           </div>
 
-          <!-- Kanan kolom -->
-          <div class="space-y-4">
-            <!-- Nomor Berkas -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
-                >Nomor Berkas</Heading
-              >
-              <input
-                value="Auto-generate"
-                type="text"
-                disabled
-                class="mt-1 w-full text-left border bg-gray-100 border-gray-100 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-              />
-            </div>
-
-            <!-- Penyusutan Akhir -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-                Penyusutan Akhir <span class="text-red-500">*</span>
-              </Heading>
-              <select
-                v-model="form.tindakan_penyusutan_akhir"
-                class="mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600"
-              >
-                <option value="Musnah">Musnah</option>
-                <option value="Permanen">Permanen</option>
-              </select>
-            </div>
-
-            <!-- Uraian -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-                Uraian <span class="text-red-500">*</span>
-              </Heading>
-              <textarea
-                v-model="form.isi_ringkas"
-                rows="3"
-                placeholder="Keterangan berkas"
-                :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 resize-none',
-                  modalErrors.isi_ringkas
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600',
-                ]"
-                @input="modalErrors.isi_ringkas = false"
-              />
-              <p v-if="modalErrors.isi_ringkas" class="text-xs text-red-500 mt-1">
-                Uraian wajib diisi
-              </p>
-            </div>
-
-            <!-- Upload Foto Lokasi Fisik -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
-                >Foto Lokasi Fisik</Heading
-              >
+          <!-- Foto Lokasi Fisik -->
+          <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Foto Lokasi Fisik
+            </span>
+            <div class="flex-1 w-full">
               <label
-                class="group cursor-pointer border-2 border-dashed rounded-xl p-5 mt-1 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition border-gray-300 dark:border-gray-600"
+                class="group cursor-pointer border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition border-gray-300 dark:border-gray-600"
               >
                 <ImageIcon
                   class="w-6 h-6 group-hover:text-primary-400 text-gray-400 dark:text-gray-500"
@@ -357,14 +497,78 @@
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- Dokumen Pendukung (Upload Box) -->
-            <div class="flex flex-col">
-              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200"
-                >Dokumen Pendukung</Heading
+          <!-- Nomor Berkas -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Nomor Berkas
+            </span>
+            <div class="flex-1 w-full">
+              <input
+                type="text"
+                disabled
+                placeholder="Otomatis"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full opacity-75 cursor-default"
+              />
+            </div>
+          </div>
+
+          <!-- Penyusutan Akhir -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+          >
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Penyusutan Akhir <span class="text-red-500">*</span>
+            </span>
+            <div class="flex-1 w-full">
+              <select
+                v-model="form.tindakan_penyusutan_akhir"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full"
               >
+                <option value="Musnah">Musnah</option>
+                <option value="Permanen">Permanen</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Uraian -->
+          <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Uraian <span class="text-red-500">*</span>
+            </span>
+            <div class="flex-1 w-full">
+              <textarea
+                v-model="form.isi_ringkas"
+                rows="3"
+                placeholder="Keterangan berkas"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 resize-none"
+                @input="modalErrors.isi_ringkas = false"
+              />
+              <p v-if="modalErrors.isi_ringkas" class="text-xs text-red-500 mt-1">
+                Uraian wajib diisi
+              </p>
+            </div>
+          </div>
+
+          <!-- Dokumen Pendukung -->
+          <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+            >
+              Dokumen Pendukung
+            </span>
+            <div class="flex-1 w-full">
               <label
-                class="group cursor-pointer border-2 border-dashed rounded-xl p-5 mt-1 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition border-gray-300 dark:border-gray-600"
+                class="group cursor-pointer border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition border-gray-300 dark:border-gray-600"
               >
                 <Upload
                   class="w-6 h-6 group-hover:text-primary-400 text-gray-400 dark:text-gray-500"
@@ -381,7 +585,6 @@
                   @change="onDokumenChange"
                 />
               </label>
-              <!-- File list -->
               <div v-if="form.dokumen_pendukung" class="mt-2 space-y-2">
                 <div
                   class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2"
@@ -416,29 +619,23 @@
           >
             <button
               type="button"
-              :disabled="isSubmitting"
+              :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="resetForm(); showCreateModal = false"
+              @click="
+                resetForm();
+                showCreateModal = false;
+              "
             >
               Batal
             </button>
 
             <button
               type="button"
-              :disabled="isSubmitting"
-              class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 text-primary hover:bg-primary-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="onSubmitBerkas('draft')"
-            >
-              Simpan Draft
-            </button>
-
-            <button
-              type="button"
-              :disabled="isSubmitting"
+              :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-80 disabled:cursor-not-allowed"
-              @click="onSubmitBerkas('aktif')"
+              @click="onSubmitBerkas()"
             >
-              <span v-if="isSubmitting" class="inline-flex items-center gap-2">
+              <span v-if="isSubmitting || isUploading" class="inline-flex items-center gap-2">
                 <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle
                     cx="12"
@@ -456,9 +653,9 @@
                     class="opacity-90"
                   />
                 </svg>
-                Menyimpan...
+                {{ isUploading ? 'Mengunggah...' : 'Menyimpan...' }}
               </span>
-              <span v-else>Simpan & Aktifkan</span>
+              <span v-else>Simpan</span>
             </button>
           </div>
         </template>
@@ -468,28 +665,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, reactive, watch } from 'vue';
 import {
   Plus,
   Eye,
-  FileEdit,
-  FolderOpen,
-  Clock,
-  FolderCheck,
   Upload,
   FileText,
   X,
   RotateCcw,
   Image as ImageIcon,
+  ChevronDown,
 } from 'lucide-vue-next';
 
 const {
   getBerkasList,
-  getBerkasStatistik,
   createBerkas,
-  activateBerkas,
   getKlasifikasiDenganRetensi,
+  uploadBerkasFile,
 } = useArsipDinamis();
+const { apiPost } = useApi();
 const toast = useToast();
 
 // ── State ────────────────────────────────────────────────────────
@@ -500,11 +694,11 @@ const currentPage = ref(1);
 const sortKey = ref('updatedAt');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const showCreateModal = ref(false);
-const statistik = ref<any>(null);
 const berkasList = ref<any[]>([]);
 const totalItems = ref(0);
 const pending = ref(false);
 const isSubmitting = ref(false);
+const isUploading = ref(false);
 const klasifikasiList = ref<any[]>([]);
 
 const filterStatus = ref('');
@@ -513,11 +707,10 @@ const filterTahun = ref('');
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'aktif', label: 'Aktif' },
-  { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi' },
-  { value: 'ditolak', label: 'Ditolak' },
-  { value: 'closed_retensi_aktif', label: 'Closed — Retensi Aktif' },
+  { value: 'aktif', label: 'Terbuka' },
+  { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi Managerial' },
+  { value: 'ditolak', label: 'Verifikasi Ditolak Managerial' },
+  { value: 'closed_retensi_aktif', label: 'Tertutup' },
 ];
 const currentYear = new Date().getFullYear();
 const tahunOptions = [
@@ -533,6 +726,79 @@ const resetFilters = () => {
   filterTahun.value = '';
   currentPage.value = 1;
 };
+
+// ── Custom Dropdown Toolbar State (delegasi-style) ────────────────
+
+const openRowsPerPage = ref(false);
+const openFilterStatus = ref(false);
+const openFilterKlasifikasi = ref(false);
+const openFilterTahun = ref(false);
+
+const statusLabel = computed(
+  () => statusOptions.find((o) => o.value === filterStatus.value)?.label ?? 'Semua Status'
+);
+const klasifikasiLabel = computed(() => {
+  if (!filterKlasifikasi.value) return 'Semua Klasifikasi';
+  const k = klasifikasiList.value.find((x: any) => x.klasifikasi === filterKlasifikasi.value);
+  return k ? `${k.klasifikasi} — ${k.klasifikasi_text || ''}` : 'Semua Klasifikasi';
+});
+const tahunLabel = computed(
+  () => tahunOptions.find((o) => o.value === filterTahun.value)?.label ?? 'Semua Tahun'
+);
+
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+  openFilterKlasifikasi.value = false;
+  openFilterTahun.value = false;
+}
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
+  openFilterKlasifikasi.value = false;
+  openFilterTahun.value = false;
+}
+function toggleFilterKlasifikasi() {
+  openFilterKlasifikasi.value = !openFilterKlasifikasi.value;
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+  openFilterTahun.value = false;
+}
+function toggleFilterTahun() {
+  openFilterTahun.value = !openFilterTahun.value;
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+  openFilterKlasifikasi.value = false;
+}
+function selectRowsPerPage(n: number) {
+  perPage.value = n;
+  openRowsPerPage.value = false;
+}
+function selectFilterStatus(val: string) {
+  filterStatus.value = val;
+  openFilterStatus.value = false;
+}
+function selectFilterKlasifikasi(val: string) {
+  filterKlasifikasi.value = val;
+  openFilterKlasifikasi.value = false;
+}
+function selectFilterTahun(val: string) {
+  filterTahun.value = val;
+  openFilterTahun.value = false;
+}
+
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const els = document.querySelectorAll('[data-custom-dropdown]');
+  for (const el of Array.from(els)) {
+    if (el.contains(target)) return;
+  }
+  openRowsPerPage.value =
+    openFilterStatus.value =
+    openFilterKlasifikasi.value =
+    openFilterTahun.value =
+      false;
+}
 
 // ── Form ─────────────────────────────────────────────────────────
 
@@ -568,53 +834,30 @@ const retensiInaktifLabel = computed(() =>
 
 const columns = [
   { key: 'judulBerkas', label: 'Nama Berkas', sortable: true },
-  { key: 'kodeBerkas', label: 'Kode Berkas' },
-  { key: 'klasifikasiTeks', label: 'Klasifikasi' },
+  { key: 'kodeBerkas', label: 'Kode Berkas', sortable: true },
+  { key: 'klasifikasiTeks', label: 'Klasifikasi', sortable: true },
   { key: 'retensi', label: 'Retensi (A/I)' },
-  { key: 'lokasi', label: 'Lokasi Fisik' },
-  { key: 'status', label: 'Status' },
+  { key: 'lokasi', label: 'Lokasi Fisik', sortable: true },
+  { key: 'status', label: 'Status', sortable: true },
   { key: 'updatedAt', label: 'Updated', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
 
-// ── Summary Cards ────────────────────────────────────────────────
-
-const summaryCards = [
-  {
-    label: 'Draft',
-    key: 'draft',
-    icon: FileEdit,
-    iconBg: 'bg-gray-100',
-    iconColor: 'text-gray-600',
-    valueColor: 'text-gray-600',
-  },
-  {
-    label: 'Aktif',
-    key: 'aktif',
-    icon: FolderOpen,
-    iconBg: 'bg-primary-50',
-    iconColor: 'text-primary-600',
-    valueColor: 'text-primary-600',
-  },
-  {
-    label: 'Menunggu Verifikasi',
-    key: 'menunggu_verifikasi',
-    icon: Clock,
-    iconBg: 'bg-warning-50',
-    iconColor: 'text-warning-600',
-    valueColor: 'text-warning-600',
-  },
-  {
-    label: 'Closed — Retensi Aktif',
-    key: 'closed_retensi_aktif',
-    icon: FolderCheck,
-    iconBg: 'bg-success-50',
-    iconColor: 'text-success-600',
-    valueColor: 'text-success-600',
-  },
-];
-
 // ── Helpers ──────────────────────────────────────────────────────
+
+// ── Status color standard (berkas-saya only) ───────────────────
+const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
+  aktif: { label: 'Terbuka', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi Managerial', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
+  ditolak: { label: 'Verifikasi Ditolak Managerial', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
+  closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+};
+const statusStyle = (status: string) => {
+  const key = (status || '').toLowerCase().replace(/[\s-]+/g, '_');
+  const s =
+    STATUS_STYLE[key] || { label: 'Tidak Diketahui', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' };
+  return { label: s.label, backgroundColor: s.bg, color: s.text, borderColor: s.border, dot: s.dot };
+};
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
@@ -646,6 +889,21 @@ const resetForm = () => {
   selectedRetensiInaktif.value = 0;
 };
 
+const klasifikasiSelected = computed(() =>
+  klasifikasiList.value.find((k: any) => k.klasifikasi === form.klasifikasi)
+);
+
+// Parent klasifikasi (kode tanpa ".") di-disable & ditampilkan sebagai group header,
+// menyamakan perilaku dengan form klasifikasi di halaman tulis naskah.
+const klasifikasiItems = computed(() =>
+  [...klasifikasiList.value]
+    .sort((a: any, b: any) => String(a.klasifikasi).localeCompare(String(b.klasifikasi)))
+    .map((item: any) => {
+      const isParent = !String(item.klasifikasi).includes('.');
+      return { ...item, isParent, disabled: isParent };
+    })
+);
+
 const onKlasifikasiChange = () => {
   const k = klasifikasiList.value.find((item: any) => item.klasifikasi === form.klasifikasi);
   if (k) {
@@ -669,7 +927,7 @@ const onFotoLokasiChange = (e: Event) => {
 
 // ── Submit ───────────────────────────────────────────────────────
 
-const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
+const onSubmitBerkas = async () => {
   modalErrors.klasifikasi = !form.klasifikasi;
   modalErrors.judul_berkas = !form.judul_berkas;
   modalErrors.lokasi = !form.lokasi;
@@ -686,6 +944,37 @@ const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
 
   isSubmitting.value = true;
   try {
+    // Upload file pendukung (foto lokasi & dokumen) ke storage bila dipilih;
+    // simpan KEY hasil upload (bukan nama file) ke DB.
+    let fotoLokasiKey: string | undefined;
+    let dokumenPendukungKey: string | undefined;
+    if (form.foto_lokasi_fisik) {
+      isUploading.value = true;
+      try {
+        const res: any = await uploadBerkasFile(form.foto_lokasi_fisik);
+        fotoLokasiKey = res?.data?.key ?? res?.key;
+      } catch (e: any) {
+        throw new Error(
+          `Gagal upload foto lokasi: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
+        );
+      } finally {
+        isUploading.value = false;
+      }
+    }
+    if (form.dokumen_pendukung) {
+      isUploading.value = true;
+      try {
+        const res: any = await uploadBerkasFile(form.dokumen_pendukung);
+        dokumenPendukungKey = res?.data?.key ?? res?.key;
+      } catch (e: any) {
+        throw new Error(
+          `Gagal upload dokumen pendukung: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
+        );
+      } finally {
+        isUploading.value = false;
+      }
+    }
+
     const payload: Record<string, any> = {
       klasifikasi: form.klasifikasi,
       judul_berkas: form.judul_berkas,
@@ -694,9 +983,8 @@ const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
       lokasi: form.lokasi,
       isi_ringkas: form.isi_ringkas,
       kategori_berkas: form.kategori_berkas || undefined,
-      // ⚠️ Nama file saja; upload multipart ke storage adalah gap pre-existing (lihat catatan task).
-      foto_lokasi_fisik: form.foto_lokasi_fisik?.name || undefined,
-      dokumen_pendukung: form.dokumen_pendukung?.name || undefined,
+      foto_lokasi_fisik: fotoLokasiKey,
+      dokumen_pendukung: dokumenPendukungKey,
     };
 
     const result: any = await createBerkas(payload);
@@ -706,12 +994,7 @@ const onSubmitBerkas = async (mode: 'draft' | 'aktif' = 'aktif') => {
       throw new Error('ID berkas tidak ditemukan pada respons server.');
     }
 
-    if (mode === 'aktif') {
-      await activateBerkas(createdBerkas.id);
-      toast.add({ title: 'Berkas berhasil dibuat & diaktifkan', color: 'success' });
-    } else {
-      toast.add({ title: 'Berkas disimpan sebagai draft', color: 'success' });
-    }
+    toast.add({ title: 'Berkas berhasil dibuat', color: 'success' });
     showCreateModal.value = false;
     resetForm();
     await fetchData();
@@ -746,25 +1029,85 @@ const normalizePaginatedResponse = (response: any) => {
 const fetchData = async () => {
   pending.value = true;
   try {
-    const [list, stats] = await Promise.all([
-      getBerkasList({
-        search: search.value || undefined,
-        status: filterStatus.value || undefined,
-        klasifikasi: filterKlasifikasi.value || undefined,
-        tahun: filterTahun.value || undefined,
-        page: currentPage.value,
-        limit: perPage.value,
-      }),
-      getBerkasStatistik(),
-    ]);
+    const list = await getBerkasList({
+      search: search.value || undefined,
+      status: filterStatus.value || undefined,
+      klasifikasi: filterKlasifikasi.value || undefined,
+      tahun: filterTahun.value || undefined,
+      page: currentPage.value,
+      limit: perPage.value,
+      sortBy: sortKey.value || undefined,
+      sortDir: sortDir.value,
+    });
     const normalizedList = normalizePaginatedResponse(list);
     berkasList.value = normalizedList.data;
     totalItems.value = Number(normalizedList.meta.total ?? normalizedList.data.length);
-    statistik.value = stats?.data ?? stats;
   } catch (e) {
     console.error('Gagal memuat data berkas:', e);
   } finally {
     pending.value = false;
+  }
+};
+
+const isExporting = ref(false);
+
+const exportData = async () => {
+  if (totalItems.value === 0) {
+    toast.add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    const list = await getBerkasList({
+      search: search.value || undefined,
+      status: filterStatus.value || undefined,
+      klasifikasi: filterKlasifikasi.value || undefined,
+      tahun: filterTahun.value || undefined,
+      page: 1,
+      limit: totalItems.value || 9999,
+    });
+    const rows = normalizePaginatedResponse(list).data;
+    if (!rows.length) {
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Tidak ada data untuk diexport',
+        color: 'warning',
+      });
+      return;
+    }
+    const headers = [
+      'Nama Berkas',
+      'Kode Berkas',
+      'Klasifikasi',
+      'Retensi (A/I)',
+      'Lokasi Fisik',
+      'Status',
+      'Updated',
+    ];
+    const csvRows = rows.map((b: any) => [
+      b.judulBerkas,
+      b.kodeBerkas,
+      b.klasifikasiTeks,
+      `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`,
+      b.lokasi,
+      b.status,
+      b.updatedAt,
+    ]);
+    downloadCsv(`berkas-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({
+      title: 'Berhasil',
+      description: `${rows.length} data berhasil diexport`,
+      color: 'success',
+    });
+  } catch (e) {
+    console.error('Gagal export berkas:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
   }
 };
 
@@ -795,10 +1138,47 @@ watch([currentPage, perPage], ([, newPerPage], [, oldPerPage]) => {
   fetchData();
 });
 
+// Sort changes -> reset to page 1 (currentPage watcher fetches; if on page 1, fetch directly).
+watch([sortKey, sortDir], () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchData();
+});
+
 // ── Init ─────────────────────────────────────────────────────────
 
 onMounted(() => {
   fetchData();
   fetchKlasifikasi();
+  // Auto-sync: berkas Tertutup dengan retensi aktif habis → buat usulan DRAFT
+  // otomatis di pemindahan arsip. Fire-and-forget (tidak block UI).
+  apiPost('/transfer-active-to-inactive/sync-draft', {}).catch((e: any) =>
+    console.warn('[berkas-saya] sync-draft error:', e?.message),
+  );
+  document.addEventListener('click', handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
 });
 </script>
+
+<style scoped>
+[data-custom-dropdown] button:focus {
+  outline: none;
+}
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+</style>

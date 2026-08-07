@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="modelValue"
-    class="fixed inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-sm pt-20"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/10 p-4"
   >
     <!-- Hanya modal yang dianimasikan -->
     <Transition name="modal">
@@ -136,7 +136,7 @@ const modalSizeClass = computed(() => {
     case 'lg':
       return 'w-[570px] max-h-[90vh]';
     case 'xl':
-      return 'w-[630px] max-w-[90vw] max-h-[90vh]';
+      return 'w-[700px] max-w-[90vw] max-h-[90vh]';
     case 'full':
       return 'w-[95vw] max-w-none max-h-[90vh]';
     default:

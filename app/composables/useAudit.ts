@@ -20,7 +20,7 @@ import type {
  */
 async function captureAuditError(
   error: unknown,
-  context: { method: string; extra?: Record<string, unknown> } = { method: '' },
+  context: { method: string; extra?: Record<string, unknown> } = { method: '' }
 ): Promise<void> {
   try {
     const config = useRuntimeConfig();
@@ -117,14 +117,16 @@ export const useAudit = () => {
   /**
    * Ambil ringkasan dashboard audit dengan filter.
    */
-  const fetchSummary = async (filters: {
-    startDate?: string;
-    endDate?: string;
-    action?: string;
-    module?: string;
-    userRole?: string;
-    search?: string;
-  } = {}) => {
+  const fetchSummary = async (
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      action?: string;
+      module?: string;
+      userRole?: string;
+      search?: string;
+    } = {}
+  ) => {
     try {
       const params: Record<string, any> = {};
       if (filters.startDate) params.startDate = filters.startDate;
@@ -253,7 +255,11 @@ export const useAudit = () => {
    */
   const fetchNotifications = async (limit = 10) => {
     try {
-      const res: any = await apiGet('/audit/notifications', { params: { limit } }, { skipCache: true });
+      const res: any = await apiGet(
+        '/audit/notifications',
+        { params: { limit } },
+        { skipCache: true }
+      );
       notifications.value = res?.data ?? [];
       return res?.data ?? [];
     } catch (e: any) {

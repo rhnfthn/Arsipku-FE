@@ -47,10 +47,10 @@
               </button>
               <button type="button" @click="toggleCheckAll"
                 class="px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-                :class="allChecked
+                :class="currentTabAllChecked
                   ? 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                   : 'bg-primary text-white hover:bg-primary-700'">
-                {{ allChecked ? t('rbac_uncheck_all_btn') : t('rbac_check_all_btn') }}
+                {{ currentTabAllChecked ? t('rbac_uncheck_all_btn') : t('rbac_check_all_btn') }}
               </button>
             </div>
           </div>
@@ -276,6 +276,37 @@ const allChecked = computed(
   () => allPermissionIds.value.length > 0 && allPermissionIds.value.every((id) => selectedIds.value.includes(id)),
 );
 
+/**
+ * Permission IDs hanya untuk tab/kategori yang sedang aktif.
+ * Dipakai oleh tombol "Centang Semua" agar hanya memengaruhi tab aktif,
+ * bukan semua kategori sekaligus.
+ */
+const currentTabPermissionIds = computed<string[]>(() => {
+  const ids: string[] = [];
+  const tree = currentTree.value;
+  if (!tree) return ids;
+  const roleName = (role.value?.name || '').toUpperCase();
+  const isUserRole = roleName === 'USER';
+  for (const menu of tree.menus ?? []) {
+    for (const sub of menu.subMenus ?? []) {
+      for (const fitur of sub.fiturs ?? []) {
+        for (const perm of fitur.permissions ?? []) {
+          if (perm.permissionId) ids.push(perm.permissionId);
+        }
+      }
+    }
+  }
+  return ids;
+});
+
+/**
+ * Apakah semua permission di tab aktif sudah tercentang.
+ */
+const currentTabAllChecked = computed(
+  () => currentTabPermissionIds.value.length > 0 &&
+        currentTabPermissionIds.value.every((id) => selectedIds.value.includes(id)),
+);
+
 function isOpen(key: string): boolean {
   return openKeys.value.has(key);
 }
@@ -329,10 +360,15 @@ const allSections = computed(() => {
 });
 
 function toggleCheckAll() {
-  if (allChecked.value) {
-    selectedIds.value = [];
+  if (currentTabAllChecked.value) {
+    // Hapus hanya permission di tab aktif, pertahankan centang tab lain
+    const remove = new Set(currentTabPermissionIds.value);
+    selectedIds.value = selectedIds.value.filter((id) => !remove.has(id));
   } else {
-    selectedIds.value = [...allPermissionIds.value];
+    // Tambah semua permission di tab aktif, pertahankan centang tab lain
+    const set = new Set(selectedIds.value);
+    currentTabPermissionIds.value.forEach((id) => set.add(id));
+    selectedIds.value = Array.from(set);
   }
 }
 function togglePermission(id: string | null | undefined, checked: boolean) {

@@ -32,6 +32,7 @@ import {
   X,
   FolderPlus,
   Folder,
+  Share2,
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { useInbox } from '~/composables/useInbox';
@@ -58,6 +59,54 @@ const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 const { getBerkasList, addNaskahToBerkas, getBerkasStatusByNaskah } = useArsipDinamis();
 const { canReadBerkasStatus } = useArsipDinamisPermission();
 
+// ── Share Naskah ─────────────────────────────────────────────────────────────
+const showShareModal = ref(false);
+const shareNaskah = ref<any>(null);
+
+const handleShare = (mail: any) => {
+  if (!mail?.naskahId) {
+    toast.add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
+    return;
+  }
+  shareNaskah.value = mail;
+  showShareModal.value = true;
+};
+
+const handleShareClose = () => {
+  showShareModal.value = false;
+  shareNaskah.value = null;
+};
+
+// ── Bulk Share (multi-naskah) ────────────────────────────────────────────────
+const showBulkShareModal = ref(false);
+const bulkShareNaskahs = ref<any[]>([]);
+
+const handleBulkShare = () => {
+  // Ambil semua naskah yang terpilih
+  const selectedNaskahs: any[] = [];
+  selectedIds.value.forEach((id) => {
+    const item = items.value.find((e) => e.id === id);
+    if (item?.naskahId) {
+      selectedNaskahs.push({
+        naskahId: item.naskahId,
+        perihal: item.perihal || item.judul || item.subject,
+        nomor: item.nomor,
+      });
+    }
+  });
+  if (selectedNaskahs.length === 0) {
+    toast.add({ title: 'Tidak bisa membagikan', description: 'Tidak ada naskah valid yang dipilih', color: 'error' });
+    return;
+  }
+  bulkShareNaskahs.value = selectedNaskahs;
+  showBulkShareModal.value = true;
+};
+
+const handleBulkShareClose = () => {
+  showBulkShareModal.value = false;
+  bulkShareNaskahs.value = [];
+};
+
 // ── Masukkan ke Berkas ───────────────────────────────────────────────────────
 const showAddToBerkasModal = ref(false);
 const selectedNaskahForBerkas = ref<any>(null);
@@ -79,18 +128,6 @@ const fetchBerkasStatus = async (rows: any[]) => {
   } catch {
     berkasStatusMap.value = {};
   }
-};
-
-const folderMenuItems = (row: any) => {
-  const items = [
-    { label: 'Tambah ke Berkas', icon: 'i-lucide-folder-plus', onSelect: () => openAddToBerkasModal(row) },
-    { label: 'Buat Berkas Baru', icon: 'i-lucide-plus', onSelect: () => navigateTo('/kelola/pemeliharaan/pemberkasan/berkas-saya') },
-  ];
-  const status = berkasStatusMap.value[row.naskahId];
-  if (status) {
-    items.push({ label: 'Lihat Detail Berkas', icon: 'i-lucide-eye', onSelect: () => navigateTo(`/kelola/pemeliharaan/pemberkasan/${status.berkas_id}`) });
-  }
-  return items;
 };
 
 const openAddToBerkasModal = async (mail: any) => {
@@ -146,6 +183,7 @@ const showLabelAssignModal = ref(false);
 // ── Filter & Pagination ───────────────────────────────────────────────────────
 const activeTab = ref('ALL');
 const activeFilterType = ref('Semua');
+const filterSudahBerkas = ref(false);
 const activeSortLabel = ref('Terbaru');
 const activeDateLabel = ref('Semua');
 const itemsPerPage = ref(10);
@@ -637,7 +675,12 @@ const downloadExcel = async () => {
 };
 
 // ── Computed ──────────────────────────────────────────────────────────────────
-const displayItems = computed(() => items.value || []);
+const displayItems = computed(() => {
+  const all = items.value || [];
+  return filterSudahBerkas.value
+    ? all.filter((m: any) => !!berkasStatusMap.value[m.naskahId])
+    : all;
+});
 const totalPages = computed(() => pagination.value.totalPages);
 const isAllSelected = computed(
   () => displayItems.value.length > 0 && selectedIds.value.size === displayItems.value.length
@@ -764,7 +807,7 @@ onUnmounted(() => {
 
 <template>
   <AccessDenied v-if="!canAccessPage()" />
-  <template v-else>
+  <div v-else>
   <PageHeader :title="$t('kotak_masuk')" :items="breadcrumbs" />
   <div
     class="w-full h-[calc(100vh-140px)] flex flex-col bg-transparent dark:bg-gray-900 overflow-hidden max-w-full font-sans rounded-xl shadow-sm glass-blue transition-colors"
@@ -867,6 +910,14 @@ onUnmounted(() => {
                 <Tag class="w-4 h-4" />
               </button>
             </UTooltip>
+            <UTooltip :text="$t('berbagi', 'Bagikan')">
+              <button
+                @click="handleBulkShare"
+                class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-500 rounded transition-colors"
+              >
+                <Share2 class="w-4 h-4" />
+              </button>
+            </UTooltip>
             <span class="text-xs text-neutral-500 dark:text-gray-400 ms-2"
               >{{ selectedIds.size }} {{ $t('km_dipilih') }}</span
             >
@@ -888,6 +939,20 @@ onUnmounted(() => {
             </button>
           </span>
         </div>
+
+        <!-- Filter Sudah Berkas (client-side) -->
+        <button
+          @click="filterSudahBerkas = !filterSudahBerkas"
+          :class="
+            filterSudahBerkas
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 border border-primary-200 dark:border-primary-700'
+              : 'text-neutral-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+          "
+          class="hidden md:inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors"
+        >
+          <UIcon name="i-lucide-folder-check" class="w-3.5 h-3.5" />
+          Sudah Berkas
+        </button>
       </div>
 
       <!-- RIGHT: Date + Sort + Download + Pagination -->
@@ -1164,7 +1229,7 @@ onUnmounted(() => {
             <UButton
               v-for="tab in tabs"
               :key="tab.value"
-              @click="activeTab = tab.value"
+              @click="() => { activeTab = tab.value }"
               color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="
@@ -1472,20 +1537,16 @@ onUnmounted(() => {
                         @click.stop="handleToggleFlag(mail, 'arsip')"
                       />
                     </UTooltip>
-                    <UDropdownMenu :items="folderMenuItems(mail)">
-                      <UTooltip text="Masukkan ke Berkas">
-                        <button
-                          class="inline-flex rounded-md p-1 text-neutral-300 dark:text-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
-                          @click.stop
-                        >
-                          <FolderPlus class="w-4 h-4" />
-                        </button>
-                      </UTooltip>
-                    </UDropdownMenu>
+                    <UTooltip text="Masukkan ke Berkas">
+                      <FolderPlus
+                        class="w-4 h-4 transition-colors hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer"
+                        :class="berkasStatusMap[mail.naskahId] ? 'text-primary-600 dark:text-primary-400' : 'text-neutral-300 dark:text-gray-600'"
+                        @click.stop="openAddToBerkasModal(mail)"
+                      />
+                    </UTooltip>
                     <UTooltip :text="$t('berbagi', 'Bagikan')">
-                      <UIcon
-                        name="i-heroicons-share"
-                        class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600 font-bold"
+                      <Share2
+                        class="w-4 h-4 transition-colors hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer text-neutral-300 dark:text-gray-600"
                         @click.stop="handleShare(mail)"
                       />
                     </UTooltip>
@@ -1498,6 +1559,24 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Share Modal -->
+    <SharedShareModal
+      v-if="showShareModal && shareNaskah"
+      :naskah-id="shareNaskah.naskahId"
+      :naskah-perihal="shareNaskah.perihal || shareNaskah.judul"
+      :naskah-nomor="shareNaskah.nomor"
+      @close="handleShareClose"
+      @shared="handleShareClose"
+    />
+
+    <!-- Bulk Share Modal (multi-naskah) -->
+    <SharedShareModal
+      v-if="showBulkShareModal && bulkShareNaskahs.length"
+      :naskah-items="bulkShareNaskahs"
+      @close="handleBulkShareClose"
+      @shared="handleBulkShareClose"
+    />
+
     <!-- ── MODALS ─────────────────────────────────────────────────────────── -->
 
     <LabelAssignModal
@@ -1508,38 +1587,66 @@ onUnmounted(() => {
     />
 
     <!-- Modal Masukkan ke Berkas -->
-    <UModal v-model:open="showAddToBerkasModal">
-      <template #header>
-        <h3 class="text-lg font-semibold">Masukkan ke Berkas</h3>
-      </template>
-      <template #default>
-        <div class="p-4 space-y-4">
-          <p v-if="selectedNaskahForBerkas" class="text-sm text-gray-500">
-            Naskah: <span class="font-medium text-gray-900 dark:text-white">{{ selectedNaskahForBerkas.subject }}</span>
-          </p>
-          <UFormField label="Pilih Berkas Aktif">
-            <USelect
-              v-model="selectedBerkasId"
-              :items="berkasListForModal.map(b => ({ label: `${b.kodeBerkas ?? b.kode_berkas ?? '-'} — ${b.judulBerkas ?? b.judul_berkas ?? '-'}`, value: b.id }))"
-              placeholder="Pilih berkas tujuan"
-            />
-          </UFormField>
+    <!-- Modal Masukkan ke Berkas -->
+    <Teleport to="body">
+      <div
+        v-if="showAddToBerkasModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      >
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[500px]"
+        >
+          <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <h3 class="font-bold text-gray-900 dark:text-gray-100">Masukkan ke Berkas</h3>
+            <button
+              @click="showAddToBerkasModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              <UIcon name="i-lucide-x" class="w-4 h-4" />
+            </button>
+          </div>
+
+          <div class="p-4 flex-1 overflow-y-auto space-y-4">
+            <p v-if="selectedNaskahForBerkas" class="text-sm text-gray-500 dark:text-gray-400">
+              Naskah:
+              <span class="font-medium text-gray-900 dark:text-white">{{ selectedNaskahForBerkas.subject || '-' }}</span>
+            </p>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pilih Berkas Aktif</label>
+              <select
+                v-model="selectedBerkasId"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              >
+                <option value="" disabled>Pilih berkas tujuan</option>
+                <option v-for="b in berkasListForModal" :key="b.id" :value="b.id">
+                  {{ b.kodeBerkas ?? b.kode_berkas ?? '-' }} — {{ b.judulBerkas ?? b.judul_berkas ?? '-' }}
+                </option>
+              </select>
+              <p v-if="berkasListForModal.length === 0" class="text-xs text-gray-400 mt-2">
+                Tidak ada berkas aktif. Buat berkas baru di halaman Pemberkasan.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+            <button
+              @click="showAddToBerkasModal = false"
+              class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              @click="handleAddToBerkas"
+              :disabled="!selectedBerkasId || isAddingToBerkas"
+              class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <UIcon v-if="isAddingToBerkas" name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
+              {{ isAddingToBerkas ? 'Menambahkan...' : 'Tambahkan' }}
+            </button>
+          </div>
         </div>
-      </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <UButton variant="ghost" @click="showAddToBerkasModal = false">Batal</UButton>
-          <UButton
-            color="primary"
-            :disabled="!selectedBerkasId"
-            :loading="isAddingToBerkas"
-            @click="handleAddToBerkas"
-          >
-            Tambahkan
-          </UButton>
-        </div>
-      </template>
-    </UModal>
+      </div>
+    </Teleport>
 
     <!-- Modal Konfirmasi Arsip / Unarsip Bulk -->
     <Teleport to="body">
@@ -1681,7 +1788,7 @@ onUnmounted(() => {
       </div>
     </Teleport>
   </div>
-  </template>
+  </div>
 </template>
 
 <style scoped>

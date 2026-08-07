@@ -2,14 +2,18 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { RotateCcw, ChevronDown, Search } from 'lucide-vue-next';
 import SharedToMeTab from '~/components/shared/SharedToMeTab.vue';
+import { downloadCsv } from '~/utils/csv-export';
+import { formatShortDate } from '~/utils/mail-helpers';
 
 definePageMeta({
   layout: 'default',
   middleware: ['auth'],
 });
 
-useHead({ title: 'Dibagikan Kepada Saya' });
 const { t } = useI18n();
+useHead({ title: () => t('share_to_me_title') });
+const toast = useToast();
+const { user } = useAuth();
 
 const {
   sharedToMe,
@@ -20,16 +24,16 @@ const {
   getShareDetail,
 } = useNaskahShare();
 
-// ── Breadcrumbs ──────────────────────────────────────────────────────────────
+// ── Breadcrumbs (locale-reactive) ────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/beranda' },
-  { label: 'Berbagi', to: '/shared/saya-bagikan' },
-  { label: 'Dibagikan Kepada Saya', to: '#' },
+  { label: t('berbagi'), to: '#' },
+  { label: t('share_to_me_title'), to: '#' },
 ]);
 
 // ── Search & Filter ──────────────────────────────────────────────────────────
 const searchQuery = ref('');
-const activeSortLabel = ref('Terbaru');
+const activeSortLabel = ref(t('share_terbaru'));
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
 
@@ -38,14 +42,14 @@ const showPageMenu = ref(false);
 const showStatusDropdown = ref(false);
 
 const filterStatus = ref('Semua');
-const statusOptions = [
-  { label: 'Semua Status', value: 'Semua' },
-  { label: 'Aktif', value: 'AKTIF' },
-  { label: 'Berakhir', value: 'BERAKHIR' },
-];
+const statusOptions = computed(() => [
+  { label: t('share_semua_status'), value: 'Semua' },
+  { label: t('share_aktif'), value: 'AKTIF' },
+  { label: t('share_berakhir'), value: 'BERAKHIR' },
+]);
 
 const filterStatusLabel = computed(() =>
-  statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
+  statusOptions.value.find((s) => s.value === filterStatus.value)?.label ?? t('share_semua_status')
 );
 
 const selectStatus = (val: string) => {
@@ -55,10 +59,10 @@ const selectStatus = (val: string) => {
   loadData();
 };
 
-const sortOptions = [
-  { label: 'Terbaru', value: 'Terbaru' },
-  { label: 'Terlama', value: 'Terlama' },
-];
+const sortOptions = computed(() => [
+  { label: t('share_terbaru'), value: t('share_terbaru') },
+  { label: t('share_terlama'), value: t('share_terlama') },
+]);
 const pageOptions = [10, 25, 50, 100];
 
 // ── Modals ───────────────────────────────────────────────────────────────────
@@ -102,6 +106,50 @@ watch(searchQuery, () => {
 // ── Handlers ─────────────────────────────────────────────────────────────────
 const handleRefresh = () => loadData();
 
+/** Export all data to CSV (fetch with limit = total, then format). */
+const isExporting = ref(false);
+const exportData = async () => {
+  if (pagination.total === 0) {
+    toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
+    return;
+  }
+  isExporting.value = true;
+  try {
+    // Fetch SEMUA data (bukan hanya halaman saat ini) dengan filter yang sama
+    await fetchShares({
+      tab: 'shared-to-me',
+      page: 1,
+      limit: pagination.total || 9999,
+      search: searchQuery.value || undefined,
+      status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
+      sort: activeSortLabel.value === t('share_terlama') ? 'ASC' : 'DESC',
+    });
+    const rows = sharedToMe.value;
+    if (!rows.length) {
+      toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
+      return;
+    }
+    const headers = [t('share_perihal'), t('share_jenis'), t('share_nomor'), t('share_dari'), t('share_akses'), t('share_tanggal')];
+    const csvRows = rows.map((s: any) => [
+      s.naskahPerihal || t('share_tanpa_perihal'),
+      s.naskahJenis || '-',
+      s.naskahNomor || '-',
+      s.pemberiNama || '-',
+      s.accessType === 'SEKALI_LIHAT' ? t('share_sekali_lihat') : `${s.durationDays || '-'} ${t('share_hari')}`,
+      formatShortDate(s.createdAt),
+    ]);
+    downloadCsv(`dibagikan-kepada-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    toast.add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
+    // Reload halaman saat ini
+    await loadData();
+  } catch (e) {
+    console.error('Gagal export:', e);
+    toast.add({ title: t('share_gagal_export'), description: t('share_coba_lagi'), color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
+
 const selectSortOption = (v: string) => {
   activeSortLabel.value = v;
   showSortMenu.value = false;
@@ -124,19 +172,10 @@ const handleViewDetail = async (share: any) => {
   showDetailModal.value = true;
 };
 
-const handleOpenShare = async (share: any) => {
-  try {
-    const freshData = await getShareDetail(share.id);
-    detailShare.value = freshData || share;
-  } catch {
-    detailShare.value = share;
-  }
-  showDetailModal.value = true;
-};
 
 const handleOpenPdf = async (share: any) => {
   isLoadingPdf.value = true;
-  pdfViewerTitle.value = share.naskahPerihal || 'Dokumen';
+  pdfViewerTitle.value = share.naskahPerihal || t('share_dokumen');
   showPdfViewer.value = true;
   try {
     const res = await openNaskah(share.id);
@@ -145,15 +184,17 @@ const handleOpenPdf = async (share: any) => {
     } else {
       pdfViewerUrl.value = '';
     }
+    // Refresh data agar status recipient (SEKALI_LIHAT → BERAKHIR) terupdate di UI
+    loadData();
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || '';
     pdfViewerUrl.value = '';
     showPdfViewer.value = false;
-    useToast().add({
-      title: 'Tidak dapat membuka',
+    toast.add({
+      title: t('share_tidak_bisa_buka'),
       description: msg.includes('sekali') || msg.includes('ditutup')
-        ? 'Anda hanya dapat membuka naskah ini sekali. Akses sudah ditutup.'
-        : msg || 'Gagal membuka naskah',
+        ? t('share_sekali_lihat_error')
+        : msg || t('share_gagal_buka'),
       color: 'error',
     });
     loadData();
@@ -168,7 +209,7 @@ onMounted(() => { loadData(); });
 <template>
   <div>
     <!-- Breadcrumb -->
-    <PageHeader title="Dibagikan Kepada Saya" :items="breadcrumbs" />
+    <PageHeader :title="t('share_to_me_title')" :items="breadcrumbs" />
 
     <!-- Main Container -->
     <div
@@ -184,7 +225,7 @@ onMounted(() => { loadData(); });
               <button
                 type="button"
                 @click.stop="showPageMenu = !showPageMenu"
-                class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+                class="flex min-w-[70px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
                 <span>{{ itemsPerPage }}</span>
                 <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showPageMenu }" />
@@ -218,7 +259,7 @@ onMounted(() => { loadData(); });
             <button
               type="button"
               @click.stop="showStatusDropdown = !showStatusDropdown"
-              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[130px] justify-between hover:border-primary transition-all"
+              class="flex min-w-[130px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               <span>{{ filterStatusLabel }}</span>
               <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showStatusDropdown }" />
@@ -251,7 +292,7 @@ onMounted(() => { loadData(); });
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari perihal atau nomor..."
+              :placeholder="t('share_cari')"
               class="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -265,7 +306,7 @@ onMounted(() => { loadData(); });
             <button
               type="button"
               @click.stop="showSortMenu = !showSortMenu"
-              class="h-9 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[100px] justify-between hover:border-primary transition-all"
+              class="flex min-w-[100px] items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none transition-all hover:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               <span>{{ activeSortLabel }}</span>
               <ChevronDown class="w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showSortMenu }" />
@@ -300,7 +341,22 @@ onMounted(() => { loadData(); });
             class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
-            Refresh
+            {{ t('share_refresh') }}
+          </button>
+
+          <!-- EXPORT BUTTON -->
+          <button
+            @click="exportData"
+            :disabled="isExporting"
+            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <UIcon
+              v-if="isExporting"
+              name="i-lucide-loader-circle"
+              class="w-4 h-4 animate-spin"
+            />
+            <UIcon v-else name="i-lucide-download" class="w-4 h-4" />
+            {{ t('share_export') }}
           </button>
         </div>
       </div>
@@ -313,8 +369,8 @@ onMounted(() => { loadData(); });
           :total="pagination.total"
           :page="currentPage"
           :limit="itemsPerPage"
+          :user-position="user?.position"
           @update:page="currentPage = $event"
-          @open="handleOpenShare"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
           @refresh="handleRefresh"
@@ -326,6 +382,7 @@ onMounted(() => { loadData(); });
     <SharedShareDetailModal
       v-if="showDetailModal && detailShare"
       :share="detailShare"
+      :user-position="user?.position"
       @close="showDetailModal = false"
     />
 
@@ -353,13 +410,13 @@ onMounted(() => { loadData(); });
           <div v-if="isLoadingPdf" class="absolute inset-0 flex items-center justify-center z-10">
             <div class="flex flex-col items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg">
               <Icon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary-500" />
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen...</p>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('share_memuat_dokumen') }}</p>
             </div>
           </div>
           <iframe v-if="pdfViewerUrl" :key="pdfViewerUrl" :src="pdfViewerUrl" class="w-full h-full border-none" />
           <div v-else-if="!isLoadingPdf" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
             <Icon name="i-lucide-file-text" class="w-12 h-12 opacity-30" />
-            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
+            <span class="text-sm">{{ t('share_dokumen_error') }}</span>
           </div>
         </div>
       </div>

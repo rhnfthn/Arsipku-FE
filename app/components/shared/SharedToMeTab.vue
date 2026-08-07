@@ -3,12 +3,15 @@ import { ref, computed, watch } from 'vue';
 import type { ShareItem } from '~/composables/useNaskahShare';
 import { getCategoryStyle, getCategoryLabel, getCategoryFullName, formatShortDate } from '~/utils/mail-helpers';
 
+const { t } = useI18n();
+
 const props = defineProps<{
   shares: ShareItem[];
   loading: boolean;
   total: number;
   page: number;
   limit: number;
+  userPosition?: string;
 }>();
 
 const emit = defineEmits<{
@@ -20,17 +23,24 @@ const emit = defineEmits<{
 }>();
 
 const columns = computed(() => [
-  { key: 'naskahPerihal', label: 'Perihal', sortable: false },
-  { key: 'naskahJenis', label: 'Jenis', sortable: false, headerClass: 'text-center', class: 'text-center' },
-  { key: 'naskahNomor', label: 'Nomor', sortable: false },
-  { key: 'pemberi', label: 'Dari', sortable: false },
-  { key: 'accessType', label: 'Akses', sortable: false, headerClass: 'text-center', class: 'text-center' },
-  { key: 'createdAt', label: 'Tanggal', sortable: false },
-  { key: 'aksi', label: '', headerClass: 'text-center', class: 'text-center' },
+  { key: 'naskahPerihal', label: t('share_perihal'), sortable: false },
+  { key: 'naskahJenis', label: t('share_jenis'), sortable: false, headerClass: 'text-center', class: 'text-center' },
+  { key: 'naskahNomor', label: t('share_nomor'), sortable: false },
+  { key: 'pemberi', label: t('share_dari'), sortable: false },
+  { key: 'accessType', label: t('share_akses'), sortable: false, headerClass: 'text-center', class: 'text-center' },
+  { key: 'status', label: t('share_status'), sortable: false, headerClass: 'text-center', class: 'text-center' },
+  { key: 'createdAt', label: t('share_tanggal'), sortable: false },
+  { key: 'aksi', label: t('share_action'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
-const getMyRecipientStatus = (share: ShareItem) => {
-  return share.recipients?.[0]?.status || 'TERKIRIM';
+/** Display status for recipient: check share.status first, then recipient.status. */
+const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
+  // Share ended (auto-expire / revoke all)
+  if (share.status === 'BERAKHIR') return 'BERAKHIR';
+  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+  if (!myRecipient) return 'AKTIF';
+  if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
+  return 'AKTIF';
 };
 </script>
 
@@ -40,12 +50,12 @@ const getMyRecipientStatus = (share: ShareItem) => {
       :columns="columns"
       :rows="shares"
       :loading="loading"
-      :empty-message="'Belum ada naskah yang dibagikan ke Anda'"
+      :empty-message="t('share_belum_ada_ke_saya')"
     >
       <template #cell-naskahPerihal="{ row }">
         <div class="max-w-[260px]">
           <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {{ row.naskahPerihal || '(Tanpa perihal)' }}
+            {{ row.naskahPerihal || t('share_tanpa_perihal') }}
           </p>
         </div>
       </template>
@@ -90,15 +100,21 @@ const getMyRecipientStatus = (share: ShareItem) => {
             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 whitespace-nowrap"
           >
             <UIcon name="i-lucide-eye" class="w-3 h-3" />
-            Sekali Lihat
+            {{ t('share_sekali_lihat') }}
           </span>
           <span
             v-else
             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap"
           >
             <UIcon name="i-lucide-calendar" class="w-3 h-3" />
-            {{ row.durationDays || '-' }} hari
+            {{ row.durationDays || '-' }} {{ t('share_hari') }}
           </span>
+        </div>
+      </template>
+
+      <template #cell-status="{ row }">
+        <div class="flex items-center justify-center">
+          <SharedShareBadge :status="getMyDisplayStatus(row)" size="xs" />
         </div>
       </template>
 
@@ -110,7 +126,7 @@ const getMyRecipientStatus = (share: ShareItem) => {
 
       <template #cell-aksi="{ row }">
         <div class="flex items-center justify-center gap-1">
-          <UTooltip text="Lihat detail">
+          <UTooltip :text="t('share_lihat_detail')">
             <UButton
               icon="i-lucide-eye"
               color="primary"
@@ -119,9 +135,8 @@ const getMyRecipientStatus = (share: ShareItem) => {
               @click="emit('view', row)"
             />
           </UTooltip>
-          <UTooltip text="Buka PDF">
+          <UTooltip :text="t('share_buka_pdf')">
             <UButton
-              v-if="row.accessType !== 'SEKALI_LIHAT' || getMyRecipientStatus(row) === 'TERKIRIM'"
               icon="i-lucide-file-text"
               color="success"
               variant="ghost"
