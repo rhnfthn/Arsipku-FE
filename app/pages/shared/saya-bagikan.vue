@@ -21,6 +21,7 @@ const {
   fetchShares,
   openNaskah,
   getShareDetail,
+  revokeShare,
 } = useNaskahShare();
 
 // ── Breadcrumbs (locale-reactive) ────────────────────────────────────────────
@@ -186,11 +187,8 @@ const handleViewDetail = async (share: any) => {
   showDetailModal.value = true;
 };
 
-const handleRevoked = () => loadData();
-
 const handleRevokeAll = async (share: any) => {
   try {
-    const { revokeShare } = useNaskahShare();
     await revokeShare(share.id);
     toast.add({
       title: t('share_berhasil'),
@@ -405,8 +403,6 @@ onMounted(() => { loadData(); });
           @update:page="currentPage = $event"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
-          @revoke="handleRevoke"
-          @refresh="handleRefresh"
         />
       </div>
     </div>
@@ -419,7 +415,7 @@ onMounted(() => { loadData(); });
       :recipient-name="revokeRecipientName"
       :naskah-perihal="revokeSharePerihal"
       @close="showRevokeModal = false"
-      @revoked="handleRevoked"
+      @revoked="loadData"
     />
 
     <!-- Detail Modal -->

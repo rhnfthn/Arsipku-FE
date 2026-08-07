@@ -16,10 +16,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:page', page: number): void;
-  (e: 'open', share: ShareItem): void;
   (e: 'view', share: ShareItem): void;
   (e: 'open-pdf', share: ShareItem): void;
-  (e: 'refresh'): void;
 }>();
 
 const columns = computed(() => [
