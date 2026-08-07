@@ -23,6 +23,7 @@ const {
   openNaskah,
   getShareDetail,
 } = useNaskahShare();
+const { counts: shareCounts, fetchCounts: fetchShareCounts, clearUnreadBadge } = useNaskahShareCounts();
 
 // ── Breadcrumbs (locale-reactive) ────────────────────────────────────────────
 const breadcrumbs = computed(() => [
@@ -203,13 +204,32 @@ const handleOpenPdf = async (share: any) => {
   }
 };
 
-onMounted(() => { loadData(); });
+onMounted(async () => {
+  // loadData memanggil fetchShares yang auto-mark recipient TERKIRIM → DIBACA di BE.
+  // Tunggu selesai dulu, baru fetch count supaya red dot tidak muncul lagi.
+  await loadData();
+  // Clear badge unread + re-fetch counts untuk update badge sidebar
+  clearUnreadBadge();
+  fetchShareCounts(true);
+});
 </script>
 
 <template>
   <div>
     <!-- Breadcrumb -->
-    <PageHeader :title="t('share_to_me_title')" :items="breadcrumbs" />
+    <PageHeader :title="t('share_to_me_title')" :items="breadcrumbs">
+      <template #title>
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            {{ t('share_to_me_title') }}
+          </h1>
+          <span
+            v-if="shareCounts.unread > 0"
+            class="w-2 h-2 bg-red-500 rounded-full ring-1 ring-white dark:ring-gray-900"
+          />
+        </div>
+      </template>
+    </PageHeader>
 
     <!-- Main Container -->
     <div
