@@ -40,6 +40,23 @@ const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
   return 'AKTIF';
 };
+
+/**
+ * Apakah tombol "Buka PDF" boleh ditampilkan.
+ * - SEKALI_LIHAT: hilang setelah naskah dibuka (recipient BERAKHIR).
+ * - RENTANG_WAKTU: hilang setelah durasi habis (share BERAKHIR).
+ */
+const canOpenPdf = (share: ShareItem): boolean => {
+  // Share sudah berakhir (durasi habis / dicabut) → icon kertas hilang
+  if (share.status === 'BERAKHIR') return false;
+  // SEKALI_LIHAT: hilang jika recipient sudah membuka (BERAKHIR)
+  if (share.accessType === 'SEKALI_LIHAT') {
+    const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+    if (!myRecipient) return true;
+    return myRecipient.status !== 'BERAKHIR';
+  }
+  return true;
+};
 </script>
 
 <template>
@@ -133,7 +150,7 @@ const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
               @click="emit('view', row)"
             />
           </UTooltip>
-          <UTooltip :text="t('share_buka_pdf')">
+          <UTooltip v-if="canOpenPdf(row)" :text="t('share_buka_pdf')">
             <UButton
               icon="i-lucide-file-text"
               color="success"
