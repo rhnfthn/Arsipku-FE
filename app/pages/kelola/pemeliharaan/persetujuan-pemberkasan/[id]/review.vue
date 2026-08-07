@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 px-4 pb-28 pt-5 dark:bg-gray-900 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-gray-50 px-4 pb-10 pt-5 dark:bg-gray-900 sm:px-5">
     <PageHeader
       :items="[
         { label: 'Kelola' },
@@ -12,14 +12,18 @@
       ]"
     >
       <template #title>
-        <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-          Review Penutupan Berkas
-        </h1>
-        <span
-          class="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300 sm:text-sm"
-        >
-          Ref: #{{ berkas?.kodeBerkas || berkasId.slice(0, 8).toUpperCase() }}
-        </span>
+        <div class="flex flex-wrap items-center gap-3">
+          <h1
+            class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl"
+          >
+            Review Penutupan Berkas
+          </h1>
+          <span
+            class="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+          >
+            Ref: #{{ berkas?.kodeBerkas || berkasId.slice(0, 8).toUpperCase() }}
+          </span>
+        </div>
       </template>
     </PageHeader>
 
@@ -27,18 +31,33 @@
       <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary-500" />
     </div>
 
-    <main v-else class="mx-auto max-w-6xl space-y-6">
+    <main v-else class="mx-auto max-w-6xl space-y-5">
+      <!-- Langkah Verifikasi -->
       <section
-        class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-7"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
       >
         <div
-          class="mb-6 flex items-center gap-2 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary-700 dark:border-gray-700 dark:text-primary-300"
+          class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
         >
-          <UIcon name="i-lucide-route" class="size-4" />
-          Langkah Verifikasi
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+          >
+            <UIcon name="i-lucide-route" class="size-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Langkah Verifikasi</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Progress persetujuan penutupan berkas.
+            </p>
+          </div>
+          <span
+            class="ml-auto inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+          >
+            {{ progressLabel }}
+          </span>
         </div>
-        <div class="overflow-x-auto pb-1">
-          <div class="flex min-w-[600px] items-center px-1 py-5">
+        <div class="overflow-x-auto px-5 py-5">
+          <div class="flex min-w-[600px] items-center px-1 py-2">
             <template v-for="(step, index) in stepItems" :key="step.id">
               <div class="flex min-w-36 items-center gap-3">
                 <div
@@ -62,102 +81,306 @@
             </template>
           </div>
         </div>
-        <div
-          class="inline-flex rounded-lg bg-primary-50 px-4 py-2.5 text-sm text-gray-600 dark:bg-primary-950/40 dark:text-gray-300"
-        >
-          Status:
-          <strong class="ml-1 text-primary-700 dark:text-primary-300">{{ progressLabel }}</strong>
-        </div>
       </section>
 
+      <!-- Informasi Berkas -->
       <section
-        class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-7"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
       >
         <div
-          class="mb-6 flex items-center gap-2 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary-700 dark:border-gray-700 dark:text-primary-300"
+          class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
         >
-          <UIcon name="i-lucide-folder-archive" class="size-4" />
-          Informasi Berkas
-        </div>
-        <div class="grid grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div v-for="item in informationItems" :key="item.label" :class="item.className">
-            <p class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 dark:text-gray-400">
-              {{ item.label }}
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+          >
+            <UIcon
+              name="i-lucide-folder-archive"
+              class="size-5 text-primary-600 dark:text-primary-400"
+            />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Informasi Berkas</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Metadata berkas yang diajukan untuk ditutup.
             </p>
-            <p
-              class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white"
+          </div>
+        </div>
+        <dl class="grid grid-cols-1 gap-x-8 gap-y-5 px-5 py-5 sm:grid-cols-2">
+          <div v-for="item in metadata" :key="item.label" class="flex items-start gap-3">
+            <span
+              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400"
             >
-              <UIcon v-if="item.icon" :name="item.icon" class="size-5 text-gray-500" />
-              {{ item.value }}
+              <UIcon :name="item.icon" class="size-4" />
+            </span>
+            <div class="min-w-0">
+              <dt
+                class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+              >
+                {{ item.label }}
+              </dt>
+              <dd
+                class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white"
+                :title="item.value"
+              >
+                {{ item.value }}
+              </dd>
+            </div>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Lampiran Berkas (Foto & Dokumen Pendukung) -->
+      <section
+        v-if="berkas?.fotoLokasiFisik || berkas?.dokumenPendukung"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <div
+          class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+        >
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+          >
+            <UIcon
+              name="i-lucide-paperclip"
+              class="size-5 text-primary-600 dark:text-primary-400"
+            />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Lampiran Berkas</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Foto lokasi fisik & dokumen pendukung.
             </p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-5 px-5 py-5 sm:grid-cols-2">
+          <!-- Foto Lokasi Fisik -->
+          <div>
+            <p
+              class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            >
+              Foto Lokasi Fisik
+            </p>
+            <div
+              v-if="fotoLoading"
+              class="flex aspect-video items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
+            >
+              <span class="text-xs text-gray-400">Memuat foto…</span>
+            </div>
+            <button
+              v-else-if="fotoObjectUrl"
+              type="button"
+              class="group relative block w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+              @click="openLightbox"
+            >
+              <img
+                :src="fotoObjectUrl"
+                alt="Foto lokasi fisik"
+                class="aspect-video w-full object-cover transition-transform group-hover:scale-[1.02]"
+              />
+              <span
+                class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/50 py-1.5 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <UIcon name="i-lucide-eye" class="size-3.5" /> Klik untuk perbesar
+              </span>
+            </button>
+            <div
+              v-else
+              class="flex aspect-video items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
+            >
+              <span class="text-xs text-gray-400">{{
+                fotoError ? 'File tidak tersedia' : 'Belum ada foto'
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Dokumen Pendukung -->
+          <div>
+            <p
+              class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            >
+              Dokumen Pendukung
+            </p>
+            <div
+              v-if="dokumenLoading"
+              class="flex aspect-video items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
+            >
+              <span class="text-xs text-gray-400">Memuat dokumen…</span>
+            </div>
+            <div
+              v-else-if="dokumenObjectUrl"
+              class="flex aspect-video flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 dark:border-gray-700 dark:from-gray-700/30 dark:to-gray-800"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                  :class="dokumenTypeIcon.bg"
+                >
+                  <UIcon :name="dokumenTypeIcon.iconName" class="size-6" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span
+                      class="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                      :class="dokumenTypeIcon.badge"
+                      >{{ dokumenTypeIcon.label }}</span
+                    >
+                    <span v-if="dokumenSize" class="text-xs text-gray-500 dark:text-gray-400">{{
+                      dokumenSize
+                    }}</span>
+                  </div>
+                  <p
+                    class="mt-1 truncate text-sm font-semibold text-gray-900 dark:text-white"
+                    :title="dokumenFileName"
+                  >
+                    {{ dokumenFileName }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Dokumen pendukung berkas
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  size="xs"
+                  icon="i-lucide-eye"
+                  class="flex-1 justify-center"
+                  @click="openDokumen"
+                  >Lihat</UButton
+                >
+                <UButton
+                  color="primary"
+                  variant="soft"
+                  size="xs"
+                  icon="i-lucide-download"
+                  class="flex-1 justify-center"
+                  @click="downloadDokumen"
+                  >Unduh</UButton
+                >
+              </div>
+            </div>
+            <div
+              v-else
+              class="flex aspect-video items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
+            >
+              <span class="text-xs text-gray-400">{{
+                dokumenError ? 'File tidak tersedia' : 'Belum ada dokumen'
+              }}</span>
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- Daftar Naskah (Isi Berkas) -->
       <section
-        class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-7"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
       >
         <div
-          class="mb-6 flex items-center gap-2 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary-700 dark:border-gray-700 dark:text-primary-300"
+          class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
         >
-          <UIcon name="i-lucide-files" class="size-4" />
-          Daftar Naskah (Isi Berkas)
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+          >
+            <UIcon name="i-lucide-files" class="size-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Daftar Naskah</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ naskahTotal }} naskah dalam berkas ini.
+            </p>
+          </div>
         </div>
-        <div class="overflow-x-auto rounded-xl border border-gray-300 dark:border-gray-600">
-          <div
-            class="grid min-w-[680px] grid-cols-[1.1fr_2.5fr_1.2fr_0.8fr] bg-primary-50 px-4 py-3 text-sm font-semibold text-primary-700 dark:bg-primary-950/40 dark:text-primary-300"
+        <div class="overflow-x-auto p-5">
+          <DataTable
+            :columns="naskahColumns"
+            :rows="naskahList"
+            empty-message="Belum ada naskah dalam berkas ini."
           >
-            <span>No Naskah</span><span>Perihal</span><span>Tanggal</span><span>Status</span>
-          </div>
-          <div v-if="naskahList.length === 0" class="px-4 py-10 text-center text-sm text-gray-500">
-            Belum ada naskah dalam berkas ini.
-          </div>
-          <div
-            v-for="item in naskahList"
-            :key="item.id || item.nomorSurat"
-            class="grid min-w-[680px] grid-cols-[1.1fr_2.5fr_1.2fr_0.8fr] items-center border-t border-gray-200 px-4 py-4 text-sm dark:border-gray-700"
-          >
-            <span class="font-mono text-gray-700 dark:text-gray-300">{{
-              item.nomorSurat || '-'
-            }}</span>
-            <span class="text-gray-900 dark:text-white">{{ item.perihal || '-' }}</span>
-            <span class="text-gray-600 dark:text-gray-400">{{
-              formatDate(item.tanggalNaskah)
-            }}</span>
-            <span>
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-950/40 dark:text-success-300"
+            <template #cell-nomorSurat="{ row }"
+              ><span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{
+                row.nomorSurat || '-'
+              }}</span></template
+            >
+            <template #cell-perihal="{ row }"
+              ><span class="text-sm text-gray-900 dark:text-white">{{
+                row.perihal || '-'
+              }}</span></template
+            >
+            <template #cell-naskahTipe="{ row }"
+              ><span
+                class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+              >
+                {{ naskahTipeLabel(row.naskahTipe) }}
+              </span></template
+            >
+            <template #cell-tanggalNaskah="{ row }"
+              ><span class="text-sm text-gray-600 dark:text-gray-400">{{
+                formatDate(row.tanggalNaskah)
+              }}</span></template
+            >
+            <template #cell-status
+              ><span
+                class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-900/30 dark:text-success-400"
               >
                 <span class="size-1.5 rounded-full bg-success-500" /> Final
-              </span>
-            </span>
+              </span></template
+            >
+          </DataTable>
+        </div>
+      </section>
+
+      <!-- Uraian / Catatan Pengusul -->
+      <section
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <div
+          class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+        >
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+          >
+            <UIcon
+              name="i-lucide-message-square-text"
+              class="size-5 text-primary-600 dark:text-primary-400"
+            />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Uraian & Catatan Pengusul</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Catatan pengusul saat mengajukan penutupan berkas.
+            </p>
           </div>
         </div>
+        <div class="px-5 py-4">
+          <p
+            class="whitespace-pre-wrap border-l-2 border-primary-300 pl-4 text-sm leading-6 text-gray-600 dark:border-primary-700 dark:text-gray-300"
+          >
+            {{ berkas?.catatanPenutupan || 'Tidak ada catatan pengusul.' }}
+          </p>
+        </div>
       </section>
 
+      <!-- Timeline Singkat -->
       <section
-        class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-7"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
       >
         <div
-          class="mb-6 flex items-center gap-2 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary-700 dark:border-gray-700 dark:text-primary-300"
+          class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
         >
-          <UIcon name="i-lucide-message-square-text" class="size-4" />
-          Catatan Pengusul
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+          >
+            <UIcon name="i-lucide-history" class="size-5 text-primary-600 dark:text-primary-400" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">Timeline Singkat</h2>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Ringkasan waktu penting berkas.
+            </p>
+          </div>
         </div>
-        <p class="whitespace-pre-wrap text-sm leading-6 text-gray-600 dark:text-gray-300">
-          {{ berkas?.isiRingkas || 'Tidak ada catatan pengusul.' }}
-        </p>
-      </section>
-
-      <section
-        class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-7"
-      >
-        <div
-          class="mb-6 flex items-center gap-2 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary-700 dark:border-gray-700 dark:text-primary-300"
-        >
-          <UIcon name="i-lucide-history" class="size-4" /> Timeline Singkat
-        </div>
-        <ol class="space-y-3">
+        <ol class="space-y-4 px-5 py-5">
           <li v-for="item in timelineItems" :key="item.label" class="flex items-start gap-3">
             <span class="mt-1.5 h-2.5 w-2.5 rounded-full bg-primary-500" />
             <div>
@@ -167,65 +390,211 @@
           </li>
         </ol>
       </section>
+
+      <!-- Aksi Verifikasi -->
+      <section
+        v-if="!isLoading && !verifikasiSelesai && !isRiwayatMode"
+        class="overflow-hidden rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400"
+            >
+              <UIcon name="i-lucide-circle-check-big" class="size-5" />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Aksi Verifikasi</h3>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {{
+                  isLastVerifikator
+                    ? 'Setujui untuk menutup berkas, atau tolak pengajuan ini.'
+                    : 'Setujui untuk meneruskan ke verifikator berikutnya, atau tolak.'
+                }}
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+            <UButton
+              class="w-full sm:w-auto"
+              color="error"
+              variant="outline"
+              size="lg"
+              icon="i-lucide-circle-x"
+              :loading="isProcessing"
+              @click="openReject"
+              >Tolak Penutupan</UButton
+            >
+            <UButton
+              class="w-full sm:w-auto"
+              color="primary"
+              size="lg"
+              icon="i-lucide-arrow-right"
+              :loading="isProcessing"
+              @click="openApprove"
+              >{{ isLastVerifikator ? 'Setujui Penutupan' : 'Lanjutkan Verifikasi' }}</UButton
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- Keputusan Anda (mode riwayat — read-only) -->
+      <section
+        v-else-if="isRiwayatMode && !isLoading"
+        class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              :class="
+                myDecision?.status === 'approved'
+                  ? 'bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-400'
+                  : 'bg-error-100 text-error-600 dark:bg-error-900/40 dark:text-error-400'
+              "
+            >
+              <UIcon
+                :name="myDecision?.status === 'approved' ? 'i-lucide-circle-check-big' : 'i-lucide-circle-x'"
+                class="size-5"
+              />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Keputusan Anda</h3>
+              <p v-if="myDecision" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Anda
+                <span
+                  :class="
+                    myDecision?.status === 'approved'
+                      ? 'font-medium text-success-700 dark:text-success-400'
+                      : 'font-medium text-error-700 dark:text-error-400'
+                  "
+                >{{ myDecision?.status === 'approved' ? 'menyetujui' : 'menolak' }}</span>
+                pengajuan penutupan berkas ini pada {{ formatDate(myDecision?.actionAt) }}.
+              </p>
+              <p v-else class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Data keputusan tidak ditemukan.
+              </p>
+            </div>
+          </div>
+          <UButton
+            class="w-full sm:w-auto"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-lucide-arrow-left"
+            to="/kelola/pemeliharaan/persetujuan-pemberkasan"
+            >Kembali ke Daftar Persetujuan</UButton
+          >
+        </div>
+        <div v-if="myDecision?.catatan" class="border-t border-gray-100 px-5 py-3 dark:border-gray-700">
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Catatan</p>
+          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{{ myDecision?.catatan }}</p>
+        </div>
+      </section>
+
+      <!-- Verifikasi Selesai (tidak ada langkah pending) -->
+      <section
+        v-else-if="!isLoading && verifikasiSelesai"
+        class="overflow-hidden rounded-xl border border-success-100 bg-gradient-to-br from-success-50 to-white p-5 shadow-sm dark:border-success-900/40 dark:from-success-900/20 dark:to-gray-800"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-400"
+            >
+              <UIcon name="i-lucide-circle-check-big" class="size-5" />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Verifikasi Selesai</h3>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Pengajuan penutupan berkas ini sudah selesai diproses. Tidak ada aksi lain
+                diperlukan.
+              </p>
+            </div>
+          </div>
+          <UButton
+            class="w-full sm:w-auto"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-lucide-arrow-left"
+            to="/kelola/pemeliharaan/persetujuan-pemberkasan"
+            >Kembali ke Daftar Persetujuan</UButton
+          >
+        </div>
+      </section>
     </main>
 
-    <div
-      v-if="!isLoading"
-      class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-6"
+    <!-- Lightbox foto -->
+    <UModal
+      v-model:open="lightboxOpen"
+      :ui="{ content: 'max-w-4xl', overlay: 'bg-black/80 backdrop-blur-sm' }"
     >
-      <div class="mx-auto flex max-w-6xl flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <UButton
-          color="error"
-          variant="ghost"
-          size="lg"
-          icon="i-lucide-circle-x"
-          :loading="isProcessing"
-          @click="showRejectModal = true"
-        >
-          Tolak Penutupan
-        </UButton>
-        <UButton
-          color="primary"
-          size="lg"
-          icon="i-lucide-arrow-right"
-          :loading="isProcessing"
-          @click="showApproveModal = true"
-        >
-          {{ isLastVerifikator ? 'Setujui Penutupan' : 'Lanjutkan Verifikasi' }}
-        </UButton>
-      </div>
-    </div>
+      <template #body>
+        <div class="flex items-center justify-center bg-black p-2">
+          <img
+            v-if="fotoObjectUrl"
+            :src="fotoObjectUrl"
+            alt="Foto lokasi fisik"
+            class="max-h-[80vh] w-full rounded-lg object-contain"
+          />
+        </div>
+      </template>
+    </UModal>
 
-    <UModal v-model:open="showApproveModal">
-      <template #header><h3 class="text-lg font-semibold">Konfirmasi Persetujuan</h3></template>
+    <UModal v-model:open="showApproveModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <span
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-success-50 text-success-600 dark:bg-success-900/30 dark:text-success-400"
+          >
+            <UIcon name="i-lucide-circle-check" class="size-5" />
+          </span>
+          <div>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+              Konfirmasi Persetujuan
+            </h3>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Tuliskan catatan persetujuan Anda.
+            </p>
+          </div>
+        </div>
+      </template>
       <template #body>
         <div class="space-y-4 p-4">
-          <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">
-            {{
+          <div
+            class="flex items-start gap-2.5 rounded-lg border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-800 dark:border-success-900/40 dark:bg-success-900/20 dark:text-success-300"
+          >
+            <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" />
+            <span>{{
               isLastVerifikator
-                ? 'Anda yakin menyetujui penutupan berkas ini?'
-                : 'Anda yakin menyetujui verifikasi ini dan meneruskannya ke verifikator berikutnya?'
-            }}
-          </p>
+                ? 'Anda akan menyetujui penutupan berkas ini. Berkas ditutup setelah seluruh verifikator menyetujui.'
+                : 'Anda akan menyetujui verifikasi ini dan meneruskannya ke verifikator berikutnya.'
+            }}</span>
+          </div>
           <div>
-            <p class="mb-3 text-sm text-gray-600 dark:text-gray-300">
-              Catatan persetujuan wajib diisi, minimal 10 karakter.
-            </p>
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Catatan Persetujuan <span class="text-error-500">*</span>
+            </label>
             <UTextarea
               v-model="approveCatatan"
               :rows="4"
               autoresize
               class="w-full"
-              placeholder="Tuliskan catatan persetujuan…"
+              placeholder="Tuliskan catatan persetujuan (minimal 10 karakter)…"
             />
+            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ approveCatatan.trim().length }}/10 karakter minimum
+            </p>
           </div>
         </div>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-3">
-          <UButton variant="ghost" @click="showApproveModal = false">Batal</UButton>
+        <div class="flex w-full justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="closeApprove">Batal</UButton>
           <UButton
             color="primary"
+            icon="i-lucide-check"
             :disabled="approveCatatan.trim().length < 10"
             :loading="isProcessing"
             @click="handleApprove"
@@ -235,31 +604,60 @@
       </template>
     </UModal>
 
-    <UModal v-model:open="showRejectModal">
-      <template #header><h3 class="text-lg font-semibold">Tolak Penutupan</h3></template>
+    <UModal v-model:open="showRejectModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <span
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-error-50 text-error-600 dark:bg-error-900/30 dark:text-error-400"
+          >
+            <UIcon name="i-lucide-circle-x" class="size-5" />
+          </span>
+          <div>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Tolak Penutupan</h3>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Tuliskan alasan penolakan Anda.
+            </p>
+          </div>
+        </div>
+      </template>
       <template #body>
-        <div class="p-4">
-          <p class="mb-3 text-sm text-gray-600 dark:text-gray-300">
-            Alasan penolakan wajib diisi, minimal 10 karakter.
-          </p>
-          <UTextarea
-            v-model="rejectCatatan"
-            :rows="4"
-            autoresize
-            class="w-full"
-            placeholder="Tuliskan alasan penolakan…"
-          />
+        <div class="space-y-4 p-4">
+          <div
+            class="flex items-start gap-2.5 rounded-lg border border-error-100 bg-error-50 px-4 py-3 text-sm text-error-800 dark:border-error-900/40 dark:bg-error-900/20 dark:text-error-300"
+          >
+            <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-4 shrink-0" />
+            <span
+              >Penolakan akan membatalkan pengajuan penutupan berkas ini. Berkas kembali ke status
+              ditolak (dapat direvisi &amp; diajukan ulang).</span
+            >
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Alasan Penolakan <span class="text-error-500">*</span>
+            </label>
+            <UTextarea
+              v-model="rejectCatatan"
+              :rows="4"
+              autoresize
+              class="w-full"
+              placeholder="Tuliskan alasan penolakan (minimal 10 karakter)…"
+            />
+            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ rejectCatatan.trim().length }}/10 karakter minimum
+            </p>
+          </div>
         </div>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-3">
-          <UButton variant="ghost" @click="showRejectModal = false">Batal</UButton>
+        <div class="flex w-full justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="closeReject">Batal</UButton>
           <UButton
             color="error"
-            :disabled="rejectCatatan.length < 10"
+            icon="i-lucide-x"
+            :disabled="rejectCatatan.trim().length < 10"
             :loading="isProcessing"
             @click="handleReject"
-            >Tolak</UButton
+            >Tolak Penutupan</UButton
           >
         </div>
       </template>
@@ -268,52 +666,130 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 definePageMeta({ middleware: 'auth' });
 const route = useRoute();
 const router = useRouter();
-const { getBerkasById, getVerifikasiDetail, getDaftarNaskah, approveVerifikasi, rejectVerifikasi } =
-  useArsipDinamis();
+const {
+  getBerkasById,
+  getVerifikasiDetail,
+  getDaftarNaskah,
+  approveVerifikasi,
+  rejectVerifikasi,
+  fetchBerkasFileBlob,
+} = useArsipDinamis();
 const toast = useToast();
+const { user } = useAuth();
 const berkasId = computed(() => route.params.id as string);
 const berkas = ref<any>(null);
 const verifikasiList = ref<any[]>([]);
 const naskahList = ref<any[]>([]);
+const naskahTotal = ref(0);
 const isLoading = ref(true);
 const isProcessing = ref(false);
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 const approveCatatan = ref('');
 const rejectCatatan = ref('');
+const openApprove = () => {
+  showApproveModal.value = true;
+};
+const openReject = () => {
+  showRejectModal.value = true;
+};
+const closeApprove = () => {
+  showApproveModal.value = false;
+};
+const closeReject = () => {
+  showRejectModal.value = false;
+};
 
 const pendingIndex = computed(() =>
   verifikasiList.value.findIndex((item) => item.status === 'pending')
 );
 const isLastVerifikator = computed(
-  () => pendingIndex.value < 0 || pendingIndex.value === verifikasiList.value.length - 1
+  () =>
+    pendingIndex.value >= 0 &&
+    pendingIndex.value === verifikasiList.value.length - 1
 );
+const verifikasiSelesai = computed(() => pendingIndex.value < 0);
 const progressLabel = computed(() =>
   pendingIndex.value < 0
     ? 'Verifikasi selesai'
     : `Verifikasi Tahap ${pendingIndex.value + 1} dari ${verifikasiList.value.length}`
 );
-const informationItems = computed(() => [
-  { label: 'Nama Berkas', value: berkas.value?.judulBerkas || '-', className: 'sm:col-span-2' },
+
+const isRiwayatMode = computed(() => !!route.query.riwayat);
+const myPersnum = computed(() => String(user.value?.persnum ?? ''));
+const myDecision = computed(() =>
+  verifikasiList.value.find((v: any) => String(v.verifikatorPersnum) === myPersnum.value),
+);
+
+const display = (value: any) =>
+  value === null || value === undefined || value === '' ? '-' : String(value);
+
+const metadata = computed(() => [
+  { label: 'Nama Berkas', value: display(berkas.value?.judulBerkas), icon: 'i-lucide-folder-open' },
+  { label: 'Kode Berkas', value: display(berkas.value?.kodeBerkas), icon: 'i-lucide-hash' },
   {
-    label: 'Kode Klasifikasi',
-    value: berkas.value?.klasifikasi || berkas.value?.klasifikasiTeks || '-',
+    label: 'Klasifikasi',
+    value: display(berkas.value?.klasifikasiTeks || berkas.value?.klasifikasi),
+    icon: 'i-lucide-tag',
   },
   {
-    label: 'Penanggung Jawab (PIC)',
-    value: berkas.value?.picPersnum || berkas.value?.pic_persnum || '-',
+    label: 'Penanggung Jawab',
+    value: display(berkas.value?.picPersnum || berkas.value?.pic_persnum),
     icon: 'i-lucide-user-round',
   },
-  { label: 'Retensi Aktif', value: `${berkas.value?.retensiAktifTahun || 0} Tahun` },
-  { label: 'Retensi Inaktif', value: `${berkas.value?.retensiInaktifTahun || 0} Tahun` },
-  { label: 'Lokasi Fisik', value: berkas.value?.lokasi || '-', className: 'sm:col-span-2' },
+  {
+    label: 'Retensi Aktif',
+    value: `${berkas.value?.retensiAktifTahun || 0} Tahun`,
+    icon: 'i-lucide-clock',
+  },
+  {
+    label: 'Retensi Inaktif',
+    value: `${berkas.value?.retensiInaktifTahun || 0} Tahun`,
+    icon: 'i-lucide-archive',
+  },
+  { label: 'Lokasi Fisik', value: display(berkas.value?.lokasi), icon: 'i-lucide-map-pin' },
+  {
+    label: 'Tindakan Akhir',
+    value: display(berkas.value?.tindakanPenyusutanAkhir),
+    icon: 'i-lucide-scale',
+  },
+  {
+    label: 'Jumlah Naskah',
+    value: `${naskahTotal.value} Dokumen`,
+    icon: 'i-lucide-file-text',
+  },
+  {
+    label: 'Tanggal Dibuat',
+    value: formatDate(berkas.value?.tanggalDibuat),
+    icon: 'i-lucide-calendar-plus',
+  },
 ]);
+
+const naskahTipeLabel = (t?: string) => {
+  const map: Record<string, string> = {
+    ND: 'Nota Dinas',
+    SDI: 'Surat Dinas Internal',
+    SDE: 'Surat Dinas Eksternal',
+    DI: 'Disposisi',
+    K: 'Konsep',
+  };
+  return map[String(t || '').toUpperCase()] || t || '-';
+};
+
+const naskahColumns = [
+  { key: 'nomorSurat', label: 'No Naskah' },
+  { key: 'perihal', label: 'Perihal' },
+  { key: 'naskahTipe', label: 'Jenis' },
+  { key: 'tanggalNaskah', label: 'Tanggal' },
+  { key: 'status', label: 'Status' },
+];
+
 const stepItems = computed(() => [
   ...verifikasiList.value.map((item, index) => ({
     id: item.id || index,
@@ -351,7 +827,8 @@ const timelineItems = computed(() => {
     .filter(Boolean)
     .sort()
     .pop();
-  if (latestNaskah) items.push({ label: 'Dokumen Terakhir Ditambahkan', value: formatDate(latestNaskah) });
+  if (latestNaskah)
+    items.push({ label: 'Dokumen Terakhir Ditambahkan', value: formatDate(latestNaskah) });
   const pengajuanAt = verifikasiList.value[0]?.createdAt;
   if (pengajuanAt) items.push({ label: 'Pengajuan Penutupan', value: formatDateTime(pengajuanAt) });
   return items;
@@ -378,6 +855,134 @@ const formatDateTime = (value?: string) =>
         minute: '2-digit',
       })
     : '-';
+
+// ── Lampiran berkas (foto lokasi fisik & dokumen pendukung) ──
+const fotoObjectUrl = ref('');
+const fotoError = ref(false);
+const fotoLoading = ref(false);
+const dokumenObjectUrl = ref('');
+const dokumenError = ref(false);
+const dokumenLoading = ref(false);
+const lightboxOpen = ref(false);
+const dokumenSize = ref('');
+const dokumenFileName = computed(
+  () => berkas.value?.dokumenPendukung?.split('/').pop() || 'dokumen-pendukung'
+);
+const isHttpUrl = (v?: string) => !!v && /^https?:\/\//i.test(v);
+function formatFileSize(bytes: number) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+const dokumenTypeIcon = computed(() => {
+  const ext = (berkas.value?.dokumenPendukung || '').split('.').pop()?.toLowerCase() || '';
+  if (ext === 'pdf')
+    return {
+      iconName: 'i-lucide-file-text',
+      label: 'PDF',
+      bg: 'bg-error-500',
+      badge: 'bg-error-100 text-error-700 dark:bg-error-900/40 dark:text-error-400',
+    };
+  if (ext === 'docx' || ext === 'doc')
+    return {
+      iconName: 'i-lucide-file-text',
+      label: ext === 'docx' ? 'DOCX' : 'DOC',
+      bg: 'bg-primary-500',
+      badge: 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-400',
+    };
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext))
+    return {
+      iconName: 'i-lucide-image',
+      label: ext.toUpperCase(),
+      bg: 'bg-success-500',
+      badge: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-400',
+    };
+  return {
+    iconName: 'i-lucide-file',
+    label: ext ? ext.toUpperCase() : 'FILE',
+    bg: 'bg-gray-500',
+    badge: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  };
+});
+async function loadBerkasFiles() {
+  if (!berkas.value) return;
+  if (fotoObjectUrl.value) URL.revokeObjectURL(fotoObjectUrl.value);
+  if (dokumenObjectUrl.value) URL.revokeObjectURL(dokumenObjectUrl.value);
+  fotoObjectUrl.value = '';
+  dokumenObjectUrl.value = '';
+  fotoError.value = false;
+  dokumenError.value = false;
+  dokumenSize.value = '';
+  const fotoKey = berkas.value.fotoLokasiFisik;
+  const dokKey = berkas.value.dokumenPendukung;
+  const tasks: Promise<void>[] = [];
+  if (fotoKey) {
+    tasks.push(
+      (async () => {
+        if (isHttpUrl(fotoKey)) {
+          fotoObjectUrl.value = fotoKey;
+          return;
+        }
+        fotoLoading.value = true;
+        try {
+          const blob = await fetchBerkasFileBlob(fotoKey);
+          fotoObjectUrl.value = URL.createObjectURL(blob);
+        } catch {
+          fotoError.value = true;
+        } finally {
+          fotoLoading.value = false;
+        }
+      })()
+    );
+  }
+  if (dokKey) {
+    tasks.push(
+      (async () => {
+        if (isHttpUrl(dokKey)) {
+          dokumenObjectUrl.value = dokKey;
+          return;
+        }
+        dokumenLoading.value = true;
+        try {
+          const blob = await fetchBerkasFileBlob(dokKey);
+          dokumenObjectUrl.value = URL.createObjectURL(blob);
+          dokumenSize.value = formatFileSize(blob.size);
+        } catch {
+          dokumenError.value = true;
+        } finally {
+          dokumenLoading.value = false;
+        }
+      })()
+    );
+  }
+  await Promise.all(tasks);
+}
+function revokeBerkasFiles() {
+  if (fotoObjectUrl.value) {
+    URL.revokeObjectURL(fotoObjectUrl.value);
+    fotoObjectUrl.value = '';
+  }
+  if (dokumenObjectUrl.value) {
+    URL.revokeObjectURL(dokumenObjectUrl.value);
+    dokumenObjectUrl.value = '';
+  }
+}
+const openLightbox = () => {
+  lightboxOpen.value = true;
+};
+function openDokumen() {
+  if (dokumenObjectUrl.value) window.open(dokumenObjectUrl.value, '_blank');
+}
+function downloadDokumen() {
+  if (!dokumenObjectUrl.value) return;
+  const a = document.createElement('a');
+  a.href = dokumenObjectUrl.value;
+  a.download = dokumenFileName.value;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 
 const handleApprove = async () => {
   const catatan = approveCatatan.value.trim();
@@ -416,19 +1021,22 @@ onMounted(async () => {
     const [b, v, n] = await Promise.all([
       getBerkasById(berkasId.value),
       getVerifikasiDetail(berkasId.value),
-      getDaftarNaskah(berkasId.value),
+      getDaftarNaskah(berkasId.value, { page: 1, limit: 100 }),
     ]);
     berkas.value = unwrap(b);
     const verificationPayload = unwrap(v);
     verifikasiList.value = Array.isArray(verificationPayload) ? verificationPayload : [];
     const naskahPayload = unwrap(n);
-    naskahList.value = (
-      Array.isArray(naskahPayload) ? naskahPayload : naskahPayload?.data || []
-    ).map((item: any) => ({
+    const naskahRows = Array.isArray(naskahPayload) ? naskahPayload : naskahPayload?.data || [];
+    naskahList.value = naskahRows.map((item: any) => ({
       ...item,
       nomorSurat: item.nomorSurat ?? item.nomor_surat,
       tanggalNaskah: item.tanggalNaskah ?? item.tanggal_naskah,
+      naskahTipe: item.naskahTipe ?? item.naskah_tipe,
     }));
+    naskahTotal.value = Number(naskahPayload?.meta?.total ?? naskahRows.length);
+    // Muat lampiran (foto lokasi & dokumen pendukung) secara non-blocking
+    loadBerkasFiles();
   } catch (e: any) {
     toast.add({
       title: 'Gagal memuat data review',
@@ -438,5 +1046,9 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+});
+
+onBeforeUnmount(() => {
+  revokeBerkasFiles();
 });
 </script>

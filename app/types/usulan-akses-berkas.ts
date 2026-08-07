@@ -52,27 +52,41 @@ export enum Keputusan {
   LANJUT = 'LANJUT',
 }
 
-export type LevelJabatan = 'AVP' | 'VP' | 'EVP';
+export type LevelJabatan = 'AVP' | 'VP' | 'EVP' | 'BOD' | 'BOD-1' | 'BOD-2' | 'BOD-3';
 
 export interface VerifikatorItem {
   persnum: number;
   levelJabatan: LevelJabatan;
-  urutan?: 1 | 2 | 3;
+  urutan?: number;
   nama?: string;
   jabatan?: string;
   divisiId?: number;
   divisiNama?: string;
+  bodTag?: string;
+  isDelegasi?: boolean;
+  positionStatus?: string | null;
+  catatan?: string; // catatan personal dari SE pemberi (hanya terlihat oleh verifikator ini)
+}
+
+export interface PenerimaAksesTambahan {
+  persnum: number;
+  nama: string | null;
+  jabatan: string | null;
+  divisiNama: string | null;
 }
 
 export interface VerificationStep {
   id: string;
   usulanId: string;
   verifierPersnum: number;
+  verifierNama?: string;
+  verifierJabatan?: string;
   roleTahap: string;
   urutanJenjang: 0 | 1 | 2 | 3;
   keputusan: Keputusan;
   catatan: string | null;
   catatanRevisi: string | null;
+  catatanKeSE: string | null; // catatan khusus dari verifikator ke SE-nya
   checklist: Record<string, boolean>;
   verifiedAt: string;
 }
@@ -84,6 +98,11 @@ export interface UsulanBerkasItem {
   jenisAksesGranted: string[];
   berlakuHingga: string;
   createdAt: string;
+  // Enriched (dari join BE)
+  judulBerkas?: string | null;
+  kodeBerkas?: string | null;
+  klasifikasiTeks?: string | null;
+  berkasStatus?: string | null;
 }
 
 export interface UsulanAksesBerkas {
@@ -91,16 +110,20 @@ export interface UsulanAksesBerkas {
   nomorUsulan: string;
   jenisBerkas: JenisBerkas;
   pengusulPersnum: number;
+  pengusulInfo?: { nama?: string; jabatan?: string };
   divisiPengusulId: number;
+  divisiPengusulNama?: string;
   divisiPemberiId: number;
+  divisiPemberiNama?: string;
   tujuanAkses: string;
   durasiAkses: DurasiPreset;
   durasiAksesDisetujui: DurasiPreset | null;
   catatanPerubahanDurasi: string | null;
   tanggalMulai: string | null;
   tanggalSelesai: string | null;
+  customTanggalSelesai: string | null;
   jenisAkses: string[];
-  penerimaAksesTambahan: number[] | null;
+  penerimaAksesTambahan: PenerimaAksesTambahan[] | null;
   suratUsulanFileId: string | null;
   verifikatorPengusul: VerifikatorItem[];
   verifikatorPemberi: VerifikatorItem[] | null;
@@ -112,6 +135,9 @@ export interface UsulanAksesBerkas {
   // Joined (di findOne)
   steps?: VerificationStep[];
   selectedBerkas?: UsulanBerkasItem[];
+  // Tracking viewed oleh user saat ini (untuk badge notifikasi).
+  // true = sudah dibuka/dilihat; false = belum.
+  isViewedByMe?: boolean;
 }
 
 export interface UsulanAksesBerkasListResponse {
@@ -121,38 +147,29 @@ export interface UsulanAksesBerkasListResponse {
   limit: number;
 }
 
-// ── Payloads ──────────────────────────────────────
-
 export interface CreateUsulanAksesBerkasPayload {
   jenisBerkas: JenisBerkas;
   divisiPemberiId?: number;
+  judulUsulan: string;
   tujuanAkses: string;
   durasiAkses: DurasiPreset;
   customTanggalSelesai?: string;
   jenisAkses: JenisAkses[];
   suratUsulanFileId?: string;
-  verifikatorPengusul: { persnum: number; levelJabatan: LevelJabatan }[];
+  verifikatorPengusul: { persnum: number; levelJabatan: LevelJabatan; catatan?: string }[];
   penerimaAksesTambahan?: number[];
 }
 
 export interface VerifikasiPengusulPayload {
-  kelengkapanBerkas: boolean;
-  kesesuaianTujuan: boolean;
-  periodeWajar: boolean;
-  suratSah: boolean;
-  tidakDuplikasi: boolean;
   catatan?: string;
   catatanRevisi?: string;
+  catatanKeSE?: string; // catatan khusus dari verifikator ke SE pengusul
   keputusan: Keputusan;
 }
 
 export interface VerifikasiPemberiPayload {
-  berkasTersedia: boolean;
-  tidakAdaPembatasan: boolean;
-  tujuanMemadai: boolean;
-  tidakBentrokRetensi: boolean;
-  disetujuiLanjut: boolean;
   durasiAksesDisetujui: DurasiPreset;
+  customTanggalSelesai?: string;
   catatanPerubahanDurasi?: string;
   catatan?: string;
   keputusan: Keputusan;
@@ -161,16 +178,14 @@ export interface VerifikasiPemberiPayload {
 export interface PilihBerkasPayload {
   berkasIds: string[];
   catatanPenerusan?: string;
-  verifikatorPemberi: { persnum: number; levelJabatan: LevelJabatan }[];
+  verifikatorPemberi: { persnum: number; levelJabatan: LevelJabatan; catatan?: string }[];
 }
 
 export interface PersetujuanPemberiPayload {
-  berkasSesuai: boolean;
-  tidakMelanggarKebijakan: boolean;
-  peminjamanTidakBerlebihan: boolean;
-  sudahDiverifikasiSekretaris: boolean;
-  disetujuiDiberikan: boolean;
   catatan?: string;
   catatanRevisi?: string;
+  catatanKeSE?: string; // catatan khusus dari verifikator ke SE pemberi
   keputusan: Keputusan;
+  durasiAksesDisetujui?: DurasiPreset;
+  catatanPerubahanDurasi?: string;
 }

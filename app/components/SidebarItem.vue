@@ -1,15 +1,20 @@
 <template>
   <div class="mb-0.5">
-    <div v-if="hasChildren" @click="toggle" :class="containerClasses">
+    <div v-if="hasChildren" @click="toggle" :class="containerClasses" :title="item?.label">
       <UIcon v-if="item?.icon" :key="item.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[14px] truncate leading-5">{{ item?.label }}</span>
+      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
 
       <span
-        v-if="item?.badge"
+        v-if="item?.badge && !effectiveBadgeAsDot"
         class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm min-w-[20px] h-5 flex items-center justify-center leading-none"
       >
         {{ item.badge }}
       </span>
+
+      <div
+        v-else-if="item?.badge && effectiveBadgeAsDot"
+        class="w-2 h-2 bg-red-600 rounded-full shadow-sm animate-pulse"
+      ></div>
 
       <div
         v-else-if="hasChildrenWithBadges"
@@ -22,9 +27,9 @@
       />
     </div>
 
-    <NuxtLink v-else-if="item?.to" :to="item.to" :class="containerClasses">
+    <NuxtLink v-else-if="item?.to" :to="item.to" :class="containerClasses" :title="item?.label">
       <UIcon v-if="item?.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[14px] truncate leading-5">{{ item?.label }}</span>
+      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
 
       <span
         v-if="item?.badge"
@@ -36,12 +41,20 @@
 
     <div v-if="hasChildren && isOpen" class="mt-0.5 mx-3 space-y-0.5">
       <template v-for="(child, i) in item.children" :key="i">
+        <!-- Recursive: child punya sub-children → render nested SidebarItem -->
+        <SidebarItem
+          v-if="child && child.children && child.children.length > 0"
+          :item="child"
+          :collapsed="collapsed"
+        />
+        <!-- Leaf: child langsung ke route -->
         <NuxtLink
-          v-if="child && child.to"
+          v-else-if="child && child.to"
           :to="child.to"
-          class="whitespace-nowrap flex items-center px-4 py-2.5 my-1 pl-12 rounded-full text-[14px] transition-colors dark:text-gray-400 relative"
+          :title="child.label"
+          class="flex items-start px-4 py-2.5 my-1 pl-12 rounded-full text-[13px] leading-tight whitespace-pre-line break-words transition-colors dark:text-gray-400 relative"
           :class="
-            isActiveChild(child.to)
+            isActiveChild(child.to, child.activePaths)
               ? 'bg-[#D3E3FD] font-bold text-gray-900 dark:bg-gray-700 dark:text-white'
               : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
@@ -63,19 +76,39 @@
 <script setup>
 const props = defineProps({
   item: { type: Object, required: true },
-  collapsed: Boolean
+  collapsed: Boolean,
+  // Tampilkan badge sebagai dot merah saja (tanpa angka).
+  // Default: otomatis dot jika punya children (parent menu di sidebar utama),
+  //          angka jika leaf (submenu di dropdown).
+  badgeAsDot: { type: Boolean, default: null },
 });
 
 const route = useRoute();
 const isOpen = ref(false);
 
+// Effective badge style:
+// - Kalau prop badgeAsDot di-set eksplisit (true/false) → pakai itu
+// - Kalau null/undefined → otomatis: parent (hasChildren) = dot, leaf = angka
+const effectiveBadgeAsDot = computed(() => {
+  if (props.badgeAsDot === true || props.badgeAsDot === false) {
+    return props.badgeAsDot;
+  }
+  return hasChildren.value;
+});
+
 // Check if has children
 const hasChildren = computed(() => props.item?.children && props.item.children.length > 0);
 
-// Check if any children has badge
+// Check if any children (or sub-children) has badge
 const hasChildrenWithBadges = computed(() => {
   if (!hasChildren.value) return false;
-  return props.item.children.some((child) => child?.badge && child.badge > 0);
+  const checkRecursive = (items) =>
+    items.some((child) => {
+      if (child?.badge && child.badge > 0) return true;
+      if (child?.children && child.children.length > 0) return checkRecursive(child.children);
+      return false;
+    });
+  return checkRecursive(props.item.children);
 });
 
 // Helper for exact or nested active state
@@ -83,10 +116,35 @@ const isActivePath = (path) => {
   return route.path === path || route.path.startsWith(path + '/');
 };
 
-// Helper khusus untuk child agar active state akurat (exact match, tidak startsWith)
-// Menghindari bug: /layanan-email ikut active saat di /layanan-email/log
-const isActiveChild = (path) => {
-  return route.path === path;
+// Helper khusus untuk child agar active state akurat.
+// Pakai startsWith agar nested route (mis. /penggunaan/pemberian/123) juga
+// menandai parent dropdown (Penggunaan) sebagai active.
+// Juga support activePaths untuk route yang redirect ke path lain.
+// Jika child.to dan activePaths mengandung path yang sama, gunakan exact match saja
+// untuk child.to (mencegah double-highlight pada route redirect).
+const isActiveChild = (path, activePaths) => {
+  if (route.path === path) return true;
+  // Untuk nested child route (path dengan children), pakai startsWith
+  if (path && route.path.startsWith(path + '/')) return true;
+  if (activePaths && Array.isArray(activePaths)) {
+    return activePaths.some((p) => {
+      // Hanya match jika path yang active berbeda dari path utama
+      // (menghindari double-highlight saat user di /usulan-akses-berkas)
+      if (p === path) return false;
+      return route.path === p || route.path.startsWith(p + '/');
+    });
+  }
+  return false;
+};
+
+// Helper recursive: cek apakah item (atau keturunannya) aktif
+const isItemActiveRecursive = (item) => {
+  if (!item) return false;
+  if (item.to && isActiveChild(item.to, item.activePaths)) return true;
+  if (item.children && item.children.length > 0) {
+    return item.children.some((child) => isItemActiveRecursive(child));
+  }
+  return false;
 };
 
 // Logic Active State
@@ -98,8 +156,8 @@ const isActive = computed(() => {
   }
 
   if (hasChildren.value) {
-    // Parent active jika salah satu child exact match dengan route saat ini
-    return props.item.children.some((child) => child?.to && isActiveChild(child.to));
+    // Parent active jika salah satu child (atau sub-child) exact match dengan route
+    return props.item.children.some((child) => isItemActiveRecursive(child));
   }
   return false;
 });

@@ -29,12 +29,12 @@
             Tidak ada anomali
           </td>
         </tr>
-        <tr
-          v-else
-          v-for="(row, idx) in rows"
-          :key="row.id ?? idx"
-          class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
-        >
+        <template v-else>
+          <tr
+            v-for="(row, idx) in rows"
+            :key="row.id ?? idx"
+            class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+          >
           <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ idx + 1 + (page - 1) * limit }}</td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-200 whitespace-nowrap">
             {{ formatDate(row.createdAt) }}
@@ -70,6 +70,14 @@
                 <UIcon name="i-lucide-check" class="w-4 h-4 text-green-600 group-hover:text-green-700" />
               </button>
               <button
+                v-if="row.status === 'NEW'"
+                @click="$emit('reviewing', row)"
+                class="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group"
+                title="Tandai Sedang Ditinjau"
+              >
+                <UIcon name="i-lucide-search" class="w-4 h-4 text-blue-600 group-hover:text-blue-700" />
+              </button>
+              <button
                 v-if="row.status === 'NEW' || row.status === 'REVIEWING'"
                 @click="$emit('ignore', row)"
                 class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
@@ -80,6 +88,7 @@
             </div>
           </td>
         </tr>
+        </template>
       </tbody>
     </table>
   </div>
@@ -99,6 +108,7 @@ defineEmits<{
   view: [row: AuditAnomaly];
   resolve: [row: AuditAnomaly];
   ignore: [row: AuditAnomaly];
+  reviewing: [row: AuditAnomaly];
 }>();
 
 const columns = [

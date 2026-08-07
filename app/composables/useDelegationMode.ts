@@ -17,6 +17,10 @@ export const useDelegationMode = () => {
     return s ? (VIEW_ONLY_STATUSES as readonly string[]).includes(s) : false;
   });
 
+  // Viewer (VI) saja — SE sudah bisa write pemberkasan (lihat @AllowViewerWrite),
+  // jadi banner read-only hanya untuk VI yang betul-betul read-only.
+  const isViewer = computed(() => activePositionStatus.value === "VI");
+
   const activePositionStatusLabel = computed(() => {
     const s = activePositionStatus.value;
     return s ? LABELS[s] ?? s : null;
@@ -30,5 +34,5 @@ export const useDelegationMode = () => {
     return s ? `${s}. ${pos}` : pos;
   });
 
-  return { activePositionStatus, isReadOnly, activePositionStatusLabel, renderedPositionLabel };
+  return { activePositionStatus, isReadOnly, isViewer, activePositionStatusLabel, renderedPositionLabel };
 };

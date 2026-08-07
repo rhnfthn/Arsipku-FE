@@ -62,7 +62,7 @@
                     </svg>
                     Kembali
                 </button>
-                <NuxtLink to="/help" class="flex items-center gap-1.5 transition-colors hover:text-slate-600">
+                <NuxtLink to="/faq/menu" class="flex items-center gap-1.5 transition-colors hover:text-slate-600">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 14c1.49-1.28 3.6-1.28 3.6-1.28" />

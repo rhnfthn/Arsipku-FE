@@ -58,3 +58,26 @@ export interface UpdateMessagePayload {
   type: MessageType;
   show_banner: boolean;
 }
+
+// ==========================================
+//   SEARCH ENGINE
+// ==========================================
+export type SearchEngineMode = "v3" | "meili";
+
+export interface KonfigurasiSearchItem {
+  id: string;
+  mode: SearchEngineMode;
+  meiliEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KonfigurasiSearchResponse {
+  success: boolean;
+  data: KonfigurasiSearchItem;
+}
+
+export interface UpdateSearchConfigPayload {
+  mode?: SearchEngineMode;
+  meili_enabled?: boolean;
+}
