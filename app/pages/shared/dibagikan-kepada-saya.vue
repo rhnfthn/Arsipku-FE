@@ -373,7 +373,6 @@ onMounted(() => { loadData(); });
           @update:page="currentPage = $event"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
-          @refresh="handleRefresh"
         />
       </div>
     </div>

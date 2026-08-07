@@ -17,8 +17,6 @@ const emit = defineEmits<{
   (e: 'update:page', page: number): void;
   (e: 'view', share: ShareItem): void;
   (e: 'open-pdf', share: ShareItem): void;
-  (e: 'revoke', payload: { share: ShareItem; recipientId: string; recipientName: string }): void;
-  (e: 'refresh'): void;
 }>();
 
 const columns = computed(() => [
@@ -41,23 +39,6 @@ const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
     if (allEnded) return 'BERAKHIR';
   }
   return 'AKTIF';
-};
-
-const getFirstActiveRecipient = (share: ShareItem) =>
-  share.recipients?.find((r) => r.status !== 'BERAKHIR') || share.recipients?.[0];
-
-const canRevokeRecipient = (share: ShareItem) =>
-  share.status === 'AKTIF' && !!share.recipients?.some((r) => r.status !== 'BERAKHIR');
-
-const handleRevokeRecipient = (share: ShareItem) => {
-  const recipient = getFirstActiveRecipient(share);
-  if (!recipient) return;
-
-  emit('revoke', {
-    share,
-    recipientId: recipient.recipientId || recipient.id,
-    recipientName: recipient.nama,
-  });
 };
 
 </script>
@@ -163,15 +144,6 @@ const handleRevokeRecipient = (share: ShareItem) => {
               variant="ghost"
               size="xs"
               @click="emit('open-pdf', row as ShareItem)"
-            />
-          </UTooltip>
-          <UTooltip v-if="canRevokeRecipient(row as ShareItem)" :text="t('share_akhiri')">
-            <UButton
-              icon="i-lucide-shield-off"
-              color="danger"
-              variant="ghost"
-              size="xs"
-              @click="handleRevokeRecipient(row as ShareItem)"
             />
           </UTooltip>
         </div>
