@@ -150,7 +150,7 @@ const canOpenPdf = (share: ShareItem): boolean => {
               @click="emit('view', row)"
             />
           </UTooltip>
-          <UTooltip v-if="canOpenPdf(row)" :text="t('share_buka_pdf')">
+          <UTooltip v-if="canOpenPdf(row as ShareItem)" :text="t('share_buka_pdf')">
             <UButton
               icon="i-lucide-file-text"
               color="success"
