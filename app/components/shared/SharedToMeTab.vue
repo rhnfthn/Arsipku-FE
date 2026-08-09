@@ -28,7 +28,6 @@ const columns = computed(() => [
   { key: 'accessType', label: t('share_akses'), sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'status', label: t('share_status'), sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: t('share_tanggal'), sortable: false },
-  { key: 'aksi', label: t('share_action'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
 /** Display status for recipient: check share.status first, then recipient.status. */
@@ -139,25 +138,30 @@ const canOpenPdf = (share: ShareItem): boolean => {
         </span>
       </template>
 
-      <template #cell-aksi="{ row }">
-        <div class="flex items-center justify-center gap-1">
+      <!-- Floating Quick Actions (muncul saat hover baris, menimpa kolom tanggal) -->
+      <template #row-extra="{ row }">
+        <div class="flex items-center gap-2 p-1">
           <UTooltip :text="t('share_lihat_detail')">
-            <UButton
-              icon="i-lucide-eye"
-              color="primary"
-              variant="ghost"
-              size="xs"
-              @click="emit('view', row)"
-            />
+            <button
+              type="button"
+              class="text-primary dark:text-primary-400 hover:opacity-80 transition-opacity"
+              @click="emit('view', row as ShareItem)"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4" />
+            </button>
           </UTooltip>
-          <UTooltip v-if="canOpenPdf(row as ShareItem)" :text="t('share_buka_pdf')">
-            <UButton
-              icon="i-lucide-file-text"
-              color="success"
-              variant="ghost"
-              size="xs"
-              @click="emit('open-pdf', row)"
-            />
+          <UTooltip :text="canOpenPdf(row as ShareItem) ? t('share_buka_pdf') : t('share_akses_berakhir')">
+            <button
+              type="button"
+              :disabled="!canOpenPdf(row as ShareItem)"
+              class="transition-opacity"
+              :class="canOpenPdf(row as ShareItem)
+                ? 'text-success dark:text-success-400 hover:opacity-80'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'"
+              @click="canOpenPdf(row as ShareItem) && emit('open-pdf', row as ShareItem)"
+            >
+              <UIcon name="i-lucide-file-text" class="w-4 h-4" />
+            </button>
           </UTooltip>
         </div>
       </template>
