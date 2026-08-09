@@ -107,6 +107,15 @@ watch(searchQuery, () => {
 // ── Handlers ─────────────────────────────────────────────────────────────────
 const handleRefresh = () => loadData();
 
+/** Reset semua filter (status, search, sort) lalu muat ulang data. */
+const resetFilters = () => {
+  filterStatus.value = 'Semua';
+  searchQuery.value = '';
+  activeSortLabel.value = t('share_terbaru');
+  currentPage.value = 1;
+  loadData();
+};
+
 /** Export all data to CSV (fetch with limit = total, then format). */
 const isExporting = ref(false);
 const exportData = async () => {
@@ -306,6 +315,18 @@ onMounted(async () => {
               </div>
             </Transition>
           </div>
+
+          <!-- RESET FILTER -->
+          <UButton
+            type="button"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="resetFilters"
+            :title="t('share_reset_filter')"
+            :aria-label="t('share_reset_filter')"
+          />
 
           <!-- SEARCH -->
           <div class="relative flex-1">
