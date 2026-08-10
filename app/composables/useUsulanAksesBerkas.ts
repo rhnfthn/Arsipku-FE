@@ -19,43 +19,17 @@ export function useUsulanAksesBerkas() {
   const usulanDetail = ref<UsulanAksesBerkas | null>(null);
   const verifikatorList = ref<VerifikatorItem[]>([]);
   const pending = ref(false);
-  const error = ref<any>(null);
   const pagination = reactive({
     total: 0,
     page: 1,
     limit: 20,
   });
 
-  // ── GET /usulan-akses-berkas/verifikator ────────
-  // divisiId opsional — kalau diisi, fetch managerial di divisi tersebut
-  // (untuk Pilih Berkas: pakai divisiPemberiId dari usulan)
-  const fetchVerifikator = async (divisiId?: number) => {
-    pending.value = true;
-    error.value = null;
-    try {
-      const query = divisiId ? `?divisiId=${divisiId}` : '';
-      const res = await apiGet<{
-        success: boolean;
-        data: VerifikatorItem[];
-        total: number;
-      }>(`/usulan-akses-berkas/verifikator${query}`, undefined, { skipCache: true });
-      verifikatorList.value = res.data || [];
-      return res;
-    } catch (err: any) {
-      error.value = err;
-      console.error('[useUsulanAksesBerkas] fetchVerifikator error:', err);
-      throw err;
-    } finally {
-      pending.value = false;
-    }
-  };
-
   // ── GET /usulan-akses-berkas/verifikator-bod ───
   // Fetch BOD + delegasi aktif (PT/PH/PS) di divisi.
   // divisiId opsional — kalau kosong, pakai divisi currentUser.
   const fetchVerifikatorBod = async (divisiId?: number) => {
     pending.value = true;
-    error.value = null;
     try {
       const query = divisiId ? `?divisiId=${divisiId}` : '';
       const res = await apiGet<{
@@ -66,7 +40,6 @@ export function useUsulanAksesBerkas() {
       verifikatorList.value = res.data || [];
       return res;
     } catch (err: any) {
-      error.value = err;
       console.error('[useUsulanAksesBerkas] fetchVerifikatorBod error:', err);
       throw err;
     } finally {
@@ -188,7 +161,6 @@ export function useUsulanAksesBerkas() {
     sortDir?: 'asc' | 'desc';
   } = {}) => {
     pending.value = true;
-    error.value = null;
     try {
       const query = new URLSearchParams();
       if (params.status) query.set('status', params.status);
@@ -213,7 +185,6 @@ export function useUsulanAksesBerkas() {
       pagination.limit = payload.limit || params.limit || 20;
       return res;
     } catch (err: any) {
-      error.value = err;
       console.error('[useUsulanAksesBerkas] fetchList error:', err);
       throw err;
     } finally {
@@ -224,7 +195,6 @@ export function useUsulanAksesBerkas() {
   // ── GET /usulan-akses-berkas/:id (detail) ───────
   const fetchDetail = async (id: string) => {
     pending.value = true;
-    error.value = null;
     try {
       const res = await apiGet<UsulanAksesBerkas>(
         `/usulan-akses-berkas/${id}`,
@@ -238,7 +208,6 @@ export function useUsulanAksesBerkas() {
       usulanDetail.value = payload;
       return payload;
     } catch (err: any) {
-      error.value = err;
       console.error('[useUsulanAksesBerkas] fetchDetail error:', err);
       throw err;
     } finally {
@@ -344,31 +313,14 @@ export function useUsulanAksesBerkas() {
     }
   };
 
-  // ── GET trail ──────────────────────────────────
-  const fetchTrail = async (id: string) => {
-    try {
-      const res = await apiGet<any[]>(
-        `/usulan-akses-berkas/${id}/trail`,
-        undefined,
-        { skipCache: true },
-      );
-      return res;
-    } catch (err: any) {
-      console.error('[useUsulanAksesBerkas] fetchTrail error:', err);
-      throw err;
-    }
-  };
-
   return {
     // state
     usulanList,
     usulanDetail,
     verifikatorList,
     pending,
-    error,
     pagination,
     // actions
-    fetchVerifikator,
     fetchVerifikatorBod,
     fetchEligiblePenerimaTambahan,
     fetchBerkasEligible,
@@ -383,6 +335,5 @@ export function useUsulanAksesBerkas() {
     verifikasiPemberi,
     pilihBerkas,
     persetujuanPemberi,
-    fetchTrail,
   };
 }

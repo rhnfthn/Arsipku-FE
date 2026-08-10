@@ -79,8 +79,6 @@ export function useUsulanAksesBerkasViewed() {
 
   return {
     isViewed,
-    markViewedOptimistic,
-    markViewedOnServer,
     markViewed,
   };
 }

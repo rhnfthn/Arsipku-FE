@@ -8,6 +8,7 @@ import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User
 import PageHeader from '~/components/PageHeader.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { downloadCsv } from '~/utils/csv-export';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Berkas yang Diberikan' });
@@ -16,13 +17,6 @@ const route = useRoute();
 const { t } = useI18n();
 const { usulanDetail, pending, fetchDetail, fetchBerkasDetail, fetchNaskahByBerkas } = useUsulanAksesBerkas();
 const toast = useToast();
-
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) return beMessage.join(', ');
-  if (typeof beMessage === 'string' && beMessage.trim()) return beMessage;
-  return err?.message || 'Terjadi kesalahan';
-};
 
 const usulanId = computed(() => route.params.usulanId as string);
 
