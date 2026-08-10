@@ -704,6 +704,9 @@ const handleBulkExecute = async () => {
 };
 
 // ── Filter / Sort / Pagination UI Actions ─────────────────────────────────────
+const selectTab = (tabValue: string) => {
+  activeTab.value = tabValue;
+};
 const applyFilter = (v: string) => {
   activeFilterType.value = v;
   showFilterMenu.value = false;
@@ -1446,7 +1449,7 @@ onUnmounted(() => {
             <UButton
               v-for="tab in tabs"
               :key="tab.value"
-              @click="activeTab = tab.value"
+              @click="selectTab(tab.value)"
               color="primary"
               class="px-4 py-2 text-sm font-normal rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 first:ms-2 last:me-2"
               :class="

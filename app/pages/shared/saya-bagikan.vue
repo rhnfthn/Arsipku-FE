@@ -21,6 +21,7 @@ const {
   fetchShares,
   openNaskah,
   getShareDetail,
+  revokeShare,
 } = useNaskahShare();
 
 // ── Breadcrumbs (locale-reactive) ────────────────────────────────────────────
@@ -74,6 +75,11 @@ const revokeSharePerihal = ref('');
 const showDetailModal = ref(false);
 const detailShare = ref<any>(null);
 
+// ── Modal konfirmasi cabut semua akses ──
+const showRevokeAllModal = ref(false);
+const revokeAllShare = ref<any>(null);
+const isRevokingAll = ref(false);
+
 const showPdfViewer = ref(false);
 const pdfViewerUrl = ref('');
 const pdfViewerTitle = ref('');
@@ -110,6 +116,15 @@ watch(searchQuery, () => {
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 const handleRefresh = () => loadData();
+
+/** Reset semua filter (status, search, sort) lalu muat ulang data. */
+const resetFilters = () => {
+  filterStatus.value = 'Semua';
+  searchQuery.value = '';
+  activeSortLabel.value = t('share_terbaru');
+  currentPage.value = 1;
+  loadData();
+};
 
 /** Export all data to CSV (fetch with limit = total, then format). */
 const isExporting = ref(false);
@@ -186,17 +201,24 @@ const handleViewDetail = async (share: any) => {
   showDetailModal.value = true;
 };
 
-const handleRevoked = () => loadData();
+const handleRevokeAll = (share: any) => {
+  // Selalu tampilkan konfirmasi popup sebelum eksekusi
+  revokeAllShare.value = share;
+  showRevokeAllModal.value = true;
+};
 
-const handleRevokeAll = async (share: any) => {
+const confirmRevokeAll = async () => {
+  if (!revokeAllShare.value) return;
+  isRevokingAll.value = true;
   try {
-    const { revokeShare } = useNaskahShare();
-    await revokeShare(share.id);
+    await revokeShare(revokeAllShare.value.id);
     toast.add({
       title: t('share_berhasil'),
       description: t('share_berhasil_revoke'),
       color: 'success',
     });
+    showRevokeAllModal.value = false;
+    revokeAllShare.value = null;
     showDetailModal.value = false;
     loadData();
   } catch (err: any) {
@@ -205,6 +227,8 @@ const handleRevokeAll = async (share: any) => {
       description: err?.response?.data?.message || err?.message || t('share_gagal_cabut'),
       color: 'error',
     });
+  } finally {
+    isRevokingAll.value = false;
   }
 };
 
@@ -320,6 +344,18 @@ onMounted(() => { loadData(); });
             </Transition>
           </div>
 
+          <!-- RESET FILTER -->
+          <UButton
+            type="button"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="resetFilters"
+            :title="t('share_reset_filter')"
+            :aria-label="t('share_reset_filter')"
+          />
+
           <!-- SEARCH -->
           <div class="relative flex-1">
             <input
@@ -405,8 +441,7 @@ onMounted(() => { loadData(); });
           @update:page="currentPage = $event"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"
-          @revoke="handleRevoke"
-          @refresh="handleRefresh"
+          @revoke-all="handleRevokeAll"
         />
       </div>
     </div>
@@ -419,7 +454,7 @@ onMounted(() => { loadData(); });
       :recipient-name="revokeRecipientName"
       :naskah-perihal="revokeSharePerihal"
       @close="showRevokeModal = false"
-      @revoked="handleRevoked"
+      @revoked="loadData"
     />
 
     <!-- Detail Modal -->
@@ -431,6 +466,47 @@ onMounted(() => { loadData(); });
       @revoke-recipient="handleRevoke"
       @revoke-all="handleRevokeAll"
     />
+
+    <!-- Modal Konfirmasi Cabut Semua Akses -->
+    <Teleport to="body">
+      <div
+        v-if="showRevokeAllModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      >
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800"
+        >
+          <div class="p-5 text-center">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-100 dark:bg-red-900/30">
+              <UIcon name="i-lucide-shield-off" class="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+              {{ t('share_cabut_semua') }}
+            </h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              {{ t('share_revoke_all_confirm') }}
+            </p>
+            <div class="flex gap-3 justify-center">
+              <button
+                @click="showRevokeAllModal = false; revokeAllShare = null"
+                :disabled="isRevokingAll"
+                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {{ t('share_batal') }}
+              </button>
+              <button
+                @click="confirmRevokeAll"
+                :disabled="isRevokingAll"
+                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <UIcon v-if="isRevokingAll" name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
+                {{ isRevokingAll ? t('share_memproses') : t('share_akhiri_akses') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- PDF Viewer Full Page -->
     <Teleport to="body">

@@ -17,7 +17,7 @@ const emit = defineEmits<{
   (e: 'shared'): void;
 }>();
 
-const { createShare, searchUsers, searchResults, searchPending, clearSearchResults } = useNaskahShare();
+const { createShare, searchUsers, searchResults, clearSearchResults } = useNaskahShare();
 const { t } = useI18n();
 
 const isOpen = ref(true);

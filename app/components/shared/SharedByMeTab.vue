@@ -17,8 +17,7 @@ const emit = defineEmits<{
   (e: 'update:page', page: number): void;
   (e: 'view', share: ShareItem): void;
   (e: 'open-pdf', share: ShareItem): void;
-  (e: 'revoke', payload: { share: ShareItem; recipientId: string; recipientName: string }): void;
-  (e: 'refresh'): void;
+  (e: 'revoke-all', share: ShareItem): void;
 }>();
 
 const columns = computed(() => [
@@ -29,7 +28,6 @@ const columns = computed(() => [
   { key: 'accessType', label: t('share_akses'), sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'status', label: t('share_status'), sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: t('share_tanggal'), sortable: false },
-  { key: 'aksi', label: t('share_action'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
 /** Display status for sender: check share.status, then per-recipient for SEKALI_LIHAT. */
@@ -43,22 +41,8 @@ const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   return 'AKTIF';
 };
 
-const getFirstActiveRecipient = (share: ShareItem) =>
-  share.recipients?.find((r) => r.status !== 'BERAKHIR') || share.recipients?.[0];
-
-const canRevokeRecipient = (share: ShareItem) =>
-  share.status === 'AKTIF' && !!share.recipients?.some((r) => r.status !== 'BERAKHIR');
-
-const handleRevokeRecipient = (share: ShareItem) => {
-  const recipient = getFirstActiveRecipient(share);
-  if (!recipient) return;
-
-  emit('revoke', {
-    share,
-    recipientId: recipient.recipientId || recipient.id,
-    recipientName: recipient.nama,
-  });
-};
+/** Apakah share masih aktif (bisa dicabut semua aksesnya). */
+const isActive = (share: ShareItem): boolean => share.status === 'AKTIF';
 
 </script>
 
@@ -145,34 +129,41 @@ const handleRevokeRecipient = (share: ShareItem) => {
         </span>
       </template>
 
-      <template #cell-aksi="{ row }">
-        <div class="flex items-center justify-center gap-1">
+      <!-- Floating Quick Actions (muncul saat hover baris, menimpa kolom tanggal) -->
+      <template #row-extra="{ row }">
+        <div class="flex items-center gap-2 p-1">
           <UTooltip :text="t('share_lihat_detail')">
-            <UButton
-              icon="i-lucide-eye"
-              color="primary"
-              variant="ghost"
-              size="xs"
+            <button
+              type="button"
+              class="text-primary dark:text-primary-400 hover:opacity-80 transition-opacity"
               @click="emit('view', row as ShareItem)"
-            />
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4" />
+            </button>
           </UTooltip>
           <UTooltip :text="t('share_buka_pdf')">
-            <UButton
-              icon="i-lucide-file-text"
-              color="success"
-              variant="ghost"
-              size="xs"
+            <button
+              type="button"
+              class="text-success dark:text-success-400 hover:opacity-80 transition-opacity"
               @click="emit('open-pdf', row as ShareItem)"
-            />
+            >
+              <UIcon name="i-lucide-file-text" class="w-4 h-4" />
+            </button>
           </UTooltip>
-          <UTooltip v-if="canRevokeRecipient(row as ShareItem)" :text="t('share_akhiri')">
-            <UButton
-              icon="i-lucide-shield-off"
-              color="danger"
-              variant="ghost"
-              size="xs"
-              @click="handleRevokeRecipient(row as ShareItem)"
-            />
+          <!-- Divider pemisah aksi cabut semua -->
+          <div class="w-px h-5 bg-gray-200 dark:bg-gray-600" />
+          <UTooltip :text="isActive(row as ShareItem) ? t('share_cabut_semua') : t('share_akses_berakhir')">
+            <button
+              type="button"
+              :disabled="!isActive(row as ShareItem)"
+              class="transition-opacity"
+              :class="isActive(row as ShareItem)
+                ? 'text-red-600 dark:text-red-400 hover:opacity-80'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'"
+              @click="isActive(row as ShareItem) && emit('revoke-all', row as ShareItem)"
+            >
+              <UIcon name="i-lucide-shield-off" class="w-4 h-4" />
+            </button>
           </UTooltip>
         </div>
       </template>
