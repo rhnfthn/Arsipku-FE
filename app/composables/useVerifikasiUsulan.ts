@@ -82,6 +82,17 @@ export const useVerifikasiUsulan = () => {
           catatan: l.catatan ?? null,
         }))
       : undefined,
+    tuApprovalLevels: Array.isArray(raw.tuApprovalLevels)
+      ? raw.tuApprovalLevels.map((l: any) => ({
+          persnum: l.persnum,
+          name: l.name ?? '-',
+          jabatan: l.jabatan ?? l.positionText ?? null,
+          urutan: l.urutan,
+          status: l.status,
+          verifiedAt: l.verifiedAt ?? l.verified_at ?? null,
+          catatan: l.catatan ?? null,
+        }))
+      : undefined,
   });
 
   /** Fetch gabungan dari 2 endpoint. */

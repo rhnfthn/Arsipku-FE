@@ -2,86 +2,26 @@
   <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
     <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Timeline Riwayat</h3>
     <div class="space-y-1">
-      <!-- Step 1: Draft -->
-      <div class="flex gap-3 pb-4">
+      <!-- Steps ditampilkan TERBALIK: paling baru (Selesai) di atas, paling lama (Draft) di bawah -->
+      <div
+        v-for="(step, i) in reversedSteps"
+        :key="step.key"
+        class="flex gap-3"
+        :class="i < reversedSteps.length - 1 ? 'pb-4' : ''"
+      >
         <div class="flex flex-col items-center">
-          <div :class="stepDotClass(0)" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-            <UIcon v-if="stepIndex >= 0 && !isRejected" name="i-lucide-check" class="w-4 h-4" />
-            <UIcon v-else-if="isRejected && stepIndex === 0" name="i-lucide-x" class="w-4 h-4" />
-            <span v-else class="text-xs font-semibold">1</span>
+          <div :class="stepDotClass(step.step)" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+            <UIcon v-if="stepIndex >= step.step && !isRejected" name="i-lucide-check" class="w-4 h-4" />
+            <UIcon v-else-if="isRejected && stepIndex === step.step" name="i-lucide-x" class="w-4 h-4" />
+            <span v-else class="text-xs font-semibold">{{ step.step + 1 }}</span>
           </div>
-          <div v-if="stepIndex > 0" class="w-0.5 flex-1 mt-1 bg-green-300 dark:bg-green-700"></div>
+          <!-- Garis penghubung ke langkah berikutnya (di bawah) -->
+          <div v-if="i < reversedSteps.length - 1" class="w-0.5 flex-1 mt-1 bg-green-300 dark:bg-green-700"></div>
         </div>
         <div class="flex-1 min-w-0">
-          <p :class="stepTextClass(0)" class="text-sm font-medium">Draft</p>
-          <p class="text-xs text-gray-400 mt-0.5">Sekretaris membuat usulan</p>
-          <p v-if="item.createdAt" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.createdAt) }}</p>
-        </div>
-      </div>
-
-      <!-- Step 2: Menunggu Persetujuan -->
-      <div class="flex gap-3 pb-4">
-        <div class="flex flex-col items-center">
-          <div :class="stepDotClass(1)" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-            <UIcon v-if="stepIndex >= 1 && !isRejected" name="i-lucide-check" class="w-4 h-4" />
-            <UIcon v-else-if="isRejected && stepIndex === 1" name="i-lucide-x" class="w-4 h-4" />
-            <span v-else class="text-xs font-semibold">2</span>
-          </div>
-          <div v-if="stepIndex > 1" class="w-0.5 flex-1 mt-1 bg-green-300 dark:bg-green-700"></div>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p :class="stepTextClass(1)" class="text-sm font-medium">Menunggu Persetujuan</p>
-          <p class="text-xs text-gray-400 mt-0.5">Atasan Managerial Sekretaris</p>
-          <p v-if="item.approvedAt" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.approvedAt) }}</p>
-        </div>
-      </div>
-
-      <!-- Step 3: Menunggu Verifikasi -->
-      <div class="flex gap-3 pb-4">
-        <div class="flex flex-col items-center">
-          <div :class="stepDotClass(2)" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-            <UIcon v-if="stepIndex >= 2 && !isRejected" name="i-lucide-check" class="w-4 h-4" />
-            <UIcon v-else-if="isRejected && stepIndex === 2" name="i-lucide-x" class="w-4 h-4" />
-            <span v-else class="text-xs font-semibold">3</span>
-          </div>
-          <div v-if="stepIndex > 2" class="w-0.5 flex-1 mt-1 bg-green-300 dark:bg-green-700"></div>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p :class="stepTextClass(2)" class="text-sm font-medium">Menunggu Verifikasi</p>
-          <p class="text-xs text-gray-400 mt-0.5">Verifikasi terakhir Atasan Managerial → masuk TU</p>
-          <p v-if="item.finalVerifiedAt" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.finalVerifiedAt) }}</p>
-        </div>
-      </div>
-
-      <!-- Step 4: Menunggu Penerimaan -->
-      <div class="flex gap-3 pb-4">
-        <div class="flex flex-col items-center">
-          <div :class="stepDotClass(3)" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-            <UIcon v-if="stepIndex >= 3 && !isRejected" name="i-lucide-check" class="w-4 h-4" />
-            <UIcon v-else-if="isRejected && stepIndex === 3" name="i-lucide-x" class="w-4 h-4" />
-            <span v-else class="text-xs font-semibold">4</span>
-          </div>
-          <div v-if="stepIndex > 3" class="w-0.5 flex-1 mt-1 bg-green-300 dark:bg-green-700"></div>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p :class="stepTextClass(3)" class="text-sm font-medium">Menunggu Penerimaan</p>
-          <p class="text-xs text-gray-400 mt-0.5">TU kirim ke Atasan Managerial TU</p>
-          <p v-if="item.tanggalDikirim" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.tanggalDikirim) }}</p>
-        </div>
-      </div>
-
-      <!-- Step 5: Selesai -->
-      <div class="flex gap-3">
-        <div class="flex flex-col items-center">
-          <div :class="stepDotClass(4)" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-            <UIcon v-if="stepIndex >= 4" name="i-lucide-check" class="w-4 h-4" />
-            <span v-else class="text-xs font-semibold">5</span>
-          </div>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p :class="stepTextClass(4)" class="text-sm font-medium">Selesai</p>
-          <p class="text-xs text-gray-400 mt-0.5">TU menata arsip inaktif</p>
-          <p v-if="item.tuFinalApprovedAt" class="text-xs text-gray-400 mt-0.5">{{ formatDate(item.tuFinalApprovedAt) }}</p>
+          <p :class="stepTextClass(step.step)" class="text-sm font-medium">{{ step.label }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ step.desc }}</p>
+          <p v-if="step.date" class="text-xs text-gray-400 mt-0.5">{{ formatDate(step.date) }}</p>
         </div>
       </div>
     </div>
@@ -127,6 +67,48 @@ const stepIndex = computed(() => {
 const isRejected = computed(() =>
   ['DITOLAK_ATASAN', 'DITOLAK_VERIFIKASI_TERAKHIR', 'DITOLAK_PERSETUJUAN_TU', 'DITOLAK_PERSETUJUAN_TERAKHIR_TU', 'BERKAS_FISIK_TIDAK_SESUAI'].includes(props.item.status),
 );
+
+/** Daftar langkah urutan lama→baru (index 0 = Draft, 4 = Selesai). */
+const steps = computed(() => [
+  {
+    key: 'draft',
+    step: 0,
+    label: 'Draft',
+    desc: 'Sekretaris membuat usulan',
+    date: props.item.createdAt,
+  },
+  {
+    key: 'persetujuan',
+    step: 1,
+    label: 'Menunggu Persetujuan',
+    desc: 'Atasan Managerial Sekretaris',
+    date: props.item.approvedAt,
+  },
+  {
+    key: 'verifikasi',
+    step: 2,
+    label: 'Menunggu Verifikasi',
+    desc: 'Verifikasi terakhir Atasan Managerial → masuk TU',
+    date: props.item.finalVerifiedAt,
+  },
+  {
+    key: 'penerimaan',
+    step: 3,
+    label: 'Menunggu Penerimaan',
+    desc: 'TU kirim ke Atasan Managerial TU',
+    date: props.item.tanggalDikirim,
+  },
+  {
+    key: 'selesai',
+    step: 4,
+    label: 'Selesai',
+    desc: 'TU menata arsip inaktif',
+    date: props.item.tuFinalApprovedAt,
+  },
+]);
+
+/** Urutan terbalik: paling baru (Selesai) di atas, paling lama (Draft) di bawah. */
+const reversedSteps = computed(() => [...steps.value].reverse());
 
 const stepDotClass = (step: number): string => {
   if (isRejected.value && step === stepIndex.value) {
