@@ -440,6 +440,7 @@ const showKelolaMenu = computed(
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
 // Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
 const isAtasanManagerialUsulan = ref(false);
+const isAtasanManagerialTuUsulan = ref(false);
 const checkAtasanManagerialUsulan = async () => {
   try {
     const res = await apiGet('/transfer-active-to-inactive/is-atasan', {
@@ -448,6 +449,19 @@ const checkAtasanManagerialUsulan = async () => {
     isAtasanManagerialUsulan.value = res?.data?.isAtasan ?? false;
   } catch {
     isAtasanManagerialUsulan.value = false;
+  }
+};
+
+// Cek apakah user terdaftar sebagai atasan TU di usulan apapun (tuApprovalLevels).
+// Jika ya, user berhak melihat menu "Verifikasi Persetujuan" (TU side).
+const checkAtasanManagerialTuUsulan = async () => {
+  try {
+    const res = await apiGet('/tu/notifikasi-usulan/is-atasan-tu', {
+      validateStatus: () => true,
+    }, { skipCache: true });
+    isAtasanManagerialTuUsulan.value = res?.data?.isAtasanTu ?? res?.isAtasanTu ?? false;
+  } catch {
+    isAtasanManagerialTuUsulan.value = false;
   }
 };
 
@@ -506,6 +520,8 @@ watch(
       rtInit();
       // Cek apakah user adalah atasan managerial di usulan pemindahan arsip
       checkAtasanManagerialUsulan();
+      // Cek apakah user terdaftar sebagai atasan TU di usulan apapun
+      checkAtasanManagerialTuUsulan();
     }
   },
   { immediate: true }
@@ -1019,6 +1035,7 @@ const adminMenuKelola = computed(() => {
       to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
       icon: 'i-lucide-file-check',
       permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      showIfCanPersetujuan: true,
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
     {
@@ -1128,6 +1145,24 @@ const adminMenuKelola = computed(() => {
     });
   }
 
+  // ── Menu Penyusutan ──
+  menus.push({
+    label: 'Penyusutan',
+    icon: 'i-lucide-file-minus',
+    children: [
+      {
+        label: 'Daftar',
+        to: '/kelola/penyusutan/daftar',
+        icon: 'i-lucide-list',
+      },
+      {
+        label: 'Verifikasi',
+        to: '/kelola/penyusutan/verifikasi',
+        icon: 'i-lucide-file-check',
+      },
+    ],
+  });
+
   return menus;
 });
 
@@ -1235,6 +1270,24 @@ label: 'Penerimaan Usulan',
     });
   }
 
+  // ── Menu Penyusutan ──
+  menus.push({
+    label: 'Penyusutan',
+    icon: 'i-lucide-file-minus',
+    children: [
+      {
+        label: 'Daftar',
+        to: '/kelola/penyusutan/daftar',
+        icon: 'i-lucide-list',
+      },
+      {
+        label: 'Verifikasi',
+        to: '/kelola/penyusutan/verifikasi',
+        icon: 'i-lucide-file-check',
+      },
+    ],
+  });
+
   return menus;
 });
 
@@ -1259,17 +1312,17 @@ const filterMenuByPermission = (items) => {
   // Menu lain difilter berdasarkan permission, termasuk superadmin
   // Support nested children (recursive) untuk menu 2+ level.
   // Support role-based filtering via `roles` array on item.
-  // Atasan Managerial TU: HERMANA (10010123) atau PRIYO (10010970) — konsisten
-  // dengan AtasanTuGuard di backend (guards/atasan-tu-guard.ts).
-  const isAtasanManagerialTuPersnum =
-    Number(user.value?.persnum) === 10010123 ||
-    Number(user.value?.persnum) === 10010970;
+  // Atasan Managerial TU: tampilkan menu verifikasi persetujuan TU HANYA jika
+  // user terdaftar di tuApprovalLevels suatu usulan (cek via API is-atasan-tu).
+  // Admin/Superadmin TIDAK otomatis lihat menu ini — hanya yang memang
+  // terdaftar sebagai atasan TU di suatu usulan.
+  const isAtasanManagerialTuPersnum = isAtasanManagerialTuUsulan.value;
 
   const hasRoleAccess = (item) => {
     if (!item.roles || item.roles.length === 0) return true;
     // Superadmin selalu lihat semua menu
     if (isSuperadmin.value) return true;
-    // Atasan Managerial TU via persnum 10010123
+    // Atasan Managerial TU via posisi managerial
     if (isAtasanManagerialTuPersnum && item.roles.includes('atasan_managerial_tu')) return true;
     // Cek role user
     const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toLowerCase();
@@ -1296,9 +1349,16 @@ const filterMenuByPermission = (items) => {
     }
 
     // Cek showIfAtasanTu — tampilkan HANYA jika user adalah Atasan Managerial TU
-    // (persnum 10010123 HERMANA atau 10010970 PRIYO). Menu ini untuk verifikasi
+    // (terdaftar di tuApprovalLevels suatu usulan). Menu ini untuk verifikasi
     // persetujuan penerimaan arsip dari TU, bukan verifikasi usulan sekretaris.
     if (cloned.showIfAtasanTu && !isAtasanManagerialTuPersnum) {
+      return null;
+    }
+
+    // Cek showIfCanPersetujuan — tampilkan HANYA jika user adalah atasan
+    // managerial (bisa memberikan persetujuan pemberkasan). Unit Dokumen /
+    // non-managerial TIDAK lihat menu "Persetujuan".
+    if (cloned.showIfCanPersetujuan && !canPersetujuan.value && !isSuperadmin.value) {
       return null;
     }
 
