@@ -115,8 +115,16 @@
             <Transition name="filter-dd">
               <div
                 v-if="openFilterKlasifikasi"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px] max-h-56 overflow-y-auto"
               >
+                <input
+                  v-model="klasifikasiSearch"
+                  type="text"
+                  placeholder="Cari klasifikasi…"
+                  class="sticky top-0 z-10 w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-0"
+                  @click.stop
+                  @keydown.stop
+                />
                 <button
                   type="button"
                   @click.stop="selectFilterKlasifikasi('')"
@@ -130,7 +138,7 @@
                   Semua Klasifikasi
                 </button>
                 <button
-                  v-for="k in klasifikasiList"
+                  v-for="k in filteredKlasifikasiList"
                   :key="k.klasifikasi"
                   type="button"
                   @click.stop="selectFilterKlasifikasi(k.klasifikasi)"
@@ -240,6 +248,9 @@
           <span class="text-xs">
             {{ row.retensiAktifTahun || 0 }}A / {{ row.retensiInaktifTahun || 0 }}I
           </span>
+        </template>
+        <template #cell-kategoriBerkas="{ row }">
+          <span class="text-xs">{{ row.kategoriBerkas || '—' }}</span>
         </template>
         <template #cell-status="{ row }">
           <span
@@ -416,22 +427,25 @@
             </div>
           </div>
 
-          <!-- Kategori Berkas -->
+          <!-- Kategori Berkas (tag opsional) -->
           <div
             class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
           >
             <span
               class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
             >
-              Kategori Berkas
+              Kategori / Tag Berkas
             </span>
             <div class="flex-1 w-full">
               <input
                 v-model="form.kategori_berkas"
                 type="text"
-                placeholder="Contoh: Pengadaan IT"
+                placeholder="Penanda tambahan untuk memudahkan pencarian, mis. Pengadaan IT, Keuangan, SDM…"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
               />
+              <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                Opsional — berkas bisa difilter &amp; dicari berdasarkan kategori ini.
+              </p>
             </div>
           </div>
 
@@ -559,58 +573,6 @@
             </div>
           </div>
 
-          <!-- Dokumen Pendukung -->
-          <div class="flex flex-col py-2 border-b border-gray-200 dark:border-gray-600 gap-2">
-            <span
-              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
-            >
-              Dokumen Pendukung
-            </span>
-            <div class="flex-1 w-full">
-              <label
-                class="group cursor-pointer border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition border-gray-300 dark:border-gray-600"
-              >
-                <Upload
-                  class="w-6 h-6 group-hover:text-primary-400 text-gray-400 dark:text-gray-500"
-                />
-                <p class="text-xs text-gray-600 dark:text-gray-400">
-                  Seret file atau
-                  <span class="text-primary-500 font-medium">pilih file</span>
-                </p>
-                <p class="text-[10px] text-gray-400 dark:text-gray-500">PDF/JPG/PNG, maks 5MB</p>
-                <input
-                  type="file"
-                  class="hidden"
-                  accept=".pdf,image/jpeg,image/png"
-                  @change="onDokumenChange"
-                />
-              </label>
-              <div v-if="form.dokumen_pendukung" class="mt-2 space-y-2">
-                <div
-                  class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2"
-                >
-                  <div class="flex items-center gap-2">
-                    <FileText class="w-4 h-4 text-primary-400" />
-                    <div class="flex flex-col">
-                      <span class="text-xs font-medium truncate max-w-[220px] dark:text-gray-200">{{
-                        form.dokumen_pendukung.name
-                      }}</span>
-                      <span class="text-[10px] text-gray-400 dark:text-gray-500"
-                        >{{ (form.dokumen_pendukung.size / 1024).toFixed(1) }} KB</span
-                      >
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="text-red-400 hover:text-red-600"
-                    @click="form.dokumen_pendukung = null"
-                  >
-                    <X class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <template #footer>
@@ -669,8 +631,6 @@ import { ref, computed, onMounted, onBeforeUnmount, reactive, watch } from 'vue'
 import {
   Plus,
   Eye,
-  Upload,
-  FileText,
   X,
   RotateCcw,
   Image as ImageIcon,
@@ -705,6 +665,8 @@ const filterStatus = ref('');
 const filterKlasifikasi = ref('');
 const filterTahun = ref('');
 
+// Berkas Tertutup (closed_retensi_aktif) tampil untuk semua user — yang
+// retensi aktifnya sudah habis otomatis pindah ke pemindahan arsip (TU).
 const statusOptions = [
   { value: '', label: 'Semua Status' },
   { value: 'aktif', label: 'Terbuka' },
@@ -733,6 +695,19 @@ const openRowsPerPage = ref(false);
 const openFilterStatus = ref(false);
 const openFilterKlasifikasi = ref(false);
 const openFilterTahun = ref(false);
+const klasifikasiSearch = ref('');
+
+// Pencarian dalam dropdown klasifikasi — daftar klasifikasi bisa sangat panjang
+// (ratusan kode), filter client-side tanpa request tambahan.
+const filteredKlasifikasiList = computed(() => {
+  const q = klasifikasiSearch.value.trim().toLowerCase();
+  if (!q) return klasifikasiList.value;
+  return klasifikasiList.value.filter(
+    (k: any) =>
+      String(k.klasifikasi).toLowerCase().includes(q) ||
+      String(k.klasifikasi_text || '').toLowerCase().includes(q)
+  );
+});
 
 const statusLabel = computed(
   () => statusOptions.find((o) => o.value === filterStatus.value)?.label ?? 'Semua Status'
@@ -745,7 +720,6 @@ const klasifikasiLabel = computed(() => {
 const tahunLabel = computed(
   () => tahunOptions.find((o) => o.value === filterTahun.value)?.label ?? 'Semua Tahun'
 );
-
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
   openFilterStatus.value = false;
@@ -763,6 +737,7 @@ function toggleFilterKlasifikasi() {
   openRowsPerPage.value = false;
   openFilterStatus.value = false;
   openFilterTahun.value = false;
+  if (openFilterKlasifikasi.value) klasifikasiSearch.value = '';
 }
 function toggleFilterTahun() {
   openFilterTahun.value = !openFilterTahun.value;
@@ -781,6 +756,7 @@ function selectFilterStatus(val: string) {
 function selectFilterKlasifikasi(val: string) {
   filterKlasifikasi.value = val;
   openFilterKlasifikasi.value = false;
+  klasifikasiSearch.value = '';
 }
 function selectFilterTahun(val: string) {
   filterTahun.value = val;
@@ -809,7 +785,6 @@ const defaultForm = {
   lokasi: '',
   isi_ringkas: '',
   kategori_berkas: '',
-  dokumen_pendukung: null as File | null,
   foto_lokasi_fisik: null as File | null,
 };
 
@@ -836,6 +811,7 @@ const columns = [
   { key: 'judulBerkas', label: 'Nama Berkas', sortable: true },
   { key: 'kodeBerkas', label: 'Kode Berkas', sortable: true },
   { key: 'klasifikasiTeks', label: 'Klasifikasi', sortable: true },
+  { key: 'kategoriBerkas', label: 'Kategori', sortable: true },
   { key: 'retensi', label: 'Retensi (A/I)' },
   { key: 'lokasi', label: 'Lokasi Fisik', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
@@ -915,11 +891,6 @@ const onKlasifikasiChange = () => {
   }
 };
 
-const onDokumenChange = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0] || null;
-  form.dokumen_pendukung = file;
-};
-
 const onFotoLokasiChange = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0] || null;
   form.foto_lokasi_fisik = file;
@@ -944,10 +915,9 @@ const onSubmitBerkas = async () => {
 
   isSubmitting.value = true;
   try {
-    // Upload file pendukung (foto lokasi & dokumen) ke storage bila dipilih;
-    // simpan KEY hasil upload (bukan nama file) ke DB.
+    // Upload foto lokasi fisik (satu-satunya file pendukung berkas) ke storage
+    // bila dipilih; simpan KEY hasil upload (bukan nama file) ke DB.
     let fotoLokasiKey: string | undefined;
-    let dokumenPendukungKey: string | undefined;
     if (form.foto_lokasi_fisik) {
       isUploading.value = true;
       try {
@@ -956,19 +926,6 @@ const onSubmitBerkas = async () => {
       } catch (e: any) {
         throw new Error(
           `Gagal upload foto lokasi: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
-        );
-      } finally {
-        isUploading.value = false;
-      }
-    }
-    if (form.dokumen_pendukung) {
-      isUploading.value = true;
-      try {
-        const res: any = await uploadBerkasFile(form.dokumen_pendukung);
-        dokumenPendukungKey = res?.data?.key ?? res?.key;
-      } catch (e: any) {
-        throw new Error(
-          `Gagal upload dokumen pendukung: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
         );
       } finally {
         isUploading.value = false;
@@ -984,7 +941,6 @@ const onSubmitBerkas = async () => {
       isi_ringkas: form.isi_ringkas,
       kategori_berkas: form.kategori_berkas || undefined,
       foto_lokasi_fisik: fotoLokasiKey,
-      dokumen_pendukung: dokumenPendukungKey,
     };
 
     const result: any = await createBerkas(payload);
@@ -1083,6 +1039,7 @@ const exportData = async () => {
       'Nama Berkas',
       'Kode Berkas',
       'Klasifikasi',
+      'Kategori',
       'Retensi (A/I)',
       'Lokasi Fisik',
       'Status',
@@ -1092,6 +1049,7 @@ const exportData = async () => {
       b.judulBerkas,
       b.kodeBerkas,
       b.klasifikasiTeks,
+      b.kategoriBerkas || '',
       `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`,
       b.lokasi,
       b.status,
