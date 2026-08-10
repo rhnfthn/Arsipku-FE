@@ -175,15 +175,18 @@
                 <span
                   class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
                 >
-                  Kategori Berkas
+                  Kategori / Tag Berkas
                 </span>
                 <div class="flex-1 w-full">
                   <input
                     v-model="form.kategori_berkas"
                     type="text"
-                    placeholder="Contoh: Pengadaan IT"
+                    placeholder="Penanda tambahan untuk memudahkan pencarian, mis. Pengadaan IT, Keuangan, SDM…"
                     class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                   />
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    Opsional — berkas bisa difilter &amp; dicari berdasarkan kategori ini.
+                  </p>
                 </div>
               </div>
 
@@ -228,11 +231,11 @@
               <div>
                 <h2 class="font-semibold text-gray-900 dark:text-white">Lampiran Berkas</h2>
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Foto lokasi fisik & dokumen pendukung. Kosongkan untuk pertahankan yang lama.
+                  Foto lokasi fisik berkas. Kosongkan untuk pertahankan yang lama.
                 </p>
               </div>
             </div>
-            <div class="grid grid-cols-1 gap-5 px-5 py-5 sm:grid-cols-2">
+            <div class="px-5 py-5">
               <!-- Foto Lokasi Fisik -->
               <div>
                 <p
@@ -274,53 +277,6 @@
                     type="button"
                     class="ml-2 text-red-400 hover:text-red-600"
                     @click="form.foto_lokasi_fisik = null"
-                  >
-                    <UIcon name="i-lucide-x" class="size-3.5 inline" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Dokumen Pendukung -->
-              <div>
-                <p
-                  class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                >
-                  Dokumen Pendukung
-                </p>
-                <p
-                  v-if="existingDokumen && !form.dokumen_pendukung"
-                  class="mb-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"
-                >
-                  <UIcon name="i-lucide-check-circle-2" class="size-3.5 text-success-500" />
-                  Dokumen saat ini tersimpan. Pilih file baru untuk mengganti.
-                </p>
-                <label
-                  class="group cursor-pointer border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900 transition border-gray-300 dark:border-gray-600"
-                >
-                  <UIcon
-                    name="i-lucide-upload"
-                    class="size-6 text-gray-400 group-hover:text-primary-500 dark:text-gray-500"
-                  />
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
-                    Seret file atau
-                    <span class="text-primary-500 font-medium">pilih file</span>
-                  </p>
-                  <p class="text-[10px] text-gray-400 dark:text-gray-500">PDF/JPG/PNG, maks 5MB</p>
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept=".pdf,image/jpeg,image/png"
-                    @change="onDokumenChange"
-                  />
-                </label>
-                <div v-if="form.dokumen_pendukung" class="mt-2">
-                  <span class="text-xs text-gray-600 dark:text-gray-300">{{
-                    form.dokumen_pendukung.name
-                  }}</span>
-                  <button
-                    type="button"
-                    class="ml-2 text-red-400 hover:text-red-600"
-                    @click="form.dokumen_pendukung = null"
                   >
                     <UIcon name="i-lucide-x" class="size-3.5 inline" />
                   </button>
@@ -461,7 +417,6 @@ const form = reactive({
   lokasi: '',
   isi_ringkas: '',
   foto_lokasi_fisik: null as File | null,
-  dokumen_pendukung: null as File | null,
 });
 const errors = reactive({
   klasifikasi: false,
@@ -470,7 +425,6 @@ const errors = reactive({
   isi_ringkas: false,
 });
 const existingFoto = ref('');
-const existingDokumen = ref('');
 const selectedRetensiAktif = ref(0);
 const selectedRetensiInaktif = ref(0);
 
@@ -524,9 +478,6 @@ const onKlasifikasiChange = () => {
 const onFotoChange = (e: Event) => {
   form.foto_lokasi_fisik = (e.target as HTMLInputElement).files?.[0] || null;
 };
-const onDokumenChange = (e: Event) => {
-  form.dokumen_pendukung = (e.target as HTMLInputElement).files?.[0] || null;
-};
 
 const prefill = () => {
   const b = berkas.value;
@@ -537,7 +488,6 @@ const prefill = () => {
   form.lokasi = b.lokasi || '';
   form.isi_ringkas = b.isiRingkas || '';
   existingFoto.value = b.fotoLokasiFisik || '';
-  existingDokumen.value = b.dokumenPendukung || '';
   selectedRetensiAktif.value = b.retensiAktifTahun || 0;
   selectedRetensiInaktif.value = b.retensiInaktifTahun || 0;
 };
@@ -553,7 +503,6 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   try {
     let fotoKey: string | undefined;
-    let dokumenKey: string | undefined;
     if (form.foto_lokasi_fisik) {
       try {
         const res: any = await uploadBerkasFile(form.foto_lokasi_fisik);
@@ -561,16 +510,6 @@ const handleSubmit = async () => {
       } catch (e: any) {
         throw new Error(
           `Gagal upload foto lokasi: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
-        );
-      }
-    }
-    if (form.dokumen_pendukung) {
-      try {
-        const res: any = await uploadBerkasFile(form.dokumen_pendukung);
-        dokumenKey = res?.data?.key ?? res?.key;
-      } catch (e: any) {
-        throw new Error(
-          `Gagal upload dokumen pendukung: ${e?.response?.data?.message || e?.message || 'coba lagi'}`
         );
       }
     }
@@ -583,7 +522,6 @@ const handleSubmit = async () => {
       isi_ringkas: form.isi_ringkas,
     };
     if (fotoKey) payload.foto_lokasi_fisik = fotoKey;
-    if (dokumenKey) payload.dokumen_pendukung = dokumenKey;
 
     await updateBerkas(berkasId.value, payload);
     toast.add({ title: 'Perubahan berkas tersimpan', color: 'success' });

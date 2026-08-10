@@ -523,6 +523,17 @@
                 }}</span
               ></template
             >
+            <template #cell-status="{ row }"
+              ><span
+                v-if="row.status === 'inaktif'"
+                class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                >Inaktif</span
+              ><span
+                v-else
+                class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-1 text-xs font-semibold text-success-700 dark:bg-success-900/30 dark:text-success-400"
+                >Aktif</span
+              ></template
+            >
             <template #cell-aksi="{ row }">
               <div class="flex items-center gap-1">
                 <NuxtLink
@@ -665,7 +676,7 @@
         <EmptyState
           icon="i-lucide-list-tree"
           title="Activity Log belum tersedia"
-          description="Modul audit log terpisah akan ditambahkan di phase berikutnya (spec §15.7)."
+          description="COMING SOON"
         />
       </section>
 
@@ -900,7 +911,7 @@
                 <input
                   v-model="candidateSearch"
                   type="text"
-                  placeholder="Cari nomor atau perihal naskah…"
+                  placeholder="Cari nomor, perihal, atau nama…"
                   class="h-9 w-full rounded-md border border-primary-200 bg-white pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-primary-900/40 dark:bg-gray-800 dark:text-gray-200"
                 />
               </div>
@@ -919,6 +930,20 @@
                 <option v-for="opt in statusFilterOptions" :key="opt.value" :value="opt.value">
                   {{ opt.label }}
                 </option>
+              </select>
+              <select
+                v-model="candidateDivisiFilter"
+                class="h-9 w-56 rounded-md border border-primary-200 bg-white px-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-primary-900/40 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="">Semua Divisi</option>
+                <option v-for="d in candidateDivisiOptions" :key="d" :value="d">{{ d }}</option>
+              </select>
+              <select
+                v-model="candidateJabatanFilter"
+                class="h-9 w-56 rounded-md border border-primary-200 bg-white px-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-primary-900/40 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="">Semua Jabatan</option>
+                <option v-for="j in candidateJabatanOptions" :key="j" :value="j">{{ j }}</option>
               </select>
             </div>
             <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -1009,6 +1034,21 @@
                 >
                   <component :is="row.sumber === 'terkirim' ? Send : Inbox" class="h-3.5 w-3.5" />
                   {{ getSourceLabel(row.sumber) }}
+                </span>
+              </template>
+              <template #cell-divisi="{ row }">
+                <span class="block min-w-32 max-w-48 text-xs text-gray-600 dark:text-gray-300">
+                  {{ row.divisi || '—' }}
+                </span>
+              </template>
+              <template #cell-jabatan="{ row }">
+                <span class="block min-w-32 max-w-48 text-xs text-gray-600 dark:text-gray-300">
+                  {{ row.jabatan || '—' }}
+                </span>
+              </template>
+              <template #cell-nama="{ row }">
+                <span class="block min-w-28 text-xs font-medium text-gray-800 dark:text-gray-200">
+                  {{ row.nama || '—' }}
                 </span>
               </template>
               <template #cell-berkas="{ row }">
@@ -1191,7 +1231,9 @@ const selectedNaskahSumber = ref<Record<string, string>>({}); // id -> sumber
 const isSubmittingNaskah = ref(false);
 const addNaskahTab = ref<'kotak_masuk' | 'terkirim' | 'siap_arsip'>('siap_arsip');
 const candidateJenisFilter = ref('');
-const candidateStatusFilter = ref('');
+const candidateStatusFilter = ref('out');
+const candidateDivisiFilter = ref('');
+const candidateJabatanFilter = ref('');
 const candidateDateFrom = ref('');
 const candidateDateTo = ref('');
 const jenisFilterOptions = [
@@ -1200,6 +1242,8 @@ const jenisFilterOptions = [
   { value: 'SDI', label: 'Surat Dinas Internal' },
   { value: 'SDE', label: 'Surat Dinas Eksternal' },
   { value: 'DI', label: 'Disposisi' },
+  { value: 'KA', label: 'Korespondensi Aktif' },
+  { value: 'UND', label: 'Surat Undangan' },
   { value: 'K', label: 'Konsep' },
 ];
 const statusFilterOptions = [
@@ -1234,6 +1278,7 @@ const naskahColumns = [
   { key: 'perihal', label: 'Perihal' },
   { key: 'naskahTipe', label: 'Jenis' },
   { key: 'sumber', label: 'Sumber' },
+  { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi', class: 'w-24' },
 ];
 const candidateColumns = [
@@ -1241,15 +1286,34 @@ const candidateColumns = [
   { key: 'nomor_surat', label: 'Nomor & Tanggal' },
   { key: 'perihal', label: 'Perihal' },
   { key: 'naskah_tipe', label: 'Jenis' },
+  { key: 'divisi', label: 'Divisi' },
+  { key: 'jabatan', label: 'Jabatan' },
+  { key: 'nama', label: 'Nama' },
   { key: 'sumber', label: 'Sumber' },
   { key: 'berkas', label: 'Status Berkas' },
 ];
+// Opsi filter divisi/jabatan unik dari daftar kandidat (kolom baru dari BE).
+const candidateDivisiOptions = computed(() => [
+  ...new Set(
+    candidateList.value.map((r) => r.divisi).filter((d: any) => typeof d === 'string' && d.trim())
+  ),
+] as string[]);
+const candidateJabatanOptions = computed(() => [
+  ...new Set(
+    candidateList.value
+      .map((r) => r.jabatan)
+      .filter((j: any) => typeof j === 'string' && j.trim())
+  ),
+] as string[]);
 const filteredCandidates = computed(() => {
   let rows = candidateList.value;
   if (candidateStatusFilter.value === 'in') rows = rows.filter((r) => r.sudah_masuk_berkas);
   else if (candidateStatusFilter.value === 'out') rows = rows.filter((r) => !r.sudah_masuk_berkas);
   if (candidateJenisFilter.value)
     rows = rows.filter((r) => (r.naskah_tipe || r.naskahTipe || '') === candidateJenisFilter.value);
+  if (candidateDivisiFilter.value) rows = rows.filter((r) => r.divisi === candidateDivisiFilter.value);
+  if (candidateJabatanFilter.value)
+    rows = rows.filter((r) => r.jabatan === candidateJabatanFilter.value);
   if (candidateDateFrom.value || candidateDateTo.value) {
     rows = rows.filter((r) => {
       const d = (r.tanggal_naskah || r.tanggalNaskah || '').toString().slice(0, 10);
@@ -1274,7 +1338,9 @@ function clearSelection() {
 }
 function resetCandidateFilters() {
   candidateJenisFilter.value = '';
-  candidateStatusFilter.value = '';
+  candidateStatusFilter.value = 'out';
+  candidateDivisiFilter.value = '';
+  candidateJabatanFilter.value = '';
   candidateDateFrom.value = '';
   candidateDateTo.value = '';
 }
@@ -1479,6 +1545,8 @@ function getNaskahTypeLabel(value?: string) {
     SDI: 'Surat Dinas Internal',
     SDE: 'Surat Dinas Eksternal',
     DI: 'Disposisi',
+    KA: 'Korespondensi Aktif',
+    UND: 'Surat Undangan',
     K: 'Konsep',
   };
   return labels[String(value || '').toUpperCase()] || value || '-';
@@ -1788,15 +1856,42 @@ async function handleAddNaskah() {
       (groups[sumber] ||= []).push(id);
       return groups;
     }, {});
-    await Promise.all(
-      Object.entries(bySource).map(([sumber, naskah_ids]) =>
-        addNaskahToBerkas(berkasId.value, { sumber, naskah_ids })
-      )
+    const results = await Promise.all(
+      Object.entries(bySource).map(async ([sumber, naskah_ids]) => {
+        const response = await addNaskahToBerkas(berkasId.value, { sumber, naskah_ids });
+        const payload = unwrapEnvelope<Record<string, any>>(response);
+        return {
+          count: Number(payload?.count ?? 0),
+          rejected: Number(payload?.rejected ?? 0),
+          alreadyExists: Number(payload?.alreadyExists ?? 0),
+        };
+      })
     );
-    toast.add({
-      title: `${entries.length} naskah berhasil ditambahkan`,
-      color: 'success',
-    });
+    const added = results.reduce((sum, r) => sum + r.count, 0);
+    const rejected = results.reduce((sum, r) => sum + r.rejected, 0);
+    const alreadyExists = results.reduce((sum, r) => sum + r.alreadyExists, 0);
+    if (added > 0) {
+      const skipped = rejected + alreadyExists;
+      toast.add({
+        title: `${added} naskah berhasil ditambahkan`,
+        description: skipped
+          ? `${skipped} naskah dilewati (sudah ada di berkas atau tidak dapat ditambahkan).`
+          : undefined,
+        color: 'success',
+      });
+    } else if (alreadyExists > 0) {
+      toast.add({
+        title: 'Naskah sudah masuk berkas',
+        description: `${alreadyExists} naskah tidak ditambahkan karena sudah terdaftar di sebuah berkas.`,
+        color: 'warning',
+      });
+    } else {
+      toast.add({
+        title: 'Tidak ada naskah yang ditambahkan',
+        description: 'Periksa kembali pilihan naskah atau muat ulang daftar naskah.',
+        color: 'error',
+      });
+    }
     showAddNaskahModal.value = false;
     selectedNaskahSumber.value = {};
     naskahPage.value = 1;

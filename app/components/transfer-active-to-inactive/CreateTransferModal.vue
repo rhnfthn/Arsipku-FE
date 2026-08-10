@@ -486,9 +486,14 @@ const loadAtasanManagerial = async () => {
 const loadArsipRetensiHabis = async () => {
   arsipLoading.value = true;
   try {
-    const { getBerkasList } = useArsipDinamis();
-    const res: any = await getBerkasList({ status: 'closed_retensi_aktif', limit: 100 });
-    const data = res?.data?.data ?? res?.data ?? res ?? [];
+    // Sumber data: arsip-tersedia (query langsung ke DB) — bukan list berkas,
+    // karena berkas tertutup sudah tidak tampil di list berkas user biasa.
+    const res: any = await apiGet(
+      '/transfer-active-to-inactive/arsip-tersedia',
+      {},
+      { skipCache: true }
+    );
+    const data = res?.data ?? res ?? [];
     let arsipList = Array.isArray(data) ? data : [];
 
     // Ambil daftar arsip yang sudah ada usulan transfer (semua status kecuali DITOLAK)
@@ -515,9 +520,13 @@ const loadArsipRetensiHabis = async () => {
 
     arsipOptions.value = arsipList.map((b: any) => ({
       id: b.id,
-      judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
+      judulBerkas: b.perihal ?? b.judulBerkas ?? b.judul_berkas ?? '-',
       kodeBerkas: b.kodeBerkas ?? b.kode_berkas ?? null,
-      tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifBerakhir ?? b.tanggal_retensi_aktif_berakhir ?? null,
+      tanggalRetensiAktifBerakhir:
+        b.tanggalRetensiAktifHabis ??
+        b.tanggalRetensiAktifBerakhir ??
+        b.tanggal_retensi_aktif_berakhir ??
+        null,
       kategoriBerkas: b.kategoriBerkas ?? b.kategori_berkas ?? null,
     }));
   } catch (e) {
