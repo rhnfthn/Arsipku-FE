@@ -79,9 +79,9 @@
           </dl>
         </div>
 
-        <!-- Lampiran Berkas (Foto & Dokumen Pendukung) -->
+        <!-- Lampiran Berkas (Foto Lokasi Fisik) -->
         <div
-          v-if="berkas?.fotoLokasiFisik || berkas?.dokumenPendukung"
+          v-if="berkas?.fotoLokasiFisik"
           class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
         >
           <div
@@ -98,11 +98,11 @@
             <div>
               <h2 class="font-semibold text-gray-900 dark:text-white">Lampiran Berkas</h2>
               <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                Foto lokasi fisik & dokumen pendukung.
+                Foto lokasi fisik.
               </p>
             </div>
           </div>
-          <div class="grid grid-cols-1 gap-5 px-5 py-5 sm:grid-cols-2">
+          <div class="grid grid-cols-1 gap-5 px-5 py-5">
             <!-- Foto Lokasi Fisik -->
             <div>
               <p
@@ -112,14 +112,14 @@
               </p>
               <div
                 v-if="fotoLoading"
-                class="flex aspect-video items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
+                class="flex aspect-video max-w-sm items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
               >
                 <span class="text-xs text-gray-400">Memuat foto…</span>
               </div>
               <button
                 v-else-if="fotoObjectUrl"
                 type="button"
-                class="group relative block w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                class="group relative block aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
                 @click="openLightbox"
               >
                 <img
@@ -135,7 +135,7 @@
               </button>
               <div
                 v-else
-                class="flex aspect-video items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
+                class="flex aspect-video max-w-sm items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
               >
                 <span class="text-xs text-gray-400">{{
                   fotoError ? 'File tidak tersedia' : 'Belum ada foto'
@@ -143,82 +143,6 @@
               </div>
             </div>
 
-            <!-- Dokumen Pendukung -->
-            <div>
-              <p
-                class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
-              >
-                Dokumen Pendukung
-              </p>
-              <div
-                v-if="dokumenLoading"
-                class="flex aspect-video items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
-              >
-                <span class="text-xs text-gray-400">Memuat dokumen…</span>
-              </div>
-              <div
-                v-else-if="dokumenObjectUrl"
-                class="flex aspect-video flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 dark:border-gray-700 dark:from-gray-700/30 dark:to-gray-800"
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                    :class="dokumenTypeIcon.bg"
-                  >
-                    <UIcon :name="dokumenTypeIcon.iconName" class="size-6" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      <span
-                        class="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                        :class="dokumenTypeIcon.badge"
-                        >{{ dokumenTypeIcon.label }}</span
-                      >
-                      <span v-if="dokumenSize" class="text-xs text-gray-500 dark:text-gray-400">{{
-                        dokumenSize
-                      }}</span>
-                    </div>
-                    <p
-                      class="mt-1 truncate text-sm font-semibold text-gray-900 dark:text-white"
-                      :title="dokumenFileName"
-                    >
-                      {{ dokumenFileName }}
-                    </p>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                      Dokumen pendukung berkas
-                    </p>
-                  </div>
-                </div>
-                <div class="flex gap-2">
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    icon="i-lucide-eye"
-                    class="flex-1 justify-center"
-                    @click="openDokumen"
-                    >Lihat</UButton
-                  >
-                  <UButton
-                    color="primary"
-                    variant="soft"
-                    size="xs"
-                    icon="i-lucide-download"
-                    class="flex-1 justify-center"
-                    @click="downloadDokumen"
-                    >Unduh</UButton
-                  >
-                </div>
-              </div>
-              <div
-                v-else
-                class="flex aspect-video items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
-              >
-                <span class="text-xs text-gray-400">{{
-                  dokumenError ? 'File tidak tersedia' : 'Belum ada dokumen'
-                }}</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -559,133 +483,42 @@ const removeVerifikator = (idx: number) => {
   verifikatorList.value.splice(idx, 1);
 };
 
-// ── Lampiran berkas (foto lokasi fisik & dokumen pendukung) ──
+// ── Lampiran berkas (foto lokasi fisik) ──
 const fotoObjectUrl = ref('');
 const fotoError = ref(false);
 const fotoLoading = ref(false);
-const dokumenObjectUrl = ref('');
-const dokumenError = ref(false);
-const dokumenLoading = ref(false);
 const lightboxOpen = ref(false);
-const dokumenSize = ref('');
-const dokumenFileName = computed(
-  () => berkas.value?.dokumenPendukung?.split('/').pop() || 'dokumen-pendukung'
-);
 const isHttpUrl = (v?: string) => !!v && /^https?:\/\//i.test(v);
-function formatFileSize(bytes: number) {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-const dokumenTypeIcon = computed(() => {
-  const ext = (berkas.value?.dokumenPendukung || '').split('.').pop()?.toLowerCase() || '';
-  if (ext === 'pdf')
-    return {
-      iconName: 'i-lucide-file-text',
-      label: 'PDF',
-      bg: 'bg-error-500',
-      badge: 'bg-error-100 text-error-700 dark:bg-error-900/40 dark:text-error-400',
-    };
-  if (ext === 'docx' || ext === 'doc')
-    return {
-      iconName: 'i-lucide-file-text',
-      label: ext === 'docx' ? 'DOCX' : 'DOC',
-      bg: 'bg-primary-500',
-      badge: 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-400',
-    };
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext))
-    return {
-      iconName: 'i-lucide-image',
-      label: ext.toUpperCase(),
-      bg: 'bg-success-500',
-      badge: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-400',
-    };
-  return {
-    iconName: 'i-lucide-file',
-    label: ext ? ext.toUpperCase() : 'FILE',
-    bg: 'bg-gray-500',
-    badge: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-  };
-});
 async function loadBerkasFiles() {
   if (!berkas.value) return;
   if (fotoObjectUrl.value) URL.revokeObjectURL(fotoObjectUrl.value);
-  if (dokumenObjectUrl.value) URL.revokeObjectURL(dokumenObjectUrl.value);
   fotoObjectUrl.value = '';
-  dokumenObjectUrl.value = '';
   fotoError.value = false;
-  dokumenError.value = false;
-  dokumenSize.value = '';
   const fotoKey = berkas.value.fotoLokasiFisik;
-  const dokKey = berkas.value.dokumenPendukung;
-  const tasks: Promise<void>[] = [];
-  if (fotoKey) {
-    tasks.push(
-      (async () => {
-        if (isHttpUrl(fotoKey)) {
-          fotoObjectUrl.value = fotoKey;
-          return;
-        }
-        fotoLoading.value = true;
-        try {
-          const blob = await fetchBerkasFileBlob(fotoKey);
-          fotoObjectUrl.value = URL.createObjectURL(blob);
-        } catch {
-          fotoError.value = true;
-        } finally {
-          fotoLoading.value = false;
-        }
-      })()
-    );
+  if (!fotoKey) return;
+  if (isHttpUrl(fotoKey)) {
+    fotoObjectUrl.value = fotoKey;
+    return;
   }
-  if (dokKey) {
-    tasks.push(
-      (async () => {
-        if (isHttpUrl(dokKey)) {
-          dokumenObjectUrl.value = dokKey;
-          return;
-        }
-        dokumenLoading.value = true;
-        try {
-          const blob = await fetchBerkasFileBlob(dokKey);
-          dokumenObjectUrl.value = URL.createObjectURL(blob);
-          dokumenSize.value = formatFileSize(blob.size);
-        } catch {
-          dokumenError.value = true;
-        } finally {
-          dokumenLoading.value = false;
-        }
-      })()
-    );
+  fotoLoading.value = true;
+  try {
+    const blob = await fetchBerkasFileBlob(fotoKey);
+    fotoObjectUrl.value = URL.createObjectURL(blob);
+  } catch {
+    fotoError.value = true;
+  } finally {
+    fotoLoading.value = false;
   }
-  await Promise.all(tasks);
 }
 function revokeBerkasFiles() {
   if (fotoObjectUrl.value) {
     URL.revokeObjectURL(fotoObjectUrl.value);
     fotoObjectUrl.value = '';
   }
-  if (dokumenObjectUrl.value) {
-    URL.revokeObjectURL(dokumenObjectUrl.value);
-    dokumenObjectUrl.value = '';
-  }
 }
 const openLightbox = () => {
   lightboxOpen.value = true;
 };
-function openDokumen() {
-  if (dokumenObjectUrl.value) window.open(dokumenObjectUrl.value, '_blank');
-}
-function downloadDokumen() {
-  if (!dokumenObjectUrl.value) return;
-  const a = document.createElement('a');
-  a.href = dokumenObjectUrl.value;
-  a.download = dokumenFileName.value;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
 
 const handleSubmit = async () => {
   if (!canSubmit.value) return;
@@ -756,7 +589,7 @@ onMounted(async () => {
       positionText: r.position_text || '',
     }));
 
-    // Muat lampiran (foto lokasi & dokumen pendukung) secara non-blocking
+    // Muat lampiran (foto lokasi fisik) secara non-blocking
     loadBerkasFiles();
   } catch (e) {
     console.error('Gagal memuat data:', e);
