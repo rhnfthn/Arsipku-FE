@@ -25,7 +25,7 @@
                 </span>
                 <div>
                   <h2 class="font-semibold text-gray-900 dark:text-white">Atasan Managerial <span class="text-red-500">*</span></h2>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi (berjenjang).</p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi .</p>
                 </div>
               </div>
               <UButton
@@ -309,6 +309,8 @@ import { formatDate } from '~/utils/transfer-status';
 const props = defineProps<{
   modelValue: boolean;
   editData?: TransferActiveToInactive | null;
+  preselectedArsip?: any | null;
+  prefillAtasan?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -486,9 +488,14 @@ const loadAtasanManagerial = async () => {
 const loadArsipRetensiHabis = async () => {
   arsipLoading.value = true;
   try {
-    const { getBerkasList } = useArsipDinamis();
-    const res: any = await getBerkasList({ status: 'closed_retensi_aktif', limit: 100 });
-    const data = res?.data?.data ?? res?.data ?? res ?? [];
+    // Sumber data: arsip-tersedia (query langsung ke DB) — bukan list berkas,
+    // karena berkas tertutup sudah tidak tampil di list berkas user biasa.
+    const res: any = await apiGet(
+      '/transfer-active-to-inactive/arsip-tersedia',
+      {},
+      { skipCache: true }
+    );
+    const data = res?.data ?? res ?? [];
     let arsipList = Array.isArray(data) ? data : [];
 
     // Ambil daftar arsip yang sudah ada usulan transfer (semua status kecuali DITOLAK)
@@ -515,9 +522,13 @@ const loadArsipRetensiHabis = async () => {
 
     arsipOptions.value = arsipList.map((b: any) => ({
       id: b.id,
-      judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
+      judulBerkas: b.perihal ?? b.judulBerkas ?? b.judul_berkas ?? '-',
       kodeBerkas: b.kodeBerkas ?? b.kode_berkas ?? null,
-      tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifBerakhir ?? b.tanggal_retensi_aktif_berakhir ?? null,
+      tanggalRetensiAktifBerakhir:
+        b.tanggalRetensiAktifHabis ??
+        b.tanggalRetensiAktifBerakhir ??
+        b.tanggal_retensi_aktif_berakhir ??
+        null,
       kategoriBerkas: b.kategoriBerkas ?? b.kategori_berkas ?? null,
     }));
   } catch (e) {
@@ -653,7 +664,20 @@ watch(
       resetForm();
       loadAtasanManagerial();
       loadArsipRetensiHabis();
-      if (props.editData) fillFromEdit(props.editData);
+      if (props.editData) {
+        fillFromEdit(props.editData);
+      } else if (props.preselectedArsip) {
+        // Pre-select arsip dari tombol "Pindahkan" di tabel gabungan
+        selectedArsipList.value = [{
+          id: props.preselectedArsip.id,
+          judulBerkas: props.preselectedArsip.perihal ?? props.preselectedArsip.judulBerkas ?? '-',
+          kodeBerkas: props.preselectedArsip.kodeBerkas ?? null,
+          tanggalRetensiAktifBerakhir: props.preselectedArsip.tanggalRetensiAktifHabis ?? null,
+          kategoriBerkas: props.preselectedArsip.klasifikasi ?? null,
+          files: [],
+        }];
+        loadArsipFiles(selectedArsipList.value[0]);
+      }
       document.addEventListener('keydown', onKeydown);
     } else {
       document.removeEventListener('keydown', onKeydown);
