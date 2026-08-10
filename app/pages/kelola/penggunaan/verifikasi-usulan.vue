@@ -10,6 +10,7 @@ import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasVi
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import { downloadCsv } from '~/utils/csv-export';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -21,13 +22,6 @@ const { clearVerifikasiBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
 const { isViewed, markViewed } = useUsulanAksesBerkasViewed();
-
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) return beMessage.join(', ');
-  if (typeof beMessage === 'string' && beMessage.trim()) return beMessage;
-  return err?.message || 'Terjadi kesalahan';
-};
 
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },

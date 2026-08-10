@@ -21,6 +21,7 @@ import {
   type VerifikatorItem,
   type LevelJabatan,
 } from '~/types/usulan-akses-berkas';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Detail Usulan Akses Berkas' });
@@ -42,20 +43,6 @@ const {
 const { fetchCounts: refetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { markViewed: markUsulanViewed } = useUsulanAksesBerkasViewed();
 const toast = useToast();
-
-// Helper: extract error message dari AxiosError (BE return { message: [...] | string })
-const extractErrorMessage = (err: any): string => {
-  // AxiosError: err.response.data.message bisa string atau array
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) {
-    return beMessage.join(', ');
-  }
-  if (typeof beMessage === 'string' && beMessage.trim()) {
-    return beMessage;
-  }
-  // Fallback ke err.message
-  return err?.message || 'Terjadi kesalahan';
-};
 
 const id = computed(() => route.params.id as string);
 

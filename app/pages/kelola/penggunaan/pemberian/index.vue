@@ -10,6 +10,7 @@ import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAkses
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { downloadCsv } from '~/utils/csv-export';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
@@ -18,13 +19,6 @@ const { t } = useI18n();
 const { fetchMyEntitlements, markBerkasRead } = useUsulanAksesBerkas();
 const { fetchCounts } = useUsulanAksesBerkasCounts();
 const toast = useToast();
-
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) return beMessage.join(', ');
-  if (typeof beMessage === 'string' && beMessage.trim()) return beMessage;
-  return err?.message || 'Terjadi kesalahan';
-};
 
 const searchQuery = ref('');
 const currentPage = ref(1);

@@ -8,6 +8,7 @@ import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { Keputusan } from '~/types/usulan-akses-berkas';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Detail Pemberian Akses Berkas' });
@@ -16,13 +17,6 @@ const route = useRoute();
 const { t } = useI18n();
 const { usulanDetail, pending, fetchDetail } = useUsulanAksesBerkas();
 const toast = useToast();
-
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) return beMessage.join(', ');
-  if (typeof beMessage === 'string' && beMessage.trim()) return beMessage;
-  return err?.message || 'Terjadi kesalahan';
-};
 
 const usulanId = computed(() => route.params.usulanId as string);
 
