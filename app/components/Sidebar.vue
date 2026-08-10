@@ -335,6 +335,7 @@ import { useAuth } from '~/composables/useAuth';
 import { useDelegationMode } from '~/composables/useDelegationMode';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
+import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
@@ -355,6 +356,10 @@ const {
   counts: usulanCounts,
   fetchCounts: fetchUsulanCounts,
 } = useUsulanAksesBerkasCounts();
+const {
+  counts: shareCounts,
+  fetchCounts: fetchShareCounts,
+} = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
@@ -549,6 +554,8 @@ onMounted(async () => {
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
     // Fetch usulan akses berkas counts untuk badge sidebar
     fetchUsulanCounts();
+    // Fetch share diterima counts untuk badge sidebar
+    fetchShareCounts();
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -654,7 +661,11 @@ const userMenuUtama = computed(() => [
     icon: 'i-lucide-share-2',
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
-      { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
+      {
+        label: 'Dibagikan Kepada Saya',
+        to: '/shared/dibagikan-kepada-saya',
+        badge: shareCounts.value.unread > 0 ? shareCounts.value.unread : null,
+      },
     ],
   },
 ]);
@@ -815,7 +826,11 @@ const adminMenuUtama = computed(() => [
     icon: 'i-lucide-share-2',
     children: [
       { label: 'Saya Bagikan', to: '/shared/saya-bagikan' },
-      { label: 'Dibagikan Kepada Saya', to: '/shared/dibagikan-kepada-saya' },
+      {
+        label: 'Dibagikan Kepada Saya',
+        to: '/shared/dibagikan-kepada-saya',
+        badge: shareCounts.value.unread > 0 ? shareCounts.value.unread : null,
+      },
     ],
   },
 ]);

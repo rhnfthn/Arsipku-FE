@@ -16,10 +16,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:page', page: number): void;
-  (e: 'open', share: ShareItem): void;
   (e: 'view', share: ShareItem): void;
   (e: 'open-pdf', share: ShareItem): void;
-  (e: 'refresh'): void;
 }>();
 
 const columns = computed(() => [
@@ -30,7 +28,6 @@ const columns = computed(() => [
   { key: 'accessType', label: t('share_akses'), sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'status', label: t('share_status'), sortable: false, headerClass: 'text-center', class: 'text-center' },
   { key: 'createdAt', label: t('share_tanggal'), sortable: false },
-  { key: 'aksi', label: t('share_action'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
 /** Display status for recipient: check share.status first, then recipient.status. */
@@ -41,6 +38,23 @@ const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   if (!myRecipient) return 'AKTIF';
   if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
   return 'AKTIF';
+};
+
+/**
+ * Apakah tombol "Buka PDF" boleh ditampilkan.
+ * - SEKALI_LIHAT: hilang setelah naskah dibuka (recipient BERAKHIR).
+ * - RENTANG_WAKTU: hilang setelah durasi habis (share BERAKHIR).
+ */
+const canOpenPdf = (share: ShareItem): boolean => {
+  // Share sudah berakhir (durasi habis / dicabut) → icon kertas hilang
+  if (share.status === 'BERAKHIR') return false;
+  // SEKALI_LIHAT: hilang jika recipient sudah membuka (BERAKHIR)
+  if (share.accessType === 'SEKALI_LIHAT') {
+    const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
+    if (!myRecipient) return true;
+    return myRecipient.status !== 'BERAKHIR';
+  }
+  return true;
 };
 </script>
 
@@ -124,25 +138,30 @@ const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
         </span>
       </template>
 
-      <template #cell-aksi="{ row }">
-        <div class="flex items-center justify-center gap-1">
+      <!-- Floating Quick Actions (muncul saat hover baris, menimpa kolom tanggal) -->
+      <template #row-extra="{ row }">
+        <div class="flex items-center gap-2 p-1">
           <UTooltip :text="t('share_lihat_detail')">
-            <UButton
-              icon="i-lucide-eye"
-              color="primary"
-              variant="ghost"
-              size="xs"
-              @click="emit('view', row)"
-            />
+            <button
+              type="button"
+              class="text-primary dark:text-primary-400 hover:opacity-80 transition-opacity"
+              @click="emit('view', row as ShareItem)"
+            >
+              <UIcon name="i-lucide-eye" class="w-4 h-4" />
+            </button>
           </UTooltip>
-          <UTooltip :text="t('share_buka_pdf')">
-            <UButton
-              icon="i-lucide-file-text"
-              color="success"
-              variant="ghost"
-              size="xs"
-              @click="emit('open-pdf', row)"
-            />
+          <UTooltip :text="canOpenPdf(row as ShareItem) ? t('share_buka_pdf') : t('share_akses_berakhir')">
+            <button
+              type="button"
+              :disabled="!canOpenPdf(row as ShareItem)"
+              class="transition-opacity"
+              :class="canOpenPdf(row as ShareItem)
+                ? 'text-success dark:text-success-400 hover:opacity-80'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'"
+              @click="canOpenPdf(row as ShareItem) && emit('open-pdf', row as ShareItem)"
+            >
+              <UIcon name="i-lucide-file-text" class="w-4 h-4" />
+            </button>
           </UTooltip>
         </div>
       </template>

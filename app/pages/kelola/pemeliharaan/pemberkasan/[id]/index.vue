@@ -244,9 +244,9 @@
             </div>
           </div>
 
-          <!-- Foto Lokasi Fisik & Dokumen Pendukung -->
+          <!-- Foto Lokasi Fisik -->
           <div
-            v-if="berkas.fotoLokasiFisik || berkas.dokumenPendukung"
+            v-if="berkas.fotoLokasiFisik"
             class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
           >
             <div
@@ -258,10 +258,10 @@
                 <ImageIcon class="h-5 w-5 text-primary-600 dark:text-primary-400" />
               </span>
               <h2 class="font-semibold text-gray-900 dark:text-white">
-                Foto Lokasi Fisik & Dokumen Pendukung
+                Foto Lokasi Fisik
               </h2>
             </div>
-            <div class="grid grid-cols-1 gap-5 px-5 py-5 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-5 px-5 py-5">
               <!-- Foto Lokasi Fisik -->
               <div>
                 <p
@@ -271,14 +271,14 @@
                 </p>
                 <div
                   v-if="fotoLoading"
-                  class="flex aspect-video items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
+                  class="flex aspect-video max-w-sm items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
                 >
                   <span class="text-xs text-gray-400">Memuat foto…</span>
                 </div>
                 <button
                   v-else-if="fotoObjectUrl"
                   type="button"
-                  class="group relative block w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                  class="group relative block aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
                   @click="lightboxOpen = true"
                 >
                   <img
@@ -294,7 +294,7 @@
                 </button>
                 <div
                   v-else
-                  class="flex aspect-video items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
+                  class="flex aspect-video max-w-sm items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
                 >
                   <span class="text-xs text-gray-400">{{
                     fotoError ? 'File tidak tersedia' : 'Belum ada foto'
@@ -302,82 +302,6 @@
                 </div>
               </div>
 
-              <!-- Dokumen Pendukung -->
-              <div>
-                <p
-                  class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                >
-                  Dokumen Pendukung
-                </p>
-                <div
-                  v-if="dokumenLoading"
-                  class="flex aspect-video items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50"
-                >
-                  <span class="text-xs text-gray-400">Memuat dokumen…</span>
-                </div>
-                <div
-                  v-else-if="dokumenObjectUrl"
-                  class="flex aspect-video flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 dark:border-gray-700 dark:from-gray-700/30 dark:to-gray-800"
-                >
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                      :class="dokumenTypeIcon.bg"
-                    >
-                      <component :is="dokumenTypeIcon.icon" class="h-6 w-6" />
-                    </div>
-                    <div class="min-w-0 flex-1">
-                      <div class="flex flex-wrap items-center gap-1.5">
-                        <span
-                          class="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                          :class="dokumenTypeIcon.badge"
-                          >{{ dokumenTypeIcon.label }}</span
-                        >
-                        <span v-if="dokumenSize" class="text-xs text-gray-500 dark:text-gray-400">{{
-                          dokumenSize
-                        }}</span>
-                      </div>
-                      <p
-                        class="mt-1 truncate text-sm font-semibold text-gray-900 dark:text-white"
-                        :title="dokumenFileName"
-                      >
-                        {{ dokumenFileName }}
-                      </p>
-                      <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        Dokumen pendukung berkas
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex gap-2">
-                    <UButton
-                      color="neutral"
-                      variant="outline"
-                      size="xs"
-                      icon="i-lucide-eye"
-                      class="flex-1 justify-center"
-                      @click="openDokumen"
-                      >Lihat</UButton
-                    >
-                    <UButton
-                      color="primary"
-                      variant="soft"
-                      size="xs"
-                      icon="i-lucide-download"
-                      class="flex-1 justify-center"
-                      @click="downloadDokumen"
-                      >Unduh</UButton
-                    >
-                  </div>
-                </div>
-                <div
-                  v-else
-                  class="flex aspect-video items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center dark:border-gray-700 dark:bg-gray-700/30"
-                >
-                  <span class="text-xs text-gray-400">{{
-                    dokumenError ? 'File tidak tersedia' : 'Belum ada dokumen'
-                  }}</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -523,14 +447,27 @@
                 }}</span
               ></template
             >
+            <template #cell-status="{ row }"
+              ><span
+                v-if="row.status === 'inaktif'"
+                class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                >Inaktif</span
+              ><span
+                v-else
+                class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-1 text-xs font-semibold text-success-700 dark:bg-success-900/30 dark:text-success-400"
+                >Aktif</span
+              ></template
+            >
             <template #cell-aksi="{ row }">
               <div class="flex items-center gap-1">
-                <NuxtLink
-                  :to="getNaskahDetailLink(row)"
+                <button
+                  type="button"
                   class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
-                  title="Lihat naskah"
-                  ><Eye class="h-4 w-4"
-                /></NuxtLink>
+                  title="Lihat PDF naskah"
+                  @click="openNaskahPdf(row)"
+                >
+                  <Eye class="h-4 w-4" />
+                </button>
                 <button
                   v-if="canRemoveNaskah"
                   type="button"
@@ -665,7 +602,7 @@
         <EmptyState
           icon="i-lucide-list-tree"
           title="Activity Log belum tersedia"
-          description="Modul audit log terpisah akan ditambahkan di phase berikutnya (spec §15.7)."
+          description="COMING SOON"
         />
       </section>
 
@@ -900,7 +837,7 @@
                 <input
                   v-model="candidateSearch"
                   type="text"
-                  placeholder="Cari nomor atau perihal naskah…"
+                  placeholder="Cari nomor, perihal, atau nama…"
                   class="h-9 w-full rounded-md border border-primary-200 bg-white pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-primary-900/40 dark:bg-gray-800 dark:text-gray-200"
                 />
               </div>
@@ -919,6 +856,20 @@
                 <option v-for="opt in statusFilterOptions" :key="opt.value" :value="opt.value">
                   {{ opt.label }}
                 </option>
+              </select>
+              <select
+                v-model="candidateDivisiFilter"
+                class="h-9 w-56 rounded-md border border-primary-200 bg-white px-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-primary-900/40 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="">Semua Divisi</option>
+                <option v-for="d in candidateDivisiOptions" :key="d" :value="d">{{ d }}</option>
+              </select>
+              <select
+                v-model="candidateJabatanFilter"
+                class="h-9 w-56 rounded-md border border-primary-200 bg-white px-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-primary-900/40 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="">Semua Jabatan</option>
+                <option v-for="j in candidateJabatanOptions" :key="j" :value="j">{{ j }}</option>
               </select>
             </div>
             <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -1009,6 +960,21 @@
                 >
                   <component :is="row.sumber === 'terkirim' ? Send : Inbox" class="h-3.5 w-3.5" />
                   {{ getSourceLabel(row.sumber) }}
+                </span>
+              </template>
+              <template #cell-divisi="{ row }">
+                <span class="block min-w-32 max-w-48 text-xs text-gray-600 dark:text-gray-300">
+                  {{ row.divisi || '—' }}
+                </span>
+              </template>
+              <template #cell-jabatan="{ row }">
+                <span class="block min-w-32 max-w-48 text-xs text-gray-600 dark:text-gray-300">
+                  {{ row.jabatan || '—' }}
+                </span>
+              </template>
+              <template #cell-nama="{ row }">
+                <span class="block min-w-28 text-xs font-medium text-gray-800 dark:text-gray-200">
+                  {{ row.nama || '—' }}
                 </span>
               </template>
               <template #cell-berkas="{ row }">
@@ -1113,6 +1079,56 @@
         </div>
       </template>
     </UModal>
+
+    <!-- Popup PDF naskah (dibuka dari tab Daftar Naskah, tanpa pindah halaman) -->
+    <UModal
+      v-model:open="showPdfModal"
+      fullscreen
+      :ui="{
+        overlay: 'bg-black/80 backdrop-blur-sm',
+        body: 'p-0',
+      }"
+    >
+      <template #header>
+        <div class="flex items-center justify-end pr-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            size="sm"
+            :padded="false"
+            @click="closePdfModal"
+          />
+        </div>
+      </template>
+      <template #body>
+        <div class="relative flex h-full min-h-0 w-full flex-col bg-gray-100 dark:bg-gray-900">
+          <div
+            v-if="pdfLoading"
+            class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90"
+          >
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="mb-2 size-10 animate-spin text-primary-500"
+            />
+            <span class="text-xs text-gray-500 dark:text-gray-400">Memuat Dokumen...</span>
+          </div>
+          <iframe
+            v-if="pdfUrl"
+            :src="pdfUrl"
+            class="h-full w-full flex-1 border-none"
+            title="Preview dokumen"
+          />
+          <div
+            v-else-if="!pdfLoading"
+            class="flex h-full flex-col items-center justify-center gap-2 text-gray-500"
+          >
+            <UIcon name="i-lucide-file-text" class="size-12 opacity-30" />
+            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -1162,6 +1178,7 @@ const {
   getBerkasById,
   getBerkasStatusByNaskah,
   getDaftarNaskah,
+  getNaskahDetailInBerkas,
   getNaskahSaya,
   getNaskahSiapArsip,
   getVerifikasiDetail,
@@ -1182,6 +1199,10 @@ const naskahPending = ref(false);
 const naskahPage = ref(1);
 const naskahPerPage = 20;
 const naskahTotal = ref(0);
+// Popup PDF naskah (tab Daftar Naskah — langsung tampil tanpa pindah halaman)
+const showPdfModal = ref(false);
+const pdfLoading = ref(false);
+const pdfUrl = ref<string | null>(null);
 const verifikasiList = ref<Record<string, any>[]>([]);
 const showAddNaskahModal = ref(false);
 const candidateList = ref<Record<string, any>[]>([]);
@@ -1191,7 +1212,12 @@ const selectedNaskahSumber = ref<Record<string, string>>({}); // id -> sumber
 const isSubmittingNaskah = ref(false);
 const addNaskahTab = ref<'kotak_masuk' | 'terkirim' | 'siap_arsip'>('siap_arsip');
 const candidateJenisFilter = ref('');
-const candidateStatusFilter = ref('');
+const candidateStatusFilter = ref('out');
+const candidateDivisiFilter = ref('');
+const candidateJabatanFilter = ref('');
+// Semua org dalam scope delegasi (dari BE meta.scopeDivisi) — filter divisi
+// tetap menampilkan unit yang belum punya naskah.
+const scopeDivisiOptions = ref<string[]>([]);
 const candidateDateFrom = ref('');
 const candidateDateTo = ref('');
 const jenisFilterOptions = [
@@ -1200,6 +1226,8 @@ const jenisFilterOptions = [
   { value: 'SDI', label: 'Surat Dinas Internal' },
   { value: 'SDE', label: 'Surat Dinas Eksternal' },
   { value: 'DI', label: 'Disposisi' },
+  { value: 'KA', label: 'Korespondensi Aktif' },
+  { value: 'UND', label: 'Surat Undangan' },
   { value: 'K', label: 'Konsep' },
 ];
 const statusFilterOptions = [
@@ -1234,6 +1262,7 @@ const naskahColumns = [
   { key: 'perihal', label: 'Perihal' },
   { key: 'naskahTipe', label: 'Jenis' },
   { key: 'sumber', label: 'Sumber' },
+  { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi', class: 'w-24' },
 ];
 const candidateColumns = [
@@ -1241,15 +1270,37 @@ const candidateColumns = [
   { key: 'nomor_surat', label: 'Nomor & Tanggal' },
   { key: 'perihal', label: 'Perihal' },
   { key: 'naskah_tipe', label: 'Jenis' },
+  { key: 'divisi', label: 'Divisi' },
+  { key: 'jabatan', label: 'Jabatan' },
+  { key: 'nama', label: 'Nama' },
   { key: 'sumber', label: 'Sumber' },
   { key: 'berkas', label: 'Status Berkas' },
 ];
+// Opsi filter divisi: semua org scope (dari BE) + divisi unik dari daftar kandidat.
+const candidateDivisiOptions = computed(() => [
+  ...new Set([
+    ...scopeDivisiOptions.value,
+    ...candidateList.value
+      .map((r) => r.divisi)
+      .filter((d: any) => typeof d === 'string' && d.trim()),
+  ]),
+] as string[]);
+const candidateJabatanOptions = computed(() => [
+  ...new Set(
+    candidateList.value
+      .map((r) => r.jabatan)
+      .filter((j: any) => typeof j === 'string' && j.trim())
+  ),
+] as string[]);
 const filteredCandidates = computed(() => {
   let rows = candidateList.value;
   if (candidateStatusFilter.value === 'in') rows = rows.filter((r) => r.sudah_masuk_berkas);
   else if (candidateStatusFilter.value === 'out') rows = rows.filter((r) => !r.sudah_masuk_berkas);
   if (candidateJenisFilter.value)
     rows = rows.filter((r) => (r.naskah_tipe || r.naskahTipe || '') === candidateJenisFilter.value);
+  if (candidateDivisiFilter.value) rows = rows.filter((r) => r.divisi === candidateDivisiFilter.value);
+  if (candidateJabatanFilter.value)
+    rows = rows.filter((r) => r.jabatan === candidateJabatanFilter.value);
   if (candidateDateFrom.value || candidateDateTo.value) {
     rows = rows.filter((r) => {
       const d = (r.tanggal_naskah || r.tanggalNaskah || '').toString().slice(0, 10);
@@ -1274,7 +1325,9 @@ function clearSelection() {
 }
 function resetCandidateFilters() {
   candidateJenisFilter.value = '';
-  candidateStatusFilter.value = '';
+  candidateStatusFilter.value = 'out';
+  candidateDivisiFilter.value = '';
+  candidateJabatanFilter.value = '';
   candidateDateFrom.value = '';
   candidateDateTo.value = '';
 }
@@ -1479,6 +1532,8 @@ function getNaskahTypeLabel(value?: string) {
     SDI: 'Surat Dinas Internal',
     SDE: 'Surat Dinas Eksternal',
     DI: 'Disposisi',
+    KA: 'Korespondensi Aktif',
+    UND: 'Surat Undangan',
     K: 'Konsep',
   };
   return labels[String(value || '').toUpperCase()] || value || '-';
@@ -1491,11 +1546,40 @@ function sourceBadgeClass(value?: string) {
     ? 'bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-400'
     : 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400';
 }
-function getNaskahDetailLink(row: Record<string, any>) {
-  // Buka naskah dalam konteks berkas (sebagai anggota pemberkasan/persetujuan),
-  // bukan sebagai peserta korespondensi — hindari 403 saat viewer bukan
-  // pengirim/penerima naskah yg ditambahkan orang lain ke berkas ini.
-  return `/kelola/pemeliharaan/pemberkasan/${berkasId.value}/naskah/${row.naskahId}`;
+// Popup PDF naskah — dibuka langsung dari tab Daftar Naskah tanpa pindah
+// halaman. URL PDF final didapat dari getNaskahDetailInBerkas (satu-satunya
+// endpoint yang menyertakan final_pdf_url), lalu dirender via blob.
+function closePdfModal() {
+  showPdfModal.value = false;
+  pdfUrl.value = null;
+}
+
+async function openNaskahPdf(row: Record<string, any>) {
+  showPdfModal.value = true;
+  pdfLoading.value = true;
+  pdfUrl.value = null;
+  try {
+    const response = await getNaskahDetailInBerkas(berkasId.value, row.naskahId);
+    const rawData: any = response?.data ?? response;
+    let flow: any[] = [];
+    if (Array.isArray(rawData)) flow = rawData;
+    else if (rawData && Array.isArray(rawData.flow)) flow = rawData.flow;
+    else if (rawData) flow = [rawData];
+    const url = flow[0]?.final_pdf_url || flow[0]?.final_pdf || '';
+    if (!url) throw new Error('Naskah tidak memiliki PDF final');
+    const res = await fetch(url);
+    const blob = new Blob([await res.arrayBuffer()], { type: 'application/pdf' });
+    pdfUrl.value = URL.createObjectURL(blob);
+  } catch (e: any) {
+    toast.add({
+      title: 'Gagal memuat PDF',
+      description: e?.message || 'Silakan coba kembali.',
+      color: 'error',
+    });
+    showPdfModal.value = false;
+  } finally {
+    pdfLoading.value = false;
+  }
 }
 
 async function fetchBerkas() {
@@ -1531,110 +1615,34 @@ async function fetchNaskah() {
     if (requestId === naskahRequestId) naskahPending.value = false;
   }
 }
-// ── Foto lokasi fisik & dokumen pendukung (diambil sebagai blob terautentikasi) ──
+// ── Foto lokasi fisik (diambil sebagai blob terautentikasi) ──
 const fotoObjectUrl = ref('');
 const fotoError = ref(false);
 const fotoLoading = ref(false);
-const dokumenObjectUrl = ref('');
-const dokumenError = ref(false);
-const dokumenLoading = ref(false);
 const lightboxOpen = ref(false);
-const dokumenFileName = computed(
-  () => berkas.value?.dokumenPendukung?.split('/').pop() || 'dokumen-pendukung'
-);
 const isHttpUrl = (v?: string) => !!v && /^https?:\/\//i.test(v);
-const dokumenSize = ref('');
-const dokumenTypeIcon = computed(() => {
-  const ext = (berkas.value?.dokumenPendukung || '').split('.').pop()?.toLowerCase() || '';
-  if (ext === 'pdf')
-    return {
-      icon: FileText,
-      label: 'PDF',
-      bg: 'bg-error-500',
-      badge: 'bg-error-100 text-error-700 dark:bg-error-900/40 dark:text-error-400',
-    };
-  if (ext === 'docx' || ext === 'doc')
-    return {
-      icon: FileText,
-      label: ext === 'docx' ? 'DOCX' : 'DOC',
-      bg: 'bg-primary-500',
-      badge: 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-400',
-    };
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext))
-    return {
-      icon: ImageIcon,
-      label: ext.toUpperCase(),
-      bg: 'bg-success-500',
-      badge: 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-400',
-    };
-  return {
-    icon: FileText,
-    label: ext ? ext.toUpperCase() : 'FILE',
-    bg: 'bg-gray-500',
-    badge: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-  };
-});
-function formatFileSize(bytes: number) {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 async function loadBerkasFiles() {
   if (!berkas.value) return;
   if (fotoObjectUrl.value) URL.revokeObjectURL(fotoObjectUrl.value);
-  if (dokumenObjectUrl.value) URL.revokeObjectURL(dokumenObjectUrl.value);
   fotoObjectUrl.value = '';
-  dokumenObjectUrl.value = '';
   fotoError.value = false;
-  dokumenError.value = false;
-  dokumenSize.value = '';
 
   const fotoKey = berkas.value.fotoLokasiFisik;
-  const dokKey = berkas.value.dokumenPendukung;
-  const tasks: Promise<void>[] = [];
-
-  if (fotoKey) {
-    tasks.push(
-      (async () => {
-        if (isHttpUrl(fotoKey)) {
-          fotoObjectUrl.value = fotoKey;
-          return;
-        }
-        fotoLoading.value = true;
-        try {
-          const blob = await fetchBerkasFileBlob(fotoKey);
-          fotoObjectUrl.value = URL.createObjectURL(blob);
-        } catch {
-          fotoError.value = true;
-        } finally {
-          fotoLoading.value = false;
-        }
-      })()
-    );
+  if (!fotoKey) return;
+  if (isHttpUrl(fotoKey)) {
+    fotoObjectUrl.value = fotoKey;
+    return;
   }
-  if (dokKey) {
-    tasks.push(
-      (async () => {
-        if (isHttpUrl(dokKey)) {
-          dokumenObjectUrl.value = dokKey;
-          return;
-        }
-        dokumenLoading.value = true;
-        try {
-          const blob = await fetchBerkasFileBlob(dokKey);
-          dokumenObjectUrl.value = URL.createObjectURL(blob);
-          dokumenSize.value = formatFileSize(blob.size);
-        } catch {
-          dokumenError.value = true;
-        } finally {
-          dokumenLoading.value = false;
-        }
-      })()
-    );
+  fotoLoading.value = true;
+  try {
+    const blob = await fetchBerkasFileBlob(fotoKey);
+    fotoObjectUrl.value = URL.createObjectURL(blob);
+  } catch {
+    fotoError.value = true;
+  } finally {
+    fotoLoading.value = false;
   }
-  await Promise.all(tasks);
 }
 
 function revokeBerkasFiles() {
@@ -1642,23 +1650,6 @@ function revokeBerkasFiles() {
     URL.revokeObjectURL(fotoObjectUrl.value);
     fotoObjectUrl.value = '';
   }
-  if (dokumenObjectUrl.value) {
-    URL.revokeObjectURL(dokumenObjectUrl.value);
-    dokumenObjectUrl.value = '';
-  }
-}
-
-function openDokumen() {
-  if (dokumenObjectUrl.value) window.open(dokumenObjectUrl.value, '_blank');
-}
-function downloadDokumen() {
-  if (!dokumenObjectUrl.value) return;
-  const a = document.createElement('a');
-  a.href = dokumenObjectUrl.value;
-  a.download = dokumenFileName.value;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
 }
 
 async function loadPage() {
@@ -1694,7 +1685,9 @@ async function fetchCandidates() {
         page: 1,
         limit: 100,
       });
-      rows = unwrapPaginated(response).rows.map((r: any) => ({ ...r, sumber: r.sumber }));
+      const { rows: siapRows, meta } = unwrapPaginated(response);
+      scopeDivisiOptions.value = Array.isArray(meta?.scopeDivisi) ? meta.scopeDivisi : [];
+      rows = siapRows.map((r: any) => ({ ...r, sumber: r.sumber }));
       // Tandai naskah yang sudah ada di berkas lain (BE Task 3)
       if (rows.length) {
         const statusMap = await getBerkasStatusByNaskah(rows.map((r) => r.id));
@@ -1788,15 +1781,42 @@ async function handleAddNaskah() {
       (groups[sumber] ||= []).push(id);
       return groups;
     }, {});
-    await Promise.all(
-      Object.entries(bySource).map(([sumber, naskah_ids]) =>
-        addNaskahToBerkas(berkasId.value, { sumber, naskah_ids })
-      )
+    const results = await Promise.all(
+      Object.entries(bySource).map(async ([sumber, naskah_ids]) => {
+        const response = await addNaskahToBerkas(berkasId.value, { sumber, naskah_ids });
+        const payload = unwrapEnvelope<Record<string, any>>(response);
+        return {
+          count: Number(payload?.count ?? 0),
+          rejected: Number(payload?.rejected ?? 0),
+          alreadyExists: Number(payload?.alreadyExists ?? 0),
+        };
+      })
     );
-    toast.add({
-      title: `${entries.length} naskah berhasil ditambahkan`,
-      color: 'success',
-    });
+    const added = results.reduce((sum, r) => sum + r.count, 0);
+    const rejected = results.reduce((sum, r) => sum + r.rejected, 0);
+    const alreadyExists = results.reduce((sum, r) => sum + r.alreadyExists, 0);
+    if (added > 0) {
+      const skipped = rejected + alreadyExists;
+      toast.add({
+        title: `${added} naskah berhasil ditambahkan`,
+        description: skipped
+          ? `${skipped} naskah dilewati (sudah ada di berkas atau tidak dapat ditambahkan).`
+          : undefined,
+        color: 'success',
+      });
+    } else if (alreadyExists > 0) {
+      toast.add({
+        title: 'Naskah sudah masuk berkas',
+        description: `${alreadyExists} naskah tidak ditambahkan karena sudah terdaftar di sebuah berkas.`,
+        color: 'warning',
+      });
+    } else {
+      toast.add({
+        title: 'Tidak ada naskah yang ditambahkan',
+        description: 'Periksa kembali pilihan naskah atau muat ulang daftar naskah.',
+        color: 'error',
+      });
+    }
     showAddNaskahModal.value = false;
     selectedNaskahSumber.value = {};
     naskahPage.value = 1;
