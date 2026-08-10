@@ -1,102 +1,187 @@
 <template>
-  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Page Header -->
-    <div class="mb-5">
+  <div class="bg-gray-50 dark:bg-gray-900 pt-5 min-h-screen px-5">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader
         title="Pemindahan Arsip Aktif ke Inaktif"
         :items="items"
       />
-    </div>
-
-    <!-- Filter Bar (1 baris: Search + Status + Export + Usul Pindah Arsip) -->
-    <div class="flex flex-wrap items-center gap-3 mb-4">
-      <!-- Items per page (custom dropdown — di kiri search) -->
-      <div ref="pageSizeRef" class="relative shrink-0 z-30">
-        <button
-          @click="pageSizeOpen = !pageSizeOpen"
-          class="h-10 w-[80px] px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
-        >
-          <span>{{ itemsPerPage }}</span>
-          <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400" :class="{ 'rotate-180': pageSizeOpen }" />
-        </button>
-        <div
-          v-if="pageSizeOpen"
-          class="absolute top-full left-0 mt-1.5 z-50 min-w-[80px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden"
-        >
-          <button
-            v-for="size in [10, 30, 50]"
-            :key="size"
-            @click="itemsPerPage = size; currentPage = 1; pageSizeOpen = false"
-            class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            :class="itemsPerPage === size ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
-          >
-            {{ size }}
-          </button>
-        </div>
-      </div>
-      <!-- Search -->
-      <div class="relative flex-1 min-w-[200px]">
-        <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          v-model="filter.search"
-          type="text"
-          placeholder="Cari kode berkas, nama berkas, atasan..."
-          @input="reload"
-          class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-        />
-      </div>
-      <!-- Status Filter (custom dropdown) -->
-      <div ref="statusRef" class="relative shrink-0 z-30">
-        <button
-          @click="statusOpen = !statusOpen"
-          class="h-10 w-[180px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
-        >
-          <span class="truncate">{{ statusOptions.find(o => o.value === filter.status)?.label ?? 'Semua Status' }}</span>
-          <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': statusOpen }" />
-        </button>
-        <div
-          v-if="statusOpen"
-          class="absolute top-full left-0 mt-1.5 z-50 min-w-[180px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden max-h-[300px] overflow-y-auto"
-        >
-          <button
-            v-for="opt in statusOptions"
-            :key="opt.value"
-            @click="filter.status = opt.value; reload(); statusOpen = false"
-            class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-            :class="filter.status === opt.value ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
-      <!-- Export -->
-      <button
-        @click="onExport"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shrink-0"
-      >
-        <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
-      </button>
-      <!-- Usul Pindah Arsip -->
       <button
         v-if="isSekretaris"
         @click="openCreateModal"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shadow-sm shrink-0"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
       >
-        <UIcon name="i-lucide-plus" class="w-4 h-4" /> Usul Pindah Arsip
+        <Plus class="w-4 h-4" />
+        Usul Pindah Arsip
       </button>
     </div>
 
-    <!-- Tabel Gabungan -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
+    <!-- Table Card -->
+    <div
+      class="rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
+    >
+      <!-- Toolbar (berkas-saya-style: perPage + filters + reset + search + export in one row) -->
+      <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
+        <div class="flex items-center gap-3 flex-wrap flex-1">
+          <!-- ROWS PER PAGE — custom dropdown -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleRowsPerPage"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
+            >
+              <span>{{ itemsPerPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openRowsPerPage }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openRowsPerPage"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]"
+              >
+                <button
+                  v-for="n in [10, 25, 50]"
+                  :key="n"
+                  type="button"
+                  @click.stop="selectRowsPerPage(n)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    itemsPerPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- FILTER STATUS -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterStatus"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
+            >
+              <span class="truncate">{{ statusFilterLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterStatus }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]"
+              >
+                <button
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(opt.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filter.status === opt.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- FILTER KLASIFIKASI -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterKlasifikasi"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
+            >
+              <span class="truncate">{{ klasifikasiLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterKlasifikasi }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterKlasifikasi"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
+              >
+                <button
+                  type="button"
+                  @click.stop="selectFilterKlasifikasi('')"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
+                    filter.klasifikasi === ''
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  Semua Klasifikasi
+                </button>
+                <button
+                  v-for="k in klasifikasiList"
+                  :key="k.klasifikasi"
+                  type="button"
+                  @click.stop="selectFilterKlasifikasi(k.klasifikasi)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filter.klasifikasi === k.klasifikasi
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <div class="relative flex-1 min-w-[180px]">
+            <UIcon
+              name="i-lucide-search"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            />
+            <input
+              v-model="filter.search"
+              type="text"
+              placeholder="Cari Berkas…"
+              @input="reload"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
+        </div>
+        <button
+          @click="onExport"
+          :disabled="isExporting"
+          class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          <UIcon
+            v-if="isExporting"
+            name="i-lucide-loader-circle"
+            class="w-3.5 h-3.5 animate-spin"
+          />
+          <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" />
+          Export
+        </button>
+      </div>
+
+      <!-- Tabel Gabungan -->
       <DataTable
         :columns="columns"
         :rows="paginatedList"
         :loading="loading"
         :sort-key="sortKey"
         :sort-dir="sortDir"
-        header-class="bg-[#457fb6] text-white text-left"
+        header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
-        row-class="hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+        row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
         empty-message="Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini."
         @sort="handleSort"
       >
@@ -123,7 +208,7 @@
               v-if="!row.isUsulan && isSekretaris"
               @click="openCreateModalWithArsip(row)"
               title="Pindahkan"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
               <UIcon name="i-lucide-file-up" class="w-4 h-4" />
             </button>
@@ -132,7 +217,7 @@
               v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
               @click="onSendUsulan(row)"
               title="Kirim ke Atasan Managerial"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
               <UIcon name="i-lucide-send" class="w-4 h-4" />
             </button>
@@ -141,7 +226,7 @@
               v-else-if="row.isUsulan"
               @click="openDetail(row)"
               title="Detail"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
               <UIcon name="i-heroicons-eye" class="w-4 h-4" />
             </button>
@@ -150,17 +235,11 @@
       </DataTable>
 
       <!-- Pagination -->
-      <div v-if="!loading && gabunganList.length > 0" class="mt-4">
-        <Pagination
-          :current-page="currentPage"
-          :total-pages="totalPages"
-          :total-items="gabunganList.length"
-          :rows-per-page="itemsPerPage"
-          :rows-options="[10, 20, 50]"
-          @update:page="goToPage"
-          @update:rows-per-page="onItemsPerPageChange"
-        />
-      </div>
+      <DataPagination
+        v-model:current-page="currentPage"
+        :total-items="gabunganList.length"
+        :per-page="itemsPerPage"
+      />
     </div>
 
     <!-- Modal Wizard -->
@@ -178,12 +257,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { Plus, ChevronDown } from 'lucide-vue-next';
 import { useApi } from '~/composables/useApi';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useAuth } from '~/composables/useAuth';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
 import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
+import { downloadCsv } from '~/utils/csv-export';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
 definePageMeta({ middleware: ['auth'] });
@@ -259,15 +340,24 @@ const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 const filter = reactive({
   search: '',
   status: '',
+  klasifikasi: '',
 });
 
 // Pagination (client-side)
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
-const pageSizeOpen = ref(false);
-const pageSizeRef = ref<HTMLElement | null>(null);
-const statusOpen = ref(false);
-const statusRef = ref<HTMLElement | null>(null);
+
+// ── Klasifikasi list (dari master klasifikasi — sama dengan berkas-saya) ───
+const klasifikasiList = ref<any[]>([]);
+
+const fetchKlasifikasi = async () => {
+  try {
+    const data: any = await apiGet('/arsip-dinamis/klasifikasi', {}, { skipCache: true });
+    klasifikasiList.value = Array.isArray(data) ? data : (data?.data ?? []);
+  } catch (e) {
+    console.error('Gagal memuat klasifikasi:', e);
+  }
+};
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
@@ -279,14 +369,59 @@ const statusOptions = [
   { value: 'DITOLAK_ATASAN', label: 'Ditolak' },
 ];
 
-const onClickOutsidePageSize = (e: MouseEvent) => {
-  if (pageSizeRef.value && !pageSizeRef.value.contains(e.target as Node)) {
-    pageSizeOpen.value = false;
+// ── Custom Dropdown Toolbar State (berkas-saya-style) ────────────
+const openRowsPerPage = ref(false);
+const openFilterStatus = ref(false);
+const openFilterKlasifikasi = ref(false);
+const statusFilterLabel = computed(
+  () => statusOptions.find((o) => o.value === filter.status)?.label ?? 'Semua Status',
+);
+const klasifikasiLabel = computed(() => {
+  if (!filter.klasifikasi) return 'Semua Klasifikasi';
+  const k = klasifikasiList.value.find((x: any) => x.klasifikasi === filter.klasifikasi);
+  return k ? `${k.klasifikasi} — ${k.klasifikasi_text || ''}` : 'Semua Klasifikasi';
+});
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+  openFilterKlasifikasi.value = false;
+}
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
+  openFilterKlasifikasi.value = false;
+}
+function toggleFilterKlasifikasi() {
+  openFilterKlasifikasi.value = !openFilterKlasifikasi.value;
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+}
+function selectRowsPerPage(n: number) {
+  itemsPerPage.value = n;
+  currentPage.value = 1;
+  openRowsPerPage.value = false;
+}
+function selectFilterStatus(val: string) {
+  filter.status = val;
+  openFilterStatus.value = false;
+  reload();
+}
+function selectFilterKlasifikasi(val: string) {
+  filter.klasifikasi = val;
+  openFilterKlasifikasi.value = false;
+  reload();
+}
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const els = document.querySelectorAll('[data-custom-dropdown]');
+  for (const el of Array.from(els)) {
+    if (el.contains(target)) return;
   }
-  if (statusRef.value && !statusRef.value.contains(e.target as Node)) {
-    statusOpen.value = false;
-  }
-};
+  openRowsPerPage.value =
+    openFilterStatus.value =
+    openFilterKlasifikasi.value =
+      false;
+}
 
 const totalPages = computed(() => Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value)));
 
@@ -332,8 +467,23 @@ const loadGabungan = async () => {
     const params: Record<string, any> = {};
     if (filter.search) params.search = filter.search;
     if (filter.status) params.status = filter.status;
+    if (filter.klasifikasi) params.klasifikasi = filter.klasifikasi;
     const res: any = await apiGet('/transfer-active-to-inactive/gabungan', { params }, { skipCache: true });
-    gabunganList.value = res?.data ?? [];
+    // Normalize ke plain object agar DataTable tidak menerima reactive proxy
+    // (menyebabkan warning "_isVue"/"constructor" saat render).
+    const raw: any[] = res?.data ?? [];
+    gabunganList.value = raw.map((r) => ({
+      id: String(r.id ?? ''),
+      isUsulan: !!r.isUsulan,
+      nomorUsulan: r.nomorUsulan ?? undefined,
+      kodeBerkas: r.kodeBerkas ?? null,
+      perihal: r.perihal ?? '',
+      klasifikasi: r.klasifikasi ?? null,
+      tanggalRetensiAktifHabis: r.tanggalRetensiAktifHabis ?? null,
+      atasanName: r.atasanName ?? null,
+      status: r.status ?? '',
+      tanggal: r.tanggal ?? null,
+    }));
   } catch (e) {
     console.error('Gagal memuat data gabungan:', e);
     gabunganList.value = [];
@@ -347,29 +497,29 @@ const reload = () => {
   loadGabungan();
 };
 
+const isExporting = ref(false);
+
 const onExport = () => {
   if (gabunganList.value.length === 0) {
     alert('Tidak ada data untuk diexport');
     return;
   }
-  const headers = ['Kode Berkas', 'Nama Berkas', 'Klasifikasi', 'Retensi Habis', 'Atasan', 'Status', 'Tanggal'];
-  const rows = gabunganList.value.map((r) => [
-    r.kodeBerkas ?? '',
-    r.perihal ?? '',
-    r.klasifikasi ?? '',
-    r.tanggalRetensiAktifHabis ?? '',
-    r.atasanName ?? '',
-    r.status ?? '',
-    r.tanggal ?? '',
-  ]);
-  const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `pemindahan-arsip-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  isExporting.value = true;
+  try {
+    const headers = ['Kode Berkas', 'Nama Berkas', 'Klasifikasi', 'Retensi Habis', 'Atasan', 'Status', 'Tanggal'];
+    const rows = gabunganList.value.map((r) => [
+      r.kodeBerkas ?? '',
+      r.perihal ?? '',
+      r.klasifikasi ?? '',
+      r.tanggalRetensiAktifHabis ?? '',
+      r.atasanName ?? '',
+      r.status ?? '',
+      r.tanggal ?? '',
+    ]);
+    downloadCsv(`pemindahan-arsip-aktif_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 const openCreateModal = () => {
@@ -406,11 +556,33 @@ const onTransferUpdated = async () => {
 };
 
 onMounted(() => {
-  document.addEventListener('click', onClickOutsidePageSize);
+  document.addEventListener('click', handleDocumentClick);
+  fetchKlasifikasi();
   loadGabungan();
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', onClickOutsidePageSize);
+  document.removeEventListener('click', handleDocumentClick);
 });
 </script>
+
+<style scoped>
+[data-custom-dropdown] button:focus {
+  outline: none;
+}
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+</style>

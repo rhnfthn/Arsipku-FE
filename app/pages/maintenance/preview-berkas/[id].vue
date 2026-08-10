@@ -50,20 +50,12 @@
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.klasifikasiTeks || berkas.klasifikasi || '-' }}</p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Kategori</span>
-            <p class="text-gray-900 dark:text-white font-medium">{{ berkas.kategoriBerkas || '-' }}</p>
-          </div>
-          <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Retensi Aktif</span>
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.retensiAktifTahun || 0 }} Tahun</p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Retensi Inaktif</span>
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.retensiInaktifTahun || 0 }} Tahun</p>
-          </div>
-          <div>
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Lokasi Fisik</span>
-            <p class="text-gray-900 dark:text-white font-medium">{{ berkas.lokasi || '-' }}</p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Tindakan Penyusutan Akhir</span>
@@ -96,7 +88,6 @@
                 Daftar Naskah
                 <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ naskahList.length }}</span>
               </h2>
-              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Naskah yang telah dikelompokkan ke dalam berkas ini.</p>
             </div>
           </div>
         </div>
@@ -164,12 +155,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useArsipDinamis } from '~/composables/useArsipDinamis';
+import { useApi } from '~/composables/useApi';
 import DataTable from '~/components/DataTable.vue';
 import NaskahDetailPopup from '~/components/NaskahDetailPopup.vue';
 
 definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
+const { apiGet } = useApi();
 const { getBerkasById, getDaftarNaskah, getNaskahDetailInBerkas } = useArsipDinamis();
 
 const nomorUsulan = computed(() => (route.query.nomor_usulan as string) || '');
@@ -179,7 +172,26 @@ const pageTitle = computed(() =>
   nomorUsulan.value ? `Detail Usulan ${nomorUsulan.value}` : 'Detail Berkas'
 );
 
+const fromPage = computed(() => (route.query.from as string) || '');
+
 const breadcrumbItems = computed(() => {
+  if (fromPage.value === 'transfer' && nomorUsulan.value && usulanId.value) {
+    return [
+      { label: 'Beranda', to: '/' },
+      { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
+      { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
+      { label: nomorUsulan.value, to: `/maintenance/transfer-active-to-inactive-file/${usulanId.value}` },
+      { label: 'Detail Berkas' },
+    ];
+  }
+  if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
+    return [
+      { label: 'Beranda', to: '/' },
+      { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
+      { label: nomorUsulan.value, to: `/maintenance/verifikasi-berkas-fisik/${usulanId.value}` },
+      { label: 'Detail Berkas' },
+    ];
+  }
   if (nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
@@ -201,6 +213,7 @@ const selectedNaskah = ref<any>(null);
 const showNaskahPopup = ref(false);
 const naskahDetail = ref<any>(null);
 const naskahDetailLoading = ref(false);
+const usulanStatus = ref<string>('');
 
 const openNaskahPopup = async (naskah: any) => {
   selectedNaskah.value = naskah;
@@ -233,14 +246,23 @@ const naskahColumns = [
 const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
   aktif: { label: 'Terbuka', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
   menunggu_verifikasi: { label: 'Menunggu Verifikasi', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
+  menunggu_verifikasi_atasan: { label: 'Menunggu Persetujuan', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  menunggu_verifikasi_terakhir: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  disetujui_atasan: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  disetujui_verifikasi_terakhir: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  dikirim: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  selesai: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
+  ditolak_atasan: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
   ditolak: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
   closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
   draft: { label: 'Draft', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' },
 };
 
 const statusStyle = (status: string) => {
-  const key = (status || '').toLowerCase().replace(/[\s-]+/g, '_');
-  const s = STATUS_STYLE[key] || { label: status || '-', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' };
+  // Jika ada usulan terkait, override status berkas dengan status usulan
+  const effectiveStatus = usulanStatus.value || status;
+  const key = (effectiveStatus || '').toLowerCase().replace(/[\s-]+/g, '_');
+  const s = STATUS_STYLE[key] || { label: effectiveStatus || status || '-', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' };
   return { label: s.label, backgroundColor: s.bg, color: s.text, borderColor: s.border, dot: s.dot };
 };
 
@@ -258,6 +280,19 @@ onMounted(async () => {
     const naskahRes: any = await getDaftarNaskah(route.params.id as string, { limit: 50 });
     const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
     naskahList.value = Array.isArray(raw) ? raw : [];
+
+    // Jika ada usulan_id, ambil status usulan untuk override status berkas
+    const usulanId = (route.query.usulan_id as string) || '';
+    if (usulanId) {
+      try {
+        const usulanRes: any = await apiGet(`/transfer-active-to-inactive/${usulanId}`, {}, { skipCache: true });
+        if (usulanRes?.data?.status) {
+          usulanStatus.value = usulanRes.data.status;
+        }
+      } catch {
+        // Ignore — fallback to berkas status
+      }
+    }
   } catch (e) {
     console.error('Gagal memuat berkas:', e);
   } finally {

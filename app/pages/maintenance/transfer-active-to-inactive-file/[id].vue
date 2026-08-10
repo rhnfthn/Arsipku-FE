@@ -83,7 +83,7 @@
 
             <!-- DISETUJUI_VERIFIKASI_TERAKHIR: Menunggu atasan kirim ke TU (bukan sekretaris) -->
             <div
-              v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR'"
+              v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' && !isSekretarisPengusul"
               class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
             >
               <div class="flex items-start gap-3">
@@ -104,39 +104,7 @@
               </div>
             </div>
 
-            <!-- Pengingat: Siapkan berkas fisik & berita acara (saat menunggu dikirim ke TU) -->
-            <div
-              v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' || item.status === 'DIKIRIM'"
-              class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1">Pengingat Persiapan Berkas</h3>
-                  <p class="text-sm text-amber-600 dark:text-amber-400 leading-relaxed">
-                    Harap siapkan berkas fisik dan berita acara serah terima yang akan dibawa dan diserahkan ke pihak Unit Dokumen.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <!-- Berita Acara (Generate) dihapus — BA format resmi ada di card bawah -->
-
-            <!-- DIKIRIM: Menunggu Penerimaan -->
-            <div
-              v-if="item.status === 'DIKIRIM'"
-              class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-clock" class="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Menunggu Penerimaan</h3>
-                  <p class="text-sm text-purple-600 dark:text-purple-400">
-                    Usulan dikirim ke Unit Tata Naskah. Menunggu penerimaan dari Atasan Managerial TU.
-                  </p>
-                </div>
-              </div>
-            </div>
 
             <!-- USUL_PINDAH_DIKIRIM: Sekretaris siapkan berkas fisik -->
             <div
@@ -232,8 +200,8 @@
               <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
             </div>
             <div>
-              <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName ?? '-' }}</p>
-              <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
+              <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; :</p>
+              <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> :</p>
               <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
             </div>
           </div>
@@ -265,16 +233,48 @@
             </div>
             <div class="text-center">
               <p class="font-semibold mb-16">Pihak Kedua</p>
-              <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData?.pengirim?.nama ?? item.sekretarisName ?? '-' }}</p>
-              <p class="text-gray-500">{{ beritaAcaraData?.pengirim?.jabatan ?? '-' }}</p>
+              <p class="border-t border-gray-400 pt-1 font-semibold">&nbsp;</p>
+              <p class="text-gray-500">&nbsp;</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pengingat Persiapan Berkas (di bawah Berita Acara) -->
+      <div
+        v-if="item && (item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' || item.status === 'DIKIRIM')"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
+      >
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+          <div>
+            <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1">Pengingat Persiapan Berkas</h3>
+            <p class="text-sm text-amber-600 dark:text-amber-400 leading-relaxed">
+              Harap siapkan berkas fisik dan berita acara serah terima yang akan dibawa dan diserahkan ke pihak Unit Dokumen.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menunggu Penerimaan (di bawah Pengingat) -->
+      <div
+        v-if="item && item.status === 'DIKIRIM'"
+        class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
+      >
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-clock" class="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
+          <div>
+            <h3 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Menunggu Penerimaan</h3>
+            <p class="text-sm text-purple-600 dark:text-purple-400">
+              Usulan dikirim ke Unit Tata Naskah. Menunggu penerimaan dari Atasan Managerial TU.
+            </p>
           </div>
         </div>
       </div>
 
       <!-- Card Persetujuan Terakhir Atasan TU (untuk atasan managerial TU) -->
       <div
-        v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTu"
+        v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuLevel1"
         class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
@@ -475,6 +475,21 @@ const isAtasanTu = computed(() => {
   return persnum === 10010123 || persnum === 10010970;
 });
 
+/** True jika user login adalah atasan TU level 1 (untuk persetujuan terakhir). */
+const isAtasanTuLevel1 = computed(() => {
+  if (!item.value || !user.value) return false
+  const levels = (item.value as any).tuApprovalLevels
+  if (!levels || levels.length === 0) return isAtasanTu.value // Legacy: single atasan
+  const firstLevel = levels.find((l: any) => l.urutan === 1)
+  return firstLevel ? firstLevel.persnum === Number(user.value.persnum) : false
+});
+
+/** True jika user login adalah sekretaris pengusul (pembuat usulan ini). */
+const isSekretarisPengusul = computed(() => {
+  if (!item.value || !user.value) return false;
+  return Number(item.value.sekretarisPersnum) === Number(user.value.persnum);
+});
+
 const item = ref<TransferActiveToInactive | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
@@ -489,6 +504,7 @@ const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 const items = computed(() => [
   { label: 'Beranda', to: '/' },
   { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
+  { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
   { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/transfer-active-to-inactive-file/${route.params.id}` },
 ]);
 
