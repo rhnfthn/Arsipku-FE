@@ -57,19 +57,6 @@
           {{ usulan.keterangan }}
         </p>
       </div>
-
-      <!-- Total Arsip -->
-      <div class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Total Arsip</h4>
-          <button @click="showTotalArsip = !showTotalArsip" class="text-xs text-primary hover:underline">
-            {{ showTotalArsip ? 'Sembunyikan' : 'Tampilkan' }}
-          </button>
-        </div>
-        <div v-if="showTotalArsip" class="text-sm text-gray-600 dark:text-gray-300">
-          <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ totalArsip }} berkas</span></p>
-        </div>
-      </div>
     </div>
 
     <!-- Card 2: Daftar Arsip yang Akan Dipindahkan -->
@@ -105,7 +92,7 @@
       </div>
     </div>
 
-    <!-- Card 3: Daftar Atasan Verifikasi (Berjenjang) -->
+    <!-- Card: Daftar Atasan Verifikasi (Berjenjang) — sisi Atasan Managerial Sekretaris -->
     <div
       v-if="usulan.approvalLevels && usulan.approvalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
@@ -116,7 +103,7 @@
           v-for="level in usulan.approvalLevels"
           :key="level.id"
           class="flex items-center gap-3 p-3 rounded-lg border"
-          :class="levelStatusClass(level)"
+          :class="levelStatusClass(level.status)"
         >
           <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 shrink-0">
             {{ level.urutan }}
@@ -135,8 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import type { VerifikasiUsulanItem, VerifikasiApprovalLevel } from '~/types/verifikasi-usulan';
+import type { VerifikasiUsulanItem } from '~/types/verifikasi-usulan';
 import {
   verifikasiStatusBadge,
   verifikasiStatusLabel,
@@ -148,13 +134,9 @@ const props = defineProps<{
   daftarArsip?: any[];
 }>();
 
-const showTotalArsip = ref(true);
-
-const totalArsip = computed(() => props.daftarArsip?.length ?? 1);
-
-const levelStatusClass = (level: VerifikasiApprovalLevel): string => {
-  if (level.status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-  if (level.status === 'DITOLAK') return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+const levelStatusClass = (status: string): string => {
+  if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+  if (status === 'DITOLAK') return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
   return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
 };
 

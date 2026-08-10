@@ -253,11 +253,16 @@ const items = [
 
 // ─── Role-based tab visibility ────────────────────────────────────────
 // Atasan Managerial Unit Kerja (ADMIN) → tab Unit Kerja.
-// Atasan Managerial TU (SUPERADMIN / persnum 10010123) → tab Unit Tata Naskah.
-// Atasan Managerial TU via persnum 10010123 (EVP Corporate Secretary).
-const isAtasanManagerialTu = computed(
-  () => isSuperadmin.value || Number(user.value?.persnum) === 10010123,
-);
+// Atasan Managerial TU (managerial position / SUPERADMIN) → tab Unit Tata Naskah.
+// Cek berdasarkan posisi managerial (EVP/VP/AVP/bodTag), bukan hardcode persnum.
+const isAtasanManagerialTu = computed(() => {
+  if (isSuperadmin.value) return true;
+  const posText = (user.value?.positionText || '').toUpperCase();
+  const hasBod = !!user.value?.bodTag?.trim();
+  return posText.includes('EVP') || posText.includes('AVP') ||
+    posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP' ||
+    hasBod;
+});
 const showUnitKerjaTab = computed(() => isAdmin.value || isSuperadmin.value);
 const showUnitTataNaskahTab = computed(() => isAtasanManagerialTu.value);
 
