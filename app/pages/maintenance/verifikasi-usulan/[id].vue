@@ -44,34 +44,6 @@
         <div class="lg:col-span-8 space-y-5">
           <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarIsi" />
 
-          <!-- ─── Card: Riwayat ─── -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Riwayat</h3>
-              <button @click="showRiwayat = !showRiwayat" class="text-xs text-[#457fb6] hover:underline">
-                {{ showRiwayat ? 'Sembunyikan' : 'Tampilkan' }}
-              </button>
-            </div>
-            <div v-if="showRiwayat" class="space-y-2">
-              <div
-                v-for="(r, idx) in riwayatList"
-                :key="idx"
-                class="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-              >
-                <div class="w-2 h-2 rounded-full bg-[#457fb6] mt-1.5 shrink-0"></div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-medium text-gray-900 dark:text-white">{{ r.label }}</span>
-                    <span class="text-xs text-gray-400">{{ r.tanggal }}</span>
-                  </div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Oleh: {{ r.oleh }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Berita Acara (hapus dari atasan managerial — hanya di sekretaris) -->
-
           <!-- ─── Card: Daftar Isi ─── -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-3">
@@ -154,8 +126,8 @@
                   <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
                 </div>
                 <div>
-                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; : {{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; :</p>
+                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> :</p>
                   <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
                 </div>
               </div>
@@ -185,27 +157,15 @@
                 </div>
                 <div class="text-center">
                   <p class="font-semibold mb-16">Pihak Kedua</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.pengirim?.nama ?? usulan.sekretarisName ?? '-' }}</p>
-                  <p class="text-gray-500">{{ beritaAcaraData.pengirim?.jabatan ?? '-' }}</p>
+                  <p class="border-t border-gray-400 pt-1 font-semibold">&nbsp;</p>
+                  <p class="text-gray-500">&nbsp;</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Tombol Pindah Usulan — muncul saat verifikasi terakhir selesai -->
-          <div v-if="canKirimTU" class="flex gap-2">
-            <button
-              @click="onKirimTU"
-              :disabled="actionLoading"
-              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
-            >
-              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Pindah Usulan
-            </button>
-          </div>
-
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canFinalVerify" class="flex gap-2">
+          <div v-if="canVerify || canFinalVerify || canKirimTU" class="flex items-center gap-2">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -222,10 +182,18 @@
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
               <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim
             </button>
-            <!-- Verifikasi Terakhir (dengan Daftar Isi + BA) -->
             <button
               v-if="canFinalVerify"
               @click="onFinalVerify"
+              :disabled="actionLoading"
+              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
+            >
+              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Pindah Usulan
+            </button>
+            <button
+              v-if="canKirimTU"
+              @click="onKirimTU"
               :disabled="actionLoading"
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
@@ -634,6 +602,10 @@ const canFinalVerify = computed(() => {
     if (!firstLevel) return false;
     return Number(firstLevel.atasanPersnum) === Number(user.value.persnum);
   }
+  // Fallback: single-atasan — cek atasanPersnum langsung
+  if (usulan.value.atasanPersnum) {
+    return Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+  }
   // Fallback: single-atasan (totalApprovalLevels <= 1) — izinkan
   return (usulan.value.totalApprovalLevels ?? 1) <= 1;
 });
@@ -647,13 +619,20 @@ const canApproveReceipt = computed(() => {
   return role === 'ADMIN' || role === 'SUPERADMIN';
 });
 
-/** Sekretaris bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
- * Hanya sekretaris pengusul yang bisa kirim, bukan atasan managerial. */
+/** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
+ * Hanya atasan managerial (bukan sekretaris) yang bisa kirim ke TU. */
 const canKirimTU = computed(() => {
   if (!usulan.value || !user.value) return false;
   if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
-  // Hanya sekretaris pengusul yang bisa kirim ke TU (bukan atasan)
-  return Number(usulan.value.sekretarisPersnum) === Number(user.value.persnum);
+  // Sekretaris tidak boleh kirim ke TU
+  if (isOwnUsulan.value) return false;
+  // Atasan managerial (ada di approvalLevels) yang bisa kirim ke TU
+  if (isAtasanInLevels.value) return true;
+  // Fallback: single-atasan tanpa approvalLevels — cek atasanPersnum langsung
+  if (usulan.value.atasanPersnum) {
+    return Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
+  }
+  return false;
 });
 
 const loadDetail = async () => {
@@ -772,7 +751,7 @@ const onKirimTU = () => {
   isSendToTUModalOpen.value = true;
 };
 
-const onConfirmKirimTU = () => {
+const onConfirmKirimTU = (catatan: string) => {
   isSendToTUModalOpen.value = false;
   act(() => kirimUsulPindah(usulan.value!.id, jenis.value));
 };

@@ -1,10 +1,8 @@
 <template>
-  <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
-    <div class="overflow-x-auto">
-      <table class="min-w-full border-collapse text-sm">
-        <thead class="bg-[#457fb6] text-white text-left">
+  <div class="overflow-x-auto">
+    <table class="min-w-full border-collapse text-sm">
+        <thead class="bg-primary dark:bg-primary-700 text-white text-left">
           <tr>
-            <th class="px-4 py-3 font-semibold">No</th>
             <th class="px-4 py-3 font-semibold">Nomor Usulan</th>
             <th class="px-4 py-3 font-semibold">Perihal Arsip</th>
             <th class="px-4 py-3 font-semibold">Sekretaris</th>
@@ -16,7 +14,7 @@
         <tbody>
           <!-- Loading -->
           <tr v-if="loading">
-            <td colspan="7" class="px-4 py-6">
+            <td colspan="6" class="px-4 py-6">
               <div class="space-y-4 animate-pulse">
                 <div v-for="n in 5" :key="n" class="h-12 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
               </div>
@@ -25,7 +23,7 @@
 
           <!-- Empty -->
           <tr v-else-if="!data || data.length === 0">
-            <td colspan="7" class="px-4 py-10 text-center text-sm text-gray-400">
+            <td colspan="6" class="px-4 py-10 text-center text-sm text-gray-400">
               <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>Belum ada usulan pemindahan arsip yang perlu diverifikasi</p>
               <p class="text-xs text-gray-400 mt-1">Usulan dari Sekretaris akan muncul di sini setelah dikirim ke Anda.</p>
@@ -35,11 +33,10 @@
           <!-- Rows -->
           <template v-else>
             <tr
-              v-for="(row, idx) in data"
+              v-for="row in data"
               :key="row.id"
-              class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+              class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              <td class="px-4 py-3 text-gray-500">{{ idx + 1 }}</td>
               <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-700 dark:text-gray-200">{{ row.nomorUsulan }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.arsipPerihal">{{ row.arsipPerihal }}</td>
               <td class="px-4 py-3 text-gray-700 dark:text-gray-200">{{ row.sekretarisName }}</td>
@@ -51,7 +48,7 @@
                 <button
                   @click="$emit('detail', row)"
                   :title="needsVerification(row.status) ? 'Verifikasi' : 'Detail'"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
                 >
                   <UIcon v-if="needsVerification(row.status)" name="i-lucide-file-check-2" class="w-4 h-4" />
                   <UIcon v-else name="i-heroicons-eye" class="w-4 h-4" />
@@ -62,7 +59,6 @@
         </tbody>
       </table>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">

@@ -39,6 +39,7 @@ export interface VerifikasiUsulanItem {
   arsipId: string;
   arsipPerihal: string;
   arsipKode?: string | null;
+  arsipKlasifikasi?: string | null;
   tanggalRetensiAktifHabis?: string | null;
   keterangan?: string | null;
   status: VerifikasiStatus;
@@ -76,6 +77,7 @@ export interface VerifikasiFilter {
   jenis?: JenisUsulan | '';
   status?: VerifikasiStatus | '';
   search?: string;
+  klasifikasi?: string;
   startDate?: string;
   page?: number;
   limit?: number;
