@@ -115,8 +115,16 @@
             <Transition name="filter-dd">
               <div
                 v-if="openFilterKlasifikasi"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px] max-h-56 overflow-y-auto"
               >
+                <input
+                  v-model="klasifikasiSearch"
+                  type="text"
+                  placeholder="Cari klasifikasi…"
+                  class="sticky top-0 z-10 w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-0"
+                  @click.stop
+                  @keydown.stop
+                />
                 <button
                   type="button"
                   @click.stop="selectFilterKlasifikasi('')"
@@ -130,7 +138,7 @@
                   Semua Klasifikasi
                 </button>
                 <button
-                  v-for="k in klasifikasiList"
+                  v-for="k in filteredKlasifikasiList"
                   :key="k.klasifikasi"
                   type="button"
                   @click.stop="selectFilterKlasifikasi(k.klasifikasi)"
@@ -142,54 +150,6 @@
                   ]"
                 >
                   {{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- FILTER KATEGORI -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              type="button"
-              @click.stop="toggleFilterKategori"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
-            >
-              <span class="truncate">{{ kategoriLabel }}</span>
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-180': openFilterKategori }"
-              />
-            </button>
-            <Transition name="filter-dd">
-              <div
-                v-if="openFilterKategori"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
-              >
-                <button
-                  type="button"
-                  @click.stop="selectFilterKategori('')"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
-                    filterKategori === ''
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
-                  ]"
-                >
-                  Semua Kategori
-                </button>
-                <button
-                  v-for="k in kategoriOptions"
-                  :key="k"
-                  type="button"
-                  @click.stop="selectFilterKategori(k)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    filterKategori === k
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
-                  ]"
-                >
-                  {{ k }}
                 </button>
               </div>
             </Transition>
@@ -684,11 +644,7 @@ const {
   uploadBerkasFile,
 } = useArsipDinamis();
 const { apiPost } = useApi();
-const { user } = useAuth();
 const toast = useToast();
-
-// TU (unit_dokumen) — satu-satunya yang melihat/mengelola berkas tertutup
-const isTuRole = computed(() => (user.value?.tuRoles ?? []).includes('tu'));
 
 // ── State ────────────────────────────────────────────────────────
 
@@ -708,22 +664,16 @@ const klasifikasiList = ref<any[]>([]);
 const filterStatus = ref('');
 const filterKlasifikasi = ref('');
 const filterTahun = ref('');
-const filterKategori = ref('');
 
-// Filter status Tertutup hanya untuk TU (unit_dokumen) — user biasa tidak
-// melihat berkas tertutup sama sekali.
-const statusOptions = computed(() => {
-  const opts = [
-    { value: '', label: 'Semua Status' },
-    { value: 'aktif', label: 'Terbuka' },
-    { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi Managerial' },
-    { value: 'ditolak', label: 'Verifikasi Ditolak Managerial' },
-  ];
-  if (isTuRole.value) {
-    opts.push({ value: 'closed_retensi_aktif', label: 'Tertutup' });
-  }
-  return opts;
-});
+// Berkas Tertutup (closed_retensi_aktif) tampil untuk semua user — yang
+// retensi aktifnya sudah habis otomatis pindah ke pemindahan arsip (TU).
+const statusOptions = [
+  { value: '', label: 'Semua Status' },
+  { value: 'aktif', label: 'Terbuka' },
+  { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi Managerial' },
+  { value: 'ditolak', label: 'Verifikasi Ditolak Managerial' },
+  { value: 'closed_retensi_aktif', label: 'Tertutup' },
+];
 const currentYear = new Date().getFullYear();
 const tahunOptions = [
   { value: '', label: 'Semua Tahun' },
@@ -736,7 +686,6 @@ const resetFilters = () => {
   filterStatus.value = '';
   filterKlasifikasi.value = '';
   filterTahun.value = '';
-  filterKategori.value = '';
   currentPage.value = 1;
 };
 
@@ -746,10 +695,22 @@ const openRowsPerPage = ref(false);
 const openFilterStatus = ref(false);
 const openFilterKlasifikasi = ref(false);
 const openFilterTahun = ref(false);
-const openFilterKategori = ref(false);
+const klasifikasiSearch = ref('');
+
+// Pencarian dalam dropdown klasifikasi — daftar klasifikasi bisa sangat panjang
+// (ratusan kode), filter client-side tanpa request tambahan.
+const filteredKlasifikasiList = computed(() => {
+  const q = klasifikasiSearch.value.trim().toLowerCase();
+  if (!q) return klasifikasiList.value;
+  return klasifikasiList.value.filter(
+    (k: any) =>
+      String(k.klasifikasi).toLowerCase().includes(q) ||
+      String(k.klasifikasi_text || '').toLowerCase().includes(q)
+  );
+});
 
 const statusLabel = computed(
-  () => statusOptions.value.find((o) => o.value === filterStatus.value)?.label ?? 'Semua Status'
+  () => statusOptions.find((o) => o.value === filterStatus.value)?.label ?? 'Semua Status'
 );
 const klasifikasiLabel = computed(() => {
   if (!filterKlasifikasi.value) return 'Semua Klasifikasi';
@@ -759,57 +720,30 @@ const klasifikasiLabel = computed(() => {
 const tahunLabel = computed(
   () => tahunOptions.find((o) => o.value === filterTahun.value)?.label ?? 'Semua Tahun'
 );
-const kategoriLabel = computed(() => filterKategori.value || 'Semua Kategori');
-// Opsi dari kategori yang ada di halaman aktif + nilai filter terpilih (agar
-// opsi aktif tetap tampil walau berpindah halaman).
-const kategoriOptions = computed(() => {
-  const fromPage = [
-    ...new Set(
-      berkasList.value
-        .map((b) => b.kategoriBerkas)
-        .filter((k: any) => typeof k === 'string' && k.trim() !== '')
-    ),
-  ] as string[];
-  if (filterKategori.value && !fromPage.includes(filterKategori.value)) {
-    fromPage.unshift(filterKategori.value);
-  }
-  return fromPage;
-});
-
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
   openFilterStatus.value = false;
   openFilterKlasifikasi.value = false;
   openFilterTahun.value = false;
-  openFilterKategori.value = false;
 }
 function toggleFilterStatus() {
   openFilterStatus.value = !openFilterStatus.value;
   openRowsPerPage.value = false;
   openFilterKlasifikasi.value = false;
   openFilterTahun.value = false;
-  openFilterKategori.value = false;
 }
 function toggleFilterKlasifikasi() {
   openFilterKlasifikasi.value = !openFilterKlasifikasi.value;
   openRowsPerPage.value = false;
   openFilterStatus.value = false;
   openFilterTahun.value = false;
-  openFilterKategori.value = false;
+  if (openFilterKlasifikasi.value) klasifikasiSearch.value = '';
 }
 function toggleFilterTahun() {
   openFilterTahun.value = !openFilterTahun.value;
   openRowsPerPage.value = false;
   openFilterStatus.value = false;
   openFilterKlasifikasi.value = false;
-  openFilterKategori.value = false;
-}
-function toggleFilterKategori() {
-  openFilterKategori.value = !openFilterKategori.value;
-  openRowsPerPage.value = false;
-  openFilterStatus.value = false;
-  openFilterKlasifikasi.value = false;
-  openFilterTahun.value = false;
 }
 function selectRowsPerPage(n: number) {
   perPage.value = n;
@@ -822,14 +756,11 @@ function selectFilterStatus(val: string) {
 function selectFilterKlasifikasi(val: string) {
   filterKlasifikasi.value = val;
   openFilterKlasifikasi.value = false;
+  klasifikasiSearch.value = '';
 }
 function selectFilterTahun(val: string) {
   filterTahun.value = val;
   openFilterTahun.value = false;
-}
-function selectFilterKategori(val: string) {
-  filterKategori.value = val;
-  openFilterKategori.value = false;
 }
 
 function handleDocumentClick(e: MouseEvent) {
@@ -842,7 +773,6 @@ function handleDocumentClick(e: MouseEvent) {
     openFilterStatus.value =
     openFilterKlasifikasi.value =
     openFilterTahun.value =
-    openFilterKategori.value =
       false;
 }
 
@@ -1059,7 +989,6 @@ const fetchData = async () => {
       search: search.value || undefined,
       status: filterStatus.value || undefined,
       klasifikasi: filterKlasifikasi.value || undefined,
-      kategori: filterKategori.value || undefined,
       tahun: filterTahun.value || undefined,
       page: currentPage.value,
       limit: perPage.value,
@@ -1093,7 +1022,6 @@ const exportData = async () => {
       search: search.value || undefined,
       status: filterStatus.value || undefined,
       klasifikasi: filterKlasifikasi.value || undefined,
-      kategori: filterKategori.value || undefined,
       tahun: filterTahun.value || undefined,
       page: 1,
       limit: totalItems.value || 9999,
@@ -1152,17 +1080,9 @@ const fetchKlasifikasi = async () => {
 
 // ── Watchers ─────────────────────────────────────────────────────
 
-// User biasa tidak boleh menyaring status Tertutup (opsi disembunyikan) —
-// reset filter lama yang tersimpan agar tidak menghasilkan list kosong.
-watch(isTuRole, (isTu) => {
-  if (!isTu && filterStatus.value === 'closed_retensi_aktif') {
-    filterStatus.value = '';
-  }
-});
-
 // Filter changes -> reset to page 1 (the currentPage watcher then fetches;
 // if already on page 1, fetch directly so the change still applies).
-watch([search, filterStatus, filterKlasifikasi, filterKategori, filterTahun], () => {
+watch([search, filterStatus, filterKlasifikasi, filterTahun], () => {
   if (currentPage.value !== 1) currentPage.value = 1;
   else fetchData();
 });
