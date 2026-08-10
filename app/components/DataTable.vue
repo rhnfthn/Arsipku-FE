@@ -46,12 +46,16 @@
           v-else
           v-for="(row, idx) in rows"
           :key="row.id ?? row.persnum ?? idx"
-          :class="rowClass"
+          :class="[rowClass, 'group relative']"
         >
           <td v-for="col in columns" :key="col.key" :class="['px-4 py-3', col.class || '']">
             <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]" :index="idx">
               {{ row[col.key] }}
             </slot>
+          </td>
+          <!-- Floating actions slot (rendered inside the <tr>, positioned absolute) -->
+          <td v-if="$slots['row-extra']" class="absolute right-0 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
+            <slot name="row-extra" :row="row" :index="idx" />
           </td>
         </tr>
       </tbody>

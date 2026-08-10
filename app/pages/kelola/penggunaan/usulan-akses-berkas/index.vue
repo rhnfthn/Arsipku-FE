@@ -10,6 +10,7 @@ import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCo
 import { useAuth } from '~/composables/useAuth';
 import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -30,18 +31,6 @@ const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifika
 const { clearVerifikasiBadge, clearPilihBerkasBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
-
-// Helper: extract error message dari AxiosError (BE return { message: [...] | string })
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) {
-    return beMessage.join(', ');
-  }
-  if (typeof beMessage === 'string' && beMessage.trim()) {
-    return beMessage;
-  }
-  return err?.message || 'Terjadi kesalahan';
-};
 
 // Hanya Sekretaris yang didelegasikan (position_status = 'SE') yang dapat
 // membuat usulan peminjaman berkas.
