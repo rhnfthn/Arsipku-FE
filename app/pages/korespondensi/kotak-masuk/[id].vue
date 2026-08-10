@@ -1317,13 +1317,6 @@ const konsepOptions = computed(() => [
   <template v-else>
   <div class="flex items-center justify-between gap-4">
     <PageHeader title="Detail Surat" :items="breadcrumbs" />
-    <button
-      v-if="!isLoading && visibleDetails.length > 0"
-      @click="openNaskahPopup"
-      class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
-    >
-      <UIcon name="i-lucide-eye" class="w-4 h-4" /> Preview Naskah
-    </button>
   </div>
 
   <div class="w-full flex gap-4 pt-4 relative">
