@@ -1,93 +1,91 @@
 <template>
-  <div class="flex flex-wrap items-center gap-3 mb-4">
-    <!-- Items per page (custom dropdown) -->
-    <div ref="pageSizeRef" class="relative shrink-0 z-30">
-      <button
-        @click="pageSizeOpen = !pageSizeOpen"
-        class="h-10 w-[80px] px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
-      >
-        <span>{{ modelValue.limit }}</span>
-        <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400" :class="{ 'rotate-180': pageSizeOpen }" />
-      </button>
-      <div
-        v-if="pageSizeOpen"
-        class="absolute top-full left-0 mt-1.5 z-50 min-w-[80px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden"
-      >
-        <button
-          v-for="size in [10, 30, 50]"
-          :key="size"
-          @click="updateField('limit', size); updateField('page', 1); pageSizeOpen = false; $emit('apply')"
-          class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-          :class="modelValue.limit === size ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
-        >
-          {{ size }}
-        </button>
+  <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
+      <div class="flex items-center gap-3 flex-wrap flex-1">
+        <!-- ROWS PER PAGE -->
+        <div class="relative" data-custom-dropdown>
+          <button
+            type="button"
+            @click.stop="toggleRowsPerPage"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
+          >
+            <span>{{ modelValue.limit }}</span>
+            <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': openRowsPerPage }" />
+          </button>
+          <Transition name="filter-dd">
+            <div v-if="openRowsPerPage" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]">
+              <button
+                v-for="n in [10, 25, 50]"
+                :key="n"
+                type="button"
+                @click.stop="selectRowsPerPage(n)"
+                :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', modelValue.limit === n ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+              >{{ n }}</button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- FILTER STATUS -->
+        <div class="relative" data-custom-dropdown>
+          <button
+            type="button"
+            @click.stop="toggleFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
+          >
+            <span class="truncate">{{ statusLabel }}</span>
+            <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': openFilterStatus }" />
+          </button>
+          <Transition name="filter-dd">
+            <div v-if="openFilterStatus" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]">
+              <button
+                type="button"
+                @click.stop="selectFilterStatus('')"
+                :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', modelValue.status === '' ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+              >Semua Status</button>
+              <button
+                v-for="opt in statusOptions"
+                :key="opt.value"
+                type="button"
+                @click.stop="selectFilterStatus(opt.value)"
+                :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', modelValue.status === opt.value ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+              >{{ opt.label }}</button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="relative flex-1 min-w-[180px]">
+          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            :value="modelValue.search"
+            @input="updateField('search', ($event.target as HTMLInputElement).value)"
+            @keydown.enter="$emit('apply')"
+            type="text"
+            placeholder="Cari Berkas…"
+            class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+          />
+        </div>
       </div>
-    </div>
-    <!-- Search -->
-    <div class="relative flex-1 min-w-[200px]">
-      <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-      <input
-        :value="modelValue.search"
-        @input="updateField('search', ($event.target as HTMLInputElement).value)"
-        @keydown.enter="$emit('apply')"
-        type="text"
-        placeholder="Cari nomor, perihal, sekretaris..."
-        class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-      />
-    </div>
-    <!-- Status Filter (custom dropdown) -->
-    <div ref="statusRef" class="relative shrink-0 z-30">
+
+      <!-- EXPORT -->
       <button
-        @click="statusOpen = !statusOpen"
-        class="h-10 w-[180px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
+        @click="$emit('export')"
+        class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap"
       >
-        <span class="truncate">{{ statusOptions.find(o => o.value === modelValue.status)?.label ?? 'Semua Status' }}</span>
-        <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': statusOpen }" />
+        <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Export
       </button>
-      <div
-        v-if="statusOpen"
-        class="absolute top-full left-0 mt-1.5 z-50 min-w-[180px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden max-h-[300px] overflow-y-auto"
-      >
-        <button
-          @click="updateField('status', ''); statusOpen = false; $emit('apply')"
-          class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-          :class="modelValue.status === '' ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
-        >
-          Semua Status
-        </button>
-        <button
-          v-for="opt in statusOptions"
-          :key="opt.value"
-          @click="updateField('status', opt.value); statusOpen = false; $emit('apply')"
-          class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-          :class="modelValue.status === opt.value ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
-        >
-          {{ opt.label }}
-        </button>
-      </div>
-    </div>
-    <!-- Export -->
-    <button
-      @click="$emit('export')"
-      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shrink-0"
-    >
-      <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ChevronDown } from 'lucide-vue-next';
 import type { VerifikasiFilter, VerifikasiStatus } from '~/types/verifikasi-usulan';
 
 const props = defineProps<{ modelValue: VerifikasiFilter }>();
 const emit = defineEmits<{ 'update:modelValue': [v: VerifikasiFilter]; apply: []; export: [] }>();
 
-const pageSizeOpen = ref(false);
-const pageSizeRef = ref<HTMLElement | null>(null);
-const statusOpen = ref(false);
-const statusRef = ref<HTMLElement | null>(null);
+const openRowsPerPage = ref(false);
+const openFilterStatus = ref(false);
 
 const statusOptions: { value: VerifikasiStatus; label: string }[] = [
   { value: 'MENUNGGU_VERIFIKASI_ATASAN', label: 'Menunggu Persetujuan' },
@@ -98,19 +96,67 @@ const statusOptions: { value: VerifikasiStatus; label: string }[] = [
   { value: 'DITOLAK_ATASAN', label: 'Ditolak' },
 ];
 
+const statusLabel = computed(() =>
+  statusOptions.find((o) => o.value === props.modelValue.status)?.label ?? 'Semua Status',
+);
+
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+}
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
+}
+
+function selectRowsPerPage(n: number) {
+  updateField('limit', n);
+  updateField('page', 1);
+  openRowsPerPage.value = false;
+  emit('apply');
+}
+function selectFilterStatus(val: string) {
+  updateField('status', val as any);
+  openFilterStatus.value = false;
+  emit('apply');
+}
+
 const updateField = (field: keyof VerifikasiFilter, value: any) => {
   emit('update:modelValue', { ...props.modelValue, [field]: value });
 };
 
-const onClickOutside = (e: MouseEvent) => {
-  if (pageSizeRef.value && !pageSizeRef.value.contains(e.target as Node)) {
-    pageSizeOpen.value = false;
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const els = document.querySelectorAll('[data-custom-dropdown]');
+  for (const el of Array.from(els)) {
+    if (el.contains(target)) return;
   }
-  if (statusRef.value && !statusRef.value.contains(e.target as Node)) {
-    statusOpen.value = false;
-  }
-};
+  openRowsPerPage.value = openFilterStatus.value = false;
+}
 
-onMounted(() => document.addEventListener('click', onClickOutside));
-onBeforeUnmount(() => document.removeEventListener('click', onClickOutside));
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick);
+});
+onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick));
 </script>
+
+<style scoped>
+[data-custom-dropdown] button:focus {
+  outline: none;
+}
+.filter-dd-enter-active,
+.filter-dd-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+.filter-dd-enter-from,
+.filter-dd-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+.filter-dd-enter-to,
+.filter-dd-leave-from {
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+}
+</style>

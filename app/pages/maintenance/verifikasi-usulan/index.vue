@@ -22,15 +22,16 @@
       </div>
     </div>
 
-    <!-- Filter Bar -->
-    <VerifikasiFilterBar
-      v-model="filter"
-      @apply="reload"
-      @export="onExport"
-    />
+    <!-- Table Card (filter + table + pagination in one card) -->
+    <div class="rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors overflow-hidden">
+      <!-- Filter Bar -->
+      <VerifikasiFilterBar
+        v-model="filter"
+        @apply="reload"
+        @export="onExport"
+      />
 
-    <!-- Table -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
+      <!-- Table -->
       <VerifikasiTable
         :data="list"
         :loading="loading"
@@ -38,15 +39,11 @@
       />
 
       <!-- Pagination -->
-      <div class="mt-4" v-if="meta">
-        <Pagination
-          :current-page="meta.page"
-          :total-pages="meta.totalPages"
+      <div v-if="meta">
+        <DataPagination
+          v-model:current-page="currentPage"
           :total-items="meta.total"
-          :rows-per-page="filter.limit ?? 10"
-          :rows-options="[10, 20, 50]"
-          @update:page="goPage"
-          @update:rows-per-page="onLimitChange"
+          :per-page="filter.limit ?? 10"
         />
       </div>
     </div>
@@ -98,6 +95,7 @@ const filter = ref<VerifikasiFilter>({
   jenis: '',
   status: '',
   search: '',
+  klasifikasi: '',
   startDate: '',
   page: 1,
   limit: 10,
@@ -118,17 +116,6 @@ const loadData = async () => {
 };
 
 const reload = () => {
-  filter.value.page = 1;
-  loadData();
-};
-
-const goPage = (p: number) => {
-  filter.value.page = p;
-  loadData();
-};
-
-const onLimitChange = (l: number) => {
-  filter.value.limit = l;
   filter.value.page = 1;
   loadData();
 };
@@ -159,6 +146,16 @@ const onExport = () => {
 const openDetail = (row: VerifikasiUsulanItem) => {
   navigateTo(`/maintenance/verifikasi-usulan/${row.id}?jenis=${row.jenis}`);
 };
+
+// DataPagination v-model:current-page → trigger loadData on page change
+const currentPage = computed({
+  get: () => filter.value.page ?? 1,
+  set: (val: number) => { filter.value.page = val; },
+});
+
+watch(() => filter.value.page, () => {
+  if (filter.value.page) loadData();
+});
 
 onMounted(() => loadData());
 </script>
