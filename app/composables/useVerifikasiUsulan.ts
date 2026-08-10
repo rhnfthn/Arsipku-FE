@@ -54,6 +54,7 @@ export const useVerifikasiUsulan = () => {
     arsipId: raw.arsipId ?? raw.arsip_id ?? '',
     arsipPerihal: raw.arsipPerihal ?? raw.arsip_perihal ?? '-',
     arsipKode: raw.arsipKode ?? raw.arsip_kode ?? null,
+    arsipKlasifikasi: raw.arsipKlasifikasi ?? raw.arsip_klasifikasi ?? null,
     tanggalRetensiAktifHabis:
       raw.tanggalRetensiAktifHabis ?? raw.tanggal_retensi_aktif_habis ?? null,
     keterangan: raw.keterangan ?? null,
@@ -124,12 +125,22 @@ export const useVerifikasiUsulan = () => {
 
       const results = await Promise.all(tasks);
 
-      // Gabungkan dan normalisasi, filter DRAFT
+      // Gabungkan dan normalisasi, filter DRAFT dan usulan milik sendiri
+      const userPersnum = user.value?.persnum;
+      const filterKlasifikasi = params.klasifikasi;
       const combined: VerifikasiUsulanItem[] = [];
       for (const r of results) {
         for (const raw of r.data) {
           const item = normalize(raw, r.jenis);
           if (item.status === 'DRAFT') continue;
+          // Sembunyikan usulan yang dibuat oleh user sendiri sebagai Sekretaris
+          // (halaman verifikasi hanya untuk usulan di mana user adalah atasan)
+          if (userPersnum && Number(item.sekretarisPersnum) === Number(userPersnum)) continue;
+          // Filter klasifikasi (client-side)
+          if (filterKlasifikasi && item.arsipKlasifikasi) {
+            if (!item.arsipKlasifikasi.toLowerCase().includes(filterKlasifikasi.toLowerCase()))
+              continue;
+          }
           combined.push(item);
         }
       }
@@ -147,7 +158,6 @@ export const useVerifikasiUsulan = () => {
       const pagedData = combined.slice(startIdx, startIdx + limit);
 
       // Enrich: cek isCurrentTurn
-      const userPersnum = (user as any)?.persnum;
       if (userPersnum) {
         await Promise.all(
           pagedData.map(async (item) => {

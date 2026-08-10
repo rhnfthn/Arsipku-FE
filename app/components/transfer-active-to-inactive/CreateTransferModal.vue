@@ -25,7 +25,7 @@
                 </span>
                 <div>
                   <h2 class="font-semibold text-gray-900 dark:text-white">Atasan Managerial <span class="text-red-500">*</span></h2>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi (berjenjang).</p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi .</p>
                 </div>
               </div>
               <UButton
@@ -309,6 +309,8 @@ import { formatDate } from '~/utils/transfer-status';
 const props = defineProps<{
   modelValue: boolean;
   editData?: TransferActiveToInactive | null;
+  preselectedArsip?: any | null;
+  prefillAtasan?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -653,7 +655,20 @@ watch(
       resetForm();
       loadAtasanManagerial();
       loadArsipRetensiHabis();
-      if (props.editData) fillFromEdit(props.editData);
+      if (props.editData) {
+        fillFromEdit(props.editData);
+      } else if (props.preselectedArsip) {
+        // Pre-select arsip dari tombol "Pindahkan" di tabel gabungan
+        selectedArsipList.value = [{
+          id: props.preselectedArsip.id,
+          judulBerkas: props.preselectedArsip.perihal ?? props.preselectedArsip.judulBerkas ?? '-',
+          kodeBerkas: props.preselectedArsip.kodeBerkas ?? null,
+          tanggalRetensiAktifBerakhir: props.preselectedArsip.tanggalRetensiAktifHabis ?? null,
+          kategoriBerkas: props.preselectedArsip.klasifikasi ?? null,
+          files: [],
+        }];
+        loadArsipFiles(selectedArsipList.value[0]);
+      }
       document.addEventListener('keydown', onKeydown);
     } else {
       document.removeEventListener('keydown', onKeydown);
