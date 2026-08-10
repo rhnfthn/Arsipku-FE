@@ -31,20 +31,15 @@ export interface ShareItem {
   recipients: ShareRecipient[];
 }
 
-export interface ShareSearchParams {
-  q: string;
-}
-
 /** Composable for share feature: state, API calls, helpers. */
 export function useNaskahShare() {
-  const { apiGet, apiPost, apiDelete, apiPatch, clearApiCache } = useApi();
+  const { apiGet, apiPost, apiDelete, clearApiCache } = useApi();
 
   // ── State ───────────────────────────────────────
   // sharedByMe: shares sent by user | sharedToMe: shares received by user
   const sharedByMe = ref<ShareItem[]>([]);
   const sharedToMe = ref<ShareItem[]>([]);
   const pending = ref(false);
-  const error = ref<any>(null);
   const pagination = reactive({
     total: 0,
     page: 1,
@@ -53,7 +48,6 @@ export function useNaskahShare() {
 
   // Search results for recipient dropdown
   const searchResults = ref<ShareRecipient[]>([]);
-  const searchPending = ref(false);
 
   /** Fetch shares with filter & pagination. Stores to sharedByMe or sharedToMe by tab. */
   const fetchShares = async (params: {
@@ -66,7 +60,6 @@ export function useNaskahShare() {
     sort?: 'ASC' | 'DESC';
   } = {}) => {
     pending.value = true;
-    error.value = null;
     try {
       const query = new URLSearchParams();
       query.set('tab', params.tab || 'shared-by-me');
@@ -94,7 +87,6 @@ export function useNaskahShare() {
       pagination.page = res.page || params.page || 1;
       pagination.limit = res.limit || params.limit || 20;
     } catch (err: any) {
-      error.value = err;
       console.error('[useNaskahShare] fetchShares error:', err);
     } finally {
       pending.value = false;
@@ -189,28 +181,12 @@ export function useNaskahShare() {
     }
   };
 
-  // ── Mark as read ────────────────────────────────
-  const markAsRead = async (shareId: string) => {
-    try {
-      await apiPatch(`/naskah-share/${shareId}/read`);
-      // Update local state
-      const item = sharedToMe.value.find((s) => s.id === shareId);
-      if (item) {
-        const recipient = item.recipients.find((r) => r.status === 'TERKIRIM');
-        if (recipient) recipient.status = 'DIBACA';
-      }
-    } catch (err: any) {
-      console.error('[useNaskahShare] markAsRead error:', err);
-    }
-  };
-
   // ── Search users for share modal ────────────────
   const searchUsers = async (query: string) => {
     if (!query || query.length < 2) {
       searchResults.value = [];
       return;
     }
-    searchPending.value = true;
     try {
       const res = await apiGet<{ success: boolean; data: ShareRecipient[] }>(
         `/naskah-share/search-user?q=${encodeURIComponent(query)}`,
@@ -219,8 +195,6 @@ export function useNaskahShare() {
     } catch (err: any) {
       console.error('[useNaskahShare] searchUsers error:', err);
       searchResults.value = [];
-    } finally {
-      searchPending.value = false;
     }
   };
 
@@ -248,17 +222,14 @@ export function useNaskahShare() {
     sharedByMe,
     sharedToMe,
     pending,
-    error,
     pagination,
     searchResults,
-    searchPending,
     // actions
     fetchShares,
     createShare,
     revokeRecipient,
     revokeShare,
     openNaskah,
-    markAsRead,
     searchUsers,
     clearSearchResults,
     getShareDetail,

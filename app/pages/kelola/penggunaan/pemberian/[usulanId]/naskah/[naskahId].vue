@@ -10,6 +10,7 @@ import PageHeader from '~/components/PageHeader.vue';
 import DetailNaskah from '@/components/DetailNaskah.vue';
 import { useApi } from '~/composables/useApi';
 import { useAuth } from '~/composables/useAuth';
+import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Detail Naskah' });
@@ -30,13 +31,6 @@ const pending = ref(true);
 const positionId = computed(
   () => user.value?.position?.id || user.value?.position_id || user.value?.position || '',
 );
-
-const extractErrorMessage = (err: any): string => {
-  const beMessage = err?.response?.data?.message;
-  if (Array.isArray(beMessage) && beMessage.length > 0) return beMessage.join(', ');
-  if (typeof beMessage === 'string' && beMessage.trim()) return beMessage;
-  return err?.message || 'Terjadi kesalahan';
-};
 
 const pageTitle = computed(() => 'Detail Naskah');
 
