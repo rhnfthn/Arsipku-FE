@@ -12,6 +12,7 @@ export interface TuUsulanItem {
   arsipId: string;
   arsipPerihal: string;
   arsipKode: string | null;
+  tanggalRetensiAktifHabis: string | null;
   arsipIds: Array<{
     id: string;
     perihal: string;
@@ -43,6 +44,29 @@ export interface TuUsulanItem {
   fotoPenataan: string | null;
   createdAt: string;
   updatedAt: string;
+  currentApprovalLevel?: number;
+  totalApprovalLevels?: number;
+  approvalLevels?: Array<{
+    id: string;
+    atasanPersnum: number;
+    atasanName: string;
+    atasanPositionText: string | null;
+    urutan: number;
+    status: string;
+    verifiedAt: string | null;
+    catatan: string | null;
+  }>;
+  tuApprovalLevels?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+    urutan: number;
+    status: 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK';
+    verifiedAt: string | null;
+    catatan: string | null;
+  }>;
+  currentTuApprovalLevel?: number;
+  totalTuApprovalLevels?: number;
 }
 
 export interface TuUsulanListResponse {
@@ -68,7 +92,12 @@ export interface VerifikasiBerkasPayload {
 }
 
 export interface AjukanAtasanTuPayload {
-  atasanTuPersnum: string;
+  atasanTuPersnum?: string;
+  atasanTuList?: Array<{
+    persnum: string;
+    name: string;
+    jabatan: string;
+  }>;
 }
 
 export interface KembalikanPayload {
