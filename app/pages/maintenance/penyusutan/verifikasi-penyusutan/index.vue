@@ -1,0 +1,403 @@
+<template>
+  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="mb-6">
+        <Heading variant="heading6b" class="text-mobile-md">Verifikasi Penyusutan</Heading>
+        <PageHeader :items="breadcrumbs" />
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Daftar pengajuan penyusutan dari unit dokumen yang menunggu verifikasi atasan managerial TU.
+        </p>
+      </div>
+
+      <!-- Filter & Search -->
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <div ref="pageSizeRef" class="relative shrink-0 z-30">
+          <button
+            @click="pageSizeOpen = !pageSizeOpen"
+            class="h-10 w-[80px] px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
+          >
+            <span>{{ limit }}</span>
+            <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400" :class="{ 'rotate-180': pageSizeOpen }" />
+          </button>
+          <div v-if="pageSizeOpen" class="absolute top-full left-0 mt-1.5 z-50 min-w-[80px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
+            <button
+              v-for="size in [10, 30, 50]"
+              :key="size"
+              @click="onLimitChange(size); pageSizeOpen = false"
+              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              :class="limit === size ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
+            >{{ size }}</button>
+          </div>
+        </div>
+
+        <div class="relative flex-1 min-w-[200px]">
+          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            v-model="searchInput"
+            type="text"
+            placeholder="Cari kode/nama berkas..."
+            class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+            @input="onSearchInput"
+          />
+        </div>
+
+        <div ref="statusRef" class="relative shrink-0 z-30">
+          <button
+            @click="statusOpen = !statusOpen"
+            class="h-10 w-[160px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
+          >
+            <span class="truncate">{{ statusOptions.find(o => o.value === filterStatus)?.label ?? 'Semua Status' }}</span>
+            <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': statusOpen }" />
+          </button>
+          <div v-if="statusOpen" class="absolute top-full left-0 mt-1.5 z-50 min-w-[160px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
+            <button
+              v-for="opt in statusOptions"
+              :key="opt.value"
+              @click="filterStatus = opt.value; page = 1; statusOpen = false"
+              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
+              :class="filterStatus === opt.value ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
+            >{{ opt.label }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-[#457fb6] text-white">
+              <tr>
+                <th class="px-3 py-3 text-center font-semibold">No</th>
+                <th class="px-3 py-3 text-center font-semibold">Kode Berkas / No Usulan</th>
+                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
+                <th class="px-3 py-3 text-center font-semibold">Pengusul</th>
+                <th class="px-3 py-3 text-center font-semibold">Jenis Penyusutan</th>
+                <th class="px-3 py-3 text-center font-semibold">Status</th>
+                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tr v-if="isLoading">
+                <td colspan="7" class="px-3 py-10 text-center">
+                  <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
+                </td>
+              </tr>
+              <tr v-else-if="filteredList.length === 0">
+                <td colspan="7" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                  Tidak ada pengajuan untuk diverifikasi.
+                </td>
+              </tr>
+              <tr
+                v-for="(item, index) in paginatedList"
+                :key="item.id"
+                class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
+              >
+                <td class="px-3 py-3 text-center">{{ (page - 1) * limit + index + 1 }}</td>
+                <td class="px-3 py-3 text-center">
+                  <div class="font-medium text-gray-800 dark:text-white">{{ item.kode_berkas }}</div>
+                  <div v-if="item.no_usulan" class="text-[11px] text-gray-400">{{ item.no_usulan }}</div>
+                </td>
+                <td class="px-3 py-3">{{ item.nama_berkas }}</td>
+                <td class="px-3 py-3 text-center">{{ item.sekretaris }}</td>
+                <td class="px-3 py-3 text-center">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                    {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-center">
+                  <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
+                </td>
+                <td class="px-3 py-3">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button
+                      @click="openDetail(item)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
+                      title="Detail"
+                    >
+                      <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                    </button>
+                    <button
+                      v-if="item.status === 'diajukan'"
+                      @click="openVerifyModal(item, true)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors"
+                      title="Setuju"
+                    >
+                      <UIcon name="i-lucide-check" class="w-4 h-4" />
+                    </button>
+                    <button
+                      v-if="item.status === 'diajukan'"
+                      @click="openVerifyModal(item, false)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      title="Tolak"
+                    >
+                      <UIcon name="i-lucide-x" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="total > 0">
+          <Pagination
+            :current-page="page"
+            :total-pages="totalPages"
+            :total-items="total"
+            :rows-per-page="limit"
+            :rows-options="[10, 20, 50]"
+            @update:page="onPageChange"
+            @update:rows-per-page="onLimitChange"
+          />
+        </div>
+      </div>
+
+      <!-- Modal Detail / Verifikasi -->
+    <Teleport to="body">
+      <div v-if="showDetailModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="showDetailModal = false" />
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto z-10">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Pengajuan Penyusutan</h3>
+            <button @click="showDetailModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6 space-y-4">
+            <!-- Info Arsip -->
+            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-2">
+              <div class="flex justify-between text-sm"><span class="text-gray-500">Kode Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ detailArsip?.kode_berkas }}</span></div>
+              <div class="flex justify-between text-sm"><span class="text-gray-500">Nama Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ detailArsip?.nama_berkas }}</span></div>
+              <div class="flex justify-between text-sm"><span class="text-gray-500">Pengusul</span><span class="font-medium text-gray-800 dark:text-white">{{ detailArsip?.sekretaris }}</span></div>
+              <div class="flex justify-between text-sm"><span class="text-gray-500">Jenis Penyusutan</span><span class="font-medium text-gray-800 dark:text-white">{{ detailArsip?.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}</span></div>
+              <div class="flex justify-between text-sm"><span class="text-gray-500">Tgl Pengajuan</span><span class="font-medium text-gray-800 dark:text-white">{{ formatDate(detailArsip?.tanggal_pengajuan) }}</span></div>
+              <div class="flex justify-between text-sm"><span class="text-gray-500">Status</span><span :class="statusBadgeClass(detailArsip?.status ?? '')" class="text-[11px]">{{ statusLabel(detailArsip?.status ?? '') }}</span></div>
+            </div>
+
+            <!-- Verifikator Berjenjang -->
+            <div>
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Atasan Managerial Berjenjang</h4>
+              <div class="space-y-2">
+                <div
+                  v-for="(v, i) in detailArsip?.atasan_managerial"
+                  :key="i"
+                  class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-[#457fb6] text-white text-xs flex items-center justify-center font-medium">{{ v.urutan }}</span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-800 dark:text-white">{{ v.name }}</p>
+                      <p class="text-xs text-gray-500">{{ v.jabatan }}</p>
+                    </div>
+                  </div>
+                  <span :class="verifikatorBadgeClass(v.status)" class="text-[11px]">{{ verifikatorLabel(v.status) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Catatan Pengusul -->
+            <div v-if="detailArsip?.catatan" class="pt-2 border-t border-gray-100 dark:border-gray-700">
+              <span class="text-sm text-gray-500">Catatan Pengusul:</span>
+              <p class="text-sm text-gray-700 dark:text-gray-200 mt-1">{{ detailArsip.catatan }}</p>
+            </div>
+
+            <!-- Catatan Verifikasi (saat verifikasi) -->
+            <div v-if="showVerifyForm" class="pt-2 border-t border-gray-100 dark:border-gray-700">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Catatan {{ verifyAction ? 'Penolakan' : 'Verifikasi' }}
+                <span v-if="!verifyAction" class="text-gray-400 font-normal">(opsional)</span>
+              </label>
+              <textarea
+                v-model="verifyCatatan"
+                rows="3"
+                :placeholder="verifyAction ? 'Catatan untuk penolakan...' : 'Catatan untuk persetujuan...'"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+              />
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-700">
+            <button
+              @click="showDetailModal = false"
+              class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Tutup</button>
+            <template v-if="showVerifyForm">
+              <button
+                @click="submitVerify"
+                :class="verifyAction ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+                class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+              >{{ verifyAction ? 'Setuju' : 'Tolak' }}</button>
+            </template>
+            <template v-else>
+              <button
+                v-if="detailArsip?.status === 'diajukan'"
+                @click="showVerifyForm = true; verifyAction = true"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
+              >Setuju</button>
+              <button
+                v-if="detailArsip?.status === 'diajukan'"
+                @click="showVerifyForm = true; verifyAction = false"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >Tolak</button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { usePenyusutan } from '~/composables/usePenyusutan'
+import type { ArsipPenyusutan } from '~/types/penyusutan'
+
+definePageMeta({ middleware: ['auth'] })
+
+const { list, loading, loadData, verifyPenyusutan } = usePenyusutan()
+
+const breadcrumbs = computed(() => [
+  { label: 'Beranda', to: '/beranda' },
+  { label: 'Penyusutan', to: '/maintenance/penyusutan/daftar-retensi-habis' },
+  { label: 'Verifikasi Penyusutan', to: '/maintenance/penyusutan/verifikasi-penyusutan' },
+])
+
+const isLoading = ref(false)
+const page = ref(1)
+const limit = ref(10)
+const searchInput = ref('')
+const filterStatus = ref('')
+const pageSizeOpen = ref(false)
+const statusOpen = ref(false)
+const pageSizeRef = ref<HTMLElement | null>(null)
+const statusRef = ref<HTMLElement | null>(null)
+
+const showDetailModal = ref(false)
+const detailArsip = ref<ArsipPenyusutan | null>(null)
+const showVerifyForm = ref(false)
+const verifyAction = ref(true)
+const verifyCatatan = ref('')
+
+const statusOptions = [
+  { value: '', label: 'Semua Status' },
+  { value: 'diajukan', label: 'Diajukan' },
+  { value: 'diterima', label: 'Diterima' },
+  { value: 'ditolak', label: 'Ditolak' },
+]
+
+const filteredList = computed(() => {
+  let result = list.value.filter((a) => a.atasan_managerial.length > 0)
+  if (searchInput.value) {
+    const q = searchInput.value.toLowerCase()
+    result = result.filter((a) =>
+      a.kode_berkas.toLowerCase().includes(q) ||
+      a.nama_berkas.toLowerCase().includes(q) ||
+      a.sekretaris.toLowerCase().includes(q)
+    )
+  }
+  if (filterStatus.value) {
+    result = result.filter((a) => a.status === filterStatus.value)
+  }
+  return result
+})
+
+const total = computed(() => filteredList.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit.value)))
+const paginatedList = computed(() => {
+  const start = (page.value - 1) * limit.value
+  return filteredList.value.slice(start, start + limit.value)
+})
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+const statusLabel = (status: string) => {
+  const map: Record<string, string> = { diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
+  return map[status] ?? status
+}
+
+const statusBadgeClass = (status: string) => {
+  const map: Record<string, string> = {
+    diajukan: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    diterima: 'px-2 py-0.5 rounded-full font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    ditolak: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    selesai: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  }
+  return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+}
+
+const verifikatorLabel = (status: string) => {
+  const map: Record<string, string> = { menunggu: 'Menunggu', disetujui: 'Disetujui', ditolak: 'Ditolak' }
+  return map[status] ?? status
+}
+
+const verifikatorBadgeClass = (status: string) => {
+  const map: Record<string, string> = {
+    menunggu: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    disetujui: 'px-2 py-0.5 rounded-full font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+    ditolak: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+  }
+  return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+}
+
+const onSearchInput = () => {
+  clearTimeout((window as any).__penyusutanDebounce3)
+  ;(window as any).__penyusutanDebounce3 = setTimeout(() => { page.value = 1 }, 400)
+}
+
+const onPageChange = (p: number) => { page.value = p }
+const onLimitChange = (l: number) => { limit.value = l; page.value = 1 }
+
+const openDetail = (item: ArsipPenyusutan) => {
+  detailArsip.value = item
+  showVerifyForm.value = false
+  verifyCatatan.value = ''
+  showDetailModal.value = true
+}
+
+const openVerifyModal = (item: ArsipPenyusutan, disetujui: boolean) => {
+  detailArsip.value = item
+  showVerifyForm.value = true
+  verifyAction.value = disetujui
+  verifyCatatan.value = ''
+  showDetailModal.value = true
+}
+
+const submitVerify = () => {
+  if (!detailArsip.value) return
+  // Simulasi: verifikator yang sedang giliran (current_verifikator_urutan)
+  const currentVerifikator = detailArsip.value.atasan_managerial.find(
+    (v) => v.urutan === detailArsip.value!.current_verifikator_urutan
+  )
+  if (!currentVerifikator) return
+  verifyPenyusutan(detailArsip.value.id, currentVerifikator.persnum, verifyAction.value, verifyCatatan.value)
+  showDetailModal.value = false
+  useToast().add({
+    title: 'Berhasil',
+    description: verifyAction.value ? 'Pengajuan disetujui.' : 'Pengajuan ditolak.',
+    color: 'success',
+  })
+}
+
+const onClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (pageSizeRef.value && !pageSizeRef.value.contains(target)) pageSizeOpen.value = false
+  if (statusRef.value && !statusRef.value.contains(target)) statusOpen.value = false
+}
+
+onMounted(() => {
+  document.addEventListener('click', onClickOutside)
+  isLoading.value = true
+  loadData().finally(() => { isLoading.value = false })
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onClickOutside)
+})
+</script>
