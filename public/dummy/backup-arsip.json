@@ -1,0 +1,11 @@
+[
+  {
+    "id": "1",
+    "arsip_id": "7",
+    "no_usulan": "UPSY/007/2026",
+    "kode_berkas": "ARK-2024-0007",
+    "nama_berkas": "Surat Masuk Eksternal 2017",
+    "tanggal_backup": "2026-08-08",
+    "berita_acara": "path/to/berita_acara_UPSY007.pdf"
+  }
+]
