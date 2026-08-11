@@ -1090,6 +1090,7 @@ const adminMenuKelola = computed(() => {
       icon: 'i-lucide-file-check-2',
       showIfAtasan: true,
     },
+    // ── Penyusutan: dipindahkan ke menu Penyusutan terpisah ──
   ];
 
   const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
@@ -1166,14 +1167,14 @@ const adminMenuKelola = computed(() => {
     icon: 'i-lucide-file-minus',
     children: [
       {
-        label: 'Daftar',
-        to: '/kelola/penyusutan/daftar',
-        icon: 'i-lucide-list',
+        label: 'Pengajuan Penyusutan',
+        to: '/maintenance/penyusutan/pengajuan-penyusutan',
+        icon: 'i-lucide-file-up',
       },
       {
-        label: 'Verifikasi',
-        to: '/kelola/penyusutan/verifikasi',
-        icon: 'i-lucide-file-check',
+        label: 'Penataan & Pemusnahan',
+        to: '/maintenance/penyusutan/penataan-pemusnahan',
+        icon: 'i-lucide-archive-x',
       },
     ],
   });
@@ -1219,6 +1220,7 @@ label: 'Penerimaan Usulan',
       icon: 'i-lucide-file-check-2',
       showIfAtasan: true,
     },
+    // ── Penyusutan: dipindahkan ke menu Penyusutan terpisah ──
   ];
 
   const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
@@ -1291,14 +1293,14 @@ label: 'Penerimaan Usulan',
     icon: 'i-lucide-file-minus',
     children: [
       {
-        label: 'Daftar',
-        to: '/kelola/penyusutan/daftar',
-        icon: 'i-lucide-list',
+        label: 'Pengajuan Penyusutan',
+        to: '/maintenance/penyusutan/pengajuan-penyusutan',
+        icon: 'i-lucide-file-up',
       },
       {
-        label: 'Verifikasi',
-        to: '/kelola/penyusutan/verifikasi',
-        icon: 'i-lucide-file-check',
+        label: 'Penataan & Pemusnahan',
+        to: '/maintenance/penyusutan/penataan-pemusnahan',
+        icon: 'i-lucide-archive-x',
       },
     ],
   });

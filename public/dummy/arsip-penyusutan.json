@@ -1,0 +1,482 @@
+[
+  {
+    "id": "9",
+    "no_usulan": "UPSY/009/2026",
+    "kode_berkas": "ARK-2024-0009",
+    "nama_berkas": "Dummy-Dokumen Kepegawaian 2019",
+    "sekretaris": "ANNISA FAJARWATI",
+    "atasan_managerial": [],
+    "status": "draft",
+    "jenis_penyusutan": "permanen",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-04-30",
+    "tanggal_pengajuan": null,
+    "catatan": "",
+    "berita_acara": null,
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Data Kepegawaian",
+    "keterangan": null,
+    "daftar_arsip": [
+      {
+        "id": "9-n1",
+        "nama": "Dokumen Kepegawaian 2019 - Naskah 1",
+        "kode": "ARK-2024-0009-N1"
+      },
+      {
+        "id": "9-n2",
+        "nama": "Dokumen Kepegawaian 2019 - Naskah 2",
+        "kode": "ARK-2024-0009-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "10",
+    "no_usulan": "UPSY/010/2026",
+    "kode_berkas": "ARK-2024-0010",
+    "nama_berkas": "Dummy-Surat Keluar Internal 2018",
+    "sekretaris": "RAIHAN FATHAN",
+    "atasan_managerial": [],
+    "status": "draft",
+    "jenis_penyusutan": "musnah",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-03-15",
+    "tanggal_pengajuan": null,
+    "catatan": "",
+    "berita_acara": null,
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Surat Keluar",
+    "keterangan": null,
+    "daftar_arsip": [
+      {
+        "id": "10-n1",
+        "nama": "Surat Keluar Internal 2018 - Naskah 1",
+        "kode": "ARK-2024-0010-N1"
+      },
+      {
+        "id": "10-n2",
+        "nama": "Surat Keluar Internal 2018 - Naskah 2",
+        "kode": "ARK-2024-0010-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "11",
+    "no_usulan": "UPSY/011/2026",
+    "kode_berkas": "ARK-2024-0011",
+    "nama_berkas": "Dummy-Laporan Realisasi Anggaran 2017",
+    "sekretaris": "IKA OCTAFIA SAPUTRI",
+    "atasan_managerial": [],
+    "status": "draft",
+    "jenis_penyusutan": "permanen",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-02-28",
+    "tanggal_pengajuan": null,
+    "catatan": "",
+    "berita_acara": null,
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Realisasi Anggaran",
+    "keterangan": null,
+    "daftar_arsip": [
+      {
+        "id": "11-n1",
+        "nama": "Laporan Realisasi Anggaran 2017 - Naskah 1",
+        "kode": "ARK-2024-0011-N1"
+      },
+      {
+        "id": "11-n2",
+        "nama": "Laporan Realisasi Anggaran 2017 - Naskah 2",
+        "kode": "ARK-2024-0011-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "1",
+    "no_usulan": "UPSY/001/2026",
+    "kode_berkas": "ARK-2024-0001",
+    "nama_berkas": "Dummy-Laporan Keuangan 2020",
+    "sekretaris": "ANNISA FAJARWATI",
+    "atasan_managerial": [
+      {
+        "persnum": "10010123",
+        "name": "SURYADI JOKO WIRATMO",
+        "jabatan": "AVP",
+        "urutan": 1,
+        "status": "menunggu",
+        "verifiedAt": null,
+        "catatan": null
+      }
+    ],
+    "status": "diajukan",
+    "jenis_penyusutan": "permanen",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-12-31",
+    "tanggal_pengajuan": "2026-08-01",
+    "catatan": "Mohon verifikasi",
+    "berita_acara": null,
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Laporan Keuangan",
+    "keterangan": "Mohon verifikasi",
+    "daftar_arsip": [
+      {
+        "id": "1-n1",
+        "nama": "Laporan Keuangan 2020 - Naskah 1",
+        "kode": "ARK-2024-0001-N1"
+      },
+      {
+        "id": "1-n2",
+        "nama": "Laporan Keuangan 2020 - Naskah 2",
+        "kode": "ARK-2024-0001-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "2",
+    "no_usulan": "UPSY/002/2026",
+    "kode_berkas": "ARK-2024-0002",
+    "nama_berkas": "Dummy-Notulen Rapat Teknis 2019",
+    "sekretaris": "RAIHAN FATHAN",
+    "atasan_managerial": [
+      {
+        "persnum": "10010123",
+        "name": "SURYADI JOKO WIRATMO",
+        "jabatan": "AVP",
+        "urutan": 1,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-02T10:00:00Z",
+        "catatan": null
+      },
+      {
+        "persnum": "10010970",
+        "name": "HERMANA SOEGIJANTORO",
+        "jabatan": "VP",
+        "urutan": 2,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-02T14:00:00Z",
+        "catatan": null
+      }
+    ],
+    "status": "diterima",
+    "jenis_penyusutan": "musnah",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-11-30",
+    "tanggal_pengajuan": "2026-08-02",
+    "catatan": "",
+    "berita_acara": null,
+    "current_verifikator_urutan": 2,
+    "klasifikasi": "Notulen Rapat",
+    "keterangan": null,
+    "daftar_arsip": [
+      {
+        "id": "2-n1",
+        "nama": "Notulen Rapat Teknis 2019 - Naskah 1",
+        "kode": "ARK-2024-0002-N1"
+      },
+      {
+        "id": "2-n2",
+        "nama": "Notulen Rapat Teknis 2019 - Naskah 2",
+        "kode": "ARK-2024-0002-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "3",
+    "no_usulan": "UPSY/003/2026",
+    "kode_berkas": "ARK-2024-0003",
+    "nama_berkas": "Dummy-Data Karyawan 2018",
+    "sekretaris": "IKA OCTAFIA SAPUTRI",
+    "atasan_managerial": [
+      {
+        "persnum": "10010970",
+        "name": "HERMANA SOEGIJANTORO",
+        "jabatan": "VP",
+        "urutan": 1,
+        "status": "ditolak",
+        "verifiedAt": "2026-08-03T11:00:00Z",
+        "catatan": "Ditolak karena data kurang lengkap"
+      }
+    ],
+    "status": "ditolak",
+    "jenis_penyusutan": "musnah",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-10-31",
+    "tanggal_pengajuan": "2026-08-03",
+    "catatan": "Ditolak karena data kurang lengkap",
+    "berita_acara": null,
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Data Kepegawaian",
+    "keterangan": "Ditolak karena data kurang lengkap",
+    "daftar_arsip": [
+      {
+        "id": "3-n1",
+        "nama": "Data Karyawan 2018 - Naskah 1",
+        "kode": "ARK-2024-0003-N1"
+      },
+      {
+        "id": "3-n2",
+        "nama": "Data Karyawan 2018 - Naskah 2",
+        "kode": "ARK-2024-0003-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "4",
+    "no_usulan": "UPSY/004/2026",
+    "kode_berkas": "ARK-2024-0004",
+    "nama_berkas": "Dummy-Perjanjian Vendor 2021",
+    "sekretaris": "RAIHAN FATHAN",
+    "atasan_managerial": [
+      {
+        "persnum": "10010123",
+        "name": "SURYADI JOKO WIRATMO",
+        "jabatan": "AVP",
+        "urutan": 1,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-04T10:00:00Z",
+        "catatan": null
+      }
+    ],
+    "status": "selesai",
+    "jenis_penyusutan": "permanen",
+    "lokasi_simpan": "Gudang Arsip Lantai 2 - Rak A12",
+    "tanggal_retensi_habis": "2024-09-30",
+    "tanggal_pengajuan": "2026-08-04",
+    "catatan": "",
+    "berita_acara": "path/to/berita_acara_UPSY004.pdf",
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Perjanjian/Kontrak",
+    "keterangan": null,
+    "daftar_arsip": [
+      {
+        "id": "4-n1",
+        "nama": "Perjanjian Vendor 2021 - Naskah 1",
+        "kode": "ARK-2024-0004-N1"
+      },
+      {
+        "id": "4-n2",
+        "nama": "Perjanjian Vendor 2021 - Naskah 2",
+        "kode": "ARK-2024-0004-N2"
+      }
+    ],
+    "foto_dokumentasi": "/uploads/foto_ARK-2024-0004.jpg",
+    "rak": "Rak A12",
+    "baris": "Baris 3",
+    "kolom": "Kolom 2"
+  },
+  {
+    "id": "5",
+    "no_usulan": "UPSY/005/2026",
+    "kode_berkas": "ARK-2024-0005",
+    "nama_berkas": "Dummy-Laporan Audit Internal 2019",
+    "sekretaris": "ANNISA FAJARWATI",
+    "atasan_managerial": [
+      {
+        "persnum": "10010123",
+        "name": "SURYADI JOKO WIRATMO",
+        "jabatan": "AVP",
+        "urutan": 1,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-05T09:00:00Z",
+        "catatan": null
+      },
+      {
+        "persnum": "10010970",
+        "name": "HERMANA SOEGIJANTORO",
+        "jabatan": "VP",
+        "urutan": 2,
+        "status": "menunggu",
+        "verifiedAt": null,
+        "catatan": null
+      }
+    ],
+    "status": "diajukan",
+    "jenis_penyusutan": "permanen",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-08-10",
+    "tanggal_pengajuan": "2026-08-05",
+    "catatan": "Menunggu verifikasi atasan berjenjang",
+    "berita_acara": null,
+    "current_verifikator_urutan": 2,
+    "klasifikasi": "Laporan Audit",
+    "keterangan": "Menunggu verifikasi atasan berjenjang",
+    "daftar_arsip": [
+      {
+        "id": "5-n1",
+        "nama": "Laporan Audit Internal 2019 - Naskah 1",
+        "kode": "ARK-2024-0005-N1"
+      },
+      {
+        "id": "5-n2",
+        "nama": "Laporan Audit Internal 2019 - Naskah 2",
+        "kode": "ARK-2024-0005-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "6",
+    "no_usulan": "UPSY/006/2026",
+    "kode_berkas": "ARK-2024-0006",
+    "nama_berkas": "Dummy-Dokumen Sertifikasi ISO 2018",
+    "sekretaris": "IKA OCTAFIA SAPUTRI",
+    "atasan_managerial": [
+      {
+        "persnum": "10010123",
+        "name": "SURYADI JOKO WIRATMO",
+        "jabatan": "AVP",
+        "urutan": 1,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-06T10:00:00Z",
+        "catatan": null
+      },
+      {
+        "persnum": "10010970",
+        "name": "HERMANA SOEGIJANTORO",
+        "jabatan": "VP",
+        "urutan": 2,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-06T13:00:00Z",
+        "catatan": null
+      }
+    ],
+    "status": "diterima",
+    "jenis_penyusutan": "permanen",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-07-15",
+    "tanggal_pengajuan": "2026-08-06",
+    "catatan": "Siap untuk penataan",
+    "berita_acara": null,
+    "current_verifikator_urutan": 2,
+    "klasifikasi": "Sertifikasi",
+    "keterangan": "Siap untuk penataan",
+    "daftar_arsip": [
+      {
+        "id": "6-n1",
+        "nama": "Dokumen Sertifikasi ISO 2018 - Naskah 1",
+        "kode": "ARK-2024-0006-N1"
+      },
+      {
+        "id": "6-n2",
+        "nama": "Dokumen Sertifikasi ISO 2018 - Naskah 2",
+        "kode": "ARK-2024-0006-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  },
+  {
+    "id": "7",
+    "no_usulan": "UPSY/007/2026",
+    "kode_berkas": "ARK-2024-0007",
+    "nama_berkas": "Dummy-Surat Masuk Eksternal 2017",
+    "sekretaris": "BAYU PRATAMA",
+    "atasan_managerial": [
+      {
+        "persnum": "10010123",
+        "name": "SURYADI JOKO WIRATMO",
+        "jabatan": "AVP",
+        "urutan": 1,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-07T10:00:00Z",
+        "catatan": null
+      },
+      {
+        "persnum": "10010970",
+        "name": "HERMANA SOEGIJANTORO",
+        "jabatan": "VP",
+        "urutan": 2,
+        "status": "disetujui",
+        "verifiedAt": "2026-08-07T14:00:00Z",
+        "catatan": null
+      }
+    ],
+    "status": "selesai",
+    "jenis_penyusutan": "musnah",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-06-30",
+    "tanggal_pengajuan": "2026-08-07",
+    "catatan": "Sudah dimusnahkan",
+    "berita_acara": "path/to/berita_acara_UPSY007.pdf",
+    "current_verifikator_urutan": 2,
+    "klasifikasi": "Surat Masuk",
+    "keterangan": "Sudah dimusnahkan",
+    "daftar_arsip": [
+      {
+        "id": "7-n1",
+        "nama": "Surat Masuk Eksternal 2017 - Naskah 1",
+        "kode": "ARK-2024-0007-N1"
+      },
+      {
+        "id": "7-n2",
+        "nama": "Surat Masuk Eksternal 2017 - Naskah 2",
+        "kode": "ARK-2024-0007-N2"
+      }
+    ],
+    "foto_dokumentasi": "/uploads/foto_ARK-2024-0007.jpg",
+    "rak": "Rak A12",
+    "baris": "Baris 3",
+    "kolom": "Kolom 2"
+  },
+  {
+    "id": "8",
+    "no_usulan": "UPSY/008/2026",
+    "kode_berkas": "ARK-2024-0008",
+    "nama_berkas": "Dummy-Laporan Kinerja Unit 2017",
+    "sekretaris": "DEWI ANGGRAINI",
+    "atasan_managerial": [],
+    "status": "diajukan",
+    "jenis_penyusutan": "musnah",
+    "lokasi_simpan": null,
+    "tanggal_retensi_habis": "2024-05-20",
+    "tanggal_pengajuan": "2026-08-08",
+    "catatan": "Menunggu verifikasi",
+    "berita_acara": null,
+    "current_verifikator_urutan": 1,
+    "klasifikasi": "Laporan Kinerja",
+    "keterangan": "Menunggu verifikasi",
+    "daftar_arsip": [
+      {
+        "id": "8-n1",
+        "nama": "Laporan Kinerja Unit 2017 - Naskah 1",
+        "kode": "ARK-2024-0008-N1"
+      },
+      {
+        "id": "8-n2",
+        "nama": "Laporan Kinerja Unit 2017 - Naskah 2",
+        "kode": "ARK-2024-0008-N2"
+      }
+    ],
+    "foto_dokumentasi": null,
+    "rak": null,
+    "baris": null,
+    "kolom": null
+  }
+]

@@ -716,7 +716,7 @@ const loadDetail = async () => {
   loading.value = true
   try {
     const res = await fetchNotifikasiDetail(route.params.id as string)
-    item.value = res?.data ?? res
+    item.value = res ?? null
     await loadDaftarIsi()
     await loadBeritaAcaraData()
   } catch (e: any) {
