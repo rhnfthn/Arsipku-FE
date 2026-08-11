@@ -57,6 +57,16 @@ export interface VerifikasiUsulanItem {
   totalApprovalLevels?: number;
   /** Daftar level approval (dari detail). */
   approvalLevels?: VerifikasiApprovalLevel[];
+  /** Daftar level approval TU berjenjang (kolom JSON di entity). */
+  tuApprovalLevels?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+    urutan: number;
+    status: 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK';
+    verifiedAt: string | null;
+    catatan: string | null;
+  }>;
   /** True jika user login sedang giliran verifikasi. */
   isCurrentTurn?: boolean;
 }

@@ -469,10 +469,14 @@ const {
   selesaikanUsulan,
 } = useTransferActiveToInactive();
 
-// Atasan Managerial TU: HERMANA (10010123) atau PRIYO (10010970)
+// Atasan Managerial TU: cek berdasarkan posisi managerial (EVP/VP/AVP/bodTag),
+// bukan hardcode persnum — konsisten dengan AtasanTuGuard di backend.
 const isAtasanTu = computed(() => {
-  const persnum = Number(user.value?.persnum);
-  return persnum === 10010123 || persnum === 10010970;
+  const posText = (user.value?.positionText || '').toUpperCase();
+  const hasBod = !!user.value?.bodTag?.trim();
+  return posText.includes('EVP') || posText.includes('AVP') ||
+    posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP' ||
+    hasBod || isAdmin.value || isSuperadmin.value;
 });
 
 /** True jika user login adalah atasan TU level 1 (untuk persetujuan terakhir). */

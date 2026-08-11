@@ -78,6 +78,18 @@ export interface TransferActiveToInactive {
   updatedAt: string;
   /** Daftar level approval (dari GET /:id). */
   approvalLevels?: ApprovalLevel[];
+  /** Daftar level approval TU berjenjang (kolom JSON di entity). */
+  tuApprovalLevels?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+    urutan: number;
+    status: 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK';
+    verifiedAt: string | null;
+    catatan: string | null;
+  }>;
+  currentTuApprovalLevel?: number;
+  totalTuApprovalLevels?: number;
 }
 
 /** Level approval berjenjang. */
