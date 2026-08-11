@@ -70,19 +70,6 @@
                 {{ item.keterangan }}
               </p>
             </div>
-
-            <!-- Total Arsip -->
-            <div class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Total Arsip</h4>
-                <button @click="showTotalArsip = !showTotalArsip" class="text-xs text-primary hover:underline">
-                  {{ showTotalArsip ? 'Sembunyikan' : 'Tampilkan' }}
-                </button>
-              </div>
-              <div v-if="showTotalArsip" class="text-sm text-gray-600 dark:text-gray-300">
-                <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ daftarBerkas.length }} berkas</span></p>
-              </div>
-            </div>
           </div>
 
           <!-- Card 2: Daftar Berkas Fisik -->
@@ -137,6 +124,33 @@
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.atasanName }}</p>
                   <p v-if="level.atasanPositionText" class="text-xs text-gray-500 dark:text-gray-400">{{ level.atasanPositionText }}</p>
+                </div>
+                <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
+                  {{ levelStatusLabel(level.status) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Daftar Atasan TU Verifikasi (Berjenjang) -->
+          <div
+            v-if="item.tuApprovalLevels && item.tuApprovalLevels.length > 0"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+          >
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
+            <div class="space-y-2">
+              <div
+                v-for="level in item.tuApprovalLevels"
+                :key="level.urutan"
+                class="flex items-center gap-3 p-3 rounded-lg border"
+                :class="levelStatusClass(level.status)"
+              >
+                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 shrink-0">
+                  {{ level.urutan }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.name }}</p>
+                  <p v-if="level.jabatan" class="text-xs text-gray-500 dark:text-gray-400">{{ level.jabatan }}</p>
                 </div>
                 <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
                   {{ levelStatusLabel(level.status) }}
@@ -387,17 +401,37 @@
                     <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-gray-400 shrink-0" :class="{ 'rotate-180': openDropdownIdx === idx }" />
                   </button>
                   <div v-if="openDropdownIdx === idx" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-[10001] overflow-hidden">
-                    <button
-                      v-for="a in atasanTuList"
-                      :key="a.persnum"
-                      :disabled="isAtasanSelectedElsewhere(a.persnum, idx)"
-                      @click="selectAtasanTu(idx, a)"
-                      class="w-full text-left py-3 px-4 border-b border-gray-100 dark:border-gray-600 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      :class="{ 'bg-primary/10': input === a.persnum }"
-                    >
-                      <p class="text-base font-medium text-gray-900 dark:text-white">{{ a.name }}</p>
-                      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ a.persnum }} — {{ a.jabatan }}</p>
-                    </button>
+                    <!-- Search input -->
+                    <div class="p-2 border-b border-gray-100 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700 z-10">
+                      <div class="relative">
+                        <UIcon name="i-lucide-search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                        <input
+                          v-model="atasanTuSearch"
+                          type="text"
+                          placeholder="Cari nama, jabatan, atau persnum..."
+                          @input.stop
+                          @click.stop
+                          class="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+                    <!-- Options list -->
+                    <div class="max-h-[240px] overflow-y-auto">
+                      <button
+                        v-for="a in filteredAtasanTuList"
+                        :key="a.persnum"
+                        :disabled="isAtasanSelectedElsewhere(a.persnum, idx)"
+                        @click="selectAtasanTu(idx, a)"
+                        class="w-full text-left py-3 px-4 border-b border-gray-100 dark:border-gray-600 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        :class="{ 'bg-primary/10': input === a.persnum }"
+                      >
+                        <p class="text-base font-medium text-gray-900 dark:text-white">{{ a.name }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ a.persnum }} — {{ a.positionText || a.jabatan }}</p>
+                      </button>
+                      <div v-if="filteredAtasanTuList.length === 0" class="py-6 text-center text-sm text-gray-400">
+                        Tidak ada atasan ditemukan
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -490,12 +524,11 @@ import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRi
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchNotifikasiDetail, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerifikasi()
+const { fetchNotifikasiDetail, fetchAtasanTuOptions, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerifikasi()
 
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
-const showTotalArsip = ref(true)
 
 const showAjukanModal = ref(false)
 const showKembalikanModal = ref(false)
@@ -506,24 +539,38 @@ const catatanKembalikan = ref('')
 const daftarIsi = ref<any[]>([])
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] })
 
-const atasanTuList = [
-  { persnum: '10010123', name: 'HERMANA SOEGIJANTORO', jabatan: 'EVP Corporate Secretary' },
-  { persnum: '10010970', name: 'PRIYO HUTOMO PUTRA', jabatan: 'VP Corporate Secretary' },
-]
+// Daftar atasan managerial TU diambil dinamis dari backend (semua anggota
+// Corporate Secretary Division dengan chief=1), bukan hardcode.
+const atasanTuList = ref<any[]>([])
+const atasanTuSearch = ref('')
 
-const getAtasanName = (persnum: string) => atasanTuList.find((a) => a.persnum === persnum)?.name || persnum
+const filteredAtasanTuList = computed(() => {
+  const q = atasanTuSearch.value.trim().toLowerCase()
+  if (!q) return atasanTuList.value
+  return atasanTuList.value.filter((a) =>
+    String(a.name ?? '').toLowerCase().includes(q) ||
+    String(a.persnum ?? '').includes(q) ||
+    String(a.positionText ?? a.jabatan ?? '').toLowerCase().includes(q),
+  )
+})
+
+const getAtasanName = (persnum: string) => atasanTuList.value.find((a) => String(a.persnum) === String(persnum))?.name || persnum
 
 const isAtasanSelectedElsewhere = (persnum: string, currentIdx: number) => {
   return atasanTuInputs.value.some((p, i) => i !== currentIdx && p === persnum)
 }
 
 const toggleAtasanDropdown = (idx: number) => {
+  if (openDropdownIdx.value !== idx) {
+    atasanTuSearch.value = ''
+  }
   openDropdownIdx.value = openDropdownIdx.value === idx ? null : idx
 }
 
 const selectAtasanTu = (idx: number, a: any) => {
   atasanTuInputs.value[idx] = a.persnum
   openDropdownIdx.value = null
+  atasanTuSearch.value = ''
 }
 
 const addAtasanTu = () => {
@@ -759,11 +806,23 @@ const refresh = async () => {
   await loadDetail()
 }
 
+const loadAtasanTuList = async () => {
+  try {
+    const res: any = await fetchAtasanTuOptions()
+    const data = res?.data ?? res ?? []
+    atasanTuList.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    console.error('Gagal memuat daftar atasan TU:', e)
+    atasanTuList.value = []
+  }
+}
+
 const openAjukanModal = () => {
   atasanTuInputs.value = ['']
   openDropdownIdx.value = null
   catatanAjuan.value = ''
   showAjukanModal.value = true
+  loadAtasanTuList()
 }
 
 const openKembalikanModal = () => {
@@ -779,8 +838,8 @@ const onConfirmAjukan = async () => {
     const atasanList = atasanTuInputs.value
       .filter((p) => p)
       .map((p) => {
-        const a = atasanTuList.find((x) => x.persnum === p)
-        return { persnum: p, name: a?.name ?? p, jabatan: a?.jabatan ?? '' }
+        const a = atasanTuList.value.find((x) => String(x.persnum) === String(p))
+        return { persnum: p, name: a?.name ?? p, jabatan: a?.positionText ?? a?.jabatan ?? '' }
       })
     await ajukanAtasanTu(item.value.id, { atasanTuList: atasanList })
     showAjukanModal.value = false

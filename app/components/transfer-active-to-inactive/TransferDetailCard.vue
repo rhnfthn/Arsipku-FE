@@ -59,19 +59,6 @@
           {{ transfer.keterangan }}
         </p>
       </div>
-
-      <!-- Total Arsip -->
-      <div class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Total Arsip</h4>
-          <button @click="showTotalArsip = !showTotalArsip" class="text-xs text-primary hover:underline">
-            {{ showTotalArsip ? 'Sembunyikan' : 'Tampilkan' }}
-          </button>
-        </div>
-        <div v-if="showTotalArsip" class="text-sm text-gray-600 dark:text-gray-300">
-          <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ totalArsip }} berkas</span></p>
-        </div>
-      </div>
     </div>
 
     <!-- Card 2: Daftar Arsip yang Akan Dipindahkan -->
@@ -104,16 +91,16 @@
       </div>
     </div>
 
-    <!-- Card 3: Daftar Atasan Verifikasi (Berjenjang) -->
+    <!-- Card 4: Daftar Atasan TU Verifikasi (Berjenjang) -->
     <div
-      v-if="transfer.approvalLevels && transfer.approvalLevels.length > 0"
+      v-if="transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi </h3>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
       <div class="space-y-2">
         <div
-          v-for="level in transfer.approvalLevels"
-          :key="level.id"
+          v-for="level in transfer.tuApprovalLevels"
+          :key="level.urutan"
           class="flex items-center gap-3 p-3 rounded-lg border"
           :class="levelStatusClass(level.status)"
         >
@@ -121,8 +108,8 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.atasanName }}</p>
-            <p v-if="level.atasanPositionText" class="text-xs text-gray-500 dark:text-gray-400">{{ level.atasanPositionText }}</p>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.name }}</p>
+            <p v-if="level.jabatan" class="text-xs text-gray-500 dark:text-gray-400">{{ level.jabatan }}</p>
           </div>
           <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
             {{ levelStatusLabel(level.status) }}
@@ -134,15 +121,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import type { TransferActiveToInactive, ApprovalLevel } from '~/types/transfer-active-to-inactive';
 import { statusBadgeClass, statusLabel, formatDate } from '~/utils/transfer-status';
 
 const props = defineProps<{ transfer: TransferActiveToInactive }>();
-
-const showTotalArsip = ref(true);
-
-const totalArsip = computed(() => props.transfer.arsipIds?.length ?? 1);
 
 const levelStatusClass = (status: string): string => {
   if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';

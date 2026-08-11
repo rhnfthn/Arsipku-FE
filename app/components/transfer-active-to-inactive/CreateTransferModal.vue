@@ -342,6 +342,8 @@ const arsipSearch = ref('');
 const arsipDropdownOpen = ref(false);
 const selectedArsipList = ref<(ArsipRetensiHabisOption & { files?: any[] })[]>([]);
 const arsipDropdownRef = ref<HTMLElement | null>(null);
+/** Map kodeBerkas → id usulan DRAFT otomatis (untuk update, bukan duplikat). */
+const draftUsulanByKode = ref<Record<string, string>>({});
 
 const filteredAtasan = computed(() => {
   const q = atasanSearch.value.trim().toLowerCase();
@@ -503,15 +505,24 @@ const loadArsipRetensiHabis = async () => {
     try {
       const gabunganRes: any = await apiGet('/transfer-active-to-inactive/gabungan', {}, { skipCache: true });
       const gabunganRows = gabunganRes?.data ?? [];
-      // Kumpulkan arsip ID dari usulan yang sudah dibuat (isUsulan=true, status bukan DITOLAK)
+      // Kumpulkan arsip ID dari usulan yang sudah dibuat (isUsulan=true).
+      // Hanya usulan AKTIF (bukan DRAFT & bukan DITOLAK) yang memblokir pemilihan,
+      // karena berkas yang masih DRAFT otomatis (auto-draft) tetap boleh dipilih
+      // untuk dikirim/diedit lewat modal ini.
       const arsipSudahUsulan = new Set<string>();
+      const draftUsulanMap: Record<string, string> = {};
       for (const row of gabunganRows) {
-        if (row.isUsulan && row.status !== 'DITOLAK_ATASAN') {
+        if (row.isUsulan && row.status === 'DRAFT') {
+          // Berkas yang masih DRAFT otomatis → boleh dipilih, dan usulan-nya
+          // akan di-update (bukan dibuat duplikat) saat submit.
+          if (row.kodeBerkas) draftUsulanMap[row.kodeBerkas] = row.id;
+        } else if (row.isUsulan && row.status !== 'DITOLAK_ATASAN') {
           // row.id adalah usulan ID, bukan arsip ID — perlu cek arsipIds
           // Tapi gabungan tidak return arsipId langsung, jadi kita exclude by kodeBerkas
           if (row.kodeBerkas) arsipSudahUsulan.add(row.kodeBerkas);
         }
       }
+      draftUsulanByKode.value = draftUsulanMap;
       arsipList = arsipList.filter((b: any) => {
         const kode = b.kodeBerkas ?? b.kode_berkas ?? null;
         return !kode || !arsipSudahUsulan.has(kode);
@@ -627,8 +638,18 @@ const submit = async (asDraft: boolean) => {
       await update(props.editData.id, payload);
       emit('updated');
     } else {
-      await create(payload);
-      emit('created');
+      // Jika berkas yang dipilih sudah punya usulan DRAFT otomatis (auto-draft),
+      // update usulan tersebut (isi atasan + kirim) daripada membuat duplikat.
+      const draftId = selectedArsipList.value.length === 1
+        ? draftUsulanByKode.value[selectedArsipList.value[0].kodeBerkas ?? '']
+        : undefined;
+      if (draftId) {
+        await update(draftId, payload);
+        emit('updated');
+      } else {
+        await create(payload);
+        emit('created');
+      }
     }
     close();
   } catch (e: any) {
