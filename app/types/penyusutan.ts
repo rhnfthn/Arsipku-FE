@@ -109,4 +109,3 @@ export interface SimpanPenataanPayload {
 export interface PemusnahanPayload {
   beritaAcara: string;
 }
-
