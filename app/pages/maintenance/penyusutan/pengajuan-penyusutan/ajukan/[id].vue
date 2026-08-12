@@ -8,7 +8,12 @@
       </NuxtLink>
     </div>
 
-    <div v-if="!item" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-10 text-center">
+    <div v-if="itemLoading" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-10 text-center">
+      <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
+      <p class="text-gray-500 dark:text-gray-400 mt-2">Memuat data arsip...</p>
+    </div>
+
+    <div v-else-if="!item" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-10 text-center">
       <p class="text-gray-500 dark:text-gray-400">Arsip tidak ditemukan atau sudah diajukan.</p>
     </div>
 
@@ -27,7 +32,7 @@
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.kode_berkas }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nama Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.nama_berkas }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasi }}</p></div>
-              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggal_retensi_habis) }}</p></div>
+              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggal_retensi_habis ?? '') }}</p></div>
             </div>
 
             <!-- Keterangan -->
@@ -39,43 +44,44 @@
             </div>
           </div>
 
-          <!-- Daftar Arsip (Naskah) -->
+          <!-- Daftar Arsip (Berkas) -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-              Daftar Arsip (Naskah) ({{ item.daftar_arsip?.length ?? 0 }})
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              Daftar Arsip
+              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ daftarArsipList.length }}</span>
             </h3>
-            <div class="space-y-1.5">
+            <!-- Loading -->
+            <div v-if="itemLoading" class="py-6 text-center">
+              <UIcon name="i-lucide-loader-2" class="w-5 h-5 text-primary animate-spin mx-auto" />
+            </div>
+            <!-- Daftar Berkas -->
+            <div v-else-if="daftarArsipList.length > 0" class="space-y-1.5">
               <div
-                v-for="(a, idx) in item.daftar_arsip"
-                :key="idx"
+                v-for="(a, idx) in daftarArsipList"
+                :key="a.id || idx"
                 class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
               >
                 <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm text-gray-900 dark:text-white truncate">
                     <span v-if="a.kode" class="font-mono text-xs text-gray-500">{{ a.kode }}</span>
-                    — {{ a.nama }}
+                    <span v-if="a.kode"> — </span>
+                    {{ a.nama }}
                   </p>
                 </div>
-              </div>
-              <div v-if="!item.daftar_arsip?.length" class="text-sm text-gray-400 italic py-2">
-                Tidak ada arsip
+                <NuxtLink
+                  :to="`/maintenance/preview-berkas/${a.id}?from=penyusutan`"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
+                  title="Lihat detail berkas"
+                >
+                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                </NuxtLink>
               </div>
             </div>
-          </div>
-
-          <!-- Tombol Aksi -->
-          <div class="flex items-center gap-3">
-            <NuxtLink
-              to="/maintenance/penyusutan/pengajuan-penyusutan"
-              class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >Batal</NuxtLink>
-            <button
-              @click="showAjukanModal = true"
-              class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-            >
-              <UIcon name="i-lucide-send" class="w-4 h-4" /> Ajukan Penyusutan
-            </button>
+            <!-- Empty -->
+            <div v-else class="text-sm text-gray-400 italic py-2">
+              Tidak ada arsip
+            </div>
           </div>
 
           <!-- Lokasi Penyimpanan -->
@@ -156,6 +162,20 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Tombol Aksi (di bawah halaman) -->
+      <div class="flex items-center gap-3 mt-5">
+        <NuxtLink
+          to="/maintenance/penyusutan/pengajuan-penyusutan"
+          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >Batal</NuxtLink>
+        <button
+          @click="showAjukanModal = true"
+          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+        >
+          <UIcon name="i-lucide-send" class="w-4 h-4" /> Ajukan Penyusutan
+        </button>
       </div>
     </template>
 
@@ -287,14 +307,14 @@
                   >
                     <button
                       v-for="a in filteredAtasan"
-                      :key="a.id"
+                      :key="a.persnum"
                       type="button"
                       @click="toggleAtasan(a)"
                       class="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center justify-between"
                     >
                       <div>
                         <div class="font-medium text-gray-900 dark:text-white">{{ a.name }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ a.id }} — {{ a.position }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ a.positionText }}</div>
                       </div>
                       <UIcon v-if="isAtasanSelected(a)" name="i-lucide-check-circle" class="w-5 h-5 text-green-500 shrink-0" />
                     </button>
@@ -326,7 +346,10 @@
 
           <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
             <button @click="showAjukanModal = false" class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Batal</button>
-            <button @click="submitAjukan" :disabled="!canSubmit" class="px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Ajukan</button>
+            <button @click="submitAjukan" :disabled="!canSubmit" class="px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2">
+              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+              Ajukan
+            </button>
           </div>
         </div>
       </div>
@@ -338,12 +361,19 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
-import type { JenisPenyusutan } from '~/types/penyusutan'
+import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
+import { useArsipDinamis } from '~/composables/useArsipDinamis'
+import { useApi } from '~/composables/useApi'
+import type { JenisPenyusutan, ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { list, loading, loadData, ajukanPenyusutan } = usePenyusutan()
+const toast = useToast()
+const { ajukanPenyusutan, fetchById } = usePenyusutan()
+const { fetchPenataanDetail } = useTuVerifikasi()
+const { apiGet } = useApi()
+const { getBerkasById } = useArsipDinamis()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -351,34 +381,152 @@ const breadcrumbs = computed(() => [
   { label: 'Ajukan Penyusutan', to: `/maintenance/penyusutan/pengajuan-penyusutan/ajukan/${route.params.id}` },
 ])
 
-const item = computed(() => list.value.find((a) => a.id === route.params.id) ?? null)
+const item = ref<ArsipPenyusutan | null>(null)
+const itemLoading = ref(false)
+
+/** Load detail item — coba dari API penyusutan dulu, fallback ke penataan. */
+const loadItem = async () => {
+  itemLoading.value = true
+  try {
+    const id = route.params.id as string
+
+    // 1. Coba fetch dari API penyusutan (data sudah ada di tabel penyusutan)
+    const penyusutanItem = await fetchById(id)
+    if (penyusutanItem) {
+      item.value = penyusutanItem as any
+      return
+    }
+
+    // 2. Fallback: fetch dari penataan (arsip yang belum diajukan penyusutan)
+    const res: any = await fetchPenataanDetail(id)
+    const d = res?.data ?? res
+    if (d) {
+      // Ambil berkasId untuk lookup klasifikasi dari tabel berkas
+      const berkasId = d.arsipIds?.[0]?.id ?? d.arsipId ?? d.id
+
+      // Fetch detail berkas untuk mendapatkan klasifikasi & klasifikasiText
+      // (API penataan detail tidak menyertakan klasifikasi)
+      let berkasKlasifikasi = d.arsipKlasifikasiKode ?? ''
+      let berkasKlasifikasiText = d.arsipKlasifikasi ?? ''
+      try {
+        const berkasRes: any = await getBerkasById(berkasId)
+        const berkasData = berkasRes?.data ?? berkasRes
+        if (berkasData) {
+          berkasKlasifikasi = berkasData.klasifikasi ?? berkasKlasifikasi
+          berkasKlasifikasiText = berkasData.klasifikasiTeks ?? berkasData.klasifikasi_text ?? berkasKlasifikasiText
+        }
+      } catch (e) {
+        console.error('Gagal memuat klasifikasi berkas:', e)
+      }
+
+      item.value = {
+        id: d.id,
+        no_usulan: d.nomorUsulan ?? '',
+        kode_berkas: d.arsipKode ?? '',
+        nama_berkas: d.arsipPerihal ?? '',
+        klasifikasi: berkasKlasifikasi,
+        klasifikasiText: berkasKlasifikasiText,
+        sekretaris: d.sekretarisName ?? '',
+        atasan_managerial: [],
+        status: 'draft' as any,
+        jenis_penyusutan: 'permanen' as JenisPenyusutan,
+        lokasi_simpan: d.lokasiPenataan ?? null,
+        rak: null,
+        baris: null,
+        kolom: null,
+        tanggal_retensi_habis: d.tanggalRetensiAktifHabis ?? '',
+        tanggal_pengajuan: null,
+        catatan: d.keterangan ?? '',
+        keterangan: d.keterangan ?? null,
+        daftar_arsip: (d.arsipIds && Array.isArray(d.arsipIds) ? d.arsipIds : []).map((a: any) => ({
+          id: a.id ?? '',
+          nama: a.perihal ?? '',
+          kode: a.kode ?? '',
+        })),
+        foto_dokumentasi: d.fotoPenataan ?? null,
+        berita_acara: d.beritaAcaraUrl ?? null,
+        current_verifikator_urutan: 1,
+        // Simpan berkasId untuk submit
+        berkasId,
+      } as any
+    }
+  } catch (e) {
+    console.error('Gagal memuat detail arsip:', e)
+  } finally {
+    itemLoading.value = false
+  }
+}
 
 const showAjukanModal = ref(false)
 const formJenis = ref<JenisPenyusutan>('permanen')
 const formCatatan = ref('')
+const submitting = ref(false)
 
-// ── Atasan Managerial Berjenjang (dummy) ──
-const dummyAtasan = [
-  { id: '10010123', name: 'HERMANA SOEGIJANTORO', position: 'EVP of Corporate Secretary' },
-  { id: '10010970', name: 'PRIYO HUTOMO PUTRA', position: 'EVP of Operations' },
-  { id: '10010444', name: 'SURYADI JOKO WIRATMO', position: 'EVP of Air Navigation Services Planning' },
-]
+// ── Daftar Arsip (Berkas) ──
+// Tampilkan daftar berkas dari daftar_arsip di DB.
+// Jika kosong, buat dummy dari berkas_id utama agar selalu ada isinya.
+const daftarArsipList = computed(() => {
+  if (!item.value) return []
+  const daftar = (item.value as any).daftar_arsip ?? (item.value as any).daftarArsip
+  if (daftar && Array.isArray(daftar) && daftar.length > 0) {
+    return daftar
+  }
+  // Dummy: jika daftar_arsip kosong, tampilkan berkas utama
+  const berkasId = (item.value as any).berkasId ?? item.value.id
+  return [
+    {
+      id: berkasId,
+      nama: item.value.nama_berkas ?? item.value.namaBerkas ?? '-',
+      kode: item.value.kode_berkas ?? item.value.kodeBerkas ?? '',
+    },
+  ]
+})
 
-const selectedAtasanList = ref<{ persnum: string; name: string; positionText: string }[]>([])
+// ── Atasan Managerial Berjenjang (dari API org-data) ──
+const atasanOptions = ref<Array<{ position: number; persnum: number; name: string; positionText: string }>>([])
+const atasanLoading = ref(false)
+const selectedAtasanList = ref<{ persnum: number; name: string; positionText: string; positionId?: number }[]>([])
 const showAtasanInput = ref(true)
 const atasanSearch = ref('')
 const atasanDropdownOpen = ref(false)
 const atasanDropdownRef = ref<HTMLElement | null>(null)
 
+const loadAtasanManagerial = async () => {
+  atasanLoading.value = true
+  try {
+    const tgl = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+    const res: any = await apiGet(`/org-data/pengirim/managerial?tgl=${tgl}`, {}, { skipCache: true })
+    const data = res?.data?.data ?? res?.data ?? []
+    if (Array.isArray(data)) {
+      atasanOptions.value = data.map((r: any) => ({
+        position: Number(r.position ?? r.position_id ?? 0),
+        persnum: Number(r.persnum ?? r.persnum_person ?? r.relation_persnum ?? 0),
+        name: r.persnum_person_text ?? r.name ?? r.label ?? '-',
+        positionText: r.position_text ?? r.positionText ?? r.labelJob ?? '-',
+      }))
+    }
+  } catch (e) {
+    console.error('Gagal memuat atasan managerial:', e)
+    atasanOptions.value = []
+  } finally {
+    atasanLoading.value = false
+  }
+}
+
 const filteredAtasan = computed(() => {
-  const q = atasanSearch.value.toLowerCase()
-  return dummyAtasan.filter((a) =>
-    a.name.toLowerCase().includes(q) || a.id.includes(q)
-  )
+  const q = atasanSearch.value.trim().toLowerCase()
+  if (!q) return atasanOptions.value.slice(0, 50)
+  return atasanOptions.value
+    .filter((a) =>
+      a.name.toLowerCase().includes(q) ||
+      String(a.persnum).includes(q) ||
+      a.positionText.toLowerCase().includes(q)
+    )
+    .slice(0, 50)
 })
 
-const isAtasanSelected = (a: { id: string }) =>
-  selectedAtasanList.value.some((s) => s.persnum === a.id)
+const isAtasanSelected = (a: { persnum: number }) =>
+  selectedAtasanList.value.some((s) => s.persnum === a.persnum)
 
 const openAtasanInput = () => {
   showAtasanInput.value = true
@@ -394,12 +542,12 @@ const onAtasanSearchInput = () => {
   atasanDropdownOpen.value = true
 }
 
-const toggleAtasan = (a: { id: string; name: string; position: string }) => {
+const toggleAtasan = (a: { persnum: number; name: string; positionText: string; position: number }) => {
   if (isAtasanSelected(a)) {
-    selectedAtasanList.value = selectedAtasanList.value.filter((s) => s.persnum !== a.id)
+    selectedAtasanList.value = selectedAtasanList.value.filter((s) => s.persnum !== a.persnum)
   } else {
     if (selectedAtasanList.value.length >= 3) return
-    selectedAtasanList.value.push({ persnum: a.id, name: a.name, positionText: a.position })
+    selectedAtasanList.value.push({ persnum: a.persnum, name: a.name, positionText: a.positionText, positionId: a.position })
   }
   atasanSearch.value = ''
   atasanDropdownOpen.value = false
@@ -411,7 +559,7 @@ const removeAtasan = (idx: number) => {
 }
 
 const canSubmit = computed(() => {
-  return selectedAtasanList.value.length >= 1 && !!formJenis.value
+  return selectedAtasanList.value.length >= 1 && !!formJenis.value && !submitting.value
 })
 
 /** Mapping status → index step (0-3). */
@@ -449,7 +597,7 @@ const stepTextClass = (step: number): string => {
   return 'text-gray-400'
 }
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string | null | undefined) => {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -471,17 +619,35 @@ const statusBadgeClass = (status: string) => {
   return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
-const submitAjukan = () => {
+const submitAjukan = async () => {
   if (!item.value) return
-  const filled = selectedAtasanList.value.map((v) => ({
-    persnum: v.persnum,
-    name: v.name,
-    jabatan: v.positionText,
-  }))
-  ajukanPenyusutan(item.value.id, formJenis.value, filled, formCatatan.value)
-  showAjukanModal.value = false
-  useToast().add({ title: 'Berhasil', description: 'Pengajuan penyusutan berhasil dikirim.', color: 'success' })
-  navigateTo('/maintenance/penyusutan/pengajuan-penyusutan')
+  submitting.value = true
+  try {
+    await ajukanPenyusutan({
+      berkasId: (item.value as any).berkasId ?? item.value.id,
+      kodeBerkas: item.value.kode_berkas || undefined,
+      namaBerkas: item.value.nama_berkas || undefined,
+      klasifikasi: item.value.klasifikasi || undefined,
+      klasifikasiText: (item.value as any).klasifikasiText || (item.value as any).klasifikasi_text || undefined,
+      tanggalRetensiHabis: item.value.tanggal_retensi_habis || undefined,
+      jenisPenyusutan: formJenis.value,
+      atasanList: selectedAtasanList.value.map((v) => ({
+        persnum: v.persnum,
+        name: v.name,
+        ...(v.positionId ? { positionId: v.positionId } : {}),
+        positionText: v.positionText,
+      })),
+      catatan: formCatatan.value || undefined,
+      daftarArsip: (item.value as any).daftar_arsip ?? (item.value as any).daftarArsip ?? undefined,
+    })
+    showAjukanModal.value = false
+    toast.add({ title: 'Berhasil', description: 'Pengajuan penyusutan berhasil dikirim ke atasan managerial.', color: 'success' })
+    navigateTo('/maintenance/penyusutan/pengajuan-penyusutan')
+  } catch (e: any) {
+    toast.add({ title: 'Gagal', description: e?.message || 'Gagal mengajukan penyusutan', color: 'error' })
+  } finally {
+    submitting.value = false
+  }
 }
 
 const onClickOutside = (e: MouseEvent) => {
@@ -490,11 +656,10 @@ const onClickOutside = (e: MouseEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', onClickOutside)
-  if (list.value.length === 0) {
-    loadData()
-  }
+  await loadItem()
+  loadAtasanManagerial()
 })
 
 onBeforeUnmount(() => {

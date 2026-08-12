@@ -140,10 +140,26 @@
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                    </NuxtLink>
+                    <NuxtLink
+                      v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'"
+                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      title="Penataan"
+                    >
+                      <UIcon name="i-lucide-archive" class="w-4 h-4" />
+                    </NuxtLink>
+                    <NuxtLink
+                      v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'"
+                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      title="Pemusnahan"
+                    >
+                      <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
                     </NuxtLink>
                   </div>
                 </td>
@@ -174,7 +190,7 @@ import { usePenyusutan } from '~/composables/usePenyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
-const { list, loading, loadData } = usePenyusutan()
+const { penataanList, loadPenataanList } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -204,7 +220,7 @@ const statusOptions = [
 const klasifikasiList = computed(() => {
   const seen = new Set<string>()
   const result: string[] = []
-  for (const a of list.value) {
+  for (const a of penataanList.value) {
     if (a.klasifikasi && !seen.has(a.klasifikasi)) {
       seen.add(a.klasifikasi)
       result.push(a.klasifikasi)
@@ -219,12 +235,12 @@ const klasifikasiLabel = computed(() => {
 })
 
 const filteredList = computed(() => {
-  let result = list.value.filter((a) => a.status === 'diterima' || a.status === 'selesai')
+  let result = penataanList.value.filter((a) => a.status === 'diterima' || a.status === 'selesai')
   if (searchInput.value) {
     const q = searchInput.value.toLowerCase()
     result = result.filter((a) =>
-      a.kode_berkas.toLowerCase().includes(q) ||
-      a.nama_berkas.toLowerCase().includes(q)
+      (a.kode_berkas ?? '').toLowerCase().includes(q) ||
+      (a.nama_berkas ?? '').toLowerCase().includes(q)
     )
   }
   if (filterStatus.value) {
@@ -292,7 +308,7 @@ const onClickOutside = (e: MouseEvent) => {
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   isLoading.value = true
-  loadData().finally(() => { isLoading.value = false })
+  loadPenataanList().finally(() => { isLoading.value = false })
 })
 
 onBeforeUnmount(() => {
