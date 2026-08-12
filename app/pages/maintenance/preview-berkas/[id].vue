@@ -212,6 +212,13 @@ const breadcrumbItems = computed(() => {
       { label: 'Detail Berkas' },
     ];
   }
+  if (fromPage.value === 'penyusutan') {
+    return [
+      { label: 'Beranda', to: '/' },
+      { label: 'Pengajuan Penyusutan', to: '/maintenance/penyusutan/pengajuan-penyusutan' },
+      { label: 'Detail Berkas' },
+    ];
+  }
   if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
