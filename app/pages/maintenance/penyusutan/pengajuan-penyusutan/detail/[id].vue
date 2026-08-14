@@ -39,6 +39,36 @@
             </div>
           </div>
 
+          <!-- Atasan Managerial Berjenjang -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <UIcon name="i-lucide-users" class="w-4 h-4 text-primary-500" /> Atasan Managerial Berjenjang
+            </h3>
+            <div class="space-y-2">
+              <div
+                v-for="(v, i) in item.atasan_managerial"
+                :key="i"
+                class="flex items-center justify-between rounded-lg p-3"
+                :class="v.status === 'DISETUJUI' || v.status === 'disetujui' ? 'bg-green-50 dark:bg-green-900/20 ring-1 ring-green-200 dark:ring-green-800' : v.status === 'DITOLAK' || v.status === 'ditolak' ? 'bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800' : 'bg-gray-50 dark:bg-gray-700/50'"
+              >
+                <div class="flex items-center gap-3">
+                  <span
+                    :class="v.status === 'DISETUJUI' || v.status === 'disetujui' ? 'bg-green-500' : v.status === 'DITOLAK' || v.status === 'ditolak' ? 'bg-red-500' : 'bg-[#457fb6]'"
+                    class="w-7 h-7 rounded-full text-white text-xs flex items-center justify-center font-medium"
+                  >{{ v.urutan }}</span>
+                  <div>
+                    <p class="text-sm font-medium text-gray-800 dark:text-white">{{ v.name }}</p>
+                    <p class="text-xs text-gray-500">{{ v.jabatan || v.positionText || '-' }}</p>
+                  </div>
+                </div>
+                <span :class="verifikatorBadgeClass(v.status)" class="text-[11px]">{{ verifikatorLabel(v.status) }}</span>
+              </div>
+              <div v-if="!item.atasan_managerial?.length" class="text-sm text-gray-400 italic py-2">
+                Tidak ada verifikator
+              </div>
+            </div>
+          </div>
+
           <!-- Daftar Arsip (Naskah) -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -196,7 +226,7 @@ const steps = computed(() => {
       key: 'draft',
       step: 0,
       label: 'Draft',
-      desc: 'Unit Dokumen menyiapkan usulan penyusutan',
+      desc: 'Arsip inaktif dan retensi habis',
     },
     {
       key: 'diajukan',
@@ -207,8 +237,8 @@ const steps = computed(() => {
     {
       key: 'diterima',
       step: 2,
-      label: 'Diterima',
-      desc: 'Atasan Managerial menerima penyusutan',
+      label: 'Disetujui',
+      desc: 'Atasan Managerial Unit Dokumen menyetujui penyusutan',
     },
     {
       key: 'selesai',
@@ -251,7 +281,7 @@ const formatDate = (dateStr: string | null | undefined) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 
@@ -264,6 +294,21 @@ const statusBadgeClass = (status: string) => {
     selesai: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
   }
   return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+}
+
+const verifikatorLabel = (status: string) => {
+  const map: Record<string, string> = { MENUNGGU: 'Menunggu', DISETUJUI: 'Disetujui', DITOLAK: 'Ditolak', menunggu: 'Menunggu', disetujui: 'Disetujui', ditolak: 'Ditolak' }
+  return map[status] ?? status
+}
+
+const verifikatorBadgeClass = (status: string) => {
+  const s = (status ?? '').toUpperCase()
+  const map: Record<string, string> = {
+    MENUNGGU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    DISETUJUI: 'px-2 py-0.5 rounded-full font-medium bg-green-500 text-white',
+    DITOLAK: 'px-2 py-0.5 rounded-full font-medium bg-red-500 text-white',
+  }
+  return map[s] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
 onMounted(async () => {

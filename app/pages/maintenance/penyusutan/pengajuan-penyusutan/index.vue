@@ -153,7 +153,7 @@
                   <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
                 </td>
                 <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </td>
@@ -163,6 +163,7 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
+                      v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -257,8 +258,8 @@ const fetchKlasifikasi = async () => {
 const statusOptions = [
   { value: '', label: 'Semua Status' },
   { value: 'draft', label: 'Draft' },
-  { value: 'diajukan', label: 'Diajukan' },
-  { value: 'diterima', label: 'Diterima' },
+  { value: 'diajukan', label: 'Menunggu Persetujuan' },
+  { value: 'diterima', label: 'Disetujui' },
   { value: 'ditolak', label: 'Ditolak' },
   { value: 'selesai', label: 'Selesai' },
 ]
@@ -303,7 +304,7 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 

@@ -1198,6 +1198,11 @@ const adminMenuKelola = computed(() => {
       to: '/maintenance/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive-x',
     });
+    penyusutanChildren.push({
+      label: 'Status Backup Data',
+      to: '/maintenance/penyusutan/backup-status',
+      icon: 'i-lucide-database-backup',
+    });
   }
 
   if (isAtasanManagerialPenyusutan.value) {
@@ -1339,6 +1344,11 @@ label: 'Penerimaan Usulan',
       label: 'Penataan & Pemusnahan',
       to: '/maintenance/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive-x',
+    });
+    penyusutanChildren.push({
+      label: 'Status Backup Data',
+      to: '/maintenance/penyusutan/backup-status',
+      icon: 'i-lucide-database-backup',
     });
   }
 
