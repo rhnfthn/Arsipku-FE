@@ -384,55 +384,11 @@ const breadcrumbs = computed(() => [
 const item = ref<ArsipPenyusutan | null>(null)
 const itemLoading = ref(false)
 
-// ── Dummy data penyusutan (status DRAFT) — untuk demo ──
-const DUMMY_PENYUSUTAN: Record<string, any> = {
-  'dummy-001': {
-    id: 'dummy-001',
-    no_usulan: 'PEN/DUMMY/001/2026',
-    kode_berkas: 'DUMMY-ARK-001',
-    nama_berkas: 'Dummy Berkas Keuangan 2026',
-    klasifikasi: 'KEU.01.01',
-    klasifikasiText: 'Laporan Keuangan',
-    sekretaris: 'IKA OCTAFIA SAPUTRI',
-    jenis_penyusutan: 'permanen',
-    status: 'draft',
-    atasan_managerial: [],
-    daftar_arsip: [
-      { id: 'dummy-naskah-001', nama: 'Laporan Keuangan Q1 2026', kode: 'ND-001' },
-      { id: 'dummy-naskah-002', nama: 'Laporan Keuangan Q2 2026', kode: 'ND-002' },
-    ],
-    tanggal_pengajuan: null,
-  },
-  'dummy-002': {
-    id: 'dummy-002',
-    no_usulan: 'PEN/DUMMY/002/2026',
-    kode_berkas: 'DUMMY-ARK-002',
-    nama_berkas: 'Dummy Berkas SDM 2026',
-    klasifikasi: 'SDM.02.03',
-    klasifikasiText: 'Data Kepegawaian',
-    sekretaris: 'IKA OCTAFIA SAPUTRI',
-    jenis_penyusutan: 'musnah',
-    status: 'draft',
-    atasan_managerial: [],
-    daftar_arsip: [
-      { id: 'dummy-naskah-003', nama: 'Data Pegawai 2025', kode: 'SDM-101' },
-      { id: 'dummy-naskah-004', nama: 'Data Pegawai 2026', kode: 'SDM-102' },
-    ],
-    tanggal_pengajuan: null,
-  },
-}
-
 /** Load detail item — coba dari API penyusutan dulu, fallback ke penataan. */
 const loadItem = async () => {
   itemLoading.value = true
   try {
     const id = route.params.id as string
-
-    // 0. Dummy data (demo) — langsung pakai tanpa fetch API
-    if (DUMMY_PENYUSUTAN[id]) {
-      item.value = DUMMY_PENYUSUTAN[id] as any
-      return
-    }
 
     // 1. Coba fetch dari API penyusutan (data sudah ada di tabel penyusutan)
     const penyusutanItem = await fetchById(id)

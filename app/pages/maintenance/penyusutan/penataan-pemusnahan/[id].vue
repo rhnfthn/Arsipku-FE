@@ -287,15 +287,8 @@
                 class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-                Lanjutkan Pemusnahan
-              </button>
-              <button
-                @click="submitBackupData"
-                :disabled="submitting"
-                class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-                Lanjut Backup Data
+                <UIcon v-else name="i-lucide-flame" class="w-4 h-4" />
+                Musnahkan
               </button>
             </div>
           </div>
@@ -477,6 +470,22 @@
               Lanjut Backup Data
             </button>
           </div>
+
+          <!-- Info Backup Permanen -->
+          <div v-if="item.jenis_penyusutan === 'permanen' && !item.isBackedUp" class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-900 p-4">
+            <p class="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+              <UIcon name="i-lucide-info" class="w-4 h-4 shrink-0" />
+              Arsip permanen dapat dibackup ke database arsip. Master berkas tetap tersimpan di database utama.
+            </p>
+            <button
+              @click="openBackupModal"
+              :disabled="submitting"
+              class="inline-flex items-center gap-2 px-5 py-2.5 mt-4 text-sm font-medium rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+              Lanjut Backup Data
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -494,7 +503,12 @@
           </div>
           <div class="p-6 space-y-4">
             <p class="text-sm text-gray-600 dark:text-gray-300">
-              Backup akan memindahkan data berkas ke database arsip. Master berkas akan dihapus dari database utama. Tabel transaksi tetap tersimpan. Lanjutkan?
+              <template v-if="item?.jenis_penyusutan === 'permanen'">
+                Backup akan memindahkan data berkas ke database arsip. Master berkas tetap tersimpan di database utama (permanen). Lanjutkan?
+              </template>
+              <template v-else>
+                Backup akan memindahkan data berkas ke database arsip. Master berkas akan dihapus dari database utama. Tabel transaksi tetap tersimpan. Lanjutkan?
+              </template>
             </p>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -877,10 +891,12 @@ const submitPemusnahan = async () => {
       beritaAcaraPath = await uploadFile(beritaAcaraFiles.value[0])
     }
     await pemusnahan(item.value.id, { beritaAcara: beritaAcaraPath ?? '' })
-    toast.add({ title: 'Berhasil', description: 'Arsip berhasil dimusnahkan.', color: 'success' })
+    toast.add({ title: 'Berhasil', description: 'Arsip berhasil dimusnahkan dan dibackup ke database arsip.', color: 'success' })
     // Reload detail + fetch fresh file URLs
     item.value = await fetchById(route.params.id as string)
     await loadFileUrls()
+    // Redirect ke halaman status backup data
+    navigateTo('/maintenance/penyusutan/backup-status')
   } catch (e: any) {
     toast.add({ title: 'Gagal', description: e?.message || 'Gagal memusnahkan arsip', color: 'error' })
   } finally {
@@ -895,12 +911,12 @@ const submitBackupData = async () => {
   submitting.value = true
   try {
     await backupData(item.value.id, { catatan: backupCatatan.value || undefined })
-    toast.add({ title: 'Berhasil', description: 'Data berhasil dibackup dan berkas telah dimusnahkan.', color: 'success' })
+    toast.add({ title: 'Berhasil', description: 'Data berhasil dibackup.', color: 'success' })
     // Reload detail — status menjadi SELESAI
     item.value = await fetchById(route.params.id as string)
     await loadFileUrls()
-    // Redirect ke daftar penataan/pemusnahan
-    navigateTo('/maintenance/penyusutan/penataan-pemusnahan')
+    // Redirect ke halaman status backup data
+    navigateTo('/maintenance/penyusutan/backup-status')
   } catch (e: any) {
     toast.add({ title: 'Gagal', description: e?.response?.data?.message || e?.message || 'Gagal membackup data arsip', color: 'error' })
   } finally {
