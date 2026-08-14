@@ -193,50 +193,6 @@ const route = useRoute();
 const { apiGet } = useApi();
 const { getBerkasById, getDaftarNaskah, getNaskahDetailInBerkas } = useArsipDinamis();
 
-// ── Dummy naskah (demo) — untuk preview-berkas dummy dari pengajuan penyusutan ──
-const DUMMY_NASKAH: Record<string, any> = {
-  'dummy-naskah-001': {
-    judulBerkas: 'Dummy Berkas Keuangan 2026',
-    kodeBerkas: 'DUMMY-ARK-001',
-    klasifikasi: 'KEU.01.01',
-    klasifikasiText: 'Laporan Keuangan',
-    isiRingkas: 'Dummy data laporan keuangan untuk demo penyusutan.',
-    naskah: [
-      { id: 'dummy-naskah-001', naskahId: 'dummy-naskah-001', naskahTipe: 'ND', nomorSurat: 'ND-001', perihal: 'Laporan Keuangan Q1 2026', tanggalNaskah: '2026-03-31', sumber: 'terkirim', urutan: 1, status: 'final' },
-    ],
-  },
-  'dummy-naskah-002': {
-    judulBerkas: 'Dummy Berkas Keuangan 2026',
-    kodeBerkas: 'DUMMY-ARK-001',
-    klasifikasi: 'KEU.01.01',
-    klasifikasiText: 'Laporan Keuangan',
-    isiRingkas: 'Dummy data laporan keuangan untuk demo penyusutan.',
-    naskah: [
-      { id: 'dummy-naskah-002', naskahId: 'dummy-naskah-002', naskahTipe: 'ND', nomorSurat: 'ND-002', perihal: 'Laporan Keuangan Q2 2026', tanggalNaskah: '2026-06-30', sumber: 'terkirim', urutan: 1, status: 'final' },
-    ],
-  },
-  'dummy-naskah-003': {
-    judulBerkas: 'Dummy Berkas SDM 2026',
-    kodeBerkas: 'DUMMY-ARK-002',
-    klasifikasi: 'SDM.02.03',
-    klasifikasiText: 'Data Kepegawaian',
-    isiRingkas: 'Dummy data kepegawaian untuk demo penyusutan.',
-    naskah: [
-      { id: 'dummy-naskah-003', naskahId: 'dummy-naskah-003', naskahTipe: 'ND', nomorSurat: 'SDM-101', perihal: 'Data Pegawai 2025', tanggalNaskah: '2025-12-31', sumber: 'terkirim', urutan: 1, status: 'final' },
-    ],
-  },
-  'dummy-naskah-004': {
-    judulBerkas: 'Dummy Berkas SDM 2026',
-    kodeBerkas: 'DUMMY-ARK-002',
-    klasifikasi: 'SDM.02.03',
-    klasifikasiText: 'Data Kepegawaian',
-    isiRingkas: 'Dummy data kepegawaian untuk demo penyusutan.',
-    naskah: [
-      { id: 'dummy-naskah-004', naskahId: 'dummy-naskah-004', naskahTipe: 'ND', nomorSurat: 'SDM-102', perihal: 'Data Pegawai 2026', tanggalNaskah: '2026-06-30', sumber: 'terkirim', urutan: 1, status: 'final' },
-    ],
-  },
-};
-
 const nomorUsulan = computed(() => (route.query.nomor_usulan as string) || '');
 const usulanId = computed(() => (route.query.usulan_id as string) || '');
 
@@ -370,22 +326,6 @@ onMounted(async () => {
   loading.value = true;
   try {
     const id = route.params.id as string;
-
-    // 0. Dummy naskah (demo) — tampilkan data dummy tanpa fetch API
-    if (DUMMY_NASKAH[id]) {
-      const d = DUMMY_NASKAH[id];
-      berkas.value = {
-        id,
-        judulBerkas: d.judulBerkas,
-        kodeBerkas: d.kodeBerkas,
-        klasifikasi: d.klasifikasi,
-        klasifikasiTeks: d.klasifikasiText,
-        isiRingkas: d.isiRingkas,
-        status: 'draft',
-      };
-      naskahList.value = d.naskah;
-      return;
-    }
 
     // 1. Coba fetch dari DB inti (arsip-dinamis). Jika gagal (mis. berkas
     //    sudah soft-deleted karena musnah), lanjut ke fallback DB arsip.

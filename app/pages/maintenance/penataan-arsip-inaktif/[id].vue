@@ -505,6 +505,14 @@ const loadDetail = async () => {
     const res = await fetchPenataanDetail(route.params.id as string)
     item.value = res?.data ?? res
     if (item.value) {
+      // Auto-buka mode penataan jika status ARSIP_INAKTIF_DITERIMA
+      // (kecuali user eksplisit minta mode=detail via query).
+      if (
+        item.value.status === 'ARSIP_INAKTIF_DITERIMA' &&
+        route.query.mode !== 'detail'
+      ) {
+        mode.value = 'penataan'
+      }
       form.lokasi = item.value.lokasiPenataan || ''
       form.rak = item.value.rak || ''
       form.baris = item.value.baris || ''
