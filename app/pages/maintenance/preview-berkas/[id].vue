@@ -325,61 +325,11 @@ const formatDate = (dateStr: string) => {
 onMounted(async () => {
   loading.value = true;
   try {
-    const id = route.params.id as string;
-
-    // 1. Coba fetch dari DB inti (arsip-dinamis). Jika gagal (mis. berkas
-    //    sudah soft-deleted karena musnah), lanjut ke fallback DB arsip.
-    try {
-      const res: any = await getBerkasById(id);
-      berkas.value = res?.data ?? res;
-      const naskahRes: any = await getDaftarNaskah(id, { limit: 50 });
-      const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
-      naskahList.value = Array.isArray(raw) ? raw : [];
-    } catch (e) {
-      console.warn('Berkas tidak ditemukan di DB inti, coba DB arsip:', e);
-      berkas.value = null;
-    }
-
-    // Jika berkas tidak ditemukan di DB inti (sudah soft-deleted, mis. musnah),
-    // fallback ke DB arsip (arsipku_arsip_local) agar tetap bisa dilihat.
-    if (!berkas.value) {
-      try {
-        const arsipRes: any = await apiGet(`/api/arsip/berkas/${id}`, {}, { skipCache: true });
-        // Backend: { success, data: { status, data: { berkas, naskah } } }
-        const arsipData = arsipRes?.data?.data ?? arsipRes?.data ?? arsipRes;
-        const arsipBerkas = arsipData?.berkas;
-        if (arsipBerkas) {
-          berkas.value = {
-            id: arsipBerkas.source_berkas_id,
-            judulBerkas: arsipBerkas.judul_berkas,
-            kodeBerkas: arsipBerkas.kode_berkas,
-            klasifikasi: arsipBerkas.klasifikasi,
-            klasifikasiTeks: arsipBerkas.klasifikasi_text,
-            retensiAktifTahun: arsipBerkas.retensi_aktif_tahun,
-            retensiInaktifTahun: arsipBerkas.retensi_inaktif_tahun,
-            tindakanPenyusutanAkhir: arsipBerkas.tindakan_penyusutan_akhir,
-            isiRingkas: arsipBerkas.isi_ringkas,
-            tanggalDibuat: arsipBerkas.tanggal_dibuat,
-            tanggalDitutup: arsipBerkas.tanggal_ditutup,
-            status: arsipBerkas.status_akhir,
-          };
-          naskahList.value = (arsipData?.naskah ?? []).map((n: any) => ({
-            id: n.id,
-            naskahId: n.naskahId,
-            naskahTipe: n.naskahTipe,
-            nomorSurat: n.nomorSurat,
-            perihal: n.perihal,
-            tanggalNaskah: n.tanggalNaskah,
-            sumber: n.sumber,
-            urutan: n.urutan,
-            final_pdf: n.finalPdf,
-            status: n.status,
-          }));
-        }
-      } catch (e) {
-        console.error('Gagal memuat berkas dari DB arsip:', e);
-      }
-    }
+    const res: any = await getBerkasById(route.params.id as string);
+    berkas.value = res?.data ?? res;
+    const naskahRes: any = await getDaftarNaskah(route.params.id as string, { limit: 50 });
+    const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
+    naskahList.value = Array.isArray(raw) ? raw : [];
 
     // Jika ada usulan_id, ambil status usulan untuk override status berkas
     const usulanId = (route.query.usulan_id as string) || '';

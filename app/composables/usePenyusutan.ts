@@ -163,19 +163,6 @@ export const usePenyusutan = () => {
     return res?.data;
   };
 
-  /** Backup data arsip musnah ke DB arsip + hapus master berkas dari DB inti. */
-  const backupData = async (id: string, payload: { catatan?: string }): Promise<any> => {
-    const res: any = await apiPost(`/penyusutan/${id}/backup-data`, payload);
-    return res?.data;
-  };
-
-  /** Load daftar arsip yang sudah dibackup (halaman tracking backup). */
-  const loadBackupStatus = async (): Promise<any[]> => {
-    const res: any = await apiGet('/api/arsip/backup-status', {}, { skipCache: true });
-    // Backend: { success, data: { status, data: [...] } }
-    return res?.data?.data ?? res?.data ?? [];
-  };
-
   return {
     list: readonly(list),
     verifikasiList: readonly(verifikasiList),
@@ -194,8 +181,6 @@ export const usePenyusutan = () => {
     pemusnahan,
     updateFotoDokumentasi,
     updateBeritaAcara,
-    backupData,
-    loadBackupStatus,
   };
 };
 
@@ -262,7 +247,6 @@ function normalizePenyusutan(item: any): ArsipPenyusutan {
     rejectedNote: item.rejectedNote ?? item.rejected_note ?? null,
     verifikators,
     atasan_managerial: verifikators,
-    isBackedUp: item.isBackedUp ?? false,
     createdAt: item.createdAt ?? item.created_at,
     updatedAt: item.updatedAt ?? item.updated_at,
   };

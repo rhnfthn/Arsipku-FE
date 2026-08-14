@@ -5,6 +5,9 @@
       <div class="mb-6">
         <Heading variant="heading6b" class="text-mobile-md">Verifikasi Penyusutan</Heading>
         <PageHeader :items="breadcrumbs" />
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Daftar pengajuan penyusutan dari unit dokumen yang menunggu verifikasi atasan managerial TU.
+        </p>
       </div>
 
       <!-- Filter & Search -->
@@ -154,7 +157,7 @@
                   <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
                 </td>
                 <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </td>
@@ -164,7 +167,6 @@
                 <td class="px-3 py-3">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/verifikasi-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -172,7 +174,7 @@
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
                     </NuxtLink>
                     <NuxtLink
-                      v-if="item.status === 'diajukan' && isCurrentVerifikator(item)"
+                      v-if="item.status === 'diajukan'"
                       :to="`/maintenance/penyusutan/verifikasi-penyusutan/tindak-lanjuti/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                       title="Tindak Lanjuti"
@@ -273,7 +275,7 @@
               <button
                 @click="submitVerify"
                 :disabled="submitting"
-                :class="verifyAction ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'"
+                :class="verifyAction ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
                 class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
               >
                 <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
@@ -289,7 +291,7 @@
               <button
                 v-if="detailArsip?.status === 'diajukan'"
                 @click="showVerifyForm = true; verifyAction = false"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
               >Tolak</button>
             </template>
           </div>
@@ -303,12 +305,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
-import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
-const { user } = useAuth()
 const { verifikasiList, loadVerifikasiList, verifyPenyusutan } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
@@ -342,8 +342,8 @@ const verifyCatatan = ref('')
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'diajukan', label: 'Menunggu Persetujuan' },
-  { value: 'diterima', label: 'Disetujui' },
+  { value: 'diajukan', label: 'Diajukan' },
+  { value: 'diterima', label: 'Diterima' },
   { value: 'ditolak', label: 'Ditolak' },
 ]
 
@@ -407,7 +407,7 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 
@@ -433,16 +433,6 @@ const verifikatorBadgeClass = (status: string) => {
     ditolak: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
   }
   return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-}
-
-/** True jika user login adalah verifikator yang sedang giliran (urutan = current_verifikator_urutan). */
-const isCurrentVerifikator = (item: ArsipPenyusutan) => {
-  if (!item || !user.value) return false
-  const userPersnum = Number(user.value.persnum)
-  const currentUrutan = item.current_verifikator_urutan ?? item.currentVerifikatorUrutan ?? 1
-  const level = (item.atasan_managerial ?? []).find((v) => v.urutan === currentUrutan)
-  if (!level) return false
-  return Number(level.persnum) === userPersnum
 }
 
 const onSearchInput = () => {

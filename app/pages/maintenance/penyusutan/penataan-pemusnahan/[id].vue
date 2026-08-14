@@ -26,7 +26,7 @@
             <div class="flex justify-between text-sm"><span class="text-gray-500">Nama Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ item.nama_berkas }}</span></div>
             <div class="flex justify-between text-sm"><span class="text-gray-500">Sekretaris</span><span class="font-medium text-gray-800 dark:text-white">{{ item.sekretaris }}</span></div>
             <div class="flex justify-between text-sm"><span class="text-gray-500">Jenis Penyusutan</span>
-              <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+              <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                 {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
               </span>
             </div>
@@ -61,10 +61,7 @@
         </div>
 
         <!-- Daftar Arsip (Berkas) -->
-        <div
-          v-if="!item.isBackedUp || item.jenis_penyusutan === 'permanen'"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-        >
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="p-5 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Daftar Arsip
@@ -87,7 +84,6 @@
                   </p>
                 </div>
                 <NuxtLink
-                  v-if="!item.isBackedUp || item.jenis_penyusutan === 'permanen'"
                   :to="`/maintenance/preview-berkas/${a.id}?from=penyusutan`"
                   class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
                   title="Lihat detail berkas"
@@ -104,43 +100,6 @@
 
         <!-- Form Penataan (Permanen) -->
         <div v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'" class="space-y-5">
-          <!-- Card: Berita Acara (Upload) -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="p-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload file berita acara penataan arsip.</p>
-            </div>
-            <div class="px-5 pb-5">
-              <!-- File terpilih: nama dokumen + tombol hapus -->
-              <div v-if="beritaAcaraFiles.length > 0" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span class="w-9 h-9 rounded-lg bg-[#457fb6]/10 text-[#457fb6] flex items-center justify-center shrink-0">
-                    <UIcon :name="beritaAcaraPreviewType === 'pdf' ? 'i-lucide-file-text' : 'i-lucide-image'" class="w-5 h-5" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-white truncate">{{ beritaAcaraFiles[0].name }}</p>
-                    <p class="text-xs text-gray-500">{{ (beritaAcaraFiles[0].size / 1024).toFixed(1) }} KB</p>
-                  </div>
-                </div>
-                <button
-                  @click="removeBeritaAcara"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shrink-0"
-                  title="Hapus file"
-                >
-                  <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-              <!-- Card upload (muncul saat belum ada file) -->
-              <FileUpload
-                v-else
-                v-model="beritaAcaraFiles"
-                accept=".pdf,.jpg,.png"
-                label="Pilih atau seret file berita acara"
-                description="PDF, JPG, PNG (max 5MB)"
-              />
-            </div>
-          </div>
-
           <!-- Card: Lokasi Penyimpanan -->
           <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="p-5">
@@ -187,6 +146,37 @@
             </div>
           </div>
 
+          <!-- Card: Berita Acara (Upload) -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="p-5">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload file berita acara penataan arsip.</p>
+            </div>
+            <div class="px-5 pb-5">
+              <FileUpload
+                v-model="beritaAcaraFiles"
+                accept=".pdf,.jpg,.png"
+                label="Pilih atau seret file berita acara"
+                description="PDF, JPG, PNG (max 5MB)"
+              />
+              <!-- Preview Berita Acara -->
+              <div v-if="beritaAcaraPreview" class="mt-3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <iframe
+                  v-if="beritaAcaraPreviewType === 'pdf'"
+                  :src="beritaAcaraPreview"
+                  class="w-full h-96 border-none"
+                  title="Preview Berita Acara"
+                />
+                <img
+                  v-else
+                  :src="beritaAcaraPreview"
+                  alt="Preview Berita Acara"
+                  class="w-full max-w-sm h-48 object-contain bg-gray-50 dark:bg-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+
           <!-- Card: Foto Dokumentasi -->
           <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="p-5">
@@ -194,33 +184,15 @@
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload foto dokumentasi arsip (opsional).</p>
             </div>
             <div class="px-5 pb-5">
-              <!-- File terpilih: nama dokumen + tombol hapus -->
-              <div v-if="fotoFiles.length > 0" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span class="w-9 h-9 rounded-lg bg-[#457fb6]/10 text-[#457fb6] flex items-center justify-center shrink-0">
-                    <UIcon name="i-lucide-image" class="w-5 h-5" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-white truncate">{{ fotoFiles[0].name }}</p>
-                    <p class="text-xs text-gray-500">{{ (fotoFiles[0].size / 1024).toFixed(1) }} KB</p>
-                  </div>
-                </div>
-                <button
-                  @click="removeFoto"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shrink-0"
-                  title="Hapus file"
-                >
-                  <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-              <!-- Card upload (muncul saat belum ada file) -->
               <FileUpload
-                v-else
                 v-model="fotoFiles"
                 accept="image/*"
                 label="Pilih atau seret foto dokumentasi"
                 description="JPG, PNG (max 5MB)"
               />
+              <div v-if="fotoPreview" class="mt-3">
+                <img :src="fotoPreview" alt="Preview foto" class="w-full max-w-xs h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-600" />
+              </div>
             </div>
           </div>
 
@@ -245,28 +217,7 @@
             <!-- Upload Berita Acara Serah Terima -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Berita Acara Serah Terima <span class="text-red-500">*</span></label>
-              <!-- File terpilih: nama dokumen + tombol hapus -->
-              <div v-if="beritaAcaraFiles.length > 0" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span class="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
-                    <UIcon :name="beritaAcaraPreviewType === 'pdf' ? 'i-lucide-file-text' : 'i-lucide-image'" class="w-5 h-5" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-white truncate">{{ beritaAcaraFiles[0].name }}</p>
-                    <p class="text-xs text-gray-500">{{ (beritaAcaraFiles[0].size / 1024).toFixed(1) }} KB</p>
-                  </div>
-                </div>
-                <button
-                  @click="removeBeritaAcara"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shrink-0"
-                  title="Hapus file"
-                >
-                  <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-              <!-- Card upload (muncul saat belum ada file) -->
               <FileUpload
-                v-else
                 v-model="beritaAcaraFiles"
                 accept=".pdf,.jpg,.png"
                 label="Pilih atau seret file berita acara"
@@ -274,23 +225,14 @@
               />
             </div>
 
-            <div class="flex items-center gap-3">
-              <NuxtLink
-                to="/maintenance/penyusutan/penataan-pemusnahan"
-                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Batal
-              </NuxtLink>
-              <button
-                @click="submitPemusnahan"
-                :disabled="submitting || beritaAcaraFiles.length === 0"
-                class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-                <UIcon v-else name="i-lucide-flame" class="w-4 h-4" />
-                Musnahkan
-              </button>
-            </div>
+            <button
+              @click="submitPemusnahan"
+              :disabled="submitting || beritaAcaraFiles.length === 0"
+              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+              Lanjutkan Pemusnahan
+            </button>
           </div>
         </div>
 
@@ -460,85 +402,10 @@
               <UIcon name="i-lucide-info" class="w-4 h-4 shrink-0" />
               Arsip telah dipindahkan ke database backup. Arsip asli tidak dapat dilihat lagi.
             </p>
-            <button
-              v-if="!item.isBackedUp"
-              @click="openBackupModal"
-              :disabled="submitting"
-              class="inline-flex items-center gap-2 px-5 py-2.5 mt-4 text-sm font-medium rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-              Lanjut Backup Data
-            </button>
-          </div>
-
-          <!-- Info Backup Permanen -->
-          <div v-if="item.jenis_penyusutan === 'permanen' && !item.isBackedUp" class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-900 p-4">
-            <p class="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
-              <UIcon name="i-lucide-info" class="w-4 h-4 shrink-0" />
-              Arsip permanen dapat dibackup ke database arsip. Master berkas tetap tersimpan di database utama.
-            </p>
-            <button
-              @click="openBackupModal"
-              :disabled="submitting"
-              class="inline-flex items-center gap-2 px-5 py-2.5 mt-4 text-sm font-medium rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-              Lanjut Backup Data
-            </button>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Modal Konfirmasi Backup Data -->
-    <Teleport to="body">
-      <div v-if="showBackupModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="showBackupModal = false" />
-        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full z-10">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Backup Data</h3>
-            <button @click="showBackupModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-              <UIcon name="i-lucide-x" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="p-6 space-y-4">
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              <template v-if="item?.jenis_penyusutan === 'permanen'">
-                Backup akan memindahkan data berkas ke database arsip. Master berkas tetap tersimpan di database utama (permanen). Lanjutkan?
-              </template>
-              <template v-else>
-                Backup akan memindahkan data berkas ke database arsip. Master berkas akan dihapus dari database utama. Tabel transaksi tetap tersimpan. Lanjutkan?
-              </template>
-            </p>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                Catatan <span class="text-gray-400 font-normal">(opsional)</span>
-              </label>
-              <textarea
-                v-model="backupCatatan"
-                rows="3"
-                placeholder="Catatan untuk backup data..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-              />
-            </div>
-          </div>
-          <div class="flex justify-start gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
-            <button
-              @click="showBackupModal = false"
-              class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >Batal</button>
-            <button
-              @click="submitBackupData"
-              :disabled="submitting"
-              class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-              Ya, Lanjutkan
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -546,7 +413,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
-import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
@@ -554,9 +420,8 @@ definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
 const toast = useToast()
-const { user } = useAuth()
 const { apiGet, apiPost } = useApi()
-const { fetchById, simpanPenataan, pemusnahan, updateFotoDokumentasi, updateBeritaAcara, backupData } = usePenyusutan()
+const { fetchById, simpanPenataan, pemusnahan, updateFotoDokumentasi, updateBeritaAcara } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -575,32 +440,6 @@ const beritaAcaraPreviewType = ref<'pdf' | 'image'>('pdf')
 const fotoFiles = ref<File[]>([])
 const fotoPreview = ref('')
 const submitting = ref(false)
-const showBackupModal = ref(false)
-const backupCatatan = ref('')
-
-/** Buka modal konfirmasi backup data. */
-const openBackupModal = () => {
-  backupCatatan.value = ''
-  showBackupModal.value = true
-}
-
-/** Hapus file berita acara yang dipilih — card upload muncul kembali. */
-const removeBeritaAcara = () => {
-  beritaAcaraFiles.value = []
-  beritaAcaraPreview.value = ''
-}
-
-/** Hapus file foto dokumentasi yang dipilih — card upload muncul kembali. */
-const removeFoto = () => {
-  fotoFiles.value = []
-  fotoPreview.value = ''
-}
-
-/** True jika user login adalah pemilik (TU) dari pengajuan ini. */
-const isOwner = computed(() => {
-  if (!item.value || !user.value) return false
-  return Number(item.value.tuPersnum) === Number(user.value.persnum)
-})
 
 // ── Edit Foto Dokumentasi (setelah selesai) ──
 const showEditFoto = ref(false)
@@ -673,6 +512,7 @@ const saveFotoDokumentasi = async () => {
 }
 
 const item = ref<ArsipPenyusutan | null>(null)
+const backupData = computed(() => null)
 
 // Split lokasi_simpan into parts for display
 const lokasiParts = computed(() => {
@@ -718,7 +558,7 @@ const formatDate = (dateStr: string | null | undefined) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { diterima: 'Disetujui', selesai: 'Selesai', diajukan: 'Menunggu Persetujuan', ditolak: 'Ditolak' }
+  const map: Record<string, string> = { diterima: 'Diterima', selesai: 'Selesai', diajukan: 'Diajukan', ditolak: 'Ditolak' }
   return map[status] ?? status
 }
 
@@ -891,12 +731,10 @@ const submitPemusnahan = async () => {
       beritaAcaraPath = await uploadFile(beritaAcaraFiles.value[0])
     }
     await pemusnahan(item.value.id, { beritaAcara: beritaAcaraPath ?? '' })
-    toast.add({ title: 'Berhasil', description: 'Arsip berhasil dimusnahkan dan dibackup ke database arsip.', color: 'success' })
+    toast.add({ title: 'Berhasil', description: 'Arsip berhasil dimusnahkan.', color: 'success' })
     // Reload detail + fetch fresh file URLs
     item.value = await fetchById(route.params.id as string)
     await loadFileUrls()
-    // Redirect ke halaman status backup data
-    navigateTo('/maintenance/penyusutan/backup-status')
   } catch (e: any) {
     toast.add({ title: 'Gagal', description: e?.message || 'Gagal memusnahkan arsip', color: 'error' })
   } finally {
@@ -904,38 +742,8 @@ const submitPemusnahan = async () => {
   }
 }
 
-/** Lanjut backup data — pindahkan berkas ke DB arsip, lalu hapus master dari DB inti. */
-const submitBackupData = async () => {
-  if (!item.value) return
-  showBackupModal.value = false
-  submitting.value = true
-  try {
-    await backupData(item.value.id, { catatan: backupCatatan.value || undefined })
-    toast.add({ title: 'Berhasil', description: 'Data berhasil dibackup.', color: 'success' })
-    // Reload detail — status menjadi SELESAI
-    item.value = await fetchById(route.params.id as string)
-    await loadFileUrls()
-    // Redirect ke halaman status backup data
-    navigateTo('/maintenance/penyusutan/backup-status')
-  } catch (e: any) {
-    toast.add({ title: 'Gagal', description: e?.response?.data?.message || e?.message || 'Gagal membackup data arsip', color: 'error' })
-  } finally {
-    submitting.value = false
-  }
-}
-
 onMounted(async () => {
   item.value = await fetchById(route.params.id as string)
-  if (item.value && !isOwner.value) {
-    // Endpoint tidak boleh diakses — redirect ke beranda.
-    useToast().add({
-      title: 'Akses Ditolak',
-      description: 'Anda tidak memiliki akses ke halaman ini.',
-      color: 'error',
-    })
-    navigateTo('/beranda')
-    return
-  }
   await loadFileUrls()
 })
 </script>
