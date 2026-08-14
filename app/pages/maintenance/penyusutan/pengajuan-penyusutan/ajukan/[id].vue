@@ -576,9 +576,9 @@ const stepIndex = computed(() => {
 const steps = computed(() => {
   const jenis = item.value?.jenis_penyusutan ?? 'permanen'
   return [
-    { key: 'draft', step: 0, label: 'Draft', desc: 'Arsip inaktif dan retensi habis' },
+    { key: 'draft', step: 0, label: 'Draft', desc: 'Unit Dokumen menyiapkan usulan penyusutan' },
     { key: 'diajukan', step: 1, label: 'Menunggu Persetujuan', desc: 'Telah diajukan ke Atasan Managerial Unit Dokumen' },
-    { key: 'diterima', step: 2, label: 'Disetujui', desc: 'Atasan Managerial Unit Dokumen menyetujui penyusutan' },
+    { key: 'diterima', step: 2, label: 'Diterima', desc: 'Atasan Managerial menerima penyusutan' },
     { key: 'selesai', step: 3, label: 'Selesai', desc: jenis === 'permanen' ? 'Arsip telah disimpan (dipermanenkan)' : 'Arsip telah dimusnahkan' },
   ]
 })
@@ -604,7 +604,7 @@ const formatDate = (dateStr: string | null | undefined) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 

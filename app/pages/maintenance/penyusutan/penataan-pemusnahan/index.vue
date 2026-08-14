@@ -129,7 +129,7 @@
                 </td>
                 <td class="px-3 py-3">{{ item.klasifikasi }}</td>
                 <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </td>
@@ -139,7 +139,6 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -157,7 +156,7 @@
                     <NuxtLink
                       v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors"
                       title="Pemusnahan"
                     >
                       <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
@@ -214,7 +213,7 @@ const klasifikasiRef = ref<HTMLElement | null>(null)
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'diterima', label: 'Disetujui' },
+  { value: 'diterima', label: 'Diterima' },
   { value: 'selesai', label: 'Selesai' },
 ]
 
@@ -261,7 +260,7 @@ const paginatedList = computed(() => {
 })
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { diterima: 'Disetujui', selesai: 'Selesai', diajukan: 'Menunggu Persetujuan', ditolak: 'Ditolak' }
+  const map: Record<string, string> = { diterima: 'Diterima', selesai: 'Selesai', diajukan: 'Diajukan', ditolak: 'Ditolak' }
   return map[status] ?? status
 }
 

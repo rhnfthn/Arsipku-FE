@@ -60,7 +60,6 @@ export interface ArsipPenyusutan {
   keterangan?: string | null;
   foto_dokumentasi?: string | null;
   fotoDokumentasi?: string | null;
-  isBackedUp?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
