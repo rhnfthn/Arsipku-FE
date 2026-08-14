@@ -41,35 +41,26 @@
 
           <!-- Daftar Arsip (Naskah) -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              Daftar Arsip
-              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ item.daftar_arsip?.length ?? 0 }}</span>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
+              Daftar Arsip (Naskah) ({{ item.daftar_arsip?.length ?? 0 }})
             </h3>
-            <div v-if="item.daftar_arsip?.length" class="space-y-1.5">
+            <div class="space-y-1.5">
               <div
                 v-for="(a, idx) in item.daftar_arsip"
-                :key="a.id || idx"
+                :key="idx"
                 class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
               >
                 <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm text-gray-900 dark:text-white truncate">
                     <span v-if="a.kode" class="font-mono text-xs text-gray-500">{{ a.kode }}</span>
-                    <span v-if="a.kode"> — </span>
-                    {{ a.nama }}
+                    — {{ a.nama }}
                   </p>
                 </div>
-                <NuxtLink
-                  :to="`/maintenance/preview-berkas/${a.id}?from=penyusutan`"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
-                  title="Lihat detail berkas"
-                >
-                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                </NuxtLink>
               </div>
-            </div>
-            <div v-else class="text-sm text-gray-400 italic py-2">
-              Tidak ada arsip
+              <div v-if="!item.daftar_arsip?.length" class="text-sm text-gray-400 italic py-2">
+                Tidak ada arsip
+              </div>
             </div>
           </div>
 
@@ -162,12 +153,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
-import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchById } = usePenyusutan()
+const { list, loading, loadData } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -175,7 +165,7 @@ const breadcrumbs = computed(() => [
   { label: 'Detail Pengajuan', to: `/maintenance/penyusutan/pengajuan-penyusutan/detail/${route.params.id}` },
 ])
 
-const item = ref<ArsipPenyusutan | null>(null)
+const item = computed(() => list.value.find((a) => a.id === route.params.id) ?? null)
 
 /** Mapping status → index step (0-3). */
 const stepIndex = computed(() => {
@@ -244,7 +234,7 @@ const stepTextClass = (step: number): string => {
   return 'text-gray-400'
 }
 
-const formatDate = (dateStr: string | null | undefined) => {
+const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -266,7 +256,9 @@ const statusBadgeClass = (status: string) => {
   return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
-onMounted(async () => {
-  item.value = await fetchById(route.params.id as string)
+onMounted(() => {
+  if (list.value.length === 0) {
+    loadData()
+  }
 })
 </script>
