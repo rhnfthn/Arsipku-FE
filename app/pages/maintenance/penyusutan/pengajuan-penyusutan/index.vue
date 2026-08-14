@@ -148,10 +148,7 @@
                   <div class="font-medium text-gray-800 dark:text-white">{{ item.kode_berkas }}</div>
                   <div v-if="item.no_usulan" class="text-[11px] text-gray-400">{{ item.no_usulan }}</div>
                 </td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.klasifikasiText || item.klasifikasi_text || item.klasifikasi || '-' }}</div>
-                  <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
-                </td>
+                <td class="px-3 py-3">{{ item.klasifikasi }}</td>
                 <td class="px-3 py-3">
                   <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
@@ -163,6 +160,7 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
+                      v-if="item.status !== 'draft'"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -210,7 +208,7 @@ import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
-const { loadData: loadPenyusutan, list: penyusutanList } = usePenyusutan()
+const { list: dummyList, loading, loadData } = usePenyusutan()
 const { fetchPenataanList } = useTuVerifikasi()
 const { apiGet } = useApi()
 
@@ -371,24 +369,16 @@ onMounted(() => {
   loadPenataanData().finally(() => { isLoading.value = false })
 })
 
-/** Ambil data pengajuan penyusutan dari API + arsip tersedia dari penataan
- *  (status SELESAI, belum diajukan penyusutan). */
+/** Ambil data arsip dari halaman Penataan Arsip Inaktif (status SELESAI)
+ *  + gabungkan dengan data dummy (banyak status). Arsip dari penataan
+ *  di-set statusnya menjadi "draft" agar bisa diajukan. */
 const loadPenataanData = async () => {
   try {
-    // 1. Load pengajuan penyusutan dari API (sudah diajukan)
-    await loadPenyusutan()
-    const pengajuan = JSON.parse(JSON.stringify(penyusutanList.value))
+    // 1. Load data dummy (banyak status)
+    await loadData()
+    const dummy = JSON.parse(JSON.stringify(dummyList.value))
 
-    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan aktif
-    // (bukan SELESAI/DITOLAK) agar tidak duplikat dengan data penataan.
-    const sudahDiajukanBerkasIds = new Set(
-      pengajuan
-        .filter((p: any) => p.status !== 'selesai' && p.status !== 'ditolak')
-        .map((p: any) => p.berkasId ?? p.berkas_id)
-        .filter(Boolean)
-    )
-
-    // 2. Ambil data penataan status SELESAI (arsip yang bisa diajukan penyusutan)
+    // 2. Ambil data penataan status SELESAI
     const res: any = await fetchPenataanList({
       status: 'SELESAI',
       page: 1,
@@ -398,45 +388,38 @@ const loadPenataanData = async () => {
     const items = payload?.data || []
 
     // Map data penataan ke format ArsipPenyusutan, status diubah jadi "draft"
-    // FILTER: hanya arsip yang BELUM punya pengajuan penyusutan aktif
-    const penataan = items
-      .filter((d: any) => {
-        const berkasId = d.arsipIds?.[0]?.id ?? d.arsipId ?? d.id
-        return !sudahDiajukanBerkasIds.has(berkasId)
-      })
-      .map((d: any) => ({
-        id: d.id,
-        no_usulan: d.nomorUsulan ?? '',
-        kode_berkas: d.arsipKode ?? '',
-        nama_berkas: d.arsipPerihal ?? '',
-        klasifikasi: d.arsipKlasifikasiKode ?? '',
-        klasifikasiText: d.arsipKlasifikasi ?? '',
-        sekretaris: d.sekretarisName ?? '',
-        atasan_managerial: [],
-        status: 'draft',
-        jenis_penyusutan: 'permanen',
-        lokasi_simpan: d.lokasiPenataan ?? null,
-        tanggal_retensi_habis: d.tanggalRetensiAktifHabis ?? '',
-        tanggal_pengajuan: null,
-        catatan: d.keterangan ?? '',
-        keterangan: d.keterangan ?? null,
-        daftar_arsip: (d.arsipIds && Array.isArray(d.arsipIds) ? d.arsipIds : []).map((a: any) => ({
-          id: a.id ?? '',
-          nama: a.perihal ?? '',
-          kode: a.kode ?? '',
-        })),
-        foto_dokumentasi: d.fotoPenataan ?? null,
-        berita_acara: d.beritaAcaraUrl ?? null,
-        current_verifikator_urutan: 1,
-        berkasId: d.arsipIds?.[0]?.id ?? d.arsipId ?? d.id,
-      }))
+    const penataan = items.map((d: any) => ({
+      id: d.id,
+      no_usulan: d.nomorUsulan ?? '',
+      kode_berkas: d.arsipKode ?? '',
+      nama_berkas: d.arsipPerihal ?? '',
+      klasifikasi: d.arsipKlasifikasi ?? '',
+      sekretaris: d.sekretarisName ?? '',
+      atasan_managerial: [],
+      status: 'draft',
+      jenis_penyusutan: 'permanen',
+      lokasi_simpan: d.lokasiPenataan ?? null,
+      tanggal_retensi_habis: d.tanggalRetensiAktifHabis ?? '',
+      tanggal_pengajuan: null,
+      catatan: d.keterangan ?? '',
+      keterangan: d.keterangan ?? null,
+      daftar_arsip: (d.arsipIds && Array.isArray(d.arsipIds) ? d.arsipIds : []).map((a: any) => ({
+        id: a.id ?? '',
+        nama: a.perihal ?? '',
+        kode: a.kode ?? '',
+      })),
+      foto_dokumentasi: d.fotoPenataan ?? null,
+      berita_acara: d.beritaAcaraUrl ?? null,
+      current_verifikator_urutan: 1,
+    }))
 
-    // Gabungkan: pengajuan dari API (sudah diajukan) + penataan (status draft, belum diajukan)
-    list.value = [...pengajuan, ...penataan]
+    // Gabungkan: dummy dulu, lalu penataan (status draft)
+    list.value = [...dummy, ...penataan]
   } catch (e) {
-    console.error('Gagal memuat data penyusutan:', e)
-    // Fallback: hanya pengajuan dari API
-    list.value = JSON.parse(JSON.stringify(penyusutanList.value))
+    console.error('Gagal memuat data penataan:', e)
+    // Fallback ke dummy data jika API gagal
+    await loadData()
+    list.value = JSON.parse(JSON.stringify(dummyList.value))
   }
 }
 
