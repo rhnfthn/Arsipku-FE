@@ -193,6 +193,50 @@ const route = useRoute();
 const { apiGet } = useApi();
 const { getBerkasById, getDaftarNaskah, getNaskahDetailInBerkas } = useArsipDinamis();
 
+// ── Dummy naskah (demo) — untuk preview-berkas dummy dari pengajuan penyusutan ──
+const DUMMY_NASKAH: Record<string, any> = {
+  'dummy-naskah-001': {
+    judulBerkas: 'Dummy Berkas Keuangan 2026',
+    kodeBerkas: 'DUMMY-ARK-001',
+    klasifikasi: 'KEU.01.01',
+    klasifikasiText: 'Laporan Keuangan',
+    isiRingkas: 'Dummy data laporan keuangan untuk demo penyusutan.',
+    naskah: [
+      { id: 'dummy-naskah-001', naskahId: 'dummy-naskah-001', naskahTipe: 'ND', nomorSurat: 'ND-001', perihal: 'Laporan Keuangan Q1 2026', tanggalNaskah: '2026-03-31', sumber: 'terkirim', urutan: 1, status: 'final' },
+    ],
+  },
+  'dummy-naskah-002': {
+    judulBerkas: 'Dummy Berkas Keuangan 2026',
+    kodeBerkas: 'DUMMY-ARK-001',
+    klasifikasi: 'KEU.01.01',
+    klasifikasiText: 'Laporan Keuangan',
+    isiRingkas: 'Dummy data laporan keuangan untuk demo penyusutan.',
+    naskah: [
+      { id: 'dummy-naskah-002', naskahId: 'dummy-naskah-002', naskahTipe: 'ND', nomorSurat: 'ND-002', perihal: 'Laporan Keuangan Q2 2026', tanggalNaskah: '2026-06-30', sumber: 'terkirim', urutan: 1, status: 'final' },
+    ],
+  },
+  'dummy-naskah-003': {
+    judulBerkas: 'Dummy Berkas SDM 2026',
+    kodeBerkas: 'DUMMY-ARK-002',
+    klasifikasi: 'SDM.02.03',
+    klasifikasiText: 'Data Kepegawaian',
+    isiRingkas: 'Dummy data kepegawaian untuk demo penyusutan.',
+    naskah: [
+      { id: 'dummy-naskah-003', naskahId: 'dummy-naskah-003', naskahTipe: 'ND', nomorSurat: 'SDM-101', perihal: 'Data Pegawai 2025', tanggalNaskah: '2025-12-31', sumber: 'terkirim', urutan: 1, status: 'final' },
+    ],
+  },
+  'dummy-naskah-004': {
+    judulBerkas: 'Dummy Berkas SDM 2026',
+    kodeBerkas: 'DUMMY-ARK-002',
+    klasifikasi: 'SDM.02.03',
+    klasifikasiText: 'Data Kepegawaian',
+    isiRingkas: 'Dummy data kepegawaian untuk demo penyusutan.',
+    naskah: [
+      { id: 'dummy-naskah-004', naskahId: 'dummy-naskah-004', naskahTipe: 'ND', nomorSurat: 'SDM-102', perihal: 'Data Pegawai 2026', tanggalNaskah: '2026-06-30', sumber: 'terkirim', urutan: 1, status: 'final' },
+    ],
+  },
+};
+
 const nomorUsulan = computed(() => (route.query.nomor_usulan as string) || '');
 const usulanId = computed(() => (route.query.usulan_id as string) || '');
 
@@ -325,11 +369,77 @@ const formatDate = (dateStr: string) => {
 onMounted(async () => {
   loading.value = true;
   try {
-    const res: any = await getBerkasById(route.params.id as string);
-    berkas.value = res?.data ?? res;
-    const naskahRes: any = await getDaftarNaskah(route.params.id as string, { limit: 50 });
-    const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
-    naskahList.value = Array.isArray(raw) ? raw : [];
+    const id = route.params.id as string;
+
+    // 0. Dummy naskah (demo) — tampilkan data dummy tanpa fetch API
+    if (DUMMY_NASKAH[id]) {
+      const d = DUMMY_NASKAH[id];
+      berkas.value = {
+        id,
+        judulBerkas: d.judulBerkas,
+        kodeBerkas: d.kodeBerkas,
+        klasifikasi: d.klasifikasi,
+        klasifikasiTeks: d.klasifikasiText,
+        isiRingkas: d.isiRingkas,
+        status: 'draft',
+      };
+      naskahList.value = d.naskah;
+      return;
+    }
+
+    // 1. Coba fetch dari DB inti (arsip-dinamis). Jika gagal (mis. berkas
+    //    sudah soft-deleted karena musnah), lanjut ke fallback DB arsip.
+    try {
+      const res: any = await getBerkasById(id);
+      berkas.value = res?.data ?? res;
+      const naskahRes: any = await getDaftarNaskah(id, { limit: 50 });
+      const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
+      naskahList.value = Array.isArray(raw) ? raw : [];
+    } catch (e) {
+      console.warn('Berkas tidak ditemukan di DB inti, coba DB arsip:', e);
+      berkas.value = null;
+    }
+
+    // Jika berkas tidak ditemukan di DB inti (sudah soft-deleted, mis. musnah),
+    // fallback ke DB arsip (arsipku_arsip_local) agar tetap bisa dilihat.
+    if (!berkas.value) {
+      try {
+        const arsipRes: any = await apiGet(`/api/arsip/berkas/${id}`, {}, { skipCache: true });
+        // Backend: { success, data: { status, data: { berkas, naskah } } }
+        const arsipData = arsipRes?.data?.data ?? arsipRes?.data ?? arsipRes;
+        const arsipBerkas = arsipData?.berkas;
+        if (arsipBerkas) {
+          berkas.value = {
+            id: arsipBerkas.source_berkas_id,
+            judulBerkas: arsipBerkas.judul_berkas,
+            kodeBerkas: arsipBerkas.kode_berkas,
+            klasifikasi: arsipBerkas.klasifikasi,
+            klasifikasiTeks: arsipBerkas.klasifikasi_text,
+            retensiAktifTahun: arsipBerkas.retensi_aktif_tahun,
+            retensiInaktifTahun: arsipBerkas.retensi_inaktif_tahun,
+            tindakanPenyusutanAkhir: arsipBerkas.tindakan_penyusutan_akhir,
+            isiRingkas: arsipBerkas.isi_ringkas,
+            tanggalDibuat: arsipBerkas.tanggal_dibuat,
+            tanggalDitutup: arsipBerkas.tanggal_ditutup,
+            status: arsipBerkas.status_akhir,
+          };
+          naskahList.value = (arsipData?.naskah ?? []).map((n: any) => ({
+            id: n.id,
+            naskahId: n.naskahId,
+            naskahTipe: n.naskahTipe,
+            nomorSurat: n.nomorSurat,
+            perihal: n.perihal,
+            tanggalNaskah: n.tanggalNaskah,
+            sumber: n.sumber,
+            urutan: n.urutan,
+            final_pdf: n.finalPdf,
+            status: n.status,
+          }));
+        }
+      } catch (e) {
+        console.error('Gagal memuat berkas dari DB arsip:', e);
+      }
+    }
 
     // Jika ada usulan_id, ambil status usulan untuk override status berkas
     const usulanId = (route.query.usulan_id as string) || '';

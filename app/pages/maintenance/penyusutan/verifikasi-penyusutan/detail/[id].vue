@@ -38,7 +38,7 @@
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis Penyusutan</span>
                 <p class="mt-0.5">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </p>
@@ -150,28 +150,177 @@
 
       <!-- Tombol Aksi -->
       <div class="flex items-center gap-3 mt-5">
-        <NuxtLink
-          v-if="item.status === 'diajukan'"
-          :to="`/maintenance/penyusutan/verifikasi-penyusutan/tindak-lanjuti/${item.id}`"
+        <button
+          v-if="item.status === 'diajukan' && isCurrentVerifikator"
+          @click="openRejectModal"
+          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+        >
+          <UIcon name="i-lucide-x" class="w-4 h-4" /> Tolak
+        </button>
+        <button
+          v-if="item.status === 'diajukan' && isCurrentVerifikator"
+          @click="openTindakLanjutiModal"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
         >
           <UIcon name="i-lucide-file-check-2" class="w-4 h-4" /> Tindak Lanjuti
+        </button>
+        <NuxtLink
+          v-if="item.status === 'diterima' && isFirstVerifikator && !handedOver"
+          :to="`/maintenance/penyusutan/verifikasi-penyusutan`"
+          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          Batal
         </NuxtLink>
+        <button
+          v-if="item.status === 'diterima' && isFirstVerifikator && !handedOver"
+          @click="openHandoverModal"
+          :class="item.jenis_penyusutan === 'permanen' ? 'bg-[#457fb6] hover:bg-[#3a6d9c]' : 'bg-red-500 hover:bg-red-600'"
+          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-white transition-colors"
+        >
+          <UIcon :name="item.jenis_penyusutan === 'permanen' ? 'i-lucide-archive' : 'i-lucide-trash-2'" class="w-4 h-4" />
+          {{ item.jenis_penyusutan === 'permanen' ? 'Penataan' : 'Musnah' }}
+        </button>
       </div>
     </template>
+
+    <!-- Modal Konfirmasi Serah Terima ke Unit Dokumen -->
+    <Teleport to="body">
+      <div v-if="showHandoverModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="showHandoverModal = false" />
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full z-10">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Serah Terima</h3>
+            <button @click="showHandoverModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6 space-y-4">
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Apakah Anda yakin ingin menyerahkan pengajuan ini ke Unit Dokumen untuk
+              {{ item?.jenis_penyusutan === 'permanen' ? 'penataan' : 'pemusnahan' }}?
+            </p>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Catatan <span class="text-gray-400 font-normal">(opsional)</span>
+              </label>
+              <textarea
+                v-model="handoverCatatan"
+                rows="3"
+                placeholder="Catatan untuk Unit Dokumen..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+              />
+            </div>
+          </div>
+          <div class="flex justify-start gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+            <button
+              @click="showHandoverModal = false"
+              class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Batal</button>
+            <button
+              @click="submitHandover"
+              :disabled="submitting"
+              class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+              Ya, Serahkan
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal Konfirmasi Tindak Lanjuti -->
+    <Teleport to="body">
+      <div v-if="showTindakLanjutiModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="showTindakLanjutiModal = false" />
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full z-10">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Tindak Lanjuti</h3>
+            <button @click="showTindakLanjutiModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Apakah Anda yakin ingin menindaklanjuti pengajuan penyusutan ini?
+            </p>
+          </div>
+          <div class="flex justify-start gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+            <button
+              @click="showTindakLanjutiModal = false"
+              class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Batal</button>
+            <NuxtLink
+              :to="`/maintenance/penyusutan/verifikasi-penyusutan/tindak-lanjuti/${item?.id}`"
+              class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+            >
+              Ya, Lanjutkan
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal Konfirmasi Penolakan -->
+    <Teleport to="body">
+      <div v-if="showRejectModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="showRejectModal = false" />
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full z-10">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Penolakan</h3>
+            <button @click="showRejectModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6 space-y-4">
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Apakah Anda yakin ingin menolak pengajuan penyusutan ini? Pengajuan akan dikembalikan ke Unit Dokumen dengan status ditolak.
+            </p>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Alasan Penolakan <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                v-model="rejectCatatan"
+                rows="3"
+                placeholder="Alasan penolakan..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+              />
+            </div>
+          </div>
+          <div class="flex justify-start gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+            <button
+              @click="showRejectModal = false"
+              class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Batal</button>
+            <button
+              @click="submitReject"
+              :disabled="submitting || !rejectCatatan.trim()"
+              class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+              Ya, Tolak
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
+import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchById } = usePenyusutan()
+const router = useRouter()
+const { user } = useAuth()
+const { fetchById, verifyPenyusutan } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -181,6 +330,102 @@ const breadcrumbs = computed(() => [
 
 const item = ref<ArsipPenyusutan | null>(null)
 const itemLoading = ref(false)
+const submitting = ref(false)
+const showTindakLanjutiModal = ref(false)
+const showRejectModal = ref(false)
+const rejectCatatan = ref('')
+const showHandoverModal = ref(false)
+const handedOver = ref(false)
+const handoverCatatan = ref('')
+
+/** Buka modal konfirmasi serah terima ke Unit Dokumen. */
+const openHandoverModal = () => {
+  handoverCatatan.value = ''
+  showHandoverModal.value = true
+}
+
+/** Konfirmasi serah terima — tandai sudah diserahkan, tombol aksi hilang. */
+const submitHandover = async () => {
+  if (!item.value) return
+  submitting.value = true
+  try {
+    // Tandai sudah diserahkan ke Unit Dokumen (persist per item).
+    const key = `penyusutan_handed_over_${item.value.id}`
+    localStorage.setItem(key, '1')
+    handedOver.value = true
+    showHandoverModal.value = false
+    useToast().add({
+      title: 'Berhasil',
+      description: `Pengajuan diserahkan ke Unit Dokumen untuk ${item.value.jenis_penyusutan === 'permanen' ? 'penataan' : 'pemusnahan'}.`,
+      color: 'success',
+    })
+  } catch (e: any) {
+    useToast().add({
+      title: 'Gagal',
+      description: e?.message || 'Gagal menyerahkan pengajuan',
+      color: 'error',
+    })
+  } finally {
+    submitting.value = false
+  }
+}
+
+/** True jika user login adalah verifikator yang sedang giliran (urutan = current_verifikator_urutan). */
+const isCurrentVerifikator = computed(() => {
+  if (!item.value || !user.value) return false
+  const userPersnum = Number(user.value.persnum)
+  const currentUrutan = item.value.current_verifikator_urutan ?? item.value.currentVerifikatorUrutan ?? 1
+  const level = (item.value.atasan_managerial ?? []).find((v) => v.urutan === currentUrutan)
+  if (!level) return false
+  return Number(level.persnum) === userPersnum
+})
+
+/** True jika user login adalah verifikator pertama (urutan 1). */
+const isFirstVerifikator = computed(() => {
+  if (!item.value || !user.value) return false
+  const userPersnum = Number(user.value.persnum)
+  const first = (item.value.atasan_managerial ?? []).find((v) => v.urutan === 1)
+  if (!first) return false
+  return Number(first.persnum) === userPersnum
+})
+
+/** Buka modal konfirmasi tindak lanjuti. */
+const openTindakLanjutiModal = () => {
+  showTindakLanjutiModal.value = true
+}
+
+/** Buka modal konfirmasi penolakan. */
+const openRejectModal = () => {
+  rejectCatatan.value = ''
+  showRejectModal.value = true
+}
+
+/** Kirim penolakan ke backend. */
+const submitReject = async () => {
+  if (!item.value) return
+  if (!rejectCatatan.value.trim()) return
+  submitting.value = true
+  try {
+    await verifyPenyusutan(item.value.id, false, {
+      catatan: rejectCatatan.value.trim(),
+    })
+    showRejectModal.value = false
+    useToast().add({
+      title: 'Berhasil',
+      description: 'Pengajuan ditolak dan dikembalikan ke Unit Dokumen.',
+      color: 'success',
+    })
+    router.push('/maintenance/penyusutan/verifikasi-penyusutan')
+  } catch (e: any) {
+    useToast().add({
+      title: 'Gagal',
+      description: e?.message || 'Gagal menolak pengajuan penyusutan',
+      color: 'error',
+    })
+  } finally {
+    submitting.value = false
+  }
+}
 
 /** Mapping status → index step (0-3). */
 const stepIndex = computed(() => {
@@ -196,9 +441,9 @@ const stepIndex = computed(() => {
 const steps = computed(() => {
   const jenis = item.value?.jenis_penyusutan ?? 'permanen'
   return [
-    { key: 'draft', step: 0, label: 'Draft', desc: 'Unit Dokumen menyiapkan usulan penyusutan' },
+    { key: 'draft', step: 0, label: 'Draft', desc: 'Arsip inaktif dan retensi habis' },
     { key: 'diajukan', step: 1, label: 'Menunggu Persetujuan', desc: 'Telah diajukan ke Atasan Managerial Unit Dokumen' },
-    { key: 'diterima', step: 2, label: 'Diterima', desc: 'Atasan Managerial menerima penyusutan' },
+    { key: 'diterima', step: 2, label: 'Disetujui', desc: 'Atasan Managerial Unit Dokumen menyetujui penyusutan' },
     { key: 'selesai', step: 3, label: 'Selesai', desc: jenis === 'permanen' ? 'Arsip telah disimpan (dipermanenkan)' : 'Arsip telah dimusnahkan' },
   ]
 })
@@ -224,7 +469,7 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 
@@ -258,6 +503,10 @@ onMounted(async () => {
   itemLoading.value = true
   try {
     item.value = await fetchById(route.params.id as string)
+    if (item.value) {
+      const key = `penyusutan_handed_over_${item.value.id}`
+      handedOver.value = localStorage.getItem(key) === '1'
+    }
   } finally {
     itemLoading.value = false
   }

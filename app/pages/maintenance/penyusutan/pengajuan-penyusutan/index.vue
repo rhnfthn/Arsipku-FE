@@ -153,7 +153,7 @@
                   <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
                 </td>
                 <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </td>
@@ -163,6 +163,7 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
+                      v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -198,6 +199,71 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Detail Naskah Dummy -->
+    <Teleport to="body">
+      <div v-if="showNaskahModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="closeNaskahModal" />
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full z-10">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Naskah</h3>
+            <button @click="closeNaskahModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div v-if="activeNaskah" class="p-6 space-y-4">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Kode Berkas</span>
+              <span class="font-medium text-gray-800 dark:text-white">{{ activeNaskah.kode_berkas }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Nama Berkas</span>
+              <span class="font-medium text-gray-800 dark:text-white">{{ activeNaskah.nama_berkas }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Jenis</span>
+              <span class="font-medium text-gray-800 dark:text-white">{{ activeNaskah.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Status</span>
+              <span :class="statusBadgeClass(activeNaskah.status)" class="text-[11px]">{{ statusLabel(activeNaskah.status) }}</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Daftar Naskah</p>
+              <div class="space-y-1.5">
+                <div
+                  v-for="(n, idx) in activeNaskah.daftar_arsip"
+                  :key="n.id || idx"
+                  class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                >
+                  <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-gray-900 dark:text-white truncate">
+                      <span v-if="n.kode" class="font-mono text-xs text-gray-500">{{ n.kode }}</span>
+                      <span v-if="n.kode"> — </span>
+                      {{ n.nama }}
+                    </p>
+                  </div>
+                  <button
+                    @click="alert(`Detail naskah: ${n.nama}`)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
+                    title="Lihat naskah"
+                  >
+                    <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+            <button
+              @click="closeNaskahModal"
+              class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Tutup</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -215,6 +281,58 @@ const { fetchPenataanList } = useTuVerifikasi()
 const { apiGet } = useApi()
 
 const list = ref<ArsipPenyusutan[]>([])
+
+// ── Dummy data penyusutan (status DRAFT) dengan detail naskah ──
+const DUMMY_PENYUSUTAN: ArsipPenyusutan[] = [
+  {
+    id: 'dummy-001',
+    no_usulan: 'PEN/DUMMY/001/2026',
+    kode_berkas: 'DUMMY-ARK-001',
+    nama_berkas: 'Dummy Berkas Keuangan 2026',
+    klasifikasi: 'KEU.01.01',
+    klasifikasiText: 'Laporan Keuangan',
+    sekretaris: 'IKA OCTAFIA SAPUTRI',
+    jenis_penyusutan: 'permanen',
+    status: 'draft',
+    atasan_managerial: [],
+    daftar_arsip: [
+      { id: 'dummy-naskah-001', nama: 'Laporan Keuangan Q1 2026', kode: 'ND-001' },
+      { id: 'dummy-naskah-002', nama: 'Laporan Keuangan Q2 2026', kode: 'ND-002' },
+    ],
+    tanggal_pengajuan: null,
+  },
+  {
+    id: 'dummy-002',
+    no_usulan: 'PEN/DUMMY/002/2026',
+    kode_berkas: 'DUMMY-ARK-002',
+    nama_berkas: 'Dummy Berkas SDM 2026',
+    klasifikasi: 'SDM.02.03',
+    klasifikasiText: 'Data Kepegawaian',
+    sekretaris: 'IKA OCTAFIA SAPUTRI',
+    jenis_penyusutan: 'musnah',
+    status: 'draft',
+    atasan_managerial: [],
+    daftar_arsip: [
+      { id: 'dummy-naskah-003', nama: 'Data Pegawai 2025', kode: 'SDM-101' },
+      { id: 'dummy-naskah-004', nama: 'Data Pegawai 2026', kode: 'SDM-102' },
+    ],
+    tanggal_pengajuan: null,
+  },
+]
+
+// ── Modal detail naskah dummy ──
+const showNaskahModal = ref(false)
+const activeNaskah = ref<any>(null)
+
+const openNaskahDetail = (naskah: any) => {
+  activeNaskah.value = naskah
+  showNaskahModal.value = true
+}
+
+const closeNaskahModal = () => {
+  showNaskahModal.value = false
+  activeNaskah.value = null
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -257,8 +375,8 @@ const fetchKlasifikasi = async () => {
 const statusOptions = [
   { value: '', label: 'Semua Status' },
   { value: 'draft', label: 'Draft' },
-  { value: 'diajukan', label: 'Diajukan' },
-  { value: 'diterima', label: 'Diterima' },
+  { value: 'diajukan', label: 'Menunggu Persetujuan' },
+  { value: 'diterima', label: 'Disetujui' },
   { value: 'ditolak', label: 'Ditolak' },
   { value: 'selesai', label: 'Selesai' },
 ]
@@ -303,7 +421,7 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 
@@ -432,7 +550,7 @@ const loadPenataanData = async () => {
       }))
 
     // Gabungkan: pengajuan dari API (sudah diajukan) + penataan (status draft, belum diajukan)
-    list.value = [...pengajuan, ...penataan]
+    list.value = [...pengajuan, ...penataan, ...DUMMY_PENYUSUTAN]
   } catch (e) {
     console.error('Gagal memuat data penyusutan:', e)
     // Fallback: hanya pengajuan dari API
