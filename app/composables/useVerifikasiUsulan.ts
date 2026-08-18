@@ -114,6 +114,14 @@ export const useVerifikasiUsulan = () => {
       delete params.page;
       delete params.limit;
 
+      // Simpan filter client-side sebelum dikirim ke BE (BE tidak mendukung filter ini)
+      const filterKlasifikasi = params.klasifikasi;
+      const filterStatus = params.status;
+      const filterSearch = params.search;
+      delete params.klasifikasi;
+      delete params.status;
+      delete params.search;
+
       // Ambil semua data dari backend (limit besar) untuk filter DRAFT di frontend
       params.limit = 999;
 
@@ -138,9 +146,6 @@ export const useVerifikasiUsulan = () => {
 
       // Gabungkan dan normalisasi, filter DRAFT dan usulan milik sendiri
       const userPersnum = user.value?.persnum;
-      const filterKlasifikasi = params.klasifikasi;
-      const filterStatus = params.status;
-      const filterSearch = params.search;
       const combined: VerifikasiUsulanItem[] = [];
       for (const r of results) {
         for (const raw of r.data) {
