@@ -5,6 +5,9 @@
       <div class="mb-6">
         <Heading variant="heading6b" class="text-mobile-md">Verifikasi Penyusutan</Heading>
         <PageHeader :items="breadcrumbs" />
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Daftar pengajuan penyusutan dari unit dokumen yang menunggu verifikasi atasan managerial TU.
+        </p>
       </div>
 
       <!-- Filter & Search -->
@@ -28,7 +31,17 @@
           </div>
         </div>
 
-        <!-- Filter Status -->
+        <div class="relative flex-1 min-w-[200px]">
+          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            v-model="searchInput"
+            type="text"
+            placeholder="Cari kode/nama berkas..."
+            class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+            @input="onSearchInput"
+          />
+        </div>
+
         <div ref="statusRef" class="relative shrink-0 z-30">
           <button
             @click="statusOpen = !statusOpen"
@@ -47,69 +60,6 @@
             >{{ opt.label }}</button>
           </div>
         </div>
-
-        <!-- Filter Klasifikasi -->
-        <div ref="klasifikasiRef" class="relative shrink-0 z-30">
-          <button
-            @click="klasifikasiOpen = !klasifikasiOpen"
-            class="h-10 w-[180px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
-          >
-            <span class="truncate">{{ klasifikasiLabel }}</span>
-            <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': klasifikasiOpen }" />
-          </button>
-          <div v-if="klasifikasiOpen" class="absolute top-full left-0 mt-1.5 z-50 min-w-[180px] max-h-56 overflow-y-auto bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
-            <button
-              @click="filterKlasifikasi = ''; page = 1; klasifikasiOpen = false"
-              :class="['w-full text-left px-4 py-2 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', filterKlasifikasi === '' ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600']"
-            >Semua Klasifikasi</button>
-            <button
-              v-for="k in klasifikasiList"
-              :key="k"
-              @click="filterKlasifikasi = k; page = 1; klasifikasiOpen = false"
-              :class="['w-full text-left px-4 py-2 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', filterKlasifikasi === k ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600']"
-            >{{ k }}</button>
-          </div>
-        </div>
-
-        <!-- Filter Jenis Penyusutan -->
-        <div ref="jenisRef" class="relative shrink-0 z-30">
-          <button
-            @click="jenisOpen = !jenisOpen"
-            class="h-10 w-[150px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
-          >
-            <span class="truncate">{{ jenisOptions.find(o => o.value === filterJenis)?.label ?? 'Semua Jenis' }}</span>
-            <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': jenisOpen }" />
-          </button>
-          <div v-if="jenisOpen" class="absolute top-full left-0 mt-1.5 z-50 min-w-[150px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
-            <button
-              v-for="opt in jenisOptions"
-              :key="opt.value"
-              @click="filterJenis = opt.value; page = 1; jenisOpen = false"
-              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-              :class="filterJenis === opt.value ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200'"
-            >{{ opt.label }}</button>
-          </div>
-        </div>
-
-        <!-- Search -->
-        <div class="relative flex-1 min-w-[200px]">
-          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            v-model="searchInput"
-            type="text"
-            placeholder="Cari kode/nama berkas..."
-            class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-            @input="onSearchInput"
-          />
-        </div>
-
-        <!-- Export -->
-        <button
-          @click="onExport"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shrink-0"
-        >
-          <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
-        </button>
       </div>
 
       <!-- Table -->
@@ -118,11 +68,11 @@
           <table class="w-full text-sm">
             <thead class="bg-[#457fb6] text-white">
               <tr>
-                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
+                <th class="px-3 py-3 text-center font-semibold">No</th>
                 <th class="px-3 py-3 text-center font-semibold">Kode Berkas / No Usulan</th>
+                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
                 <th class="px-3 py-3 text-center font-semibold">Pengusul</th>
-                <th class="px-3 py-3 text-center font-semibold">Klasifikasi</th>
-                <th class="px-3 py-3 text-center font-semibold">Jenis</th>
+                <th class="px-3 py-3 text-center font-semibold">Jenis Penyusutan</th>
                 <th class="px-3 py-3 text-center font-semibold">Status</th>
                 <th class="px-3 py-3 text-center font-semibold">Aksi</th>
               </tr>
@@ -139,46 +89,50 @@
                 </td>
               </tr>
               <tr
-                v-for="item in paginatedList"
+                v-for="(item, index) in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
-                <td class="px-3 py-3">{{ item.nama_berkas }}</td>
-                <td class="px-3 py-3">
+                <td class="px-3 py-3 text-center">{{ (page - 1) * limit + index + 1 }}</td>
+                <td class="px-3 py-3 text-center">
                   <div class="font-medium text-gray-800 dark:text-white">{{ item.kode_berkas }}</div>
                   <div v-if="item.no_usulan" class="text-[11px] text-gray-400">{{ item.no_usulan }}</div>
                 </td>
-                <td class="px-3 py-3">{{ item.sekretaris }}</td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.klasifikasiText || item.klasifikasi_text || item.klasifikasi || '-' }}</div>
-                  <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
-                </td>
-                <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                <td class="px-3 py-3">{{ item.nama_berkas }}</td>
+                <td class="px-3 py-3 text-center">{{ item.sekretaris }}</td>
+                <td class="px-3 py-3 text-center">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </td>
-                <td class="px-3 py-3">
+                <td class="px-3 py-3 text-center">
                   <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
                 </td>
                 <td class="px-3 py-3">
                   <div class="flex items-center justify-center gap-1.5">
-                    <NuxtLink
-                      v-if="item.status === 'selesai'"
-                      :to="`/maintenance/penyusutan/verifikasi-penyusutan/detail/${item.id}`"
+                    <button
+                      @click="openDetail(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                    </NuxtLink>
-                    <NuxtLink
-                      v-if="item.status === 'diajukan' && isCurrentVerifikator(item)"
-                      :to="`/maintenance/penyusutan/verifikasi-penyusutan/tindak-lanjuti/${item.id}`"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
-                      title="Tindak Lanjuti"
+                    </button>
+                    <button
+                      v-if="item.status === 'diajukan'"
+                      @click="openVerifyModal(item, true)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors"
+                      title="Setuju"
                     >
-                      <UIcon name="i-lucide-file-check-2" class="w-4 h-4" />
-                    </NuxtLink>
+                      <UIcon name="i-lucide-check" class="w-4 h-4" />
+                    </button>
+                    <button
+                      v-if="item.status === 'diajukan'"
+                      @click="openVerifyModal(item, false)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      title="Tolak"
+                    >
+                      <UIcon name="i-lucide-x" class="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -272,13 +226,9 @@
             <template v-if="showVerifyForm">
               <button
                 @click="submitVerify"
-                :disabled="submitting"
-                :class="verifyAction ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'"
-                class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
-              >
-                <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-                {{ verifyAction ? 'Setuju' : 'Tolak' }}
-              </button>
+                :class="verifyAction ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+                class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+              >{{ verifyAction ? 'Setuju' : 'Tolak' }}</button>
             </template>
             <template v-else>
               <button
@@ -289,7 +239,7 @@
               <button
                 v-if="detailArsip?.status === 'diajukan'"
                 @click="showVerifyForm = true; verifyAction = false"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
               >Tolak</button>
             </template>
           </div>
@@ -303,13 +253,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
-import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
-const { user } = useAuth()
-const { verifikasiList, loadVerifikasiList, verifyPenyusutan } = usePenyusutan()
+const { list, loading, loadData, verifyPenyusutan } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -318,21 +266,14 @@ const breadcrumbs = computed(() => [
 ])
 
 const isLoading = ref(false)
-const submitting = ref(false)
 const page = ref(1)
 const limit = ref(10)
 const searchInput = ref('')
 const filterStatus = ref('')
-const filterKlasifikasi = ref('')
-const filterJenis = ref('')
 const pageSizeOpen = ref(false)
 const statusOpen = ref(false)
-const klasifikasiOpen = ref(false)
-const jenisOpen = ref(false)
 const pageSizeRef = ref<HTMLElement | null>(null)
 const statusRef = ref<HTMLElement | null>(null)
-const klasifikasiRef = ref<HTMLElement | null>(null)
-const jenisRef = ref<HTMLElement | null>(null)
 
 const showDetailModal = ref(false)
 const detailArsip = ref<ArsipPenyusutan | null>(null)
@@ -342,53 +283,23 @@ const verifyCatatan = ref('')
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'diajukan', label: 'Menunggu Persetujuan' },
-  { value: 'diterima', label: 'Disetujui' },
+  { value: 'diajukan', label: 'Diajukan' },
+  { value: 'diterima', label: 'Diterima' },
   { value: 'ditolak', label: 'Ditolak' },
 ]
 
-const jenisOptions = [
-  { value: '', label: 'Semua Jenis' },
-  { value: 'permanen', label: 'Permanen' },
-  { value: 'musnah', label: 'Musnah' },
-]
-
-const klasifikasiList = computed(() => {
-  const seen = new Set<string>()
-  const result: string[] = []
-  for (const a of verifikasiList.value) {
-    if (a.klasifikasi && !seen.has(a.klasifikasi)) {
-      seen.add(a.klasifikasi)
-      result.push(a.klasifikasi)
-    }
-  }
-  return result
-})
-
-const klasifikasiLabel = computed(() => {
-  if (!filterKlasifikasi.value) return 'Semua Klasifikasi'
-  return filterKlasifikasi.value
-})
-
 const filteredList = computed(() => {
-  let result = verifikasiList.value
+  let result = list.value.filter((a) => a.atasan_managerial.length > 0)
   if (searchInput.value) {
     const q = searchInput.value.toLowerCase()
     result = result.filter((a) =>
-      (a.kode_berkas ?? '').toLowerCase().includes(q) ||
-      (a.nama_berkas ?? '').toLowerCase().includes(q) ||
-      (a.sekretaris ?? '').toLowerCase().includes(q) ||
-      (a.no_usulan ?? '').toLowerCase().includes(q)
+      a.kode_berkas.toLowerCase().includes(q) ||
+      a.nama_berkas.toLowerCase().includes(q) ||
+      a.sekretaris.toLowerCase().includes(q)
     )
   }
   if (filterStatus.value) {
     result = result.filter((a) => a.status === filterStatus.value)
-  }
-  if (filterKlasifikasi.value) {
-    result = result.filter((a) => a.klasifikasi === filterKlasifikasi.value)
-  }
-  if (filterJenis.value) {
-    result = result.filter((a) => a.jenis_penyusutan === filterJenis.value)
   }
   return result
 })
@@ -407,7 +318,7 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 
@@ -435,16 +346,6 @@ const verifikatorBadgeClass = (status: string) => {
   return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
-/** True jika user login adalah verifikator yang sedang giliran (urutan = current_verifikator_urutan). */
-const isCurrentVerifikator = (item: ArsipPenyusutan) => {
-  if (!item || !user.value) return false
-  const userPersnum = Number(user.value.persnum)
-  const currentUrutan = item.current_verifikator_urutan ?? item.currentVerifikatorUrutan ?? 1
-  const level = (item.atasan_managerial ?? []).find((v) => v.urutan === currentUrutan)
-  if (!level) return false
-  return Number(level.persnum) === userPersnum
-}
-
 const onSearchInput = () => {
   clearTimeout((window as any).__penyusutanDebounce3)
   ;(window as any).__penyusutanDebounce3 = setTimeout(() => { page.value = 1 }, 400)
@@ -452,22 +353,6 @@ const onSearchInput = () => {
 
 const onPageChange = (p: number) => { page.value = p }
 const onLimitChange = (l: number) => { limit.value = l; page.value = 1 }
-
-const onExport = () => {
-  if (filteredList.value.length === 0) { alert('Tidak ada data untuk diexport'); return }
-  const headers = ['No', 'Nama Berkas', 'Kode Berkas', 'No Usulan', 'Pengusul', 'Klasifikasi', 'Jenis', 'Status']
-  const rows = filteredList.value.map((r, i) => [
-    i + 1, r.nama_berkas ?? '', r.kode_berkas ?? '', r.no_usulan ?? '', r.sekretaris ?? '', r.klasifikasi ?? '', r.jenis_penyusutan ?? '', statusLabel(r.status),
-  ])
-  const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `verifikasi-penyusutan-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
 const openDetail = (item: ArsipPenyusutan) => {
   detailArsip.value = item
@@ -484,45 +369,32 @@ const openVerifyModal = (item: ArsipPenyusutan, disetujui: boolean) => {
   showDetailModal.value = true
 }
 
-const submitVerify = async () => {
+const submitVerify = () => {
   if (!detailArsip.value) return
-  submitting.value = true
-  try {
-    await verifyPenyusutan(detailArsip.value.id, verifyAction.value, {
-      catatan: verifyCatatan.value || undefined,
-    })
-    showDetailModal.value = false
-    useToast().add({
-      title: 'Berhasil',
-      description: verifyAction.value ? 'Pengajuan disetujui.' : 'Pengajuan ditolak.',
-      color: 'success',
-    })
-    // Reload list
-    isLoading.value = true
-    loadVerifikasiList().finally(() => { isLoading.value = false })
-  } catch (e: any) {
-    useToast().add({
-      title: 'Gagal',
-      description: e?.message || 'Gagal verifikasi penyusutan',
-      color: 'error',
-    })
-  } finally {
-    submitting.value = false
-  }
+  // Simulasi: verifikator yang sedang giliran (current_verifikator_urutan)
+  const currentVerifikator = detailArsip.value.atasan_managerial.find(
+    (v) => v.urutan === detailArsip.value!.current_verifikator_urutan
+  )
+  if (!currentVerifikator) return
+  verifyPenyusutan(detailArsip.value.id, currentVerifikator.persnum, verifyAction.value, verifyCatatan.value)
+  showDetailModal.value = false
+  useToast().add({
+    title: 'Berhasil',
+    description: verifyAction.value ? 'Pengajuan disetujui.' : 'Pengajuan ditolak.',
+    color: 'success',
+  })
 }
 
 const onClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement
   if (pageSizeRef.value && !pageSizeRef.value.contains(target)) pageSizeOpen.value = false
   if (statusRef.value && !statusRef.value.contains(target)) statusOpen.value = false
-  if (klasifikasiRef.value && !klasifikasiRef.value.contains(target)) klasifikasiOpen.value = false
-  if (jenisRef.value && !jenisRef.value.contains(target)) jenisOpen.value = false
 }
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   isLoading.value = true
-  loadVerifikasiList().finally(() => { isLoading.value = false })
+  loadData().finally(() => { isLoading.value = false })
 })
 
 onBeforeUnmount(() => {
