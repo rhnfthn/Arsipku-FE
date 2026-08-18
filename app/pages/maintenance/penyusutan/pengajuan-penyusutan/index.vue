@@ -388,14 +388,14 @@ const loadPenataanData = async () => {
         .filter(Boolean)
     )
 
-    // 2. Ambil data penataan status SELESAI (arsip yang bisa diajukan penyusutan)
-    const res: any = await fetchPenataanList({
-      status: 'SELESAI',
-      page: 1,
-      limit: 100,
-    })
+    // 2. Ambil data transfer status SELESAI (arsip yang bisa diajukan penyusutan)
+    //    Gunakan endpoint /transfer-active-to-inactive (tanpa TuGuard) agar
+    //    semua user yang login bisa mengakses, bukan hanya TU.
+    const res: any = await apiGet('/transfer-active-to-inactive', {
+      params: { status: 'SELESAI', limit: 100 },
+    }, { skipCache: true })
     const payload = res?.data ?? res
-    const items = payload?.data || []
+    const items = Array.isArray(payload) ? payload : (payload?.data || [])
 
     // Map data penataan ke format ArsipPenyusutan, status diubah jadi "draft"
     // FILTER: hanya arsip yang BELUM punya pengajuan penyusutan aktif
