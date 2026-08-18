@@ -18,7 +18,10 @@ const routePermissions: Record<string, string> = {
   '/korespondensi/tertunda': 'utama.tertunda:read',
   '/korespondensi/tulis/disposisi': 'utama.tulis.disposisi:read',
   '/korespondensi/tulis/kajian': 'utama.tulis.kajian:read',
-  '/korespondensi/tulis/naskah-umum': 'utama.tulis.naskah-lainnya:read',
+  '/naskah-lainnya': 'utama.tulis.naskah-lainnya:read',
+  '/naskah-lainnya/tulis': 'utama.tulis.naskah-lainnya:read',
+  '/naskah-lainnya/persetujuan': 'utama.tulis.naskah-lainnya:read',
+  '/naskah-lainnya/draf': 'utama.draft:read',
   '/korespondensi/tulis/nota-dinas': 'utama.tulis.nota-dinas:read',
   '/korespondensi/tulis/surat-dinas-eksternal': 'utama.tulis.surat-dinas-eksternal:read',
   '/korespondensi/tulis/surat-dinas-internal': 'utama.tulis.surat-dinas-internal:read',
@@ -106,7 +109,17 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   // Master data — sub-pages inherit parent permission
   { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
+  { pattern: /^\/naskah-lainnya\/[^/]+(?:\/[^/]+)?$/, perm: 'utama.tulis.naskah-lainnya:read' },
 ];
+
+/**
+ * Akses Naskah Lainnya berdasarkan position_status. Mirror BE helper
+ * (canAccessNaskahLainnya). SE/VI/EXT ditolak; lainnya allow.
+ */
+const NASKAH_LAINNYA_BLOCKED_STATUSES = new Set(['SE', 'VI', 'EXT']);
+export function canAccessNaskahLainnya(positionStatus: string | null | undefined): boolean {
+  return !(positionStatus && NASKAH_LAINNYA_BLOCKED_STATUSES.has(positionStatus));
+}
 
 export function useFeatureAccess() {
   const auth = useAuth();
@@ -146,6 +159,14 @@ export function useFeatureAccess() {
   };
 
   const canAccessPage = (path?: string): boolean => {
+    // Gate position_status untuk Naskah Lainnya (SE/VI/EXT blocked) — sebelum cek permission
+    const p = path ?? useRoute().path;
+    if (
+      p.startsWith('/naskah-lainnya') &&
+      !canAccessNaskahLainnya(auth.user.value?.position_status)
+    ) {
+      return false;
+    }
     const perm = currentRoutePermission(path);
     if (!perm) return true;
     return hasPermission(perm.resource, perm.action);

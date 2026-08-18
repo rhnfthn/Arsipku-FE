@@ -204,9 +204,20 @@ export const useAuth = () => {
   // ============================================================
 
   const hasPermission = (resource: string, action: string): boolean => {
+    // Superadmin bypass — punya semua permission
+    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
+    if (role === 'SUPERADMIN') return true;
     const perms = user.value?.activePermissions || [];
     return perms.some(
-      (p: ActivePermission) => p.resource === resource && p.actions.includes(action)
+      (p: ActivePermission) => {
+        // Match: exact, parent→child (user punya parent, FE cek child),
+        // atau child→parent (user punya child, FE cek parent)
+        const resourceMatch =
+          p.resource === resource ||
+          resource.startsWith(p.resource + '.') ||  // parent mencakup child
+          p.resource.startsWith(resource + '.');     // child mencakup parent
+        return resourceMatch && p.actions.includes(action);
+      }
     );
   };
 
