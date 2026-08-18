@@ -39,67 +39,28 @@
             </div>
           </div>
 
-          <!-- Atasan Managerial Berjenjang -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <UIcon name="i-lucide-users" class="w-4 h-4 text-primary-500" /> Atasan Managerial Berjenjang
-            </h3>
-            <div class="space-y-2">
-              <div
-                v-for="(v, i) in item.atasan_managerial"
-                :key="i"
-                class="flex items-center justify-between rounded-lg p-3"
-                :class="v.status === 'DISETUJUI' || v.status === 'disetujui' ? 'bg-green-50 dark:bg-green-900/20 ring-1 ring-green-200 dark:ring-green-800' : v.status === 'DITOLAK' || v.status === 'ditolak' ? 'bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800' : 'bg-gray-50 dark:bg-gray-700/50'"
-              >
-                <div class="flex items-center gap-3">
-                  <span
-                    :class="v.status === 'DISETUJUI' || v.status === 'disetujui' ? 'bg-green-500' : v.status === 'DITOLAK' || v.status === 'ditolak' ? 'bg-red-500' : 'bg-[#457fb6]'"
-                    class="w-7 h-7 rounded-full text-white text-xs flex items-center justify-center font-medium"
-                  >{{ v.urutan }}</span>
-                  <div>
-                    <p class="text-sm font-medium text-gray-800 dark:text-white">{{ v.name }}</p>
-                    <p class="text-xs text-gray-500">{{ v.jabatan || v.positionText || '-' }}</p>
-                  </div>
-                </div>
-                <span :class="verifikatorBadgeClass(v.status)" class="text-[11px]">{{ verifikatorLabel(v.status) }}</span>
-              </div>
-              <div v-if="!item.atasan_managerial?.length" class="text-sm text-gray-400 italic py-2">
-                Tidak ada verifikator
-              </div>
-            </div>
-          </div>
-
           <!-- Daftar Arsip (Naskah) -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              Daftar Arsip
-              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ item.daftar_arsip?.length ?? 0 }}</span>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
+              Daftar Arsip (Naskah) ({{ item.daftar_arsip?.length ?? 0 }})
             </h3>
-            <div v-if="item.daftar_arsip?.length" class="space-y-1.5">
+            <div class="space-y-1.5">
               <div
                 v-for="(a, idx) in item.daftar_arsip"
-                :key="a.id || idx"
+                :key="idx"
                 class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
               >
                 <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm text-gray-900 dark:text-white truncate">
                     <span v-if="a.kode" class="font-mono text-xs text-gray-500">{{ a.kode }}</span>
-                    <span v-if="a.kode"> — </span>
-                    {{ a.nama }}
+                    — {{ a.nama }}
                   </p>
                 </div>
-                <NuxtLink
-                  :to="`/maintenance/preview-berkas/${a.id}?from=penyusutan`"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
-                  title="Lihat detail berkas"
-                >
-                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                </NuxtLink>
               </div>
-            </div>
-            <div v-else class="text-sm text-gray-400 italic py-2">
-              Tidak ada arsip
+              <div v-if="!item.daftar_arsip?.length" class="text-sm text-gray-400 italic py-2">
+                Tidak ada arsip
+              </div>
             </div>
           </div>
 
@@ -192,12 +153,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
-import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-const { fetchById } = usePenyusutan()
+const { list, loading, loadData } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -205,7 +165,7 @@ const breadcrumbs = computed(() => [
   { label: 'Detail Pengajuan', to: `/maintenance/penyusutan/pengajuan-penyusutan/detail/${route.params.id}` },
 ])
 
-const item = ref<ArsipPenyusutan | null>(null)
+const item = computed(() => list.value.find((a) => a.id === route.params.id) ?? null)
 
 /** Mapping status → index step (0-3). */
 const stepIndex = computed(() => {
@@ -226,7 +186,7 @@ const steps = computed(() => {
       key: 'draft',
       step: 0,
       label: 'Draft',
-      desc: 'Arsip inaktif dan retensi habis',
+      desc: 'Unit Dokumen menyiapkan usulan penyusutan',
     },
     {
       key: 'diajukan',
@@ -237,8 +197,8 @@ const steps = computed(() => {
     {
       key: 'diterima',
       step: 2,
-      label: 'Disetujui',
-      desc: 'Atasan Managerial Unit Dokumen menyetujui penyusutan',
+      label: 'Diterima',
+      desc: 'Atasan Managerial menerima penyusutan',
     },
     {
       key: 'selesai',
@@ -274,14 +234,14 @@ const stepTextClass = (step: number): string => {
   return 'text-gray-400'
 }
 
-const formatDate = (dateStr: string | null | undefined) => {
+const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Menunggu Persetujuan', diterima: 'Disetujui', ditolak: 'Ditolak', selesai: 'Selesai' }
+  const map: Record<string, string> = { draft: 'Draft', diajukan: 'Diajukan', diterima: 'Diterima', ditolak: 'Ditolak', selesai: 'Selesai' }
   return map[status] ?? status
 }
 
@@ -296,22 +256,9 @@ const statusBadgeClass = (status: string) => {
   return map[status] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
-const verifikatorLabel = (status: string) => {
-  const map: Record<string, string> = { MENUNGGU: 'Menunggu', DISETUJUI: 'Disetujui', DITOLAK: 'Ditolak', menunggu: 'Menunggu', disetujui: 'Disetujui', ditolak: 'Ditolak' }
-  return map[status] ?? status
-}
-
-const verifikatorBadgeClass = (status: string) => {
-  const s = (status ?? '').toUpperCase()
-  const map: Record<string, string> = {
-    MENUNGGU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-    DISETUJUI: 'px-2 py-0.5 rounded-full font-medium bg-green-500 text-white',
-    DITOLAK: 'px-2 py-0.5 rounded-full font-medium bg-red-500 text-white',
+onMounted(() => {
+  if (list.value.length === 0) {
+    loadData()
   }
-  return map[s] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-}
-
-onMounted(async () => {
-  item.value = await fetchById(route.params.id as string)
 })
 </script>

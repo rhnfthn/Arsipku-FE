@@ -25,8 +25,7 @@ export const useTuVerifikasi = () => {
   };
 
   const fetchNotifikasiDetail = async (id: string) => {
-    const res = await apiGet<any>(`/tu/notifikasi-usulan/${id}`);
-    return (res?.data ?? res) as TuUsulanItem;
+    return await apiGet<TuUsulanItem>(`/tu/notifikasi-usulan/${id}`);
   };
 
   const fetchAtasanTuOptions = async () => {
@@ -55,8 +54,7 @@ export const useTuVerifikasi = () => {
   };
 
   const fetchAtasanTuDetail = async (id: string) => {
-    const res = await apiGet<any>(`/atasan-tu/verifikasi-persetujuan/${id}`);
-    return (res?.data ?? res) as TuUsulanItem;
+    return await apiGet<TuUsulanItem>(`/atasan-tu/verifikasi-persetujuan/${id}`);
   };
 
   const setujuiPenerimaan = async (id: string, payload: SetujuiPenerimaanPayload) => {
@@ -90,8 +88,7 @@ export const useTuVerifikasi = () => {
   };
 
   const fetchPenataanDetail = async (id: string) => {
-    const res = await apiGet<any>(`/tu/penataan-arsip/${id}`);
-    return (res?.data ?? res) as TuUsulanItem;
+    return await apiGet<TuUsulanItem>(`/tu/penataan-arsip/${id}`);
   };
 
   const selesaiPenataan = async (id: string, payload: SelesaiPenataanPayload) => {
