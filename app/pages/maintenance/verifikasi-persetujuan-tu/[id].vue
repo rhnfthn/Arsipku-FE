@@ -700,7 +700,7 @@ const loadDetail = async () => {
   loading.value = true
   try {
     const res = await fetchAtasanTuDetail(route.params.id as string)
-    item.value = res?.data ?? res
+    item.value = res ?? null
     catatanVerifikasi.value = item.value?.physicalVerificationNote ?? ''
     await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()])
   } catch (e: any) {
