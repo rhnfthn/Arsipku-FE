@@ -1,7 +1,7 @@
 <template>
   <div class="overflow-x-auto">
     <table class="min-w-full border-collapse text-sm">
-        <thead class="bg-primary dark:bg-primary-700 text-white text-left">
+        <thead class="bg-primary dark:bg-primary-700 text-white text-center">
           <tr>
             <th class="px-4 py-3 font-semibold">Nama Berkas</th>
             <th class="px-4 py-3 font-semibold">Kode Berkas / No. Usulan</th>
@@ -9,7 +9,7 @@
             <th class="px-4 py-3 font-semibold">Sekretaris</th>
             <th class="px-4 py-3 font-semibold">Status</th>
             <th class="px-4 py-3 font-semibold">Tanggal</th>
-            <th class="px-4 py-3 font-semibold text-center">Aksi</th>
+            <th class="px-4 py-3 font-semibold">Aksi</th>
           </tr>
         </thead>
         <tbody>
