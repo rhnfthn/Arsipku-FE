@@ -52,6 +52,34 @@
           </Transition>
         </div>
 
+        <!-- FILTER KLASIFIKASI -->
+        <div class="relative" data-custom-dropdown>
+          <button
+            type="button"
+            @click.stop="toggleFilterKlasifikasi"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
+          >
+            <span class="truncate">{{ klasifikasiLabel }}</span>
+            <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': openFilterKlasifikasi }" />
+          </button>
+          <Transition name="filter-dd">
+            <div v-if="openFilterKlasifikasi" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto">
+              <button
+                type="button"
+                @click.stop="selectFilterKlasifikasi('')"
+                :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', modelValue.klasifikasi === '' ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+              >Semua Klasifikasi</button>
+              <button
+                v-for="k in klasifikasiList"
+                :key="k.klasifikasi"
+                type="button"
+                @click.stop="selectFilterKlasifikasi(k.klasifikasi)"
+                :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', modelValue.klasifikasi === k.klasifikasi ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+              >{{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}</button>
+            </div>
+          </Transition>
+        </div>
+
         <!-- SEARCH -->
         <div class="relative flex-1 min-w-[180px]">
           <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -79,21 +107,41 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
+import { useApi } from '~/composables/useApi';
 import type { VerifikasiFilter, VerifikasiStatus } from '~/types/verifikasi-usulan';
 
 const props = defineProps<{ modelValue: VerifikasiFilter }>();
 const emit = defineEmits<{ 'update:modelValue': [v: VerifikasiFilter]; apply: []; export: [] }>();
 
+const { apiGet } = useApi();
+
 const openRowsPerPage = ref(false);
 const openFilterStatus = ref(false);
+const openFilterKlasifikasi = ref(false);
+
+const klasifikasiList = ref<any[]>([]);
+
+const fetchKlasifikasi = async () => {
+  try {
+    const data: any = await apiGet('/arsip-dinamis/klasifikasi', {}, { skipCache: true });
+    klasifikasiList.value = Array.isArray(data) ? data : (data?.data ?? []);
+  } catch (e) {
+    console.error('Gagal memuat klasifikasi:', e);
+  }
+};
+
+const klasifikasiLabel = computed(() => {
+  if (!props.modelValue.klasifikasi) return 'Semua Klasifikasi';
+  const k = klasifikasiList.value.find((x: any) => x.klasifikasi === props.modelValue.klasifikasi);
+  return k ? `${k.klasifikasi} — ${k.klasifikasi_text || ''}` : 'Semua Klasifikasi';
+});
 
 const statusOptions: { value: VerifikasiStatus; label: string }[] = [
+  { value: 'DRAFT', label: 'Draft' },
   { value: 'MENUNGGU_VERIFIKASI_ATASAN', label: 'Menunggu Persetujuan' },
-  { value: 'DISETUJUI_ATASAN', label: 'Menunggu Verifikasi (Level Berikutnya)' },
   { value: 'MENUNGGU_VERIFIKASI_TERAKHIR', label: 'Menunggu Verifikasi' },
   { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
   { value: 'SELESAI', label: 'Selesai' },
-  { value: 'DITOLAK_ATASAN', label: 'Ditolak' },
 ];
 
 const statusLabel = computed(() =>
@@ -103,10 +151,17 @@ const statusLabel = computed(() =>
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
   openFilterStatus.value = false;
+  openFilterKlasifikasi.value = false;
 }
 function toggleFilterStatus() {
   openFilterStatus.value = !openFilterStatus.value;
   openRowsPerPage.value = false;
+  openFilterKlasifikasi.value = false;
+}
+function toggleFilterKlasifikasi() {
+  openFilterKlasifikasi.value = !openFilterKlasifikasi.value;
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
 }
 
 function selectRowsPerPage(n: number) {
@@ -120,6 +175,11 @@ function selectFilterStatus(val: string) {
   openFilterStatus.value = false;
   emit('apply');
 }
+function selectFilterKlasifikasi(val: string) {
+  updateField('klasifikasi', val);
+  openFilterKlasifikasi.value = false;
+  emit('apply');
+}
 
 const updateField = (field: keyof VerifikasiFilter, value: any) => {
   emit('update:modelValue', { ...props.modelValue, [field]: value });
@@ -131,11 +191,12 @@ function handleDocumentClick(e: MouseEvent) {
   for (const el of Array.from(els)) {
     if (el.contains(target)) return;
   }
-  openRowsPerPage.value = openFilterStatus.value = false;
+  openRowsPerPage.value = openFilterStatus.value = openFilterKlasifikasi.value = false;
 }
 
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick);
+  fetchKlasifikasi();
 });
 onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick));
 </script>

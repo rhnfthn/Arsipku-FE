@@ -191,6 +191,7 @@
         <template #cell-kodeBerkas="{ row }">
           <div class="truncate font-medium text-gray-700 dark:text-gray-200" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
           <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
+          <div v-else class="text-[11px] text-gray-300 dark:text-gray-500 truncate italic">Belum diusulkan</div>
         </template>
         <template #cell-klasifikasi="{ row }">
           <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
