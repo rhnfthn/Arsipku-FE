@@ -109,7 +109,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/preview-berkas',
     '/maintenance/penyusutan/pengajuan-penyusutan',
     '/maintenance/penyusutan/penataan-pemusnahan',
-    '/maintenance/penyusutan/verifikasi-penyusutan',
   ];
 
   if (role === 'user') {
