@@ -26,6 +26,10 @@
           <p class="text-gray-900 dark:text-white font-medium">{{ usulan.arsipKode ?? '-' }}</p>
         </div>
         <div>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
+          <p class="text-gray-900 dark:text-white font-medium">{{ usulan.arsipKlasifikasi ?? '-' }}</p>
+        </div>
+        <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
           <p class="text-gray-900 dark:text-white font-bold">{{ usulan.atasanName }}</p>
           <p v-if="usulan.totalApprovalLevels && usulan.totalApprovalLevels > 1" class="text-xs text-gray-400 mt-0.5">
@@ -65,7 +69,7 @@
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-        Daftar Arsip yang Akan Dipindahkan ({{ daftarArsip.length }})
+        Daftar Arsip ({{ daftarArsip.length }})
       </h3>
       <div class="space-y-1.5">
         <div
@@ -97,7 +101,7 @@
       v-if="usulan.approvalLevels && usulan.approvalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi (Berjenjang)</h3>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan</h3>
       <div class="space-y-2">
         <div
           v-for="level in usulan.approvalLevels"
