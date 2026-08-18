@@ -243,6 +243,7 @@ const breadcrumbItems = computed(() => {
 
 const berkas = ref<any>(null);
 const naskahList = ref<any[]>([]);
+const isArchived = ref(false);
 const loading = ref(true);
 const usulanStatus = ref<string>('');
 
@@ -260,6 +261,11 @@ const closePdfViewer = () => {
 
 /** Buka PDF naskah dalam viewer full-page (bisa preview & cetak). */
 const openNaskahPdf = async (naskah: any) => {
+  // Jika berkas sudah dimusnahkan/diarsipkan, naskah tidak bisa dibuka
+  if (isArchived.value) {
+    alert('Naskah telah dimusnahkan.');
+    return;
+  }
   // Ambil detail naskah untuk mendapatkan final_pdf_url
   isLoadingPdf.value = true;
   try {
@@ -349,6 +355,7 @@ onMounted(async () => {
         const arsipData = arsipRes?.data?.data ?? arsipRes?.data ?? arsipRes;
         const arsipBerkas = arsipData?.berkas;
         if (arsipBerkas) {
+          isArchived.value = true;
           berkas.value = {
             id: arsipBerkas.source_berkas_id,
             judulBerkas: arsipBerkas.judul_berkas,
