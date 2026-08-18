@@ -179,7 +179,7 @@
         :loading="loading"
         :sort-key="sortKey"
         :sort-dir="sortDir"
-        header-class="bg-primary dark:bg-primary-700 text-white text-left"
+        header-class="bg-primary dark:bg-primary-700 text-white text-center"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
         empty-message="Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini."
@@ -206,7 +206,7 @@
             <!-- Arsip belum jadi usulan → tombol Pindahkan -->
             <button
               v-if="!row.isUsulan && isSekretaris"
-              @click="openCreateModalWithArsip(row)"
+              @click="openCreateModalWithArsip(row as GabunganRow)"
               title="Pindahkan"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -215,7 +215,7 @@
             <!-- Usulan DRAFT → tombol Kirim Usulan -->
             <button
               v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
-              @click="onSendUsulan(row)"
+              @click="onSendUsulan(row as GabunganRow)"
               title="Kirim ke Atasan Managerial"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -224,7 +224,7 @@
             <!-- Usulan sudah dibuat → tombol Detail -->
             <button
               v-else-if="row.isUsulan"
-              @click="openDetail(row)"
+              @click="openDetail(row as GabunganRow)"
               title="Detail"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -297,7 +297,7 @@ const prefillAtasan = ref(true);
 
 // ── Table Columns (dengan sort arrow, menyamakan berkas-saya) ───
 const columns = [
-  { key: 'perihal', label: 'Nama Berkas / Perihal', sortable: true },
+  { key: 'perihal', label: 'Nama Berkas', sortable: true },
   { key: 'kodeBerkas', label: 'Kode Berkas / No. Usulan', sortable: true },
   { key: 'klasifikasi', label: 'Klasifikasi', sortable: true },
   { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', sortable: true },

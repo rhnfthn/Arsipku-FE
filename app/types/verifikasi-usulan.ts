@@ -69,6 +69,12 @@ export interface VerifikasiUsulanItem {
   }>;
   /** True jika user login sedang giliran verifikasi. */
   isCurrentTurn?: boolean;
+  /** Nama TU yang menerima usulan (untuk timeline). */
+  tuName?: string | null;
+  /** Nama atasan TU yang memverifikasi (untuk timeline). */
+  atasanTuName?: string | null;
+  /** Tanggal usulan dikirim ke TU (untuk timeline). */
+  tanggalDikirim?: string | null;
 }
 
 /** Level approval berjenjang (untuk verifikasi-usulan). */

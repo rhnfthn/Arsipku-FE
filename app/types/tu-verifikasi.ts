@@ -12,6 +12,7 @@ export interface TuUsulanItem {
   arsipId: string;
   arsipPerihal: string;
   arsipKode: string | null;
+  arsipKlasifikasi?: string | null;
   tanggalRetensiAktifHabis: string | null;
   arsipIds: Array<{
     id: string;
@@ -82,6 +83,7 @@ export interface TuUsulanListResponse {
 export interface TuFilterParams {
   status?: string;
   search?: string;
+  klasifikasi?: string;
   page?: number;
   limit?: number;
 }
