@@ -137,12 +137,11 @@ const klasifikasiLabel = computed(() => {
 });
 
 const statusOptions: { value: VerifikasiStatus; label: string }[] = [
+  { value: 'DRAFT', label: 'Draft' },
   { value: 'MENUNGGU_VERIFIKASI_ATASAN', label: 'Menunggu Persetujuan' },
-  { value: 'DISETUJUI_ATASAN', label: 'Menunggu Verifikasi (Level Berikutnya)' },
   { value: 'MENUNGGU_VERIFIKASI_TERAKHIR', label: 'Menunggu Verifikasi' },
   { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
   { value: 'SELESAI', label: 'Selesai' },
-  { value: 'DITOLAK_ATASAN', label: 'Ditolak' },
 ];
 
 const statusLabel = computed(() =>
