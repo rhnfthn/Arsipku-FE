@@ -163,7 +163,7 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status === 'selesai'"
+                      v-if="item.status === 'selesai' || (item.status === 'diterima' && item.jenis_penyusutan === 'musnah')"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -380,23 +380,22 @@ const loadPenataanData = async () => {
     await loadPenyusutan()
     const pengajuan = JSON.parse(JSON.stringify(penyusutanList.value))
 
-    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan aktif
-    // (bukan SELESAI/DITOLAK) agar tidak duplikat dengan data penataan.
+    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan (semua status,
+    // termasuk selesai/ditolak) agar tidak duplikat dengan data penataan.
     const sudahDiajukanBerkasIds = new Set(
       pengajuan
-        .filter((p: any) => p.status !== 'selesai' && p.status !== 'ditolak')
         .map((p: any) => p.berkasId ?? p.berkas_id)
         .filter(Boolean)
     )
 
-    // 2. Ambil data penataan status SELESAI (arsip yang bisa diajukan penyusutan)
-    const res: any = await fetchPenataanList({
-      status: 'SELESAI',
-      page: 1,
-      limit: 100,
-    })
+    // 2. Ambil data transfer status SELESAI (arsip yang bisa diajukan penyusutan)
+    //    Gunakan endpoint /transfer-active-to-inactive (tanpa TuGuard) agar
+    //    semua user yang login bisa mengakses, bukan hanya TU.
+    const res: any = await apiGet('/transfer-active-to-inactive', {
+      params: { status: 'SELESAI', limit: 100 },
+    }, { skipCache: true })
     const payload = res?.data ?? res
-    const items = payload?.data || []
+    const items = Array.isArray(payload) ? payload : (payload?.data || [])
 
     // Map data penataan ke format ArsipPenyusutan, status diubah jadi "draft"
     // FILTER: hanya arsip yang BELUM punya pengajuan penyusutan aktif
