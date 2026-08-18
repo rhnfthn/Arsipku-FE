@@ -163,7 +163,7 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status === 'selesai'"
+                      v-if="item.status === 'selesai' || (item.status === 'diterima' && item.jenis_penyusutan === 'musnah')"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -380,11 +380,10 @@ const loadPenataanData = async () => {
     await loadPenyusutan()
     const pengajuan = JSON.parse(JSON.stringify(penyusutanList.value))
 
-    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan aktif
-    // (bukan SELESAI/DITOLAK) agar tidak duplikat dengan data penataan.
+    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan (semua status,
+    // termasuk selesai/ditolak) agar tidak duplikat dengan data penataan.
     const sudahDiajukanBerkasIds = new Set(
       pengajuan
-        .filter((p: any) => p.status !== 'selesai' && p.status !== 'ditolak')
         .map((p: any) => p.berkasId ?? p.berkas_id)
         .filter(Boolean)
     )

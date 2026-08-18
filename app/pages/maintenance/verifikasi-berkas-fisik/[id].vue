@@ -75,7 +75,7 @@
           <!-- Card 2: Daftar Berkas Fisik -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-              Daftar Arsip yang Akan Dipindahkan ({{ daftarBerkas.length }})
+              Daftar Arsip ({{ daftarBerkas.length }})
             </h3>
             <div class="space-y-1.5">
               <div
@@ -110,7 +110,7 @@
             v-if="item.approvalLevels && item.approvalLevels.length > 0"
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
           >
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi (Berjenjang)</h3>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan</h3>
             <div class="space-y-2">
               <div
                 v-for="level in item.approvalLevels"
@@ -137,7 +137,7 @@
             v-if="item.tuApprovalLevels && item.tuApprovalLevels.length > 0"
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
           >
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan</h3>
             <div class="space-y-2">
               <div
                 v-for="level in item.tuApprovalLevels"
@@ -164,32 +164,25 @@
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
               <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
+                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
               </button>
             </div>
             <div id="daftar-isi-print" class="text-sm">
-              <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ item.nomorUsulan }}</p>
+              <p class="font-semibold text-gray-900 dark:text-white mb-3">{{ item.nomorUsulan }}</p>
               <table class="w-full border-collapse text-xs">
                 <thead>
                   <tr class="border-b-2 border-gray-300 dark:border-gray-500">
-                    <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
                     <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Kode Berkas</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas</th>
                     <th class="text-center py-2 px-2 text-gray-500 w-16">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                    <td class="text-center py-2 px-2">
-                      <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" />
-                    </td>
                     <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
-                      <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
-                      {{ d.namaBerkas }}
-                    </td>
-                    <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.kode ?? '-' }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
                     <td class="text-center py-2 px-2">
                       <NuxtLink
                         v-if="d.id"
@@ -202,7 +195,7 @@
                     </td>
                   </tr>
                   <tr v-if="daftarIsi.length === 0">
-                    <td colspan="5" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
+                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
                   </tr>
                 </tbody>
               </table>
@@ -742,17 +735,17 @@ const printDaftarIsi = () => {
   if (!el) return
   const w = window.open('', '_blank')
   if (!w) return
-  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title><style>
+  w.document.write(`<!DOCTYPE html><html><head><title>${item.value?.nomorUsulan ?? ''}</title><style>
     body{font-family:Arial,sans-serif;padding:30px;color:#111}
     .text-sm{font-size:13px}.text-xs{font-size:12px}.font-semibold{font-weight:600}
     .mb-3{margin-bottom:12px}.text-gray-500{color:#6b7280}.text-gray-600{color:#4b5563}
     .text-gray-700{color:#374151}.text-gray-400{color:#9ca3af}.text-center{text-align:center}
-    .italic{font-style:italic}.w-full{width:100%}.w-8{width:32px}.w-10{width:40px}
+    .italic{font-style:italic}.w-full{width:100%}.w-10{width:40px}
     table{width:100%;border-collapse:collapse}
     th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}
     td{border-bottom:1px solid #f3f4f6;padding:8px}
     .px-2{padding-left:8px;padding-right:8px}.py-2{padding-top:8px;padding-bottom:8px}
-    .py-4{padding-top:16px;padding-bottom:16px}input[type=checkbox]{width:16px;height:16px}p{margin:0}
+    .py-4{padding-top:16px;padding-bottom:16px}p{margin:0}
   </style></head><body>${el.innerHTML}</body></html>`)
   w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250)
 }
