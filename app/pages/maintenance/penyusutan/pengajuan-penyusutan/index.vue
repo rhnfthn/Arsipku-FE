@@ -380,11 +380,10 @@ const loadPenataanData = async () => {
     await loadPenyusutan()
     const pengajuan = JSON.parse(JSON.stringify(penyusutanList.value))
 
-    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan aktif
-    // (bukan SELESAI/DITOLAK) agar tidak duplikat dengan data penataan.
+    // Kumpulkan berkasId yang sudah punya pengajuan penyusutan (semua status,
+    // termasuk selesai/ditolak) agar tidak duplikat dengan data penataan.
     const sudahDiajukanBerkasIds = new Set(
       pengajuan
-        .filter((p: any) => p.status !== 'selesai' && p.status !== 'ditolak')
         .map((p: any) => p.berkasId ?? p.berkas_id)
         .filter(Boolean)
     )
