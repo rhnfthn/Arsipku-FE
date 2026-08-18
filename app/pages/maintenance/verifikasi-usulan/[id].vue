@@ -47,7 +47,7 @@
           <!-- ─── Card: Daftar Isi ─── -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ usulan.nomorUsulan }}</h3>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
               <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
               </button>
@@ -58,19 +58,16 @@
                 <thead>
                   <tr class="border-b-2 border-gray-300 dark:border-gray-500">
                     <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Kode Berkas</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas</th>
                     <th class="text-center py-2 px-2 text-gray-500 w-16">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
                     <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
-                      <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
-                      {{ d.namaBerkas }}
-                    </td>
-                    <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.kode ?? '-' }}</td>
+                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">{{ d.namaBerkas }}</td>
                     <td class="text-center py-2 px-2">
                       <NuxtLink
                         v-if="d.id"

@@ -31,7 +31,7 @@
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-          <p class="text-gray-900 dark:text-white font-bold">{{ usulan.atasanName }}</p>
+          <p class="text-gray-900 dark:text-white font-medium">{{ usulan.atasanName }}</p>
           <p v-if="usulan.totalApprovalLevels && usulan.totalApprovalLevels > 1" class="text-xs text-gray-400 mt-0.5">
             Tahap {{ usulan.currentApprovalLevel }} dari {{ usulan.totalApprovalLevels }}
           </p>
