@@ -332,11 +332,13 @@ import {
 import { useRoute } from 'vue-router';
 
 import { useAuth } from '~/composables/useAuth';
+import { canAccessNaskahLainnya } from '~/composables/useFeatureAccess';
 import { useDelegationMode } from '~/composables/useDelegationMode';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
+import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
@@ -361,6 +363,9 @@ const {
   fetchCounts: fetchShareCounts,
 } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+const { fetchPersetujuanCount, persetujuanCount } = useNaskahLainnya();
+// Badge jumlah naskah menunggu persetujuan (BE real).
+const naskahLainnyaPersetujuanCount = computed(() => persetujuanCount.value);
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
 const {
@@ -553,9 +558,13 @@ onMounted(async () => {
     window.addEventListener('active_profile_changed', syncProfileFromStorage);
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
     // Fetch usulan akses berkas counts untuk badge sidebar
-    fetchUsulanCounts();
+    if (hasPermission('usulan-akses-berkas', 'read')) fetchUsulanCounts();
     // Fetch share diterima counts untuk badge sidebar
-    fetchShareCounts();
+    if (hasPermission('naskah-share', 'read')) fetchShareCounts();
+    // Fetch jumlah naskah menunggu persetujuan untuk badge sidebar
+    if (canAccessNaskahLainnya(user.value?.position_status)) {
+      fetchPersetujuanCount().catch(() => { /* abaikan */ });
+    }
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -595,8 +604,6 @@ const tulisChildrenByBod = computed(() => {
     { label: t('surat_dinas_internal'), to: '/korespondensi/tulis/surat-dinas-internal', permission: { resource: 'utama.tulis.surat-dinas-internal', action: 'read' } },
     { label: t('surat_dinas_eksternal'), to: '/korespondensi/tulis/surat-dinas-eksternal', permission: { resource: 'utama.tulis.surat-dinas-eksternal', action: 'read' } },
     { label: t('kajian'), to: '/korespondensi/tulis/kajian', permission: { resource: 'utama.tulis.kajian', action: 'read' } },
-    // URS poin 6 - Naskah Dinas lainnya (Peraturan, Keputusan, Perjanjian, dll)
-    { label: 'Naskah Lainnya', to: '/korespondensi/tulis/naskah-umum', permission: { resource: 'utama.tulis.naskah-lainnya', action: 'read' } },
   ];
   if (tag === 'BOD' || tag === 'BOD-1') return all;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
@@ -632,6 +639,21 @@ const userMenuUtama = computed(() => [
   },
   ...(isReadOnly.value ? [] : [tulisMenu.value]),
   {
+    label: 'Naskah Lainnya',
+    to: '/naskah-lainnya',
+    icon: 'i-lucide-file-stack',
+    permission: { resource: 'utama.tulis.naskah-lainnya', action: 'read' },
+    children: [
+      { label: 'Tulis Naskah', to: '/naskah-lainnya/tulis' },
+      { label: 'Daftar Naskah', to: '/naskah-lainnya', exact: true },
+      {
+        label: 'Persetujuan',
+        to: '/naskah-lainnya/persetujuan',
+        badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
+      },
+    ],
+  },
+  {
     label: t('kotak_masuk'),
     to: '/korespondensi/kotak-masuk',
     icon: 'i-lucide-inbox',
@@ -652,9 +674,12 @@ const userMenuUtama = computed(() => [
   },
   {
     label: t('draft'),
-    to: '/korespondensi/draf',
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
+    children: [
+      { label: 'Draft Korespondensi', to: '/korespondensi/draf', permission: { resource: 'utama.draft', action: 'read' } },
+      { label: 'Naskah Lainnya', to: '/naskah-lainnya/draf', permission: { resource: 'utama.draft', action: 'read' } },
+    ],
   },
   {
     label: t('berbagi', 'Berbagi'),
@@ -797,6 +822,21 @@ const adminMenuUtama = computed(() => [
   },
   ...(isReadOnly.value ? [] : [tulisMenu.value]),
   {
+    label: 'Naskah Lainnya',
+    to: '/naskah-lainnya',
+    icon: 'i-lucide-file-stack',
+    permission: { resource: 'utama.tulis.naskah-lainnya', action: 'read' },
+    children: [
+      { label: 'Tulis Naskah', to: '/naskah-lainnya/tulis' },
+      { label: 'Daftar Naskah', to: '/naskah-lainnya', exact: true },
+      {
+        label: 'Persetujuan',
+        to: '/naskah-lainnya/persetujuan',
+        badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
+      },
+    ],
+  },
+  {
     label: t('kotak_masuk'),
     to: '/korespondensi/kotak-masuk',
     icon: 'i-lucide-inbox',
@@ -817,9 +857,12 @@ const adminMenuUtama = computed(() => [
   },
   {
     label: t('draft'),
-    to: '/korespondensi/draf',
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
+    children: [
+      { label: 'Draft Korespondensi', to: '/korespondensi/draf', permission: { resource: 'utama.draft', action: 'read' } },
+      { label: 'Naskah Lainnya', to: '/naskah-lainnya/draf', permission: { resource: 'utama.draft', action: 'read' } },
+    ],
   },
   {
     label: t('berbagi', 'Berbagi'),
