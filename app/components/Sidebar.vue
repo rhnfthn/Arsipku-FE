@@ -470,6 +470,25 @@ const checkAtasanManagerialTuUsulan = async () => {
   }
 };
 
+// Cek apakah user terdaftar sebagai verifikator penyusutan (atasan managerial TU)
+// ATAU punya posisi managerial (EVP/VP/AVP/BOD). Jika ya, user berhak melihat
+// menu "Verifikasi Penyusutan". Posisi managerial dipakai sebagai fallback
+// agar atasan bisa lihat menu sebelum ada pengajuan yang masuk.
+const isAtasanManagerialPenyusutan = ref(false);
+const checkAtasanManagerialPenyusutan = async () => {
+  try {
+    const res = await apiGet('/penyusutan/is-atasan', {
+      validateStatus: () => true,
+    }, { skipCache: true });
+    const isVerifikator = res?.data?.isAtasan ?? false;
+    // Tampilkan menu jika user adalah verifikator penyusutan ATAU punya posisi managerial
+    isAtasanManagerialPenyusutan.value = isVerifikator || isManagerialPosition.value;
+  } catch {
+    // Fallback: tampilkan berdasarkan posisi managerial saja
+    isAtasanManagerialPenyusutan.value = isManagerialPosition.value;
+  }
+};
+
 // ─── Count fetching ───────────────────────────────────────────────────────────
 // Nomor count sekarang sepenuhnya dari WebSocket (realtime:summary + nomor:count event).
 // Tidak ada lagi REST fallback ke /admin/nomor-request-count atau /nomor-request-count.
@@ -527,6 +546,8 @@ watch(
       checkAtasanManagerialUsulan();
       // Cek apakah user terdaftar sebagai atasan TU di usulan apapun
       checkAtasanManagerialTuUsulan();
+      // Cek apakah user terdaftar sebagai verifikator penyusutan
+      checkAtasanManagerialPenyusutan();
     }
   },
   { immediate: true }
@@ -1162,22 +1183,43 @@ const adminMenuKelola = computed(() => {
   }
 
   // ── Menu Penyusutan ──
-  menus.push({
-    label: 'Penyusutan',
-    icon: 'i-lucide-file-minus',
-    children: [
-      {
-        label: 'Pengajuan Penyusutan',
-        to: '/maintenance/penyusutan/pengajuan-penyusutan',
-        icon: 'i-lucide-file-up',
-      },
-      {
-        label: 'Penataan & Pemusnahan',
-        to: '/maintenance/penyusutan/penataan-pemusnahan',
-        icon: 'i-lucide-archive-x',
-      },
-    ],
-  });
+  // Pengajuan Penyusutan & Penataan & Pemusnahan: HANYA untuk unit_dokumen (TU).
+  // Verifikasi Penyusutan: HANYA untuk atasan managerial TU.
+  const penyusutanChildren = [];
+
+  if (isTuRole.value) {
+    penyusutanChildren.push({
+      label: 'Pengajuan Penyusutan',
+      to: '/maintenance/penyusutan/pengajuan-penyusutan',
+      icon: 'i-lucide-file-up',
+    });
+    penyusutanChildren.push({
+      label: 'Penataan & Pemusnahan',
+      to: '/maintenance/penyusutan/penataan-pemusnahan',
+      icon: 'i-lucide-archive-x',
+    });
+    penyusutanChildren.push({
+      label: 'Status Backup Data',
+      to: '/maintenance/penyusutan/backup-status',
+      icon: 'i-lucide-database-backup',
+    });
+  }
+
+  if (isAtasanManagerialPenyusutan.value) {
+    penyusutanChildren.push({
+      label: 'Verifikasi Penyusutan',
+      to: '/maintenance/penyusutan/verifikasi-penyusutan',
+      icon: 'i-lucide-file-check-2',
+    });
+  }
+
+  if (penyusutanChildren.length > 0) {
+    menus.push({
+      label: 'Penyusutan',
+      icon: 'i-lucide-file-minus',
+      children: penyusutanChildren,
+    });
+  }
 
   return menus;
 });
@@ -1288,22 +1330,43 @@ label: 'Penerimaan Usulan',
   }
 
   // ── Menu Penyusutan ──
-  menus.push({
-    label: 'Penyusutan',
-    icon: 'i-lucide-file-minus',
-    children: [
-      {
-        label: 'Pengajuan Penyusutan',
-        to: '/maintenance/penyusutan/pengajuan-penyusutan',
-        icon: 'i-lucide-file-up',
-      },
-      {
-        label: 'Penataan & Pemusnahan',
-        to: '/maintenance/penyusutan/penataan-pemusnahan',
-        icon: 'i-lucide-archive-x',
-      },
-    ],
-  });
+  // Pengajuan Penyusutan & Penataan & Pemusnahan: HANYA untuk unit_dokumen (TU).
+  // Verifikasi Penyusutan: HANYA untuk atasan managerial TU.
+  const penyusutanChildren = [];
+
+  if (isTuRole.value) {
+    penyusutanChildren.push({
+      label: 'Pengajuan Penyusutan',
+      to: '/maintenance/penyusutan/pengajuan-penyusutan',
+      icon: 'i-lucide-file-up',
+    });
+    penyusutanChildren.push({
+      label: 'Penataan & Pemusnahan',
+      to: '/maintenance/penyusutan/penataan-pemusnahan',
+      icon: 'i-lucide-archive-x',
+    });
+    penyusutanChildren.push({
+      label: 'Status Backup Data',
+      to: '/maintenance/penyusutan/backup-status',
+      icon: 'i-lucide-database-backup',
+    });
+  }
+
+  if (isAtasanManagerialPenyusutan.value) {
+    penyusutanChildren.push({
+      label: 'Verifikasi Penyusutan',
+      to: '/maintenance/penyusutan/verifikasi-penyusutan',
+      icon: 'i-lucide-file-check-2',
+    });
+  }
+
+  if (penyusutanChildren.length > 0) {
+    menus.push({
+      label: 'Penyusutan',
+      icon: 'i-lucide-file-minus',
+      children: penyusutanChildren,
+    });
+  }
 
   return menus;
 });
