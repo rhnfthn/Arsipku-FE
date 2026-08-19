@@ -49,8 +49,12 @@ export interface DokumenFile {
   tipe: 'naskah' | 'naskah_fisik' | 'blanko_verbal' | 'pendukung';
   ukuran: string;                // "48 KB"
   tanggal?: string;
-  status: 'terbaca' | 'final' | 'revisi' | 'belum_diunggah';
+  status: 'terbaca' | 'final' | 'revisi' | 'belum_diunggah' | 'draf' | 'dittd';
   parameter?: { nomor?: string; perihal?: string; tanggal?: string };
+  // Field versi naskah (hanya untuk tipe 'naskah'):
+  uploaderNama?: string;
+  uploaderJabatan?: string;
+  fase?: string; // raw tahapan enum (konsep|legal_drafting|perlu_perbaikan|...)
 }
 
 export type TahapApproval = 'persetujuan' | 'legal_drafting' | 'approval_legal' | 'approval_blanko' | 'approval_penandatangan';
@@ -216,4 +220,19 @@ export const JENIS_FORMAT_PENOMORAN: Record<JenisNaskah, string> = {
   PUM: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   PIA: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   LAP: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+};
+
+// Label ramah tahapan/fase untuk timeline versi naskah. Fallback: raw tahapan.
+export const FASE_LABEL: Record<string, string> = {
+  konsep: 'Konsep Awal',
+  legal_drafting: 'Legal Drafting',
+  perlu_perbaikan: 'Revisi Legal',
+  persetujuan: 'Persetujuan',
+  evaluasi: 'Evaluasi',
+  tanda_tangan_pemrakarsa: 'Tanda Tangan Pemrakarsa',
+  blanko_verbal: 'Blanko Verbal',
+  tanda_tangan_legal: 'Tanda Tangan Legal',
+  tanda_tangan_pejabat: 'Tanda Tangan Pejabat',
+  tanda_tangan: 'Tanda Tangan',
+  selesai: 'Final',
 };
