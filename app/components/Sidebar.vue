@@ -347,7 +347,7 @@ import { usePemeliharaanAccess } from '~/composables/usePemeliharaanAccess';
 import { buildLabelTree } from '~/utils/treeHelper';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
-const { user, getProfile, hasRole, hasPermission, isSuperadmin } = useAuth();
+const { user, getProfile, hasRole, hasPermission, isSuperadmin, isLegalRole } = useAuth();
 const { isReadOnly, activePositionStatus } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
@@ -363,7 +363,7 @@ const {
   fetchCounts: fetchShareCounts,
 } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
-const { fetchPersetujuanCount, persetujuanCount } = useNaskahLainnya();
+const { fetchPersetujuanCount, persetujuanCount, fetchLegalDraftingCount, legalDraftingCount } = useNaskahLainnya();
 // Badge jumlah naskah menunggu persetujuan (BE real).
 const naskahLainnyaPersetujuanCount = computed(() => persetujuanCount.value);
 const { apiGet } = useApi();
@@ -565,6 +565,10 @@ onMounted(async () => {
     if (canAccessNaskahLainnya(user.value?.position_status)) {
       fetchPersetujuanCount().catch(() => { /* abaikan */ });
     }
+    // Fetch jumlah naskah antrian legal drafting untuk badge sidebar (khusus legal role)
+    if (isLegalRole.value) {
+      fetchLegalDraftingCount().catch(() => { /* abaikan */ });
+    }
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -651,6 +655,11 @@ const userMenuUtama = computed(() => [
         to: '/naskah-lainnya/persetujuan',
         badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
       },
+      ...(isLegalRole.value ? [{
+        label: 'Legal Drafting',
+        to: '/naskah-lainnya/legal-drafting',
+        badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
+      }] : []),
     ],
   },
   {
@@ -834,6 +843,11 @@ const adminMenuUtama = computed(() => [
         to: '/naskah-lainnya/persetujuan',
         badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
       },
+      ...(isLegalRole.value ? [{
+        label: 'Legal Drafting',
+        to: '/naskah-lainnya/legal-drafting',
+        badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
+      }] : []),
     ],
   },
   {

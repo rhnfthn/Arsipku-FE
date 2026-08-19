@@ -117,6 +117,12 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-green-700 dark:text-green-400',
     dot: 'bg-green-700',
   },
+  sudah_dikerjakan: {
+    label: 'Sudah Dikerjakan',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
+  },
   perlu_perbaikan: {
     label: 'Perlu Perbaikan',
     bg: 'bg-orange-100 dark:bg-orange-900/30',

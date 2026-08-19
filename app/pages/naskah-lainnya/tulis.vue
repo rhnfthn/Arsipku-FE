@@ -39,13 +39,18 @@
           </div>
         </div>
 
-        <!-- Nomor (auto-fill dari upload, disabled) -->
+        <!-- Nomor (editable; otomatis saat kirim atau isi manual sesuai format) -->
         <div
           class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-          <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Nomor</span>
-          <UInput v-model="form.nomor" disabled placeholder="Otomatis terisi setelah unggah naskah"
+          <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-1">
+            Nomor
+            <UTooltip text="Kosongkan untuk penomoran otomatis saat kirim. Jika diisi manual, harus sesuai format jenis naskah & unik.">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
+            </UTooltip>
+          </span>
+          <UInput v-model="form.nomor" :placeholder="nomorPlaceholder"
             class="w-full sm:flex-1" variant="none"
-            :ui="{ base: 'disabled:opacity-60 cursor-not-allowed text-sm text-gray-900 dark:text-white px-0' }" />
+            :ui="{ base: 'text-sm text-gray-900 dark:text-white px-0' }" />
         </div>
 
         <!-- Perihal (auto-fill dari upload, disabled) -->
@@ -64,9 +69,49 @@
         <!-- Tanggal (komponen Tulis, pola nota-dinas) -->
         <TulisInputTanggal v-model="tanggalDate" :label="$t('f_tanggal_surat')" />
 
-        <!-- Penandatangan (multiple, pola TulisInputPenerima — sama dengan nota-dinas) -->
-        <TulisInputPenerima v-model="selectedPenandatangan" label="Tertuju (Penandatangan)" placeholder="Pilih penandatangan"
-          :items="penandatanganItems" />
+        <!-- Penandatangan dinamis: satu single-select per slot -->
+        <div v-if="signerSlotCount > 0" class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+            Urutan Penandatangan
+            <span class="block text-xs text-gray-400 font-normal">({{ signerSlotCount }} slot)</span>
+          </span>
+          <div class="flex-1 w-full space-y-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Urutan sesuai posisi <code class="text-xs">{<!-- -->{tanda_tangan_N}<!-- -->}</code> di template. Pilih penandatangan untuk setiap slot sesuai urutan penandatangan.
+            </p>
+            <div v-for="slot in signerSlots" :key="slot.index" class="flex items-center gap-2">
+              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500 text-white text-xs font-bold shrink-0">
+                {{ slot.index }}
+              </span>
+              <USelectMenu v-model="slotSigners[slot.index - 1]" :items="slotItems(slot.index - 1)" value-key="value"
+                :searchable="true" variant="none" class="flex-1 w-full"
+                :content="({ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any)"
+                :ui="{
+                  base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
+                  input: 'w-full',
+                  value: 'w-full',
+                  viewport: 'max-h-[380px]',
+                } as any">
+                <template #default>
+                  <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
+                    <span v-if="slotSigners[slot.index - 1]" class="text-sm text-left truncate text-gray-900 dark:text-white">
+                      {{ selectedSlotLabel(slot.index - 1) }}
+                    </span>
+                    <span v-else class="text-sm text-gray-400">Pilih penandatangan {{ slot.index }}</span>
+                  </div>
+                </template>
+              </USelectMenu>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="!loadingSigners && form.jenis" class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+            Urutan Penandatangan
+          </span>
+          <p class="text-xs text-gray-400 flex-1 w-full">
+            Template ini tidak memiliki placeholder penandatangan — fase signing akan dilewati.
+          </p>
+        </div>
 
         <!-- Sifat (komponen Tulis, pola nota-dinas) -->
         <TulisInputSifat v-model="selectedSifat" />
@@ -84,7 +129,7 @@
               <div v-for="(v, idx) in selectedApprovals" :key="v.persnum"
                 class="flex items-center gap-2 rounded-lg border border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 px-3 py-2">
                 <span
-                  class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-500 text-white text-[10px] font-bold shrink-0">
+                  class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-500 text-white text-xs font-bold shrink-0">
                   {{ idx + 1 }}
                 </span>
                 <div class="flex-1 min-w-0">
@@ -178,8 +223,21 @@
             <div class="flex items-center gap-2 mb-3">
               <UIcon name="i-lucide-eye" class="w-4 h-4 text-gray-400" />
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pratinjau</h4>
+              <button
+                type="button"
+                class="ml-auto flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 dark:hover:bg-primary-900/30 dark:hover:border-primary-700 dark:hover:text-primary-300 transition-colors"
+                @click="previewCollapsed = !previewCollapsed"
+              >
+                <UIcon
+                  :name="previewCollapsed ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
+                  class="w-3.5 h-3.5"
+                />
+                {{ previewCollapsed ? 'Tampilkan' : 'Sembunyikan' }}
+              </button>
             </div>
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 overflow-auto max-h-[500px] relative">
+            <div
+              v-show="!previewCollapsed"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 overflow-auto max-h-[500px] relative">
               <div v-if="previewLoading" class="absolute inset-0 flex items-center justify-center bg-gray-100/80 dark:bg-gray-900/80 z-10">
                 <div class="flex flex-col items-center gap-2">
                   <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
@@ -196,7 +254,7 @@
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Dokumen Pendukung</h4>
               <span class="text-xs text-gray-400">(opsional)</span>
             </div>
-            <FileUpload :model-value="pendukungFiles" :multiple="true" accept=".pdf,application/pdf"
+            <FileUpload :model-value="pendukungFiles" :multiple="true" accept=".pdf,application/pdf" :previewable="true"
               label="+ Unggah Dokumen Pendukung" @update:model-value="onPendukungFiles" />
           </div>
         </div>
@@ -247,6 +305,52 @@
           </div>
         </div>
 
+        <!-- ── Section 4: Tanda Tangan (digital / fisik) ─────────────── -->
+        <div class="pt-6">
+          <div
+            class="rounded-xl border-2 border-primary-200 dark:border-primary-800 bg-primary-50/60 dark:bg-primary-900/10 p-4 sm:p-5">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
+                <UIcon name="i-lucide-pen-tool" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Tanda Tangan</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Metode penandatanganan naskah</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button type="button"
+                      class="flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-left transition-all duration-200"
+                      :class="form.signOption === 'qr_only'
+                        ? 'border-primary-500 bg-white dark:bg-gray-800'
+                        : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'"
+                      @click="form.signOption = 'qr_only'">
+                      <span class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                        :class="form.signOption === 'qr_only' ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'">
+                        <span v-if="form.signOption === 'qr_only'" class="w-2 h-2 rounded-full bg-primary-500" />
+                      </span>
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">Digital</span>
+                    </button>
+                    <button type="button"
+                      class="flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-left transition-all duration-200"
+                      :class="form.signOption === 'ttd_basah'
+                        ? 'border-primary-500 bg-white dark:bg-gray-800'
+                        : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'"
+                      @click="form.signOption = 'ttd_basah'">
+                      <span class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                        :class="form.signOption === 'ttd_basah' ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'">
+                        <span v-if="form.signOption === 'ttd_basah'" class="w-2 h-2 rounded-full bg-primary-500" />
+                      </span>
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">Fisik</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Action bar: Draft & Kirim (langsung di form, tidak pakai slideover) -->
         <div class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800">
           <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
@@ -276,7 +380,7 @@ import { CalendarDate, parseDate } from '@internationalized/date';
 import { renderAsync } from 'docx-preview';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import type { BuatNaskahPayload, JenisNaskah, ApprovalItem, NaskahDetail, Penandatangan } from '~/types/naskah-lainnya';
-import { JENIS_LABELS } from '~/types/naskah-lainnya';
+import { JENIS_LABELS, JENIS_FORMAT_PENOMORAN } from '~/types/naskah-lainnya';
 import type { Klasifikasi } from '~/types/klasifikasi';
 import type { Verifikator } from '~/types/digsig';
 
@@ -286,7 +390,8 @@ const { t } = useI18n();
 const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getConfigDigsig } = useDigsig();
-const { user } = useAuth();
+const { user, getProfile } = useAuth();
+const { apiGet } = useApi();
 const alertState = useAlertState();
 const route = useRoute();
 const { create, update, kirim, uploadDokumen, uploadDokumenTambahan, getTemplateUrl, createdId, fetchDetail, detail } = useNaskahLainnya();
@@ -331,7 +436,7 @@ const penandatanganItems = computed(() =>
       raw: v,
     })),
 );
-const selectedPenandatangan = ref<any[]>([]);
+const slotSigners = ref<(string | null)[]>([]);
 
 // Sifat memakai pola object-ref (sama dengan nota-dinas & semua page korespondensi):
 // TulisInputSifat meng-emmit object {label,value}, string value diekstrak di buildPayload.
@@ -345,16 +450,107 @@ const sifatOptions = [
 ];
 const selectedSifat = ref<{ label: string; value: string } | null>(null);
 
-const form = ref<BuatNaskahPayload>({
+const form = ref<BuatNaskahPayload & { penandatanganList: Penandatangan[] }>({
   jenis: 'PER' as JenisNaskah,
   nomor: '',
   klasifikasi: '',
   penandatangan: { nama: '', jabatan: '' },
+  penandatanganList: [],
   sifat: 'biasa',
-  signOption: 'digsig',
+  signOption: 'qr_only',
   butuhLegal: true,
   perihal: '',
 });
+
+// ── Deteksi jumlah penandatangan (N) dari template-signers per jenis ──
+// GET /naskah-lainnya/template-signers/:jenis → { data: { count, slots: [{index}] } }
+const signerSlotCount = ref(0);
+const signerSlots = ref<{ index: number }[]>([]);
+const loadingSigners = ref(false);
+
+async function fetchTemplateSigners(jenis: string) {
+  if (!jenis) {
+    signerSlotCount.value = 0;
+    signerSlots.value = [];
+    slotSigners.value = [];
+    form.value.penandatanganList = [];
+    return;
+  }
+  loadingSigners.value = true;
+  try {
+    const res = await apiGet<{ data: { count: number; slots: { index: number }[] } }>(
+      `/naskah-lainnya/template-signers/${encodeURIComponent(jenis)}`,
+    );
+    const { count, slots } = res.data;
+    signerSlotCount.value = count;
+    signerSlots.value = slots;
+    // Reset semua slot agar tidak ada penandatangan lawas yang tertinggal saat ganti jenis/count.
+    slotSigners.value = Array.from({ length: count }, () => null);
+    form.value.penandatanganList = Array.from(
+      { length: count },
+      () => ({ nama: '', jabatan: '' }),
+    );
+  } catch {
+    // Template mungkin tidak punya placeholder tanda_tangan_N → N=0, fase signing dilewati.
+    signerSlotCount.value = 0;
+    signerSlots.value = [];
+    slotSigners.value = [];
+    form.value.penandatanganList = [];
+  } finally {
+    loadingSigners.value = false;
+  }
+}
+
+watch(() => form.value.jenis, (jenis) => { fetchTemplateSigners(jenis as string); });
+
+// Opsi per slot: tandai item yang sudah dipilih di slot lain sebagai disabled.
+function slotItems(slotIndex: number) {
+  return penandatanganItems.value.map((item) => ({
+    ...item,
+    disabled: slotSigners.value.some(
+      (val, idx) => idx !== slotIndex && val === item.value,
+    ),
+  }));
+}
+
+function selectedSlotLabel(slotIndex: number) {
+  const value = slotSigners.value[slotIndex];
+  const item = value != null
+    ? penandatanganItems.value.find((p) => String(p.value) === String(value))
+    : undefined;
+  return item?.label || form.value.penandatanganList[slotIndex]?.nama || '';
+}
+
+function resolveSlotSigner(value: string | null, fallbackIndex: number): Penandatangan {
+  if (value == null) return { nama: '', jabatan: '' };
+  const item = penandatanganItems.value.find((p) => String(p.value) === String(value));
+  if (item) {
+    return {
+      positionId: String(item.raw?.positionId ?? ''),
+      persnum: item.raw?.persnum,
+      nama: item.raw?.nama || item.label,
+      jabatan: item.raw?.jabatan || item.labelJob || '',
+    };
+  }
+  // Fallback: data yang sudah tersimpan (draft lawas / tidak cocok dengan daftar pejabat).
+  return form.value.penandatanganList[fallbackIndex] ?? { nama: '', jabatan: '' };
+}
+
+function findSignerValue(stored: Partial<Penandatangan>): string | null {
+  const match = penandatanganItems.value.find((item) => {
+    const raw = item.raw;
+    if (stored.persnum != null && raw?.persnum === stored.persnum) return true;
+    if (stored.positionId != null && String(raw?.positionId) === String(stored.positionId)) return true;
+    if (stored.nama != null && raw?.nama?.toLowerCase() === stored.nama.toLowerCase()) return true;
+    return false;
+  });
+  return match ? String(match.value) : null;
+}
+
+// Sinkronkan slotSigners → form.penandatanganList (rantai N entry, urutan = urutan penandatangan).
+watch(slotSigners, (values) => {
+  form.value.penandatanganList = values.map((val, i) => resolveSlotSigner(val, i));
+}, { deep: true });
 
 const templateName = computed(() => `Template ${labelJenis(form.value.jenis)}.docx`);
 
@@ -370,7 +566,12 @@ const tanggalDate = ref<CalendarDate>(new CalendarDate(_today.getFullYear(), _to
 // Label tampil untuk select borderless (pola TulisInputSifat: resolve label dari value).
 const jenisLabel = computed(() => jenisOptions.find((o) => o.value === form.value.jenis)?.label ?? '');
 
-// ── Approval berjenjang (data dari /digsig/document/verifikator — sama dengan naskah-dinas) ──
+// Placeholder field Nomor: template format per jenis ({TIPE} → kode jenis) sebagai panduan struktur.
+// Teks bantuan lengkap (otomatis/manual & unik) ada di tooltip ikon ℹ di label, bukan di bawah field.
+const nomorPlaceholder = computed(() => JENIS_FORMAT_PENOMORAN[form.value.jenis].replace('{TIPE}', form.value.jenis));
+
+// ── Approval berjenjang / Verifikator: atasan managerial pengaju dalam 1 divisi/direktorat
+//    (sama dengan penutupan berkas) — GET /org-data/atasan-managerial/:positionId ──
 const approvalCandidates = ref<Verifikator[]>([]);
 const selectedApprovals = ref<Verifikator[]>([]);
 const showApprovalDropdown = ref(false);
@@ -380,12 +581,16 @@ const approvalSearchRef = ref<HTMLInputElement | null>(null);
 const approvalError = ref('');
 
 // Kandidat: belum dipilih, dan berbeda dari penandatangan.
+const selectedSignerPersnums = computed(() => new Set(
+  (form.value.penandatanganList ?? [])
+    .map((s) => s?.persnum)
+    .filter((p): p is number => p != null),
+));
 const availableApprovals = computed(() => {
   const selectedSet = new Set(selectedApprovals.value.map((v) => v.persnum));
-  const signerPersnums = new Set(selectedPenandatangan.value.map((s) => Number(s.value)));
   return approvalCandidates.value
     .filter((v) => !selectedSet.has(v.persnum))
-    .filter((v) => !signerPersnums.has(v.persnum));
+    .filter((v) => !selectedSignerPersnums.value.has(v.persnum));
 });
 
 const filteredApprovals = computed(() => {
@@ -400,8 +605,7 @@ const filteredApprovals = computed(() => {
 const onApprovalSelect = (persnum: number) => {
   const v = approvalCandidates.value.find((x) => x.persnum === persnum);
   if (!v) return;
-  const signerPersnums = new Set(selectedPenandatangan.value.map((s) => Number(s.value)));
-  if (signerPersnums.has(persnum)) {
+  if (selectedSignerPersnums.value.has(persnum)) {
     approvalError.value = 'Approver tidak boleh sama dengan penandatangan';
     return;
   }
@@ -441,7 +645,7 @@ onBeforeUnmount(() => {
 });
 
 const uploadStatus = ref<'idle' | 'reading' | 'done' | 'error'>('idle');
-const detected = ref<{ nomor: string; perihal: string; tanggal: string } | null>(null);
+const detected = ref<{ perihal: string; tanggal: string } | null>(null);
 const saving = ref(false);
 const dokumenOk = computed(() => uploadStatus.value === 'done' || previewFile.value !== null);
 
@@ -452,10 +656,12 @@ const pendukungFiles = ref<File[]>([]);
 const previewFile = computed(() => naskahFiles.value[naskahFiles.value.length - 1] ?? null);
 const previewContainer = ref<HTMLElement | null>(null);
 const previewLoading = ref(false);
+const previewCollapsed = ref(false);
 
 // Render docx inline — trigger saat file berubah.
 watch(previewFile, async (file) => {
   if (!file) return;
+  previewCollapsed.value = false;
   previewLoading.value = true;
   await nextTick();
   try {
@@ -498,12 +704,39 @@ onMounted(async () => {
     klasifikasiStatus.value = 'error';
   }
 
-  // Kandidat approval + penandatangan (dari /digsig/document/verifikator — sama dengan naskah-dinas).
+  // Penandatangan: dari /digsig/document/verifikator (semua personil area).
   try {
     await fetchVerifikator({ chiefOnly: false });
-    approvalCandidates.value = verifikatorList.value;
   } catch {
-    // abaikan — dropdown approval akan kosong, form tetap bisa dipakai (fallback default workflow)
+    // abaikan — dropdown penandatangan akan kosong
+  }
+
+  // Verifikator berjenjang: atasan managerial pengaju dalam 1 divisi/direktorat
+  // (logic sama dengan penutupan berkas) — GET /org-data/atasan-managerial/:positionId.
+  // Delegasi SE: user.position adalah jabatan yang didelegasikan (mis. EVP), bukan
+  // jabatan asli pengaju — resolve posisi asli via /org-data/my-position?persnum.
+  try {
+    if (!user.value) await getProfile();
+    let positionId = Number(user.value?.position);
+    if (user.value?.position_status === 'SE') {
+      try {
+        const myPos: any = await apiGet(`/org-data/my-position?persnum=${user.value.persnum}`);
+        const row = myPos?.data ?? myPos;
+        if (row?.position) positionId = Number(row.position);
+      } catch (e) {
+        console.warn('[tulis-naskah] Gagal resolve posisi asli, fallback ke posisi delegasi:', e);
+      }
+    }
+    const atasanRes: any = await apiGet(`/org-data/atasan-managerial/${positionId}`);
+    const atasans: any[] = Array.isArray(atasanRes?.data) ? atasanRes.data : [];
+    approvalCandidates.value = atasans.map((r: any) => ({
+      persnum: Number(r.persnum_person),
+      nama: r.persnum_person_text || 'Tanpa nama',
+      positionId: Number(r.position) || undefined,
+      jabatan: r.position_text || '',
+    } as Verifikator));
+  } catch {
+    // abaikan — dropdown verifikator akan kosong, form tetap bisa dipakai (fallback default workflow)
   } finally {
     isLoadingData.value = false;
   }
@@ -520,7 +753,7 @@ onMounted(async () => {
         form.value.nomor = d.nomor ?? '';
         form.value.perihal = d.perihal ?? '';
         selectedSifat.value = sifatOptions.find((o) => o.value === d.sifat) ?? null;
-        form.value.signOption = d.signOption ?? 'digsig';
+        form.value.signOption = d.signOption === 'digsig' ? 'qr_only' : (d.signOption ?? 'qr_only');
         form.value.butuhLegal = d.butuhLegal;
         form.value.penandatangan = d.penandatangan;
         if (d.klasifikasi) {
@@ -539,11 +772,8 @@ onMounted(async () => {
             jabatan: a.jabatan,
           } as Verifikator));
         }
-        // Restore penandatangan select — dukung `penandatanganList` (array), `penandatangan` array,
-        // maupun single `penandatangan`. Cocokkan ke verifikatorList via persnum (paling andal),
-        // lalu positionId, lalu nama (case-insensitive — BE kadang menormalisasi case nama tersimpan).
-        // Jika tak ada yang cocok, tetap tampilkan chip dari data tersimpan agar penandatangan tidak
-        // "hilang" saat edit draft, dan identitas (positionId/persnum) tetap terbawa saat simpan.
+        // Restore jumlah slot dari template restored jenis, lalu isi per-slot.
+        await fetchTemplateSigners(d.jenis as string);
         const detailPenandatanganList = (d as NaskahDetail).penandatanganList;
         const storedSigners: Partial<Penandatangan>[] = [];
         if (Array.isArray(detailPenandatanganList) && detailPenandatanganList.length) {
@@ -554,22 +784,21 @@ onMounted(async () => {
           storedSigners.push(d.penandatangan);
         }
         if (storedSigners.length) {
-          const restored: any[] = [];
-          for (const sp of storedSigners) {
-            const match = verifikatorList.value.find((v) =>
-              (sp.persnum != null && v.persnum === sp.persnum)
-              || (sp.positionId != null && String(v.positionId) === String(sp.positionId))
-              || (sp.nama != null && v.nama?.toLowerCase() === sp.nama.toLowerCase()),
-            );
-            const raw = match ?? { nama: sp.nama, jabatan: sp.jabatan ?? '', persnum: sp.persnum, positionId: sp.positionId };
-            restored.push({
-              label: match ? `${match.nama} — ${match.jabatan}` : `${sp.nama}${sp.jabatan ? ' — ' + sp.jabatan : ''}`,
-              labelJob: match?.jabatan || sp.jabatan || '',
-              value: String(match?.persnum ?? sp.persnum ?? sp.positionId ?? ''),
-              raw,
-            });
-          }
-          selectedPenandatangan.value = restored;
+          // Simpan data asli sebagai fallback bila tidak cocok dengan daftar pejabat.
+          form.value.penandatanganList = Array.from(
+            { length: signerSlotCount.value },
+            (_, i) => {
+              const sp = storedSigners[i];
+              if (!sp) return { nama: '', jabatan: '' };
+              return {
+                positionId: String(sp.positionId ?? ''),
+                persnum: sp.persnum,
+                nama: sp.nama || '',
+                jabatan: sp.jabatan || '',
+              } as Penandatangan;
+            },
+          );
+          slotSigners.value = signerSlots.value.map((_, i) => findSignerValue(storedSigners[i]));
         }
         // Restore file naskah + preview dari BE proxy
         if (d.id) {
@@ -616,22 +845,28 @@ onMounted(async () => {
 // Penandatangan: kirim single object bila hanya 1 (BE wrap ke array),
 // kirim array bila user pilih multiple.
 const buildPayload = (): BuatNaskahPayload => {
-  // Penandatangan selalu dari select (selectedPenandatangan). Restore di onMounted sudah memastikan
-  // select terisi dari data BE (match verifikator atau sintetis dari stored), jadi tidak perlu — dan
-  // tidak boleh — fallback ke form.value.penandatangan (stale) agar perubahan/hapus benar-benar tersimpan.
-  const signers = selectedPenandatangan.value.map((s) => ({
-    positionId: String(s.raw?.positionId ?? ''),
-    persnum: s.raw?.persnum,
-    nama: s.raw?.nama || s.label,
-    jabatan: s.raw?.jabatan || s.labelJob || '',
+  // Penandatangan dari form.penandatanganList (rantai N entry, urutan = signing order).
+  // Catatan: BE PenandatanganDto hanya menerima { nama, jabatan, positionId?, persnum? }
+  // (forbidNonWhitelisted) — urutan signing ditentukan array order, jadi kirim hanya
+  // field yang di-whitelist (jangan leak `index`/field UI lain).
+  const signers = (form.value.penandatanganList ?? []).map((s) => ({
+    nama: s.nama,
+    jabatan: s.jabatan,
+    positionId: s.positionId,
+    persnum: s.persnum,
   }));
+  // N=0 (template tanpa placeholder TTD): kirim array kosong, bukan {nama:'',jabatan:''}
+  // (yang akan 400 karena @IsNotEmpty). BE simpan chain=null → signing di-skip.
   const penandatangan: Penandatangan | Penandatangan[] =
-    signers.length === 0 ? { nama: '', jabatan: '' }
+    signers.length === 0 ? []
       : signers.length === 1 ? signers[0]
         : signers;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { penandatanganList: _, ...rest } = form.value;
+
   return {
-    ...form.value,
+    ...rest,
     nomor: form.value.nomor || undefined,
     // sifat diambil dari object-ref selectedSifat (pola TulisInputSifat), bukan form.value.sifat
     // yang tidak pernah di-update oleh select (select meng-emmit object ke selectedSifat).
@@ -663,6 +898,13 @@ async function downloadTemplate() {
 }
 
 function onNaskahFiles(files: File[]) {
+  // Tolak unggah bila penandatangan belum lengkap: onUpload() memanggil create()
+  // yang butuh penandatangan valid (BE @IsNotEmpty pada nama/jabatan); tanpa ini
+  // unggah gagal diam-diam. validateSigners() sudah memunculkan toast peringatan.
+  if (files.length && !validateSigners()) {
+    naskahFiles.value = [];
+    return;
+  }
   naskahFiles.value = files;
   if (files.length) {
     onUpload(files[files.length - 1]);
@@ -708,9 +950,8 @@ async function onUpload(file: File) {
     const res = await uploadDokumen(createdId.value!, file);
     detected.value = res.data.parameter;
 
-    // Isi form nomor & perihal dari hasil docx-reader
+    // Isi form perihal dari hasil docx-reader (nomor di-generate sistem saat kirim)
     // (tidak perlu call update() — buildPayload() di kirim/draft sudah include form.value)
-    if (res.data.parameter.nomor) form.value.nomor = res.data.parameter.nomor;
     if (res.data.parameter.perihal) form.value.perihal = res.data.parameter.perihal;
 
     // Isi tanggal dari dokumen HANYA jika user belum memilih manual.
@@ -723,9 +964,32 @@ async function onUpload(file: File) {
     }
 
     uploadStatus.value = 'done';
-  } catch {
+  } catch (e) {
     uploadStatus.value = 'error';
+    const rawMsg = e?.response?.data?.message || e?.message;
+    const errMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
+    useToast().add({
+      title: 'Gagal mengunggah naskah',
+      description: errMsg || 'Periksa penandatangan & isi naskah, lalu coba lagi.',
+      color: 'error',
+    });
   }
+}
+
+// ── Validasi: bila template mendeteksi N slot, semua harus terisi sebelum kirim/draft ──
+function validateSigners(): boolean {
+  if (signerSlotCount.value <= 0) return true;
+  const chain = form.value.penandatanganList ?? [];
+  const isValidEntry = (s?: Penandatangan | null) => !!s && !!(s.persnum || s.positionId || s.nama);
+  if (chain.length !== signerSlotCount.value || !chain.every(isValidEntry)) {
+    useToast().add({
+      title: `Isi semua ${signerSlotCount.value} penandatangan`,
+      description: 'Setiap slot penandatangan wajib diisi sesuai urutan.',
+      color: 'warning',
+    });
+    return false;
+  }
+  return true;
 }
 
 // ── Draft ──
@@ -737,6 +1001,7 @@ async function handleSaveDraft() {
 
 async function confirmSaveDraft() {
   showDraftConfirm.value = false;
+  if (!validateSigners()) return;
   saving.value = true;
   try {
     if (!createdId.value) {
@@ -761,6 +1026,7 @@ function handleConfirmKirim() {
 
 const doKirim = async () => {
   showKirimConfirm.value = false;
+  if (!validateSigners()) return;
   saving.value = true;
   try {
     if (!createdId.value) {

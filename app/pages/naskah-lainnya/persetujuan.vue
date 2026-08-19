@@ -45,6 +45,45 @@
             </Transition>
           </div>
 
+          <!-- FILTER STATUS (Menunggu / Disetujui / Ditolak) -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterStatus"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[190px] justify-between"
+            >
+              <span class="flex items-center gap-1.5 truncate">
+                <UIcon name="i-lucide-list-filter" class="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <span class="truncate">{{ currentFilterLabel }}</span>
+              </span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterStatus }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterStatus"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[210px]"
+              >
+                <button
+                  v-for="tab in filterTabs"
+                  :key="tab.value"
+                  type="button"
+                  @click.stop="selectFilterStatus(tab.value)"
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                    filterStatus === tab.value
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                  ]"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
+            </Transition>
+          </div>
+
           <div class="relative flex-1 min-w-[180px]">
             <UIcon
               name="i-lucide-search"
@@ -199,6 +238,14 @@ const sortKey = ref('nomor');
 const sortDir = ref<'asc' | 'desc'>('asc');
 const isExporting = ref(false);
 
+// Filter status persetujuan (menunggu / disetujui / ditolak).
+const filterStatus = ref<'menunggu' | 'disetujui' | 'ditolak'>('menunggu');
+const filterTabs: { value: 'menunggu' | 'disetujui' | 'ditolak'; label: string }[] = [
+  { value: 'menunggu', label: 'Menunggu Persetujuan Anda' },
+  { value: 'disetujui', label: 'Disetujui' },
+  { value: 'ditolak', label: 'Ditolak' },
+];
+
 const columns = [
   { key: 'nomor', label: 'Nomor', sortable: true },
   { key: 'jenis', label: 'Jenis', sortable: true },
@@ -212,6 +259,7 @@ const columns = [
 // ── Custom Dropdown Toolbar State (pola berkas-saya) ──────────────
 
 const openRowsPerPage = ref(false);
+const openFilterStatus = ref(false);
 
 function toggleRowsPerPage() {
   openRowsPerPage.value = !openRowsPerPage.value;
@@ -221,6 +269,17 @@ function selectRowsPerPage(n: number) {
   openRowsPerPage.value = false;
 }
 
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+}
+function selectFilterStatus(v: 'menunggu' | 'disetujui' | 'ditolak') {
+  filterStatus.value = v;
+  openFilterStatus.value = false;
+}
+const currentFilterLabel = computed(
+  () => filterTabs.find((t) => t.value === filterStatus.value)?.label ?? 'Filter',
+);
+
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const els = document.querySelectorAll('[data-custom-dropdown]');
@@ -228,6 +287,7 @@ function handleDocumentClick(e: MouseEvent) {
     if (el.contains(target)) return;
   }
   openRowsPerPage.value = false;
+  openFilterStatus.value = false;
 }
 
 // ── Search + Sort + Pagination (client-side; API mengembalikan list penuh) ─
@@ -297,7 +357,7 @@ async function doSetuju() {
   try {
     const approvalId = await firstWaitingId();
     await setuju(selected.value.id, approvalId, catatan.value || undefined);
-    await fetchPersetujuan();
+    await fetchPersetujuan(filterStatus.value);
     modalOpen.value = false;
   } finally { busy.value = false; }
 }
@@ -308,7 +368,7 @@ async function doTolak() {
   try {
     const approvalId = await firstWaitingId();
     await tolak(selected.value.id, approvalId, alasan.value);
-    await fetchPersetujuan();
+    await fetchPersetujuan(filterStatus.value);
     tolakOpen.value = false;
     modalOpen.value = false;
   } finally { busy.value = false; }
@@ -320,7 +380,7 @@ async function doKembali() {
   try {
     const approvalId = await firstWaitingId();
     await kembalikan(selected.value.id, approvalId, alasan.value);
-    await fetchPersetujuan();
+    await fetchPersetujuan(filterStatus.value);
     kembaliOpen.value = false;
     modalOpen.value = false;
   } finally { busy.value = false; }
@@ -363,7 +423,7 @@ async function exportData() {
 // if already on page 1, fetch directly so the change still applies).
 watch(search, () => {
   if (currentPage.value !== 1) currentPage.value = 1;
-  else fetchPersetujuan();
+  else fetchPersetujuan(filterStatus.value);
 });
 
 // Page/perPage changes -> fetch (perPage change resets to page 1 first).
@@ -372,19 +432,25 @@ watch([currentPage, perPage], ([, newPerPage], [, oldPerPage]) => {
     currentPage.value = 1;
     return;
   }
-  fetchPersetujuan();
+  fetchPersetujuan(filterStatus.value);
 });
 
 // Sort changes -> reset to page 1 (currentPage watcher fetches; if on page 1, fetch directly).
 watch([sortKey, sortDir], () => {
   if (currentPage.value !== 1) currentPage.value = 1;
-  else fetchPersetujuan();
+  else fetchPersetujuan(filterStatus.value);
+});
+
+// Filter tab change -> reset to page 1 (currentPage watcher fetches; if on page 1, fetch directly).
+watch(filterStatus, () => {
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else fetchPersetujuan(filterStatus.value);
 });
 
 // ── Init ──────────────────────────────────────────────────────────
 
 onMounted(() => {
-  fetchPersetujuan();
+  fetchPersetujuan(filterStatus.value);
   document.addEventListener('click', handleDocumentClick);
 });
 

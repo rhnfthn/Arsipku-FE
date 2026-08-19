@@ -96,6 +96,7 @@ const actionDescription = computed(() => {
   if (t === 'blanko_verbal') return 'Buat blanko verbal untuk naskah ini.';
   if (t === 'tanda_tangan_legal') return 'Tanda tangani naskah sebagai legal.';
   if (t === 'tanda_tangan_pejabat') return 'Tanda tangani naskah sebagai pejabat.';
+  if (t === 'tanda_tangan') return 'Tanda tangani naskah sebagai penandatangan aktif.';
   if (t === 'konsep' || t === 'perlu_perbaikan') return 'Kirim naskah untuk persetujuan.';
   return 'Pilih aksi yang tersedia.';
 });
@@ -111,10 +112,18 @@ const showReturnModal = ref(false);
 const savingAction = ref(false);
 const pendingAction = ref<JenisAksi | null>(null);
 
+// Nomor bersih untuk tampilan: sembunyikan placeholder mentah {{...}} (legacy scrape
+// pra-Task-8 menangkap {{nomor}} dari template docx dan menyimpannya sebagai nomor).
+// Konsumen beri fallback masing-masing ('—' untuk info row, 'Detail' untuk breadcrumb).
+const nomorClean = computed(() => {
+  const n = detail.value?.nomor;
+  return n && !/\{\{[^}]*\}\}/.test(n) ? n : '';
+});
+
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('naskah_lainnya'), to: '/naskah-lainnya' },
-  { label: detail.value?.nomor ?? 'Detail', to: '#' },
+  { label: nomorClean.value || 'Detail', to: '#' },
 ]);
 
 onMounted(() => fetchDetail(id.value));
@@ -184,7 +193,7 @@ async function fetchFileBlob(): Promise<{ blob: Blob; filename: string } | null>
   try {
     const blob = await apiGet(url, { responseType: 'blob' });
     const nama = detail.value?.dokumen.find((d) => d.tipe === 'naskah')?.nama
-      || `${detail.value?.nomor || 'naskah'}.docx`;
+      || `${nomorClean.value || 'naskah'}.docx`;
     return { blob, filename: nama };
   } catch {
     return null;
@@ -273,7 +282,7 @@ const ACTION_META: Record<JenisAksi, { label: string; icon: string; color: 'prim
   tolak: { label: 'Tolak', icon: 'i-lucide-x', color: 'error', variant: 'reject' },
   kembalikan: { label: 'Kembalikan', icon: 'i-lucide-undo-2', color: 'warning', variant: 'return' },
   'mulai-legal': { label: 'Mulai Legal Drafting', icon: 'i-lucide-file-pen', color: 'primary', to: (id: string) => `/naskah-lainnya/${id}/legal-drafting` },
-  'kirim-approval-legal': { label: 'Kirim Approval Legal', icon: 'i-lucide-send', color: 'primary' },
+  'kirim-approval-legal': { label: 'Kirim Approval Legal', icon: 'i-lucide-send', color: 'primary', to: (id: string) => `/naskah-lainnya/${id}/legal-drafting` },
   'kembalikan-legal': { label: 'Kembalikan ke Pemrakarsa', icon: 'i-lucide-undo-2', color: 'warning', to: (id: string) => `/naskah-lainnya/${id}/legal-drafting`, variant: 'return' },
   evaluasi: { label: 'Evaluasi', icon: 'i-lucide-clipboard-check', color: 'primary' },
   'simpan-blanko': { label: 'Buat Blanko Verbal', icon: 'i-lucide-file-check', color: 'primary', to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal` },
@@ -303,8 +312,6 @@ function openActionModal(a: JenisAksi) {
     showReturnModal.value = true;
   } else if (a === 'kirim') {
     showApproveModal.value = true;
-  } else if (a === 'kirim-approval-legal') {
-    showApproveModal.value = true;
   } else if (a === 'evaluasi') {
     showApproveModal.value = true;
   }
@@ -322,8 +329,6 @@ async function handleApprove(catatan: string) {
       if (approval) await nl.setuju(naskahId, approval.id, catatan || undefined);
     } else if (a === 'kirim') {
       await nl.kirim(naskahId);
-    } else if (a === 'kirim-approval-legal') {
-      await nl.kirimApprovalLegal(naskahId);
     } else if (a === 'evaluasi') {
       await nl.evaluasi(naskahId, { sesuai: true, checklist: [], catatan: catatan || undefined });
     }
@@ -446,6 +451,7 @@ const nextActionInfo = computed(() => {
     blanko_verbal: 'Pembuatan blanko verbal',
     tanda_tangan_legal: 'Menunggu tanda tangan legal',
     tanda_tangan_pejabat: 'Menunggu tanda tangan pejabat',
+    tanda_tangan: 'Menunggu tanda tangan penandatangan',
     perlu_perbaikan: 'Naskah perlu perbaikan',
   };
   const label = tahapanLabels[tahapan] ?? tahapan;
@@ -491,7 +497,7 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
       <template #title>
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-2xl">
-            {{ detail?.nomor ?? 'Draf Naskah' }}
+            {{ detail?.perihal ?? 'Draf Naskah' }}
           </h1>
           <StatusBadge v-if="detail" :status="detail.tahapan" />
         </div>
@@ -570,7 +576,7 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Nomor</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ detail.nomor || '—' }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ nomorClean || '—' }}</dd>
                 </div>
               </div>
               <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
@@ -690,7 +696,7 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
                   <div class="p-2">
                     <div class="h-24 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex flex-col items-center justify-center gap-1 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
                       <UIcon name="i-lucide-file-text" class="size-8 text-red-500" />
-                      <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ d.tipe === 'naskah' ? 'DOCX' : d.nama.split('.').pop()?.toUpperCase() || 'FILE' }}</span>
+                      <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ d.tipe === 'naskah' ? 'DOCX' : d.nama.split('.').pop()?.toUpperCase() || 'FILE' }}</span>
                     </div>
                   </div>
                   <div class="px-2 pb-2 flex-1 flex items-center justify-center">
@@ -800,7 +806,7 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ nextActionInfo.jabatan ? nextActionInfo.jabatan + ' — ' : '' }}{{ nextActionInfo.oleh || 'Status' }}</p>
-                  <p class="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">{{ nextActionInfo.label }}</p>
+                  <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ nextActionInfo.label }}</p>
                 </div>
               </div>
 
@@ -852,9 +858,9 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
                   <div class="min-w-0 flex-1 pb-2">
                     <div class="flex items-center justify-between gap-2">
                       <p class="text-xs font-semibold text-gray-900 dark:text-white">{{ entry.jabatan ? entry.jabatan + ' — ' : '' }}{{ entry.title }}</p>
-                      <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium" :class="entry.actionColor">{{ entry.action }}</span>
+                      <span class="shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium" :class="entry.actionColor">{{ entry.action }}</span>
                     </div>
-                    <p class="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">{{ fmtDateTime(entry.timestamp) }}</p>
+                    <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ fmtDateTime(entry.timestamp) }}</p>
                     <p v-if="entry.catatan" class="mt-1 rounded bg-gray-50 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700/50 dark:text-gray-300">
                       <span class="font-medium">Catatan:</span> {{ entry.catatan }}
                     </p>

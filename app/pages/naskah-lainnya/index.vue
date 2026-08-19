@@ -5,20 +5,6 @@
       :items="breadcrumbs"
     />
 
-    <!-- Tab -->
-    <div class="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700">
-      <button
-        v-for="tab in tabs" :key="tab.id"
-        class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
-        :class="activeTab === tab.id
-          ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-          : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
-        @click="switchTab(tab.id)"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
-
     <!-- Table Card (pola berkas-saya: toolbar + DataTable + DataPagination) -->
     <div
       class="rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
@@ -221,7 +207,6 @@ definePageMeta({ layout: 'default', middleware: ['auth'] });
 const { items, pending, error, fetchList } = useNaskahLainnya();
 const toast = useToast();
 
-const activeTab = ref<'all' | 'mine'>('all');
 const search = ref('');
 const filterJenis = ref('');
 const filterTahapan = ref('');
@@ -230,11 +215,6 @@ const currentPage = ref(1);
 const sortKey = ref('terakhirDiubah');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const isExporting = ref(false);
-
-const tabs = [
-  { id: 'all' as const, label: 'Semua' },
-  { id: 'mine' as const, label: 'Naskah Saya' },
-];
 
 const { t } = useI18n();
 const breadcrumbs = computed(() => [
@@ -369,9 +349,8 @@ function handleSort(key: string) {
 // ── Data Fetching ─────────────────────────────────────────────────
 
 function load() {
-  return fetchList({ tab: activeTab.value, search: search.value, jenis: filterJenis.value, tahapan: filterTahapan.value });
+  return fetchList({ search: search.value, jenis: filterJenis.value, tahapan: filterTahapan.value });
 }
-function switchTab(id: 'all' | 'mine') { activeTab.value = id; }
 function goDetail(id: string) { navigateTo(`/naskah-lainnya/${id}`); }
 
 // ── Export CSV ───────────────────────────────────────────────────
@@ -405,7 +384,7 @@ async function exportData() {
 
 // Filter changes -> reset to page 1 (the currentPage watcher then fetches;
 // if already on page 1, fetch directly so the change still applies).
-watch([search, filterJenis, filterTahapan, activeTab], () => {
+watch([search, filterJenis, filterTahapan], () => {
   if (currentPage.value !== 1) currentPage.value = 1;
   else load();
 });
