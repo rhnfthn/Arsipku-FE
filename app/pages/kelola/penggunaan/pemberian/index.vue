@@ -23,7 +23,7 @@ const toast = useToast();
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
-const filterStatus = ref('Semua');
+const filterStatus = ref('Aktif');
 const sortKey = ref('tanggalMulai');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const isExporting = ref(false);
@@ -120,7 +120,7 @@ const loadData = async () => {
 
 const resetFilters = () => {
   searchQuery.value = '';
-  filterStatus.value = 'Semua';
+  filterStatus.value = 'Aktif';
   currentPage.value = 1;
 };
 
