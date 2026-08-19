@@ -274,6 +274,44 @@ async function download(d) {
   }
 }
 
+// ── Aksi per-versi naskah (timeline) — pakai endpoint per dokumenId (tipe-agnostic). ──
+async function lihatVersi(dokumenId: string) {
+  const id_ = detail.value?.id;
+  try {
+    const { apiGet } = useApi();
+    const blob = await apiGet(`/naskah-lainnya/${id_}/dokumen/${dokumenId}/download`, {
+      params: { inline: '1' },
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(blob as Blob);
+    window.open(url, '_blank');
+    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+  } catch {
+    toast.add({ title: 'Gagal memuat pratinjau', color: 'error' });
+  }
+}
+
+async function unduhVersi(dokumenId: string) {
+  const id_ = detail.value?.id;
+  try {
+    const { apiGet } = useApi();
+    const blob = await apiGet(`/naskah-lainnya/${id_}/dokumen/${dokumenId}/download`, {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(blob as Blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const d = detail.value?.dokumen.find((x) => x.id === dokumenId);
+    a.download = d?.nama ?? 'naskah.docx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+  } catch {
+    toast.add({ title: 'Gagal mengunduh', color: 'error' });
+  }
+}
+
 // ── Action metadata ──
 const ACTION_META: Record<JenisAksi, { label: string; icon: string; color: 'primary' | 'success' | 'error' | 'warning' | 'neutral'; to?: string | ((id: string) => string); variant?: 'approve' | 'reject' | 'return' }> = {
   kirim: { label: 'Kirim untuk Approval', icon: 'i-lucide-send', color: 'primary' },
@@ -682,34 +720,41 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
               </button>
             </div>
             <div class="p-4">
-              <div v-if="dokumenTerkait.length === 0" class="flex flex-col items-center gap-2 py-8 text-gray-400 dark:text-gray-500">
-                <UIcon name="i-lucide-inbox" class="size-8" />
-                <span class="text-sm">Belum ada dokumen.</span>
-              </div>
-              <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <button
-                  v-for="d in dokumenTerkait"
-                  :key="d.id"
-                  @click="preview(d)"
-                  class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-400 dark:hover:border-primary-500 transition-all text-center flex flex-col overflow-hidden group"
-                >
-                  <div class="p-2">
-                    <div class="h-24 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex flex-col items-center justify-center gap-1 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
-                      <UIcon name="i-lucide-file-text" class="size-8 text-red-500" />
-                      <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ d.tipe === 'naskah' ? 'DOCX' : d.nama.split('.').pop()?.toUpperCase() || 'FILE' }}</span>
-                    </div>
-                  </div>
-                  <div class="px-2 pb-2 flex-1 flex items-center justify-center">
-                    <p class="text-xs font-medium text-gray-700 dark:text-gray-200 line-clamp-2 break-all leading-tight">{{ d.nama }}</p>
-                  </div>
-                </button>
-              </div>
-              <!-- Download all -->
-              <div v-if="dokumenTerkait.length > 0" class="mt-3 flex justify-end">
-                <div class="flex gap-1">
-                  <UButton v-for="d in dokumenTerkait" :key="d.id" icon="i-lucide-download" color="neutral" variant="ghost" size="xs" @click="download(d)" />
+              <NaskahVersiTimeline
+                v-if="dokumenTab === 0"
+                :items="dokumenTerkait"
+                @lihat="lihatVersi"
+                @unduh="unduhVersi"
+              />
+              <template v-else>
+                <div v-if="dokumenTerkait.length === 0" class="flex flex-col items-center gap-2 py-8 text-gray-400 dark:text-gray-500">
+                  <UIcon name="i-lucide-inbox" class="size-8" />
+                  <span class="text-sm">Belum ada dokumen.</span>
                 </div>
-              </div>
+                <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <button
+                    v-for="d in dokumenTerkait"
+                    :key="d.id"
+                    @click="preview(d)"
+                    class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-400 dark:hover:border-primary-500 transition-all text-center flex flex-col overflow-hidden group"
+                  >
+                    <div class="p-2">
+                      <div class="h-24 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex flex-col items-center justify-center gap-1 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+                        <UIcon name="i-lucide-file-text" class="size-8 text-red-500" />
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ d.tipe === 'naskah' ? 'DOCX' : d.nama.split('.').pop()?.toUpperCase() || 'FILE' }}</span>
+                      </div>
+                    </div>
+                    <div class="px-2 pb-2 flex-1 flex items-center justify-center">
+                      <p class="text-xs font-medium text-gray-700 dark:text-gray-200 line-clamp-2 break-all leading-tight">{{ d.nama }}</p>
+                    </div>
+                  </button>
+                </div>
+                <div v-if="dokumenTerkait.length > 0" class="mt-3 flex justify-end">
+                  <div class="flex gap-1">
+                    <UButton v-for="d in dokumenTerkait" :key="d.id" icon="i-lucide-download" color="neutral" variant="ghost" size="xs" @click="download(d)" />
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
 
