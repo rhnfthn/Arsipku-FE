@@ -1074,13 +1074,9 @@ const adminMenuKelola = computed(() => {
       showIfCanPersetujuan: true,
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
-    {
-      label: 'Usulan Akses',
-      to: '/kelola/penggunaan/usulan-akses-berkas',
-      icon: 'i-lucide-folder-key',
-      permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    },
+    // ── 'Usulan Akses' dipindahkan ke menu Penggunaan (Usulan Saya / Verifikasi Usulan)
+    //    Lihat penggunaanChildren di bawah. Entry lama di Pemeliharaan dihapus agar
+    //    sidebar tidak punya 2 menu redundant untuk halaman yang sama.
     {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
