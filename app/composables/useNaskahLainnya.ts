@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { useApi } from './useApi';
 import type {
   NaskahListItem, NaskahDetail, BuatNaskahPayload, EvaluasiPayload,
-  BlankoPayload, TandaTanganPayload, ApiResponse,
+  BlankoPayload, TandaTanganPayload, ApiResponse, LegalRecipient,
 } from '~/types/naskah-lainnya';
 
 export function useNaskahLainnya() {
@@ -11,6 +11,9 @@ export function useNaskahLainnya() {
   const items = ref<NaskahListItem[]>([]);
   const persetujuan = ref<NaskahListItem[]>([]);
   const persetujuanCount = ref(0);
+  const legalDrafting = ref<NaskahListItem[]>([]);
+  const legalDraftingCount = ref(0);
+  const legalRecipients = ref<LegalRecipient[]>([]);
   const detail = ref<NaskahDetail | null>(null);
   const pending = ref(false);
   const error = ref<any>(null);
@@ -41,9 +44,9 @@ export function useNaskahLainnya() {
       (d) => { detail.value = d; },
     );
 
-  const fetchPersetujuan = () =>
+  const fetchPersetujuan = (status: 'menunggu' | 'disetujui' | 'ditolak' = 'menunggu') =>
     run(
-      () => apiGet('/naskah-lainnya/persetujuan', {}, { skipCache: true }),
+      () => apiGet('/naskah-lainnya/persetujuan', { params: { status } }, { skipCache: true }),
       (d) => { persetujuan.value = d; },
     );
 
@@ -51,6 +54,25 @@ export function useNaskahLainnya() {
     run(
       () => apiGet('/naskah-lainnya/persetujuan', {}, { skipCache: true }),
       (d) => { persetujuanCount.value = Array.isArray(d) ? d.length : (d as any) ?? 0; },
+    );
+
+  const fetchLegalDrafting = (status: 'belum-dikirim' | 'menunggu' | 'ditolak' | 'aksi-saya' = 'belum-dikirim') =>
+    run(
+      () => apiGet('/naskah-lainnya/legal-drafting', { params: { status } }, { skipCache: true }),
+      (d) => { legalDrafting.value = d; },
+    );
+
+  const fetchLegalDraftingCount = () =>
+    run(
+      () => apiGet('/naskah-lainnya/legal-drafting', {}, { skipCache: true }),
+      (d) => { legalDraftingCount.value = Array.isArray(d) ? d.length : (d as any) ?? 0; },
+    );
+
+  // Pemberi persetujuan legal = person di unit legal (GET /konfigurasi/unit-legal).
+  const fetchLegalRecipients = () =>
+    run(
+      () => apiGet<LegalRecipient[]>('/konfigurasi/unit-legal'),
+      (d) => { legalRecipients.value = Array.isArray(d) ? d : (d as any) ?? []; },
     );
 
   const createdId = ref<string | null>(null);
@@ -73,7 +95,7 @@ export function useNaskahLainnya() {
     tolak: (id, b) => ({ url: `/naskah-lainnya/${id}/approval/${b?.approvalId}/tolak`, body: { catatan: b?.catatan } }),
     kembalikan: (id, b) => ({ url: `/naskah-lainnya/${id}/approval/${b?.approvalId}/kembalikan`, body: { catatan: b?.catatan } }),
     mulaiLegal: (id) => ({ url: `/naskah-lainnya/${id}/legal-drafting/mulai` }),
-    kirimApprovalLegal: (id) => ({ url: `/naskah-lainnya/${id}/legal-drafting/kirim-approval` }),
+    kirimApprovalLegal: (id, b) => ({ url: `/naskah-lainnya/${id}/legal-drafting/kirim-approval`, body: b }),
     kembalikanLegal: (id, b) => ({ url: `/naskah-lainnya/${id}/legal-drafting/kembalikan`, body: { catatan: b?.catatan } }),
     evaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi`, body: b }),
     simpanBlanko: (id, b) => ({ url: `/naskah-lainnya/${id}/blanko-verbal`, body: b }),
@@ -94,7 +116,8 @@ export function useNaskahLainnya() {
   const tolak = (id: string, approvalId: string, catatan: string) => act(id, 'tolak', { approvalId, catatan });
   const kembalikan = (id: string, approvalId: string, catatan: string) => act(id, 'kembalikan', { approvalId, catatan });
   const mulaiLegal = (id: string) => act(id, 'mulaiLegal');
-  const kirimApprovalLegal = (id: string) => act(id, 'kirimApprovalLegal');
+  const kirimApprovalLegal = (id: string, approvers: { positionId?: string; nama: string; jabatan: string; persnum?: number }[]) =>
+    act(id, 'kirimApprovalLegal', { approval: approvers });
   const kembalikanLegal = (id: string, catatan: string) => act(id, 'kembalikanLegal', { catatan });
   const evaluasi = (id: string, payload: EvaluasiPayload) => act(id, 'evaluasi', payload);
   const simpanBlanko = (id: string, payload: BlankoPayload) => act(id, 'simpanBlanko', payload);
@@ -104,13 +127,19 @@ export function useNaskahLainnya() {
   const uploadDokumen = async (id: string, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    return apiPost<ApiResponse<{ parameter: { nomor: string; perihal: string; tanggal: string } }>>(`/naskah-lainnya/${id}/dokumen`, fd);
+    return apiPost<ApiResponse<{ parameter: { perihal: string; tanggal: string } }>>(`/naskah-lainnya/${id}/dokumen`, fd);
   };
 
   const uploadDokumenTambahan = async (id: string, tipe: string, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
     return apiPost<ApiResponse<{ id: string; nama: string; tipe: string }>>(`/naskah-lainnya/${id}/dokumen/${tipe}`, fd);
+  };
+
+  const unggahTtdFisik = async (id: string, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return apiPost<ApiResponse<NaskahDetail>>(`/naskah-lainnya/${id}/unggah-ttd-fisik`, fd);
   };
 
   const deleteDokumenTambahan = (id: string, dokumenId: string) =>
@@ -123,11 +152,11 @@ export function useNaskahLainnya() {
     apiDelete<ApiResponse<{ id: string }>>(`/naskah-lainnya/${id}`);
 
   return {
-    items, persetujuan, persetujuanCount, detail, pending, error, createdId,
-    fetchList, fetchDetail, fetchPersetujuan, fetchPersetujuanCount,
+    items, persetujuan, persetujuanCount, legalDrafting, legalDraftingCount, legalRecipients, detail, pending, error, createdId,
+    fetchList, fetchDetail, fetchPersetujuan, fetchPersetujuanCount, fetchLegalDrafting, fetchLegalDraftingCount, fetchLegalRecipients,
     create, update, kirim, setuju, tolak, kembalikan, mulaiLegal,
     kirimApprovalLegal, kembalikanLegal, evaluasi, simpanBlanko,
     kirimApprovalBlanko, tandaTangan, uploadDokumen, uploadDokumenTambahan,
-    deleteDokumenTambahan, getTemplateUrl, deleteDraft,
+    unggahTtdFisik, deleteDokumenTambahan, getTemplateUrl, deleteDraft,
   };
 }

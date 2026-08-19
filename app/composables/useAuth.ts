@@ -62,6 +62,7 @@ export const useAuth = () => {
         // 2. Ambil data tambahan dari root response
         const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
         const delegationsData = res?.data?.delegations || res?.delegations || null;
+        const isLegalRoleData = res?.data?.isLegalRole ?? res?.isLegalRole ?? false;
 
         if (profileData) {
           // 3. GABUNGKAN: Masukkan alamatInfo dan delegations ke dalam profileData
@@ -69,6 +70,7 @@ export const useAuth = () => {
             ...profileData,
             alamatInfo: alamatData || profileData.alamatInfo,
             delegations: delegationsData || profileData.delegations,
+            isLegalRole: isLegalRoleData,
           };
 
           // Casting ke UserProfile
@@ -235,6 +237,7 @@ export const useAuth = () => {
 
   const isSuperadmin = computed(() => hasRole('SUPERADMIN'));
   const isAdmin = computed(() => hasRole('ADMIN'));
+  const isLegalRole = computed(() => !!user.value?.isLegalRole);
 
   const switchRole = async (roleId: string) => {
     if (!process.client) return;
@@ -350,6 +353,7 @@ export const useAuth = () => {
     hasAnyRole,
     isSuperadmin,
     isAdmin,
+    isLegalRole,
     switchRole,
     switchProfile,
   };

@@ -39,7 +39,7 @@
             <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ penandatanganNama }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ penandatanganJabatan }}</p>
           </div>
-          <UBadge color="primary" size="sm" icon="i-lucide-pen-tool">Tanda Tangan</UBadge>
+          <UBadge color="primary" size="sm" icon="i-lucide-pen-tool">{{ signerProgress || 'Tanda Tangan' }}</UBadge>
         </div>
       </div>
 
@@ -58,7 +58,9 @@
         @upload-revisi="onUploadRevisi"
       >
         <template #actions>
+          <!-- Digital (qr_only): inject QR + advance -->
           <UButton
+            v-if="signOption === 'qr_only'"
             color="primary"
             icon="i-lucide-pen-tool"
             size="lg"
@@ -68,6 +70,19 @@
           >
             {{ actionLabel }}
           </UButton>
+
+          <!-- Fisik (ttd_basah): unduh + unggah hasil ttd basah -->
+          <template v-else-if="signOption === 'ttd_basah'">
+            <UButton color="neutral" variant="outline" icon="i-lucide-download" size="lg" @click="downloadNaskah">
+              Unduh Naskah
+            </UButton>
+            <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">
+              <UIcon name="i-lucide-upload" class="size-4" />
+              Unggah Naskah Ditandatangani
+              <input type="file" class="hidden" accept=".docx,.pdf,image/*" @change="onUnggahTtdFisik" />
+            </label>
+          </template>
+
           <UButton
             v-if="canKembalikan"
             color="error"
@@ -114,7 +129,7 @@
 const route = useRoute();
 const id = computed(() => route.params.id);
 const { apiGet } = useApi();
-const { detail, fetchDetail, uploadDokumen, tandaTangan } = useNaskahLainnya();
+const { detail, fetchDetail, uploadDokumen, tandaTangan, unggahTtdFisik } = useNaskahLainnya();
 const toast = useToast();
 
 const loading = ref(true);
@@ -131,12 +146,14 @@ const JENIS_LABELS = {
 const jenisLabel = (j) => JENIS_LABELS[j] || j;
 
 const tahapan = computed(() => detail.value?.tahapan ?? '');
+const signOption = computed(() => detail.value?.signOption ?? 'qr_only');
 
 const tahapanLabel = computed(() => {
   const t = tahapan.value;
   if (t === 'tanda_tangan_pemrakarsa') return 'Tanda Tangan Pemrakarsa';
   if (t === 'tanda_tangan_legal') return 'Tanda Tangan Legal';
   if (t === 'tanda_tangan_pejabat') return 'Tanda Tangan Pejabat';
+  if (t === 'tanda_tangan') return 'Tanda Tangan';
   return 'Tanda Tangan';
 });
 
@@ -144,6 +161,7 @@ const areaTitle = computed(() => {
   const t = tahapan.value;
   if (t === 'tanda_tangan_pemrakarsa') return 'Tinjauan Pemrakarsa';
   if (t === 'tanda_tangan_legal') return 'Tinjauan Legal';
+  if (t === 'tanda_tangan') return 'Tinjauan Penandatangan';
   return 'Tinjauan Pejabat';
 });
 
@@ -153,6 +171,7 @@ const catatanTitle = computed(() => {
   const t = tahapan.value;
   if (t === 'tanda_tangan_pemrakarsa') return 'Catatan Pemrakarsa';
   if (t === 'tanda_tangan_legal') return 'Catatan Legal';
+  if (t === 'tanda_tangan') return 'Catatan Penandatangan';
   return 'Catatan Pejabat';
 });
 
@@ -162,21 +181,37 @@ const actionLabel = computed(() => {
   const t = tahapan.value;
   if (t === 'tanda_tangan_pemrakarsa') return 'Tanda Tangani (Pemrakarsa)';
   if (t === 'tanda_tangan_legal') return 'Tanda Tangani (Legal)';
+  if (t === 'tanda_tangan') return 'Tandatangani Naskah';
   return 'Tanda Tangani Naskah';
 });
 
-const canKembalikan = computed(() => tahapan.value === 'tanda_tangan_legal' || tahapan.value === 'tanda_tangan_pemrakarsa');
+const canKembalikan = computed(() =>
+  tahapan.value === 'tanda_tangan_legal'
+  || tahapan.value === 'tanda_tangan_pemrakarsa');
 
-const penandatanganList = computed(() => detail.value?.penandatanganList ?? []);
-const penandatanganNama = computed(() => {
-  const list = penandatanganList.value;
-  if (list.length > 0) return list.map((p) => p.nama).join(', ');
-  return detail.value?.penandatangan?.nama ?? '—';
+// BE getDetail mengirim rantai penandatangan sebagai `penandatangan` (array),
+// bukan `penandatanganList`. `penandatanganList` dipakai sebagai sumber sekunder
+// bila BE kelak mengirimnya; `penandatangan` adalah yang otoritatif (sama dengan [id].vue).
+const signerChain = computed(() => {
+  const d = detail.value;
+  if (!d) return [];
+  const pl = d.penandatanganList;
+  if (Array.isArray(pl) && pl.length) return pl;
+  const pen = d.penandatangan;
+  if (Array.isArray(pen) && pen.length) return pen;
+  if (pen && !Array.isArray(pen) && pen.nama) return [pen];
+  return [];
 });
-const penandatanganJabatan = computed(() => {
-  const list = penandatanganList.value;
-  if (list.length > 0) return list.map((p) => p.jabatan).join(', ');
-  return detail.value?.penandatangan?.jabatan ?? '';
+const currentSigner = computed(() => {
+  const idx = detail.value?.signingIndex ?? 1;
+  return signerChain.value[idx - 1] ?? null;
+});
+const penandatanganNama = computed(() => currentSigner.value?.nama ?? '—');
+const penandatanganJabatan = computed(() => currentSigner.value?.jabatan ?? '');
+const signerProgress = computed(() => {
+  const idx = detail.value?.signingIndex ?? 1;
+  const total = detail.value?.signerCount ?? 0;
+  return total > 0 ? `Penandatangan ke-${idx} dari ${total}` : '';
 });
 
 const dokumenPendukung = computed(() => (detail.value?.dokumen ?? []).filter((d) => d.tipe === 'pendukung'));
@@ -231,17 +266,39 @@ async function onUploadRevisi(file) {
   return res;
 }
 
+async function afterSignNavigate() {
+  await fetchDetail(id.value);
+  const t = detail.value?.tahapan;
+  if (t === 'selesai') {
+    navigateTo(`/naskah-lainnya/${id.value}/selesai`);
+  } else {
+    navigateTo(`/naskah-lainnya/${id.value}/tanda-tangan`);
+  }
+}
+
+async function onUnggahTtdFisik(ev) {
+  const input = ev.target;
+  const file = input.files?.[0];
+  if (!file) return;
+  busy.value = true;
+  try {
+    await unggahTtdFisik(id.value, file);
+    toast.add({ title: 'Naskah ditandatangani (fisik) diunggah', color: 'success' });
+    await afterSignNavigate();
+  } catch (e) {
+    toast.add({ title: e?.response?.data?.message ?? 'Gagal mengunggah naskah ditandatangani', color: 'error' });
+  } finally {
+    busy.value = false;
+    input.value = '';
+  }
+}
+
 async function tandaTanganClick() {
   busy.value = true;
   try {
     await tandaTangan(id.value);
     toast.add({ title: 'Naskah ditandatangani', color: 'success' });
-    const t = detail.value?.tahapan;
-    if (t === 'tanda_tangan_pejabat') {
-      navigateTo(`/naskah-lainnya/${id.value}/selesai`);
-    } else {
-      navigateTo(`/naskah-lainnya/${id.value}`);
-    }
+    await afterSignNavigate();
   } catch {
     toast.add({ title: 'Gagal menandatangani naskah', color: 'error' });
   } finally {
