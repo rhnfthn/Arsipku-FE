@@ -32,7 +32,14 @@ const triedSubmit = ref(false);
 const accessType = ref<'RENTANG_WAKTU' | 'SEKALI_LIHAT'>('RENTANG_WAKTU');
 const durationDays = ref<number | 'CUSTOM'>(7);
 const customTanggalSelesai = ref('');
-const todayStr = new Date().toISOString().split('T')[0];
+// Tanggal hari ini dalam timezone lokal (bukan UTC) untuk `min` date picker.
+const todayStr = (() => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+})();
 
 // Metode berbagi naskah: via ArsipKu, Email, atau WhatsApp
 const shareMethod = ref<'ARSIPKU' | 'EMAIL' | 'WHATSAPP'>('ARSIPKU');
@@ -144,14 +151,26 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   errorMsg.value = '';
   try {
+    // Hitung durasi efektif: preset langsung, custom = selisih hari dari hari ini.
+    let effectiveDurationDays: number | undefined;
+    if (accessType.value === 'RENTANG_WAKTU') {
+      if (durationDays.value === 'CUSTOM') {
+        const end = new Date(customTanggalSelesai.value);
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        effectiveDurationDays = diff > 0 ? diff : undefined;
+      } else {
+        effectiveDurationDays = durationDays.value;
+      }
+    }
+
     await createShare(
       items[0].naskahId,
       selectedRecipients.value.map((r) => r.id),
       catatan.value || undefined,
       accessType.value,
-      accessType.value === 'RENTANG_WAKTU'
-        ? (durationDays.value === 'CUSTOM' ? undefined : durationDays.value)
-        : undefined,
+      effectiveDurationDays,
       items.length > 1 ? items.map((i) => i.naskahId) : undefined,
     );
     useToast().add({
@@ -235,7 +254,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
       <!-- Tipe Berbagi (metode bagi naskah) -->
       <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
-          Tipe Berbagi <span class="text-red-500">*</span>
+          {{ t('share_tipe_berbagi') }} <span class="text-red-500">*</span>
         </span>
         <div class="flex-1">
           <div class="relative" ref="shareMethodDropdownRef">
@@ -250,7 +269,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
             </button>
             <div
               v-if="showShareMethodDropdown"
-              class="absolute z-60 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+              class="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
             >
               <div class="max-h-[200px] overflow-y-auto">
                 <button
@@ -270,10 +289,10 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
           <!-- Coming soon untuk metode selain ArsipKu -->
           <div v-if="isShareMethodComingSoon" class="mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center dark:border-gray-600 dark:bg-gray-700/30">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Feature coming soon
+              {{ t('share_coming_soon') }}
             </p>
             <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-              Metode berbagi via {{ shareMethodLabel }} akan segera tersedia.
+              {{ t('share_metode_segera', { method: shareMethodLabel }) }}
             </p>
           </div>
         </div>
@@ -354,7 +373,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
             <!-- Preset: tanggal berakhir -->
             <div v-else-if="tanggalSelesaiStr" class="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700/40">
               <UIcon name="i-lucide-calendar-days" class="w-4 h-4 shrink-0 text-gray-500" />
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">Berakhir: {{ formatTanggalID(tanggalSelesaiStr) }}</span>
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('share_berakhir_pada') }} {{ formatTanggalID(tanggalSelesaiStr) }}</span>
             </div>
           </div>
         </div>
@@ -449,8 +468,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
         {{ t('share_batal') }}
       </button>
       <button
-        class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
-        style="background-color: #175FA4"
+        class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90 bg-primary dark:bg-primary-600"
         :disabled="isSubmitting || isShareMethodComingSoon"
         @click="handleSubmit"
       >
