@@ -299,9 +299,7 @@ const emptyMessage = computed(() =>
     ? 'Tidak ada pengajuan yang menunggu persetujuan Anda.'
     : statusFilter.value === 'approved'
       ? 'Tidak ada berkas yang Anda setujui.'
-      : statusFilter.value === 'rejected'
-        ? 'Tidak ada berkas yang Anda tolak.'
-        : 'Tidak ada data persetujuan pemberkasan.'
+      : 'Tidak ada berkas yang Anda tolak.'
 );
 
 const formatDate = (value?: string) => {
