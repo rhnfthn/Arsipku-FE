@@ -442,7 +442,6 @@ const statusLabel = computed(() => {
 });
 const statusBadgeColor = computed(() => {
   const map: Record<string, string> = {
-    draft: 'neutral',
     aktif: 'warning',
     ditolak: 'error',
     menunggu_verifikasi: 'warning',
