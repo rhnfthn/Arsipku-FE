@@ -255,11 +255,11 @@
         <template #cell-status="{ row }">
           <span
             class="px-2.5 py-0.5 text-xs rounded-full font-medium inline-flex items-center gap-1 w-fit border"
-            :class="statusStyle(row.status).class"
+            :style="statusStyle(row.status)"
           >
             <span
               class="w-1.5 h-1.5 rounded-full"
-              :class="statusStyle(row.status).dot"
+              :style="{ backgroundColor: statusStyle(row.status).dot }"
             />
             {{ statusStyle(row.status).label }}
           </span>
@@ -687,9 +687,6 @@ const resetFilters = () => {
   filterKlasifikasi.value = '';
   filterTahun.value = '';
   currentPage.value = 1;
-  // Pastikan refetch meski semua filter sudah di nilai default (watcher
-  // tidak akan trigger jika tidak ada perubahan nilai).
-  fetchData();
 };
 
 // ── Custom Dropdown Toolbar State (delegasi-style) ────────────────
@@ -825,17 +822,17 @@ const columns = [
 // ── Helpers ──────────────────────────────────────────────────────
 
 // ── Status color standard (berkas-saya only) ───────────────────
-const STATUS_STYLE: Record<string, { label: string; class: string; dot: string }> = {
-  aktif: { label: 'Terbuka', class: 'bg-green-100 text-green-700 border-green-300', dot: 'bg-green-700' },
-  menunggu_verifikasi: { label: 'Menunggu Verifikasi Managerial', class: 'bg-amber-100 text-amber-700 border-amber-300', dot: 'bg-amber-700' },
-  ditolak: { label: 'Verifikasi Ditolak Managerial', class: 'bg-red-100 text-red-700 border-red-300', dot: 'bg-red-700' },
-  closed_retensi_aktif: { label: 'Tertutup', class: 'bg-blue-100 text-blue-700 border-blue-300', dot: 'bg-blue-700' },
+const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
+  aktif: { label: 'Terbuka', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi Managerial', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
+  ditolak: { label: 'Verifikasi Ditolak Managerial', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
+  closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
 };
 const statusStyle = (status: string) => {
   const key = (status || '').toLowerCase().replace(/[\s-]+/g, '_');
-  return (
-    STATUS_STYLE[key] || { label: 'Tidak Diketahui', class: 'bg-gray-100 text-gray-600 border-gray-300', dot: 'bg-gray-500' }
-  );
+  const s =
+    STATUS_STYLE[key] || { label: 'Tidak Diketahui', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' };
+  return { label: s.label, backgroundColor: s.bg, color: s.text, borderColor: s.border, dot: s.dot };
 };
 
 const formatDate = (dateStr: string) => {
@@ -1055,7 +1052,7 @@ const exportData = async () => {
       b.kategoriBerkas || '',
       `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`,
       b.lokasi,
-      statusStyle(b.status).label,
+      b.status,
       b.updatedAt,
     ]);
     downloadCsv(`berkas-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);

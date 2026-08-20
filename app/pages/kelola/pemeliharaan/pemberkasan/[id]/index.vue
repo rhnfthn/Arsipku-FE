@@ -1336,7 +1336,7 @@ const canRemoveNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.valu
 const canClose = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canEdit = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
 const canDelete = computed(
-  () => berkas.value?.status === 'aktif' && naskahTotal.value === 0,
+  () => berkas.value?.status === 'aktif' && naskahList.value.length === 0,
 );
 const quickInfoCards = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-', icon: Hash },
