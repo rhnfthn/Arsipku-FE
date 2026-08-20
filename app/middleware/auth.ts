@@ -103,8 +103,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/final-approval-transfer-active-to-inactive',
     '/maintenance/verifikasi-usulan',
     '/maintenance/verifikasi-persetujuan-tu',
-    '/maintenance/notifikasi-usulan-pindah-arsip',
-    '/maintenance/verifikasi-berkas-fisik',
+    '/maintenance/penerimaan-usulan',
     '/maintenance/penataan-arsip-inaktif',
     '/maintenance/preview-berkas',
   ];
