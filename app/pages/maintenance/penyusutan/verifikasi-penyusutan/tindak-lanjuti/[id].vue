@@ -31,7 +31,7 @@
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span><p class="text-gray-900 dark:text-white font-medium">{{ item.no_usulan }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.kode_berkas ?? '-' }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nama Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.nama_berkas }}</p></div>
-              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasi ?? '-' }}</p></div>
+              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasi || '-' }}<span v-if="item.klasifikasiText || item.klasifikasi_text" class="text-xs ml-1">({{ item.klasifikasiText || item.klasifikasi_text }})</span></p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Unit Dokumen)</span><p class="text-gray-900 dark:text-white font-medium">{{ item.sekretaris }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Pengajuan</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggal_pengajuan) }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggal_retensi_habis) }}</p></div>

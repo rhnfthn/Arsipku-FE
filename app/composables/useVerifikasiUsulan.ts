@@ -114,14 +114,6 @@ export const useVerifikasiUsulan = () => {
       delete params.page;
       delete params.limit;
 
-      // Simpan filter client-side sebelum dikirim ke BE (BE tidak mendukung filter ini)
-      const filterKlasifikasi = params.klasifikasi;
-      const filterStatus = params.status;
-      const filterSearch = params.search;
-      delete params.klasifikasi;
-      delete params.status;
-      delete params.search;
-
       // Ambil semua data dari backend (limit besar) untuk filter DRAFT di frontend
       params.limit = 999;
 
@@ -146,32 +138,19 @@ export const useVerifikasiUsulan = () => {
 
       // Gabungkan dan normalisasi, filter DRAFT dan usulan milik sendiri
       const userPersnum = user.value?.persnum;
+      const filterKlasifikasi = params.klasifikasi;
       const combined: VerifikasiUsulanItem[] = [];
       for (const r of results) {
         for (const raw of r.data) {
           const item = normalize(raw, r.jenis);
-          // Skip DRAFT kecuali jika user explicitly filter DRAFT
-          if (item.status === 'DRAFT' && filterStatus !== 'DRAFT') continue;
+          if (item.status === 'DRAFT') continue;
           // Sembunyikan usulan yang dibuat oleh user sendiri sebagai Sekretaris
           // (halaman verifikasi hanya untuk usulan di mana user adalah atasan)
           if (userPersnum && Number(item.sekretarisPersnum) === Number(userPersnum)) continue;
-          // Filter status (client-side)
-          if (filterStatus && item.status !== filterStatus) continue;
           // Filter klasifikasi (client-side)
-          if (filterKlasifikasi) {
-            const ik = (item.arsipKlasifikasi ?? '').toLowerCase();
-            if (!ik.includes(filterKlasifikasi.toLowerCase())) continue;
-          }
-          // Filter search (client-side)
-          if (filterSearch) {
-            const q = filterSearch.toLowerCase();
-            const match =
-              (item.arsipPerihal ?? '').toLowerCase().includes(q) ||
-              (item.arsipKode ?? '').toLowerCase().includes(q) ||
-              (item.nomorUsulan ?? '').toLowerCase().includes(q) ||
-              (item.sekretarisName ?? '').toLowerCase().includes(q) ||
-              (item.arsipKlasifikasi ?? '').toLowerCase().includes(q);
-            if (!match) continue;
+          if (filterKlasifikasi && item.arsipKlasifikasi) {
+            if (!item.arsipKlasifikasi.toLowerCase().includes(filterKlasifikasi.toLowerCase()))
+              continue;
           }
           combined.push(item);
         }

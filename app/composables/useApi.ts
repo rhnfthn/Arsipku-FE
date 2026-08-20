@@ -1,5 +1,5 @@
-import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig } from 'axios';
+  import axios from "axios";
+import type { AxiosInstance, AxiosRequestConfig } from "axios";
 
 const isDev = process.dev;
 
@@ -12,7 +12,7 @@ const cache = new Map<string, CacheEntry>();
 const MAX_CACHE_SIZE = 100;
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 menit
 
-let lastAuthCacheScope = 'anonymous';
+let lastAuthCacheScope = "anonymous";
 
 interface ApiGetOptions {
   ttlMs?: number;
@@ -33,7 +33,6 @@ const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/search\/v3(?:[/?#]|$)/,
   /^\/mail-service\/logs(?:[/?#]|$)/,
   /^\/arsip-dinamis(?:[/?#]|$)/,
-  /^\/penyusutan(?:[/?#]|$)/,
 ];
 
 const normalizeApiUrl = (url: string): string => {
@@ -46,7 +45,7 @@ const normalizeApiUrl = (url: string): string => {
     // Keep original URL if parsing fails.
   }
 
-  return url.startsWith('/') ? url : `/${url}`;
+  return url.startsWith("/") ? url : `/${url}`;
 };
 
 const shouldBypassCache = (url: string, options: ApiGetOptions = {}): boolean => {
@@ -65,7 +64,7 @@ const hashString = (value: string): string => {
 };
 
 const getHeaderValue = (
-  headers: AxiosRequestConfig['headers'] | undefined,
+  headers: AxiosRequestConfig["headers"] | undefined,
   name: string
 ): string | undefined => {
   const rawHeaders = headers as any;
@@ -74,11 +73,11 @@ const getHeaderValue = (
 };
 
 const getAuthCacheScope = (config?: AxiosRequestConfig): string => {
-  const authHeader = getHeaderValue(config?.headers, 'Authorization');
-  const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-  const storedToken = process.client ? localStorage.getItem('token') : null;
+  const authHeader = getHeaderValue(config?.headers, "Authorization");
+  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+  const storedToken = process.client ? localStorage.getItem("token") : null;
   const token = headerToken || storedToken;
-  const scope = token ? `auth:${hashString(token)}` : 'anonymous';
+  const scope = token ? `auth:${hashString(token)}` : "anonymous";
 
   if (scope !== lastAuthCacheScope) {
     cache.clear();
@@ -91,9 +90,9 @@ const getAuthCacheScope = (config?: AxiosRequestConfig): string => {
 const buildCacheKey = (
   url: string,
   config?: AxiosRequestConfig,
-  authScope = 'anonymous'
+  authScope = "anonymous"
 ): string => {
-  const params = config?.params ? JSON.stringify(config.params) : '';
+  const params = config?.params ? JSON.stringify(config.params) : "";
   return `${authScope}:${url}?${params}`;
 };
 
@@ -116,8 +115,8 @@ const setCached = (key: string, data: any, ttlMs = DEFAULT_TTL_MS): void => {
 };
 
 const buildInvalidationPrefixes = (url: string): string[] => {
-  const normalizedUrl = normalizeApiUrl(url).split('?')[0] || '/';
-  const segments = normalizedUrl.split('/').filter(Boolean);
+  const normalizedUrl = normalizeApiUrl(url).split("?")[0] || "/";
+  const segments = normalizedUrl.split("/").filter(Boolean);
   const prefixes = new Set<string>([normalizedUrl]);
 
   if (segments.length > 0) {
@@ -145,15 +144,15 @@ export const useApi = () => {
   });
 
   api.interceptors.request.use((config) => {
-    const token = process.client ? localStorage.getItem('token') : null;
+    const token = process.client ? localStorage.getItem("token") : null;
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     // JIKA FormData → JANGAN SET CONTENT-TYPE
-    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
-      delete config.headers?.['Content-Type'];
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      delete config.headers?.["Content-Type"];
     }
 
     return config;
@@ -173,7 +172,7 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {},
     options: ApiGetOptions = {}
   ): Promise<T> => {
-    const baseUrl = api.defaults.baseURL || '';
+    const baseUrl = api.defaults.baseURL || "";
     const fullUrl = `${baseUrl}${url}`;
     const cacheKey = buildCacheKey(url, axiosConfig, getAuthCacheScope(axiosConfig));
     const skipCache = shouldBypassCache(url, options);
@@ -181,19 +180,19 @@ export const useApi = () => {
     if (!skipCache) {
       const cached = getCached<T>(cacheKey);
       if (cached !== undefined) {
-        if (isDev) console.log('[api] GET cache hit ->', fullUrl);
+        if (isDev) console.log("[api] GET cache hit ->", fullUrl);
         return cached;
       }
     }
 
     try {
-      if (isDev) console.log('[api] GET ->', fullUrl, axiosConfig);
+      if (isDev) console.log("[api] GET ->", fullUrl, axiosConfig);
       const res = await api.get(url, axiosConfig);
-      if (isDev) console.log('[api] GET response <-', fullUrl, res.status);
+      if (isDev) console.log("[api] GET response <-", fullUrl, res.status);
       if (!skipCache) setCached(cacheKey, res.data, options.ttlMs);
       return res.data;
     } catch (err) {
-      if (isDev) console.error('[api] GET error ->', url, err);
+      if (isDev) console.error("[api] GET error ->", url, err);
       throw err;
     }
   };
@@ -203,63 +202,51 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => apiGet<T>(url, axiosConfig, { skipCache: true });
 
-  const apiPost = async <T = any>(
-    url: string,
-    data?: any,
-    axiosConfig: AxiosRequestConfig = {}
-  ): Promise<T> => {
+  const apiPost = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
-      if (isDev) console.log('[api] POST ->', fullUrl, data);
+      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
+      if (isDev) console.log("[api] POST ->", fullUrl, data);
       const res = await api.post(url, data, axiosConfig);
-      if (isDev) console.log('[api] POST response <-', fullUrl, res.status);
-      invalidateCache(url.split('?')[0]);
+      if (isDev) console.log("[api] POST response <-", fullUrl, res.status);
+      invalidateCache(url.split("?")[0]);
       return res.data;
     } catch (err) {
-      if (isDev) console.error('[api] POST error ->', url, err);
+      if (isDev) console.error("[api] POST error ->", url, err);
       throw err;
     }
   };
 
-  const apiPut = async <T = any>(
-    url: string,
-    data?: any,
-    axiosConfig: AxiosRequestConfig = {}
-  ): Promise<T> => {
+  const apiPut = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
-      if (isDev) console.log('[api] PUT ->', fullUrl, data);
+      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
+      if (isDev) console.log("[api] PUT ->", fullUrl, data);
       const res = await api.put(url, data, axiosConfig);
-      if (isDev) console.log('[api] PUT response <-', fullUrl, res.status);
-      invalidateCache(url.split('?')[0]);
+      if (isDev) console.log("[api] PUT response <-", fullUrl, res.status);
+      invalidateCache(url.split("?")[0]);
       return res.data;
     } catch (err) {
-      if (isDev) console.error('[api] PUT error ->', url, err);
+      if (isDev) console.error("[api] PUT error ->", url, err);
       throw err;
     }
   };
 
-  const apiPatch = async <T = any>(
-    url: string,
-    data?: any,
-    axiosConfig: AxiosRequestConfig = {}
-  ): Promise<T> => {
+  const apiPatch = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
-      if (isDev) console.log('[api] PATCH ->', fullUrl, data);
+      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
+      if (isDev) console.log("[api] PATCH ->", fullUrl, data);
       const res = await api.patch(url, data, axiosConfig);
-      if (isDev) console.log('[api] PATCH response <-', fullUrl, res.status);
-      invalidateCache(url.split('?')[0]);
+      if (isDev) console.log("[api] PATCH response <-", fullUrl, res.status);
+      invalidateCache(url.split("?")[0]);
       return res.data as T;
     } catch (err) {
-      if (isDev) console.error('[api] PATCH error ->', url, err);
+      if (isDev) console.error("[api] PATCH error ->", url, err);
       throw err;
     }
   };
 
   const apiDelete = async <T = any>(url: string): Promise<T> => {
     const res = await api.delete(url);
-    invalidateCache(url.split('?')[0]);
+    invalidateCache(url.split("?")[0]);
     return res.data;
   };
 

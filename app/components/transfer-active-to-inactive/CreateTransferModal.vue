@@ -230,17 +230,7 @@
             </div>
             <div class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[200px] overflow-y-auto">
               <div v-for="a in selectedArsipList" :key="a.id" class="px-4 py-2">
-                <div class="flex items-center gap-1.5 mb-1">
-                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate flex-1">{{ a.kodeBerkas ?? '-' }} — {{ a.judulBerkas }}</span>
-                  <button
-                    type="button"
-                    @click="openArsipDetail(a)"
-                    title="Lihat detail arsip"
-                    class="inline-flex items-center justify-center w-6 h-6 rounded-md text-gray-400 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/900/20 transition-colors shrink-0"
-                  >
-                    <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                <div class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{{ a.kodeBerkas ?? '-' }} — {{ a.judulBerkas }}</div>
                 <div v-if="a.files && a.files.length > 0" class="space-y-1">
                   <div
                     v-for="(f, fidx) in a.files"
@@ -471,11 +461,6 @@ const previewFile = (f: any) => {
   } else {
     alert('File tidak tersedia untuk dilihat.');
   }
-};
-
-const openArsipDetail = (a: any) => {
-  if (!a?.id) return;
-  navigateTo(`/maintenance/preview-berkas/${a.id}`);
 };
 
 const loadAtasanManagerial = async () => {
