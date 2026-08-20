@@ -97,7 +97,7 @@ const loadData = async () => {
       limit: itemsPerPage.value,
       search: searchQuery.value || undefined,
       status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
-      sort: activeSortLabel.value === 'Terlama' ? 'ASC' : 'DESC',
+      sort: activeSortLabel.value === t('share_terlama') ? 'ASC' : 'DESC',
     });
   } finally {
     isRefreshing.value = false;
@@ -468,81 +468,27 @@ onMounted(() => { loadData(); });
     />
 
     <!-- Modal Konfirmasi Cabut Semua Akses -->
-    <Teleport to="body">
-      <div
-        v-if="showRevokeAllModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-      >
-        <div
-          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800"
-        >
-          <div class="p-5 text-center">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-100 dark:bg-red-900/30">
-              <UIcon name="i-lucide-shield-off" class="w-6 h-6 text-red-600 dark:text-red-400" />
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-              {{ t('share_cabut_semua') }}
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {{ t('share_revoke_all_confirm') }}
-            </p>
-            <div class="flex gap-3 justify-center">
-              <button
-                @click="showRevokeAllModal = false; revokeAllShare = null"
-                :disabled="isRevokingAll"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-              >
-                {{ t('share_batal') }}
-              </button>
-              <button
-                @click="confirmRevokeAll"
-                :disabled="isRevokingAll"
-                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <UIcon v-if="isRevokingAll" name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
-                {{ isRevokingAll ? t('share_memproses') : t('share_akhiri_akses') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <ConfirmModal
+      v-model="showRevokeAllModal"
+      :title="t('share_cabut_semua')"
+      :description="t('share_revoke_all_confirm')"
+      :confirm-text="t('share_akhiri_akses')"
+      :cancel-text="t('share_batal')"
+      :loading-text="t('share_memproses')"
+      :loading="isRevokingAll"
+      variant="danger"
+      @confirm="confirmRevokeAll"
+      @cancel="revokeAllShare = null"
+    />
 
     <!-- PDF Viewer Full Page -->
-    <Teleport to="body">
-      <div
-        v-if="showPdfViewer"
-        class="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-gray-950"
-      >
-        <!-- Top Bar -->
-        <div class="h-12 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
-          <div class="flex items-center gap-2 min-w-0">
-            <Icon name="i-lucide-file-text" class="w-4 h-4 text-primary-500 shrink-0" />
-            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ pdfViewerTitle }}</p>
-          </div>
-          <button
-            @click="showPdfViewer = false; pdfViewerUrl = ''"
-            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors shrink-0"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <!-- PDF Content -->
-        <div class="flex-1 relative bg-gray-100 dark:bg-gray-900 min-h-0">
-          <div v-if="isLoadingPdf" class="absolute inset-0 flex items-center justify-center z-10">
-            <div class="flex flex-col items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg">
-              <Icon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary-500" />
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('share_memuat_dokumen') }}</p>
-            </div>
-          </div>
-          <iframe v-if="pdfViewerUrl" :key="pdfViewerUrl" :src="pdfViewerUrl" class="w-full h-full border-none" />
-          <div v-else-if="!isLoadingPdf" class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
-            <Icon name="i-lucide-file-text" class="w-12 h-12 opacity-30" />
-            <span class="text-sm">{{ t('share_dokumen_error') }}</span>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <SharePdfViewer
+      v-model="showPdfViewer"
+      :url="pdfViewerUrl"
+      :title="pdfViewerTitle"
+      :loading="isLoadingPdf"
+      @close="showPdfViewer = false; pdfViewerUrl = ''"
+    />
   </div>
 </template>
 
