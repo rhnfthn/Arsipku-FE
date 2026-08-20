@@ -702,6 +702,8 @@ const naskahTipeLabel = (t?: string) => {
     SDI: 'Surat Dinas Internal',
     SDE: 'Surat Dinas Eksternal',
     DI: 'Disposisi',
+    KA: 'Korespondensi Aktif',
+    UND: 'Surat Undangan',
     K: 'Konsep',
   };
   return map[String(t || '').toUpperCase()] || t || '-';
