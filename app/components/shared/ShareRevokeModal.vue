@@ -115,8 +115,7 @@ watch(isOpen, (val) => {
           {{ t('share_batal') }}
         </button>
         <button
-          class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
-          style="background-color: #DC2626"
+          class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
           :disabled="isLoading"
           @click="handleRevoke"
         >

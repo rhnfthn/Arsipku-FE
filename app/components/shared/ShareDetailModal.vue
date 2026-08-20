@@ -24,7 +24,18 @@ const isOpen = ref(true);
 
 /** Display status for badge in detail modal header. */
 const displayStatus = computed<'AKTIF' | 'BERAKHIR'>(() => {
-  return props.share.status === 'BERAKHIR' ? 'BERAKHIR' : 'AKTIF';
+  if (props.share.status === 'BERAKHIR') return 'BERAKHIR';
+  // SEKALI_LIHAT: jika semua penerima sudah BERAKHIR (dibuka), tampilkan BERAKHIR.
+  if (
+    props.share.accessType === 'SEKALI_LIHAT' &&
+    props.share.recipients?.length
+  ) {
+    const allEnded = props.share.recipients.every(
+      (r) => r.status === 'BERAKHIR',
+    );
+    if (allEnded) return 'BERAKHIR';
+  }
+  return 'AKTIF';
 });
 
 const handleClose = () => {
