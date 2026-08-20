@@ -53,9 +53,9 @@ export const statusLabel = (s: TransferActiveToInactiveStatus): string => {
     MENUNGGU_VERIFIKASI_TERAKHIR: 'Menunggu Persetujuan',
     DITOLAK_VERIFIKASI_TERAKHIR: 'Tolak',
     // Verifikasi terakhir selesai → siap kirim ke TU
-    DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
+    DISETUJUI_VERIFIKASI_TERAKHIR: 'Disetujui',
     USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
-    SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
+    SIAPKAN_BERKAS_FISIK: 'Siapkan Berkas',
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
     BERKAS_FISIK_TIDAK_SESUAI: 'Tolak',

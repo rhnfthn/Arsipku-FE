@@ -164,7 +164,7 @@
                 <td class="px-3 py-3">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status === 'selesai'"
+                      v-if="item.status === 'selesai' || item.status === 'diterima' || item.status === 'ditolak' || hasUserApproved(item)"
                       :to="`/maintenance/penyusutan/verifikasi-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -443,6 +443,15 @@ const isCurrentVerifikator = (item: ArsipPenyusutan) => {
   const level = (item.atasan_managerial ?? []).find((v) => v.urutan === currentUrutan)
   if (!level) return false
   return Number(level.persnum) === userPersnum
+}
+
+/** True jika user login sudah pernah approve pengajuan ini (status verifikator = disetujui). */
+const hasUserApproved = (item: ArsipPenyusutan) => {
+  if (!item || !user.value) return false
+  const userPersnum = Number(user.value.persnum)
+  return (item.atasan_managerial ?? []).some(
+    (v) => Number(v.persnum) === userPersnum && (v.status === 'disetujui' || v.status === 'DISETUJUI')
+  )
 }
 
 const onSearchInput = () => {

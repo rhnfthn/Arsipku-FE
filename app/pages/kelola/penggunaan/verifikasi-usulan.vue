@@ -250,7 +250,7 @@ const getProgressLabel = (row: any): string => {
   if (!row.tanggalSelesai) return '-';
   const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (sisa <= 0) return 'Habis';
-  return `${sisa} hari`;
+  return `${sisa} hari lagi`;
 };
 </script>
 
