@@ -48,17 +48,40 @@
               <Transition name="filter-dd">
                 <div v-if="statusOpen" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]">
                   <button
-                    type="button"
-                    @click.stop="filterStatus = ''; page = 1; fetchData(); statusOpen = false"
-                    :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', filterStatus === '' ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
-                  >Semua Status</button>
-                  <button
                     v-for="opt in statusOptions"
                     :key="opt.value"
                     type="button"
                     @click.stop="filterStatus = opt.value; page = 1; fetchData(); statusOpen = false"
                     :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', filterStatus === opt.value ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
                   >{{ opt.label }}</button>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- FILTER KLASIFIKASI -->
+            <div class="relative" data-custom-dropdown>
+              <button
+                type="button"
+                @click.stop="klasifikasiOpen = !klasifikasiOpen"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
+              >
+                <span class="truncate">{{ klasifikasiLabel }}</span>
+                <ChevronDown class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': klasifikasiOpen }" />
+              </button>
+              <Transition name="filter-dd">
+                <div v-if="klasifikasiOpen" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto">
+                  <button
+                    type="button"
+                    @click.stop="filterKlasifikasi = ''; page = 1; fetchData(); klasifikasiOpen = false"
+                    :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', filterKlasifikasi === '' ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+                  >Semua Klasifikasi</button>
+                  <button
+                    v-for="k in klasifikasiList"
+                    :key="k.klasifikasi"
+                    type="button"
+                    @click.stop="filterKlasifikasi = k.klasifikasi; page = 1; fetchData(); klasifikasiOpen = false"
+                    :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', filterKlasifikasi === k.klasifikasi ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+                  >{{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}</button>
                 </div>
               </Transition>
             </div>
@@ -90,23 +113,24 @@
           <table class="w-full text-sm">
             <thead class="bg-primary dark:bg-primary-700 text-white">
               <tr>
-                <th class="px-3 py-3 text-left font-semibold">Nomor Usulan</th>
-                <th class="px-3 py-3 text-left font-semibold">Sekretaris</th>
-                <th class="px-3 py-3 text-left font-semibold">Arsip</th>
-                <th class="px-3 py-3 text-left font-semibold">Atasan Managerial</th>
-                <th class="px-3 py-3 text-left font-semibold">Tgl Dikirim</th>
-                <th class="px-3 py-3 text-left font-semibold">Status</th>
-                <th class="px-3 py-3 text-left font-semibold">Aksi</th>
+                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
+                <th class="px-3 py-3 text-center font-semibold">Kode Berkas/No Usulan</th>
+                <th class="px-3 py-3 text-center font-semibold">Klasifikasi</th>
+                <th class="px-3 py-3 text-center font-semibold">Sekretaris</th>
+                <th class="px-3 py-3 text-center font-semibold">Atasan Managerial</th>
+                <th class="px-3 py-3 text-center font-semibold">Tgl Dikirim</th>
+                <th class="px-3 py-3 text-center font-semibold">Status</th>
+                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="7" class="px-3 py-10 text-center">
+                <td colspan="8" class="px-3 py-10 text-center">
                   <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
                 </td>
               </tr>
               <tr v-else-if="list.length === 0">
-                <td colspan="7" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="8" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
                   Belum ada usulan masuk.
                 </td>
               </tr>
@@ -115,17 +139,21 @@
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
               >
-                <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.nomorUsulan }}</td>
+                <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.arsipPerihal }}</td>
+                <td class="px-3 py-3">
+                  <div class="font-medium text-gray-800 dark:text-white">{{ item.arsipKode ?? '-' }}</div>
+                  <div v-if="item.nomorUsulan" class="text-[11px] text-gray-400">{{ item.nomorUsulan }}</div>
+                </td>
+                <td class="px-3 py-3">{{ item.arsipKlasifikasi ?? '-' }}</td>
                 <td class="px-3 py-3">{{ item.sekretarisName }}</td>
-                <td class="px-3 py-3">{{ item.arsipPerihal }}</td>
                 <td class="px-3 py-3">{{ item.atasanName }}</td>
-                <td class="px-3 py-3">{{ formatDate(item.tanggalDikirim) }}</td>
+                <td class="px-3 py-3 whitespace-nowrap">{{ formatDate(item.tanggalDikirim) }}</td>
                 <td class="px-3 py-3">
                   <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
                 </td>
-                <td class="px-3 py-3">
+                <td class="px-3 py-3 text-center">
                   <NuxtLink
-                    :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
+                    :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
                     class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
                   >
                     <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
@@ -157,15 +185,17 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
+import { useApi } from '~/composables/useApi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
 
 definePageMeta({ middleware: ['auth'] })
 
 const { fetchNotifikasiList } = useTuVerifikasi()
+const { apiGet } = useApi()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
+  { label: 'Penerimaan Usulan', to: '/maintenance/penerimaan-usulan' },
 ])
 
 const list = ref<TuUsulanItem[]>([])
@@ -177,21 +207,22 @@ const totalPages = ref(1)
 
 const searchInput = ref('')
 const filterStatus = ref('')
+const filterKlasifikasi = ref('')
 const pageSizeOpen = ref(false)
 const statusOpen = ref(false)
+const klasifikasiOpen = ref(false)
+const klasifikasiList = ref<any[]>([])
+
+const klasifikasiLabel = computed(() => {
+  if (!filterKlasifikasi.value) return 'Semua Klasifikasi'
+  const k = klasifikasiList.value.find((x: any) => x.klasifikasi === filterKlasifikasi.value)
+  return k ? `${k.klasifikasi} — ${k.klasifikasi_text || ''}` : 'Semua Klasifikasi'
+})
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'USUL_PINDAH_DIKIRIM', label: 'Menunggu Siapkan Berkas' },
-  { value: 'SIAPKAN_BERKAS_FISIK', label: 'Siapkan Berkas Fisik' },
-  { value: 'DIKIRIM', label: 'Menunggu Verifikasi' },
-  { value: 'BERKAS_FISIK_TIDAK_SESUAI', label: 'Berkas Tidak Sesuai' },
-  { value: 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU', label: 'Menunggu Persetujuan' },
-  { value: 'DISETUJUI_PERSETUJUAN_TU', label: 'Disetujui Persetujuan' },
-  { value: 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU', label: 'Menunggu Persetujuan Terakhir' },
-  { value: 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU', label: 'Disetujui Persetujuan Terakhir' },
-  { value: 'ARSIP_INAKTIF_DITERIMA', label: 'Arsip Diterima' },
-  { value: 'PENATAAN_ARSIP_INAKTIF', label: 'Penataan Arsip' },
+  { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
+  { value: 'MENUNGGU_VERIFIKASI_BERKAS_FISIK', label: 'Menunggu Verifikasi' },
   { value: 'SELESAI', label: 'Selesai' },
 ];
 
@@ -203,6 +234,16 @@ const onClickOutside = (e: MouseEvent) => {
   }
   pageSizeOpen.value = false;
   statusOpen.value = false;
+  klasifikasiOpen.value = false;
+};
+
+const fetchKlasifikasi = async () => {
+  try {
+    const data: any = await apiGet('/arsip-dinamis/klasifikasi', {}, { skipCache: true });
+    klasifikasiList.value = Array.isArray(data) ? data : (data?.data ?? []);
+  } catch (e) {
+    console.error('Gagal memuat klasifikasi:', e);
+  }
 };
 
 let searchDebounce: any = null
@@ -220,6 +261,7 @@ const fetchData = async () => {
     const res = await fetchNotifikasiList({
       search: searchInput.value || undefined,
       status: filterStatus.value || undefined,
+      klasifikasi: filterKlasifikasi.value || undefined,
       page: page.value,
       limit: limit.value,
     })
@@ -298,6 +340,7 @@ const onExport = () => {
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
+  fetchKlasifikasi()
   fetchData()
 })
 

@@ -1068,7 +1068,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Penerimaan Usulan',
-      to: '/maintenance/notifikasi-usulan-pindah-arsip',
+      to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
     },
@@ -1111,9 +1111,8 @@ const adminMenuKelola = computed(() => {
   // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
   // Tiap child tampil berdasarkan actor:
   //   - Usulan Saya: SE (buat usulan)
-  //   - Verifikasi Usulan: SE (verifikasi usulan masuk ke divisinya)
-  //   - Verifikasi Usulan: Managerial (EVP/AVP/VP/BOD — verifikasi usulan yang harus dia approve)
   //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
+  //   Verifikasi Usulan hanya ada di menu Pemeliharaan (untuk Atasan Managerial).
   const penggunaanChildren = [];
 
   if (isSekretarisActor.value) {
@@ -1122,23 +1121,6 @@ const adminMenuKelola = computed(() => {
       to: '/kelola/penggunaan/usulan-saya',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
-      activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
-    });
-    penggunaanChildren.push({
-      label: 'Verifikasi Usulan',
-      to: '/kelola/penggunaan/verifikasi-usulan',
-      icon: 'i-lucide-file-check',
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    });
-  }
-
-  // Managerial (EVP/AVP/VP/BOD) — verifikasi usulan yang harus dia approve
-  if (isManagerialPosition.value) {
-    penggunaanChildren.push({
-      label: 'Verifikasi Usulan',
-      to: '/kelola/penggunaan/usulan-akses-berkas?tab=verify-me',
-      icon: 'i-lucide-file-check',
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
     });
   }
@@ -1196,8 +1178,8 @@ const userMenuKelola = computed(() => {
       showIfSekretarisOnly: true,
     },
     {
-label: 'Penerimaan Usulan',
-      to: '/maintenance/notifikasi-usulan-pindah-arsip',
+      label: 'Penerimaan Usulan',
+      to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
     },
@@ -1247,23 +1229,6 @@ label: 'Penerimaan Usulan',
       to: '/kelola/penggunaan/usulan-saya',
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
-      activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
-    });
-    penggunaanChildren.push({
-      label: 'Verifikasi Usulan',
-      to: '/kelola/penggunaan/verifikasi-usulan',
-      icon: 'i-lucide-file-check',
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    });
-  }
-
-  // Managerial (EVP/AVP/VP/BOD) — verifikasi usulan yang harus dia approve
-  if (isManagerialPosition.value) {
-    penggunaanChildren.push({
-      label: 'Verifikasi Usulan',
-      to: '/kelola/penggunaan/usulan-akses-berkas?tab=verify-me',
-      icon: 'i-lucide-file-check',
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
     });
   }
