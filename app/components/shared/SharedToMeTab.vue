@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { ShareItem } from '~/composables/useNaskahShare';
 import { getCategoryStyle, getCategoryLabel, getCategoryFullName, formatShortDate } from '~/utils/mail-helpers';
 
@@ -34,9 +34,7 @@ const columns = computed(() => [
 const getMyDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
   // Share ended (auto-expire / revoke all)
   if (share.status === 'BERAKHIR') return 'BERAKHIR';
-  const myRecipient = share.recipients?.find(
-    (r) => String(r.recipientId) === String(props.userPosition),
-  );
+  const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
   if (!myRecipient) return 'AKTIF';
   if (myRecipient.status === 'BERAKHIR') return 'BERAKHIR';
   return 'AKTIF';
@@ -52,9 +50,7 @@ const canOpenPdf = (share: ShareItem): boolean => {
   if (share.status === 'BERAKHIR') return false;
   // SEKALI_LIHAT: hilang jika recipient sudah membuka (BERAKHIR)
   if (share.accessType === 'SEKALI_LIHAT') {
-    const myRecipient = share.recipients?.find(
-      (r) => String(r.recipientId) === String(props.userPosition),
-    );
+    const myRecipient = share.recipients?.find((r) => r.recipientId === props.userPosition);
     if (!myRecipient) return true;
     return myRecipient.status !== 'BERAKHIR';
   }

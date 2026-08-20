@@ -153,7 +153,7 @@
                 </td>
                 <td class="px-3 py-3 text-center">
                   <NuxtLink
-                    :to="`/maintenance/verifikasi-berkas-fisik/${item.id}`"
+                    :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
                     class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
                   >
                     <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
@@ -195,7 +195,7 @@ const { apiGet } = useApi()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
+  { label: 'Penerimaan Usulan', to: '/maintenance/penerimaan-usulan' },
 ])
 
 const list = ref<TuUsulanItem[]>([])

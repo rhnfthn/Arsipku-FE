@@ -163,7 +163,7 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status === 'selesai' || (item.status === 'diterima' && item.jenis_penyusutan === 'musnah')"
+                      v-if="item.status !== 'draft'"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
@@ -416,6 +416,9 @@ const loadPenataanData = async () => {
         status: 'draft',
         jenis_penyusutan: 'permanen',
         lokasi_simpan: d.lokasiPenataan ?? null,
+        rak: d.rak ?? null,
+        baris: d.baris ?? null,
+        kolom: d.kolom ?? null,
         tanggal_retensi_habis: d.tanggalRetensiAktifHabis ?? '',
         tanggal_pengajuan: null,
         catatan: d.keterangan ?? '',
@@ -432,7 +435,16 @@ const loadPenataanData = async () => {
       }))
 
     // Gabungkan: pengajuan dari API (sudah diajukan) + penataan (status draft, belum diajukan)
-    list.value = [...pengajuan, ...penataan]
+    // Urutkan berdasarkan tanggal terbaru — yang baru masuk tampil paling atas.
+    // Data draft (dari penataan) tidak punya updatedAt/createdAt, jadi pakai
+    // tanggal_retensi_habis atau tanggal saat ini sebagai fallback.
+    list.value = [...pengajuan, ...penataan].sort((a: any, b: any) => {
+      const dateA = a.updatedAt || a.createdAt || a.tanggal_pengajuan || a.tanggalUsulan || a.tanggal_retensi_habis || ''
+      const dateB = b.updatedAt || b.createdAt || b.tanggal_pengajuan || b.tanggalUsulan || b.tanggal_retensi_habis || ''
+      const timeA = dateA ? new Date(dateA).getTime() : 0
+      const timeB = dateB ? new Date(dateB).getTime() : 0
+      return timeB - timeA
+    })
   } catch (e) {
     console.error('Gagal memuat data penyusutan:', e)
     // Fallback: hanya pengajuan dari API
