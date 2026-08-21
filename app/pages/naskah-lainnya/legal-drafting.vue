@@ -137,10 +137,8 @@
         <template #cell-tahapan="{ row }">
           <StatusBadge :status="row.tahapan" />
         </template>
-        <template #cell-status>
-          <!-- Filter "Sudah Dikerjakan": badge pill sama dgn kolom Tahapan, label "Sudah Dikerjakan". -->
-          <StatusBadge v-if="filterStatus === 'aksi-saya'" status="sudah_dikerjakan" />
-          <UBadge v-else :color="activeStatusBadge.color" size="xs">{{ activeStatusBadge.label }}</UBadge>
+        <template #cell-status="{ row }">
+          <StatusBadge :status="row.statusLegal" />
         </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="openAction(row)">Detail</UButton>
@@ -187,24 +185,40 @@ const sortDir = ref<'asc' | 'desc'>('asc');
 const isExporting = ref(false);
 
 // Filter status persetujuan legal (sesuai action di halaman legal drafting).
-const filterStatus = ref<'belum-dikirim' | 'menunggu' | 'ditolak' | 'aksi-saya'>('belum-dikirim');
-const filterTabs: { value: 'belum-dikirim' | 'menunggu' | 'ditolak' | 'aksi-saya'; label: string }[] = [
+const filterStatus = ref<'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya'>('belum-dikirim');
+const filterTabs: { value: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya'; label: string }[] = [
+  { value: 'semua', label: 'Semua' },
   { value: 'belum-dikirim', label: 'Belum Dikirim' },
   { value: 'menunggu', label: 'Menunggu Persetujuan' },
-  { value: 'ditolak', label: 'Ditolak' },
+  { value: 'revisi', label: 'Revisi' },
   { value: 'aksi-saya', label: 'Sudah Dikerjakan' },
 ];
 const currentFilterLabel = computed(
   () => filterTabs.find((t) => t.value === filterStatus.value)?.label ?? 'Filter',
 );
-const activeStatusBadge = computed(() => {
-  switch (filterStatus.value) {
-    case 'menunggu': return { label: 'Menunggu Persetujuan', color: 'primary' as const };
-    case 'ditolak': return { label: 'Ditolak', color: 'error' as const };
-    case 'aksi-saya': return { label: 'Sudah Dikerjakan', color: 'success' as const };
-    default: return { label: 'Belum Dikirim', color: 'neutral' as const };
-  }
-});
+// Label badge per-row statusLegal (BE mengirim statusLegal per naskah). Dipakai
+// untuk kolom Status & export — terutama filter 'semua' yang mencampur sub-status.
+const STATUS_LEGAL_LABEL: Record<string, string> = {
+  belum_dikirim: 'Belum Dikirim',
+  menunggu_persetujuan: 'Menunggu Persetujuan',
+  revisi: 'Revisi',
+  sudah_dikerjakan: 'Sudah Dikerjakan',
+  persetujuan_direksi: 'Persetujuan Direksi',
+  blanko_verbal: 'Blanko Verbal',
+};
+
+// Pemetaan tab filter → nilai statusLegal yang ditampilkan. 'semua' = null (tidak
+// difilter). Filter client-side ini memastikan baris PD (dari merge general list,
+// statusLegal belum_dikirim) tidak bocor ke tab menunggu/revisi/sudah-dikerjakan,
+// dan tab "Sudah Dikerjakan" benar-benar memfilter statusLegal=sudah_dikerjakan
+// (bukan sekadar "aksi-saya" berdasarkan aktor).
+const STATUS_FILTER_MAP: Record<string, string | null> = {
+  'semua': null,
+  'belum-dikirim': 'belum_dikirim',
+  'menunggu': 'menunggu_persetujuan',
+  'revisi': 'revisi',
+  'aksi-saya': 'sudah_dikerjakan',
+};
 
 const columns = [
   { key: 'nomor', label: 'Nomor', sortable: true },
@@ -222,7 +236,7 @@ const openFilterStatus = ref(false);
 function toggleRowsPerPage() { openRowsPerPage.value = !openRowsPerPage.value; }
 function selectRowsPerPage(n: number) { perPage.value = n; openRowsPerPage.value = false; }
 function toggleFilterStatus() { openFilterStatus.value = !openFilterStatus.value; }
-function selectFilterStatus(v: 'belum-dikirim' | 'menunggu' | 'ditolak' | 'aksi-saya') {
+function selectFilterStatus(v: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya') {
   filterStatus.value = v;
   openFilterStatus.value = false;
 }
@@ -236,9 +250,17 @@ function handleDocumentClick(e: MouseEvent) {
 
 // ── Search + Sort + Pagination (client-side) ──
 const filteredRows = computed(() => {
+  // Filter status (client-side) berdasarkan statusLegal — memastikan setiap tab
+  // hanya menampilkan baris dengan status yang sesuai, termasuk baris PD yang
+  // dimerge dari general list.
+  const statusFilter = STATUS_FILTER_MAP[filterStatus.value] ?? null;
+  let rows = legalDrafting.value;
+  if (statusFilter) {
+    rows = rows.filter((r) => (r.statusLegal ?? '') === statusFilter);
+  }
   const q = search.value.trim().toLowerCase();
-  if (!q) return legalDrafting.value;
-  return legalDrafting.value.filter((r) =>
+  if (!q) return rows;
+  return rows.filter((r) =>
     [r.nomor, r.perihal, r.pemrakarsa.nama].some((v) => String(v ?? '').toLowerCase().includes(q))
   );
 });
@@ -251,7 +273,8 @@ const displayRows = computed(() =>
     pemrakarsa: r.pemrakarsa.nama,
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
-    status: activeStatusBadge.value.label,
+    statusLegal: r.statusLegal ?? '',
+    status: STATUS_LEGAL_LABEL[r.statusLegal ?? ''] ?? r.statusLegal ?? '',
   })),
 );
 

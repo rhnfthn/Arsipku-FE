@@ -6,11 +6,11 @@
         <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <NuxtLink to="/naskah-lainnya" class="hover:text-primary">Naskah Lainnya</NuxtLink>
           <span>/</span>
-          <NuxtLink :to="`/naskah-lainnya/${id}`" class="hover:text-primary">Detail</NuxtLink>
+          <NuxtLink :to="`/naskah-lainnya/${id}`" class="hover:text-primary truncate max-w-[220px]">{{ detail?.perihal || 'Detail' }}</NuxtLink>
           <span>/</span>
           <span class="text-gray-700 dark:text-gray-300">{{ tahapanLabel }}</span>
         </div>
-        <h1 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">{{ detail?.nomor || 'Memuat…' }}</h1>
+        <h1 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
         <div class="mt-1.5 flex gap-2">
           <UBadge color="primary" size="sm">{{ tahapanLabel }}</UBadge>
           <UBadge v-if="detail?.jenis" color="neutral" size="sm">{{ jenisLabel(detail.jenis) }}</UBadge>
@@ -73,7 +73,7 @@
 
           <!-- Fisik (ttd_basah): unduh + unggah hasil ttd basah -->
           <template v-else-if="signOption === 'ttd_basah'">
-            <UButton color="neutral" variant="outline" icon="i-lucide-download" size="lg" @click="downloadNaskah">
+            <UButton color="neutral" variant="outline" icon="i-lucide-download" size="lg" @click="downloadNaskah(naskahFileName(detail))">
               Unduh Naskah
             </UButton>
             <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">
@@ -126,6 +126,8 @@
 </template>
 
 <script setup>
+import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+
 const route = useRoute();
 const id = computed(() => route.params.id);
 const { apiGet } = useApi();
@@ -227,13 +229,13 @@ async function loadDetail() {
   }
 }
 
-async function downloadNaskah() {
+async function downloadNaskah(name) {
   try {
     const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, { responseType: 'blob' });
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = 'naskah.docx';
+    a.download = name || naskahFileName(detail);
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {

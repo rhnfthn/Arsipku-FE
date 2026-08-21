@@ -22,6 +22,17 @@
 
       <!-- Form -->
       <div v-else class="flex-1 overflow-y-auto space-y-1">
+        <!-- Banner revisi (naskah dikembalikan ke pemrakarsa) -->
+        <UAlert
+          v-if="isRevisi"
+          icon="i-lucide-info"
+          color="warning"
+          variant="soft"
+          title="Revisi naskah yang dikembalikan"
+          description="Periksa catatan pengembalian di halaman detail. Lengkapi revisi (termasuk unggah ulang naskah dari template bila isi berubah), lalu Kirim untuk approval ulang."
+          class="mb-2"
+        />
+
         <!-- Jenis Naskah -->
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
@@ -396,6 +407,9 @@ const alertState = useAlertState();
 const route = useRoute();
 const { create, update, kirim, uploadDokumen, uploadDokumenTambahan, getTemplateUrl, createdId, fetchDetail, detail } = useNaskahLainnya();
 const { verifikatorList, fetchVerifikator } = useNaskahDinas();
+
+// Revisi naskah yang dikembalikan (perlu_perbaikan) — tampilkan banner revisi.
+const isRevisi = computed(() => detail.value?.tahapan === 'perlu_perbaikan');
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },

@@ -87,6 +87,12 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-blue-700 dark:text-blue-400',
     dot: 'bg-blue-700',
   },
+  persetujuan_direksi: {
+    label: 'Persetujuan Direksi',
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-700 dark:text-indigo-400',
+    dot: 'bg-indigo-700',
+  },
   tanda_tangan_pemrakarsa: {
     label: 'TTD Pemrakarsa',
     bg: 'bg-blue-100 dark:bg-blue-900/30',
@@ -153,6 +159,25 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     bg: 'bg-gray-100 dark:bg-gray-700',
     text: 'text-gray-600 dark:text-gray-300',
     dot: 'bg-gray-400',
+  },
+  // ——— Naskah Lainnya: badge status filter Legal Drafting ———
+  belum_dikirim: {
+    label: 'Belum Dikirim',
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-600 dark:text-gray-300',
+    dot: 'bg-gray-400',
+  },
+  menunggu_persetujuan: {
+    label: 'Menunggu Persetujuan',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
+  },
+  revisi: {
+    label: 'Revisi',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    text: 'text-orange-700 dark:text-orange-400',
+    dot: 'bg-orange-700',
   },
 };
 
