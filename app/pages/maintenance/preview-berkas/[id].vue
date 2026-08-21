@@ -200,6 +200,16 @@ const pageTitle = computed(() =>
   nomorUsulan.value ? `Detail Usulan ${nomorUsulan.value}` : 'Detail Berkas'
 );
 
+// Set tab title ke nama berkas agar tidak "about:blank"
+const berkas = ref<any>(null);
+useHead(() => ({
+  title: berkas.value?.judulBerkas
+    ? `${berkas.value.judulBerkas} — Detail Berkas`
+    : berkas.value?.kodeBerkas
+      ? `${berkas.value.kodeBerkas} — Detail Berkas`
+      : 'Detail Berkas',
+}));
+
 const fromPage = computed(() => (route.query.from as string) || '');
 
 const breadcrumbItems = computed(() => {
@@ -215,8 +225,8 @@ const breadcrumbItems = computed(() => {
   if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
-      { label: nomorUsulan.value, to: `/maintenance/verifikasi-berkas-fisik/${usulanId.value}` },
+      { label: 'Penerimaan Usulan', to: '/maintenance/penerimaan-usulan' },
+      { label: nomorUsulan.value, to: `/maintenance/penerimaan-usulan/${usulanId.value}` },
       { label: 'Detail Berkas' },
     ];
   }
@@ -234,8 +244,9 @@ const breadcrumbItems = computed(() => {
   ];
 });
 
-const berkas = ref<any>(null);
 const naskahList = ref<any[]>([]);
+const isArchived = ref(false);
+const isMusnah = ref(false);
 const loading = ref(true);
 const usulanStatus = ref<string>('');
 
@@ -253,9 +264,38 @@ const closePdfViewer = () => {
 
 /** Buka PDF naskah dalam viewer full-page (bisa preview & cetak). */
 const openNaskahPdf = async (naskah: any) => {
+  // Jika berkas sudah dimusnahkan (jenis musnah), naskah tidak bisa dibuka.
+  // Untuk permanen, naskah tetap bisa dilihat meski sudah di-arsipkan.
+  if (isMusnah.value) {
+    alert('Naskah telah dimusnahkan.');
+    return;
+  }
   // Ambil detail naskah untuk mendapatkan final_pdf_url
   isLoadingPdf.value = true;
   try {
+    // Jika berkas dari DB arsip (permanen), naskah sudah punya final_pdf
+    // dari snapshot — ambil presigned URL dari endpoint arsip.
+    if (isArchived.value) {
+      if (!naskah.final_pdf) {
+        alert('PDF naskah tidak tersedia (final_pdf kosong).');
+        return;
+      }
+      const pdfRes: any = await apiGet(
+        `/api/arsip/naskah/pdf`,
+        { params: { key: naskah.final_pdf } },
+        { skipCache: true },
+      );
+      const pdfUrl = pdfRes?.data?.data?.url ?? pdfRes?.data?.url ?? null;
+      if (!pdfUrl) {
+        alert('PDF naskah tidak tersedia.');
+        return;
+      }
+      pdfViewerTitle.value = naskah.perihal || 'Naskah';
+      pdfViewerUrl.value = pdfUrl;
+      showPdfViewer.value = true;
+      return;
+    }
+
     const res: any = await getNaskahDetailInBerkas(
       route.params.id as string,
       naskah.naskahId || naskah.id,
@@ -318,11 +358,63 @@ const formatDate = (dateStr: string) => {
 onMounted(async () => {
   loading.value = true;
   try {
-    const res: any = await getBerkasById(route.params.id as string);
-    berkas.value = res?.data ?? res;
-    const naskahRes: any = await getDaftarNaskah(route.params.id as string, { limit: 50 });
-    const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
-    naskahList.value = Array.isArray(raw) ? raw : [];
+    const id = route.params.id as string;
+
+    // 1. Coba fetch dari DB inti (arsip-dinamis). Jika gagal (mis. berkas
+    //    sudah soft-deleted karena musnah), lanjut ke fallback DB arsip.
+    try {
+      const res: any = await getBerkasById(id);
+      berkas.value = res?.data ?? res;
+      const naskahRes: any = await getDaftarNaskah(id, { limit: 50 });
+      const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
+      naskahList.value = Array.isArray(raw) ? raw : [];
+    } catch (e) {
+      console.warn('Berkas tidak ditemukan di DB inti, coba DB arsip:', e);
+      berkas.value = null;
+    }
+
+    // Jika berkas tidak ditemukan di DB inti (sudah soft-deleted, mis. musnah),
+    // fallback ke DB arsip (arsipku_arsip_local) agar tetap bisa dilihat.
+    if (!berkas.value) {
+      try {
+        const arsipRes: any = await apiGet(`/api/arsip/berkas/${id}`, {}, { skipCache: true });
+        // Backend: { success, data: { status, data: { berkas, naskah } } }
+        const arsipData = arsipRes?.data?.data ?? arsipRes?.data ?? arsipRes;
+        const arsipBerkas = arsipData?.berkas;
+        if (arsipBerkas) {
+          isArchived.value = true;
+          isMusnah.value = arsipBerkas.is_musnah === true || arsipBerkas.is_musnah === 1 || arsipBerkas.status_akhir === 'musnah';
+          berkas.value = {
+            id: arsipBerkas.source_berkas_id,
+            judulBerkas: arsipBerkas.judul_berkas,
+            kodeBerkas: arsipBerkas.kode_berkas,
+            klasifikasi: arsipBerkas.klasifikasi,
+            klasifikasiTeks: arsipBerkas.klasifikasi_text,
+            retensiAktifTahun: arsipBerkas.retensi_aktif_tahun,
+            retensiInaktifTahun: arsipBerkas.retensi_inaktif_tahun,
+            tindakanPenyusutanAkhir: arsipBerkas.tindakan_penyusutan_akhir,
+            isiRingkas: arsipBerkas.isi_ringkas,
+            tanggalDibuat: arsipBerkas.tanggal_dibuat,
+            tanggalDitutup: arsipBerkas.tanggal_ditutup,
+            status: arsipBerkas.status_akhir,
+          };
+          naskahList.value = (arsipData?.naskah ?? []).map((n: any) => ({
+            id: n.id,
+            naskahId: n.naskahId,
+            naskahTipe: n.naskahTipe,
+            nomorSurat: n.nomorSurat,
+            perihal: n.perihal,
+            tanggalNaskah: n.tanggalNaskah,
+            sumber: n.sumber,
+            urutan: n.urutan,
+            final_pdf: n.finalPdf,
+            status: n.status,
+          }));
+        }
+      } catch (e) {
+        console.error('Gagal memuat berkas dari DB arsip:', e);
+      }
+    }
 
     // Jika ada usulan_id, ambil status usulan untuk override status berkas
     const usulanId = (route.query.usulan_id as string) || '';

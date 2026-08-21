@@ -129,7 +129,7 @@
                 </td>
                 <td class="px-3 py-3">{{ item.klasifikasi }}</td>
                 <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
                     {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
                   </span>
                 </td>
@@ -139,11 +139,28 @@
                 <td class="px-3 py-3 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
+                      v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                    </NuxtLink>
+                    <NuxtLink
+                      v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'"
+                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      title="Penataan"
+                    >
+                      <UIcon name="i-lucide-archive" class="w-4 h-4" />
+                    </NuxtLink>
+                    <NuxtLink
+                      v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'"
+                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                      title="Pemusnahan"
+                    >
+                      <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
                     </NuxtLink>
                   </div>
                 </td>
@@ -174,7 +191,7 @@ import { usePenyusutan } from '~/composables/usePenyusutan'
 
 definePageMeta({ middleware: ['auth'] })
 
-const { list, loading, loadData } = usePenyusutan()
+const { penataanList, loadPenataanList } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -197,14 +214,14 @@ const klasifikasiRef = ref<HTMLElement | null>(null)
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'diterima', label: 'Diterima' },
+  { value: 'diterima', label: 'Disetujui' },
   { value: 'selesai', label: 'Selesai' },
 ]
 
 const klasifikasiList = computed(() => {
   const seen = new Set<string>()
   const result: string[] = []
-  for (const a of list.value) {
+  for (const a of penataanList.value) {
     if (a.klasifikasi && !seen.has(a.klasifikasi)) {
       seen.add(a.klasifikasi)
       result.push(a.klasifikasi)
@@ -219,12 +236,12 @@ const klasifikasiLabel = computed(() => {
 })
 
 const filteredList = computed(() => {
-  let result = list.value.filter((a) => a.status === 'diterima' || a.status === 'selesai')
+  let result = penataanList.value.filter((a) => a.status === 'diterima' || a.status === 'selesai')
   if (searchInput.value) {
     const q = searchInput.value.toLowerCase()
     result = result.filter((a) =>
-      a.kode_berkas.toLowerCase().includes(q) ||
-      a.nama_berkas.toLowerCase().includes(q)
+      (a.kode_berkas ?? '').toLowerCase().includes(q) ||
+      (a.nama_berkas ?? '').toLowerCase().includes(q)
     )
   }
   if (filterStatus.value) {
@@ -244,7 +261,7 @@ const paginatedList = computed(() => {
 })
 
 const statusLabel = (status: string) => {
-  const map: Record<string, string> = { diterima: 'Diterima', selesai: 'Selesai', diajukan: 'Diajukan', ditolak: 'Ditolak' }
+  const map: Record<string, string> = { diterima: 'Disetujui', selesai: 'Selesai', diajukan: 'Menunggu Persetujuan', ditolak: 'Ditolak' }
   return map[status] ?? status
 }
 
@@ -292,7 +309,7 @@ const onClickOutside = (e: MouseEvent) => {
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   isLoading.value = true
-  loadData().finally(() => { isLoading.value = false })
+  loadPenataanList().finally(() => { isLoading.value = false })
 })
 
 onBeforeUnmount(() => {

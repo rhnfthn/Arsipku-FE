@@ -546,10 +546,9 @@ const isOwnUsulan = computed(() => {
 /** True jika user login ada di daftar atasan berjenjang (approvalLevels). */
 const isAtasanInLevels = computed(() => {
   if (!usulan.value || !user.value) return false;
-  const userPersnum = Number(user.value.persnum);
   const levels = usulan.value.approvalLevels;
   if (!levels || levels.length === 0) return false;
-  return levels.some((l) => Number(l.atasanPersnum) === userPersnum);
+  return levels.some((l) => Number(l.atasanPersnum) === Number(user.value.persnum));
 });
 
 /**
@@ -560,7 +559,6 @@ const isAtasanInLevels = computed(() => {
  */
 const isCurrentTurnFromLevels = computed(() => {
   if (!usulan.value || !user.value) return false;
-  const userPersnum = Number(user.value.persnum);
   const levels = usulan.value.approvalLevels;
   const currentLevel = usulan.value.currentApprovalLevel ?? 1;
   // Jika ada approvalLevels, cek dari sana
@@ -569,13 +567,13 @@ const isCurrentTurnFromLevels = computed(() => {
     if (!level) return false;
     return (
       level.status === 'MENUNGGU' &&
-      Number(level.atasanPersnum) === userPersnum
+      Number(level.atasanPersnum) === Number(user.value.persnum)
     );
   }
   // Fallback: jika tidak ada approvalLevels (legacy/single atasan),
   // cek atasanPersnum langsung dari usulan
   if (usulan.value.atasanPersnum) {
-    return Number(usulan.value.atasanPersnum) === userPersnum;
+    return Number(usulan.value.atasanPersnum) === Number(user.value.persnum);
   }
   return false;
 });
