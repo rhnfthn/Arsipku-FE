@@ -179,7 +179,7 @@
         :loading="loading"
         :sort-key="sortKey"
         :sort-dir="sortDir"
-        header-class="bg-primary dark:bg-primary-700 text-white text-center"
+        header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
         empty-message="Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini."
@@ -191,7 +191,6 @@
         <template #cell-kodeBerkas="{ row }">
           <div class="truncate font-medium text-gray-700 dark:text-gray-200" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
           <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
-          <div v-else class="text-[11px] text-gray-300 dark:text-gray-500 truncate italic">Belum diusulkan</div>
         </template>
         <template #cell-klasifikasi="{ row }">
           <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
@@ -207,7 +206,7 @@
             <!-- Arsip belum jadi usulan → tombol Pindahkan -->
             <button
               v-if="!row.isUsulan && isSekretaris"
-              @click="openCreateModalWithArsip(row as GabunganRow)"
+              @click="openCreateModalWithArsip(row)"
               title="Pindahkan"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -216,7 +215,7 @@
             <!-- Usulan DRAFT → tombol Kirim Usulan -->
             <button
               v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
-              @click="onSendUsulan(row as GabunganRow)"
+              @click="onSendUsulan(row)"
               title="Kirim ke Atasan Managerial"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -225,7 +224,7 @@
             <!-- Usulan sudah dibuat → tombol Detail -->
             <button
               v-else-if="row.isUsulan"
-              @click="openDetail(row as GabunganRow)"
+              @click="openDetail(row)"
               title="Detail"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -298,7 +297,7 @@ const prefillAtasan = ref(true);
 
 // ── Table Columns (dengan sort arrow, menyamakan berkas-saya) ───
 const columns = [
-  { key: 'perihal', label: 'Nama Berkas', sortable: true },
+  { key: 'perihal', label: 'Nama Berkas / Perihal', sortable: true },
   { key: 'kodeBerkas', label: 'Kode Berkas / No. Usulan', sortable: true },
   { key: 'klasifikasi', label: 'Klasifikasi', sortable: true },
   { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', sortable: true },

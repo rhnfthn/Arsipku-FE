@@ -67,7 +67,7 @@
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-        Daftar Arsip ({{ transfer.arsipIds.length }})
+        Daftar Arsip yang Akan Dipindahkan ({{ transfer.arsipIds.length }})
       </h3>
       <div class="space-y-1.5">
         <div
@@ -96,7 +96,7 @@
       v-if="transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan</h3>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
       <div class="space-y-2">
         <div
           v-for="level in transfer.tuApprovalLevels"

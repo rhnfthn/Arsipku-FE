@@ -51,7 +51,7 @@ export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
     MENUNGGU_VERIFIKASI_TERAKHIR: 'Menunggu Persetujuan',
     DITOLAK_VERIFIKASI_TERAKHIR: 'Tolak',
     // Siap Kirim ke TU: verifikasi terakhir selesai, menunggu atasan kirim
-    DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
+    DISETUJUI_VERIFIKASI_TERAKHIR: 'Disetujui',
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
     BERKAS_FISIK_TIDAK_SESUAI: 'Tolak',
