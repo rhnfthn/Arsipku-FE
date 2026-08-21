@@ -61,20 +61,17 @@
         </div>
 
         <!-- Daftar Arsip (Berkas) -->
-        <div
-          v-if="!item.isBackedUp || item.jenis_penyusutan === 'permanen'"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-        >
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="p-5 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Daftar Arsip
-              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ item.daftar_arsip?.length ?? 0 }}</span>
+              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ daftarArsipItems.length }}</span>
             </h3>
           </div>
           <div class="p-5">
-            <div v-if="item.daftar_arsip?.length" class="space-y-1.5">
+            <div v-if="daftarArsipItems.length" class="space-y-1.5">
               <div
-                v-for="(a, idx) in item.daftar_arsip"
+                v-for="(a, idx) in daftarArsipItems"
                 :key="a.id || idx"
                 class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
               >
@@ -87,7 +84,7 @@
                   </p>
                 </div>
                 <NuxtLink
-                  v-if="!item.isBackedUp || item.jenis_penyusutan === 'permanen'"
+                  v-if="item.jenis_penyusutan === 'permanen'"
                   :to="`/maintenance/preview-berkas/${a.id}?from=penyusutan`"
                   class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
                   title="Lihat detail berkas"
@@ -678,6 +675,12 @@ const item = ref<ArsipPenyusutan | null>(null)
 const lokasiParts = computed(() => {
   const lokasi = item.value?.lokasi_simpan ?? ''
   return lokasi.split(' / ').map(s => s.trim()).filter(Boolean)
+})
+
+// Daftar arsip (naskah) — normalize dari daftar_arsip (snake_case) atau daftarArsip (camelCase)
+const daftarArsipItems = computed(() => {
+  const raw = item.value?.daftar_arsip ?? item.value?.daftarArsip ?? []
+  return Array.isArray(raw) ? raw : []
 })
 
 // ── Fresh presigned URLs for MinIO files ──

@@ -24,6 +24,24 @@
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Pastikan Berkas Fisik dan Berita Acara Serah Terima sudah disiapkan sebelumnya.
           </p>
+          <div class="space-y-3 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.nomorUsulan ?? '-' }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.sekretarisName ?? '-' }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.atasanName ?? '-' }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 text-xs">Jumlah Arsip</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ jumlahArsip }} berkas</p>
+            </div>
+          </div>
 
           <!-- Catatan -->
           <div class="mt-4">

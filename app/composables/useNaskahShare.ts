@@ -7,7 +7,6 @@ export interface ShareRecipient {
   nama: string;
   positionText: string;
   orgText?: string;
-  organizationText?: string;
   status?: string;
   openedAt?: string | null;
 }

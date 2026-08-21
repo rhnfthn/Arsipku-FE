@@ -8,7 +8,8 @@ import AddUsulanAksesBerkas from '~/components/usulan-akses-berkas/AddUsulanAkse
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
-import { StatusUsulan } from '~/types/usulan-akses-berkas';
+import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
+import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import { extractErrorMessage } from '~/utils/error-helper';
 
 definePageMeta({ middleware: 'auth' });
@@ -26,7 +27,7 @@ useHead({
 });
 
 const { t } = useI18n();
-const { usulanList, pending, pagination, fetchList } = useUsulanAksesBerkas();
+const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifikasiPemberi, persetujuanPemberi } = useUsulanAksesBerkas();
 const { clearVerifikasiBadge, clearPilihBerkasBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
@@ -88,6 +89,10 @@ const statusOptions = computed(() => {
   }
   return base;
 });
+
+const totalPages = computed(() =>
+  Math.ceil(pagination.total / itemsPerPage.value) || 1,
+);
 
 const loadData = async () => {
   try {
@@ -176,30 +181,6 @@ function formatDurasiLabel(preset: string | undefined | null, customDate?: strin
   return preset.replace('_', ' ');
 }
 
-// Label status untuk export CSV (mirror UsulanAksesBerkasBadge).
-function statusLabelForExport(status: string): string {
-  const map: Record<string, string> = {
-    DRAFT: 'Draft',
-    MENUNGGU_VERIFIKASI_PENGUSUL: 'Menunggu Verifikasi Pengusul',
-    MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL: 'Menunggu Verifikasi Pengusul',
-    MENUNGGU_VERIFIKASI_EVP_PENGUSUL: 'Menunggu Verifikasi Pengusul',
-    REVISI_PENGUSUL: 'Ditolak Verifikasi Pengusul',
-    DITOLAK_PENGUSUL: 'Ditolak Verifikasi Pengusul',
-    TERKIRIM_KE_PEMBERI: 'Menunggu Verifikasi Pemberi',
-    MENUNGGU_VERIFIKASI_PEMBERI: 'Menunggu Verifikasi Pemberi',
-    PEMILIHAN_BERKAS: 'Menunggu Verifikasi Pemberi',
-    MENUNGGU_PERSETUJUAN_PEMBERI: 'Menunggu Persetujuan Pemberi',
-    MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI: 'Menunggu Persetujuan Pemberi',
-    MENUNGGU_PERSETUJUAN_EVP_PEMBERI: 'Menunggu Persetujuan Pemberi',
-    REVISI_PEMBERI: 'Ditolak Persetujuan Pemberi',
-    DITOLAK_PEMBERI: 'Ditolak Persetujuan Pemberi',
-    AKSES_DITERBITKAN: 'Akses Diberikan',
-    SELESAI: 'Akses Diberikan',
-    AKSES_KADALUARSA: 'Akses Kadaluarsa',
-  };
-  return map[status] || status;
-}
-
 // ── Custom dropdown for rows per page (pemberkasan style) ───────
 const openRowsPerPage = ref(false);
 function toggleRowsPerPage() {
@@ -257,7 +238,48 @@ const columns = [
   { key: 'aksi', label: 'Aksi' },
 ];
 
+// ── Progress bar: durasi akses yang sudah diterbitkan ────────────
+// Bar merepresentasikan waktu yang sudah berlalu dari tanggalMulai ke tanggalSelesai.
+// 0% = baru mulai, 100% = sudah habis.
+// Warna: hijau (0-50%), kuning (50-80%), merah (80-100%)
+const getProgressPercent = (row: any): number => {
+  if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return 0;
+  if (!row.tanggalMulai || !row.tanggalSelesai) return 0;
+  const mulai = new Date(row.tanggalMulai).getTime();
+  const selesai = new Date(row.tanggalSelesai).getTime();
+  const now = Date.now();
+  if (now <= mulai) return 0;
+  if (now >= selesai) return 100;
+  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
+};
+
+const getProgressBarClass = (percent: number): string => {
+  if (percent < 50) return 'bg-green-500';
+  if (percent < 80) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
+const getProgressLabel = (row: any): string => {
+  if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return '-';
+  const percent = getProgressPercent(row);
+  if (percent >= 100) return 'Habis';
+  if (!row.tanggalSelesai) return '-';
+  const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (sisa <= 0) return 'Habis';
+  return `${sisa} hari lagi`;
+};
+
 // ── Cek apakah user bisa verifikasi usulan ini ──
+const menungguStatuses = [
+  StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL,
+  StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL,
+  StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL,
+  StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI,
+  StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI,
+  StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI,
+  StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI,
+];
+
 const canVerifyRow = (row: any): boolean => {
   const userPersnum = Number(user.value?.persnum);
   // Tentukan urutan aktif berdasarkan status (hanya urutan yang sedang menunggu)
@@ -288,6 +310,10 @@ const canVerifyRow = (row: any): boolean => {
   return false;
 };
 
+const canRejectRow = (row: any): boolean => {
+  return canVerifyRow(row);
+};
+
 // Filter list: saat tab verify-me, hanya tampilkan usulan yang sudah giliran user untuk approve
 const displayList = computed(() => {
   if (activeTab.value === 'verify-me') {
@@ -295,6 +321,141 @@ const displayList = computed(() => {
   }
   return usulanList.value;
 });
+
+// ── Modal Setuju/Tolak (standarisasi) ──────────────
+const showApproveModal = ref(false);
+const showRejectModal = ref(false);
+const actionRow = ref<any>(null);
+const actionNote = ref('');
+const savingAction = ref(false);
+
+const openApproveModal = (row: any) => {
+  actionRow.value = row;
+  actionNote.value = '';
+  showApproveModal.value = true;
+};
+
+const openRejectModal = (row: any) => {
+  actionRow.value = row;
+  actionNote.value = '';
+  showRejectModal.value = true;
+};
+
+// Tentukan jenis verifikasi berdasarkan status & verifikator
+const getVerificationType = (row: any): 'pengusul' | 'pemberi' | 'persetujuan-pemberi' | null => {
+  const userPersnum = Number(user.value?.persnum);
+  const isPengusulVerifier = row.verifikatorPengusul?.some((v: any) => v.persnum === userPersnum);
+  const isPemberiVerifier = row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum);
+
+  if (isPengusulVerifier) {
+    if ([StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL].includes(row.status)) {
+      return 'pengusul';
+    }
+  }
+  if (isPemberiVerifier) {
+    if (row.status === StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI) return 'pemberi';
+    if ([StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI].includes(row.status)) {
+      return 'persetujuan-pemberi';
+    }
+  }
+  return null;
+};
+
+const handleApprove = async (note: string) => {
+  if (!actionRow.value) return;
+  savingAction.value = true;
+  try {
+    const row = actionRow.value;
+    const userPersnum = Number(user.value?.persnum);
+    const type = getVerificationType(row);
+
+    if (type === 'pengusul') {
+      const verifikator = row.verifikatorPengusul.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await verifikasiPengusul(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.SETUJU,
+      });
+    } else if (type === 'pemberi') {
+      await verifikasiPemberi(row.id, {
+        durasiAksesDisetujui: row.durasiAkses,
+        catatanPerubahanDurasi: '',
+        catatan: note,
+        keputusan: Keputusan.LANJUT,
+      });
+    } else if (type === 'persetujuan-pemberi') {
+      const verifikator = row.verifikatorPemberi.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await persetujuanPemberi(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.SETUJU,
+        durasiAksesDisetujui: undefined,
+        catatanPerubahanDurasi: '',
+      });
+    }
+
+    toast.add({ title: 'Berhasil', description: 'Verifikasi terkirim', color: 'success' });
+    showApproveModal.value = false;
+    await loadData();
+    fetchCounts(true);
+  } catch (err: any) {
+    toast.add({ title: 'Gagal Verifikasi', description: extractErrorMessage(err), color: 'error' });
+  } finally {
+    savingAction.value = false;
+  }
+};
+
+const handleReject = async (note: string) => {
+  if (!actionRow.value) return;
+  if (!note.trim() || note.trim().length < 5) {
+    toast.add({ title: 'Alasan penolakan wajib diisi (minimal 5 karakter)', color: 'error' });
+    return;
+  }
+  savingAction.value = true;
+  try {
+    const row = actionRow.value;
+    const userPersnum = Number(user.value?.persnum);
+    const type = getVerificationType(row);
+
+    if (type === 'pengusul') {
+      const verifikator = row.verifikatorPengusul.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await verifikasiPengusul(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.TOLAK,
+      });
+    } else if (type === 'pemberi') {
+      await verifikasiPemberi(row.id, {
+        durasiAksesDisetujui: row.durasiAkses,
+        catatanPerubahanDurasi: '',
+        catatan: note,
+        keputusan: Keputusan.TOLAK,
+      });
+    } else if (type === 'persetujuan-pemberi') {
+      const verifikator = row.verifikatorPemberi.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await persetujuanPemberi(row.id, jenjang, {
+        catatan: note,
+        catatanRevisi: '',
+        keputusan: Keputusan.TOLAK,
+        durasiAksesDisetujui: undefined,
+        catatanPerubahanDurasi: '',
+      });
+    }
+
+    toast.add({ title: 'Berhasil', description: 'Penolakan terkirim', color: 'success' });
+    showRejectModal.value = false;
+    await loadData();
+    fetchCounts(true);
+  } catch (err: any) {
+    toast.add({ title: 'Gagal Tolak', description: extractErrorMessage(err), color: 'error' });
+  } finally {
+    savingAction.value = false;
+  }
+};
 
 // ── Sort ────────────────────────────────────────────────────────
 const sortKey = ref('createdAt');
@@ -346,7 +507,7 @@ const exportData = async () => {
       r.nomorUsulan,
       r.jenisBerkas,
       formatDurasiLabel(r.durasiAkses, r.customTanggalSelesai),
-      statusLabelForExport(r.status),
+      r.status,
       formatDate(r.createdAt),
     ]);
     downloadCsv(`usulan-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
@@ -554,7 +715,7 @@ onBeforeUnmount(() => {
               ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
               : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
           >
-            {{ row.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}
+            {{ row.jenisBerkas }}
           </span>
         </template>
         <template #cell-judulUsulan="{ row }">
@@ -591,5 +752,31 @@ onBeforeUnmount(() => {
     <Teleport to="body">
       <AddUsulanAksesBerkas v-model="openAdd" @created="handleCreated" />
     </Teleport>
+
+    <!-- Modal Setuju (standarisasi) -->
+    <VerifyActionModal
+      v-model="showApproveModal"
+      variant="approve"
+      title="Setujui Usulan Akses Berkas"
+      description="Pastikan usulan sudah sesuai sebelum disetujui."
+      note-placeholder="Keterangan opsional"
+      confirm-label="Setuju"
+      :saving="savingAction"
+      @confirm="handleApprove"
+    />
+
+    <!-- Modal Tolak (standarisasi) -->
+    <VerifyActionModal
+      v-model="showRejectModal"
+      variant="reject"
+      title="Tolak Usulan Akses Berkas"
+      description="Penolakan akan menghentikan alur verifikasi usulan ini."
+      note-placeholder="Masukkan alasan penolakan"
+      confirm-label="Tolak"
+      :saving="savingAction"
+      :require-note="true"
+      :min-note-length="5"
+      @confirm="handleReject"
+    />
   </div>
 </template>

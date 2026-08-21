@@ -4,7 +4,7 @@
 // Data dari endpoint /my-entitlements (akses yang diterima user)
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, RotateCw } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
@@ -23,7 +23,7 @@ const toast = useToast();
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
-const filterStatus = ref('Aktif');
+const filterStatus = ref('Semua');
 const sortKey = ref('tanggalMulai');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const isExporting = ref(false);
@@ -96,6 +96,10 @@ const filteredEntitlements = computed(() => {
   return rows;
 });
 
+const totalPages = computed(() =>
+  Math.ceil(filteredEntitlements.value.length / itemsPerPage.value) || 1,
+);
+
 // Paginated rows
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
@@ -116,7 +120,7 @@ const loadData = async () => {
 
 const resetFilters = () => {
   searchQuery.value = '';
-  filterStatus.value = 'Aktif';
+  filterStatus.value = 'Semua';
   currentPage.value = 1;
 };
 
@@ -192,6 +196,16 @@ const formatDate = (dateStr: string) => {
     year: 'numeric',
   });
 };
+
+// Format durasi akses
+function formatDurasiLabel(preset: string | undefined | null, customDate?: string | null): string {
+  if (!preset) return '-';
+  if (preset === 'CUSTOM' && customDate) {
+    const tgl = new Date(customDate);
+    return tgl.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  return preset.replace('_', ' ');
+}
 
 // ── Custom dropdown for rows per page ───────
 const openRowsPerPage = ref(false);

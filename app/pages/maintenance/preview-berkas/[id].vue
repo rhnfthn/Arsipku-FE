@@ -200,6 +200,16 @@ const pageTitle = computed(() =>
   nomorUsulan.value ? `Detail Usulan ${nomorUsulan.value}` : 'Detail Berkas'
 );
 
+// Set tab title ke nama berkas agar tidak "about:blank"
+const berkas = ref<any>(null);
+useHead(() => ({
+  title: berkas.value?.judulBerkas
+    ? `${berkas.value.judulBerkas} — Detail Berkas`
+    : berkas.value?.kodeBerkas
+      ? `${berkas.value.kodeBerkas} — Detail Berkas`
+      : 'Detail Berkas',
+}));
+
 const fromPage = computed(() => (route.query.from as string) || '');
 
 const breadcrumbItems = computed(() => {
@@ -212,18 +222,11 @@ const breadcrumbItems = computed(() => {
       { label: 'Detail Berkas' },
     ];
   }
-  if (fromPage.value === 'penyusutan') {
-    return [
-      { label: 'Beranda', to: '/' },
-      { label: 'Pengajuan Penyusutan', to: '/maintenance/penyusutan/pengajuan-penyusutan' },
-      { label: 'Detail Berkas' },
-    ];
-  }
   if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Penerimaan Usulan', to: '/maintenance/notifikasi-usulan-pindah-arsip' },
-      { label: nomorUsulan.value, to: `/maintenance/verifikasi-berkas-fisik/${usulanId.value}` },
+      { label: 'Penerimaan Usulan', to: '/maintenance/penerimaan-usulan' },
+      { label: nomorUsulan.value, to: `/maintenance/penerimaan-usulan/${usulanId.value}` },
       { label: 'Detail Berkas' },
     ];
   }
@@ -241,9 +244,9 @@ const breadcrumbItems = computed(() => {
   ];
 });
 
-const berkas = ref<any>(null);
 const naskahList = ref<any[]>([]);
 const isArchived = ref(false);
+const isMusnah = ref(false);
 const loading = ref(true);
 const usulanStatus = ref<string>('');
 
@@ -261,14 +264,38 @@ const closePdfViewer = () => {
 
 /** Buka PDF naskah dalam viewer full-page (bisa preview & cetak). */
 const openNaskahPdf = async (naskah: any) => {
-  // Jika berkas sudah dimusnahkan/diarsipkan, naskah tidak bisa dibuka
-  if (isArchived.value) {
+  // Jika berkas sudah dimusnahkan (jenis musnah), naskah tidak bisa dibuka.
+  // Untuk permanen, naskah tetap bisa dilihat meski sudah di-arsipkan.
+  if (isMusnah.value) {
     alert('Naskah telah dimusnahkan.');
     return;
   }
   // Ambil detail naskah untuk mendapatkan final_pdf_url
   isLoadingPdf.value = true;
   try {
+    // Jika berkas dari DB arsip (permanen), naskah sudah punya final_pdf
+    // dari snapshot — ambil presigned URL dari endpoint arsip.
+    if (isArchived.value) {
+      if (!naskah.final_pdf) {
+        alert('PDF naskah tidak tersedia (final_pdf kosong).');
+        return;
+      }
+      const pdfRes: any = await apiGet(
+        `/api/arsip/naskah/pdf`,
+        { params: { key: naskah.final_pdf } },
+        { skipCache: true },
+      );
+      const pdfUrl = pdfRes?.data?.data?.url ?? pdfRes?.data?.url ?? null;
+      if (!pdfUrl) {
+        alert('PDF naskah tidak tersedia.');
+        return;
+      }
+      pdfViewerTitle.value = naskah.perihal || 'Naskah';
+      pdfViewerUrl.value = pdfUrl;
+      showPdfViewer.value = true;
+      return;
+    }
+
     const res: any = await getNaskahDetailInBerkas(
       route.params.id as string,
       naskah.naskahId || naskah.id,
@@ -356,6 +383,7 @@ onMounted(async () => {
         const arsipBerkas = arsipData?.berkas;
         if (arsipBerkas) {
           isArchived.value = true;
+          isMusnah.value = arsipBerkas.is_musnah === true || arsipBerkas.is_musnah === 1 || arsipBerkas.status_akhir === 'musnah';
           berkas.value = {
             id: arsipBerkas.source_berkas_id,
             judulBerkas: arsipBerkas.judul_berkas,

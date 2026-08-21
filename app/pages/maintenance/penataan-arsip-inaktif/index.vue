@@ -5,6 +5,9 @@
       <div class="mb-6">
         <Heading variant="heading6b" class="text-mobile-md">Penataan Arsip Inaktif</Heading>
         <PageHeader :items="breadcrumbs" />
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Daftar arsip inaktif yang sudah diterima dan siap ditata.
+        </p>
       </div>
 
       <!-- Filter & Search -->
@@ -33,6 +36,17 @@
             </button>
           </div>
         </div>
+        <!-- Search -->
+        <div class="relative flex-1 min-w-[200px]">
+          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            v-model="searchInput"
+            type="text"
+            placeholder="Cari nomor/perihal/sekretaris..."
+            class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
+            @input="onSearchInput"
+          />
+        </div>
         <!-- Status Filter (custom dropdown) -->
         <div ref="statusRef" class="relative shrink-0 z-30">
           <button
@@ -57,42 +71,6 @@
             </button>
           </div>
         </div>
-        <!-- Klasifikasi Filter (custom dropdown) -->
-        <div ref="klasifikasiRef" class="relative shrink-0 z-30">
-          <button
-            @click="klasifikasiOpen = !klasifikasiOpen"
-            class="h-10 w-[180px] px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6] flex items-center justify-between"
-          >
-            <span class="truncate">{{ klasifikasiLabel }}</span>
-            <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" :class="{ 'rotate-180': klasifikasiOpen }" />
-          </button>
-          <div
-            v-if="klasifikasiOpen"
-            class="absolute top-full left-0 mt-1.5 z-50 min-w-[180px] max-h-56 overflow-y-auto bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden"
-          >
-            <button
-              @click="filterKlasifikasi = ''; page = 1; fetchData(); klasifikasiOpen = false"
-              :class="['w-full text-left px-4 py-2 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', filterKlasifikasi === '' ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600']"
-            >Semua Klasifikasi</button>
-            <button
-              v-for="k in klasifikasiList"
-              :key="k.klasifikasi"
-              @click="filterKlasifikasi = k.klasifikasi; page = 1; fetchData(); klasifikasiOpen = false"
-              :class="['w-full text-left px-4 py-2 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', filterKlasifikasi === k.klasifikasi ? 'bg-[#457fb6]/10 text-[#457fb6] font-medium' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600']"
-            >{{ k.klasifikasi }} — {{ k.klasifikasi_text || '' }}</button>
-          </div>
-        </div>
-        <!-- Search -->
-        <div class="relative flex-1 min-w-[200px]">
-          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            v-model="searchInput"
-            type="text"
-            placeholder="Cari nomor/perihal/sekretaris..."
-            class="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-            @input="onSearchInput"
-          />
-        </div>
         <!-- Export -->
         <button
           @click="onExport"
@@ -108,48 +86,55 @@
           <table class="w-full text-sm">
             <thead class="bg-[#457fb6] text-white">
               <tr>
-                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
-                <th class="px-3 py-3 text-center font-semibold">Kode Berkas / No Usulan</th>
-                <th class="px-3 py-3 text-center font-semibold">Klasifikasi</th>
-                <th class="px-3 py-3 text-center font-semibold">Lokasi</th>
-                <th class="px-3 py-3 text-center font-semibold">Status</th>
-                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
+                <th class="px-3 py-3 text-left font-semibold">No</th>
+                <th class="px-3 py-3 text-left font-semibold">Nomor Usulan</th>
+                <th class="px-3 py-3 text-left font-semibold">Sekretaris</th>
+                <th class="px-3 py-3 text-left font-semibold">Arsip</th>
+                <th class="px-3 py-3 text-left font-semibold">Lokasi</th>
+                <th class="px-3 py-3 text-left font-semibold">Status</th>
+                <th class="px-3 py-3 text-left font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="6" class="px-3 py-10 text-center">
+                <td colspan="7" class="px-3 py-10 text-center">
                   <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
                 </td>
               </tr>
               <tr v-else-if="list.length === 0">
-                <td colspan="6" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="7" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
                   Belum ada arsip untuk ditata.
                 </td>
               </tr>
               <tr
-                v-for="item in list"
+                v-for="(item, index) in list"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
+                <td class="px-3 py-3">{{ (page - 1) * limit + index + 1 }}</td>
+                <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.nomorUsulan }}</td>
+                <td class="px-3 py-3">{{ item.sekretarisName }}</td>
                 <td class="px-3 py-3">{{ item.arsipPerihal }}</td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.arsipKode ?? '-' }}</div>
-                  <div v-if="item.nomorUsulan" class="text-[11px] text-gray-400">{{ item.nomorUsulan }}</div>
-                </td>
-                <td class="px-3 py-3">{{ (item as any).arsipKlasifikasi ?? '-' }}</td>
                 <td class="px-3 py-3">{{ item.lokasiPenataan || '-' }}</td>
                 <td class="px-3 py-3">
                   <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
                 </td>
-                <td class="px-3 py-3 text-center">
-                  <div class="flex items-center justify-center gap-1.5">
+                <td class="px-3 py-3">
+                  <div class="flex items-center gap-1.5">
                     <NuxtLink
                       :to="`/maintenance/penataan-arsip-inaktif/${item.id}`"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                    </NuxtLink>
+                    <NuxtLink
+                      v-if="item.status === 'ARSIP_INAKTIF_DITERIMA'"
+                      :to="`/maintenance/penataan-arsip-inaktif/${item.id}?mode=penataan`"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
+                      title="Penataan"
+                    >
+                      <UIcon name="i-lucide-archive" class="w-4 h-4" />
                     </NuxtLink>
                   </div>
                 </td>
@@ -178,13 +163,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
-import { useApi } from '~/composables/useApi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
 
 definePageMeta({ middleware: ['auth'] })
 
 const { fetchPenataanList } = useTuVerifikasi()
-const { apiGet } = useApi()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -200,20 +183,10 @@ const totalPages = ref(1)
 
 const searchInput = ref('')
 const filterStatus = ref('')
-const filterKlasifikasi = ref('')
 const pageSizeOpen = ref(false)
 const pageSizeRef = ref<HTMLElement | null>(null)
 const statusOpen = ref(false)
 const statusRef = ref<HTMLElement | null>(null)
-const klasifikasiOpen = ref(false)
-const klasifikasiRef = ref<HTMLElement | null>(null)
-const klasifikasiList = ref<any[]>([])
-
-const klasifikasiLabel = computed(() => {
-  if (!filterKlasifikasi.value) return 'Semua Klasifikasi'
-  const k = klasifikasiList.value.find((x: any) => x.klasifikasi === filterKlasifikasi.value)
-  return k ? `${k.klasifikasi} — ${k.klasifikasi_text || ''}` : 'Semua Klasifikasi'
-})
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
@@ -221,24 +194,12 @@ const statusOptions = [
   { value: 'SELESAI', label: 'Selesai' },
 ];
 
-const fetchKlasifikasi = async () => {
-  try {
-    const data: any = await apiGet('/arsip-dinamis/klasifikasi', {}, { skipCache: true })
-    klasifikasiList.value = Array.isArray(data) ? data : (data?.data ?? [])
-  } catch (e) {
-    console.error('Gagal memuat klasifikasi:', e)
-  }
-}
-
 const onClickOutside = (e: MouseEvent) => {
   if (pageSizeRef.value && !pageSizeRef.value.contains(e.target as Node)) {
     pageSizeOpen.value = false;
   }
   if (statusRef.value && !statusRef.value.contains(e.target as Node)) {
     statusOpen.value = false;
-  }
-  if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target as Node)) {
-    klasifikasiOpen.value = false;
   }
 };
 
@@ -251,10 +212,9 @@ const onSearchInput = () => {
 const fetchData = async () => {
   isLoading.value = true
   try {
-    const res: any = await fetchPenataanList({
+    const res = await fetchPenataanList({
       search: searchInput.value || undefined,
       status: filterStatus.value || undefined,
-      klasifikasi: filterKlasifikasi.value || undefined,
       page: page.value, limit: limit.value,
     })
     const payload = res?.data ?? res
@@ -284,12 +244,11 @@ const onExport = () => {
     alert('Tidak ada data untuk diexport')
     return
   }
-  const headers = ['Nama Berkas', 'Kode Berkas', 'No Usulan', 'Klasifikasi', 'Lokasi', 'Status']
+  const headers = ['Nomor Usulan', 'Sekretaris', 'Arsip', 'Lokasi', 'Status']
   const rows = list.value.map((r: any) => [
-    r.arsipPerihal ?? '',
-    r.arsipKode ?? '',
     r.nomorUsulan ?? '',
-    r.arsipKlasifikasi ?? '',
+    r.sekretarisName ?? '',
+    r.arsipPerihal ?? '',
     r.lokasiPenataan ?? '',
     statusLabel(r.status) ?? '',
   ])
@@ -304,7 +263,6 @@ const onExport = () => {
 }
 
 onMounted(() => {
-  fetchKlasifikasi()
   fetchData()
   document.addEventListener('mousedown', onClickOutside)
 })

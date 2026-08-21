@@ -29,11 +29,6 @@ const breadcrumbs = computed(() => [
 
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-};
-
-const formatDateTime = (dateStr: string | null) => {
-  if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
@@ -294,7 +289,7 @@ const getProgressLabel = (detail: any): string => {
                 </span>
               </div>
               <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {{ step.verifierNama || `Persnum ${step.verifierPersnum}` }}<span v-if="step.verifierJabatan"> · {{ step.verifierJabatan }}</span> · {{ formatDateTime(step.verifiedAt) }}
+                {{ step.verifierNama || `Persnum ${step.verifierPersnum}` }}<span v-if="step.verifierJabatan"> · {{ step.verifierJabatan }}</span> · {{ formatDate(step.verifiedAt) }}
               </div>
               <div v-if="step.catatan" class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ step.catatan }}</div>
               <div v-if="step.catatanRevisi" class="mt-1 text-sm text-orange-600 dark:text-orange-400">Revisi: {{ step.catatanRevisi }}</div>

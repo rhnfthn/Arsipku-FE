@@ -31,8 +31,11 @@
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span><p class="text-gray-900 dark:text-white font-medium">{{ item.no_usulan }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.kode_berkas }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nama Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.nama_berkas }}</p></div>
-              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasi }}</p></div>
+              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasi || '-' }}<span v-if="item.klasifikasiText || item.klasifikasi_text" class="text-xs ml-1">({{ item.klasifikasiText || item.klasifikasi_text }})</span></p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggal_retensi_habis ?? '') }}</p></div>
+              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span><p class="text-gray-900 dark:text-white font-medium">
+                <span :class="item.jenis_penyusutan === 'musnah' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'" class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">{{ item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen' }}</span>
+              </p></div>
             </div>
 
             <!-- Keterangan -->
@@ -431,9 +434,9 @@ const loadItem = async () => {
         status: 'draft' as any,
         jenis_penyusutan: 'permanen' as JenisPenyusutan,
         lokasi_simpan: d.lokasiPenataan ?? null,
-        rak: null,
-        baris: null,
-        kolom: null,
+        rak: d.rak ?? null,
+        baris: d.baris ?? null,
+        kolom: d.kolom ?? null,
         tanggal_retensi_habis: d.tanggalRetensiAktifHabis ?? '',
         tanggal_pengajuan: null,
         catatan: d.keterangan ?? '',
