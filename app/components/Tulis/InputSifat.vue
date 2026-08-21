@@ -6,7 +6,7 @@
     </span>
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu v-model="selected" :items="sifatOptions" :placeholder="$t('f_pilih_sifat')" class="w-full p-0"
-        variant="none" :search="false" value-attribute="value">
+        variant="none" :search="false">
         <template #default="{ label }: any">
           <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
             <span v-if="selected" class="text-sm text-left truncate text-gray-900 dark:text-white">
@@ -38,7 +38,7 @@ const sifatOptions = computed(() => [
   { label: t('sifat_biasa'), value: "biasa" },
   { label: t('sifat_terbatas'), value: "terbatas" },
   { label: t('sifat_rahasia'), value: "rahasia" },
-  { label: t('sifat_sangat_rahasia'), value: "sangat rahasia" }
+  { label: t('sifat_sangat_rahasia'), value: "sangat_rahasia" }
 ])
 
 // Helper untuk mendapatkan label dari value jika v-model isinya string

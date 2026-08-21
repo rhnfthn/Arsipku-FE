@@ -54,7 +54,7 @@
           :title="child.label"
           class="flex items-start px-4 py-2.5 my-1 pl-12 rounded-full text-[13px] leading-tight whitespace-pre-line break-words transition-colors dark:text-gray-400 relative"
           :class="
-            isActiveChild(child.to, child.activePaths)
+            isActiveChild(child.to, child.activePaths, child.exact)
               ? 'bg-[#D3E3FD] font-bold text-gray-900 dark:bg-gray-700 dark:text-white'
               : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
           "
@@ -122,10 +122,17 @@ const isActivePath = (path) => {
 // Juga support activePaths untuk route yang redirect ke path lain.
 // Jika child.to dan activePaths mengandung path yang sama, gunakan exact match saja
 // untuk child.to (mencegah double-highlight pada route redirect).
-const isActiveChild = (path, activePaths) => {
+//
+// `exact` (opsional): untuk child section-index yang to-nya sama dengan parent
+// (mis. Daftar Naskah /naskah-lainnya). Tanpa exact, startsWith(path+'/') akan
+// menandai child ini aktif pada route sibling (Persetujuan, Tulis) yang berada
+// di bawah path yang sama — padahal user belum masuk ke menu tersebut.
+// exact=true membatasi ke match persis (+ activePaths).
+const isActiveChild = (path, activePaths, exact = false) => {
   if (route.path === path) return true;
-  // Untuk nested child route (path dengan children), pakai startsWith
-  if (path && route.path.startsWith(path + '/')) return true;
+  // Untuk nested child route (path dengan children), pakai startsWith.
+  // Dilewati untuk child bertanda exact (section-index).
+  if (!exact && path && route.path.startsWith(path + '/')) return true;
   if (activePaths && Array.isArray(activePaths)) {
     return activePaths.some((p) => {
       // Hanya match jika path yang active berbeda dari path utama
