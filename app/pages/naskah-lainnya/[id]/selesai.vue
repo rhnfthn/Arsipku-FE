@@ -6,11 +6,11 @@
         <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <NuxtLink to="/naskah-lainnya" class="hover:text-primary">Naskah Lainnya</NuxtLink>
           <span>/</span>
-          <NuxtLink :to="`/naskah-lainnya/${id}`" class="hover:text-primary">Detail</NuxtLink>
+          <NuxtLink :to="`/naskah-lainnya/${id}`" class="hover:text-primary truncate max-w-[220px]">{{ detail?.perihal || 'Detail' }}</NuxtLink>
           <span>/</span>
           <span class="text-gray-700 dark:text-gray-300">Selesai</span>
         </div>
-        <h1 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">{{ detail?.nomor || 'Memuat…' }}</h1>
+        <h1 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
       </div>
       <UButton :to="`/naskah-lainnya/${id}`" variant="ghost" icon="i-lucide-arrow-left" color="neutral">
         Kembali ke Detail
@@ -148,7 +148,7 @@ async function downloadNaskah() {
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = 'naskah.docx';
+    a.download = naskahFileName(detail.value);
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {

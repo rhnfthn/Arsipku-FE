@@ -230,7 +230,8 @@ const jenisOptions = [
 const tahapanOptions = [
   { label: 'Semua Tahapan', value: '' }, { label: 'Konsep', value: 'konsep' },
   { label: 'Persetujuan', value: 'persetujuan' }, { label: 'Legal Drafting', value: 'legal_drafting' },
-  { label: 'Evaluasi', value: 'evaluasi' }, { label: 'TTD Pemrakarsa', value: 'tanda_tangan_pemrakarsa' },
+  { label: 'Evaluasi', value: 'evaluasi' }, { label: 'Persetujuan Direksi', value: 'persetujuan_direksi' },
+  { label: 'TTD Pemrakarsa', value: 'tanda_tangan_pemrakarsa' },
   { label: 'Blanko Verbal', value: 'blanko_verbal' }, { label: 'TTD Legal', value: 'tanda_tangan_legal' },
   { label: 'TTD Pejabat', value: 'tanda_tangan_pejabat' }, { label: 'Selesai', value: 'selesai' },
 ];

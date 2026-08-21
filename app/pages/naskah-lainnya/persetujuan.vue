@@ -238,9 +238,10 @@ const sortKey = ref('nomor');
 const sortDir = ref<'asc' | 'desc'>('asc');
 const isExporting = ref(false);
 
-// Filter status persetujuan (menunggu / disetujui / ditolak).
-const filterStatus = ref<'menunggu' | 'disetujui' | 'ditolak'>('menunggu');
-const filterTabs: { value: 'menunggu' | 'disetujui' | 'ditolak'; label: string }[] = [
+// Filter status persetujuan (semua / menunggu / disetujui / ditolak).
+const filterStatus = ref<'semua' | 'menunggu' | 'disetujui' | 'ditolak'>('menunggu');
+const filterTabs: { value: 'semua' | 'menunggu' | 'disetujui' | 'ditolak'; label: string }[] = [
+  { value: 'semua', label: 'Semua' },
   { value: 'menunggu', label: 'Menunggu Persetujuan Anda' },
   { value: 'disetujui', label: 'Disetujui' },
   { value: 'ditolak', label: 'Ditolak' },
@@ -272,7 +273,7 @@ function selectRowsPerPage(n: number) {
 function toggleFilterStatus() {
   openFilterStatus.value = !openFilterStatus.value;
 }
-function selectFilterStatus(v: 'menunggu' | 'disetujui' | 'ditolak') {
+function selectFilterStatus(v: 'semua' | 'menunggu' | 'disetujui' | 'ditolak') {
   filterStatus.value = v;
   openFilterStatus.value = false;
 }

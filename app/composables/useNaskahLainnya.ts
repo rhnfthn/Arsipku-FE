@@ -3,6 +3,7 @@ import { useApi } from './useApi';
 import type {
   NaskahListItem, NaskahDetail, BuatNaskahPayload, EvaluasiPayload,
   BlankoPayload, TandaTanganPayload, ApiResponse, LegalRecipient,
+  DirectorApprovalItem, SheetFormModel,
 } from '~/types/naskah-lainnya';
 
 export function useNaskahLainnya() {
@@ -44,7 +45,7 @@ export function useNaskahLainnya() {
       (d) => { detail.value = d; },
     );
 
-  const fetchPersetujuan = (status: 'menunggu' | 'disetujui' | 'ditolak' = 'menunggu') =>
+  const fetchPersetujuan = (status: 'semua' | 'menunggu' | 'disetujui' | 'ditolak' = 'menunggu') =>
     run(
       () => apiGet('/naskah-lainnya/persetujuan', { params: { status } }, { skipCache: true }),
       (d) => { persetujuan.value = d; },
@@ -56,7 +57,10 @@ export function useNaskahLainnya() {
       (d) => { persetujuanCount.value = Array.isArray(d) ? d.length : (d as any) ?? 0; },
     );
 
-  const fetchLegalDrafting = (status: 'belum-dikirim' | 'menunggu' | 'ditolak' | 'aksi-saya' = 'belum-dikirim') =>
+  // BE legal-drafting endpoint sudah mencakup legal_drafting + persetujuan_direksi
+  // + blanko_verbal dengan statusLegal akurat per naskah. Sub-filter statusLegal
+  // dilakukan client-side di halaman legal-drafting (tab filter).
+  const fetchLegalDrafting = (status: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya' = 'belum-dikirim') =>
     run(
       () => apiGet('/naskah-lainnya/legal-drafting', { params: { status } }, { skipCache: true }),
       (d) => { legalDrafting.value = d; },
@@ -98,9 +102,18 @@ export function useNaskahLainnya() {
     kirimApprovalLegal: (id, b) => ({ url: `/naskah-lainnya/${id}/legal-drafting/kirim-approval`, body: b }),
     kembalikanLegal: (id, b) => ({ url: `/naskah-lainnya/${id}/legal-drafting/kembalikan`, body: { catatan: b?.catatan } }),
     evaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi`, body: b }),
+    kembalikanEvaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi/kembalikan`, body: { catatan: b?.catatan } }),
     simpanBlanko: (id, b) => ({ url: `/naskah-lainnya/${id}/blanko-verbal`, body: b }),
     kirimApprovalBlanko: (id) => ({ url: `/naskah-lainnya/${id}/blanko-verbal/kirim-approval` }),
     tandaTangan: (id, b) => ({ url: `/naskah-lainnya/${id}/tanda-tangan`, body: b ?? {} }),
+    // Lembar Persetujuan Direksi
+    kirimLembarPersetujuanDireksi: (id, b) => ({ url: `/naskah-lainnya/${id}/lembar-persetujuan-direksi/kirim`, body: b }),
+    parafLembarPersetujuanDireksi: (id, b) => ({ url: `/naskah-lainnya/${id}/lembar-persetujuan-direksi/paraf`, body: b }),
+    tolakLembarPersetujuanDireksi: (id, b) => ({ url: `/naskah-lainnya/${id}/lembar-persetujuan-direksi/tolak`, body: b }),
+    // Blanko Verbal
+    kirimBlankoVerbal: (id, b) => ({ url: `/naskah-lainnya/${id}/blanko-verbal/kirim`, body: b }),
+    parafBlankoVerbal: (id, b) => ({ url: `/naskah-lainnya/${id}/blanko-verbal/paraf`, body: b }),
+    tolakBlankoVerbal: (id, b) => ({ url: `/naskah-lainnya/${id}/blanko-verbal/tolak`, body: b }),
   };
 
   const act = (id: string, key: string, body?: any) => {
@@ -116,13 +129,82 @@ export function useNaskahLainnya() {
   const tolak = (id: string, approvalId: string, catatan: string) => act(id, 'tolak', { approvalId, catatan });
   const kembalikan = (id: string, approvalId: string, catatan: string) => act(id, 'kembalikan', { approvalId, catatan });
   const mulaiLegal = (id: string) => act(id, 'mulaiLegal');
-  const kirimApprovalLegal = (id: string, approvers: { positionId?: string; nama: string; jabatan: string; persnum?: number }[]) =>
-    act(id, 'kirimApprovalLegal', { approval: approvers });
+  const kirimApprovalLegal = (
+    id: string,
+    approvers: { positionId?: string; nama: string; jabatan: string; persnum?: number }[],
+    catatan?: string,
+    catatanLegal?: string,
+  ) =>
+    act(id, 'kirimApprovalLegal', { approval: approvers, catatan, catatan_legal: catatanLegal });
   const kembalikanLegal = (id: string, catatan: string) => act(id, 'kembalikanLegal', { catatan });
   const evaluasi = (id: string, payload: EvaluasiPayload) => act(id, 'evaluasi', payload);
+  const kembalikanEvaluasi = (id: string, catatan: string) => act(id, 'kembalikanEvaluasi', { catatan });
   const simpanBlanko = (id: string, payload: BlankoPayload) => act(id, 'simpanBlanko', payload);
   const kirimApprovalBlanko = (id: string) => act(id, 'kirimApprovalBlanko');
   const tandaTangan = (id: string, payload: TandaTanganPayload = {}) => act(id, 'tandaTangan', payload);
+
+  // ── Direksi (BOD) ──
+  const fetchBodDirectors = async (): Promise<DirectorApprovalItem[]> => {
+    const res: any = await apiGet('/org-data/bod', {}, { skipCache: true });
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return data as DirectorApprovalItem[];
+  };
+
+  // ── Lembar Persetujuan Direksi ──
+  const previewLembarPersetujuanDireksi = async (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+  ): Promise<string> => {
+    const body = { ...sheet, catatan };
+    const res: any = await apiPost(`/naskah-lainnya/${id}/lembar-persetujuan-direksi/preview`, body);
+    return res?.data?.pdfUrl ?? res?.pdfUrl ?? '';
+  };
+
+  const kirimLembarPersetujuanDireksi = (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+  ) => act(id, 'kirimLembarPersetujuanDireksi', { ...sheet, catatan });
+
+  const parafLembarPersetujuanDireksi = (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+  ) => act(id, 'parafLembarPersetujuanDireksi', { ...sheet, catatan });
+
+  const tolakLembarPersetujuanDireksi = (
+    id: string,
+    catatan: string,
+  ) => act(id, 'tolakLembarPersetujuanDireksi', { catatan });
+
+  // ── Blanko Verbal ──
+  const previewBlankoVerbal = async (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+  ): Promise<string> => {
+    const body = { ...sheet, catatan };
+    const res: any = await apiPost(`/naskah-lainnya/${id}/blanko-verbal/preview`, body);
+    return res?.data?.pdfUrl ?? res?.pdfUrl ?? '';
+  };
+
+  const kirimBlankoVerbal = (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+  ) => act(id, 'kirimBlankoVerbal', { ...sheet, catatan });
+
+  const parafBlankoVerbal = (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+  ) => act(id, 'parafBlankoVerbal', { ...sheet, catatan });
+
+  const tolakBlankoVerbal = (
+    id: string,
+    catatan: string,
+  ) => act(id, 'tolakBlankoVerbal', { catatan });
 
   const uploadDokumen = async (id: string, file: File) => {
     const fd = new FormData();
@@ -155,8 +237,12 @@ export function useNaskahLainnya() {
     items, persetujuan, persetujuanCount, legalDrafting, legalDraftingCount, legalRecipients, detail, pending, error, createdId,
     fetchList, fetchDetail, fetchPersetujuan, fetchPersetujuanCount, fetchLegalDrafting, fetchLegalDraftingCount, fetchLegalRecipients,
     create, update, kirim, setuju, tolak, kembalikan, mulaiLegal,
-    kirimApprovalLegal, kembalikanLegal, evaluasi, simpanBlanko,
+    kirimApprovalLegal, kembalikanLegal, evaluasi, kembalikanEvaluasi, simpanBlanko,
     kirimApprovalBlanko, tandaTangan, uploadDokumen, uploadDokumenTambahan,
     unggahTtdFisik, deleteDokumenTambahan, getTemplateUrl, deleteDraft,
+    // Direksi / lembar / blanko
+    fetchBodDirectors,
+    previewLembarPersetujuanDireksi, kirimLembarPersetujuanDireksi, parafLembarPersetujuanDireksi, tolakLembarPersetujuanDireksi,
+    previewBlankoVerbal, kirimBlankoVerbal, parafBlankoVerbal, tolakBlankoVerbal,
   };
 }
