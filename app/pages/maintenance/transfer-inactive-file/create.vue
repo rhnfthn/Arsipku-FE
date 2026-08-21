@@ -122,7 +122,7 @@
                   </span>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {{ a.kodeBerkas ?? '-' }} · Retensi habis: {{ formatDate(a.tanggalRetensiAktifBerakhir) }}
+                  {{ a.kodeBerkas ?? '-' }} · Jatuh tempo inaktif: {{ formatDate(a.tanggalRetensiInaktifBerakhir) }}
                 </div>
               </button>
             </div>
@@ -131,7 +131,7 @@
               v-if="arsipDropdownOpen && arsipOptions.length === 0 && !arsipLoading"
               class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 text-center text-sm text-gray-400"
             >
-              Tidak ada arsip dengan retensi aktif habis
+              Tidak ada arsip pada masa retensi inaktif
             </div>
             <!-- Empty: ada arsip tapi filter kosong -->
             <div
@@ -213,6 +213,7 @@ interface ArsipOption {
   judulBerkas: string;
   kodeBerkas: string | null;
   tanggalRetensiAktifBerakhir: string | null;
+  tanggalRetensiInaktifBerakhir: string | null;
   kategoriBerkas: string | null;
 }
 const arsipOptions = ref<ArsipOption[]>([]);
@@ -236,10 +237,10 @@ const filteredArsip = computed(() => {
     .slice(0, 50);
 });
 
-/** Apakah ada arsip yang retensinya sudah lewat (mendesa). */
+/** Apakah ada arsip yang masa retensi inaktifnya sudah lewat (mendesa). */
 const isUrgent = (a: ArsipOption) => {
-  if (!a.tanggalRetensiAktifBerakhir) return false;
-  const d = new Date(a.tanggalRetensiAktifBerakhir);
+  if (!a.tanggalRetensiInaktifBerakhir) return false;
+  const d = new Date(a.tanggalRetensiInaktifBerakhir);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return d < today;
@@ -292,7 +293,9 @@ const fetchArsipRetensiHabis = async () => {
   arsipLoading.value = true;
   try {
     const { getBerkasList } = useArsipDinamis();
-    const res: any = await getBerkasList({ status: 'closed_retensi_aktif', limit: 100 });
+    // Sumber pemindahan inaktif = berkas yang sudah masuk fase retensi inaktif
+    // (hasil transfer aktif→inaktif), bukan yang masih closed_retensi_aktif.
+    const res: any = await getBerkasList({ status: 'retensi_inaktif', limit: 100 });
     // Backend: { success, data: { data: [...], meta } } | { data: [...] } | [...]
     const data = res?.data?.data ?? res?.data ?? res ?? [];
     arsipOptions.value = (Array.isArray(data) ? data : []).map((b: any) => ({
@@ -300,6 +303,7 @@ const fetchArsipRetensiHabis = async () => {
       judulBerkas: b.judulBerkas ?? b.judul_berkas ?? '-',
       kodeBerkas: b.kodeBerkas ?? b.kode_berkas ?? null,
       tanggalRetensiAktifBerakhir: b.tanggalRetensiAktifBerakhir ?? b.tanggal_retensi_aktif_berakhir ?? null,
+      tanggalRetensiInaktifBerakhir: b.tanggalRetensiInaktifBerakhir ?? b.tanggal_retensi_inaktif_berakhir ?? null,
       kategoriBerkas: b.kategoriBerkas ?? b.kategori_berkas ?? null,
     }));
   } catch (e) {

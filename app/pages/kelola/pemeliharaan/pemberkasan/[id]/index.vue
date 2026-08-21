@@ -607,17 +607,19 @@
       </section>
 
       <section v-else-if="activeTab === 'retensi'" class="mt-5 space-y-5">
-        <template v-if="isRetensiAktif">
-          <!-- Hero progress (primary-tinted) -->
+        <template v-if="retensiPhase">
+          <!-- Hero progress (warna konsisten primary; bar mengikuti urgensi) -->
           <div
-            class="overflow-hidden rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white shadow-sm dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800"
+            class="overflow-hidden rounded-xl border shadow-sm"
+            :class="retensiHero.wrap"
           >
             <div
               class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div class="flex items-start gap-3">
                 <span
-                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400"
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                  :class="retensiHero.iconBox"
                 >
                   <Clock3 class="h-6 w-6" />
                 </span>
@@ -625,29 +627,35 @@
                   <h3
                     class="flex flex-wrap items-center gap-2 font-semibold text-gray-900 dark:text-white"
                   >
-                    Retensi Aktif Berjalan
+                    {{ retensiHero.title }}
                     <span
-                      class="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                      :class="retensiHero.badgeCls"
                     >
-                      <span class="h-1.5 w-1.5 rounded-full bg-primary-500" /> Retensi Aktif
+                      <span class="h-1.5 w-1.5 rounded-full" :class="retensiHero.dot" />
+                      {{ retensiHero.badge }}
                     </span>
                   </h3>
                   <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ retensiInfo }}</p>
                 </div>
               </div>
               <div class="text-left sm:text-right">
-                <p class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                <p class="text-3xl font-bold" :class="retensiHero.pct">
                   {{ retensiProgress }}%
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">masa aktif berjalan</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  masa {{ retensiPhase === 'inaktif' ? 'inaktif' : 'aktif' }} berjalan
+                </p>
               </div>
             </div>
             <div class="px-5 pb-5">
               <div
-                class="relative h-3.5 w-full overflow-hidden rounded-full bg-primary-100 dark:bg-primary-900/30"
+                class="relative h-3.5 w-full overflow-hidden rounded-full"
+                :class="retensiHero.track"
               >
                 <div
-                  class="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500"
+                  class="h-full rounded-full bg-gradient-to-r transition-all duration-500"
+                  :class="retensiBar"
                   :style="{ width: retensiProgress + '%' }"
                 />
               </div>
@@ -655,12 +663,12 @@
                 class="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
               >
                 <span class="inline-flex items-center gap-1.5">
-                  <span class="h-2 w-2 rounded-full bg-primary-500" /> Mulai ·
-                  {{ formatDate(berkas?.tanggalDitutup) }}
+                  <span class="h-2 w-2 rounded-full" :class="retensiHero.dot" />
+                  {{ retensiHero.startLabel }} · {{ retensiHero.startDate }}
                 </span>
                 <span class="inline-flex items-center gap-1.5">
-                  Jatuh Tempo · {{ formatDate(berkas?.tanggalRetensiAktifBerakhir) }}
-                  <span class="h-2 w-2 rounded-full bg-primary-300" />
+                  {{ retensiHero.endLabel }} · {{ retensiHero.endDate }}
+                  <span class="h-2 w-2 rounded-full" :class="retensiHero.dot" />
                 </span>
               </div>
             </div>
@@ -674,9 +682,10 @@
               class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
             >
               <span
-                class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
+                class="flex h-9 w-9 items-center justify-center rounded-lg"
+                :class="retensiHero.iconBox"
               >
-                <Clock3 class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                <Clock3 class="h-5 w-5" />
               </span>
               <div>
                 <h2 class="font-semibold text-gray-900 dark:text-white">Siklus Retensi Arsip</h2>
@@ -687,54 +696,27 @@
             </div>
             <div class="overflow-x-auto px-5 py-6">
               <div class="flex min-w-[640px] items-start">
-                <div class="flex min-w-40 flex-col items-center text-center">
-                  <div
-                    class="flex size-12 items-center justify-center rounded-full bg-primary-500 text-white shadow-sm ring-4 ring-primary-100 dark:ring-primary-900/40"
-                  >
-                    <UIcon name="i-lucide-play" class="size-5" />
+                <template v-for="(step, i) in retensiSteps" :key="step.label">
+                  <div class="flex min-w-40 flex-col items-center text-center">
+                    <div
+                      class="flex size-12 items-center justify-center rounded-full shadow-sm ring-4"
+                      :class="stepCircle(step.state)"
+                    >
+                      <UIcon :name="step.icon" class="size-5" />
+                    </div>
+                    <p class="mt-2 text-sm font-semibold" :class="stepLabel(step.state)">
+                      {{ step.label }}
+                    </p>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ step.sub }}</p>
+                    <p class="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {{ step.date }}
+                    </p>
                   </div>
-                  <p class="mt-2 text-sm font-semibold text-primary-700 dark:text-primary-400">
-                    Retensi Aktif
-                  </p>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Sedang berjalan</p>
-                  <p class="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {{ formatDate(berkas?.tanggalDitutup) }}
-                  </p>
-                </div>
-                <div class="mt-6 h-0.5 flex-1 bg-gray-200 dark:bg-gray-700" />
-                <div class="flex min-w-40 flex-col items-center text-center">
                   <div
-                    class="flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500"
-                  >
-                    <UIcon name="i-lucide-archive" class="size-5" />
-                  </div>
-                  <p class="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                    Retensi Inaktif
-                  </p>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {{ berkas?.retensiInaktifTahun || 0 }} tahun
-                  </p>
-                  <p class="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {{ formatDate(berkas?.tanggalRetensiAktifBerakhir) }}
-                  </p>
-                </div>
-                <div class="mt-6 h-0.5 flex-1 bg-gray-200 dark:bg-gray-700" />
-                <div class="flex min-w-40 flex-col items-center text-center">
-                  <div
-                    class="flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500"
-                  >
-                    <UIcon name="i-lucide-flag" class="size-5" />
-                  </div>
-                  <p class="mt-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                    Tindakan Akhir
-                  </p>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {{ berkas?.tindakanPenyusutanAkhir || '-' }}
-                  </p>
-                  <p class="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {{ formatDate(berkas?.tanggalRetensiInaktifBerakhir) }}
-                  </p>
-                </div>
+                    v-if="i < retensiSteps.length - 1"
+                    class="mt-6 h-0.5 flex-1 bg-gray-200 dark:bg-gray-700"
+                  />
+                </template>
               </div>
             </div>
           </div>
@@ -747,7 +729,8 @@
               class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
             >
               <span
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                :class="retensiHero.iconBox"
               >
                 <UIcon :name="card.icon" class="h-5 w-5" />
               </span>
@@ -1350,9 +1333,28 @@ const quickInfoCards = computed(() => [
   },
 ]);
 const isRetensiAktif = computed(() => berkas.value?.status === 'closed_retensi_aktif');
+const isRetensiInaktif = computed(() => berkas.value?.status === 'retensi_inaktif');
+const retensiPhase = computed<'aktif' | 'inaktif' | null>(() =>
+  isRetensiAktif.value ? 'aktif' : isRetensiInaktif.value ? 'inaktif' : null,
+);
+// Rentang fase berjalan: aktif = tanggalDitutup → tanggalRetensiAktifBerakhir;
+// inaktif = tanggalRetensiAktifBerakhir → tanggalRetensiInaktifBerakhir.
+const retensiRange = computed(() => {
+  const inaktif = retensiPhase.value === 'inaktif';
+  return {
+    start: inaktif
+      ? berkas.value?.tanggalRetensiAktifBerakhir
+      : berkas.value?.tanggalDitutup,
+    end: inaktif
+      ? berkas.value?.tanggalRetensiInaktifBerakhir
+      : berkas.value?.tanggalRetensiAktifBerakhir,
+    totalTahun: inaktif
+      ? berkas.value?.retensiInaktifTahun || 0
+      : berkas.value?.retensiAktifTahun || 0,
+  };
+});
 const retensiProgress = computed(() => {
-  const start = berkas.value?.tanggalDitutup;
-  const end = berkas.value?.tanggalRetensiAktifBerakhir;
+  const { start, end } = retensiRange.value;
   if (!start || !end) return 0;
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();
@@ -1362,20 +1364,88 @@ const retensiProgress = computed(() => {
   return Math.round(((now - s) / (e - s)) * 100);
 });
 const retensiInfo = computed(() => {
-  const end = berkas.value?.tanggalRetensiAktifBerakhir;
+  const { end, totalTahun } = retensiRange.value;
+  const inaktif = retensiPhase.value === 'inaktif';
   if (!end) return 'Tanggal jatuh tempo retensi belum dihitung.';
   const days = Math.ceil((new Date(end).getTime() - Date.now()) / 86400000);
-  if (days <= 0) return 'Masa retensi aktif telah berakhir.';
+  if (days <= 0)
+    return inaktif
+      ? 'Masa retensi inaktif telah berakhir.'
+      : 'Masa retensi aktif telah berakhir.';
   const years = Math.floor(days / 365);
   const months = Math.floor((days % 365) / 30);
-  return `Tersisa ${years} tahun ${months} bulan dari total masa retensi aktif ${berkas.value?.retensiAktifTahun || 0} tahun.`;
+  return `Tersisa ${years} tahun ${months} bulan dari total masa retensi ${inaktif ? 'inaktif' : 'aktif'} ${totalTahun} tahun.`;
 });
 const sisaWaktu = computed(() => {
-  const end = berkas.value?.tanggalRetensiAktifBerakhir;
+  const { end } = retensiRange.value;
   if (!end) return '-';
   const days = Math.ceil((new Date(end).getTime() - Date.now()) / 86400000);
   return days <= 0 ? 'Lewat' : `${days} hari`;
 });
+const retensiHero = computed(() => {
+  const inaktif = retensiPhase.value === 'inaktif';
+  const { start, end } = retensiRange.value;
+  return {
+    title: inaktif ? 'Retensi Inaktif Berjalan' : 'Retensi Aktif Berjalan',
+    badge: inaktif ? 'Retensi Inaktif' : 'Retensi Aktif',
+    wrap: 'border-primary-200 bg-gradient-to-br from-primary-50 to-white dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800',
+    iconBox: 'bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400',
+    badgeCls: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
+    dot: 'bg-primary-500',
+    pct: 'text-primary-600 dark:text-primary-400',
+    track: 'bg-primary-100 dark:bg-primary-900/30',
+    startLabel: inaktif ? 'Mulai Inaktif' : 'Mulai',
+    startDate: formatDate(start),
+    endLabel: inaktif ? 'Jatuh Tempo Inaktif' : 'Jatuh Tempo',
+    endDate: formatDate(end),
+  };
+});
+// Warna bar mengikuti urgensi: hijau (aman) → amber (separuh) → merah (jatuh tempo dekat).
+const retensiBar = computed(() => {
+  const p = retensiProgress.value;
+  if (p >= 80) return 'from-red-400 to-red-600';
+  if (p >= 50) return 'from-amber-400 to-amber-600';
+  return 'from-emerald-400 to-emerald-600';
+});
+const retensiSteps = computed(() => {
+  const phase = retensiPhase.value;
+  const aktifDone = phase === 'inaktif';
+  return [
+    {
+      label: 'Retensi Aktif',
+      sub: aktifDone ? 'Selesai' : phase === 'aktif' ? 'Sedang berjalan' : 'Belum berjalan',
+      date: formatDate(berkas.value?.tanggalDitutup),
+      state: aktifDone ? 'done' : phase === 'aktif' ? 'active' : 'todo',
+      icon: aktifDone ? 'i-lucide-check' : 'i-lucide-play',
+    },
+    {
+      label: 'Retensi Inaktif',
+      sub: phase === 'inaktif' ? 'Sedang berjalan' : 'Menunggu',
+      date: formatDate(berkas.value?.tanggalRetensiAktifBerakhir),
+      state: phase === 'inaktif' ? 'active' : 'todo',
+      icon: 'i-lucide-archive',
+    },
+    {
+      label: 'Tindakan Akhir',
+      sub: berkas.value?.tindakanPenyusutanAkhir || '-',
+      date: formatDate(berkas.value?.tanggalRetensiInaktifBerakhir),
+      state: 'todo',
+      icon: 'i-lucide-flag',
+    },
+  ];
+});
+const stepCircle = (state: string) =>
+  state === 'done'
+    ? 'bg-success-500 text-white ring-success-100 dark:ring-success-900/40'
+    : state === 'active'
+      ? 'bg-primary-500 text-white ring-primary-100 dark:ring-primary-900/40'
+      : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 ring-transparent';
+const stepLabel = (state: string) =>
+  state === 'done'
+    ? 'text-success-600 dark:text-success-400'
+    : state === 'active'
+      ? 'text-primary-700 dark:text-primary-400'
+      : 'text-gray-600 dark:text-gray-300';
 const metadataList = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-', icon: Hash },
   { label: 'Kategori Berkas', value: berkas.value?.kategoriBerkas || '-', icon: Folder },
@@ -1463,34 +1533,45 @@ function verifikasiStatusMeta(status?: string) {
       };
   }
 }
-const retensiStatCards = computed(() => [
-  {
-    label: 'Tanggal Ditutup',
-    value: formatDate(berkas.value?.tanggalDitutup),
-    icon: 'i-lucide-lock-keyhole',
-  },
-  {
-    label: 'JRA Aktif',
-    value: `${berkas.value?.retensiAktifTahun || 0} Tahun`,
-    icon: 'i-lucide-clock',
-  },
-  { label: 'Sisa Waktu Aktif', value: sisaWaktu.value, icon: 'i-lucide-calendar-clock' },
-  {
-    label: 'Jatuh Tempo Aktif',
-    value: formatDate(berkas.value?.tanggalRetensiAktifBerakhir),
-    icon: 'i-lucide-calendar-x',
-  },
-  {
-    label: 'JRA Inaktif',
-    value: `${berkas.value?.retensiInaktifTahun || 0} Tahun`,
-    icon: 'i-lucide-archive',
-  },
-  {
-    label: 'Jatuh Tempo Inaktif',
-    value: formatDate(berkas.value?.tanggalRetensiInaktifBerakhir),
-    icon: 'i-lucide-calendar-x-2',
-  },
-]);
+const retensiStatCards = computed(() => {
+  const inaktif = retensiPhase.value === 'inaktif';
+  return [
+    {
+      label: 'Tanggal Ditutup',
+      value: formatDate(berkas.value?.tanggalDitutup),
+      icon: 'i-lucide-lock-keyhole',
+    },
+    {
+      label: 'JRA Aktif',
+      value: `${berkas.value?.retensiAktifTahun || 0} Tahun`,
+      icon: 'i-lucide-clock',
+    },
+    {
+      label: inaktif ? 'Sisa Waktu Inaktif' : 'Sisa Waktu Aktif',
+      value: sisaWaktu.value,
+      icon: 'i-lucide-calendar-clock',
+    },
+    {
+      label: inaktif ? 'Jatuh Tempo Inaktif' : 'Jatuh Tempo Aktif',
+      value: formatDate(
+        inaktif
+          ? berkas.value?.tanggalRetensiInaktifBerakhir
+          : berkas.value?.tanggalRetensiAktifBerakhir,
+      ),
+      icon: 'i-lucide-calendar-x',
+    },
+    {
+      label: 'JRA Inaktif',
+      value: `${berkas.value?.retensiInaktifTahun || 0} Tahun`,
+      icon: 'i-lucide-archive',
+    },
+    {
+      label: 'Jatuh Tempo Inaktif',
+      value: formatDate(berkas.value?.tanggalRetensiInaktifBerakhir),
+      icon: 'i-lucide-calendar-x-2',
+    },
+  ];
+});
 
 const unwrapEnvelope = <T = any,>(response: any): T => response?.data ?? response;
 const unwrapPaginated = (response: any) => {
