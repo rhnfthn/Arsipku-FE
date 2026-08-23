@@ -10,7 +10,8 @@
     <ApprovalSummaryCards :summary="summary" class="mb-4" />
 
     <ApprovalFilterBar
-      v-model="filter"
+      :model-value="filter"
+      @update:model-value="(v) => Object.assign(filter, v)"
       class="mb-4"
       @apply="reload"
       @reset="resetFilter"

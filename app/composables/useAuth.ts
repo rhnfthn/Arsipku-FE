@@ -62,6 +62,7 @@ export const useAuth = () => {
         // 2. Ambil data tambahan dari root response
         const alamatData = res?.data?.alamatInfo || res?.alamatInfo || null;
         const delegationsData = res?.data?.delegations || res?.delegations || null;
+        const isLegalRoleData = res?.data?.isLegalRole ?? res?.isLegalRole ?? false;
 
         if (profileData) {
           // 3. GABUNGKAN: Masukkan alamatInfo dan delegations ke dalam profileData
@@ -69,6 +70,7 @@ export const useAuth = () => {
             ...profileData,
             alamatInfo: alamatData || profileData.alamatInfo,
             delegations: delegationsData || profileData.delegations,
+            isLegalRole: isLegalRoleData,
           };
 
           // Casting ke UserProfile
@@ -204,9 +206,20 @@ export const useAuth = () => {
   // ============================================================
 
   const hasPermission = (resource: string, action: string): boolean => {
+    // Superadmin bypass — punya semua permission
+    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
+    if (role === 'SUPERADMIN') return true;
     const perms = user.value?.activePermissions || [];
     return perms.some(
-      (p: ActivePermission) => p.resource === resource && p.actions.includes(action)
+      (p: ActivePermission) => {
+        // Match: exact, parent→child (user punya parent, FE cek child),
+        // atau child→parent (user punya child, FE cek parent)
+        const resourceMatch =
+          p.resource === resource ||
+          resource.startsWith(p.resource + '.') ||  // parent mencakup child
+          p.resource.startsWith(resource + '.');     // child mencakup parent
+        return resourceMatch && p.actions.includes(action);
+      }
     );
   };
 
@@ -224,6 +237,7 @@ export const useAuth = () => {
 
   const isSuperadmin = computed(() => hasRole('SUPERADMIN'));
   const isAdmin = computed(() => hasRole('ADMIN'));
+  const isLegalRole = computed(() => !!user.value?.isLegalRole);
 
   const switchRole = async (roleId: string) => {
     if (!process.client) return;
@@ -339,6 +353,7 @@ export const useAuth = () => {
     hasAnyRole,
     isSuperadmin,
     isAdmin,
+    isLegalRole,
     switchRole,
     switchProfile,
   };

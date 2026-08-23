@@ -665,14 +665,15 @@ const filterStatus = ref('');
 const filterKlasifikasi = ref('');
 const filterTahun = ref('');
 
-// Berkas Tertutup (closed_retensi_aktif) tampil untuk semua user — yang
-// retensi aktifnya sudah habis otomatis pindah ke pemindahan arsip (TU).
+// Berkas Tertutup (closed_retensi_aktif) & Retensi Inaktif tampil untuk semua
+// user — yang retensinya sudah habis otomatis pindah ke pemindahan arsip (TU).
 const statusOptions = [
   { value: '', label: 'Semua Status' },
   { value: 'aktif', label: 'Terbuka' },
   { value: 'menunggu_verifikasi', label: 'Menunggu Verifikasi Managerial' },
   { value: 'ditolak', label: 'Verifikasi Ditolak Managerial' },
   { value: 'closed_retensi_aktif', label: 'Tertutup' },
+  { value: 'retensi_inaktif', label: 'Retensi Inaktif' },
 ];
 const currentYear = new Date().getFullYear();
 const tahunOptions = [
@@ -827,6 +828,7 @@ const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; bo
   menunggu_verifikasi: { label: 'Menunggu Verifikasi Managerial', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
   ditolak: { label: 'Verifikasi Ditolak Managerial', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
   closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  retensi_inaktif: { label: 'Retensi Inaktif', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
 };
 const statusStyle = (status: string) => {
   const key = (status || '').toLowerCase().replace(/[\s-]+/g, '_');
