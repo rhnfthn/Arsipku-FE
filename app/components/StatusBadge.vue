@@ -62,6 +62,123 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-blue-600 dark:text-blue-400',
     dot: 'bg-blue-600',
   },
+  // ——— Naskah Lainnya: badge tahapan (prototype: abu/amber/biru/oranye/ungu/hijau) ———
+  konsep: {
+    label: 'Konsep',
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-600 dark:text-gray-300',
+    dot: 'bg-gray-400',
+  },
+  persetujuan: {
+    label: 'Persetujuan',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
+  },
+  legal_drafting: {
+    label: 'Legal Drafting',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    text: 'text-blue-700 dark:text-blue-400',
+    dot: 'bg-blue-700',
+  },
+  evaluasi: {
+    label: 'Evaluasi',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    text: 'text-blue-700 dark:text-blue-400',
+    dot: 'bg-blue-700',
+  },
+  persetujuan_direksi: {
+    label: 'Persetujuan Direksi',
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-700 dark:text-indigo-400',
+    dot: 'bg-indigo-700',
+  },
+  tanda_tangan_pemrakarsa: {
+    label: 'TTD Pemrakarsa',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    text: 'text-blue-700 dark:text-blue-400',
+    dot: 'bg-blue-700',
+  },
+  blanko_verbal: {
+    label: 'Blanko Verbal',
+    bg: 'bg-purple-100 dark:bg-purple-900/30',
+    text: 'text-purple-700 dark:text-purple-400',
+    dot: 'bg-purple-700',
+  },
+  tanda_tangan_legal: {
+    label: 'TTD Legal',
+    bg: 'bg-purple-100 dark:bg-purple-900/30',
+    text: 'text-purple-700 dark:text-purple-400',
+    dot: 'bg-purple-700',
+  },
+  tanda_tangan_pejabat: {
+    label: 'TTD Pejabat',
+    bg: 'bg-purple-100 dark:bg-purple-900/30',
+    text: 'text-purple-700 dark:text-purple-400',
+    dot: 'bg-purple-700',
+  },
+  selesai: {
+    label: 'Selesai',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
+  },
+  sudah_dikerjakan: {
+    label: 'Sudah Dikerjakan',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
+  },
+  perlu_perbaikan: {
+    label: 'Perlu Perbaikan',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    text: 'text-orange-700 dark:text-orange-400',
+    dot: 'bg-orange-700',
+  },
+  // ——— Naskah Lainnya: badge status approver ———
+  waiting: {
+    label: 'Menunggu',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
+  },
+  verified: {
+    label: 'Disetujui',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
+  },
+  rejected: {
+    label: 'Ditolak',
+    bg: 'bg-red-100 dark:bg-red-900/30',
+    text: 'text-red-600 dark:text-red-400',
+    dot: 'bg-red-600',
+  },
+  pending: {
+    label: 'Pending',
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-600 dark:text-gray-300',
+    dot: 'bg-gray-400',
+  },
+  // ——— Naskah Lainnya: badge status filter Legal Drafting ———
+  belum_dikirim: {
+    label: 'Belum Dikirim',
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-600 dark:text-gray-300',
+    dot: 'bg-gray-400',
+  },
+  menunggu_persetujuan: {
+    label: 'Menunggu Persetujuan',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
+  },
+  revisi: {
+    label: 'Revisi',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    text: 'text-orange-700 dark:text-orange-400',
+    dot: 'bg-orange-700',
+  },
 };
 
 const props = withDefaults(

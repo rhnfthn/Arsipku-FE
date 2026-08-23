@@ -95,6 +95,9 @@ export interface UserProfile {
 
   // Opsional: Jika ingin menyimpan list delegasi di user profile
   delegations?: UserDelegation[];
+
+  // Legal role: user terdaftar di tabel legal_role (dari /auth/profile)
+  isLegalRole?: boolean;
 }
 
 export interface AuthComposable {
