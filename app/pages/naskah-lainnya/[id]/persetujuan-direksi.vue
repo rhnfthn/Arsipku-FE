@@ -2,13 +2,7 @@
   <div class="space-y-5">
     <PageHeader :items="breadcrumbs">
       <template #title>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
-      </template>
-      <template #subtitle>
-        <div class="flex flex-wrap gap-2">
-          <StatusBadge :status="detail?.tahapan" />
-          <UBadge v-if="detail?.jenis" color="neutral" size="sm">{{ jenisLabel(detail.jenis) }}</UBadge>
-        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
       </template>
     </PageHeader>
 
@@ -103,20 +97,7 @@
               </div>
             </div>
 
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
-            >
-              <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Referensi Tanggal</span>
-                <div class="flex-1 w-full">
-                  <input
-                    type="date"
-                    v-model="sheet.referensiTanggal"
-                    class="outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                  />
-                </div>
-              </div>
-            </div>
+            <TulisInputTanggal v-model="refDate" label="Referensi Tanggal" />
 
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
@@ -150,7 +131,7 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Catatan (opsional)</span>
+                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Catatan</span>
                 <textarea
                   v-model="catatan"
                   rows="2"
@@ -162,21 +143,15 @@
           </template>
 
           <!-- ── Inline paper preview ── -->
-          <div class="flex flex-col py-4">
-            <ClientOnly>
-              <div
-                class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-2"
-              >
-                <div class="bg-white pt-6 pb-6 border-b border-gray-100 select-none text-black">
-                  <LembarPersetujuanDireksiTemplate
-                    v-model="sheet"
-                    :directors="bodDirectors"
-                    :read-only="!canEditSheet"
-                  />
-                </div>
-              </div>
-            </ClientOnly>
-          </div>
+          <ClientOnly>
+            <div class="mt-6 overflow-x-auto">
+              <LembarPersetujuanDireksiTemplate
+                v-model="sheet"
+                :directors="bodDirectors"
+                :read-only="!canEditSheet"
+              />
+            </div>
+          </ClientOnly>
 
           <!-- ── Read-only mode: Progress Persetujuan Direksi ── -->
           <template v-if="!canEditSheet && pdDirectors.length > 0">
@@ -209,16 +184,6 @@
               :loading="busy"
               @click="previewPdf"
             />
-            <UButton
-              v-if="canEditSheet"
-              label="Kirim Lembar Persetujuan Direksi"
-              color="primary"
-              size="lg"
-              icon="i-lucide-send"
-              class="px-8 font-bold"
-              :loading="busy"
-              @click="kirimSheet"
-            />
           </div>
         </div>
       </UCard>
@@ -234,6 +199,7 @@
           content: 'h-screen max-h-screen',
           body: 'p-0',
           footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+          wrapper: 'z-50',
         }"
       >
         <template #body>
@@ -252,7 +218,7 @@
               label="Kirim Lembar Persetujuan Direksi"
               color="primary"
               size="lg"
-              icon="i-lucide-send"
+              icon="i-heroicons-paper-airplane"
               class="px-8 font-bold"
               :loading="busy"
               @click="kirimSheet"
@@ -298,8 +264,7 @@ import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
-import type { SheetFormModel, DirectorApprovalItem, ApprovalRow, JenisNaskah } from '~/types/naskah-lainnya';
-import { JENIS_LABELS } from '~/types/naskah-lainnya';
+import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -356,6 +321,17 @@ watch(formDate, (d) => {
     sheet.value.tanggal = `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
   }
 }, { immediate: true });
+
+// Referensi Tanggal: CalendarDate (TulisInputTanggal) ↔ sheet.referensiTanggal (YYYY-MM-DD)
+const refDate = ref<CalendarDate | null>(null);
+watch(refDate, (d) => {
+  sheet.value.referensiTanggal = d
+    ? `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`
+    : '';
+});
+
+// Sync catatan → sheet.catatan (agar tampil di preview inline, konsisten dgn PDF)
+watch(catatan, (v) => { sheet.value.catatan = v; });
 
 const isEvaluasi = computed(() => detail.value?.tahapan === 'evaluasi');
 const isPd = computed(() => detail.value?.tahapan === 'persetujuan_direksi');
@@ -431,10 +407,6 @@ async function loadBod() {
   } catch {
     toast.add({ title: 'Gagal memuat daftar direksi', color: 'error' });
   }
-}
-
-function jenisLabel(j: JenisNaskah) {
-  return JENIS_LABELS[j] || j;
 }
 
 function apiErrorMessage(e) {

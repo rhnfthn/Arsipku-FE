@@ -1,154 +1,153 @@
 <template>
-  <div class="bg-white text-black p-8 min-h-[297mm] w-[210mm] mx-auto shadow print:shadow-none font-['Times_New_Roman'] text-[11pt] leading-normal">
-    <PerumKopSurat :alamat-info="modelValue?.alamatInfo" />
-
-    <div class="text-center mb-4">
-      <h1 class="text-base font-bold uppercase mb-1">Blanko Verbal</h1>
-      <p class="text-[11pt] font-bold uppercase leading-tight">
-        Perusahaan Umum (PERUM) Lembaga Penyelenggara Pelayanan Navigasi Penerbangan Indonesia
-      </p>
+  <div class="bv-page">
+    <div class="bv-header">
+      BLANKO VERBAL<br>
+      PERUSAHAAN UMUM (PERUM) LEMBAGA PENYELENGGARA PELAYANAN<br>
+      NAVIGASI PENERBANGAN INDONESIA
     </div>
 
-    <!-- Tabel utama: kolom kiri (identitas), tengah (legal drafter/checker), kanan (referensi + perihal) -->
-    <table class="w-full border border-black border-collapse text-[11pt] mb-0">
+    <!-- TOP TABLE -->
+    <table class="bv-top">
+      <colgroup>
+        <col style="width:24%">
+        <col style="width:2%">
+        <col style="width:32%">
+        <col style="width:14%">
+        <col style="width:2%">
+        <col style="width:26%">
+      </colgroup>
       <tbody>
-        <!-- Baris 1: tanggal / legal drafter / referensi -->
-        <tr>
-          <td class="border border-black px-2 py-1 align-top w-[26%]">
-            <div class="text-center font-semibold">Tangerang/Tgl/Bln/Tahun</div>
-            <div class="text-center mt-1">{{ formatTanggal(modelValue?.tanggal) }}</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top w-[40%]">
-            <div class="font-semibold">Diusulkan oleh</div>
-            <div class="text-center font-semibold mt-2">{{ modelValue?.diusulkanOleh || '(Nama Pejabat 1 level di bawah Direksi)' }}</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top w-[17%]">
-            <div class="font-semibold">Referensi :</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top w-[17%]">
-            <div class="font-semibold">Dari</div>
-            <div class="mt-1">{{ modelValue?.referensiDari || '' }}</div>
-          </td>
-        </tr>
-
-        <!-- Baris 2: diusulkan jabatan / legal drafter jabatan / kosong / referensi nomor -->
-        <tr>
-          <td class="border border-black px-2 py-1 align-top text-center">
-            <div class="font-semibold">{{ modelValue?.jabatanDiusulkan || '(Jabatan Unit Pemrakarsa)' }}</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top">
-            <div class="font-semibold">: {{ modelValue?.legalDrafterJabatan || '(Jabatan Yang memiliki Spesialisasi di Bidang Peraturan)' }}</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top"></td>
-          <td class="border border-black px-2 py-1 align-top">
-            <div class="font-semibold">No. Surat</div>
-            <div class="mt-1">{{ modelValue?.referensiNomor || '' }}</div>
-          </td>
-        </tr>
-
-        <!-- Baris 3: kosong / nama legal drafter / kosong / referensi tanggal -->
-        <tr>
-          <td class="border border-black px-2 py-1 align-top"></td>
-          <td class="border border-black px-2 py-1 align-top text-center">
-            <div>({{ modelValue?.legalDrafter || 'Nama Pejabat' }})</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top"></td>
-          <td class="border border-black px-2 py-1 align-top">
-            <div class="font-semibold">Tanggal</div>
-            <div class="mt-1">{{ formatTanggal(modelValue?.referensiTanggal) }}</div>
-          </td>
-        </tr>
-
-        <!-- Baris 4: legal checker / perihal -->
-        <tr>
-          <td class="border border-black px-2 py-1 align-top" colspan="2">
-            <div class="font-semibold">Legal Drafting Diperiksa Oleh</div>
-            <div class="font-semibold mt-1">: {{ modelValue?.legalCheckerJabatan || '(Jabatan Satu Tingkat di bawah Direksi yang membidangi hukum)' }}</div>
-            <div class="text-center mt-2">({{ modelValue?.legalChecker || 'Nama Pejabat satu tingkat di bawah Direksi yang membidangi hukum' }})</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top">
-            <div class="font-semibold">Perihal</div>
-          </td>
-          <td class="border border-black px-2 py-1 align-top">
-            <div>{{ modelValue?.perihal || 'Permohonan Persetujuan (Judul Peraturan Direksi, Keputusan Direksi)' }}</div>
-          </td>
-        </tr>
+      <tr>
+        <td>Tangerang/Tgl/Bln/Tahun</td>
+        <td class="bv-colon">:</td>
+        <td><div class="bv-field">{{ formatTanggal(modelValue?.tanggal) }}</div></td>
+        <td>Referensi :</td>
+        <td colspan="2"><div class="bv-field">&nbsp;</div></td>
+      </tr>
+      <tr>
+        <td><div class="bv-center">Diusulkan oleh</div></td>
+        <td class="bv-colon">:</td>
+        <td>
+          <div class="bv-small-italic">{{ modelValue?.diusulkanOleh || '(Nama Pejabat 1 level di bawah Direksi)' }}<br>{{ modelValue?.jabatanDiusulkan || '(Jabatan Unit Pemrakarsa)' }}</div>
+        </td>
+        <td rowspan="2">
+          Dari<br>
+          No. Surat<br>
+          Tanggal
+        </td>
+        <td rowspan="2" class="bv-colon">
+          :<br>:<br>:
+        </td>
+        <td rowspan="2">
+          {{ modelValue?.referensiDari || '' }}<br>
+          {{ modelValue?.referensiNomor || '' }}<br>
+          {{ formatTanggal(modelValue?.referensiTanggal) }}
+        </td>
+      </tr>
+      <tr>
+        <td><div class="bv-center">Legal Drafting Dikerjakan oleh</div></td>
+        <td class="bv-colon">:</td>
+        <td>
+          <div class="bv-small-italic">{{ modelValue?.legalDrafter || '(Nama Pejabat)' }}<br>{{ modelValue?.legalDrafterJabatan || '(Jabatan Yang memiliki Spesialisasi di Bidang Peraturan)' }}</div>
+        </td>
+      </tr>
+      <tr>
+        <td><div class="bv-center">Legal Drafting Diperiksa Oleh</div></td>
+        <td class="bv-colon">:</td>
+        <td>
+          <div class="bv-small-italic">{{ modelValue?.legalChecker || '(Nama Pejabat satu tingkat di bawah Direksi yang membidangi hukum)' }}<br>{{ modelValue?.legalCheckerJabatan || '(Jabatan Satu Tingkat di bawah Direksi yang membidangi hukum)' }}</div>
+        </td>
+        <td>Perihal</td>
+        <td class="bv-colon">:</td>
+        <td>
+          <div class="bv-small-italic">{{ modelValue?.perihal || 'Permohonan Persetujuan (Judul Peraturan Direksi, Keputusan Direksi)' }}</div>
+        </td>
+      </tr>
       </tbody>
     </table>
 
-    <!-- Tabel bawah: penetapan kiri + paraf direksi kanan -->
-    <table class="w-full border border-black border-collapse text-[11pt] mb-0">
+    <!-- BOTTOM TABLE -->
+    <table class="bv-bottom">
+      <colgroup>
+        <col style="width:20%">
+        <col style="width:2%">
+        <col style="width:36%">
+        <col style="width:42%">
+      </colgroup>
       <tbody>
-        <tr>
-          <!-- Kolom kiri: nomor/tanggal/ditetapkan + perihal/klasifikasi/lampiran -->
-          <td class="border border-black px-2 py-1 align-top w-[50%]">
-            <table class="w-full border-collapse">
-              <tbody>
-                <tr>
-                  <td class="py-1 align-top w-[130px]"><span class="font-semibold">Nomor</span></td>
-                  <td class="py-1 align-top w-[10px]">:</td>
-                  <td class="py-1 align-top">{{ modelValue?.nomor || '' }}</td>
-                </tr>
-                <tr>
-                  <td class="py-1 align-top"><span class="font-semibold">Tanggal</span></td>
-                  <td class="py-1 align-top">:</td>
-                  <td class="py-1 align-top">{{ formatTanggal(modelValue?.tanggal) }}</td>
-                </tr>
-                <tr>
-                  <td class="py-1 align-top"><span class="font-semibold">Ditetapkan/Disahkan Oleh</span></td>
-                  <td class="py-1 align-top">:</td>
-                  <td class="py-1 align-top"></td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="mt-6 text-center font-semibold">a.n DIREKSI</div>
-            <div class="text-center font-semibold">DIREKTUR UTAMA</div>
-            <div class="mt-8 text-center font-semibold underline">NAMA LENGKAP TANPA GELAR</div>
-
-            <table class="w-full border-collapse mt-6">
-              <tbody>
-                <tr>
-                  <td class="py-1 align-top w-[130px]"><span class="font-semibold">Penetapan / Pengesahan Perihal</span></td>
-                  <td class="py-1 align-top w-[10px]">:</td>
-                  <td class="py-1 align-top">Draft (Judul Peraturan Direksi, Keputusan Direksi)</td>
-                </tr>
-                <tr>
-                  <td class="py-1 align-top"><span class="font-semibold">Klasifikasi</span></td>
-                  <td class="py-1 align-top">:</td>
-                  <td class="py-1 align-top">{{ modelValue?.klasifikasi || 'Penting' }}</td>
-                </tr>
-                <tr>
-                  <td class="py-1 align-top"><span class="font-semibold">Lampiran</span></td>
-                  <td class="py-1 align-top">:</td>
-                  <td class="py-1 align-top">{{ modelValue?.lampiran || '1 (satu) berkas' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-
-          <!-- Kolom kanan: sebelum ditetapkan + daftar direktur -->
-          <td class="border border-black px-2 py-1 align-top w-[50%]">
-            <div class="font-semibold mb-3">Sebelum ditetapkan diketahui oleh :</div>
-            <div class="space-y-4">
-              <div v-for="(d, idx) in directors" :key="d.index ?? idx" class="min-h-[60px]">
-                <p class="font-semibold">{{ d.index ?? idx + 1 }}. {{ d.jabatan || '-' }}</p>
-                <p class="mt-2 underline text-center">{{ d.nama?.toUpperCase() || 'NAMA LENGKAP TANPA GELAR' }}</p>
-              </div>
-              <div v-if="directors.length === 0" class="italic text-gray-500">Belum ada data direksi</div>
-            </div>
-          </td>
-        </tr>
-
-        <!-- Catatan -->
-        <tr>
-          <td class="border border-black px-2 py-1 align-top">
-            Setelah selesai di proses, harap diteruskan kepada (unit yang membidangi hukum)
-          </td>
-          <td class="border border-black px-2 py-1 align-top">
-            <div class="font-semibold">Catatan :</div>
-          </td>
-        </tr>
+      <tr>
+        <td>Nomor</td>
+        <td class="bv-colon">:</td>
+        <td><div class="bv-field">{{ modelValue?.nomor || '' }}</div></td>
+        <td rowspan="2" style="vertical-align:top;">Sebelum ditetapkan diketahui oleh :</td>
+      </tr>
+      <tr>
+        <td>Tanggal</td>
+        <td class="bv-colon">:</td>
+        <td><div class="bv-field">{{ formatTanggal(modelValue?.tanggal) }}</div></td>
+      </tr>
+      <tr>
+        <td colspan="3">Ditetapkan/Disahkan Oleh</td>
+        <td>&nbsp;</td>
+      </tr>
+      <tr>
+        <td colspan="3" style="vertical-align:top;">
+          <div class="bv-signature-block">
+            a.n DIREKSI<br>
+            DIREKTUR UTAMA<br>
+            <div class="bv-signature-name">{{ dirutNama }}</div>
+          </div>
+        </td>
+        <td style="vertical-align:top;">
+          <div class="bv-director-item bv-director-divider" v-if="directorSlots[0]">
+            {{ directorSlots[0].index ?? 1 }}. {{ directorSlots[0].jabatan || '' }}
+            <div class="bv-director-name">{{ (directorSlots[0].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}</div>
+          </div>
+          <div class="bv-director-item" v-if="directorSlots[1]">
+            {{ directorSlots[1].index ?? 2 }}. {{ directorSlots[1].jabatan || '' }}
+            <div class="bv-director-name">{{ (directorSlots[1].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Penetapan /<br>Pengesahan Perihal</td>
+        <td class="bv-colon">:</td>
+        <td>
+          <div class="bv-small-italic">{{ modelValue?.perihal || 'Draft (Judul Peraturan Direksi, Keputusan Direksi)' }}</div>
+        </td>
+        <td style="vertical-align:top;">
+          <div class="bv-director-item" v-if="directorSlots[2]">
+            {{ directorSlots[2].index ?? 3 }}. {{ directorSlots[2].jabatan || '' }}
+            <div class="bv-director-name">{{ (directorSlots[2].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Klasifikasi</td>
+        <td class="bv-colon">:</td>
+        <td>{{ modelValue?.klasifikasi || 'Penting' }}</td>
+        <td style="vertical-align:top;">
+          <div class="bv-director-item" v-if="directorSlots[3]">
+            {{ directorSlots[3].index ?? 4 }}. {{ directorSlots[3].jabatan || '' }}
+            <div class="bv-director-name">{{ (directorSlots[3].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Lampiran</td>
+        <td class="bv-colon">:</td>
+        <td>{{ modelValue?.lampiran || '1 (satu) berkas' }}</td>
+        <td style="vertical-align:top;">
+          <div class="bv-director-item" v-if="directorSlots[4]">
+            {{ directorSlots[4].index ?? 5 }}. {{ directorSlots[4].jabatan || '' }}
+            <div class="bv-director-name">{{ (directorSlots[4].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="bv-footer-note">Setelah selesai di proses, harap diteruskan kepada (unit yang membidangi hukum)</td>
+        <td class="bv-catatan">Catatan : {{ modelValue?.catatan || '' }}</td>
+      </tr>
       </tbody>
     </table>
   </div>
@@ -161,12 +160,32 @@ const modelValue = defineModel<SheetFormModel>({ default: () => ({}) });
 
 const props = withDefaults(defineProps<{
   directors: DirectorApprovalItem[];
-  showPlaceholders?: boolean;
   readOnly?: boolean;
 }>(), {
   directors: () => [],
-  showPlaceholders: true,
   readOnly: false,
+});
+
+// Fallback daftar direksi (non-Direktur Utama) standar LPPNPI bila daftar direksi
+// belum dimuat. Direktur Utama ditampilkan terpisah di blok tanda tangan a.n DIREKSI.
+const STANDARD_DIREKSI: DirectorApprovalItem[] = [
+  { index: 1, nama: '', jabatan: 'DIREKTUR OPERASI' },
+  { index: 2, nama: '', jabatan: 'DIREKTUR TEKNIK' },
+  { index: 3, nama: '', jabatan: 'DIREKTUR KESELAMATAN KEAMANAN DAN STANDARISASI' },
+  { index: 4, nama: '', jabatan: 'DIREKTUR KEUANGAN' },
+  { index: 5, nama: '', jabatan: 'DIREKTUR SDM & UMUM' },
+];
+const directorSlots = computed(() => {
+  const dirs = Array.isArray(props.directors) ? props.directors : [];
+  const filtered = dirs.filter((d) => !/direktur\s*utama/i.test(d.jabatan || ''));
+  return filtered.length ? filtered : STANDARD_DIREKSI;
+});
+
+// Nama Direktur Utama untuk blok tanda tangan a.n DIREKSI.
+const dirutNama = computed(() => {
+  const dirs = Array.isArray(props.directors) ? props.directors : [];
+  const dirut = dirs.find((d) => /direktur\s*utama/i.test(d.jabatan || ''));
+  return (dirut?.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase();
 });
 
 function formatTanggal(value?: string) {
@@ -175,21 +194,109 @@ function formatTanggal(value?: string) {
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
 }
-
-function formatShortTanggal(value?: string) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const d = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const y = date.getFullYear();
-  return `${d}/${m}/${y}`;
-}
-
 </script>
 
 <style scoped>
+.bv-page {
+  width: 100%;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: #fff;
+  padding: 15mm 15mm;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 13px;
+  color: #000;
+}
+
+.bv-header {
+  text-align: center;
+  font-weight: bold;
+  text-transform: uppercase;
+  line-height: 1.4;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.bv-top {
+  margin-bottom: 22px;
+}
+
+td {
+  border: 1px solid #000;
+  padding: 4px 7px;
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.bv-colon {
+  width: 14px;
+  text-align: center;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.bv-center {
+  text-align: center;
+}
+
+.bv-small-italic {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.bv-signature-block {
+  text-align: center;
+  padding: 6px 4px 4px 4px;
+}
+
+.bv-signature-name {
+  text-decoration: underline;
+  display: inline-block;
+  margin-top: 55px;
+}
+
+.bv-director-item {
+  margin-bottom: 4px;
+}
+
+.bv-director-divider {
+  border-bottom: 1px solid #000;
+  margin: 0 -7px 6px;
+  padding: 0 7px 6px;
+}
+
+.bv-director-name {
+  text-decoration: underline;
+  display: block;
+  margin: 45px 0 10px 0;
+}
+
+.bv-catatan {
+  height: 60px;
+}
+
+.bv-footer-note {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.bv-field {
+  outline: none;
+  min-height: 16px;
+}
+
 @media print {
-  .bg-white { background-color: #ffffff !important; color: #000000 !important; }
+  .bv-page {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    min-height: auto;
+  }
 }
 </style>
