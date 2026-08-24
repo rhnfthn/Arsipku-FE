@@ -17,9 +17,9 @@ const props = defineProps({
         </h1>
       </slot>
     </div>
-    <p v-if="subtitle" class="text-sm text-gray-500 dark:text-gray-400">
-      {{ subtitle }}
-    </p>
+    <div v-if="subtitle || $slots.subtitle" class="text-sm text-gray-500 dark:text-gray-400">
+      <slot name="subtitle">{{ subtitle }}</slot>
+    </div>
 
     <!-- BREADCRUMB -->
     <UBreadcrumb

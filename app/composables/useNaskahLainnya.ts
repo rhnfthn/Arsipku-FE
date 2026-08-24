@@ -146,8 +146,13 @@ export function useNaskahLainnya() {
   // ── Direksi (BOD) ──
   const fetchBodDirectors = async (): Promise<DirectorApprovalItem[]> => {
     const res: any = await apiGet('/org-data/bod', {}, { skipCache: true });
-    const data = Array.isArray(res) ? res : (res?.data ?? []);
-    return data as DirectorApprovalItem[];
+    // BE membungkus semua respons via TransformResponseInterceptor
+    // ({ success, data: <controllerReturn> }), dan controller getBod
+    // mengembalikan { data: [...] } → array sebenarnya di res.data.data.
+    // Tangani ketiga shape (double-wrap, single-wrap, mentah) agar robust.
+    const mid = Array.isArray(res) ? res : res?.data;
+    const arr = Array.isArray(mid) ? mid : mid?.data;
+    return (Array.isArray(arr) ? arr : []) as DirectorApprovalItem[];
   };
 
   // ── Lembar Persetujuan Direksi ──

@@ -105,6 +105,16 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-purple-700 dark:text-purple-400',
     dot: 'bg-purple-700',
   },
+  // Tahapan signing alur baru (gabungan !butuhLegal & butuhLegal). Sebelumnya
+  // tidak ada di map → fallback ke 'Draft' (menyesatkan, terutama di menu
+  // persetujuan). Label 'Menunggu Tanda Tangan' menyampaikan naskah menunggu
+  // penandatangan bertindak.
+  tanda_tangan: {
+    label: 'Menunggu Tanda Tangan',
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-700 dark:text-indigo-400',
+    dot: 'bg-indigo-700',
+  },
   tanda_tangan_legal: {
     label: 'TTD Legal',
     bg: 'bg-purple-100 dark:bg-purple-900/30',
