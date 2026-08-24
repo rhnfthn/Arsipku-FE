@@ -172,6 +172,7 @@ export interface SheetFormModel {
   referensiTanggal?: string;
   klasifikasi?: string;
   lampiran?: string;
+  catatan?: string;
   bodyHtml?: string;
   legalDrafter?: string;
   legalDrafterJabatan?: string;

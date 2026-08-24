@@ -240,6 +240,7 @@ const dokumenTabs = [
   { label: 'Naskah Fisik', icon: 'i-lucide-folder' },
   { label: 'Blanko Verbal', icon: 'i-lucide-file-check' },
   { label: 'Dok. Pendukung', icon: 'i-lucide-paperclip' },
+  { label: 'Lembar PD', icon: 'i-lucide-stamp' },
 ];
 
 const dokumenTerkait = computed<DokumenFile[]>(() => {
@@ -247,7 +248,7 @@ const dokumenTerkait = computed<DokumenFile[]>(() => {
   const all = detail.value.dokumen;
   if (!Array.isArray(all)) return [];
   const t = dokumenTab.value;
-  const tipe = ['naskah', 'naskah_fisik', 'blanko_verbal', 'pendukung'][t];
+  const tipe = ['naskah', 'naskah_fisik', 'blanko_verbal', 'pendukung', 'lembar_persetujuan_direksi_pdf'][t];
   return all.filter((d) => d.tipe === tipe);
 });
 
@@ -619,11 +620,29 @@ const nextActionInfo = computed(() => {
   return { label, oleh: '', jabatan: '' };
 });
 
+// ── Ikon status terkini (terminal state → check/x, lainnya → clock) ──
+const nextActionIcon = computed(() => {
+  const t = detail.value?.tahapan;
+  if (t === 'selesai') return { icon: 'i-lucide-check', bg: 'bg-green-500 dark:bg-green-600', text: 'text-white' };
+  if (t === 'ditolak') return { icon: 'i-lucide-x', bg: 'bg-red-500 dark:bg-red-600', text: 'text-white' };
+  if (t === 'dibatalkan') return { icon: 'i-lucide-ban', bg: 'bg-gray-400 dark:bg-gray-500', text: 'text-white' };
+  return { icon: 'i-lucide-clock', bg: 'bg-gray-300 dark:bg-gray-600', text: 'text-white' };
+});
+
+// ── Stepper: hilangkan step 'skip' (mode tanpa legal) & renumber 1..M ──
+// BE buildStepper seharusnya sudah memfilter skip, tapi guard di FE agar UI
+// tetap benar walau BE lama masih mengirim status:'skip'.
+const visibleStepper = computed(() => {
+  if (!detail.value?.stepper) return [];
+  return detail.value.stepper
+    .filter((s) => s.status !== 'skip')
+    .map((s, i) => ({ ...s, step: i + 1 }));
+});
+
 // ── Stepper status styling ──
 function stepperIconClass(s: StepperStep) {
   if (s.status === 'done') return 'bg-green-100 border-green-500 text-green-700 dark:bg-green-900/30 dark:text-green-400';
   if (s.status === 'active') return 'bg-primary-500 border-primary-500 text-white';
-  if (s.status === 'skip') return 'bg-gray-100 border-gray-300 text-gray-400 dark:bg-gray-700 dark:border-gray-600';
   return 'bg-white dark:bg-gray-800 border-gray-300 text-gray-400 dark:border-gray-600';
 }
 
@@ -984,8 +1003,8 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
               <!-- Next action info -->
               <div v-if="nextActionInfo" class="mb-4 flex gap-2.5 pb-3 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex flex-col items-center">
-                  <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-300 ring-4 ring-white dark:bg-gray-600 dark:ring-gray-800">
-                    <UIcon name="i-lucide-clock" class="size-3.5 text-white" />
+                  <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-white dark:ring-gray-800" :class="nextActionIcon.bg">
+                    <UIcon :name="nextActionIcon.icon" class="size-3.5" :class="nextActionIcon.text" />
                   </span>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -996,18 +1015,17 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
 
               <!-- Stepper -->
               <ol class="relative flex flex-col gap-0">
-                <li v-for="(s, i) in detail.stepper" :key="s.step" class="flex gap-3">
+                <li v-for="(s, i) in visibleStepper" :key="s.step" class="flex gap-3">
                   <div class="flex flex-col items-center">
                     <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 shrink-0" :class="stepperIconClass(s)">
                       <UIcon v-if="s.status === 'done'" name="i-lucide-check" class="size-3" />
                       <span v-else>{{ s.step }}</span>
                     </div>
-                    <div v-if="i < detail.stepper.length - 1" class="w-0.5 flex-1 min-h-4 border-l border-dashed border-gray-300 dark:border-gray-700" :class="s.status === 'done' ? 'border-green-400!' : ''" />
+                    <div v-if="i < visibleStepper.length - 1" class="w-0.5 flex-1 min-h-4 border-l border-dashed border-gray-300 dark:border-gray-700" :class="s.status === 'done' ? 'border-green-400!' : ''" />
                   </div>
                   <div class="pb-4 text-sm">
                     <span class="font-medium" :class="stepperLabelClass(s)">{{ s.label }}</span>
                     <span v-if="s.status === 'active'" class="ml-2 text-xs text-primary-500">● berjalan</span>
-                    <span v-else-if="s.status === 'skip'" class="ml-2 text-xs text-gray-400 dark:text-gray-500">(dilewati)</span>
                   </div>
                 </li>
               </ol>
@@ -1089,6 +1107,31 @@ const signLabel = computed(() => detail.value ? (SIGN_LABELS[detail.value.signOp
               :loading="pendingAction === 'setuju' && savingAction"
               @click="openActionModal('setuju')"
             >Proses Persetujuan Legal</UButton>
+          </div>
+        </div>
+      </section>
+
+      <!-- Selesai toolbar: link kembali ke halaman selesai (naskah sudah final,
+           availableActions kosong → pengganti action toolbar). -->
+      <section v-if="detail.tahapan === 'selesai'" class="overflow-hidden rounded-xl border border-green-200 bg-gradient-to-br from-green-50 to-white p-5 shadow-sm dark:border-green-900/40 dark:from-green-900/20 dark:to-gray-800">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400">
+              <UIcon name="i-lucide-circle-check-big" class="size-5" />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Naskah Selesai</h3>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Naskah telah diselesaikan. Lihat dokumen final &amp; ringkasan penandatangan.</p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+            <UButton
+              color="primary"
+              size="lg"
+              icon="i-lucide-eye"
+              class="w-full font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
+              :to="`/naskah-lainnya/${detail.id}/selesai`"
+            >Lihat Halaman Selesai</UButton>
           </div>
         </div>
       </section>
