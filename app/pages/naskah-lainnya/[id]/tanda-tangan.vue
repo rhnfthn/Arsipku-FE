@@ -1,25 +1,10 @@
 <template>
-  <div>
-    <!-- Header -->
-    <div class="mb-6 flex items-center justify-between">
-      <div>
-        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <NuxtLink to="/naskah-lainnya" class="hover:text-primary">Naskah Lainnya</NuxtLink>
-          <span>/</span>
-          <NuxtLink :to="`/naskah-lainnya/${id}`" class="hover:text-primary truncate max-w-[220px]">{{ detail?.perihal || 'Detail' }}</NuxtLink>
-          <span>/</span>
-          <span class="text-gray-700 dark:text-gray-300">{{ tahapanLabel }}</span>
-        </div>
-        <h1 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
-        <div class="mt-1.5 flex gap-2">
-          <UBadge color="primary" size="sm">{{ tahapanLabel }}</UBadge>
-          <UBadge v-if="detail?.jenis" color="neutral" size="sm">{{ jenisLabel(detail.jenis) }}</UBadge>
-        </div>
-      </div>
-      <UButton :to="`/naskah-lainnya/${id}`" variant="ghost" icon="i-lucide-arrow-left" color="neutral">
-        Kembali ke Detail
-      </UButton>
-    </div>
+  <div class="space-y-6">
+    <PageHeader :items="breadcrumbs">
+      <template #title>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
+      </template>
+    </PageHeader>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -28,9 +13,10 @@
 
     <div v-else-if="!detail" class="py-20 text-center text-gray-500">Naskah tidak ditemukan.</div>
 
-    <div v-else>
-      <!-- Info penandatangan -->
-      <div class="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div v-else class="space-y-6">
+      <!-- Info penandatangan aktif (tanda-tangan-specific; legal-drafting memakai kartu
+           pemberi persetujuan di posisi ini — konteks siapa menandatangani saat ini). -->
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="flex items-center gap-3 p-4">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400">
             <UIcon name="i-lucide-pen-tool" class="h-5 w-5" />
@@ -43,72 +29,107 @@
         </div>
       </div>
 
-      <!-- Workspace -->
       <NaskahDraftWorkspace
         :detail="detail"
         :dokumen-pendukung="dokumenPendukung"
-        :area-title="areaTitle"
-        :area-description="areaDescription"
-        :catatan-title="catatanTitle"
-        :catatan-placeholder="catatanPlaceholder"
+        area-title="Tinjauan Penandatangan"
+        area-description="Revisi naskah di luar aplikasi: download draf, lengkapi di Microsoft Word, lalu upload kembali. Noted: Jangan menghapus parameter dikarenakan sistem membaca isi dan parameter di dalamnya."
+        catatan-title="Catatan Penandatangan"
+        catatan-placeholder="Tuliskan catatan hasil tinjauan…"
+        :show-actions="false"
+        :docx-url="`/naskah-lainnya/${id}/file`"
+        :show-draf-download="false"
+        :catatan-rich="true"
+        :stage-upload="true"
         v-model="catatan"
         @preview="previewNaskah"
         @download="downloadNaskah"
         @preview-pendukung="previewPendukung"
-        @upload-revisi="onUploadRevisi"
-      >
-        <template #actions>
-          <!-- Digital (qr_only): inject QR + advance -->
-          <UButton
-            v-if="signOption === 'qr_only'"
-            color="primary"
-            icon="i-lucide-pen-tool"
-            size="lg"
-            class="font-semibold"
-            :loading="busy"
-            @click="tandaTanganClick"
-          >
-            {{ actionLabel }}
-          </UButton>
+        @stage-revisi="onStageRevisi"
+      />
 
-          <!-- Fisik (ttd_basah): unduh + unggah hasil ttd basah -->
-          <template v-else-if="signOption === 'ttd_basah'">
-            <UButton color="neutral" variant="outline" icon="i-lucide-download" size="lg" @click="downloadNaskah(naskahFileName(detail))">
-              Unduh Naskah
+      <!-- Aksi (highlighted — selaraskan dengan action toolbar legal-drafting) -->
+      <div class="overflow-hidden rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white shadow-sm ring-1 ring-primary-100 dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800 dark:ring-primary-900/30">
+        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400">
+              <UIcon name="i-lucide-pen-tool" class="size-5" />
+            </span>
+            <div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">{{ actionToolbarTitle }}</h3>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ actionToolbarDesc }}</p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <!-- Digital (qr_only): inject QR + advance -->
+            <UButton
+              v-if="signOption === 'qr_only'"
+              color="primary"
+              icon="i-lucide-pen-tool"
+              size="lg"
+              class="w-full font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
+              :loading="busy"
+              @click="showSignModal = true"
+            >Tandatangani Naskah</UButton>
+
+            <!-- Fisik (ttd_basah): unduh + unggah hasil ttd basah -->
+            <template v-else-if="signOption === 'ttd_basah'">
+              <UButton color="neutral" variant="outline" icon="i-lucide-download" size="lg" class="w-full sm:w-auto" @click="downloadNaskah(naskahFileName(detail))">
+                Unduh Naskah
+              </UButton>
+              <label class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700 sm:w-auto">
+                <UIcon name="i-lucide-upload" class="size-4" />
+                Unggah Naskah Ditandatangani
+                <input type="file" class="hidden" accept=".docx,.pdf,image/*" @change="onUnggahTtdFisik" />
+              </label>
+            </template>
+
+            <UButton
+              v-if="canKembalikan"
+              color="error"
+              variant="outline"
+              icon="i-lucide-undo-2"
+              size="lg"
+              class="w-full sm:w-auto"
+              @click="showKembalikanModal = true"
+            >
+              Kembalikan
             </UButton>
-            <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">
-              <UIcon name="i-lucide-upload" class="size-4" />
-              Unggah Naskah Ditandatangani
-              <input type="file" class="hidden" accept=".docx,.pdf,image/*" @change="onUnggahTtdFisik" />
-            </label>
-          </template>
-
-          <UButton
-            v-if="canKembalikan"
-            color="error"
-            variant="outline"
-            icon="i-lucide-undo-2"
-            size="lg"
-            @click="showKembalikanModal = true"
-          >
-            Kembalikan
-          </UButton>
-        </template>
-      </NaskahDraftWorkspace>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Preview Modal -->
-    <UModal v-model="previewUrl" :ui="{ content: 'max-w-4xl' }">
+    <!-- Preview Modal (PDF iframe / DOCX renderAsync) -->
+    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-4xl' }">
       <template #content>
         <div class="flex h-[85vh] flex-col">
           <div class="flex items-center justify-between border-b px-4 py-3 dark:border-gray-700">
             <h3 class="font-semibold text-gray-900 dark:text-white">Preview Dokumen</h3>
-            <UButton size="sm" variant="ghost" icon="i-lucide-x" @click="previewUrl = null" />
+            <UButton size="sm" variant="ghost" icon="i-lucide-x" @click="closePreview" />
           </div>
-          <iframe :src="previewUrl" class="flex-1 w-full" />
+          <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-900">
+            <div v-if="previewLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10">
+              <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
+            </div>
+            <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
+            <div v-else ref="previewDocxContainer" class="docx-preview-container w-full h-full overflow-auto"></div>
+          </div>
         </div>
       </template>
     </UModal>
+
+    <!-- Tandatangani Modal (catatan/konfirmasi sebelum sign — selaraskan dgn legal-drafting) -->
+    <VerifyActionModal
+      v-model="showSignModal"
+      variant="approve"
+      title="Tandatangani Naskah"
+      description="Naskah akan ditandatangani secara digital (QR). Revisi yang di-stage akan diunggah bersamaan dengan tandatangan."
+      :require-note="false"
+      confirm-label="Tandatangani"
+      :saving="busy"
+      @confirm="tandaTanganConfirm"
+    />
 
     <!-- Kembalikan Modal -->
     <VerifyActionModal
@@ -126,6 +147,7 @@
 </template>
 
 <script setup>
+import { renderAsync } from 'docx-preview';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
 const route = useRoute();
@@ -133,63 +155,50 @@ const id = computed(() => route.params.id);
 const { apiGet } = useApi();
 const { detail, fetchDetail, uploadDokumen, tandaTangan, unggahTtdFisik } = useNaskahLainnya();
 const toast = useToast();
+const { t } = useI18n();
+
+const breadcrumbs = computed(() => [
+  { label: t('beranda'), to: '/beranda' },
+  { label: t('naskah_lainnya'), to: '/naskah-lainnya' },
+  { label: detail.value?.perihal || 'Detail', to: `/naskah-lainnya/${id.value}` },
+  { label: 'Tanda Tangan', to: '#' },
+]);
 
 const loading = ref(true);
 const busy = ref(false);
 const catatan = ref('');
-const previewUrl = ref(null);
+const dokumenPendukung = ref([]);
+const showSignModal = ref(false);
 const showKembalikanModal = ref(false);
 const sendingKembalikan = ref(false);
-
-const JENIS_LABELS = {
-  PER: 'Peraturan (PER)', KEP: 'Keputusan (KEP)', INS: 'Instruksi (INS)',
-  PKS: 'Perjanjian Kerja Sama (PKS)', UND: 'Undangan (UND)', BA: 'Berita Acara (BA)',
-};
-const jenisLabel = (j) => JENIS_LABELS[j] || j;
+// ── Popup preview dokumen pendukung (PDF iframe / DOCX renderAsync) ──
+const previewOpen = ref(false);
+const previewUrl = ref(null);
+const previewDocxBuffer = ref(null);
+const previewDocxContainer = ref(null);
+const previewLoading = ref(false);
+// Revisi di-stage di FE (preview lokal). Baru di-commit ke naskah saat user klik
+// "Tandatangani Naskah" (qr_only) atau "Unggah Naskah Ditandatangani" (ttd_basah) —
+// bukan saat unggah — agar naskah tidak menumpuk versi sebelum sign benar-benar jalan.
+const stagedRevisi = ref(null);
 
 const tahapan = computed(() => detail.value?.tahapan ?? '');
 const signOption = computed(() => detail.value?.signOption ?? 'qr_only');
 
-const tahapanLabel = computed(() => {
-  const t = tahapan.value;
-  if (t === 'tanda_tangan_pemrakarsa') return 'Tanda Tangan Pemrakarsa';
-  if (t === 'tanda_tangan_legal') return 'Tanda Tangan Legal';
-  if (t === 'tanda_tangan_pejabat') return 'Tanda Tangan Pejabat';
-  if (t === 'tanda_tangan') return 'Tanda Tangan';
-  return 'Tanda Tangan';
-});
-
-const areaTitle = computed(() => {
-  const t = tahapan.value;
-  if (t === 'tanda_tangan_pemrakarsa') return 'Tinjauan Pemrakarsa';
-  if (t === 'tanda_tangan_legal') return 'Tinjauan Legal';
-  if (t === 'tanda_tangan') return 'Tinjauan Penandatangan';
-  return 'Tinjauan Pejabat';
-});
-
-const areaDescription = 'Download draf naskah, lakukan revisi jika diperlukan di Microsoft Word, lalu upload kembali. Naskah akan diperbarui untuk step berikutnya.';
-
-const catatanTitle = computed(() => {
-  const t = tahapan.value;
-  if (t === 'tanda_tangan_pemrakarsa') return 'Catatan Pemrakarsa';
-  if (t === 'tanda_tangan_legal') return 'Catatan Legal';
-  if (t === 'tanda_tangan') return 'Catatan Penandatangan';
-  return 'Catatan Pejabat';
-});
-
-const catatanPlaceholder = 'Tuliskan catatan hasil tinjauan…';
-
-const actionLabel = computed(() => {
-  const t = tahapan.value;
-  if (t === 'tanda_tangan_pemrakarsa') return 'Tanda Tangani (Pemrakarsa)';
-  if (t === 'tanda_tangan_legal') return 'Tanda Tangani (Legal)';
-  if (t === 'tanda_tangan') return 'Tandatangani Naskah';
-  return 'Tanda Tangani Naskah';
-});
-
 const canKembalikan = computed(() =>
   tahapan.value === 'tanda_tangan_legal'
   || tahapan.value === 'tanda_tangan_pemrakarsa');
+
+const actionToolbarTitle = computed(() =>
+  signOption.value === 'ttd_basah' ? 'Tanda Tangan Basah' : 'Tanda Tangan Digital',
+);
+const actionToolbarDesc = computed(() =>
+  stagedRevisi.value
+    ? 'Revisi di-stage akan diunggah bersama tandatangan.'
+    : (signOption.value === 'ttd_basah'
+      ? 'Unduh naskah, tandatangani secara fisik, lalu unggah hasilnya.'
+      : 'Klik Tandatangani untuk menyuntuh QR dan menyelesaikan naskah.'),
+);
 
 // BE getDetail mengirim rantai penandatangan sebagai `penandatangan` (array),
 // bukan `penandatanganList`. `penandatanganList` dipakai sebagai sumber sekunder
@@ -216,12 +225,11 @@ const signerProgress = computed(() => {
   return total > 0 ? `Penandatangan ke-${idx} dari ${total}` : '';
 });
 
-const dokumenPendukung = computed(() => (detail.value?.dokumen ?? []).filter((d) => d.tipe === 'pendukung'));
-
 async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
+    dokumenPendukung.value = (detail.value?.dokumen || []).filter((d) => d.tipe === 'pendukung');
   } catch {
     toast.add({ title: 'Gagal memuat detail naskah', color: 'error' });
   } finally {
@@ -235,7 +243,7 @@ async function downloadNaskah(name) {
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = name || naskahFileName(detail);
+    a.download = name || naskahFileName(detail.value);
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {
@@ -246,35 +254,108 @@ async function downloadNaskah(name) {
 async function previewNaskah() {
   try {
     const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, { responseType: 'blob' });
+    window.open(window.URL.createObjectURL(blob), '_blank');
+  } catch {
+    toast.add({ title: 'Gagal memuat preview', color: 'error' });
+  }
+}
+
+async function renderDocxPreview() {
+  if (!previewDocxBuffer.value || !previewDocxContainer.value) return;
+  previewDocxContainer.value.innerHTML = '';
+  await renderAsync(previewDocxBuffer.value, previewDocxContainer.value, undefined, {
+    className: 'docx',
+    inWrapper: true,
+    ignoreWidth: false,
+    ignoreHeight: false,
+    breakPages: true,
+  });
+}
+
+// Buka popup preview dari blob sesuai tipe file (PDF → iframe, DOCX → renderAsync).
+async function openPreviewFromBlob(blob, nama) {
+  const lower = String(nama ?? '').toLowerCase();
+  const isPdf = lower.endsWith('.pdf') || blob.type === 'application/pdf';
+  const isDocx = lower.endsWith('.docx');
+  if (previewUrl.value) { window.URL.revokeObjectURL(previewUrl.value); previewUrl.value = null; }
+  previewDocxBuffer.value = null;
+  if (isPdf) {
+    previewUrl.value = window.URL.createObjectURL(blob);
+    previewOpen.value = true;
+  } else if (isDocx) {
+    previewDocxBuffer.value = await blob.arrayBuffer();
+    previewOpen.value = true;
+    await nextTick();
+    await renderDocxPreview();
+  } else {
+    // tipe lain (gambar/dll) — buka tab baru
     const url = window.URL.createObjectURL(blob);
     window.open(url, '_blank');
-  } catch {
-    toast.add({ title: 'Gagal memuat preview', color: 'error' });
+    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
   }
 }
+
+function closePreview() {
+  previewOpen.value = false;
+  if (previewUrl.value) { window.URL.revokeObjectURL(previewUrl.value); previewUrl.value = null; }
+  previewDocxBuffer.value = null;
+}
+
+watch(previewOpen, (open) => { if (!open) closePreview(); });
 
 async function previewPendukung(doc) {
+  previewLoading.value = true;
   try {
     const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, { responseType: 'blob' });
-    previewUrl.value = window.URL.createObjectURL(blob);
+    await openPreviewFromBlob(blob, doc.nama);
   } catch {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
+  } finally {
+    previewLoading.value = false;
   }
 }
 
-async function onUploadRevisi(file) {
-  const res = await uploadDokumen(id.value, file);
-  toast.add({ title: 'Naskah diperbarui', color: 'success' });
-  return res;
+function onStageRevisi(file) {
+  stagedRevisi.value = file;
+}
+
+// Commit revisi yang di-stage ke naskah (1 versi per sign sukses). Dipanggil
+// BERSAMA tindakan sign — bukan saat unggah — agar sign gagal tidak meninggalkan
+// versi naskah yang numpuk (sama dengan pola legal-drafting).
+async function commitStagedRevisi() {
+  if (!stagedRevisi.value) return;
+  try {
+    await uploadDokumen(id.value, stagedRevisi.value);
+  } catch {
+    toast.add({ title: 'Revisi gagal diunggah, melanjutkan sign', color: 'warning' });
+  }
+  stagedRevisi.value = null;
 }
 
 async function afterSignNavigate() {
   await fetchDetail(id.value);
-  const t = detail.value?.tahapan;
-  if (t === 'selesai') {
+  const tahap = detail.value?.tahapan;
+  if (tahap === 'selesai') {
     navigateTo(`/naskah-lainnya/${id.value}/selesai`);
   } else {
     navigateTo(`/naskah-lainnya/${id.value}/tanda-tangan`);
+  }
+}
+
+async function tandaTanganConfirm() {
+  busy.value = true;
+  try {
+    await commitStagedRevisi();
+    await tandaTangan(id.value);
+    toast.add({ title: 'Naskah ditandatangani', color: 'success' });
+    showSignModal.value = false;
+    await afterSignNavigate();
+  } catch (e) {
+    const rawMsg = e?.response?.data?.message || e?.message;
+    const errMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
+    toast.add({ title: 'Gagal menandatangani naskah', description: errMsg || '', color: 'error' });
+  } finally {
+    busy.value = false;
   }
 }
 
@@ -284,6 +365,7 @@ async function onUnggahTtdFisik(ev) {
   if (!file) return;
   busy.value = true;
   try {
+    await commitStagedRevisi();
     await unggahTtdFisik(id.value, file);
     toast.add({ title: 'Naskah ditandatangani (fisik) diunggah', color: 'success' });
     await afterSignNavigate();
@@ -292,19 +374,6 @@ async function onUnggahTtdFisik(ev) {
   } finally {
     busy.value = false;
     input.value = '';
-  }
-}
-
-async function tandaTanganClick() {
-  busy.value = true;
-  try {
-    await tandaTangan(id.value);
-    toast.add({ title: 'Naskah ditandatangani', color: 'success' });
-    await afterSignNavigate();
-  } catch {
-    toast.add({ title: 'Gagal menandatangani naskah', color: 'error' });
-  } finally {
-    busy.value = false;
   }
 }
 
@@ -324,3 +393,12 @@ async function kembalikan(catatanText) {
 
 onMounted(loadDetail);
 </script>
+
+<style scoped>
+:deep(.docx-preview-container) { padding: 16px; }
+:deep(.docx-wrapper) { background: #fff !important; padding: 0 !important; }
+:deep(.docx-wrapper > section.docx) {
+  border: none !important;
+  margin: 0 auto !important;
+}
+</style>
