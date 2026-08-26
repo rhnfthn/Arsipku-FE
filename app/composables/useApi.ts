@@ -27,6 +27,7 @@ const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/naskah_sirkulasi\/(?:inbox-count|inbox|sent|tertunda)(?:[/?#]|$)/,
   /^\/draft\/list(?:[/?#]|$)/,
   /^\/labels\/(?:counts|[^/]+\/naskah)(?:[/?#]|$)/,
+  /^\/naskah-lainnya(?:[/?#]|$)/,
   /^\/(?:admin\/)?nomor-request(?:[/?#-]|$)/,
   /^\/digsig(?:[/?#]|$)/,
   /^\/naskah-dinas(?:[/?#]|$)/,

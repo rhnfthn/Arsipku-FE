@@ -180,40 +180,43 @@
             </div>
             <div class="flex-1">
               <div class="font-semibold text-sm text-gray-900 dark:text-white">
-                Kirim dengan Tanda Tangan Basah
+                Tanda Tangan Basah
               </div>
               <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Dokumen ditandatangani secara tanda tangan basah atau fisik
+                Cetak dokumen, tanda tangani secara fisik, lalu scan & unggah kembali
               </div>
             </div>
           </div>
-          <div v-if="selectedMethod === 'ttd_basah'" class="mx-4 mb-4">
-            <div class="rounded-xl border border-primary-200 dark:border-primary-800 overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-primary-500 dark:bg-primary-700">
-                <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-white shrink-0" />
-                <p class="text-xs font-semibold text-white">Alur Tanda Tangan Basah</p>
+        </div>
+
+        <!-- ── Option 4: Tanpa TTD Digital ─────────────────────────────── -->
+        <div
+          class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden" :class="selectedMethod === 'tanpa_ttd'
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+          @click="selectMethod('tanpa_ttd')">
+          <div class="flex items-start gap-3 p-4">
+            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0"
+              :class="selectedMethod === 'tanpa_ttd' ? 'border-primary-500' : 'border-gray-300'">
+              <div v-if="selectedMethod === 'tanpa_ttd'" class="w-2 h-2 rounded-full bg-primary-500" />
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold text-sm text-gray-900 dark:text-white">
+                Tanpa Tanda Tangan Digital
               </div>
-              <div class="px-4 py-3 bg-primary-50 dark:bg-primary-900/20 space-y-2">
-                <div class="flex items-start gap-2.5">
-                  <span
-                    class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                  <p class="text-xs text-primary-700 dark:text-primary-300">Tekan <strong>Kirim</strong> — dokumen masuk
-                    ke
-                    halaman <strong>Tertunda</strong> dengan status <em>pending</em> (belum terkirim).</p>
-                </div>
-                <div class="flex items-start gap-2.5">
-                  <span
-                    class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                  <p class="text-xs text-primary-700 dark:text-primary-300">Cetak dokumen, tanda tangani secara basah,
-                    lalu
-                    scan dan unggah kembali.</p>
-                </div>
-                <div class="flex items-start gap-2.5">
-                  <span
-                    class="w-4 h-4 rounded-full bg-primary-200 dark:bg-primary-700 text-primary-700 dark:text-primary-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                  <p class="text-xs text-primary-700 dark:text-primary-300">Setelah file diunggah, dokumen dapat
-                    dikirim.</p>
-                </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Dokumen akan dicetak dan ditandatangani secara fisik oleh para pihak (pihak internal &amp; eksternal)
+              </div>
+            </div>
+          </div>
+          <div v-if="selectedMethod === 'tanpa_ttd'" class="mx-4 mb-4">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+              <div class="flex items-start gap-2.5">
+                <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                  Dokumen langsung dikirim untuk approval tanpa tanda tangan digital.
+                  Setelah disetujui, dokumen dicetak dan ditandatangani secara fisik oleh semua pihak yang bersangkutan.
+                </p>
               </div>
             </div>
           </div>
@@ -265,7 +268,7 @@ const isOpen = computed({
 })
 
 const showAllOptions = ref(false)
-const selectedMethod = ref<'digsig' | 'qr_only' | 'ttd_basah'>('digsig')
+const selectedMethod = ref<'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd'>('digsig')
 const localPassphrase = ref('')
 const passphraseError = ref('')
 const showPassword = ref(false)
@@ -285,7 +288,7 @@ watch(() => props.open, (val) => {
   }
 })
 
-const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah') => {
+const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd') => {
   selectedMethod.value = method
   passphraseError.value = ''
 }
@@ -307,6 +310,8 @@ const handleSubmit = async () => {
   } else if (selectedMethod.value === 'ttd_basah') {
     // Langsung emit tanpa validasi file — dokumen masuk tertunda, upload dilakukan di halaman tertunda
     emit('submit', { method: 'ttd_basah' })
+  } else if (selectedMethod.value === 'tanpa_ttd') {
+    emit('submit', { method: 'tanpa_ttd' })
   }
 }
 

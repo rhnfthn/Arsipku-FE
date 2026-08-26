@@ -62,7 +62,7 @@
 
     <!-- Filter -->
     <div class="mb-4">
-      <AuditLogFilter v-model="filter" @apply="onApplyFilter" @export="onExport" />
+      <AuditLogFilter :model-value="filter" @update:model-value="(v) => Object.assign(filter, v)" @apply="onApplyFilter" @export="onExport" />
     </div>
 
     <!-- Table -->
