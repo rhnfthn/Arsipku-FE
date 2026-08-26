@@ -17,13 +17,36 @@
       <!-- LoadingOverlay for async actions (preview, kirim, paraf, tolak) -->
       <LoadingOverlay :loading="busy" :message="busyMessage" />
 
+      <!-- Banner mode: susun lembar (edit) vs menunggu paraf direksi (read-only) -->
+      <div
+        class="flex items-start gap-3 rounded-xl border px-4 py-3.5"
+        :class="canEditSheet
+          ? 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30'
+          : 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30'"
+      >
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+          :class="canEditSheet ? 'bg-primary-500' : 'bg-violet-500'"
+        >
+          <UIcon :name="canEditSheet ? 'i-lucide-file-pen-line' : 'i-lucide-stamp'" class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-bold text-gray-900 dark:text-white">{{ canEditSheet ? 'Susun Lembar Persetujuan Direksi' : 'Menunggu Paraf Direksi' }}</p>
+          <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+            {{ canEditSheet
+              ? 'Lengkapi data lembar di bawah, tinjau pratinjau PDF, lalu kirim ke direksi untuk diparaf.'
+              : `${parafDone}/${pdDirectors.length} direksi telah memaraf${nextDirector ? ' — giliran ' + nextDirector.nama + '.' : '.'}` }}
+          </p>
+        </div>
+      </div>
+
       <UCard
         variant="soft"
-        :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }"
+        :ui="{ root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors' }"
       >
         <div class="flex-1 overflow-y-auto space-y-1">
           <!-- ── Form fields (editable mode only) ── -->
-          <template v-if="canEditSheet">
+          <div v-if="canEditSheet" class="pd-form">
             <TulisInputTanggal v-model="formDate" label="Tanggal Lembar" />
 
             <div
@@ -140,7 +163,7 @@
                 />
               </div>
             </div>
-          </template>
+          </div>
 
           <!-- ── Inline paper preview ── -->
           <ClientOnly>
@@ -173,17 +196,23 @@
 
           <!-- ── Action bar ── -->
           <div
-            class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
+            class="flex flex-col gap-3 border-t border-gray-100 py-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
           >
-            <UButton
-              label="Preview PDF"
-              color="primary"
-              size="lg"
-              icon="i-lucide-eye"
-              class="px-8 font-bold"
-              :loading="busy"
-              @click="previewPdf"
-            />
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ canEditSheet
+                ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim lembar ke direksi untuk diparaf.'
+                : 'Lembar sedang menunggu proses paraf direksi.' }}
+            </p>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <UButton
+                label="Preview PDF"
+                color="primary"
+                size="lg"
+                icon="i-lucide-eye"
+                :loading="busy"
+                @click="previewPdf"
+              />
+            </div>
           </div>
         </div>
       </UCard>
@@ -260,7 +289,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { CalendarDate } from '@internationalized/date';
-import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
@@ -353,6 +381,9 @@ const pdDirectors = computed<DirectorApprovalItem[]>(() =>
     catatan: a.catatan,
   })),
 );
+
+const parafDone = computed(() => pdDirectors.value.filter((d) => d.status === 'verified').length);
+const nextDirector = computed(() => pdDirectors.value.find((d) => d.status === 'waiting') ?? null);
 
 function isUserApprover(row: ApprovalRow) {
   if (row.status !== 'waiting') return false;
@@ -501,5 +532,18 @@ onMounted(() => {
 <style scoped>
 :deep(.tox-tinymce) {
   border: none !important;
+}
+
+/* Input inline ala kertas: tetap tanpa border, tapi ada ring saat fokus */
+.pd-form input:focus,
+.pd-form textarea:focus {
+  outline: none;
+  border-radius: 6px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  box-shadow: 0 0 0 1px var(--ui-primary, #155dfc);
+  background: var(--ui-bg-elevated, rgba(0, 0, 0, 0.03));
 }
 </style>
