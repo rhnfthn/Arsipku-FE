@@ -58,8 +58,15 @@
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.retensiInaktifTahun || 0 }} Tahun</p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Tindakan Penyusutan Akhir</span>
-            <p class="text-gray-900 dark:text-white font-medium">{{ berkas.tindakanPenyusutanAkhir || '-' }}</p>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
+            <p class="text-gray-900 dark:text-white font-medium">
+              <span
+                v-if="berkas.tindakanPenyusutanAkhir"
+                :class="berkas.tindakanPenyusutanAkhir.toLowerCase() === 'musnah' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'"
+                class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+              >{{ berkas.tindakanPenyusutanAkhir }}</span>
+              <span v-else>-</span>
+            </p>
           </div>
           <div v-if="berkas.tanggalDibuat">
             <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Dibuat</span>
@@ -339,6 +346,15 @@ const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; bo
   ditolak: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
   closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
   draft: { label: 'Draft', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' },
+  permanen: { label: 'Permanen', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
+  musnah: { label: 'Musnah', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
+  // Unit Dokumen → Atasan Unit Dokumen = Menunggu Penerimaan
+  menunggu_verifikasi_persetujuan_tu: { label: 'Menunggu Penerimaan', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
+  disetujui_persetujuan_tu: { label: 'Menunggu Penerimaan', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
+  menunggu_persetujuan_terakhir_tu: { label: 'Menunggu Penerimaan', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
+  disetujui_persetujuan_terakhir_tu: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
+  arsip_inaktif_diterima: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
+  penataan_arsip_inaktif: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
 };
 
 const statusStyle = (status: string) => {
@@ -352,7 +368,7 @@ const statusStyle = (status: string) => {
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 };
 
 onMounted(async () => {
@@ -360,59 +376,61 @@ onMounted(async () => {
   try {
     const id = route.params.id as string;
 
-    // 1. Coba fetch dari DB inti (arsip-dinamis). Jika gagal (mis. berkas
-    //    sudah soft-deleted karena musnah), lanjut ke fallback DB arsip.
+    // 1. Cek DB arsip DULU. Jika berkas sudah diarsipkan (permanen/musnah),
+    //    baca berkas + naskah dari DB arsip (newarsipku_arsip), bukan DB inti.
+    //    Untuk permanen, relasi berkas_naskah di DB inti sudah dihapus saat
+    //    arsipkan, sehingga naskah hanya tersedia di DB arsip.
+    let arsipLoaded = false;
     try {
-      const res: any = await getBerkasById(id);
-      berkas.value = res?.data ?? res;
-      const naskahRes: any = await getDaftarNaskah(id, { limit: 50 });
-      const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
-      naskahList.value = Array.isArray(raw) ? raw : [];
+      const arsipRes: any = await apiGet(`/api/arsip/berkas/${id}`, {}, { skipCache: true });
+      const arsipData = arsipRes?.data?.data ?? arsipRes?.data ?? arsipRes;
+      const arsipBerkas = arsipData?.berkas;
+      if (arsipBerkas) {
+        isArchived.value = true;
+        isMusnah.value = arsipBerkas.is_musnah === true || arsipBerkas.is_musnah === 1 || arsipBerkas.status_akhir === 'musnah';
+        berkas.value = {
+          id: arsipBerkas.source_berkas_id,
+          judulBerkas: arsipBerkas.judul_berkas,
+          kodeBerkas: arsipBerkas.kode_berkas,
+          klasifikasi: arsipBerkas.klasifikasi,
+          klasifikasiTeks: arsipBerkas.klasifikasi_text,
+          retensiAktifTahun: arsipBerkas.retensi_aktif_tahun,
+          retensiInaktifTahun: arsipBerkas.retensi_inaktif_tahun,
+          tindakanPenyusutanAkhir: arsipBerkas.tindakan_penyusutan_akhir,
+          isiRingkas: arsipBerkas.isi_ringkas,
+          tanggalDibuat: arsipBerkas.tanggal_dibuat,
+          tanggalDitutup: arsipBerkas.tanggal_ditutup,
+          status: arsipBerkas.status_akhir,
+        };
+        naskahList.value = (arsipData?.naskah ?? []).map((n: any) => ({
+          id: n.id,
+          naskahId: n.naskahId,
+          naskahTipe: n.naskahTipe,
+          nomorSurat: n.nomorSurat,
+          perihal: n.perihal,
+          tanggalNaskah: n.tanggalNaskah,
+          sumber: n.sumber,
+          urutan: n.urutan,
+          final_pdf: n.finalPdf,
+          status: n.status,
+        }));
+        arsipLoaded = true;
+      }
     } catch (e) {
-      console.warn('Berkas tidak ditemukan di DB inti, coba DB arsip:', e);
-      berkas.value = null;
+      console.warn('Gagal cek DB arsip:', e);
     }
 
-    // Jika berkas tidak ditemukan di DB inti (sudah soft-deleted, mis. musnah),
-    // fallback ke DB arsip (arsipku_arsip_local) agar tetap bisa dilihat.
-    if (!berkas.value) {
+    // 2. Jika tidak diarsipkan, baca dari DB inti (arsip-dinamis).
+    if (!arsipLoaded) {
       try {
-        const arsipRes: any = await apiGet(`/api/arsip/berkas/${id}`, {}, { skipCache: true });
-        // Backend: { success, data: { status, data: { berkas, naskah } } }
-        const arsipData = arsipRes?.data?.data ?? arsipRes?.data ?? arsipRes;
-        const arsipBerkas = arsipData?.berkas;
-        if (arsipBerkas) {
-          isArchived.value = true;
-          isMusnah.value = arsipBerkas.is_musnah === true || arsipBerkas.is_musnah === 1 || arsipBerkas.status_akhir === 'musnah';
-          berkas.value = {
-            id: arsipBerkas.source_berkas_id,
-            judulBerkas: arsipBerkas.judul_berkas,
-            kodeBerkas: arsipBerkas.kode_berkas,
-            klasifikasi: arsipBerkas.klasifikasi,
-            klasifikasiTeks: arsipBerkas.klasifikasi_text,
-            retensiAktifTahun: arsipBerkas.retensi_aktif_tahun,
-            retensiInaktifTahun: arsipBerkas.retensi_inaktif_tahun,
-            tindakanPenyusutanAkhir: arsipBerkas.tindakan_penyusutan_akhir,
-            isiRingkas: arsipBerkas.isi_ringkas,
-            tanggalDibuat: arsipBerkas.tanggal_dibuat,
-            tanggalDitutup: arsipBerkas.tanggal_ditutup,
-            status: arsipBerkas.status_akhir,
-          };
-          naskahList.value = (arsipData?.naskah ?? []).map((n: any) => ({
-            id: n.id,
-            naskahId: n.naskahId,
-            naskahTipe: n.naskahTipe,
-            nomorSurat: n.nomorSurat,
-            perihal: n.perihal,
-            tanggalNaskah: n.tanggalNaskah,
-            sumber: n.sumber,
-            urutan: n.urutan,
-            final_pdf: n.finalPdf,
-            status: n.status,
-          }));
-        }
+        const res: any = await getBerkasById(id);
+        berkas.value = res?.data ?? res;
+        const naskahRes: any = await getDaftarNaskah(id, { limit: 50 });
+        const raw = naskahRes?.data?.data ?? naskahRes?.data ?? [];
+        naskahList.value = Array.isArray(raw) ? raw : [];
       } catch (e) {
-        console.error('Gagal memuat berkas dari DB arsip:', e);
+        console.warn('Berkas tidak ditemukan di DB inti:', e);
+        berkas.value = null;
       }
     }
 
