@@ -105,6 +105,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/verifikasi-persetujuan-tu',
     '/maintenance/penerimaan-usulan',
     '/maintenance/penataan-arsip-inaktif',
+    '/maintenance/penyusutan',
     '/maintenance/preview-berkas',
   ];
 

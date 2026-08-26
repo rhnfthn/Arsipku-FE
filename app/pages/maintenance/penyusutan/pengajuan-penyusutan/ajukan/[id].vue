@@ -31,7 +31,7 @@
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span><p class="text-gray-900 dark:text-white font-medium">{{ item.no_usulan }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.kode_berkas }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nama Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.nama_berkas }}</p></div>
-              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasi || '-' }}<span v-if="item.klasifikasiText || item.klasifikasi_text" class="text-xs ml-1">({{ item.klasifikasiText || item.klasifikasi_text }})</span></p></div>
+              <div><span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span><p class="text-gray-900 dark:text-white font-medium">{{ item.klasifikasiText || item.klasifikasi_text || item.klasifikasi || '-' }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggal_retensi_habis ?? '') }}</p></div>
               <div><span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span><p class="text-gray-900 dark:text-white font-medium">
                 <span :class="item.jenis_penyusutan === 'musnah' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'" class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">{{ item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen' }}</span>
@@ -200,7 +200,7 @@
               <div class="flex justify-between text-sm"><span class="text-gray-500 dark:text-gray-400">Kode Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ item?.kode_berkas }}</span></div>
               <div class="flex justify-between text-sm"><span class="text-gray-500 dark:text-gray-400">No Usulan</span><span class="font-medium text-gray-800 dark:text-white">{{ item?.no_usulan }}</span></div>
               <div class="flex justify-between text-sm"><span class="text-gray-500 dark:text-gray-400">Nama Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ item?.nama_berkas }}</span></div>
-              <div class="flex justify-between text-sm"><span class="text-gray-500 dark:text-gray-400">Klasifikasi</span><span class="font-medium text-gray-800 dark:text-white">{{ item?.klasifikasi }}</span></div>
+              <div class="flex justify-between text-sm"><span class="text-gray-500 dark:text-gray-400">Klasifikasi</span><span class="font-medium text-gray-800 dark:text-white">{{ item?.klasifikasiText || item?.klasifikasi_text || item?.klasifikasi || '-' }}</span></div>
               <div class="flex justify-between text-sm"><span class="text-gray-500 dark:text-gray-400">Tgl Retensi Habis</span><span class="font-medium text-gray-800 dark:text-white">{{ formatDate(item?.tanggal_retensi_habis ?? '') }}</span></div>
             </div>
 

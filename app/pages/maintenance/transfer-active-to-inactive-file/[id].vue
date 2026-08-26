@@ -275,7 +275,7 @@
       <!-- Card Persetujuan Terakhir Atasan TU (untuk atasan managerial TU) -->
       <div
         v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuLevel1"
-        class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5"
+        class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
       >
         <div class="flex items-start gap-3">
           <UIcon name="i-lucide-check-check" class="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
@@ -290,7 +290,7 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" /> Setujui Persetujuan Terakhir
+              <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" /> Konfirmasi Persetujuan Terakhir
             </button>
           </div>
         </div>
@@ -377,27 +377,22 @@
             </div>
             <div class="flex-1">
               <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                Apakah Anda yakin ingin menyetujui persetujuan terakhir untuk usulan ini?
+                Arsip akan diterima dan TU dapat melanjutkan ke penataan arsip inaktif.
               </p>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Arsip akan diterima dan TU dapat melanjutkan ke penataan arsip inaktif.
+                Apakah Anda yakin ingin menyetujui persetujuan terakhir?
               </p>
             </div>
           </div>
-          <!-- Info usulan -->
-          <div class="space-y-2 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ item?.nomorUsulan ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ item?.sekretarisName ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Arsip</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ item?.arsipPerihal ?? '-' }}</p>
-            </div>
+          <!-- Catatan (opsional) -->
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan (opsional)</label>
+            <textarea
+              v-model="catatanSetujuiTerakhir"
+              rows="3"
+              placeholder="Catatan..."
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+            ></textarea>
           </div>
         </div>
         <!-- Footer -->
@@ -410,7 +405,7 @@
           >
             <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
             <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" />
-            Setujui Persetujuan Terakhir
+            Setujui
           </button>
         </div>
         </div>
@@ -500,6 +495,7 @@ const actionLoading = ref(false);
 const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
 const isSetujuiTerakhirModalOpen = ref(false);
+const catatanSetujuiTerakhir = ref('');
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
 const daftarIsi = ref<any[]>([]);
@@ -747,6 +743,7 @@ const onSelesai = () => {
 
 /** Setujui Persetujuan Terakhir oleh Atasan TU → ARSIP_INAKTIF_DITERIMA. */
 const onSetujuiTerakhir = () => {
+  catatanSetujuiTerakhir.value = '';
   isSetujuiTerakhirModalOpen.value = true;
 };
 
@@ -760,7 +757,9 @@ const onConfirmSetujuiTerakhir = async () => {
   if (!item.value) return;
   actionLoading.value = true;
   try {
-    await tuSetujuiTerakhir(item.value.id, {});
+    await tuSetujuiTerakhir(item.value.id, {
+      catatanVerifikasi: catatanSetujuiTerakhir.value.trim() || undefined,
+    });
     isSetujuiTerakhirModalOpen.value = false;
     await loadDetail();
   } catch (e: any) {

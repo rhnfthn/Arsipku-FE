@@ -51,15 +51,19 @@
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipKode ?? '-' }}</p>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-                <p class="text-gray-900 dark:text-white font-bold">{{ item.atasanName || '-' }}</p>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipKlasifikasi ?? '-' }}</p>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">TU Pengirim</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item.tuName || '-' }}</p>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.atasanName || '-' }}</p>
               </div>
-              <div class="md:col-span-2">
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Perihal Arsip</span>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Nama Berkas</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipPerihal }}</p>
               </div>
             </div>
@@ -582,36 +586,50 @@ const formatDate = (dateStr: string | Date | null) => {
 
 const statusLabel = (s: string) => {
   const m: Record<string, string> = {
+    // Menunggu Verifikasi (Atasan Sekretaris approve → dikirim ke Unit Dokumen)
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
-    BERKAS_FISIK_SESUAI: 'Berkas Sesuai',
-    BERKAS_FISIK_TIDAK_SESUAI: 'Dikembalikan',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Persetujuan TU',
-    DISETUJUI_PERSETUJUAN_TU: 'Disetujui TU',
-    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Persetujuan Terakhir',
-    DITOLAK_PERSETUJUAN_TU: 'Ditolak TU',
-    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak TU',
-    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Disetujui Final',
-    ARSIP_INAKTIF_DITERIMA: 'Arsip Diterima',
+    BERKAS_FISIK_SESUAI: 'Menunggu Verifikasi',
+    USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
+    SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
+    // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen)
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Penerimaan',
+    // Selesai
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Selesai',
+    ARSIP_INAKTIF_DITERIMA: 'Selesai',
+    PENATAAN_ARSIP_INAKTIF: 'Selesai',
     SELESAI: 'Selesai',
+    // Ditolak
+    BERKAS_FISIK_TIDAK_SESUAI: 'Ditolak',
+    DITOLAK_PERSETUJUAN_TU: 'Ditolak',
+    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak',
   }
   return m[s] || s
 }
 
 const statusBadgeClass = (s: string) => {
   const m: Record<string, string> = {
+    // Menunggu Verifikasi = biru
     DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     BERKAS_FISIK_SESUAI: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    BERKAS_FISIK_TIDAK_SESUAI: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-    DISETUJUI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-    DITOLAK_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    USUL_PINDAH_DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    SIAPKAN_BERKAS_FISIK: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    // Menunggu Penerimaan = ungu
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    DISETUJUI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    // Selesai = hijau
     DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     ARSIP_INAKTIF_DITERIMA: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    PENATAAN_ARSIP_INAKTIF: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     SELESAI: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    // Ditolak = merah
+    BERKAS_FISIK_TIDAK_SESUAI: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    DITOLAK_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
   }
   return m[s] || 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
@@ -722,7 +740,7 @@ const loadDetail = async () => {
   loading.value = true
   try {
     const res = await fetchNotifikasiDetail(route.params.id as string)
-    item.value = res ?? null
+    item.value = res?.data ?? res ?? null
     await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()])
   } catch (e: any) {
     console.error('Gagal memuat detail:', e)
