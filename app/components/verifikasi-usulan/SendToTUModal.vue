@@ -5,7 +5,7 @@
       <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Kirim ke TU</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Kirim ke Unit Dokumen</h3>
           <button @click="close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <UIcon name="i-lucide-x" class="w-5 h-5" />
           </button>
@@ -17,31 +17,13 @@
             <div class="flex items-start gap-3">
               <UIcon name="i-lucide-help-circle" class="w-5 h-5 text-[#457fb6] mt-0.5 shrink-0" />
               <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
-                Apakah Anda yakin dan setuju untuk mengirimkannya ke TU?
+                Apakah Anda yakin dan setuju untuk mengirimkannya ke Unit Dokumen?
               </p>
             </div>
           </div>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Pastikan Berkas Fisik dan Berita Acara Serah Terima sudah disiapkan sebelumnya.
           </p>
-          <div class="space-y-3 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.nomorUsulan ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.sekretarisName ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.atasanName ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Jumlah Arsip</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ jumlahArsip }} berkas</p>
-            </div>
-          </div>
 
           <!-- Catatan -->
           <div class="mt-4">
@@ -70,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import type { VerifikasiUsulanItem } from '~/types/verifikasi-usulan';
 
 const props = defineProps<{
@@ -83,11 +65,6 @@ const emit = defineEmits<{
   'update:modelValue': [v: boolean];
   confirm: [catatan: string];
 }>();
-
-const jumlahArsip = computed(() => {
-  // Jumlah arsip dari totalApprovalLevels atau default 1
-  return props.usulan?.totalApprovalLevels ?? 1;
-});
 
 const catatan = ref('');
 

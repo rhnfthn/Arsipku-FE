@@ -26,7 +26,8 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span><p class="text-gray-900 dark:text-white font-medium">{{ item.nomorUsulan }}</p></div>
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span><p class="text-gray-900 dark:text-white font-medium">{{ item.sekretarisName }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span><p class="text-gray-900 dark:text-white font-bold">{{ item.atasanName ?? '-' }}</p></div>
+            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span><p class="text-gray-900 dark:text-white font-medium">{{ item.atasanName ?? '-' }}</p></div>
+            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span><p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p></div>
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Diterima</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.receivedAt) }}</p></div>
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.arsipKode ?? '-' }}</p></div>
             <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggalRetensiAktifHabis) }}</p></div>
@@ -45,7 +46,7 @@
         <!-- Daftar Arsip yang Akan Dipindahkan -->
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
           <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-            Daftar Arsip yang Akan Dipindahkan ({{ daftarBerkas.length }})
+            Daftar Arsip({{ daftarBerkas.length }})
           </h3>
           <div class="space-y-1.5">
             <div

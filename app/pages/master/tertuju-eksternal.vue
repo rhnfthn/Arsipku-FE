@@ -93,13 +93,29 @@
       <table class="min-w-full text-sm">
         <thead class="text-left bg-primary-400 dark:bg-primary-700 text-white">
           <tr>
+            <th @click="handleSort('kode')" class="cursor-pointer px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              <div class="flex items-center gap-2">
+                <span>ID</span>
+                <ArrowUpDown
+                  class="w-4 h-4 origin-center transition-transform duration-300"
+                  :class="[
+                    sortColumn === 'kode'
+                      ? sortDirection === 'desc'
+                        ? 'rotate-180'
+                        : 'rotate-0'
+                      : 'opacity-50'
+                  ]"
+                />
+              </div>
+            </th>
+
             <th @click="handleSort('nama')" class="cursor-pointer">
               <div class="flex items-center gap-2 ml-5">
                 <span>{{ $t('te_nama') }}</span>
                 <ArrowUpDown
                   class="w-4 h-4 origin-center transition-transform duration-300"
                   :class="[
-                    sortColumn === 'status'
+                    sortColumn === 'nama'
                       ? sortDirection === 'desc'
                         ? 'rotate-180'
                         : 'rotate-0'
@@ -133,7 +149,7 @@
         <tbody>
           <!-- Loading - Skeleton -->
           <tr v-if="loading">
-            <td colspan="7" class="px-4 py-6">
+            <td colspan="8" class="px-4 py-6">
               <div class="space-y-4 animate-pulse">
                 <div
                   v-for="n in skeletonRows"
@@ -154,6 +170,12 @@
               idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
             ]"
           >
+            <td
+              class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap"
+            >
+              {{ item.kode || '-' }}
+            </td>
+
             <td
               class="px-4 py-3 font-medium text-gray-900 dark:text-white capitalize"
               v-html="highlight(item.nama, filters.search)"
@@ -333,6 +355,19 @@
             {{ editId ? $t('te_modal_edit') : $t('te_modal_add') }}
           </Heading>
         </template>
+
+        <!-- FIELD KODE (readonly) -->
+        <div class="flex flex-col gap-2 p-1">
+          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+            ID
+          </Heading>
+          <input
+            :value="editId ? form.kode : '(Otomatis 3 digit dari 100)'"
+            type="text"
+            readonly
+            class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
+          />
+        </div>
 
         <!-- FIELD NAMA -->
         <div class="flex flex-col gap-2 p-1">
@@ -535,6 +570,7 @@ const handleSort = (column: string) => {
 };
 
 const form = ref({
+  kode: '',
   nama: '',
   alamat: '',
   telephone: '',
@@ -660,6 +696,7 @@ const handleSave = async () => {
     editId.value = null;
 
     form.value = {
+      kode: '',
       nama: '',
       alamat: '',
       telephone: '',
@@ -725,6 +762,7 @@ const confirmDelete = async () => {
 const openEdit = (item: any) => {
   editId.value = item.id;
   form.value = {
+    kode: item.kode || '',
     nama: item.nama,
     alamat: item.alamat,
     telephone: item.telepon,
@@ -829,9 +867,11 @@ const refreshData = async () => {
 const onExport = () => {
   const exportData = sortedData.value.map((item, idx) => ({
     No: idx + 1,
+    ID: item.kode || '-',
     [t('te_nama')]: item.nama,
     [t('te_alamat')]: item.alamat,
     [t('te_telepon')]: item.telepon || '-',
+    Email: item.email || '-',
     Status: item.aktif ? t('te_aktif') : t('te_tidak_aktif'),
     [t('te_pengusul')]: item.nama_pembuat || '-'
   }));
@@ -844,9 +884,11 @@ const onExport = () => {
   const worksheet = XLSX.utils.json_to_sheet(exportData);
   worksheet['!cols'] = [
     { wch: 5 },
+    { wch: 12 },
     { wch: 30 },
     { wch: 40 },
     { wch: 18 },
+    { wch: 30 },
     { wch: 12 },
     { wch: 25 }
   ];

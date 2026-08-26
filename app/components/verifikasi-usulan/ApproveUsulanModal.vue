@@ -15,20 +15,6 @@
           <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
             Apakah Anda yakin ingin menyetujui verifikasi usulan ini?
           </p>
-          <div class="space-y-3 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.nomorUsulan ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.sekretarisName ?? '-' }}</p>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400 text-xs">Arsip</span>
-              <p class="text-gray-900 dark:text-white font-medium">{{ usulan?.arsipPerihal ?? '-' }}</p>
-            </div>
-          </div>
 
           <!-- Catatan Verifikasi (opsional) -->
           <div class="mt-4">

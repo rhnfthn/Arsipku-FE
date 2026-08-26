@@ -4,7 +4,7 @@ import type { VerifikasiStatus, JenisUsulan } from '~/types/verifikasi-usulan';
 export const verifikasiStatusBadge = (s: VerifikasiStatus): string => {
   const m: Record<string, string> = {
     DRAFT: 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300',
-    // Menunggu Persetujuan (atasan sekretaris) = kuning
+    // Menunggu Persetujuan (Sekretaris → Atasan Sekretaris) = kuning
     MENUNGGU_VERIFIKASI_ATASAN:
       'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     DITOLAK_ATASAN: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
@@ -12,19 +12,21 @@ export const verifikasiStatusBadge = (s: VerifikasiStatus): string => {
     MENUNGGU_VERIFIKASI_TERAKHIR:
       'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     DITOLAK_VERIFIKASI_TERAKHIR: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    // Menunggu Verifikasi (verifikasi terakhir selesai) = biru
-    DISETUJUI_VERIFIKASI_TERAKHIR:
-      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    // Menunggu Verifikasi (Atasan Sekretaris approve → dikirim ke Unit Dokumen) = biru
+    DISETUJUI_VERIFIKASI_TERAKHIR: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    USUL_PINDAH_DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    SIAPKAN_BERKAS_FISIK: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK:
       'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     BERKAS_FISIK_TIDAK_SESUAI: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
     BERKAS_FISIK_SESUAI: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen) = ungu
     MENUNGGU_VERIFIKASI_PERSETUJUAN_TU:
-      'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+      'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     DITOLAK_PERSETUJUAN_TU: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    DISETUJUI_PERSETUJUAN_TU: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    // Menunggu Penerimaan (dari Atasan TU) = ungu
+    DISETUJUI_PERSETUJUAN_TU:
+      'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     MENUNGGU_PERSETUJUAN_TERAKHIR_TU:
       'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
@@ -44,25 +46,27 @@ export const verifikasiStatusBadge = (s: VerifikasiStatus): string => {
 export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
   const m: Record<string, string> = {
     DRAFT: 'Draft',
-    // Menunggu Persetujuan: atasan sekretaris approve berjenjang
+    // Sekretaris → Atasan Sekretaris (belum approve) = Menunggu Persetujuan
     MENUNGGU_VERIFIKASI_ATASAN: 'Menunggu Persetujuan',
-    DITOLAK_ATASAN: 'Tolak',
+    DITOLAK_ATASAN: 'Ditolak',
     DISETUJUI_ATASAN: 'Menunggu Persetujuan',
     MENUNGGU_VERIFIKASI_TERAKHIR: 'Menunggu Persetujuan',
-    DITOLAK_VERIFIKASI_TERAKHIR: 'Tolak',
-    // Siap Kirim ke TU: verifikasi terakhir selesai, menunggu atasan kirim
-    DISETUJUI_VERIFIKASI_TERAKHIR: 'Disetujui',
+    DITOLAK_VERIFIKASI_TERAKHIR: 'Ditolak',
+    // Atasan Sekretaris approve → dikirim ke Unit Dokumen = Menunggu Verifikasi
+    DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
+    USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
+    SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
-    BERKAS_FISIK_TIDAK_SESUAI: 'Tolak',
+    BERKAS_FISIK_TIDAK_SESUAI: 'Ditolak',
     BERKAS_FISIK_SESUAI: 'Menunggu Verifikasi',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Verifikasi',
-    DITOLAK_PERSETUJUAN_TU: 'Tolak',
-    DISETUJUI_PERSETUJUAN_TU: 'Menunggu Verifikasi',
-    // Menunggu Penerimaan: TU kirim ke Atasan TU
+    // Unit Dokumen → Atasan Unit Dokumen (belum approve) = Menunggu Penerimaan
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    DITOLAK_PERSETUJUAN_TU: 'Ditolak',
+    DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
     MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Penerimaan',
-    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Tolak',
-    // Selesai: Atasan TU setuju
+    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak',
+    // Atasan Unit Dokumen approve + penataan = Selesai
     DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Selesai',
     ARSIP_INAKTIF_DITERIMA: 'Selesai',
     PENATAAN_ARSIP_INAKTIF: 'Selesai',
@@ -73,9 +77,10 @@ export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
 
 /** Badge class untuk jenis usulan. */
 export const jenisBadgeClass = (j: JenisUsulan): string => {
-  const color = j === 'aktif_ke_inaktif'
-    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-    : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
+  const color =
+    j === 'aktif_ke_inaktif'
+      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+      : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
   return `px-2 py-0.5 text-xs rounded-full font-medium ${color}`;
 };
 

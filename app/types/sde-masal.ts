@@ -25,6 +25,34 @@ export interface SdeMasalPenerima {
   kodePos: string | null;
   jabatanPenerima: string | null;
   keterangan: string | null;
+  // Field data ASE
+  perihal?: string;
+  idTertuju?: string;
+  idramount?: string;
+  usdamount?: string;
+  namacro?: string;
+  email?: string;
+  tembusan?: string;
+  isRevision?: number | boolean;
+  emailTertuju?: string;
+  emailCc?: string;
+  emailBcc?: string;
+  // Field skema keuangan / tagihan PINP
+  jumlahTagihanIdr?: string;
+  jumlahTagihanUsd?: string;
+  namaCro?: string;
+  emailCro?: string;
+  jabatanSigner?: string;
+  namaSigner?: string;
+  // Field skema umum / tagihan PJNP
+  jumlahLampiran?: string;
+  jabatanPenerima?: string;
+  alamatPenerima?: string;
+  panggilanPenerima?: string;
+  nominalRupiah?: string;
+  nominalDolar?: string;
+  tembusan1?: string;
+  tembusan2?: string;
   isValid: boolean;
   validationMessage?: string;
 }
@@ -61,6 +89,33 @@ export interface SdeMasalItem {
   naskahId: string | null;
   nomorSurat: string | null;
   errorMessage: string | null;
+  // Field data ASE
+  idTertuju: string | null;
+  idramount: string | null;
+  usdamount: string | null;
+  namacro: string | null;
+  email: string | null;
+  tembusan: string | null;
+  isRevision: number | boolean;
+  emailTertuju: string | null;
+  emailCc: string | null;
+  emailBcc: string | null;
+  // Field skema keuangan / tagihan PINP
+  jumlahTagihanIdr: string | null;
+  jumlahTagihanUsd: string | null;
+  namaCro: string | null;
+  emailCro: string | null;
+  jabatanSigner: string | null;
+  namaSigner: string | null;
+  // Field skema umum / tagihan PJNP
+  jumlahLampiran: string | null;
+  jabatanPenerima: string | null;
+  alamatPenerima: string | null;
+  panggilanPenerima: string | null;
+  nominalRupiah: string | null;
+  nominalDolar: string | null;
+  tembusan1: string | null;
+  tembusan2: string | null;
   createdAt: string;
   updatedAt: string;
 }

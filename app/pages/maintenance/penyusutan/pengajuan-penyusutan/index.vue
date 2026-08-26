@@ -437,10 +437,10 @@ const loadPenataanData = async () => {
     // Gabungkan: pengajuan dari API (sudah diajukan) + penataan (status draft, belum diajukan)
     // Urutkan berdasarkan tanggal terbaru — yang baru masuk tampil paling atas.
     // Data draft (dari penataan) tidak punya updatedAt/createdAt, jadi pakai
-    // tanggal_retensi_habis atau tanggal saat ini sebagai fallback.
+    // waktu saat ini (baru tersedia untuk diajukan) sebagai fallback.
     list.value = [...pengajuan, ...penataan].sort((a: any, b: any) => {
-      const dateA = a.updatedAt || a.createdAt || a.tanggal_pengajuan || a.tanggalUsulan || a.tanggal_retensi_habis || ''
-      const dateB = b.updatedAt || b.createdAt || b.tanggal_pengajuan || b.tanggalUsulan || b.tanggal_retensi_habis || ''
+      const dateA = a.updatedAt || a.createdAt || a.tanggal_pengajuan || a.tanggalUsulan || new Date().toISOString()
+      const dateB = b.updatedAt || b.createdAt || b.tanggal_pengajuan || b.tanggalUsulan || new Date().toISOString()
       const timeA = dateA ? new Date(dateA).getTime() : 0
       const timeB = dateB ? new Date(dateB).getTime() : 0
       return timeB - timeA
