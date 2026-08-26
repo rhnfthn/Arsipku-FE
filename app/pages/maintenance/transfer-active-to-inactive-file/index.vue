@@ -297,7 +297,7 @@ const prefillAtasan = ref(true);
 
 // ── Table Columns (dengan sort arrow, menyamakan berkas-saya) ───
 const columns = [
-  { key: 'perihal', label: 'Nama Berkas / Perihal', sortable: true },
+  { key: 'perihal', label: 'Nama Berkas', sortable: true },
   { key: 'kodeBerkas', label: 'Kode Berkas / No. Usulan', sortable: true },
   { key: 'klasifikasi', label: 'Klasifikasi', sortable: true },
   { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', sortable: true },

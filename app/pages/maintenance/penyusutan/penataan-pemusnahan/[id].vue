@@ -296,21 +296,21 @@
           <!-- Info Selesai + Foto Dokumentasi (gabungan) — hanya untuk jenis permanen -->
           <div v-if="item.jenis_penyusutan === 'permanen'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="p-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-                Lokasi Penyimpanan
-              </h3>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                  Lokasi Penyimpanan
+                </h3>
+                <button
+                  v-if="!showEditFoto"
+                  @click="showEditFoto = true"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
+                >
+                  <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" /> Edit
+                </button>
+              </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Kolom Kiri: Foto Dokumentasi -->
                 <div>
-                  <div class="flex items-center justify-end mb-3">
-                    <button
-                      v-if="!showEditFoto"
-                      @click="showEditFoto = true"
-                      class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
-                    >
-                      <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" /> Edit
-                    </button>
-                  </div>
                   <!-- Existing foto preview -->
                   <div v-if="fotoDokumentasiUrl && !showEditFoto" class="relative group inline-block">
                     <a :href="fotoDokumentasiUrl" target="_blank" class="block">
@@ -397,16 +397,9 @@
                 <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500" /> Berita Acara
               </h3>
               <div class="flex items-center gap-2">
-                <a v-if="beritaAcaraUrl && !showEditBerita" :href="beritaAcaraUrl" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0">
-                  <UIcon name="i-lucide-external-link" class="w-3.5 h-3.5" /> Buka
+                <a v-if="beritaAcaraUrl && !showEditBerita" :href="beritaAcaraUrl" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0" title="Buka berita acara">
+                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
                 </a>
-                <button
-                  v-if="!showEditBerita"
-                  @click="showEditBerita = true"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
-                >
-                  <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" /> Edit
-                </button>
               </div>
             </div>
             <div class="px-5 pb-5">

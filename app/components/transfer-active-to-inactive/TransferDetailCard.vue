@@ -29,10 +29,14 @@
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-          <p class="text-gray-900 dark:text-white font-bold">{{ transfer.atasanName }}</p>
+          <p class="text-gray-900 dark:text-white font-medium">{{ transfer.atasanName }}</p>
           <p v-if="transfer.totalApprovalLevels && transfer.totalApprovalLevels > 1" class="text-xs text-gray-400 mt-0.5">
             Tahap {{ transfer.currentApprovalLevel }} dari {{ transfer.totalApprovalLevels }}
           </p>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
+          <p class="text-gray-900 dark:text-white font-medium">{{ transfer.arsipTindakanPenyusutan ?? '-' }}</p>
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
@@ -67,7 +71,7 @@
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-        Daftar Arsip yang Akan Dipindahkan ({{ transfer.arsipIds.length }})
+        Daftar Arsip({{ transfer.arsipIds.length }})
       </h3>
       <div class="space-y-1.5">
         <div

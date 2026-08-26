@@ -40,6 +40,8 @@ export interface VerifikasiUsulanItem {
   arsipPerihal: string;
   arsipKode?: string | null;
   arsipKlasifikasi?: string | null;
+  arsipKlasifikasiKode?: string | null;
+  arsipTindakanPenyusutan?: string | null;
   tanggalRetensiAktifHabis?: string | null;
   keterangan?: string | null;
   status: VerifikasiStatus;

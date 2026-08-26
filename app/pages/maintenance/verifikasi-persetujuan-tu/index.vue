@@ -118,7 +118,8 @@
             <thead class="bg-[#457fb6] text-white">
               <tr>
                 <th class="px-3 py-3 text-left font-semibold">Nama Berkas</th>
-                <th class="px-3 py-3 text-left font-semibold">Kode Berkas / No Usulan / Klasifikasi</th>
+                <th class="px-3 py-3 text-left font-semibold">Kode Berkas / No. Usulan</th>
+                <th class="px-3 py-3 text-left font-semibold">Klasifikasi</th>
                 <th class="px-3 py-3 text-left font-semibold">Unit Dokumen</th>
                 <th class="px-3 py-3 text-left font-semibold">Tgl Kirim</th>
                 <th class="px-3 py-3 text-left font-semibold">Status</th>
@@ -127,12 +128,12 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="6" class="px-3 py-10 text-center">
+                <td colspan="7" class="px-3 py-10 text-center">
                   <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
                 </td>
               </tr>
               <tr v-else-if="list.length === 0">
-                <td colspan="6" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="7" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
                   Belum ada usulan.
                 </td>
               </tr>
@@ -145,8 +146,8 @@
                 <td class="px-3 py-3">
                   <p v-if="item.arsipKode" class="font-mono text-xs text-gray-600 dark:text-gray-300">{{ item.arsipKode }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.nomorUsulan }}</p>
-                  <p v-if="item.arsipKlasifikasi" class="text-xs text-gray-400 dark:text-gray-500">{{ item.arsipKlasifikasi }}</p>
                 </td>
+                <td class="px-3 py-3">{{ item.arsipKlasifikasi || '-' }}</td>
                 <td class="px-3 py-3">{{ item.tuName || '-' }}</td>
                 <td class="px-3 py-3 text-xs text-gray-600 dark:text-gray-300">{{ item.tanggalDikirim ? formatDate(item.tanggalDikirim) : '-' }}</td>
                 <td class="px-3 py-3">
@@ -218,9 +219,7 @@ const klasifikasiRef = ref<HTMLElement | null>(null)
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
-  { value: 'DISETUJUI_PERSETUJUAN_TU', label: 'Menunggu Penerimaan' },
-  { value: 'ARSIP_INAKTIF_DITERIMA', label: 'Arsip Diterima' },
+  { value: 'MENUNGGU_PENERIMAAN', label: 'Menunggu Penerimaan' },
   { value: 'SELESAI', label: 'Selesai' },
 ];
 
@@ -303,22 +302,27 @@ const exportCSV = () => {
 
 const statusLabel = (s: string) => {
   const m: Record<string, string> = {
+    // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen)
     DIKIRIM: 'Menunggu Penerimaan',
     MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
     DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
-    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Persetujuan Terakhir',
-    ARSIP_INAKTIF_DITERIMA: 'Arsip Diterima',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Penerimaan',
+    // Selesai
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Selesai',
+    ARSIP_INAKTIF_DITERIMA: 'Selesai',
+    PENATAAN_ARSIP_INAKTIF: 'Selesai',
     SELESAI: 'Selesai',
+    // Ditolak
     DITOLAK_PERSETUJUAN_TU: 'Ditolak',
+    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak',
   }
   return m[s] || s
 }
 
 const statusBadgeClass = (s: string) => {
-  if (s === 'DITOLAK_PERSETUJUAN_TU') return 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-  if (s === 'ARSIP_INAKTIF_DITERIMA' || s === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-  if (s === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-  return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
+  if (s === 'DITOLAK_PERSETUJUAN_TU' || s === 'DITOLAK_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+  if (s === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU' || s === 'ARSIP_INAKTIF_DITERIMA' || s === 'PENATAAN_ARSIP_INAKTIF' || s === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+  return 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
 }
 
 onMounted(() => {

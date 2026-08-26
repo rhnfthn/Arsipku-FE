@@ -22,19 +22,6 @@
     <!-- Upload Form -->
     <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 max-w-2xl">
       <div class="space-y-5">
-        <!-- Skema Template -->
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Skema Template <span class="text-red-500">*</span></label>
-          <select
-            v-model="form.skemaTemplate"
-            class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-          >
-            <option value="">Pilih skema...</option>
-            <option value="SDE-STANDAR">SDE Standar</option>
-            <option value="SDE-KHUSUS">SDE Khusus</option>
-          </select>
-        </div>
-
         <!-- Versi Template -->
         <div>
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Versi Template <span class="text-red-500">*</span></label>
@@ -78,14 +65,14 @@
         <div class="flex items-center gap-3 pt-2">
           <button
             @click="submit"
-            :disabled="submitting || !selectedFile || !form.skemaTemplate || !form.versiTemplate"
+            :disabled="submitting || !selectedFile || !form.versiTemplate"
             class="h-10 px-5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50"
           >
             <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
             Submit Upload
           </button>
           <button
-            @click="downloadTemplate"
+            @click="downloadTemplate('KEUANGAN')"
             class="h-10 px-5 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 dark:hover:bg-[#457fb6]/20 transition-colors"
           >
             <UIcon name="i-lucide-download" class="w-4 h-4 mr-1 inline" />
@@ -128,7 +115,6 @@ const submitting = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const form = reactive({
-  skemaTemplate: '',
   versiTemplate: '',
 });
 
@@ -159,7 +145,7 @@ const validateAndSetFile = (file: File) => {
 };
 
 const submit = async () => {
-  if (!selectedFile.value || !form.skemaTemplate || !form.versiTemplate) {
+  if (!selectedFile.value || !form.versiTemplate) {
     alert('Semua field wajib diisi');
     return;
   }
@@ -174,7 +160,7 @@ const submit = async () => {
     const result = await uploadExcel(
       selectedFile.value,
       concept.value.id,
-      form.skemaTemplate,
+      'KEUANGAN',
       form.versiTemplate,
     );
 

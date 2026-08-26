@@ -1,55 +1,47 @@
 <template>
-  <div class="flex-1 overflow-y-auto space-y-1">
-    <!-- Tanggal Konsep Surat -->
-    <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" />
+  <div class="flex-1 overflow-y-auto">
+    <!-- Section: Konsep Surat -->
+    <div class="space-y-1">
+      <!-- Tanggal Konsep Surat -->
+      <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" />
 
-    <!-- Klasifikasi -->
-    <TulisInputKlasifikasi v-model="klasifikasiModel" :items="klasifikasiList" :loading="klasifikasiStatus === 'loading'" />
+      <!-- Klasifikasi -->
+      <TulisInputKlasifikasi v-model="klasifikasiModel" :items="klasifikasiList" :loading="klasifikasiStatus === 'loading'" />
 
-    <!-- Klasifikasi loading/error info -->
-    <div v-if="klasifikasiStatus === 'loading'" class="text-xs text-gray-400 -mt-1 pl-40">Memuat klasifikasi...</div>
-    <div v-else-if="klasifikasiStatus === 'error'" class="text-xs text-red-500 -mt-1 pl-40">Gagal memuat klasifikasi</div>
-    <div v-else-if="klasifikasiStatus === 'success' && klasifikasiList.length === 0" class="text-xs text-gray-400 -mt-1 pl-40">Belum ada data klasifikasi</div>
+      <!-- Klasifikasi loading/error info -->
+      <div v-if="klasifikasiStatus === 'loading'" class="text-xs text-gray-400 -mt-1 pl-40">Memuat klasifikasi...</div>
+      <div v-else-if="klasifikasiStatus === 'error'" class="text-xs text-red-500 -mt-1 pl-40">Gagal memuat klasifikasi</div>
+      <div v-else-if="klasifikasiStatus === 'success' && klasifikasiList.length === 0" class="text-xs text-gray-400 -mt-1 pl-40">Belum ada data klasifikasi</div>
 
-    <!-- Pengirim -->
-    <TulisInputPengirim v-model="senderModel" label="Pengirim" placeholder="Pilih Pengirim" :items="senderItems" />
+      <!-- Pengirim -->
+      <TulisInputPengirim v-model="senderModel" label="Pengirim" placeholder="Pilih Pengirim" :items="senderItems" />
 
-    <!-- Pengirim loading/error info -->
-    <div v-if="senderLoading" class="text-xs text-gray-400 -mt-1 pl-40">Memuat daftar pengirim...</div>
-    <div v-else-if="!senderLoading && senderItems.length === 0" class="text-xs text-gray-400 -mt-1 pl-40">Belum ada data pengirim</div>
+      <!-- Pengirim loading/error info -->
+      <div v-if="senderLoading" class="text-xs text-gray-400 -mt-1 pl-40">Memuat daftar pengirim...</div>
+      <div v-else-if="!senderLoading && senderItems.length === 0" class="text-xs text-gray-400 -mt-1 pl-40">Belum ada data pengirim</div>
 
-    <!-- Sifat Surat (opsional) -->
-    <TulisInputSifat v-model="sifatModel" />
+      <!-- Sifat Surat (opsional) -->
+      <TulisInputSifat v-model="sifatModel" />
 
-    <!-- Perihal -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-      <div class="flex flex-col sm:flex-row sm:items-center w-full">
-        <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
-        <div class="flex items-center flex-1 w-full gap-2">
-          <input
-            type="text"
-            v-model="perihalModel"
-            :maxlength="maxPerihal"
-            class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-            placeholder="Ketik Perihal Surat"
-          />
-          <span
-            class="text-[10px] font-mono shrink-0 transition-colors"
-            :class="(perihalModel || '').length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'"
-          >
-            {{ (perihalModel || '').length }}/{{ maxPerihal }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Info Parent Naskah -->
-    <div v-if="parentNaskahId" class="mt-4 p-3 bg-[#457fb6]/10 dark:bg-[#457fb6]/20 rounded-lg">
-      <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-link" class="w-4 h-4 text-[#457fb6]" />
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Naskah Induk</p>
-          <p class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ parentNaskahId }}</p>
+      <!-- Perihal -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <div class="flex flex-col sm:flex-row sm:items-center w-full">
+          <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+          <div class="flex items-center flex-1 w-full gap-2">
+            <input
+              type="text"
+              v-model="perihalModel"
+              :maxlength="maxPerihal"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+              placeholder="Ketik Perihal Surat"
+            />
+            <span
+              class="text-[10px] font-mono shrink-0 transition-colors"
+              :class="(perihalModel || '').length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'"
+            >
+              {{ (perihalModel || '').length }}/{{ maxPerihal }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -80,6 +72,25 @@ const klasifikasiStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const senderItems = ref<any[]>([]);
 const senderLoading = ref(false);
 const maxPerihal = 200;
+
+const setSenderItems = (rows: any[]) => {
+  senderItems.value = rows.map((r: any) => ({
+    label: `${r.persnum_person_text} - ${r.position_text}`,
+    labelJob: r.position_text,
+    value: String(r.position),
+    raw: r,
+  }));
+
+  if (senderModel.value || senderItems.value.length === 0) return;
+
+  // User EVP memakai posisinya sendiri. Untuk AVP/bawahan, pilih EVP
+  // sebagai atasan langsung, meskipun API mengembalikan urutan berbeda.
+  const ownPosition = String(user.value?.position || '');
+  senderModel.value =
+    senderItems.value.find((item) => item.value === ownPosition) ||
+    senderItems.value.find((item) => /\bEVP\b/i.test(item.labelJob || '')) ||
+    senderItems.value[0];
+};
 
 // --- Internal state ---
 const today = new Date();
@@ -130,15 +141,7 @@ const fetchSenderList = async (posId: string | number) => {
       `/SDE/get-senders?pengirim=${posId}&tgl=${tglParam}`
     );
     if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-      senderItems.value = res.data.map((r: any) => ({
-        label: `${r.persnum_person_text} - ${r.position_text}`,
-        labelJob: r.position_text,
-        value: String(r.position),
-        raw: r,
-      }));
-      if (senderItems.value.length === 1 && !senderModel.value) {
-        senderModel.value = senderItems.value[0];
-      }
+      setSenderItems(res.data);
       return;
     }
 
@@ -149,12 +152,7 @@ const fetchSenderList = async (posId: string | number) => {
       `/org-data/pengirim/managerial?tgl=${tglFallback}`
     );
     if (mgrRes?.success && Array.isArray(mgrRes.data)) {
-      senderItems.value = mgrRes.data.map((r: any) => ({
-        label: `${r.persnum_person_text} - ${r.position_text}`,
-        labelJob: r.position_text,
-        value: String(r.position),
-        raw: r,
-      }));
+      setSenderItems(mgrRes.data);
     } else {
       senderItems.value = [];
     }
@@ -167,12 +165,7 @@ const fetchSenderList = async (posId: string | number) => {
         `/org-data/pengirim/managerial?tgl=${tglFallback}`
       );
       if (mgrRes?.success && Array.isArray(mgrRes.data)) {
-        senderItems.value = mgrRes.data.map((r: any) => ({
-          label: `${r.persnum_person_text} - ${r.position_text}`,
-          labelJob: r.position_text,
-          value: String(r.position),
-          raw: r,
-        }));
+        setSenderItems(mgrRes.data);
       } else {
         senderItems.value = [];
       }
