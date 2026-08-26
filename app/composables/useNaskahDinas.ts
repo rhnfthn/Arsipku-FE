@@ -102,12 +102,13 @@ export function useNaskahDinas() {
   const verifikatorList = ref<Verifikator[]>([]);
   const loadingVerifikator = ref(false);
 
-  const fetchVerifikator = async () => {
+  const fetchVerifikator = async (opts?: { chiefOnly?: boolean }) => {
     loadingVerifikator.value = true;
     error.value = null;
 
     try {
-      const res = await apiGet('/digsig/document/verifikator', {}, { skipCache: true });
+      const params = opts?.chiefOnly === false ? { chief: '0' } : {};
+      const res = await apiGet('/digsig/document/verifikator', { params }, { skipCache: true });
       verifikatorList.value = res?.data ?? [];
     } catch (err) {
       error.value = err;
