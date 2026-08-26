@@ -2,13 +2,9 @@
   <div class="space-y-6">
     <PageHeader :items="breadcrumbs">
       <template #title>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
-      </template>
-      <template #subtitle>
-        <div class="flex flex-wrap gap-2">
-          <StatusBadge status="legal_drafting" />
-          <UBadge v-if="detail?.jenis" color="neutral" size="sm">{{ jenisLabel(detail.jenis) }}</UBadge>
-        </div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          {{ detail?.perihal || 'Memuat…' }}
+        </h1>
       </template>
     </PageHeader>
 
@@ -19,21 +15,37 @@
 
     <div v-else-if="!detail" class="py-20 text-center text-gray-500">Naskah tidak ditemukan.</div>
 
-    <div v-else class="space-y-6">
-      <!-- Naskah dikembalikan dari evaluasi oleh pemrakarsa → banner paling atas
-           agar drafter legal langsung melihat alasan sebelum merevisi. -->
-      <div
-        v-if="evaluasiKembalikanRow"
-        class="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4"
-      >
-        <div class="flex items-center gap-2 mb-1.5">
-          <UIcon name="i-lucide-undo-2" class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">Dikembalikan dari Evaluasi</p>
+    <div
+      v-else
+      class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700"
+    >
+      <!-- Banner status (selaras dgn tanda-tangan: cardBg + ikon bulat + judul/desc) -->
+      <div class="px-5 py-4" :class="ldBanner.cardBg">
+        <div class="flex items-start gap-3">
+          <span
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+            :class="ldBanner.wrap"
+          >
+            <UIcon :name="ldBanner.icon" class="size-5" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ ldBanner.title }}</p>
+            <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">{{ ldBanner.desc }}</p>
+          </div>
+          <span
+            v-if="hasWaitingLegalRows && legalApprovalRows.length > 1"
+            class="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800/70 dark:text-gray-200"
+          >
+            <UIcon name="i-lucide-check" class="size-3 text-green-600 dark:text-green-400" />
+            {{ verifiedLegalCount }}/{{ legalApprovalRows.length }} disetujui
+          </span>
         </div>
-        <p class="text-sm text-amber-700/90 dark:text-amber-400/80 mb-1">
-          Pemrakarsa mengembalikan naskah ke legal drafting untuk direvisi. Perbaiki naskah di area kerja, lalu kirim ulang approval. Alasan:
+        <p
+          v-if="ldBanner.catatan"
+          class="mt-3 border-t border-black/5 pt-3 pl-10 text-sm italic text-gray-800 dark:border-white/10 dark:text-gray-100"
+        >
+          &ldquo;{{ ldBanner.catatan }}&rdquo;
         </p>
-        <p v-if="evaluasiKembalikanRow.catatan" class="text-sm text-gray-800 dark:text-gray-100 italic">&ldquo;{{ evaluasiKembalikanRow.catatan }}&rdquo;</p>
       </div>
 
       <NaskahDraftWorkspace
@@ -46,8 +58,8 @@
         :show-actions="false"
         :docx-url="`/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
-        :catatan-rich="true"
         :stage-upload="true"
+        divided
         v-model="catatanLegal"
         @preview="previewNaskah"
         @download="downloadNaskah"
@@ -56,12 +68,12 @@
       />
 
       <!-- Pemberi Persetujuan Legal (recipients khusus unit legal) -->
-      <div
-        class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5"
-      >
-        <div class="flex items-center gap-2 mb-3">
+      <div class="px-5 py-4">
+        <div class="mb-3 flex items-center gap-2">
           <UIcon name="i-lucide-users" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Pemberi Persetujuan Legal</h3>
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Pemberi Persetujuan Legal
+          </h3>
           <span class="text-xs text-gray-400">(berjenjang — dari unit legal)</span>
         </div>
 
@@ -72,8 +84,13 @@
           class="mb-3 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3"
         >
           <div class="flex items-center gap-2 mb-2">
-            <UIcon name="i-lucide-circle-x" class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
-            <p class="text-sm font-semibold text-red-700 dark:text-red-300">Naskah Ditolak Pemberi Persetujuan Legal</p>
+            <UIcon
+              name="i-lucide-circle-x"
+              class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0"
+            />
+            <p class="text-sm font-semibold text-red-700 dark:text-red-300">
+              Naskah Ditolak Pemberi Persetujuan Legal
+            </p>
           </div>
           <p class="text-xs text-red-600/80 dark:text-red-400/80 mb-2">
             Perbaiki naskah di area kerja, lalu kirim ulang approval. Alasan penolakan:
@@ -85,38 +102,67 @@
               class="rounded-md bg-white/60 dark:bg-gray-800/60 px-2.5 py-1.5"
             >
               <div class="flex items-center gap-2">
-                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold shrink-0">{{ r.urutan }}</span>
-                <p class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">{{ r.nama }}</p>
+                <span
+                  class="flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold shrink-0"
+                  >{{ r.urutan }}</span
+                >
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
+                  {{ r.nama }}
+                </p>
                 <StatusBadge status="rejected" />
               </div>
-              <p v-if="r.catatan" class="mt-1 text-xs text-gray-600 dark:text-gray-300 italic pl-7">&ldquo;{{ r.catatan }}&rdquo;</p>
+              <p v-if="r.catatan" class="mt-1 text-xs text-gray-600 dark:text-gray-300 italic pl-7">
+                &ldquo;{{ r.catatan }}&rdquo;
+              </p>
             </div>
           </div>
         </div>
 
         <!-- Status menunggu approver (berjenjang — read-only kecuali baris aktif milik user) -->
         <div v-if="hasWaitingLegalRows" class="space-y-2">
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            Naskah sudah dikirim ke pemberi persetujuan legal. Menunggu persetujuan berjenjang.
-          </p>
           <div
             v-for="r in visibleLegalApprovalRows"
             :key="r.id"
-            class="flex items-center gap-2 rounded-lg border px-3 py-2"
-            :class="r.status === 'waiting'
-              ? 'border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20'
-              : r.status === 'verified'
-                ? 'border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
-                : 'border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20'"
+            class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5"
+            :class="
+              r.status === 'waiting'
+                ? 'border-primary-300 bg-primary-50/60 ring-1 ring-primary-200 dark:border-primary-800 dark:bg-primary-900/20 dark:ring-primary-900/50'
+                : r.status === 'verified'
+                  ? 'border-gray-200 dark:border-gray-700'
+                  : 'border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
+            "
           >
-            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-500 text-white text-xs font-bold shrink-0">
-              {{ r.urutan }}
+            <span
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+              :class="
+                r.status === 'verified'
+                  ? 'bg-green-500 text-white'
+                  : r.status === 'rejected'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+              "
+            >
+              <UIcon v-if="r.status === 'verified'" name="i-lucide-check" class="size-3" />
+              <UIcon v-else-if="r.status === 'rejected'" name="i-lucide-x" class="size-3" />
+              <template v-else>{{ r.urutan }}</template>
             </span>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ r.nama }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ r.jabatan }}</p>
+            <div class="flex-1 min-w-40">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ r.nama }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ r.jabatan }}</p>
             </div>
-            <StatusBadge :status="r.status" />
+            <span
+              v-if="r.status === 'verified'"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            >
+              <UIcon name="i-lucide-check" class="size-3" />Disetujui
+            </span>
+            <span
+              v-else-if="r.status === 'waiting'"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+            >
+              <UIcon name="i-lucide-clock" class="size-3" />Menunggu
+            </span>
+            <StatusBadge v-else :status="r.status" />
           </div>
           <p v-if="pendingAfterCount > 0" class="text-xs text-gray-400 pl-1">
             Dan {{ pendingAfterCount }} pemberi persetujuan lain menunggu giliran.
@@ -139,20 +185,30 @@
                 <div
                   v-for="(v, idx) in legalApprovers"
                   :key="v.positionId"
-                  class="flex items-center gap-2 rounded-lg border border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 px-3 py-2"
+                  class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-primary-300 bg-primary-50/60 px-3 py-2.5 ring-1 ring-primary-200 dark:border-primary-800 dark:bg-primary-900/20 dark:ring-primary-900/50"
                 >
-                  <span class="flex items-center justify-center w-5 h-5 rounded-full bg-primary-500 text-white text-xs font-bold shrink-0">
+                  <span
+                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300"
+                  >
                     {{ idx + 1 }}
                   </span>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ v.nama }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan }}</p>
+                  <div class="flex-1 min-w-40">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ v.nama }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ v.jabatan }}</p>
                   </div>
-                  <button type="button" class="text-gray-400 hover:text-red-500 shrink-0" @click.stop="removeApprover(v.positionId)" aria-label="Hapus approver">
+                  <button
+                    type="button"
+                    class="text-gray-400 hover:text-red-500 shrink-0"
+                    @click.stop="removeApprover(v.positionId)"
+                    aria-label="Hapus approver"
+                  >
                     <UIcon name="i-lucide-x" class="w-4 h-4" />
                   </button>
                 </div>
-                <span v-if="!legalApprovers.length" class="text-sm text-gray-400 dark:text-gray-500 py-1">
+                <span
+                  v-if="!legalApprovers.length"
+                  class="text-sm text-gray-400 dark:text-gray-500 py-1"
+                >
                   Pilih pemberi persetujuan legal…
                 </span>
               </div>
@@ -163,10 +219,18 @@
                 class="flex items-center gap-2 w-full py-1 cursor-pointer"
                 @click.stop.prevent="toggleApprover(item)"
               >
-                <UCheckbox :model-value="isApproverSelected(item)" class="pointer-events-none shrink-0" :ui="{ base: 'w-4 h-4' }" />
+                <UCheckbox
+                  :model-value="isApproverSelected(item)"
+                  class="pointer-events-none shrink-0"
+                  :ui="{ base: 'w-4 h-4' }"
+                />
                 <div class="flex-1 min-w-0">
-                  <span class="block text-sm text-left truncate text-gray-900 dark:text-white">{{ item.label }}</span>
-                  <span class="block text-xs text-left truncate text-gray-400">{{ item.jabatan || '' }}</span>
+                  <span class="block text-sm text-left truncate text-gray-900 dark:text-white">{{
+                    item.label
+                  }}</span>
+                  <span class="block text-xs text-left truncate text-gray-400">{{
+                    item.jabatan || ''
+                  }}</span>
                 </div>
               </div>
             </template>
@@ -181,23 +245,29 @@
             description="Tidak ada anggota unit legal aktif lain yang dapat dipilih."
           />
 
-          <p class="mt-2 text-xs text-gray-400">Pilih pemberi persetujuan dari unit legal. Urutan pilihan = urutan persetujuan.</p>
+          <p class="mt-2 text-xs text-gray-400">
+            Pilih pemberi persetujuan dari unit legal. Urutan pilihan = urutan persetujuan.
+          </p>
         </div>
       </div>
 
-      <!-- Aksi (highlighted — selaraskan dengan action toolbar [id].vue) -->
-      <div class="overflow-hidden rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white shadow-sm ring-1 ring-primary-100 dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800 dark:ring-primary-900/30">
-        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <!-- Aksi (di dalam panel — selaras dgn action toolbar tanda-tangan) -->
+      <div class="px-5 py-4 bg-primary-50/50 dark:bg-primary-900/10">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 shadow-sm dark:bg-primary-900/40 dark:text-primary-400"
+            >
               <UIcon name="i-lucide-send" class="size-5" />
             </span>
             <div>
               <h3 class="font-semibold text-gray-900 dark:text-white">Kirim Approval Legal</h3>
               <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ hasWaitingLegalRows
-                  ? 'Naskah sudah dikirim. Menunggu persetujuan berjenjang.'
-                  : 'Kirim naskah ke pemberi persetujuan legal untuk persetujuan berjenjang.' }}
+                {{
+                  hasWaitingLegalRows
+                    ? 'Naskah sudah dikirim. Menunggu persetujuan berjenjang.'
+                    : 'Kirim naskah ke pemberi persetujuan legal untuk persetujuan berjenjang.'
+                }}
               </p>
             </div>
           </div>
@@ -209,7 +279,8 @@
             :loading="sendingApproval"
             :disabled="hasWaitingLegalRows || legalApprovers.length === 0"
             @click="showKirimModal = true"
-          >Kirim Approval Legal</UButton>
+            >Kirim Approval Legal</UButton
+          >
         </div>
       </div>
     </div>
@@ -223,11 +294,18 @@
             <UButton size="sm" variant="ghost" icon="i-lucide-x" @click="closePreview" />
           </div>
           <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-900">
-            <div v-if="previewLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10">
+            <div
+              v-if="previewLoading"
+              class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
+            >
               <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
             </div>
             <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
-            <div v-else ref="previewDocxContainer" class="docx-preview-container w-full h-full overflow-auto"></div>
+            <div
+              v-else
+              ref="previewDocxContainer"
+              class="docx-preview-container w-full h-full overflow-auto"
+            ></div>
           </div>
         </div>
       </template>
@@ -255,7 +333,14 @@ import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModa
 const route = useRoute();
 const id = computed(() => route.params.id);
 const { apiGet } = useApi();
-const { fetchDetail, detail, uploadDokumen, kirimApprovalLegal, fetchLegalRecipients, legalRecipients } = useNaskahLainnya();
+const {
+  fetchDetail,
+  detail,
+  uploadDokumen,
+  kirimApprovalLegal,
+  fetchLegalRecipients,
+  legalRecipients,
+} = useNaskahLainnya();
 const { user } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
@@ -287,10 +372,10 @@ const stagedRevisi = ref(null);
 const legalApprovers = ref([]);
 
 const legalApprovalRows = computed(() =>
-  (detail.value?.approval ?? []).filter((a) => a.tahap === 'legal_drafting'),
+  (detail.value?.approval ?? []).filter((a) => a.tahap === 'legal_drafting')
 );
 const hasWaitingLegalRows = computed(() =>
-  legalApprovalRows.value.some((r) => r.status === 'waiting'),
+  legalApprovalRows.value.some((r) => r.status === 'waiting')
 );
 
 // ── Berjenjang: hanya baris sudah diproses (verified/rejected) + baris waiting
@@ -299,18 +384,16 @@ const hasWaitingLegalRows = computed(() =>
 // applyApproval lowerWaiting check di BE: urutan 2 tidak bisa diproses sebelum
 // urutan 1 verified).
 const sortedLegalRows = computed(() =>
-  [...legalApprovalRows.value].sort((a, b) => a.urutan - b.urutan),
+  [...legalApprovalRows.value].sort((a, b) => a.urutan - b.urutan)
 );
 const lowestWaitingUrutan = computed(() => {
-  const ws = sortedLegalRows.value
-    .filter((r) => r.status === 'waiting')
-    .map((r) => r.urutan);
+  const ws = sortedLegalRows.value.filter((r) => r.status === 'waiting').map((r) => r.urutan);
   return ws.length ? Math.min(...ws) : null;
 });
 const visibleLegalApprovalRows = computed(() =>
   sortedLegalRows.value.filter(
-    (r) => r.status !== 'waiting' || r.urutan === lowestWaitingUrutan.value,
-  ),
+    (r) => r.status !== 'waiting' || r.urutan === lowestWaitingUrutan.value
+  )
 );
 const pendingAfterCount = computed(
   () =>
@@ -318,8 +401,8 @@ const pendingAfterCount = computed(
       (r) =>
         r.status === 'waiting' &&
         lowestWaitingUrutan.value != null &&
-        r.urutan > lowestWaitingUrutan.value,
-    ).length,
+        r.urutan > lowestWaitingUrutan.value
+    ).length
 );
 
 // Naskah ditolak pemberi persetujuan legal → kembali ke step legal drafting (tolak,
@@ -327,7 +410,7 @@ const pendingAfterCount = computed(
 // apa yang direvisi sebelum kirim ulang approval (buatApprovalLegalDrafting hapus
 // baris lama saat kirim ulang — idempotent).
 const rejectedLegalRows = computed(() =>
-  sortedLegalRows.value.filter((r) => r.status === 'rejected'),
+  sortedLegalRows.value.filter((r) => r.status === 'rejected')
 );
 const hasRejectedLegalRows = computed(() => rejectedLegalRows.value.length > 0);
 
@@ -341,14 +424,64 @@ const evaluasiKembalikanRow = computed(() => {
   return last?.aksi === 'kembalikan-evaluasi' ? last : null;
 });
 
+const verifiedLegalCount = computed(
+  () => legalApprovalRows.value.filter((r) => r.status === 'verified').length
+);
+const currentLegalApprover = computed(
+  () => visibleLegalApprovalRows.value.find((r) => r.status === 'waiting') ?? null
+);
+
+// Banner status (selaras dgn ttBanner tanda-tangan: cardBg + ikon bulat + judul/desc).
+const ldBanner = computed(() => {
+  if (hasWaitingLegalRows.value) {
+    const current = currentLegalApprover.value;
+    return {
+      icon: 'i-lucide-user-check',
+      cardBg: 'bg-primary-50 dark:bg-primary-950/30',
+      wrap: 'bg-primary-500',
+      title: 'Menunggu Persetujuan Legal',
+      desc: current
+        ? `Pemberi persetujuan ke-${current.urutan} — ${current.nama} (${current.jabatan}).`
+        : 'Naskah sudah dikirim ke pemberi persetujuan legal.',
+      catatan: null,
+    };
+  }
+  if (hasRejectedLegalRows.value) {
+    return {
+      icon: 'i-lucide-circle-x',
+      cardBg: 'bg-red-50 dark:bg-red-950/30',
+      wrap: 'bg-red-500',
+      title: 'Naskah Ditolak Pemberi Persetujuan Legal',
+      desc: 'Perbaiki naskah sesuai alasan penolakan, lalu kirim ulang approval.',
+      catatan: null,
+    };
+  }
+  if (evaluasiKembalikanRow.value) {
+    return {
+      icon: 'i-lucide-undo-2',
+      cardBg: 'bg-amber-50 dark:bg-amber-950/30',
+      wrap: 'bg-amber-500',
+      title: 'Dikembalikan dari Evaluasi',
+      desc: 'Pemrakarsa mengembalikan naskah ke legal drafting untuk direvisi.',
+      catatan: evaluasiKembalikanRow.value.catatan || null,
+    };
+  }
+  return {
+    icon: 'i-lucide-file-pen-line',
+    cardBg: 'bg-primary-50 dark:bg-primary-950/30',
+    wrap: 'bg-primary-500',
+    title: 'Legal Drafting',
+    desc: 'Revisi naskah, isi catatan legal, lalu kirim ke pemberi persetujuan legal.',
+    catatan: null,
+  };
+});
+
 // Eligible: aktif, bukan user sendiri (urutan pemilihan = urutan persetujuan).
 const eligibleRecipients = computed(() => {
   const myPosId = String(user.value?.position ?? user.value?.positionId ?? '');
   const myPersnum = user.value?.persnum;
-  return legalRecipients.value.filter((v) =>
-    v.isActive
-    && v.positionId !== myPosId
-    && !(myPersnum != null && v.persnum === myPersnum),
+  return legalRecipients.value.filter(
+    (v) => v.isActive && v.positionId !== myPosId && !(myPersnum != null && v.persnum === myPersnum)
   );
 });
 
@@ -358,7 +491,7 @@ const approverOptions = computed(() =>
     value: v.positionId,
     label: v.nama,
     jabatan: v.jabatan || v.unitName || '',
-  })),
+  }))
 );
 
 // Model satu arah ke USelectMenu: array of object (selected).
@@ -367,7 +500,7 @@ const selectedApproverItems = computed(() =>
     value: v.positionId,
     label: v.nama,
     jabatan: v.jabatan || v.unitName || '',
-  })),
+  }))
 );
 
 function isApproverSelected(item) {
@@ -385,12 +518,6 @@ function toggleApprover(item) {
 function removeApprover(positionId) {
   legalApprovers.value = legalApprovers.value.filter((v) => v.positionId !== positionId);
 }
-
-const JENIS_LABELS = {
-  PER: 'Peraturan (PER)', KEP: 'Keputusan (KEP)', INS: 'Instruksi (INS)',
-  PKS: 'Perjanjian Kerja Sama (PKS)', UND: 'Undangan (UND)', BA: 'Berita Acara (BA)',
-};
-const jenisLabel = (j) => JENIS_LABELS[j] || j;
 
 async function loadDetail() {
   loading.value = true;
@@ -446,7 +573,10 @@ async function openPreviewFromBlob(blob, nama) {
   const lower = String(nama ?? '').toLowerCase();
   const isPdf = lower.endsWith('.pdf') || blob.type === 'application/pdf';
   const isDocx = lower.endsWith('.docx');
-  if (previewUrl.value) { window.URL.revokeObjectURL(previewUrl.value); previewUrl.value = null; }
+  if (previewUrl.value) {
+    window.URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = null;
+  }
   previewDocxBuffer.value = null;
   if (isPdf) {
     previewUrl.value = window.URL.createObjectURL(blob);
@@ -466,16 +596,23 @@ async function openPreviewFromBlob(blob, nama) {
 
 function closePreview() {
   previewOpen.value = false;
-  if (previewUrl.value) { window.URL.revokeObjectURL(previewUrl.value); previewUrl.value = null; }
+  if (previewUrl.value) {
+    window.URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = null;
+  }
   previewDocxBuffer.value = null;
 }
 
-watch(previewOpen, (open) => { if (!open) closePreview(); });
+watch(previewOpen, (open) => {
+  if (!open) closePreview();
+});
 
 async function previewPendukung(doc) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, { responseType: 'blob' });
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+      responseType: 'blob',
+    });
     await openPreviewFromBlob(blob, doc.nama);
   } catch {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
@@ -497,7 +634,9 @@ async function kirimApproval(note) {
   sendingApproval.value = true;
   try {
     const approvers = legalApprovers.value.map((v) => ({
-      positionId: v.positionId, nama: v.nama, jabatan: v.jabatan,
+      positionId: v.positionId,
+      nama: v.nama,
+      jabatan: v.jabatan,
     }));
     // catatan = alasan kirim (→ riwayat, item #8); catatanLegal = catatan legal persist (item #4).
     // Kirim approval DULU. Bila gagal (validasi BE), revisi TIDAK di-commit ke
@@ -519,7 +658,11 @@ async function kirimApproval(note) {
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;
     const errMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
-    toast.add({ title: 'Gagal mengirim approval legal', description: errMsg || '', color: 'error' });
+    toast.add({
+      title: 'Gagal mengirim approval legal',
+      description: errMsg || '',
+      color: 'error',
+    });
   } finally {
     sendingApproval.value = false;
   }
@@ -527,13 +670,20 @@ async function kirimApproval(note) {
 
 onMounted(() => {
   loadDetail();
-  fetchLegalRecipients().catch(() => { /* abaikan — dropdown approver kosong */ });
+  fetchLegalRecipients().catch(() => {
+    /* abaikan — dropdown approver kosong */
+  });
 });
 </script>
 
 <style scoped>
-:deep(.docx-preview-container) { padding: 16px; }
-:deep(.docx-wrapper) { background: #fff !important; padding: 0 !important; }
+:deep(.docx-preview-container) {
+  padding: 16px;
+}
+:deep(.docx-wrapper) {
+  background: #fff !important;
+  padding: 0 !important;
+}
 :deep(.docx-wrapper > section.docx) {
   border: none !important;
   margin: 0 auto !important;
