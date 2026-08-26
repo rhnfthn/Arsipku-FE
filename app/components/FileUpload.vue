@@ -8,6 +8,7 @@ const props = defineProps({
   label: { type: String, default: undefined },
   description: { type: String, default: undefined },
   maxSize: { type: Number, default: null },
+  previewable: { type: Boolean, default: false },
 })
 
 const effectiveLabel = computed(() => props.label ?? t('fu_label'))
@@ -89,10 +90,32 @@ const processFiles = (fileList: FileList) => {
 }
 
 const removeFile = (i: number) => {
+  closePreview()
   const updated = [...props.modelValue]
   updated.splice(i, 1)
   emit('update:modelValue', updated)
 }
+
+// ── Inline preview (opt-in via `previewable`): klik nama file → tampilkan preview PDF. ──
+const previewIndex = ref<number | null>(null)
+const previewUrl = ref<string | null>(null)
+
+const closePreview = () => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value = null
+  previewIndex.value = null
+}
+
+const togglePreview = (i: number) => {
+  if (previewIndex.value === i) { closePreview(); return }
+  closePreview()
+  const file = props.modelValue[i]
+  if (!file) return
+  previewUrl.value = URL.createObjectURL(file)
+  previewIndex.value = i
+}
+
+onBeforeUnmount(closePreview)
 </script>
 
 <template>
@@ -116,11 +139,20 @@ const removeFile = (i: number) => {
     <!-- PREVIEW FILES -->
     <div v-if="modelValue.length > 0" class="flex flex-col gap-2 mt-2">
       <div v-for="(file, index) in modelValue" :key="index"
-        class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
+        class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md"
+        :class="previewable && previewIndex === index ? 'ring-1 ring-primary-300 dark:ring-primary-700' : ''">
         <div class="flex items-center gap-2 overflow-hidden">
           <UIcon name="i-lucide-file-text" class="size-4 text-red-500 shrink-0" />
           <div class="flex flex-col">
-            <span class="text-sm text-gray-700 dark:text-gray-200 truncate font-medium">{{ file.name }}</span>
+            <button
+              v-if="previewable"
+              type="button"
+              class="text-sm text-gray-700 dark:text-gray-200 truncate font-medium text-left hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
+              @click.stop="togglePreview(index)"
+            >
+              {{ file.name }}
+            </button>
+            <span v-else class="text-sm text-gray-700 dark:text-gray-200 truncate font-medium">{{ file.name }}</span>
             <span class="text-xs text-gray-400 dark:text-gray-500">{{ (file.size / 1024).toFixed(1) }} {{ $t('fu_kb') }}</span>
           </div>
         </div>
@@ -128,6 +160,46 @@ const removeFile = (i: number) => {
           :aria-label="$t('fu_delete')"
           class="w-6 h-6 hover:bg-red-50 dark:hover:bg-red-900/30 rounded shrink-0" @click.stop="removeFile(index)" />
       </div>
+
     </div>
+
+    <!-- FULLSCREEN PREVIEW MODAL (PDF via object URL) -->
+    <Teleport to="body">
+      <Transition name="fu-preview">
+        <div
+          v-if="previewable && previewIndex !== null && previewUrl"
+          class="fixed inset-0 z-100 flex flex-col bg-white dark:bg-gray-900"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex items-center gap-2 min-w-0">
+              <UIcon name="i-lucide-file-text" class="w-5 h-5 text-red-500 shrink-0" />
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{{ modelValue[previewIndex]?.name }}</span>
+            </div>
+            <button
+              type="button"
+              class="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 dark:hover:bg-primary-900/30 dark:hover:border-primary-700 dark:hover:text-primary-300 transition-colors shrink-0"
+              @click="closePreview"
+            >
+              <UIcon name="i-lucide-x" class="w-4 h-4" />
+              Tutup
+            </button>
+          </div>
+          <!-- PDF iframe fills remaining viewport -->
+          <iframe :src="previewUrl" class="flex-1 w-full bg-white" :title="modelValue[previewIndex]?.name ?? 'preview'" />
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.fu-preview-enter-active,
+.fu-preview-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fu-preview-enter-from,
+.fu-preview-leave-to {
+  opacity: 0;
+}
+</style>

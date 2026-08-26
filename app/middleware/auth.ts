@@ -83,6 +83,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/persetujuan-penomoran',
     '/digsig',
     '/layanan-email',
+    '/naskah-lainnya',
     '/naskah-dinas/verifikator',
     '/kelola/pemeliharaan/pemberkasan',
     '/kelola/pemeliharaan/persetujuan-pemberkasan',
@@ -105,6 +106,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/verifikasi-persetujuan-tu',
     '/maintenance/penerimaan-usulan',
     '/maintenance/penataan-arsip-inaktif',
+    '/maintenance/penyusutan',
     '/maintenance/preview-berkas',
   ];
 

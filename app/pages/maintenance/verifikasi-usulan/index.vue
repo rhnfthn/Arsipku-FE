@@ -125,13 +125,13 @@ const onExport = () => {
     alert('Tidak ada data untuk diexport');
     return;
   }
-  const headers = ['Nomor Usulan', 'Perihal Arsip', 'Sekretaris', 'Status', 'Tanggal'];
+  const headers = ['Nama Berkas', 'Kode Berkas', 'No. Usulan', 'Klasifikasi', 'Status'];
   const rows = list.value.map((r: any) => [
-    r.nomorUsulan ?? '',
     r.arsipPerihal ?? '',
-    r.sekretarisName ?? '',
+    r.arsipKode ?? '',
+    r.nomorUsulan ?? '',
+    r.arsipKlasifikasi ?? '',
     r.status ?? '',
-    r.tanggalUsulan ?? '',
   ]);
   const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });

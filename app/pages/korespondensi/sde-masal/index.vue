@@ -292,9 +292,54 @@
             <div>
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jenis Template</label>
               <select v-model="editForm.jenisTemplate" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none">
-                <option value="SDE-STANDAR">SDE Standar</option>
-                <option value="SDE-KHUSUS">SDE Khusus</option>
+                <option value="">Pilih skema...</option>
+                <option value="KEUANGAN">Keuangan / Tagihan PINP</option>
+                <option value="UMUM">Umum</option>
               </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ID Tertuju</label>
+                <input v-model="editForm.idTertuju" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Perihal Penerima</label>
+                <input v-model="editForm.perihal" type="text" disabled class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 outline-none" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jumlah Tagihan IDR</label>
+                <input v-model="editForm.jumlahTagihanIdr" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jumlah Tagihan USD</label>
+                <input v-model="editForm.jumlahTagihanUsd" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nama CRO</label>
+                <input v-model="editForm.namaCro" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email CRO</label>
+                <input v-model="editForm.emailCro" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jabatan Signer</label>
+                <input v-model="editForm.jabatanSigner" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nama Signer</label>
+                <input v-model="editForm.namaSigner" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tembusan</label>
+              <input v-model="editForm.tembusan" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
             </div>
           </div>
           <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 flex justify-end gap-2">
@@ -411,6 +456,21 @@ const editForm = reactive({
   perihal: '',
   tertuju: '',
   jenisTemplate: '',
+  idTertuju: '',
+  idramount: '',
+  usdamount: '',
+  namacro: '',
+  email: '',
+  tembusan: '',
+  emailTertuju: '',
+  emailCc: '',
+  emailBcc: '',
+  jumlahTagihanIdr: '',
+  jumlahTagihanUsd: '',
+  namaCro: '',
+  emailCro: '',
+  jabatanSigner: '',
+  namaSigner: '',
 });
 
 // --- Helpers ---
@@ -442,6 +502,14 @@ const detailFields = computed(() => {
     { label: 'Isi Ringkasan', value: s.isiRingkasan },
     { label: 'Template', value: formatTemplate(s) },
     { label: 'Status', value: statusLabel(s.statusVerifikasi) },
+    { label: 'ID Tertuju', value: s.idTertuju },
+    { label: 'Jumlah Tagihan IDR', value: s.jumlahTagihanIdr },
+    { label: 'Jumlah Tagihan USD', value: s.jumlahTagihanUsd },
+    { label: 'Nama CRO', value: s.namaCro },
+    { label: 'Email CRO', value: s.emailCro },
+    { label: 'Jabatan Signer', value: s.jabatanSigner },
+    { label: 'Nama Signer', value: s.namaSigner },
+    { label: 'Tembusan', value: s.tembusan },
     { label: 'Nomor Surat', value: s.nomorSurat },
     { label: 'Naskah ID', value: s.naskahId },
     { label: 'Error', value: s.errorMessage },
@@ -486,6 +554,21 @@ const showEdit = (item: SdeMasalItem) => {
   editForm.perihal = item.perihal;
   editForm.tertuju = item.tertuju;
   editForm.jenisTemplate = typeof item.jenisTemplate === 'string' ? item.jenisTemplate : (item.jenisTemplate?.value || '');
+  editForm.idTertuju = item.idTertuju || '';
+  editForm.idramount = item.idramount || '';
+  editForm.usdamount = item.usdamount || '';
+  editForm.namacro = item.namacro || '';
+  editForm.email = item.email || '';
+  editForm.tembusan = item.tembusan || '';
+  editForm.emailTertuju = item.emailTertuju || '';
+  editForm.emailCc = item.emailCc || '';
+  editForm.emailBcc = item.emailBcc || '';
+  editForm.jumlahTagihanIdr = item.jumlahTagihanIdr || '';
+  editForm.jumlahTagihanUsd = item.jumlahTagihanUsd || '';
+  editForm.namaCro = item.namaCro || '';
+  editForm.emailCro = item.emailCro || '';
+  editForm.jabatanSigner = item.jabatanSigner || '';
+  editForm.namaSigner = item.namaSigner || '';
   editModal.value = true;
 };
 

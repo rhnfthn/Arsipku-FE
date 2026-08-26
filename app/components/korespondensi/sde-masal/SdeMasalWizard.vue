@@ -2,10 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <PageHeader title="SDE Masal (Surat Dinas Eksternal Massal)" :items="breadcrumbs" />
 
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 -mt-2">
-      Wizard pembuatan Surat Dinas Eksternal secara massal. Ikuti langkah-langkah berikut.
-    </p>
-
+    
     <!-- Stepper -->
     <div class="mb-6">
       <div class="flex items-center justify-between max-w-3xl mx-auto">
@@ -60,6 +57,7 @@
         v-else-if="currentStep === 2"
         v-model="wizardState.penerimaList"
         :konsep="wizardState.konsep"
+        @update:skema-template="wizardState.skemaTemplate = $event"
       />
 
       <!-- Step 3: Template dan Konten -->
@@ -68,6 +66,7 @@
         v-model="wizardState.template"
         :konsep="wizardState.konsep"
         :penerima-list="wizardState.penerimaList"
+        :default-skema="wizardState.skemaTemplate"
       />
 
       <!-- Step 4: Preview dan Konfirmasi -->
@@ -142,10 +141,12 @@ const wizardState = reactive<{
   konsep: SdeMasalConcept | null;
   penerimaList: SdeMasalPenerima[];
   template: SdeMasalTemplate | null;
+  skemaTemplate: 'KEUANGAN' | 'UMUM' | null;
 }>({
   konsep: null,
   penerimaList: [],
   template: null,
+  skemaTemplate: null,
 });
 
 const breadcrumbs = computed(() => [
@@ -212,6 +213,7 @@ const handleGenerate = async () => {
     wizardState.konsep = null;
     wizardState.penerimaList = [];
     wizardState.template = null;
+    wizardState.skemaTemplate = null;
     currentStep.value = 1;
 
     // Redirect ke dashboard

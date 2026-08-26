@@ -52,7 +52,11 @@
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-                <p class="text-gray-900 dark:text-white font-bold">{{ item.atasanName || '-' }}</p>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.atasanName || '-' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p>
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">TU Pengirim</span>
@@ -89,7 +93,7 @@
           <!-- Card 2: Daftar Arsip yang Akan Dipindahkan -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-              Daftar Arsip yang Akan Dipindahkan ({{ daftarBerkas.length }})
+              Daftar Arsip({{ daftarBerkas.length }})
             </h3>
             <div class="space-y-1.5">
               <div
@@ -124,7 +128,7 @@
             v-if="item.approvalLevels && item.approvalLevels.length > 0"
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
           >
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi (Berjenjang)</h3>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi</h3>
             <div class="space-y-2">
               <div
                 v-for="level in item.approvalLevels"
@@ -182,11 +186,10 @@
               </button>
             </div>
             <div id="daftar-isi-print" class="text-sm">
-              <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ item.nomorUsulan }}</p>
+              <p class="font-semibold text-gray-900 dark:text-white mb-3">{{ item.nomorUsulan }}</p>
               <table class="w-full border-collapse text-xs">
                 <thead>
                   <tr class="border-b-2 border-gray-300 dark:border-gray-500">
-                    <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
                     <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
                     <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
                     <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
@@ -195,9 +198,6 @@
                 </thead>
                 <tbody>
                   <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                    <td class="text-center py-2 px-2">
-                      <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" />
-                    </td>
                     <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
                     <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
                       <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
@@ -216,7 +216,7 @@
                     </td>
                   </tr>
                   <tr v-if="daftarIsi.length === 0">
-                    <td colspan="5" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
+                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
                   </tr>
                 </tbody>
               </table>
@@ -331,7 +331,7 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" /> Setujui Persetujuan Terakhir
+              <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" /> Setujui
             </button>
           </div>
         </div>
@@ -363,24 +363,6 @@
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Apakah Anda yakin ingin menyetujui penerimaan usulan ini?
             </p>
-            <div class="space-y-2 mb-4 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item?.nomorUsulan ?? '-' }}</p>
-              </div>
-              <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item?.sekretarisName ?? '-' }}</p>
-              </div>
-              <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">TU Pengirim</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item?.tuName ?? '-' }}</p>
-              </div>
-              <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Jumlah Arsip</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ daftarBerkas.length }} berkas</p>
-              </div>
-            </div>
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi (opsional)</label>
             <textarea
               v-model="catatanVerifikasi"
@@ -480,7 +462,7 @@
               class="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              Setujui Persetujuan Terakhir
+              Setujui
             </button>
           </div>
         </div>
@@ -575,30 +557,38 @@ const formatDate = (dateStr: string | Date | null) => {
 
 const statusLabel = (s: string) => {
   const m: Record<string, string> = {
-    DIKIRIM: 'Menunggu Verifikasi',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Persetujuan TU',
-    DISETUJUI_PERSETUJUAN_TU: 'Disetujui TU',
-    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Persetujuan Terakhir',
-    DITOLAK_PERSETUJUAN_TU: 'Ditolak TU',
-    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak TU',
-    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Disetujui Final',
-    ARSIP_INAKTIF_DITERIMA: 'Arsip Diterima',
+    // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen)
+    DIKIRIM: 'Menunggu Penerimaan',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Penerimaan',
+    // Selesai
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Selesai',
+    ARSIP_INAKTIF_DITERIMA: 'Selesai',
+    PENATAAN_ARSIP_INAKTIF: 'Selesai',
     SELESAI: 'Selesai',
+    // Ditolak
+    DITOLAK_PERSETUJUAN_TU: 'Ditolak',
+    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak',
   }
   return m[s] || s
 }
 
 const statusBadgeClass = (s: string) => {
   const m: Record<string, string> = {
-    DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-    DISETUJUI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-    DITOLAK_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    // Menunggu Penerimaan = ungu
+    DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    DISETUJUI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    // Selesai = hijau
     DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     ARSIP_INAKTIF_DITERIMA: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    PENATAAN_ARSIP_INAKTIF: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     SELESAI: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    // Ditolak = merah
+    DITOLAK_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
   }
   return m[s] || 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }

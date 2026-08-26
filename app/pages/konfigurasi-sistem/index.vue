@@ -49,6 +49,15 @@
               <UIcon name="i-lucide-archive" class="w-4 h-4" />
               Unit TU
             </button>
+            <button @click="activeTab = 'unit-legal'" :class="[
+              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+              activeTab === 'unit-legal'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+            ]">
+              <UIcon name="i-lucide-scale" class="w-4 h-4" />
+              Unit Legal
+            </button>
             <button @click="activeTab = 'search'" :class="[
               'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
               activeTab === 'search'
@@ -334,6 +343,11 @@
               profile-description="Beralih ke profile Unit Dokumen"
             />
           </div>
+        </div>
+
+        <!-- ===================== TAB: UNIT LEGAL ===================== -->
+        <div v-if="activeTab === 'unit-legal'">
+          <UnitLegalTab />
         </div>
 
         <!-- ===================== TAB: SEARCH ENGINE ===================== -->
