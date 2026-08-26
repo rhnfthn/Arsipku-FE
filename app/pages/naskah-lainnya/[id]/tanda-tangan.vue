@@ -2,7 +2,9 @@
   <div class="space-y-6">
     <PageHeader :items="breadcrumbs">
       <template #title>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          {{ detail?.perihal || 'Memuat…' }}
+        </h1>
       </template>
     </PageHeader>
 
@@ -13,20 +15,37 @@
 
     <div v-else-if="!detail" class="py-20 text-center text-gray-500">Naskah tidak ditemukan.</div>
 
-    <div v-else class="space-y-6">
-      <!-- Info penandatangan aktif (tanda-tangan-specific; legal-drafting memakai kartu
-           pemberi persetujuan di posisi ini — konteks siapa menandatangani saat ini). -->
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div class="flex items-center gap-3 p-4">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400">
-            <UIcon name="i-lucide-pen-tool" class="h-5 w-5" />
+    <div
+      v-else
+      class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700"
+    >
+      <!-- Banner status (selaras dgn legal-drafting: cardBg + ikon bulat + judul/desc) -->
+      <div class="px-5 py-4" :class="ttBanner.cardBg">
+        <div class="flex items-start gap-3">
+          <span
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+            :class="ttBanner.wrap"
+          >
+            <UIcon :name="ttBanner.icon" class="size-5" />
           </span>
-          <div class="flex-1">
-            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ penandatanganNama }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ penandatanganJabatan }}</p>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ ttBanner.title }}</p>
+            <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">{{ ttBanner.desc }}</p>
           </div>
-          <UBadge color="primary" size="sm" icon="i-lucide-pen-tool">{{ signerProgress || 'Tanda Tangan' }}</UBadge>
+          <span
+            v-if="signerCount > 1"
+            class="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800/70 dark:text-gray-200"
+          >
+            <UIcon name="i-lucide-check" class="size-3 text-green-600 dark:text-green-400" />
+            {{ signedCount }}/{{ signerCount }} ditandatangani
+          </span>
         </div>
+        <p
+          v-if="ttBanner.catatan"
+          class="mt-3 border-t border-black/5 pt-3 pl-10 text-sm italic text-gray-800 dark:border-white/10 dark:text-gray-100"
+        >
+          &ldquo;{{ ttBanner.catatan }}&rdquo;
+        </p>
       </div>
 
       <NaskahDraftWorkspace
@@ -39,8 +58,8 @@
         :show-actions="false"
         :docx-url="`/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
-        :catatan-rich="true"
         :stage-upload="true"
+        divided
         v-model="catatan"
         @preview="previewNaskah"
         @download="downloadNaskah"
@@ -48,11 +67,76 @@
         @stage-revisi="onStageRevisi"
       />
 
-      <!-- Aksi (highlighted — selaraskan dengan action toolbar legal-drafting) -->
-      <div class="overflow-hidden rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white shadow-sm ring-1 ring-primary-100 dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800 dark:ring-primary-900/30">
-        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <!-- Daftar Penandatangan (analog dgn "Pemberi Persetujuan Legal" di legal-drafting) -->
+      <div class="px-5 py-4">
+        <div class="mb-3 flex items-center gap-2">
+          <UIcon name="i-lucide-users" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Penandatangan</h3>
+          <span class="text-xs text-gray-400">(berjenjang — sesuai urutan)</span>
+        </div>
+        <div
+          v-if="signerChain.length === 0"
+          class="flex items-center gap-2 py-2 text-sm text-gray-400 dark:text-gray-500"
+        >
+          <UIcon name="i-lucide-inbox" class="size-4" />
+          <span>Belum ada penandatangan.</span>
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="(p, i) in signerChain"
+            :key="p.positionId || p.persnum || i"
+            class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5"
+            :class="
+              signerStatus(i) === 'current'
+                ? 'border-primary-300 bg-primary-50/60 ring-1 ring-primary-200 dark:border-primary-800 dark:bg-primary-900/20 dark:ring-primary-900/50'
+                : 'border-gray-200 dark:border-gray-700'
+            "
+          >
+            <span
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+              :class="
+                signerStatus(i) === 'signed'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+              "
+            >
+              <UIcon v-if="signerStatus(i) === 'signed'" name="i-lucide-check" class="size-3" />
+              <template v-else>{{ i + 1 }}</template>
+            </span>
+            <div class="flex-1 min-w-40">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ p.nama }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ p.jabatan }}</p>
+            </div>
+            <span
+              v-if="signerStatus(i) === 'signed'"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            >
+              <UIcon name="i-lucide-check" class="size-3" />Ditandatangani
+            </span>
+            <span
+              v-else-if="signerStatus(i) === 'current'"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+            >
+              <UIcon name="i-lucide-pen-line" class="size-3" />Menandatangani
+            </span>
+            <span
+              v-else-if="signerStatus(i) === 'waiting'"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+            >
+              <UIcon name="i-lucide-clock" class="size-3" />Menunggu
+            </span>
+            <UIcon v-else name="i-lucide-signature" class="size-4 shrink-0 text-gray-400" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Aksi (di dalam panel — selaras dgn action toolbar legal-drafting) -->
+      <div class="px-5 py-4 bg-primary-50/50 dark:bg-primary-900/10">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 shadow-sm dark:bg-primary-900/40 dark:text-primary-400"
+            >
               <UIcon name="i-lucide-pen-tool" class="size-5" />
             </span>
             <div>
@@ -70,17 +154,32 @@
               class="w-full font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
               :loading="busy"
               @click="showSignModal = true"
-            >Tandatangani Naskah</UButton>
+              >Tandatangani Naskah</UButton
+            >
 
             <!-- Fisik (ttd_basah): unduh + unggah hasil ttd basah -->
             <template v-else-if="signOption === 'ttd_basah'">
-              <UButton color="neutral" variant="outline" icon="i-lucide-download" size="lg" class="w-full sm:w-auto" @click="downloadNaskah(naskahFileName(detail))">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-download"
+                size="lg"
+                class="w-full sm:w-auto"
+                @click="downloadNaskah(naskahFileName(detail))"
+              >
                 Unduh Naskah
               </UButton>
-              <label class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700 sm:w-auto">
+              <label
+                class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700 sm:w-auto"
+              >
                 <UIcon name="i-lucide-upload" class="size-4" />
                 Unggah Naskah Ditandatangani
-                <input type="file" class="hidden" accept=".docx,.pdf,image/*" @change="onUnggahTtdFisik" />
+                <input
+                  type="file"
+                  class="hidden"
+                  accept=".docx,.pdf,image/*"
+                  @change="onUnggahTtdFisik"
+                />
               </label>
             </template>
 
@@ -109,11 +208,18 @@
             <UButton size="sm" variant="ghost" icon="i-lucide-x" @click="closePreview" />
           </div>
           <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-900">
-            <div v-if="previewLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10">
+            <div
+              v-if="previewLoading"
+              class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
+            >
               <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
             </div>
             <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
-            <div v-else ref="previewDocxContainer" class="docx-preview-container w-full h-full overflow-auto"></div>
+            <div
+              v-else
+              ref="previewDocxContainer"
+              class="docx-preview-container w-full h-full overflow-auto"
+            ></div>
           </div>
         </div>
       </template>
@@ -185,19 +291,19 @@ const stagedRevisi = ref(null);
 const tahapan = computed(() => detail.value?.tahapan ?? '');
 const signOption = computed(() => detail.value?.signOption ?? 'qr_only');
 
-const canKembalikan = computed(() =>
-  tahapan.value === 'tanda_tangan_legal'
-  || tahapan.value === 'tanda_tangan_pemrakarsa');
+const canKembalikan = computed(
+  () => tahapan.value === 'tanda_tangan_legal' || tahapan.value === 'tanda_tangan_pemrakarsa'
+);
 
 const actionToolbarTitle = computed(() =>
-  signOption.value === 'ttd_basah' ? 'Tanda Tangan Basah' : 'Tanda Tangan Digital',
+  signOption.value === 'ttd_basah' ? 'Tanda Tangan Basah' : 'Tanda Tangan Digital'
 );
 const actionToolbarDesc = computed(() =>
   stagedRevisi.value
     ? 'Revisi di-stage akan diunggah bersama tandatangan.'
-    : (signOption.value === 'ttd_basah'
+    : signOption.value === 'ttd_basah'
       ? 'Unduh naskah, tandatangani secara fisik, lalu unggah hasilnya.'
-      : 'Klik Tandatangani untuk menyuntuh QR dan menyelesaikan naskah.'),
+      : 'Klik Tandatangani untuk menyuntuh QR dan menyelesaikan naskah.'
 );
 
 // BE getDetail mengirim rantai penandatangan sebagai `penandatangan` (array),
@@ -224,11 +330,57 @@ const signerProgress = computed(() => {
   const total = detail.value?.signerCount ?? 0;
   return total > 0 ? `Penandatangan ke-${idx} dari ${total}` : '';
 });
+const signerCount = computed(() => detail.value?.signerCount ?? signerChain.value.length);
+
+// Status per penandatangan (sama dgn [id].vue: signingIndex 1-based; selesai → semua signed).
+function signerStatus(i) {
+  const d = detail.value;
+  if (!d) return 'idle';
+  if (d.tahapan === 'selesai') return 'signed';
+  if (d.tahapan === 'tanda_tangan' && d.signingIndex != null) {
+    if (i + 1 < d.signingIndex) return 'signed';
+    if (i + 1 === d.signingIndex) return 'current';
+    return 'waiting';
+  }
+  return 'idle';
+}
+const signedCount = computed(
+  () => signerChain.value.filter((_, i) => signerStatus(i) === 'signed').length
+);
+
+// Banner status (selaras dgn ldBanner legal-drafting: cardBg + ikon bulat + judul/desc).
+const ttBanner = computed(() => {
+  if (tahapan.value === 'selesai') {
+    return {
+      icon: 'i-lucide-circle-check',
+      cardBg: 'bg-green-50 dark:bg-green-950/30',
+      wrap: 'bg-green-500',
+      title: 'Naskah Selesai',
+      desc: 'Seluruh penandatangan telah menandatangani naskah.',
+      catatan: null,
+    };
+  }
+  const isFisik = signOption.value === 'ttd_basah';
+  return {
+    icon: 'i-lucide-pen-tool',
+    cardBg: 'bg-primary-50 dark:bg-primary-950/30',
+    wrap: 'bg-primary-500',
+    title: isFisik ? 'Menunggu Tanda Tangan Basah' : 'Menunggu Tanda Tangan Digital',
+    desc: signerProgress.value
+      ? `${signerProgress.value} — ${penandatanganNama.value} (${penandatanganJabatan.value}).`
+      : `${penandatanganNama.value} (${penandatanganJabatan.value}).`,
+    catatan: null,
+  };
+});
 
 async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
+    if (detail.value?.signOption === 'ttd_basah') {
+      await navigateTo(`/naskah-lainnya/${id.value}`, { replace: true });
+      return;
+    }
     dokumenPendukung.value = (detail.value?.dokumen || []).filter((d) => d.tipe === 'pendukung');
   } catch {
     toast.add({ title: 'Gagal memuat detail naskah', color: 'error' });
@@ -277,7 +429,10 @@ async function openPreviewFromBlob(blob, nama) {
   const lower = String(nama ?? '').toLowerCase();
   const isPdf = lower.endsWith('.pdf') || blob.type === 'application/pdf';
   const isDocx = lower.endsWith('.docx');
-  if (previewUrl.value) { window.URL.revokeObjectURL(previewUrl.value); previewUrl.value = null; }
+  if (previewUrl.value) {
+    window.URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = null;
+  }
   previewDocxBuffer.value = null;
   if (isPdf) {
     previewUrl.value = window.URL.createObjectURL(blob);
@@ -297,16 +452,23 @@ async function openPreviewFromBlob(blob, nama) {
 
 function closePreview() {
   previewOpen.value = false;
-  if (previewUrl.value) { window.URL.revokeObjectURL(previewUrl.value); previewUrl.value = null; }
+  if (previewUrl.value) {
+    window.URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = null;
+  }
   previewDocxBuffer.value = null;
 }
 
-watch(previewOpen, (open) => { if (!open) closePreview(); });
+watch(previewOpen, (open) => {
+  if (!open) closePreview();
+});
 
 async function previewPendukung(doc) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, { responseType: 'blob' });
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+      responseType: 'blob',
+    });
     await openPreviewFromBlob(blob, doc.nama);
   } catch {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
@@ -370,7 +532,10 @@ async function onUnggahTtdFisik(ev) {
     toast.add({ title: 'Naskah ditandatangani (fisik) diunggah', color: 'success' });
     await afterSignNavigate();
   } catch (e) {
-    toast.add({ title: e?.response?.data?.message ?? 'Gagal mengunggah naskah ditandatangani', color: 'error' });
+    toast.add({
+      title: e?.response?.data?.message ?? 'Gagal mengunggah naskah ditandatangani',
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     input.value = '';
@@ -395,8 +560,13 @@ onMounted(loadDetail);
 </script>
 
 <style scoped>
-:deep(.docx-preview-container) { padding: 16px; }
-:deep(.docx-wrapper) { background: #fff !important; padding: 0 !important; }
+:deep(.docx-preview-container) {
+  padding: 16px;
+}
+:deep(.docx-wrapper) {
+  background: #fff !important;
+  padding: 0 !important;
+}
 :deep(.docx-wrapper > section.docx) {
   border: none !important;
   margin: 0 auto !important;

@@ -101,6 +101,46 @@ const allBvVerified = computed(() =>
 const isCompleted = computed(() => allBvVerified.value);
 const isEditable = computed(() => isBlankoVerbal.value && !isCompleted.value);
 
+const bvDone = computed(() => bvDirectors.value.filter((d) => d.status === 'verified').length);
+
+const bvBanner = computed(() => {
+  if (isEditable.value) {
+    return {
+      icon: 'i-lucide-file-pen-line',
+      card: 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30',
+      wrap: 'bg-primary-500',
+      title: 'Susun Blanko Verbal',
+      desc: 'Lengkapi data blanko di bawah, tinjau pratinjau PDF, lalu kirim ke direksi untuk diparaf.',
+    };
+  }
+  if (isCompleted.value) {
+    return {
+      icon: 'i-lucide-circle-check-big',
+      card: 'border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-950/30',
+      wrap: 'bg-green-500',
+      title: 'Blanko Verbal Selesai',
+      desc: 'Seluruh direksi telah memberikan paraf. Naskah siap diteruskan ke tahap tanda tangan.',
+    };
+  }
+  const nextD = bvDirectors.value.find((d) => d.status === 'waiting');
+  if (bvDirectors.value.length > 0) {
+    return {
+      icon: 'i-lucide-stamp',
+      card: 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30',
+      wrap: 'bg-violet-500',
+      title: 'Menunggu Paraf Direksi',
+      desc: `${bvDone.value}/${bvDirectors.value.length} direksi telah memaraf${nextD ? ' — giliran ' + nextD.nama + '.' : '.'}`,
+    };
+  }
+  return {
+    icon: 'i-lucide-info',
+    card: 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/60',
+    wrap: 'bg-gray-400 dark:bg-gray-500',
+    title: 'Blanko Verbal',
+    desc: 'Blanko verbal akan aktif setelah tahap persetujuan direksi selesai.',
+  };
+});
+
 const rejectedPersetujuanDireksiRow = computed(() => {
   const r = detail.value?.riwayat ?? [];
   const last = r.length ? r[r.length - 1] : null;
@@ -118,20 +158,6 @@ function isUserApprover(row: ApprovalRow) {
     (row.persnum && String(row.persnum) === uid) ||
     (row.positionId && String(row.positionId) === pos) ||
     (row.nama && row.nama.trim().toLowerCase() === nama)
-  );
-}
-
-function directorCanAct(director: DirectorApprovalItem) {
-  if (director.status !== 'waiting') return false;
-  const u = user.value;
-  if (!u) return false;
-  const uid = String(u.persnum ?? '').trim();
-  const pos = String(u.position_id ?? u.position ?? '').trim();
-  const nama = (u.nama ?? '').trim().toLowerCase();
-  return (
-    (director.persnum && String(director.persnum) === uid) ||
-    (director.positionId && String(director.positionId) === pos) ||
-    (director.nama && director.nama.trim().toLowerCase() === nama)
   );
 }
 
@@ -337,30 +363,46 @@ onMounted(async () => {
       <!-- LoadingOverlay for async actions (preview, kirim, paraf, tolak) -->
       <LoadingOverlay :loading="busy" :message="loadingMessage" />
 
+      <!-- Banner mode: susun blanko / menunggu paraf / selesai -->
+      <div class="flex items-start gap-3 rounded-xl border px-4 py-3.5" :class="bvBanner.card">
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+          :class="bvBanner.wrap"
+        >
+          <UIcon :name="bvBanner.icon" class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-bold text-gray-900 dark:text-white">{{ bvBanner.title }}</p>
+          <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">{{ bvBanner.desc }}</p>
+        </div>
+      </div>
+
       <UCard
         variant="soft"
-        :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }"
+        :ui="{ root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors' }"
       >
         <div class="flex-1 overflow-y-auto space-y-1">
           <!-- Banner: ditolak dari persetujuan direksi -->
           <div
             v-if="rejectedPersetujuanDireksiRow"
-            class="mb-5 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4"
+            class="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 dark:border-red-900/50 dark:bg-red-950/30"
           >
-            <div class="flex items-center gap-2 mb-1.5">
-              <UIcon name="i-lucide-circle-x" class="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
-              <p class="text-sm font-semibold text-red-700 dark:text-red-300">Ditolak dari Persetujuan Direksi</p>
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm">
+              <UIcon name="i-lucide-circle-x" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-bold text-red-700 dark:text-red-300">Ditolak dari Persetujuan Direksi</p>
+              <p class="mt-0.5 text-xs text-red-600/80 dark:text-red-400/80">
+                Perbaiki naskah sesuai alasan penolakan, lalu kirim ulang blanko verbal:
+              </p>
+              <p v-if="rejectedPersetujuanDireksiRow.catatan" class="mt-1 text-sm italic text-gray-800 dark:text-gray-100">
+                &ldquo;{{ rejectedPersetujuanDireksiRow.catatan }}&rdquo;
+              </p>
             </div>
-            <p class="text-sm text-red-600/80 dark:text-red-400/80 mb-1">
-              Naskah ditolak saat persetujuan direksi. Perbaiki dan kirim ulang sesuai alasan penolakan:
-            </p>
-            <p v-if="rejectedPersetujuanDireksiRow.catatan" class="text-sm text-gray-800 dark:text-gray-100 italic">
-              &ldquo;{{ rejectedPersetujuanDireksiRow.catatan }}&rdquo;
-            </p>
           </div>
 
           <!-- ── Form fields (editable mode only) ── -->
-          <template v-if="isEditable">
+          <div v-if="isEditable" class="bv-form">
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
@@ -519,7 +561,7 @@ onMounted(async () => {
                 />
               </div>
             </div>
-          </template>
+          </div>
 
           <!-- ── Inline paper preview ── -->
           <ClientOnly>
@@ -552,17 +594,25 @@ onMounted(async () => {
 
           <!-- ── Action bar ── -->
           <div
-            class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
+            class="flex flex-col gap-3 border-t border-gray-100 py-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
           >
-            <UButton
-              label="Preview PDF"
-              color="primary"
-              size="lg"
-              icon="i-lucide-eye"
-              class="px-8 font-bold"
-              :loading="busy"
-              @click="generatePreviewPdf"
-            />
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ isEditable
+                ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim blanko ke direksi untuk diparaf.'
+                : isCompleted
+                  ? 'Seluruh direksi telah memaraf. Teruskan naskah ke tahap tanda tangan.'
+                  : 'Blanko verbal sedang menunggu proses paraf direksi.' }}
+            </p>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <UButton
+                label="Preview PDF"
+                color="primary"
+                size="lg"
+                icon="i-lucide-eye"
+                :loading="busy"
+                @click="generatePreviewPdf"
+              />
+            </div>
           </div>
         </div>
       </UCard>
@@ -570,7 +620,7 @@ onMounted(async () => {
       <!-- Lanjutkan ke Tanda Tangan -->
       <div
         v-if="allBvVerified && isBlankoVerbal"
-        class="overflow-hidden rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white shadow-sm ring-1 ring-primary-100 dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800 dark:ring-primary-900/30"
+        class="overflow-hidden rounded-xl border border-primary-200 bg-linear-to-br from-primary-50 to-white shadow-sm ring-1 ring-primary-100 dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800 dark:ring-primary-900/30"
       >
         <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
@@ -619,14 +669,14 @@ onMounted(async () => {
           </div>
         </template>
         <template #footer>
-          <div class="flex gap-4 w-full">
+          <div class="flex w-full justify-end">
             <UButton
               v-if="isEditable"
               label="Simpan & Kirim Blanko Verbal"
               color="primary"
               size="lg"
-              icon="i-heroicons-paper-airplane"
-              class="px-8 font-bold"
+              icon="i-lucide-send"
+              class="font-semibold"
               :loading="busy"
               @click="kirim"
             />
@@ -674,3 +724,18 @@ onMounted(async () => {
     </template>
   </div>
 </template>
+
+<style scoped>
+/* Input inline ala kertas: tetap tanpa border, tapi ada ring saat fokus */
+.bv-form input:focus,
+.bv-form textarea:focus {
+  outline: none;
+  border-radius: 6px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  box-shadow: 0 0 0 1px var(--ui-primary, #155dfc);
+  background: var(--ui-bg-elevated, rgba(0, 0, 0, 0.03));
+}
+</style>

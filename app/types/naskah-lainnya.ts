@@ -4,26 +4,69 @@
 // ============================================================
 
 export type JenisNaskah =
-  | 'PER' | 'KEP' | 'INS' | 'SPD' | 'SED' | 'SOP' | 'KSB'
-  | 'PKS' | 'KTP' | 'PJL' | 'LOA' | 'SKU' | 'BA' | 'SKE'
-  | 'SPR' | 'RRA' | 'PUM' | 'PIA' | 'LAP';
+  | 'PER'
+  | 'KEP'
+  | 'INS'
+  | 'SPD'
+  | 'SED'
+  | 'SOP'
+  | 'KSB'
+  | 'PKS'
+  | 'KTP'
+  | 'PJL'
+  | 'LOA'
+  | 'SKU'
+  | 'BA'
+  | 'SKE'
+  | 'SPR'
+  | 'RRA'
+  | 'PUM'
+  | 'PIA'
+  | 'LAP';
 
 export type Tahapan =
-  | 'konsep' | 'persetujuan' | 'legal_drafting' | 'evaluasi' | 'persetujuan_direksi'
-  | 'tanda_tangan_pemrakarsa' | 'blanko_verbal' | 'tanda_tangan_legal'
-  | 'tanda_tangan_pejabat' | 'tanda_tangan' | 'selesai' | 'perlu_perbaikan'
-  | 'ditolak' | 'dibatalkan';
+  | 'konsep'
+  | 'persetujuan'
+  | 'legal_drafting'
+  | 'evaluasi'
+  | 'persetujuan_direksi'
+  | 'tanda_tangan_pemrakarsa'
+  | 'blanko_verbal'
+  | 'tanda_tangan_legal'
+  | 'tanda_tangan_pejabat'
+  | 'tanda_tangan'
+  | 'selesai'
+  | 'perlu_perbaikan'
+  | 'ditolak'
+  | 'dibatalkan';
 
 export type StatusApprover = 'pending' | 'waiting' | 'verified' | 'rejected';
 export type SignOption = 'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd';
+export type DocumentStatus = 'draf' | 'pending' | 'final' | 'final_tte';
 export type MockRole = 'pemrakarsa' | 'legal' | 'pejabat';
 
 export type JenisAksi =
-  | 'kirim' | 'edit' | 'setuju' | 'tolak' | 'kembalikan'
-  | 'mulai-legal' | 'kirim-approval-legal' | 'kembalikan-legal'
-  | 'evaluasi' | 'kembalikan-evaluasi' | 'simpan-blanko' | 'kirim-approval-blanko' | 'tanda-tangan'
-  | 'preview-lembar-persetujuan-direksi' | 'kirim-lembar-persetujuan-direksi' | 'paraf-lembar-persetujuan-direksi' | 'tolak-lembar-persetujuan-direksi'
-  | 'preview-blanko-verbal' | 'kirim-blanko-verbal' | 'paraf-blanko-verbal' | 'tolak-blanko-verbal';
+  | 'kirim'
+  | 'edit'
+  | 'setuju'
+  | 'tolak'
+  | 'kembalikan'
+  | 'mulai-legal'
+  | 'kirim-approval-legal'
+  | 'kembalikan-legal'
+  | 'evaluasi'
+  | 'kembalikan-evaluasi'
+  | 'simpan-blanko'
+  | 'kirim-approval-blanko'
+  | 'tanda-tangan'
+  | 'preview-lembar-persetujuan-direksi'
+  | 'kirim-lembar-persetujuan-direksi'
+  | 'paraf-lembar-persetujuan-direksi'
+  | 'tolak-lembar-persetujuan-direksi'
+  | 'preview-blanko-verbal'
+  | 'kirim-blanko-verbal'
+  | 'paraf-blanko-verbal'
+  | 'tolak-blanko-verbal';
 
 export interface Persona {
   positionId?: string;
@@ -34,15 +77,15 @@ export interface Persona {
 
 export interface NaskahListItem {
   id: string;
-  nomor: string | null;          // null saat konsep
+  nomor: string | null; // null saat konsep
   jenis: JenisNaskah;
   perihal: string;
   pemrakarsa: Persona;
   tahapan: Tahapan;
   butuhLegal: boolean;
   penandatangan: Persona;
-  tanggal: string;               // YYYY-MM-DD
-  terakhirDiubah: string;        // ISO datetime
+  tanggal: string; // YYYY-MM-DD
+  terakhirDiubah: string; // ISO datetime
   // Sub-status legal per naskah (badge kolom Status di halaman Legal Drafting).
   // Dihitung BE getLegalDrafting: 'belum_dikirim' | 'menunggu_persetujuan' | 'revisi' | 'sudah_dikerjakan'.
   statusLegal?: string;
@@ -52,7 +95,7 @@ export interface DokumenFile {
   id: string;
   nama: string;
   tipe: 'naskah' | 'naskah_fisik' | 'blanko_verbal' | 'pendukung';
-  ukuran: string;                // "48 KB"
+  ukuran: string; // "48 KB"
   tanggal?: string;
   status: 'terbaca' | 'final' | 'revisi' | 'belum_diunggah' | 'draf' | 'dittd';
   parameter?: { nomor?: string; perihal?: string; tanggal?: string };
@@ -62,7 +105,14 @@ export interface DokumenFile {
   fase?: string; // raw tahapan enum (konsep|legal_drafting|perlu_perbaikan|...)
 }
 
-export type TahapApproval = 'persetujuan' | 'legal_drafting' | 'approval_legal' | 'approval_blanko' | 'approval_penandatangan' | 'persetujuan_direksi' | 'blanko_verbal';
+export type TahapApproval =
+  | 'persetujuan'
+  | 'legal_drafting'
+  | 'approval_legal'
+  | 'approval_blanko'
+  | 'approval_penandatangan'
+  | 'persetujuan_direksi'
+  | 'blanko_verbal';
 
 export interface ApprovalRow {
   id: string;
@@ -83,27 +133,31 @@ export type ApprovalByTahap = Record<string, ApprovalRow[]>;
 
 export interface RiwayatRow {
   id: string;
-  aksi: string;                  // 'kirim' | 'setuju' | 'tolak' | 'ttd' | ...
+  aksi: string; // 'kirim' | 'setuju' | 'tolak' | 'ttd' | ...
   aktor: string;
   jabatan: string;
   tahap: string;
   status: string;
   catatan?: string;
-  tanggal: string;               // ISO datetime
+  tanggal: string; // ISO datetime
 }
 
 // Riwayat dikelompokkan per tahap (fase) — approval pemrakarsa, legal unit, dll
 // tidak tercampur. Key = tahap ('persetujuan', 'legal_drafting', ...), value = riwayat rows fase itu.
 export type RiwayatByTahap = Record<string, RiwayatRow[]>;
 
-export interface StepperStep { step: number; label: string; status: 'done' | 'active' | 'todo' | 'skip'; }
+export interface StepperStep {
+  step: number;
+  label: string;
+  status: 'done' | 'active' | 'todo' | 'skip';
+}
 
 export interface NaskahDetail extends NaskahListItem {
   klasifikasi: string;
-  sifat: string;                 // 'sangat_rahasia' | 'rahasia' | 'terbatas' | 'biasa' | 'terbuka'
+  sifat: string; // 'sangat_rahasia' | 'rahasia' | 'terbatas' | 'biasa' | 'terbuka'
   signOption: SignOption;
   approvalChain?: { positionId?: string; persnum?: number; nama: string; jabatan: string }[];
-  fileUrl?: string | null;       // relative proxy path `/naskah-lainnya/:id/file` (bukan signed URL MinIO, untuk hindari CORS)
+  fileUrl?: string | null; // relative proxy path `/naskah-lainnya/:id/file` (bukan signed URL MinIO, untuk hindari CORS)
   dokumen: DokumenFile[];
   approval: ApprovalRow[];
   approvalByTahap?: ApprovalByTahap;
@@ -115,12 +169,22 @@ export interface NaskahDetail extends NaskahListItem {
   // `penandatangan` (inherited dari NaskahListItem) tetap dipertahankan untuk backward compat (item pertama).
   penandatanganList?: Penandatangan[];
   // BE `getDetail` baru — fase penandatangan.
-  signingIndex: number | null;     // 1-based index signer aktif, null di luar fase tanda tangan
-  signerCount: number;             // N total signer
-  signedFileUrl: string | null;    // URL MinIO artefak tertandatangan, atau null
+  signingIndex: number | null; // 1-based index signer aktif, null di luar fase tanda tangan
+  signerCount: number; // N total signer
+  signedFileUrl: string | null; // URL MinIO artefak tertandatangan, atau null
+  documentStatus: DocumentStatus;
+  manualFinalStatus: 'final' | 'belum_final';
+  manualFinalFileUploaded: boolean;
+  canManageManualFinal: boolean;
 }
 
-export interface Penandatangan { positionId?: string; nama: string; jabatan: string; persnum?: number; index?: number; }
+export interface Penandatangan {
+  positionId?: string;
+  nama: string;
+  jabatan: string;
+  persnum?: number;
+  index?: number;
+}
 
 export interface ApprovalItem {
   positionId?: string;
@@ -144,11 +208,14 @@ export interface BuatNaskahPayload {
   approval?: ApprovalItem[];
 }
 
-export interface ApprovalActionPayload { approvalId: string; catatan?: string; }
+export interface ApprovalActionPayload {
+  approvalId: string;
+  catatan?: string;
+}
 
 export interface EvaluasiPayload {
   sesuai: boolean;
-  checklist: string[];           // id checklist yang tercentang
+  checklist: string[]; // id checklist yang tercentang
   catatan?: string;
 }
 
@@ -197,7 +264,9 @@ export interface DirectorApprovalItem {
   catatan?: string;
 }
 
-export interface TandaTanganPayload { passphrase?: string; }
+export interface TandaTanganPayload {
+  passphrase?: string;
+}
 
 // Pemberi persetujuan legal drafting — person di unit legal (GET /konfigurasi/unit-legal).
 export interface LegalRecipient {
@@ -213,15 +282,30 @@ export interface LegalRecipient {
 }
 
 // Payload kirim approval legal drafting — array approver dari unit legal (urutan = urutan persetujuan).
-export interface KirimApprovalLegalPayload { approval: ApprovalItem[]; }
+export interface KirimApprovalLegalPayload {
+  approval: ApprovalItem[];
+}
 
-export interface ApiResponse<T> { success: boolean; data: T; }
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
 
 export const TAHAPAN_STEP: Record<Tahapan, number> = {
-  konsep: 1, persetujuan: 2, legal_drafting: 3, evaluasi: 4, persetujuan_direksi: 5,
-  tanda_tangan_pemrakarsa: 6, blanko_verbal: 7, tanda_tangan_legal: 8,
-  tanda_tangan_pejabat: 9, tanda_tangan: 9, selesai: 10,
-  perlu_perbaikan: 1, ditolak: 0, dibatalkan: 0,
+  konsep: 1,
+  persetujuan: 2,
+  legal_drafting: 3,
+  evaluasi: 4,
+  persetujuan_direksi: 5,
+  tanda_tangan_pemrakarsa: 6,
+  blanko_verbal: 7,
+  tanda_tangan_legal: 8,
+  tanda_tangan_pejabat: 9,
+  tanda_tangan: 9,
+  selesai: 10,
+  perlu_perbaikan: 1,
+  ditolak: 0,
+  dibatalkan: 0,
 };
 
 // Sumber kebenaran label jenis naskah — dipakai form (tulis) & detail, jangan duplikat.
