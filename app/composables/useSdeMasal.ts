@@ -53,11 +53,13 @@ export const useSdeMasal = () => {
 
   /**
    * Download template Excel.
+   * @param skema - skema template, e.g. 'KEUANGAN' atau 'UMUM'
    */
-  const downloadTemplate = async () => {
+  const downloadTemplate = async (skema?: string) => {
     try {
+      const query = skema ? `?skema=${encodeURIComponent(skema)}` : '';
       const response = await fetch(
-        (useApi().api?.defaults?.baseURL || '') + '/sde-masal/template',
+        (useApi().api?.defaults?.baseURL || '') + '/sde-masal/template' + query,
         {
           method: 'GET',
           headers: {
@@ -69,7 +71,9 @@ export const useSdeMasal = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'template-sde-masal.xlsx';
+      a.download = skema?.toUpperCase().includes('KEUANGAN')
+        ? 'template-sde-masal-keuangan.xlsx'
+        : 'template-sde-masal.xlsx';
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (e) {
@@ -113,9 +117,9 @@ export const useSdeMasal = () => {
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
     // Cari sheet "Data Penerima", fallback ke sheet pertama
-    const sheetName = workbook.SheetNames.find((n) =>
-      n.toLowerCase().includes('data penerima'),
-    ) || workbook.SheetNames[0];
+    const sheetName =
+      workbook.SheetNames.find((n) => n.toLowerCase().includes('data penerima')) ||
+      workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
 
@@ -135,34 +139,109 @@ export const useSdeMasal = () => {
     const result: SdeMasalPenerima[] = [];
     let no = 0;
     rows.forEach((row) => {
-      const persnum = getCol(row, 'Persnum', 'persnum');
-      const nama = getCol(row, 'Nama', 'nama');
-      const jabatan = getCol(row, 'Jabatan', 'jabatan', 'Jabatan Penerima', 'jabatanPenerima');
-      const keterangan = getCol(row, 'Keterangan', 'keterangan');
+      const perihalRow = getCol(row, 'Perihal', 'perihal');
+      const idTertuju = getCol(row, 'id_tertuju', 'idTertuju');
+      const idramount = getCol(row, 'idramount');
+      const usdamount = getCol(row, 'usdamount');
+      const namacro = getCol(row, 'namacro');
+      const email = getCol(row, 'email', 'Email');
+      const tembusan = getCol(row, 'tembusan', 'Tembusan');
+      const isRevisionRaw = getCol(row, 'is_revision', 'isRevision');
+      const emailTertuju = getCol(row, 'email_tertuju', 'emailTertuju');
+      const emailCc = getCol(row, 'email_cc', 'emailCc');
+      const emailBcc = getCol(row, 'email_bcc', 'emailBcc');
+
+      // Field skema keuangan / tagihan PINP
+      const jumlahTagihanIdr = getCol(row, 'jumlah_tagihan_idr', 'jumlahTagihanIdr');
+      const jumlahTagihanUsd = getCol(row, 'jumlah_tagihan_usd', 'jumlahTagihanUsd');
+      const namaCro = getCol(row, 'nama_cro', 'namaCro');
+      const emailCro = getCol(row, 'email_cro', 'emailCro');
+      const jabatanSigner = getCol(row, 'jabatan_signer', 'jabatanSigner');
+      const namaSigner = getCol(row, 'nama_signer', 'namaSigner');
+
+      // Field skema umum / tagihan PJNP
+      const jumlahLampiran = getCol(row, 'jumlah_lampiran', 'jumlahLampiran');
+      const jabatanPenerima = getCol(row, 'jabatan_penerima', 'jabatanPenerima');
+      const alamatPenerima = getCol(row, 'alamat_penerima', 'alamatPenerima');
+      const panggilanPenerima = getCol(row, 'panggilan_penerima', 'panggilanPenerima');
+      const nominalRupiah = getCol(row, 'nominal_rupiah', 'nominalRupiah');
+      const nominalDolar = getCol(row, 'nominal_dolar', 'nominalDolar');
+      const tembusan1 = getCol(row, 'tembusan_1', 'tembusan1');
+      const tembusan2 = getCol(row, 'tembusan_2', 'tembusan2');
 
       // Skip baris kosong (semua field kosong)
-      if (!persnum && !nama && !jabatan && !keterangan) {
+      if (
+        !perihalRow &&
+        !idTertuju &&
+        !idramount &&
+        !usdamount &&
+        !namacro &&
+        !email &&
+        !tembusan &&
+        !emailTertuju &&
+        !emailCc &&
+        !emailBcc &&
+        !jumlahTagihanIdr &&
+        !jumlahTagihanUsd &&
+        !namaCro &&
+        !emailCro &&
+        !jabatanSigner &&
+        !namaSigner &&
+        !jumlahLampiran &&
+        !jabatanPenerima &&
+        !alamatPenerima &&
+        !panggilanPenerima &&
+        !nominalRupiah &&
+        !nominalDolar &&
+        !tembusan1 &&
+        !tembusan2
+      ) {
         return;
       }
 
       no++;
-      // Validasi: Persnum, Nama, Jabatan wajib
-      const isValid = !!(persnum && nama && jabatan);
-      const tertuju = nama && jabatan ? `${nama} - ${jabatan}` : nama || jabatan || '';
+      // Validasi: Perihal wajib
+      const isValid = !!perihalRow;
+      const isRevision = isRevisionRaw === '1' || isRevisionRaw.toLowerCase() === 'true' ? 1 : 0;
 
       result.push({
         no,
-        persnum,
-        nama,
-        jabatan,
-        tertuju,
+        persnum: '',
+        nama: '',
+        jabatan: '',
+        tertuju: idTertuju || perihalRow || '',
         alamat: null,
         kota: null,
-        kodePos: persnum || null,
-        jabatanPenerima: jabatan || null,
-        keterangan: keterangan || null,
+        kodePos: null,
+        jabatanPenerima: null,
+        keterangan: null,
+        perihal: perihalRow || '',
+        idTertuju: idTertuju || '',
+        idramount: idramount || '',
+        usdamount: usdamount || '',
+        namacro: namacro || '',
+        email: email || '',
+        tembusan: tembusan || '',
+        isRevision,
+        emailTertuju: emailTertuju || '',
+        emailCc: emailCc || '',
+        emailBcc: emailBcc || '',
+        jumlahTagihanIdr: jumlahTagihanIdr || '',
+        jumlahTagihanUsd: jumlahTagihanUsd || '',
+        namaCro: namaCro || '',
+        emailCro: emailCro || '',
+        jabatanSigner: jabatanSigner || '',
+        namaSigner: namaSigner || '',
+        jumlahLampiran: jumlahLampiran || '',
+        jabatanPenerima: jabatanPenerima || '',
+        alamatPenerima: alamatPenerima || '',
+        panggilanPenerima: panggilanPenerima || '',
+        nominalRupiah: nominalRupiah || '',
+        nominalDolar: nominalDolar || '',
+        tembusan1: tembusan1 || '',
+        tembusan2: tembusan2 || '',
         isValid,
-        validationMessage: isValid ? undefined : 'Persnum, Nama, dan Jabatan wajib diisi',
+        validationMessage: isValid ? undefined : 'Perihal wajib diisi',
       });
     });
 

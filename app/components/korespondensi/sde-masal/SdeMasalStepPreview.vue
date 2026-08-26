@@ -94,13 +94,30 @@
     <Teleport to="body">
       <div v-if="showPreview" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showPreview = false" />
-        <div class="relative w-full max-w-3xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[85vh]">
+        <div class="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Preview Perwakilan Surat</h3>
             <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="showPreview = false" />
           </div>
           <div class="p-4 overflow-y-auto">
-            <div class="bg-white text-black p-8 font-['Times_New_Roman'] text-[14px] leading-relaxed" v-html="previewHtml" />
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Preview untuk penerima
+              </label>
+              <USelectMenu
+                v-model="previewIndex"
+                :items="previewOptions"
+                value-key="value"
+                class="w-full"
+                variant="outline"
+              />
+            </div>
+            <SdeMasalLetterPreview
+              :konsep="konsep"
+              :penerima-list="penerimaList"
+              :template="template"
+              :penerima-index="previewIndex"
+            />
           </div>
         </div>
       </div>
@@ -128,6 +145,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import SdeMasalLetterPreview from './SdeMasalLetterPreview.vue';
 import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
 
 const props = defineProps<{
@@ -142,18 +160,12 @@ defineEmits<{
 }>();
 
 const showPreview = ref(false);
+const previewIndex = ref<number>(0);
 
-const previewHtml = computed(() => {
-  const first = props.penerimaList[0];
-  let html = props.template?.konten || '<p>(Konten kosong)</p>';
-  if (first) {
-    html = html
-      .replace(/\{\{tertuju\}\}/g, first.tertuju || '-')
-      .replace(/\{\{nama\}\}/g, first.nama || '-')
-      .replace(/\{\{jabatan\}\}/g, first.jabatan || '-')
-      .replace(/\{\{persnum\}\}/g, first.persnum || '-')
-      .replace(/\{\{keterangan\}\}/g, first.keterangan || '-');
-  }
-  return html;
-});
+const previewOptions = computed(() =>
+  props.penerimaList.map((p, idx) => ({
+    label: `${p.no || idx + 1}. ${p.idTertuju || p.tertuju || p.perihal || 'Penerima'}`,
+    value: idx,
+  })),
+);
 </script>
