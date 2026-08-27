@@ -2,13 +2,7 @@
   <div class="space-y-5">
     <PageHeader :items="breadcrumbs">
       <template #title>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
-      </template>
-      <template #subtitle>
-        <div class="flex flex-wrap gap-2">
-          <StatusBadge :status="detail?.tahapan" />
-          <UBadge v-if="detail?.jenis" color="neutral" size="sm">{{ jenisLabel(detail.jenis) }}</UBadge>
-        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
       </template>
     </PageHeader>
 
@@ -23,13 +17,36 @@
       <!-- LoadingOverlay for async actions (preview, kirim, paraf, tolak) -->
       <LoadingOverlay :loading="busy" :message="busyMessage" />
 
+      <!-- Banner mode: susun lembar (edit) vs menunggu paraf direksi (read-only) -->
+      <div
+        class="flex items-start gap-3 rounded-xl border px-4 py-3.5"
+        :class="canEditSheet
+          ? 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30'
+          : 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30'"
+      >
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+          :class="canEditSheet ? 'bg-primary-500' : 'bg-violet-500'"
+        >
+          <UIcon :name="canEditSheet ? 'i-lucide-file-pen-line' : 'i-lucide-stamp'" class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-bold text-gray-900 dark:text-white">{{ canEditSheet ? 'Susun Lembar Persetujuan Direksi' : 'Menunggu Paraf Direksi' }}</p>
+          <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+            {{ canEditSheet
+              ? 'Lengkapi data lembar di bawah, tinjau pratinjau PDF, lalu kirim ke direksi untuk diparaf.'
+              : `${parafDone}/${pdDirectors.length} direksi telah memaraf${nextDirector ? ' — giliran ' + nextDirector.nama + '.' : '.'}` }}
+          </p>
+        </div>
+      </div>
+
       <UCard
         variant="soft"
-        :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }"
+        :ui="{ root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors' }"
       >
         <div class="flex-1 overflow-y-auto space-y-1">
           <!-- ── Form fields (editable mode only) ── -->
-          <template v-if="canEditSheet">
+          <div v-if="canEditSheet" class="pd-form">
             <TulisInputTanggal v-model="formDate" label="Tanggal Lembar" />
 
             <div
@@ -103,20 +120,7 @@
               </div>
             </div>
 
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
-            >
-              <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Referensi Tanggal</span>
-                <div class="flex-1 w-full">
-                  <input
-                    type="date"
-                    v-model="sheet.referensiTanggal"
-                    class="outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                  />
-                </div>
-              </div>
-            </div>
+            <TulisInputTanggal v-model="refDate" label="Referensi Tanggal" />
 
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
@@ -150,7 +154,7 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Catatan (opsional)</span>
+                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Catatan</span>
                 <textarea
                   v-model="catatan"
                   rows="2"
@@ -159,24 +163,18 @@
                 />
               </div>
             </div>
-          </template>
+          </div>
 
           <!-- ── Inline paper preview ── -->
-          <div class="flex flex-col py-4">
-            <ClientOnly>
-              <div
-                class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-2"
-              >
-                <div class="bg-white pt-6 pb-6 border-b border-gray-100 select-none text-black">
-                  <LembarPersetujuanDireksiTemplate
-                    v-model="sheet"
-                    :directors="bodDirectors"
-                    :read-only="!canEditSheet"
-                  />
-                </div>
-              </div>
-            </ClientOnly>
-          </div>
+          <ClientOnly>
+            <div class="mt-6 overflow-x-auto">
+              <LembarPersetujuanDireksiTemplate
+                v-model="sheet"
+                :directors="bodDirectors"
+                :read-only="!canEditSheet"
+              />
+            </div>
+          </ClientOnly>
 
           <!-- ── Read-only mode: Progress Persetujuan Direksi ── -->
           <template v-if="!canEditSheet && pdDirectors.length > 0">
@@ -198,27 +196,23 @@
 
           <!-- ── Action bar ── -->
           <div
-            class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
+            class="flex flex-col gap-3 border-t border-gray-100 py-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
           >
-            <UButton
-              label="Preview PDF"
-              color="primary"
-              size="lg"
-              icon="i-lucide-eye"
-              class="px-8 font-bold"
-              :loading="busy"
-              @click="previewPdf"
-            />
-            <UButton
-              v-if="canEditSheet"
-              label="Kirim Lembar Persetujuan Direksi"
-              color="primary"
-              size="lg"
-              icon="i-lucide-send"
-              class="px-8 font-bold"
-              :loading="busy"
-              @click="kirimSheet"
-            />
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ canEditSheet
+                ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim lembar ke direksi untuk diparaf.'
+                : 'Lembar sedang menunggu proses paraf direksi.' }}
+            </p>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <UButton
+                label="Preview PDF"
+                color="primary"
+                size="lg"
+                icon="i-lucide-eye"
+                :loading="busy"
+                @click="previewPdf"
+              />
+            </div>
           </div>
         </div>
       </UCard>
@@ -234,6 +228,7 @@
           content: 'h-screen max-h-screen',
           body: 'p-0',
           footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+          wrapper: 'z-50',
         }"
       >
         <template #body>
@@ -252,7 +247,7 @@
               label="Kirim Lembar Persetujuan Direksi"
               color="primary"
               size="lg"
-              icon="i-lucide-send"
+              icon="i-heroicons-paper-airplane"
               class="px-8 font-bold"
               :loading="busy"
               @click="kirimSheet"
@@ -294,12 +289,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { CalendarDate } from '@internationalized/date';
-import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
-import type { SheetFormModel, DirectorApprovalItem, ApprovalRow, JenisNaskah } from '~/types/naskah-lainnya';
-import { JENIS_LABELS } from '~/types/naskah-lainnya';
+import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -357,6 +350,17 @@ watch(formDate, (d) => {
   }
 }, { immediate: true });
 
+// Referensi Tanggal: CalendarDate (TulisInputTanggal) ↔ sheet.referensiTanggal (YYYY-MM-DD)
+const refDate = ref<CalendarDate | null>(null);
+watch(refDate, (d) => {
+  sheet.value.referensiTanggal = d
+    ? `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`
+    : '';
+});
+
+// Sync catatan → sheet.catatan (agar tampil di preview inline, konsisten dgn PDF)
+watch(catatan, (v) => { sheet.value.catatan = v; });
+
 const isEvaluasi = computed(() => detail.value?.tahapan === 'evaluasi');
 const isPd = computed(() => detail.value?.tahapan === 'persetujuan_direksi');
 const pdRows = computed(() =>
@@ -377,6 +381,9 @@ const pdDirectors = computed<DirectorApprovalItem[]>(() =>
     catatan: a.catatan,
   })),
 );
+
+const parafDone = computed(() => pdDirectors.value.filter((d) => d.status === 'verified').length);
+const nextDirector = computed(() => pdDirectors.value.find((d) => d.status === 'waiting') ?? null);
 
 function isUserApprover(row: ApprovalRow) {
   if (row.status !== 'waiting') return false;
@@ -431,10 +438,6 @@ async function loadBod() {
   } catch {
     toast.add({ title: 'Gagal memuat daftar direksi', color: 'error' });
   }
-}
-
-function jenisLabel(j: JenisNaskah) {
-  return JENIS_LABELS[j] || j;
 }
 
 function apiErrorMessage(e) {
@@ -529,5 +532,18 @@ onMounted(() => {
 <style scoped>
 :deep(.tox-tinymce) {
   border: none !important;
+}
+
+/* Input inline ala kertas: tetap tanpa border, tapi ada ring saat fokus */
+.pd-form input:focus,
+.pd-form textarea:focus {
+  outline: none;
+  border-radius: 6px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  box-shadow: 0 0 0 1px var(--ui-primary, #155dfc);
+  background: var(--ui-bg-elevated, rgba(0, 0, 0, 0.03));
 }
 </style>

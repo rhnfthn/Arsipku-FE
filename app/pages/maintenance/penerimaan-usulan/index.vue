@@ -154,9 +154,10 @@
                 <td class="px-3 py-3 text-center">
                   <NuxtLink
                     :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-800 transition-colors"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
+                    :title="isDetailOnly(item.status) ? 'Detail' : 'Verifikasi'"
                   >
-                    <UIcon name="i-lucide-file-check" class="w-3.5 h-3.5" /> Verifikasi
+                    <UIcon :name="isDetailOnly(item.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="w-4 h-4" />
                   </NuxtLink>
                 </td>
               </tr>
@@ -221,8 +222,8 @@ const klasifikasiLabel = computed(() => {
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'DIKIRIM', label: 'Menunggu Penerimaan' },
-  { value: 'MENUNGGU_VERIFIKASI_BERKAS_FISIK', label: 'Menunggu Verifikasi' },
+  { value: 'MENUNGGU_VERIFIKASI', label: 'Menunggu Verifikasi' },
+  { value: 'MENUNGGU_PENERIMAAN', label: 'Menunggu Penerimaan' },
   { value: 'SELESAI', label: 'Selesai' },
 ];
 
@@ -288,30 +289,43 @@ const formatDate = (dateStr: string | null) => {
 }
 
 const statusLabel = (status: string) => {
-  if (status === 'USUL_PINDAH_DIKIRIM') return 'Menunggu Siapkan Berkas'
-  if (status === 'SIAPKAN_BERKAS_FISIK') return 'Siapkan Berkas Fisik'
-  if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'Berkas Tidak Sesuai'
-  if (status === 'DISETUJUI_PERSETUJUAN_TU') return 'Disetujui Persetujuan'
-  if (status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'Menunggu Persetujuan Terakhir'
-  if (status === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU') return 'Disetujui Persetujuan Terakhir'
-  if (status === 'ARSIP_INAKTIF_DITERIMA') return 'Arsip Diterima'
-  if (status === 'PENATAAN_ARSIP_INAKTIF') return 'Penataan Arsip'
+  if (status === 'DIKIRIM') return 'Menunggu Verifikasi'
+  if (status === 'MENUNGGU_VERIFIKASI_BERKAS_FISIK') return 'Menunggu Verifikasi'
+  if (status === 'BERKAS_FISIK_SESUAI') return 'Menunggu Verifikasi'
+  if (status === 'USUL_PINDAH_DIKIRIM') return 'Menunggu Verifikasi'
+  if (status === 'SIAPKAN_BERKAS_FISIK') return 'Menunggu Verifikasi'
+  // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen)
+  if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU') return 'Menunggu Penerimaan'
+  if (status === 'DISETUJUI_PERSETUJUAN_TU') return 'Menunggu Penerimaan'
+  if (status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'Menunggu Penerimaan'
+  // Selesai
+  if (status === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU') return 'Selesai'
+  if (status === 'ARSIP_INAKTIF_DITERIMA') return 'Selesai'
+  if (status === 'PENATAAN_ARSIP_INAKTIF') return 'Selesai'
   if (status === 'SELESAI') return 'Selesai'
-  if (status === 'MENUNGGU_VERIFIKASI_BERKAS_FISIK') return 'Menunggu Verifikasi Berkas'
-  if (status === 'BERKAS_FISIK_SESUAI') return 'Berkas Sesuai'
-  if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU') return 'Menunggu Persetujuan'
+  // Ditolak
+  if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'Ditolak'
   return 'Menunggu Verifikasi'
 }
 
 const statusBadgeClass = (status: string) => {
   if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-  if (status === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-  if (status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU' || status === 'ARSIP_INAKTIF_DITERIMA') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-  if (status === 'USUL_PINDAH_DIKIRIM' || status === 'SIAPKAN_BERKAS_FISIK') return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
-  if (status === 'BERKAS_FISIK_SESUAI') return 'px-2 py-0.5 rounded-full font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-  if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU' || status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-  if (status === 'PENATAAN_ARSIP_INAKTIF') return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+  if (status === 'SELESAI' || status === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU' || status === 'ARSIP_INAKTIF_DITERIMA' || status === 'PENATAAN_ARSIP_INAKTIF') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+  if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU' || status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
   return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+}
+
+/** Status yang hanya menampilkan tombol "Detail" (bukan "Verifikasi"). */
+const isDetailOnly = (status: string) => {
+  return (
+    status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU' ||
+    status === 'DISETUJUI_PERSETUJUAN_TU' ||
+    status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU' ||
+    status === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU' ||
+    status === 'ARSIP_INAKTIF_DITERIMA' ||
+    status === 'PENATAAN_ARSIP_INAKTIF' ||
+    status === 'SELESAI'
+  )
 }
 
 const onExport = () => {

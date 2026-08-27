@@ -7,7 +7,7 @@
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0 rounded-t-2xl">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ editData ? 'Edit Usulan' : 'Usul Pindah Arsip ke Inaktif' }}
+            {{ editData ? 'Usul Pindah Arsip' : 'Usul Pindah Arsip ke Inaktif' }}
           </h3>
           <button @click="close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <UIcon name="i-lucide-x" class="w-5 h-5" />
@@ -275,18 +275,11 @@
             Batal
           </button>
           <button
-            @click="submit(true)"
-            :disabled="submitting || !canSubmit"
-            class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-          >
-            {{ submitting ? 'Menyimpan...' : 'Simpan Draft' }}
-          </button>
-          <button
             @click="submit(false)"
             :disabled="submitting || !canSubmit"
             class="px-5 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50"
           >
-            {{ submitting ? 'Mengirim...' : 'Simpan & Kirim ke Atasan' }}
+            {{ submitting ? 'Mengirim...' : 'Kirim' }}
           </button>
         </div>
       </div>

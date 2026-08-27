@@ -1,8 +1,9 @@
-import { ref } from "vue";
-import { useApi } from "~/composables/useApi";
+import { ref } from 'vue';
+import { useApi } from '~/composables/useApi';
 
 export interface TertujuEksternal {
   id: string;
+  kode?: string;
   id_position_pembuat: string;
 
   company: string;
@@ -28,7 +29,11 @@ export const useTertujuEksternal = () => {
     loading.value = true;
     try {
       // Include inactive data — skipCache agar selalu fetch data terbaru
-      const res = await apiGet("/persuratan/eksternal?include_inactive=true", {}, { skipCache: true });
+      const res = await apiGet(
+        '/persuratan/eksternal?include_inactive=true',
+        {},
+        { skipCache: true }
+      );
       data.value = res?.data ?? [];
     } catch (err) {
       error.value = err;
@@ -43,7 +48,7 @@ export const useTertujuEksternal = () => {
     error.value = null;
 
     try {
-      await apiPost("/persuratan/eksternal", payload);
+      await apiPost('/persuratan/eksternal', payload);
 
       await fetchTertujuEksternal();
     } catch (err) {

@@ -55,6 +55,8 @@ export const useVerifikasiUsulan = () => {
     arsipPerihal: raw.arsipPerihal ?? raw.arsip_perihal ?? '-',
     arsipKode: raw.arsipKode ?? raw.arsip_kode ?? null,
     arsipKlasifikasi: raw.arsipKlasifikasi ?? raw.arsip_klasifikasi ?? null,
+    arsipKlasifikasiKode: raw.arsipKlasifikasiKode ?? raw.arsip_klasifikasi_kode ?? null,
+    arsipTindakanPenyusutan: raw.arsipTindakanPenyusutan ?? raw.arsip_tindakan_penyusutan ?? null,
     tanggalRetensiAktifHabis:
       raw.tanggalRetensiAktifHabis ?? raw.tanggal_retensi_aktif_habis ?? null,
     keterangan: raw.keterangan ?? null,
@@ -108,6 +110,11 @@ export const useVerifikasiUsulan = () => {
       const jenis = params.jenis;
       delete params.jenis;
 
+      // Status "MENUNGGU_VERIFIKASI" adalah pseudo-status (gabungan beberapa
+      // status menunggu). Jangan kirim ke backend — filter di frontend.
+      const statusFilter = params.status;
+      delete params.status;
+
       // Pagination dilakukan di frontend (setelah filter DRAFT)
       const page = params.page ?? 1;
       const limit = params.limit ?? 10;
@@ -147,10 +154,42 @@ export const useVerifikasiUsulan = () => {
           // Sembunyikan usulan yang dibuat oleh user sendiri sebagai Sekretaris
           // (halaman verifikasi hanya untuk usulan di mana user adalah atasan)
           if (userPersnum && Number(item.sekretarisPersnum) === Number(userPersnum)) continue;
-          // Filter klasifikasi (client-side)
-          if (filterKlasifikasi && item.arsipKlasifikasi) {
-            if (!item.arsipKlasifikasi.toLowerCase().includes(filterKlasifikasi.toLowerCase()))
+          // Filter status (client-side) — pseudo-status
+          if (statusFilter) {
+            if (statusFilter === 'MENUNGGU_PERSETUJUAN') {
+              const menunggu = [
+                'MENUNGGU_VERIFIKASI_ATASAN',
+                'DISETUJUI_ATASAN',
+                'MENUNGGU_VERIFIKASI_TERAKHIR',
+              ];
+              if (!menunggu.includes(item.status)) continue;
+            } else if (statusFilter === 'MENUNGGU_VERIFIKASI') {
+              const menunggu = [
+                'DISETUJUI_VERIFIKASI_TERAKHIR',
+                'USUL_PINDAH_DIKIRIM',
+                'SIAPKAN_BERKAS_FISIK',
+                'DIKIRIM',
+                'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
+                'BERKAS_FISIK_SESUAI',
+              ];
+              if (!menunggu.includes(item.status)) continue;
+            } else if (statusFilter === 'MENUNGGU_PENERIMAAN') {
+              const menunggu = [
+                'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
+                'DISETUJUI_PERSETUJUAN_TU',
+                'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
+              ];
+              if (!menunggu.includes(item.status)) continue;
+            } else if (item.status !== statusFilter) {
               continue;
+            }
+          }
+          // Filter klasifikasi (client-side) — cocokkan kode ATAU teks
+          if (filterKlasifikasi) {
+            const fk = filterKlasifikasi.toLowerCase();
+            const kode = (item.arsipKlasifikasiKode ?? '').toLowerCase();
+            const teks = (item.arsipKlasifikasi ?? '').toLowerCase();
+            if (kode !== fk && !teks.includes(fk) && !kode.includes(fk)) continue;
           }
           combined.push(item);
         }

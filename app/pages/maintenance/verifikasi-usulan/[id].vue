@@ -53,22 +53,18 @@
               </button>
             </div>
             <div id="daftar-isi-print" class="text-sm">
-              <p class="font-semibold text-gray-900 dark:text-white mb-3">Daftar Isi — {{ usulan.nomorUsulan }}</p>
+              <p class="font-semibold text-gray-900 dark:text-white mb-3">{{ usulan.nomorUsulan }}</p>
               <table class="w-full border-collapse text-xs">
                 <thead>
                   <tr class="border-b-2 border-gray-300 dark:border-gray-500">
-                    <th class="text-center py-2 px-2 text-gray-500 w-8">✓</th>
                     <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
+                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas</th>
                     <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
                     <th class="text-center py-2 px-2 text-gray-500 w-16">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                    <td class="text-center py-2 px-2">
-                      <input type="checkbox" class="w-4 h-4 text-[#457fb6] border-gray-300 rounded" />
-                    </td>
                     <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
                     <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
                       <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
@@ -87,7 +83,7 @@
                     </td>
                   </tr>
                   <tr v-if="daftarIsi.length === 0">
-                    <td colspan="5" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
+                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
                   </tr>
                 </tbody>
               </table>
@@ -620,14 +616,19 @@ const canApproveReceipt = computed(() => {
 });
 
 /** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
- * Hanya atasan managerial (bukan sekretaris) yang bisa kirim ke TU. */
+ * HANYA atasan LEVEL 1 (urutan=1) yang bisa kirim ke TU — bukan level 2/3. */
 const canKirimTU = computed(() => {
   if (!usulan.value || !user.value) return false;
   if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
   // Sekretaris tidak boleh kirim ke TU
   if (isOwnUsulan.value) return false;
-  // Atasan managerial (ada di approvalLevels) yang bisa kirim ke TU
-  if (isAtasanInLevels.value) return true;
+  // Cek apakah user login adalah atasan LEVEL 1 (urutan=1)
+  const levels = usulan.value.approvalLevels;
+  if (levels && levels.length > 0) {
+    const firstLevel = levels.find((l) => l.urutan === 1);
+    if (!firstLevel) return false;
+    return Number(firstLevel.atasanPersnum) === Number(user.value.persnum);
+  }
   // Fallback: single-atasan tanpa approvalLevels — cek atasanPersnum langsung
   if (usulan.value.atasanPersnum) {
     return Number(usulan.value.atasanPersnum) === Number(user.value.persnum);

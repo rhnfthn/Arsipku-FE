@@ -139,7 +139,7 @@
           <StatusBadge :status="row.tahapan" />
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :status="row.tahapan === 'perlu_perbaikan' ? 'perlu_perbaikan' : 'waiting'" />
+          <StatusBadge :status="approvalStatusKey(row.tahapanRaw)" />
         </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="openAction(row)">Proses</UButton>
@@ -301,6 +301,20 @@ const filteredRows = computed(() => {
   );
 });
 
+// Status persetujuan dari POV user (badge kolom Status). Sebelumnya hardcoded
+// 'waiting' — komparasi row.tahapan (sudah di-spasi-kan) vs 'perlu_perbaikan'
+// (underscore) selalu false → naskah selesai pun tampil "Menunggu".
+const APPROVAL_STATUS_LABEL: Record<string, string> = {
+  selesai: 'Selesai', perlu_perbaikan: 'Perlu Perbaikan',
+  ditolak: 'Ditolak', dibatalkan: 'Dibatalkan',
+};
+function approvalStatusKey(tahapanRaw: string): string {
+  if (tahapanRaw === 'selesai') return 'selesai';
+  if (tahapanRaw === 'perlu_perbaikan') return 'perlu_perbaikan';
+  if (tahapanRaw === 'ditolak' || tahapanRaw === 'dibatalkan') return 'ditolak';
+  return 'waiting';
+}
+
 const displayRows = computed(() =>
   filteredRows.value.map((r) => ({
     id: r.id,
@@ -310,7 +324,7 @@ const displayRows = computed(() =>
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
-    status: r.tahapan === 'perlu_perbaikan' ? 'Perlu Perbaikan' : 'Menunggu',
+    status: APPROVAL_STATUS_LABEL[r.tahapan] ?? 'Menunggu',
   })),
 );
 
