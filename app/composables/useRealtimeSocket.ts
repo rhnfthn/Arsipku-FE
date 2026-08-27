@@ -45,6 +45,14 @@ const arsipPersetujuanWaitingCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
 
+// Flag update (note/lock/favorit/arsip) — payload { id_sirkulasi, flag_type, new_value }
+const flagUpdate = ref<{
+  id_sirkulasi: string;
+  flag_type: string;
+  new_value: boolean;
+  note_text?: string | null;
+} | null>(null);
+
 let socket: Socket | null = null;
 let connectPromise: Promise<void> | null = null;
 
@@ -211,6 +219,12 @@ const connectSocket = async (): Promise<void> => {
       }
     });
 
+    socket.on('flag:update', (payload: any) => {
+      if (payload && payload.id_sirkulasi && payload.flag_type) {
+        flagUpdate.value = payload;
+      }
+    });
+
     socket.on('realtime:connected', () => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
@@ -282,6 +296,7 @@ export function useRealtimeSocket() {
     nomorCounts,
     naskahDinasVerifikatorWaitingCount,
     arsipPersetujuanWaitingCount,
+    flagUpdate,
     isConnected,
     hasBsreAlert,
     // Socket reference (for custom event listeners)
