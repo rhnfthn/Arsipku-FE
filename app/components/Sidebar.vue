@@ -475,6 +475,18 @@ const checkAtasanManagerialTuUsulan = async () => {
   }
 };
 
+// Cek apakah user pernah dipilih sebagai atasan managerial di penyusutan.
+// Jika ya, user berhak melihat menu "Verifikasi Penyusutan".
+const isAtasanManagerialPenyusutan = ref(false);
+const checkAtasanManagerialPenyusutan = async () => {
+  try {
+    const res = await apiGet('/penyusutan/is-atasan', {}, { skipCache: true });
+    isAtasanManagerialPenyusutan.value = res?.data?.isAtasan ?? res?.isAtasan ?? false;
+  } catch {
+    isAtasanManagerialPenyusutan.value = false;
+  }
+};
+
 // ─── Count fetching ───────────────────────────────────────────────────────────
 // Nomor count sekarang sepenuhnya dari WebSocket (realtime:summary + nomor:count event).
 // Tidak ada lagi REST fallback ke /admin/nomor-request-count atau /nomor-request-count.
@@ -532,6 +544,8 @@ watch(
       checkAtasanManagerialUsulan();
       // Cek apakah user terdaftar sebagai atasan TU di usulan apapun
       checkAtasanManagerialTuUsulan();
+      // Cek apakah user adalah atasan managerial di penyusutan
+      checkAtasanManagerialPenyusutan();
     }
   },
   { immediate: true }
@@ -1090,11 +1104,260 @@ const isSekretarisActor = computed(
   () => activePositionStatus.value === 'SE' || activePositionStatus.value === 'PS' || isSekretarisRole.value,
 );
 
+const unitDokumenKelolaMenus = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+      },
+      {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
+        label: 'Penerimaan Usulan',
+        to: '/maintenance/penerimaan-usulan',
+        icon: 'i-lucide-bell',
+      },
+      {
+        label: 'Penataan Arsip Inaktif',
+        to: '/maintenance/penataan-arsip-inaktif',
+        icon: 'i-lucide-archive',
+      },
+    ],
+  },
+  {
+    label: 'Penggunaan',
+    icon: 'i-lucide-folder-open',
+    children: [
+      {
+        label: 'Pemberian',
+        to: '/kelola/penggunaan/pemberian',
+        icon: 'i-lucide-folder-check',
+        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+      },
+    ],
+  },
+  {
+    label: 'Penyusutan',
+    icon: 'i-lucide-file-minus',
+    children: [
+      {
+        label: 'Pengajuan Penyusutan',
+        to: '/maintenance/penyusutan/pengajuan-penyusutan',
+        icon: 'i-lucide-list',
+      },
+      {
+        label: 'Penataan dan Pemusnahan',
+        to: '/maintenance/penyusutan/penataan-pemusnahan',
+        icon: 'i-lucide-archive',
+      },
+      {
+        label: 'Backup Status',
+        to: '/maintenance/penyusutan/backup-status',
+        icon: 'i-lucide-database',
+      },
+    ],
+  },
+]);
+
+const sekretarisKelolaMenus = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+      },
+      {
+        label: 'Pemindahan Arsip',
+        to: '/maintenance/transfer-active-to-inactive-file',
+        icon: 'i-lucide-file-up',
+      },
+    ],
+  },
+  {
+    label: 'Penggunaan',
+    icon: 'i-lucide-folder-open',
+    children: [
+      {
+        label: 'Usulan Saya',
+        to: '/kelola/penggunaan/usulan-saya',
+        icon: 'i-lucide-file-plus',
+        badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      },
+      {
+        label: 'Pemberian',
+        to: '/kelola/penggunaan/pemberian',
+        icon: 'i-lucide-folder-check',
+        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+      },
+    ],
+  },
+]);
+
+const atasanManagerialSekretarisKelolaMenus = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+      },
+      {
+        label: 'Persetujuan',
+        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+        icon: 'i-lucide-file-check',
+        badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+      },
+      {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
+        label: 'Verifikasi Usulan',
+        to: '/maintenance/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+      },
+    ],
+  },
+  {
+    label: 'Penggunaan',
+    icon: 'i-lucide-folder-open',
+    children: [
+      {
+        label: 'Pemberian',
+        to: '/kelola/penggunaan/pemberian',
+        icon: 'i-lucide-folder-check',
+        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+      },
+    ],
+  },
+  {
+    label: 'Penyusutan',
+    icon: 'i-lucide-file-minus',
+    children: [
+      {
+        label: 'Verifikasi Penyusutan',
+        to: '/maintenance/penyusutan/verifikasi-penyusutan',
+        icon: 'i-lucide-file-check',
+      },
+    ],
+  },
+]);
+
+const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
+  {
+    label: 'Pemeliharaan',
+    icon: 'i-lucide-folder-cog',
+    children: [
+      {
+        label: 'Pemberkasan',
+        to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
+        icon: 'i-lucide-folder-plus',
+      },
+      {
+        label: 'Persetujuan',
+        to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+        icon: 'i-lucide-file-check',
+        badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+      },
+      {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
+        label: 'Verifikasi Persetujuan',
+        to: '/maintenance/verifikasi-persetujuan-tu',
+        icon: 'i-lucide-file-check-2',
+      },
+      {
+        label: 'Verifikasi Usulan',
+        to: '/maintenance/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+      },
+    ],
+  },
+  {
+    label: 'Penggunaan',
+    icon: 'i-lucide-folder-open',
+    children: [
+      {
+        label: 'Pemberian',
+        to: '/kelola/penggunaan/pemberian',
+        icon: 'i-lucide-folder-check',
+        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+      },
+    ],
+  },
+  {
+    label: 'Penyusutan',
+    icon: 'i-lucide-file-minus',
+    children: [
+      {
+        label: 'Verifikasi Penyusutan',
+        to: '/maintenance/penyusutan/verifikasi-penyusutan',
+        icon: 'i-lucide-file-check',
+      },
+    ],
+  },
+]);
+
+// Pengguna yang hanya memiliki satu profile arsip bisa belum menyimpan
+// `active_profile` di localStorage. Tetap gunakan role tunggal sebagai fallback
+// agar menu Unit Dokumen/Sekretaris tidak jatuh ke menu Kelola umum.
+const isUnitDokumenProfile = computed(
+  () => activeProfile.value === 'unit_dokumen' || (isTuRole.value && !isSekretarisRole.value)
+);
+const isSekretarisProfile = computed(
+  () => activeProfile.value === 'sekretaris' || (isSekretarisActor.value && !isTuRole.value)
+);
+
+const isAtasanManagerialSekretarisProfile = computed(
+  () =>
+    isSekretarisProfile.value &&
+    (isManagerialPosition.value || isAtasanManagerialUsulan.value || isAtasanManagerialPenyusutan.value)
+);
+const isAtasanManagerialUnitDokumenProfile = computed(
+  () =>
+    // Penugasan di tuApprovalLevels adalah sumber otoritas untuk Atasan
+    // Managerial Unit Dokumen, terlepas dari profile lokal yang sedang tersimpan.
+    isAtasanManagerialTuUsulan.value ||
+    (isUnitDokumenProfile.value &&
+      (isManagerialPosition.value ||
+        isAtasanManagerialUsulan.value ||
+        isAtasanManagerialPenyusutan.value))
+);
+
+const profileKelolaMenus = computed(() => {
+  if (isAtasanManagerialUnitDokumenProfile.value) return atasanManagerialUnitDokumenKelolaMenus.value;
+  if (isAtasanManagerialSekretarisProfile.value) return atasanManagerialSekretarisKelolaMenus.value;
+  if (isUnitDokumenProfile.value && isTuRole.value) return unitDokumenKelolaMenus.value;
+  if (isSekretarisProfile.value && isSekretarisActor.value) return sekretarisKelolaMenus.value;
+  return null;
+});
+
 // ── Menu Pemeliharaan (milik Fakhri — JANGAN UBAH) ──
 // Struktur asli Fakhri: Pemberkasan + Persetujuan Pemberkasan
 // Admin (SUPERADMIN/ADMIN) lihat keduanya, User biasa lihat Pemberkasan saja.
 
 const adminMenuKelola = computed(() => {
+  if (profileKelolaMenus.value) return profileKelolaMenus.value;
+
   const pemeliharaanChildren = [
     {
       label: 'Pemberkasan',
@@ -1200,33 +1463,67 @@ const adminMenuKelola = computed(() => {
   }
 
   // ── Menu Penyusutan ──
-  menus.push({
-    label: 'Penyusutan',
-    icon: 'i-lucide-file-minus',
-    children: [
-      {
-        label: 'Daftar',
-        to: '/kelola/penyusutan/daftar',
-        icon: 'i-lucide-list',
-      },
-      {
-        label: 'Verifikasi',
-        to: '/kelola/penyusutan/verifikasi',
-        icon: 'i-lucide-file-check',
-      },
-    ],
+  const penyusutanChildren = [
+    {
+      label: 'Pengajuan Penyusutan',
+      to: '/maintenance/penyusutan/pengajuan-penyusutan',
+      icon: 'i-lucide-list',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Penataan & Pemusnahan',
+      to: '/maintenance/penyusutan/penataan-pemusnahan',
+      icon: 'i-lucide-archive',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Penyusutan',
+      to: '/maintenance/penyusutan/verifikasi-penyusutan',
+      icon: 'i-lucide-file-check',
+      showIfAtasanPenyusutan: true,
+    },
+    {
+      label: 'Backup Status',
+      to: '/maintenance/penyusutan/backup-status',
+      icon: 'i-lucide-database',
+      showIfTuRole: true,
+    },
+  ];
+
+  const filteredPenyusutanChildren = penyusutanChildren.filter((c) => {
+    if (c.showIfTuRole && !isTuRole.value) return false;
+    if (c.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) return false;
+    return true;
   });
+
+  if (filteredPenyusutanChildren.length > 0) {
+    menus.push({
+      label: 'Penyusutan',
+      icon: 'i-lucide-file-minus',
+      children: filteredPenyusutanChildren,
+    });
+  }
 
   return menus;
 });
 
 const userMenuKelola = computed(() => {
+  if (profileKelolaMenus.value) return profileKelolaMenus.value;
+
   const pemeliharaanChildren = [
     {
       label: 'Pemberkasan',
       to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
       icon: 'i-lucide-folder-plus',
       permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
+    },
+    {
+      label: 'Persetujuan',
+      to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
+      icon: 'i-lucide-file-check',
+      permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+      showIfCanPersetujuan: true,
+      badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
     {
       label: 'Pemindahan Arsip',
@@ -1277,53 +1574,41 @@ const userMenuKelola = computed(() => {
     },
   ];
 
-  // ── Menu Penggunaan (scope kita) ──
-  const penggunaanChildren = [];
-
-  if (isSekretarisActor.value) {
-    penggunaanChildren.push({
-      label: 'Usulan Saya',
-      to: '/kelola/penggunaan/usulan-saya',
-      icon: 'i-lucide-file-plus',
-      badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
-      activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
-    });
-  }
-
-  penggunaanChildren.push({
-    label: 'Pemberian',
-    to: '/kelola/penggunaan/pemberian',
-    icon: 'i-lucide-folder-check',
-    badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
-  });
-
-  if (penggunaanChildren.length > 0) {
-    const penggunaanBadge = penggunaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
-    menus.push({
-      label: 'Penggunaan',
-      icon: 'i-lucide-folder-open',
-      badge: penggunaanBadge > 0 ? penggunaanBadge : null,
-      children: penggunaanChildren,
-    });
-  }
-
   // ── Menu Penyusutan ──
-  menus.push({
-    label: 'Penyusutan',
-    icon: 'i-lucide-file-minus',
-    children: [
-      {
-        label: 'Daftar',
-        to: '/kelola/penyusutan/daftar',
-        icon: 'i-lucide-list',
-      },
-      {
-        label: 'Verifikasi',
-        to: '/kelola/penyusutan/verifikasi',
-        icon: 'i-lucide-file-check',
-      },
-    ],
+  const penyusutanChildrenKelola = [
+    {
+      label: 'Pengajuan Penyusutan',
+      to: '/maintenance/penyusutan/pengajuan-penyusutan',
+      icon: 'i-lucide-list',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Penataan & Pemusnahan',
+      to: '/maintenance/penyusutan/penataan-pemusnahan',
+      icon: 'i-lucide-archive',
+      showIfTuRole: true,
+    },
+    {
+      label: 'Verifikasi Penyusutan',
+      to: '/maintenance/penyusutan/verifikasi-penyusutan',
+      icon: 'i-lucide-file-check',
+      showIfAtasanPenyusutan: true,
+    },
+  ];
+
+  const filteredPenyusutanChildrenKelola = penyusutanChildrenKelola.filter((c) => {
+    if (c.showIfTuRole && !isTuRole.value) return false;
+    if (c.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) return false;
+    return true;
   });
+
+  if (filteredPenyusutanChildrenKelola.length > 0) {
+    menus.push({
+      label: 'Penyusutan',
+      icon: 'i-lucide-file-minus',
+      children: filteredPenyusutanChildrenKelola,
+    });
+  }
 
   return menus;
 });
@@ -1389,6 +1674,12 @@ const filterMenuByPermission = (items) => {
     // (terdaftar di tuApprovalLevels suatu usulan). Menu ini untuk verifikasi
     // persetujuan penerimaan arsip dari TU, bukan verifikasi usulan sekretaris.
     if (cloned.showIfAtasanTu && !isAtasanManagerialTuPersnum) {
+      return null;
+    }
+
+    // Cek showIfAtasanPenyusutan — tampilkan HANYA jika user adalah Atasan
+    // Managerial di penyusutan (terdaftar di penyusutan_verifikator).
+    if (cloned.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) {
       return null;
     }
 

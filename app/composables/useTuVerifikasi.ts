@@ -25,7 +25,7 @@ export const useTuVerifikasi = () => {
   };
 
   const fetchNotifikasiDetail = async (id: string) => {
-    return await apiGet<TuUsulanItem>(`/tu/notifikasi-usulan/${id}`);
+    return await apiGet<any>(`/tu/notifikasi-usulan/${id}`);
   };
 
   const fetchAtasanTuOptions = async () => {
@@ -54,7 +54,7 @@ export const useTuVerifikasi = () => {
   };
 
   const fetchAtasanTuDetail = async (id: string) => {
-    return await apiGet<TuUsulanItem>(`/atasan-tu/verifikasi-persetujuan/${id}`);
+    return await apiGet<any>(`/atasan-tu/verifikasi-persetujuan/${id}`);
   };
 
   const setujuiPenerimaan = async (id: string, payload: SetujuiPenerimaanPayload) => {
@@ -80,15 +80,11 @@ export const useTuVerifikasi = () => {
 
   // ─── TU: Penataan Arsip ───
   const fetchPenataanList = async (params: TuFilterParams) => {
-    return await apiGet<TuUsulanListResponse>(
-      '/tu/penataan-arsip',
-      { params },
-      { skipCache: true }
-    );
+    return await apiGet<any>('/tu/penataan-arsip', { params }, { skipCache: true });
   };
 
   const fetchPenataanDetail = async (id: string) => {
-    return await apiGet<TuUsulanItem>(`/tu/penataan-arsip/${id}`);
+    return await apiGet<any>(`/tu/penataan-arsip/${id}`);
   };
 
   const selesaiPenataan = async (id: string, payload: SelesaiPenataanPayload) => {

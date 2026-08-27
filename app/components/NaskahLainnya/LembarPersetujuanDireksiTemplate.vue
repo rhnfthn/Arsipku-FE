@@ -28,7 +28,7 @@
         <td class="lpd-tall">
           <div class="lpd-center">Diusulkan Oleh</div>
           <br><br><br>
-          <div class="lpd-small-italic lpd-center">(Nama Pejabat 1 Level di<br>bawah Direksi )</div>
+          <div class="lpd-small-italic lpd-center">(Nama Pejabat 1 Level di<br>bawah Direksi)</div>
         </td>
         <td class="lpd-colon">:</td>
         <td>
@@ -54,7 +54,6 @@
       <tr>
         <td>Perihal</td>
         <td colspan="5">
-          <div class="lpd-small-italic">Permohonan Persetujuan (Judul Naskah Dinas Yang Dimintakan Persetujuan Direksi )</div>
           <div class="lpd-field" style="min-height:34px;">{{ modelValue?.perihal }}</div>
         </td>
       </tr>
@@ -90,7 +89,7 @@
           <div class="lpd-signature-block">
             a.n DIREKSI<br>
             DIREKTUR UTAMA<br>
-            <div class="lpd-signature-name">NAMA LENGKAP TANPA GELAR</div>
+            <div class="lpd-signature-name">{{ dirutNama }}</div>
           </div>
         </td>
         <td style="vertical-align:top;">
@@ -104,7 +103,7 @@
         <td>Penetapan /<br>Pengesahan Perihal</td>
         <td class="lpd-colon">:</td>
         <td>
-          <div class="lpd-small-italic">Draft ( {{ modelValue?.perihal || 'Judul Peraturan Direksi, Keputusan Direksi' }} )</div>
+          <div class="lpd-small-italic"> {{ modelValue?.perihal || 'Judul Peraturan Direksi, Keputusan Direksi' }} </div>
         </td>
         <td style="vertical-align:top;">
           <div class="lpd-director-item" v-if="directorSlots[1]">
@@ -148,7 +147,7 @@
       </tr>
       <tr>
         <td colspan="3" class="lpd-footer-note">Setelah selesai di proses, harap diteruskan kepada (unit yang membidangi hukum)</td>
-        <td class="lpd-catatan">Catatan :</td>
+        <td class="lpd-catatan">Catatan : {{ modelValue?.catatan || '' }}</td>
       </tr>
       </tbody>
     </table>
@@ -176,6 +175,13 @@ const directorSlots = computed(() =>
   props.directors && props.directors.length ? props.directors : STANDARD_DIREKSI,
 );
 
+// Nama Direktur Utama untuk blok tanda tangan a.n DIREKSI (bukan baris paraf).
+const dirutNama = computed(() => {
+  const dirs = Array.isArray(props.directors) ? props.directors : [];
+  const dirut = dirs.find((d) => /direktur\s*utama/i.test(d.jabatan || ''));
+  return (dirut?.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase();
+});
+
 function formatTanggal(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -187,12 +193,11 @@ function formatTanggal(value) {
 
 <style scoped>
 .lpd-page {
-  width: 210mm;
+  width: 100%;
   min-height: 297mm;
   margin: 0 auto;
   background: #fff;
   padding: 15mm 15mm;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
   font-family: "Times New Roman", Times, serif;
   font-size: 13px;
   color: #000;

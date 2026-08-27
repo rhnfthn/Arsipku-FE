@@ -45,6 +45,7 @@ export interface TransferActiveToInactive {
   arsipPerihal: string;
   arsipKode: string | null;
   arsipKlasifikasi?: string | null;
+  arsipTindakanPenyusutan?: string | null;
   tanggalRetensiAktifHabis: string | null;
   arsipIds: Array<{
     id: string;

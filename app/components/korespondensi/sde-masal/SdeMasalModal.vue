@@ -82,18 +82,6 @@
             </div>
 
             <!-- Skema Template -->
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Skema Template <span class="text-red-500">*</span></label>
-              <select
-                v-model="upload.skemaTemplate"
-                class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-              >
-                <option value="">Pilih skema...</option>
-                <option value="SDE-STANDAR">SDE Standar</option>
-                <option value="SDE-KHUSUS">SDE Khusus</option>
-              </select>
-            </div>
-
             <!-- Versi Template -->
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Versi Template <span class="text-red-500">*</span></label>
@@ -172,7 +160,7 @@
             </div>
             <div class="flex items-center gap-2">
               <button
-                @click="downloadTemplate"
+                @click="downloadTemplate('KEUANGAN')"
                 class="px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 dark:hover:bg-[#457fb6]/20 transition-colors"
               >
                 <UIcon name="i-lucide-download" class="w-4 h-4 mr-1 inline" />
@@ -240,7 +228,6 @@ const concept = reactive({
 });
 
 const upload = reactive({
-  skemaTemplate: '',
   versiTemplate: '',
 });
 
@@ -249,7 +236,7 @@ const canProceedStep1 = computed(() => {
 });
 
 const canSubmitUpload = computed(() => {
-  return !!(upload.skemaTemplate && upload.versiTemplate && selectedFile.value);
+  return !!(upload.versiTemplate && selectedFile.value);
 });
 
 const close = () => {
@@ -263,7 +250,6 @@ const resetState = () => {
   concept.klasifikasiName = '';
   concept.pengirimId = '';
   concept.pengirimName = '';
-  upload.skemaTemplate = '';
   upload.versiTemplate = '';
   selectedFile.value = null;
 };
@@ -356,7 +342,7 @@ const submitUpload = async () => {
     const result = await uploadExcel(
       selectedFile.value!,
       conceptData.id,
-      upload.skemaTemplate,
+      'KEUANGAN',
       upload.versiTemplate,
     );
 

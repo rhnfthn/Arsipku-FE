@@ -1,4 +1,4 @@
-import type { Klasifikasi } from "~/types/klasifikasi";
+import type { Klasifikasi } from '~/types/klasifikasi';
 
 export type { Klasifikasi };
 
@@ -17,12 +17,10 @@ export const useKlasifikasi = () => {
 
   const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
-      const response = await api.get<{ data: Klasifikasi[] }>(
-        "/persuratan/klasifikasi",
-      );
+      const response = await api.get<{ data: Klasifikasi[] }>('/persuratan/klasifikasi');
       return response.data.data;
     } catch (error) {
-      console.error("Gagal mengambil data klasifikasi:", error);
+      console.error('Gagal mengambil data klasifikasi:', error);
       throw error;
     }
   };
@@ -50,11 +48,12 @@ export const useKlasifikasi = () => {
 
     isLoadingKlasifikasi.value = true;
     try {
-      const data = await apiGet<Klasifikasi[]>("/persuratan/klasifikasi", {}, { skipCache: true });
+      const res: any = await apiGet('/persuratan/klasifikasi', {}, { skipCache: true });
+      const data = Array.isArray(res) ? res : (res?.data ?? []);
       klasifikasi.value = data;
       return data;
     } catch (error) {
-      console.error("Gagal mengambil klasifikasi:", error);
+      console.error('Gagal mengambil klasifikasi:', error);
       throw error;
     } finally {
       isLoadingKlasifikasi.value = false;
@@ -62,7 +61,7 @@ export const useKlasifikasi = () => {
   };
 
   const createKlasifikasi = (payload: KlasifikasiPayload) => {
-    return apiPost("/persuratan/klasifikasi", payload);
+    return apiPost('/persuratan/klasifikasi', payload);
   };
 
   const updateKlasifikasi = (id: string, payload: KlasifikasiPayload) => {
@@ -76,7 +75,8 @@ export const useKlasifikasi = () => {
   const refreshKlasifikasi = async () => {
     isLoadingKlasifikasi.value = true;
     try {
-      const data = await apiGet<Klasifikasi[]>("/persuratan/klasifikasi", {}, { skipCache: true });
+      const res: any = await apiGet('/persuratan/klasifikasi', {}, { skipCache: true });
+      const data = Array.isArray(res) ? res : (res?.data ?? []);
       klasifikasi.value = data;
       return data;
     } finally {

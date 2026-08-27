@@ -79,17 +79,34 @@
       />
     </div>
 
-    <!-- Preview Modal sederhana -->
+    <!-- Preview Modal -->
     <Teleport to="body">
       <div v-if="showPreview" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showPreview = false" />
-        <div class="relative w-full max-w-3xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[85vh]">
+        <div class="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-xl flex flex-col max-h-[90vh]">
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Preview Perwakilan Surat</h3>
             <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="showPreview = false" />
           </div>
           <div class="p-4 overflow-y-auto">
-            <div class="bg-white text-black p-8 font-['Times_New_Roman'] text-[14px] leading-relaxed" v-html="previewHtml" />
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Preview untuk penerima
+              </label>
+              <USelectMenu
+                v-model="previewIndex"
+                :items="previewOptions"
+                value-key="value"
+                class="w-full"
+                variant="outline"
+              />
+            </div>
+            <SdeMasalLetterPreview
+              :konsep="konsep"
+              :penerima-list="penerimaList"
+              :template="{ skema: skemaModel, versi: versiModel, konten: kontenModel }"
+              :penerima-index="previewIndex"
+            />
           </div>
         </div>
       </div>
@@ -98,14 +115,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
+import SdeMasalLetterPreview from './SdeMasalLetterPreview.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { SdeMasalTemplate, SdeMasalConcept, SdeMasalPenerima } from '~/types/sde-masal';
 
 const props = defineProps<{
   konsep: SdeMasalConcept | null;
   penerimaList: SdeMasalPenerima[];
+  defaultSkema?: 'KEUANGAN' | 'UMUM' | null;
 }>();
 
 const model = defineModel<SdeMasalTemplate | null>({ default: null });
@@ -114,11 +133,12 @@ const skemaModel = ref<string>('');
 const versiModel = ref<string>('');
 const kontenModel = ref<string>('');
 const showPreview = ref(false);
+const previewIndex = ref<number>(0);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 const skemaOptions = [
-  { label: 'SDE Standar', value: 'SDE-STANDAR' },
-  { label: 'SDE Khusus', value: 'SDE-KHUSUS' },
+  { label: 'Keuangan / Tagihan PINP', value: 'KEUANGAN' },
+  { label: 'Umum', value: 'UMUM' },
 ];
 
 const versiOptions = [
@@ -126,13 +146,167 @@ const versiOptions = [
   { label: 'v2', value: 'v2' },
 ];
 
-const dynamicVariables = [
-  { var: '{{tertuju}}', desc: 'Nama - Jabatan' },
-  { var: '{{nama}}', desc: 'Nama penerima' },
-  { var: '{{jabatan}}', desc: 'Jabatan penerima' },
-  { var: '{{persnum}}', desc: 'Nomor pegawai' },
-  { var: '{{keterangan}}', desc: 'Keterangan' },
+const allVariables = [
+  { var: '{{tertuju}}', desc: 'Nama - Jabatan', skema: 'all' },
+  { var: '{{nama}}', desc: 'Nama penerima', skema: 'all' },
+  { var: '{{jabatan}}', desc: 'Jabatan penerima', skema: 'all' },
+  { var: '{{persnum}}', desc: 'Nomor pegawai', skema: 'all' },
+  { var: '{{keterangan}}', desc: 'Keterangan', skema: 'all' },
+  { var: '{{perihal}}', desc: 'Perihal penerima', skema: 'all' },
+  { var: '{{id_tertuju}}', desc: 'ID Tertuju', skema: 'all' },
+  { var: '{{tanggal_surat}}', desc: 'Tanggal Surat', skema: 'UMUM' },
+  { var: '{{nomor_surat}}', desc: 'Nomor Surat', skema: 'UMUM' },
+  { var: '{{sifat_surat}}', desc: 'Sifat Surat', skema: 'UMUM' },
+  { var: '{{jumlah_lampiran}}', desc: 'Jumlah Lampiran', skema: 'UMUM' },
+  { var: '{{jabatan_penerima}}', desc: 'Jabatan Penerima', skema: 'UMUM' },
+  { var: '{{alamat_penerima}}', desc: 'Alamat Penerima', skema: 'UMUM' },
+  { var: '{{panggilan_penerima}}', desc: 'Panggilan Penerima', skema: 'UMUM' },
+  { var: '{{nominal_rupiah}}', desc: 'Nominal Rupiah', skema: 'UMUM' },
+  { var: '{{nominal_dolar}}', desc: 'Nominal Dolar', skema: 'UMUM' },
+  { var: '{{idramount}}', desc: 'IDR Amount', skema: 'UMUM' },
+  { var: '{{usdamount}}', desc: 'USD Amount', skema: 'UMUM' },
+  { var: '{{namacro}}', desc: 'Nama Macro', skema: 'UMUM' },
+  { var: '{{email}}', desc: 'Email', skema: 'UMUM' },
+  { var: '{{tembusan_1}}', desc: 'Tembusan 1', skema: 'UMUM' },
+  { var: '{{tembusan_2}}', desc: 'Tembusan 2', skema: 'UMUM' },
+  { var: '{{tembusan}}', desc: 'Tembusan', skema: 'all' },
+  { var: '{{email_tertuju}}', desc: 'Email Tertuju', skema: 'UMUM' },
+  { var: '{{email_cc}}', desc: 'Email CC', skema: 'UMUM' },
+  { var: '{{email_bcc}}', desc: 'Email BCC', skema: 'UMUM' },
+  { var: '{{jumlah_tagihan_idr}}', desc: 'Jumlah Tagihan IDR', skema: 'KEUANGAN' },
+  { var: '{{jumlah_tagihan_usd}}', desc: 'Jumlah Tagihan USD', skema: 'KEUANGAN' },
+  { var: '{{nama_cro}}', desc: 'Nama CRO', skema: 'KEUANGAN' },
+  { var: '{{email_cro}}', desc: 'Email CRO', skema: 'KEUANGAN' },
+  { var: '{{jabatan_signer}}', desc: 'Jabatan Signer', skema: 'KEUANGAN' },
+  { var: '{{nama_signer}}', desc: 'Nama Signer', skema: 'KEUANGAN' },
 ];
+
+const dynamicVariables = computed(() => {
+  const skema = skemaModel.value;
+  if (!skema || skema === 'UMUM') {
+    return allVariables.filter((v) => v.skema === 'all' || v.skema === 'UMUM');
+  }
+  if (skema === 'KEUANGAN') {
+    return allVariables.filter((v) => v.skema === 'all' || v.skema === 'KEUANGAN');
+  }
+  return allVariables;
+});
+
+// Template konten default untuk skema KEUANGAN (sesuai desain surat PINP)
+const keuanganTemplateContent = `<p style="text-align: center;"><strong style="font-size: 14pt;">{{perihal}}</strong></p>
+<p>&nbsp;</p>
+<p>Kepada Yth,<br />
+<strong>{{tertuju}}</strong><br />
+Di tempat</p>
+<p>&nbsp;</p>
+<p>Dengan hormat,</p>
+<p>Berdasarkan catatan keuangan AirNav Indonesia, kami menyampaikan bahwa terdapat tagihan atas Biaya Pelayanan Jasa Navigasi Penerbangan (PINP) yang telah jatuh tempo dan belum kami terima pembayarannya sebesar Rp {{jumlah_tagihan_idr}} / $ {{jumlah_tagihan_usd}}. Statement of Account (SOA) terlampir untuk menjadi perhatian.</p>
+<p>&nbsp;</p>
+<p>Sehubungan dengan hal tersebut, kami mengharapkan bantuan Bapak/Ibu untuk dapat melakukan penyelesaian atas kewajiban dimaksud secepatnya.</p>
+<p>&nbsp;</p>
+<p>Mengingat biaya PINP memiliki peran penting dalam mendukung keselamatan penerbangan serta merupakan bagian dari pendapatan negara yang wajib disetorkan sesuai ketentuan peraturan yang berlaku, agar hal ini dapat menjadi perhatian dan prioritas.</p>
+<p>&nbsp;</p>
+<p>Apabila memerlukan klarifikasi lebih lanjut, dapat menghubungi Customer Relationship Officer (CRO) kami yaitu {{nama_cro}}, melalui alamat email {{email_cro}}.</p>
+<p>&nbsp;</p>
+<p>Demikian disampaikan, atas perhatian dan kerja samanya kami ucapkan terima kasih.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p style="text-align: center;">a.n Direktur Utama</p>
+<p style="text-align: center;"><strong>{{jabatan_signer}}</strong></p>
+<p style="text-align: center;">&nbsp;</p>
+<p style="text-align: center;">&nbsp;</p>
+<p style="text-align: center;">&nbsp;</p>
+<p style="text-align: center;"><strong>{{nama_signer}}</strong></p>
+<p>&nbsp;</p>
+<p>Tembusan:</p>
+<p>{{tembusan}}</p>`;
+
+// Template konten default untuk skema UMUM (surat tagihan PJNP AirNav)
+const umumTemplateContent = `<p style="text-align: right;">Tangerang, {{tanggal_surat}}</p>
+<p>&nbsp;</p>
+<table style="border-collapse: collapse; width: 100%;">
+  <tbody>
+    <tr>
+      <td style="width: 18%; padding: 4px 0; vertical-align: top;">Nomor</td>
+      <td style="width: 2%; padding: 4px 0; vertical-align: top;">:</td>
+      <td style="width: 80%; padding: 4px 0; vertical-align: top;">{{nomor_surat}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; vertical-align: top;">Sifat</td>
+      <td style="padding: 4px 0; vertical-align: top;">:</td>
+      <td style="padding: 4px 0; vertical-align: top;">{{sifat_surat}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; vertical-align: top;">Lampiran</td>
+      <td style="padding: 4px 0; vertical-align: top;">:</td>
+      <td style="padding: 4px 0; vertical-align: top;">{{jumlah_lampiran}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; vertical-align: top;">Perihal</td>
+      <td style="padding: 4px 0; vertical-align: top;">:</td>
+      <td style="padding: 4px 0; vertical-align: top;"><strong>Pemberitahuan Tagihan PJNP</strong></td>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+<p>Kepada Yth.<br />
+<strong>{{jabatan_penerima}}</strong><br />
+{{alamat_penerima}}</p>
+<p>&nbsp;</p>
+<p>Dengan hormat,</p>
+<p>Berdasarkan catatan keuangan AirNav Indonesia, kami menyampaikan bahwa terdapat tagihan atas Biaya Pelayanan Jasa Navigasi Penerbangan (PJNP) yang telah jatuh tempo dan belum kami terima pembayarannya sebesar {{nominal_rupiah}} / {{nominal_dolar}}.</p>
+<p>&nbsp;</p>
+<p>Statement of Account (SOA) terlampir untuk menjadi perhatian.</p>
+<p>&nbsp;</p>
+<p>Sehubungan dengan hal tersebut, kami mengharapkan bantuan {{panggilan_penerima}} untuk dapat melakukan penyelesaian atas kewajiban dimaksud secepatnya mungkin.</p>
+<p>&nbsp;</p>
+<p>Mengingat biaya PJNP memiliki peran penting dalam mendukung keselamatan penerbangan serta merupakan bagian dari pendapatan negara yang wajib disetorkan sesuai ketentuan peraturan yang berlaku, agar hal ini dapat menjadi perhatian dan prioritas.</p>
+<p>&nbsp;</p>
+<p>Apabila memerlukan klarifikasi lebih lanjut, dapat menghubungi Customer Relationship Officer (CRO) kami yaitu {{nama_cro}}, melalui alamat email {{email_cro}}.</p>
+<p>&nbsp;</p>
+<p>Demikian disampaikan, atas perhatian dan kerja samanya kami ucapkan terima kasih.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>a.n Direktur Utama</p>
+<p><strong>{{jabatan_signer}}</strong></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>{{nama_signer}}</strong></p>
+<p>&nbsp;</p>
+<p>Tembusan:</p>
+<p>1. {{tembusan_1}}</p>
+<p>2. {{tembusan_2}}</p>`;
+
+// Auto-set skema & konten dari defaultSkema (dari Step 2) saat step dibuka
+onMounted(() => {
+  if (props.defaultSkema && !skemaModel.value) {
+    skemaModel.value = props.defaultSkema;
+    // Auto-fill konten sesuai skema
+    const templateContent = props.defaultSkema === 'KEUANGAN' ? keuanganTemplateContent : umumTemplateContent;
+    if (tinymceEditor.value) {
+      tinymceEditor.value.setContent(templateContent);
+      kontenModel.value = tinymceEditor.value.getContent();
+    } else {
+      // TinyMCE belum ready, tunggu sebentar
+      setTimeout(() => {
+        if (tinymceEditor.value) {
+          tinymceEditor.value.setContent(templateContent);
+          kontenModel.value = tinymceEditor.value.getContent();
+        } else {
+          kontenModel.value = templateContent;
+        }
+      }, 500);
+    }
+  }
+});
+
+const previewOptions = computed(() =>
+  props.penerimaList.map((p, idx) => ({
+    label: `${p.no || idx + 1}. ${p.idTertuju || p.tertuju || p.perihal || 'Penerima'}`,
+    value: idx,
+  })),
+);
 
 const tinyMceInit = {
   base_url: '/tinymce',
@@ -169,19 +343,20 @@ const insertVariable = (varName: string) => {
   }
 };
 
-// Preview HTML dengan variabel diganti dari penerima pertama
-const previewHtml = computed(() => {
-  const first = props.penerimaList[0];
-  let html = kontenModel.value || '<p>(Konten kosong)</p>';
-  if (first) {
-    html = html
-      .replace(/\{\{tertuju\}\}/g, first.tertuju || '-')
-      .replace(/\{\{nama\}\}/g, first.nama || '-')
-      .replace(/\{\{jabatan\}\}/g, first.jabatan || '-')
-      .replace(/\{\{persnum\}\}/g, first.persnum || '-')
-      .replace(/\{\{keterangan\}\}/g, first.keterangan || '-');
+
+
+// Auto-fill konten ketika skema dipilih (hanya jika konten masih kosong)
+watch(skemaModel, (newSkema) => {
+  if (!newSkema) return;
+  if (kontenModel.value && kontenModel.value.trim() !== '') return;
+
+  const templateContent = newSkema === 'KEUANGAN' ? keuanganTemplateContent : umumTemplateContent;
+  if (tinymceEditor.value) {
+    tinymceEditor.value.setContent(templateContent);
+    kontenModel.value = tinymceEditor.value.getContent();
+  } else {
+    kontenModel.value = templateContent;
   }
-  return html;
 });
 
 // Sync ke model parent
