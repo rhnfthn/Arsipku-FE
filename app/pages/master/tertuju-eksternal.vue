@@ -6,7 +6,7 @@
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
       <button
-        v-if="hasPermission('master-data', 'create-tertuju')"
+        v-if="canCreateTertuju"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -81,7 +81,7 @@
 
         <!-- Export -->
         <button
-          v-if="hasPermission('master-data', 'export-tertuju')"
+          v-if="canExportTertuju"
           @click="onExport"
           class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
@@ -216,7 +216,7 @@
 
             <td class="px-4 py-3 text-center flex justify-center gap-3">
               <button
-                v-if="hasPermission('master-data', 'update-tertuju')"
+                v-if="canUpdateTertuju"
                 @click="openEdit(item)"
                 class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
               >
@@ -226,7 +226,7 @@
               </button>
 
               <button
-                v-if="hasPermission('master-data', 'delete-tertuju')"
+                v-if="canDeleteTertuju"
                 class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
@@ -547,7 +547,19 @@ const items = computed(() => [
 
 const auth = useAuth();
 const user = auth.user;
-const { hasPermission } = auth;
+const { hasPermission, isSuperadmin } = auth;
+const canCreateTertuju = computed(
+  () => isSuperadmin.value || hasPermission('master-data', 'create-tertuju')
+);
+const canUpdateTertuju = computed(
+  () => isSuperadmin.value || hasPermission('master-data', 'update-tertuju')
+);
+const canDeleteTertuju = computed(
+  () => isSuperadmin.value || hasPermission('master-data', 'delete-tertuju')
+);
+const canExportTertuju = computed(
+  () => isSuperadmin.value || hasPermission('master-data', 'export-tertuju')
+);
 
 
 const {
@@ -704,8 +716,9 @@ const handleSave = async () => {
       aktif: ''
     };
   } catch (err: any) {
-    console.error('Gagal menyimpan data:', err?.response?.data || err);
-    showToast('Gagal', 'Gagal menyimpan data.', 'error');
+    const response = err?.response?.data ?? err?.data;
+    console.error('Gagal menyimpan data:', response || err);
+    showToast('Gagal', response?.message || 'Gagal menyimpan data.', 'error');
     return;
   } finally {
     isSavingForm.value = false;
@@ -719,6 +732,7 @@ const isDeleting = ref(false);
 const resetForm = () => {
   editId.value = null;
   form.value = {
+    kode: '',
     nama: '',
     alamat: '',
     telephone: '',
@@ -748,11 +762,12 @@ const confirmDelete = async () => {
   try {
     isDeleting.value = true;
     await deleteTertujuEksternal(deleteTargetId.value);
-    showToast('Berhasil', 'Data berhasil dihapus.', 'success');
+    showToast('Berhasil', 'Data berhasil dinonaktifkan.', 'success');
     showConfirmDelete.value = false;
   } catch (err: any) {
-    console.error('Gagal menghapus data:', err?.response?.data || err);
-    showToast('Gagal', 'Gagal menghapus data.', 'error');
+    const response = err?.response?.data ?? err?.data;
+    console.error('Gagal menghapus data:', response || err);
+    showToast('Gagal', response?.message || 'Gagal menghapus data.', 'error');
   } finally {
     isDeleting.value = false;
     deleteTargetId.value = null;

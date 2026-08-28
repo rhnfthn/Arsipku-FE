@@ -62,9 +62,9 @@
 
     <!-- Tanda Tangan -->
     <div class="flex mt-12 text-black">
-      <div class="text-center min-w-[250px]">
-        <div v-if="atasNamaLabel" class="font-bold mb-1">a.n {{ atasNamaLabel }}</div>
-        <div class="font-bold mb-24">{{ jabatanSigner }}</div>
+      <div class="text-left min-w-[250px]">
+        <div class="font-bold">{{ jabatanSigner }}</div>
+        <div class="h-24 flex items-center">[TTD]</div>
         <div class="font-bold underline">{{ namaSigner }}</div>
       </div>
     </div>
@@ -73,15 +73,16 @@
     <div v-if="tembusanList.length > 0" class="mt-8 text-[12px]">
       <div class="font-bold underline mb-1">Tembusan :</div>
       <ol class="list-decimal ml-4 pl-2">
-        <li v-for="(t, idx) in tembusanList" :key="idx">{{ t }}</li>
+        <li v-for="(t, idx) in tembusanList" :key="idx">{{ tembusanLabel(t) }}</li>
       </ol>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useAuth } from '~/composables/useAuth';
+import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
 import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
 
 const props = defineProps<{
@@ -92,6 +93,15 @@ const props = defineProps<{
 }>();
 
 const { user } = useAuth();
+const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
+
+onMounted(async () => {
+  try {
+    await fetchTertujuEksternal();
+  } catch (error) {
+    console.warn('Gagal memuat master tertuju eksternal untuk preview surat SDE Masal', error);
+  }
+});
 
 const alamatInfo = computed(() => user.value?.alamatInfo);
 const tempat = computed(() => {
@@ -131,31 +141,34 @@ const selectedPenerima = computed(() => {
   const idx = Math.max(0, Math.min(props.penerimaIndex || 0, props.penerimaList.length - 1));
   return props.penerimaList[idx] || null;
 });
+const findTertujuEksternal = (value: string | number | null | undefined) => {
+  const raw = String(value ?? '').trim();
+  const code = raw.split(/\s*(?:—|-)\s*/)[0].padStart(3, '0');
+  return tertujuEksternal.value.find((item) => String(item.kode ?? '').trim().padStart(3, '0') === code) || null;
+};
+const selectedTertujuEksternal = computed(() => {
+  return findTertujuEksternal(selectedPenerima.value?.idTertuju || selectedPenerima.value?.tertuju);
+});
+const recipientCompanyName = computed(() => {
+  return selectedTertujuEksternal.value?.nama || null;
+});
 
 const penerimaLabel = computed(() => {
   const p = selectedPenerima.value;
   if (!p) return '[Jabatan Penerima]';
-  return p.jabatanPenerima || p.idTertuju || p.tertuju || `${p.nama || ''}${p.nama && p.jabatan ? ' - ' : ''}${p.jabatan || ''}` || '[Jabatan Penerima]';
+  return p.jabatanPenerima || recipientCompanyName.value || p.idTertuju || p.tertuju || `${p.nama || ''}${p.nama && p.jabatan ? ' - ' : ''}${p.jabatan || ''}` || '[Jabatan Penerima]';
 });
 
 const alamatPenerima = computed(() => {
   const p = selectedPenerima.value;
   if (!p) return '[Alamat Penerima]';
-  return p.alamatPenerima || p.alamat || 'Di tempat';
-});
-
-const atasNamaLabel = computed(() => {
-  // Jika pengirim bukan Dirut, tampilkan a.n Dirut (sesuai alur SDE)
-  const pengirimName = props.konsep?.pengirimName || '';
-  if (pengirimName.toLowerCase().includes('direktur utama')) return '';
-  return 'Direktur Utama';
+  return p.alamatPenerima || p.alamat || selectedTertujuEksternal.value?.alamat || 'Di tempat';
 });
 
 const jabatanSigner = computed(() => {
   const p = selectedPenerima.value;
   if (p?.jabatanSigner) return p.jabatanSigner;
-  const pengirimName = props.konsep?.pengirimName || '';
-  return pengirimName || '[JABATAN_SIGNER]';
+  return '[JABATAN_SIGNER]';
 });
 
 const namaSigner = computed(() => {
@@ -169,19 +182,42 @@ const tembusanList = computed(() => {
   const raw = p?.tembusan || '';
   if (!raw) return [];
   return raw
-    .split(/[;\n]/)
+    .split(/[;,\n]/)
     .map((t) => t.trim())
     .filter(Boolean);
 });
+
+const tembusanLabel = (value: string) => {
+  const tertuju = findTertujuEksternal(value);
+  if (tertuju) return tertuju.nama;
+  return value.replace(/^\s*\d+\s*(?:—|-)\s*/, '').trim();
+};
 
 const renderedContent = computed(() => {
   const p = selectedPenerima.value;
   let html = props.template?.konten || '<p>(Konten kosong)</p>';
   if (!p) return html;
 
+  // Tanda tangan dan tembusan selalu ditampilkan oleh blok preview di bawah.
+  // Buang footer dari konten template agar tidak tampil dua kali.
+  const footerMarkers = [
+    html.search(/<p[^>]*>\s*a\.n\s+Direktur Utama/i),
+    html.indexOf('{{jabatan_signer}}'),
+    html.indexOf('{{nama_signer}}'),
+    html.indexOf('{{tembusan}}'),
+    html.indexOf('{{tembusan_1}}'),
+    html.indexOf('{{tembusan_2}}'),
+    html.search(/<p[^>]*>\s*Tembusan\s*:/i),
+  ].filter((index) => index >= 0);
+  if (footerMarkers.length > 0) {
+    const marker = Math.min(...footerMarkers);
+    const paragraphStart = html.lastIndexOf('<p', marker);
+    html = html.slice(0, paragraphStart >= 0 ? paragraphStart : marker);
+  }
+
   const nama = p.nama || '';
   const jabatan = p.jabatan || p.jabatanPenerima || '';
-  const tertuju = p.idTertuju || p.tertuju || (nama && jabatan ? `${nama} - ${jabatan}` : nama || jabatan || '-');
+  const tertuju = recipientCompanyName.value || p.idTertuju || p.tertuju || (nama && jabatan ? `${nama} - ${jabatan}` : nama || jabatan || '-');
 
   return html
     .replace(/\{\{tertuju\}\}/g, tertuju)
@@ -194,10 +230,7 @@ const renderedContent = computed(() => {
     .replace(/\{\{kode_pos\}\}/g, p.kodePos || '-')
     .replace(/\{\{kodepos\}\}/g, p.kodePos || '-')
     .replace(/\{\{perihal\}\}/g, p.perihal || props.konsep?.perihal || '-')
-    .replace(/\{\{id_tertuju\}\}/g, p.idTertuju || '-')
-    .replace(/\{\{idramount\}\}/g, p.idramount || '-')
-    .replace(/\{\{usdamount\}\}/g, p.usdamount || '-')
-    .replace(/\{\{namacro\}\}/g, p.namacro || '-')
+    .replace(/\{\{id_tertuju\}\}/g, recipientCompanyName.value || p.idTertuju || '-')
     .replace(/\{\{email\}\}/g, p.email || '-')
     .replace(/\{\{tembusan\}\}/g, p.tembusan || '-')
     .replace(/\{\{email_tertuju\}\}/g, p.emailTertuju || '-')
@@ -216,8 +249,8 @@ const renderedContent = computed(() => {
     .replace(/\{\{jabatan_penerima\}\}/g, p.jabatanPenerima || '-')
     .replace(/\{\{alamat_penerima\}\}/g, p.alamatPenerima || p.alamat || 'Di tempat')
     .replace(/\{\{panggilan_penerima\}\}/g, p.panggilanPenerima || 'Bapak/Ibu')
-    .replace(/\{\{nominal_rupiah\}\}/g, p.nominalRupiah || p.idramount || '-')
-    .replace(/\{\{nominal_dolar\}\}/g, p.nominalDolar || p.usdamount || '-')
+    .replace(/\{\{nominal_rupiah\}\}/g, p.nominalRupiah || '-')
+    .replace(/\{\{nominal_dolar\}\}/g, p.nominalDolar || '-')
     .replace(/\{\{tembusan_1\}\}/g, p.tembusan1 || (p.tembusan ? p.tembusan.split(';')[0] : '-'))
     .replace(/\{\{tembusan_2\}\}/g, p.tembusan2 || (p.tembusan ? p.tembusan.split(';')[1] || '-' : '-'));
 });
