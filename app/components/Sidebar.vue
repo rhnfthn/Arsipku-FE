@@ -1137,6 +1137,12 @@ const unitDokumenKelolaMenus = computed(() => [
     icon: 'i-lucide-folder-open',
     children: [
       {
+        label: 'Verifikasi Usulan Akses',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
@@ -1195,6 +1201,12 @@ const sekretarisKelolaMenus = computed(() => [
         badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       },
       {
+        label: 'Verifikasi Usulan Akses',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
@@ -1224,6 +1236,12 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         label: 'Usulan Akses',
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
+        label: 'Verifikasi Usulan Akses',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check',
         badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
       {
@@ -1278,6 +1296,12 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         label: 'Usulan Akses',
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
+        label: 'Verifikasi Usulan Akses',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check',
         badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
       {
@@ -1431,8 +1455,8 @@ const adminMenuKelola = computed(() => {
   // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
   // Tiap child tampil berdasarkan actor:
   //   - Usulan Saya: SE (buat usulan)
+  //   - Verifikasi Usulan Akses: verifikator managerial & SE pemberi
   //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
-  //   Verifikasi Usulan hanya ada di menu Pemeliharaan (untuk Atasan Managerial).
   const penggunaanChildren = [];
 
   if (isSekretarisActor.value) {
@@ -1444,6 +1468,13 @@ const adminMenuKelola = computed(() => {
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
     });
   }
+
+  penggunaanChildren.push({
+    label: 'Verifikasi Usulan Akses',
+    to: '/kelola/penggunaan/verifikasi-usulan',
+    icon: 'i-lucide-file-check',
+    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+  });
 
   penggunaanChildren.push({
     label: 'Pemberian',
@@ -1573,6 +1604,32 @@ const userMenuKelola = computed(() => {
       children: pemeliharaanChildren,
     },
   ];
+
+  // ── Menu Penggunaan (Usulan Akses Berkas) ──
+  // Verifikasi Usulan Akses: verifikator managerial (EVP/AVP/VP/BOD) & SE pemberi.
+  // Pemberian: list akses yang sudah diterbitkan (semua user).
+  const penggunaanChildrenKelola = [
+    {
+      label: 'Verifikasi Usulan Akses',
+      to: '/kelola/penggunaan/verifikasi-usulan',
+      icon: 'i-lucide-file-check',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+    },
+    {
+      label: 'Pemberian',
+      to: '/kelola/penggunaan/pemberian',
+      icon: 'i-lucide-folder-check',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+    },
+  ];
+
+  menus.push({
+    label: 'Penggunaan',
+    icon: 'i-lucide-folder-open',
+    children: penggunaanChildrenKelola,
+  });
 
   // ── Menu Penyusutan ──
   const penyusutanChildrenKelola = [
