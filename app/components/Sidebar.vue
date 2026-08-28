@@ -402,6 +402,10 @@ const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADM
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
+const canAccessSdeMasalPenyusunan = computed(() => {
+  const tag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  return ['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
+});
 
 // ─── Pindah Profile (Sekretaris / Unit Dokumen) ──────────────────────────────
 // User dengan delegasi di organization_tu (sekretaris_delegasi / unit_dokumen)
@@ -648,6 +652,17 @@ const verifikatorMenu = computed(() => ({
   badge: rtVerifikatorCount.value > 0 ? rtVerifikatorCount.value : null,
 }));
 
+const sdeMasalMenu = computed(() => ({
+  label: 'SDE Massal',
+  icon: 'i-lucide-files',
+  children: [
+    ...(canAccessSdeMasalPenyusunan.value
+      ? [{ label: 'Penyusunan SDE Massal', to: '/korespondensi/sde-masal' }]
+      : []),
+    { label: 'Verifikasi SDE Massal', to: '/korespondensi/sde-masal/verifikasi' },
+  ],
+}));
+
 const userMenuUtama = computed(() => [
   {
     label: t('beranda'),
@@ -694,6 +709,9 @@ const userMenuUtama = computed(() => [
     to: '/korespondensi/tertunda',
     icon: 'i-lucide-file-clock',
     permission: { resource: 'utama.tertunda', action: 'read' },
+  },
+  {
+    ...sdeMasalMenu.value,
   },
   {
     label: t('draft'),
@@ -882,6 +900,9 @@ const adminMenuUtama = computed(() => [
     to: '/korespondensi/tertunda',
     icon: 'i-lucide-file-clock',
     permission: { resource: 'utama.tertunda', action: 'read' },
+  },
+  {
+    ...sdeMasalMenu.value,
   },
   {
     label: t('draft'),

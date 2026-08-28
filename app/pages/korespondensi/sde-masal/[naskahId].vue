@@ -110,7 +110,7 @@
       <!-- Tombol Aksi -->
       <div class="flex flex-wrap items-center gap-3 mb-8">
         <UButton
-          label="Kembali ke Dashboard SDE Masal"
+          label="Kembali ke SDE Masal"
           color="primary"
           variant="soft"
           icon="i-lucide-arrow-left"
@@ -150,7 +150,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
 
 const route = useRoute();
 const { fetchNaskahDetail } = useSdeMasal();
