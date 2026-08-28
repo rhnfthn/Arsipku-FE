@@ -96,7 +96,7 @@ import { useRouter } from 'vue-router';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import type { SdeMasalConcept } from '~/types/sde-masal';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
 
 const router = useRouter();
 const { uploadExcel, downloadTemplate } = useSdeMasal();
