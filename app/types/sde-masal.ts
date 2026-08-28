@@ -11,10 +11,12 @@ export interface SdeMasalConcept {
   pengirimName: string;
   sifat?: string;
   perihal?: string;
+  defaultTertuju?: string;
   parentNaskahId?: string;
 }
 
 export interface SdeMasalPenerima {
+  variables?: Record<string, string>;
   no?: number;
   persnum?: string;
   nama?: string;
@@ -28,9 +30,6 @@ export interface SdeMasalPenerima {
   // Field data ASE
   perihal?: string;
   idTertuju?: string;
-  idramount?: string;
-  usdamount?: string;
-  namacro?: string;
   email?: string;
   tembusan?: string;
   isRevision?: number | boolean;
@@ -63,6 +62,18 @@ export interface SdeMasalTemplate {
   konten: string;
 }
 
+export interface SdeMasalVerifikator {
+  urutan: number;
+  persnum: string;
+  position: string;
+  nama: string;
+  jabatan: string;
+  status: 'pending' | 'waiting' | 'verified' | 'rejected';
+  verifiedAt?: string | null;
+  rejectedAt?: string | null;
+  catatan?: string | null;
+}
+
 export interface SdeMasalItem {
   id: string;
   conceptId: string | null;
@@ -81,7 +92,7 @@ export interface SdeMasalItem {
   kodePos: string | null;
   jabatanPenerima: string | null;
   isiRingkasan: string | null;
-  statusVerifikasi: 'MENUNGGU' | 'TERKIRIM' | 'TERVERIFIKASI' | 'DITOLAK' | 'GAGAL';
+  statusVerifikasi: 'MENUNGGU' | 'MENUNGGU_VERIFIKASI' | 'TERKIRIM' | 'TERVERIFIKASI' | 'DITOLAK' | 'GAGAL';
   jenisTemplate: string | null;
   lampiranUrl: string | null;
   originalFileUrl: string | null;
@@ -89,11 +100,11 @@ export interface SdeMasalItem {
   naskahId: string | null;
   nomorSurat: string | null;
   errorMessage: string | null;
+  verifikators?: SdeMasalVerifikator[] | null;
+  currentVerifikatorUrutan?: number | null;
+  submittedAt?: string | null;
   // Field data ASE
   idTertuju: string | null;
-  idramount: string | null;
-  usdamount: string | null;
-  namacro: string | null;
   email: string | null;
   tembusan: string | null;
   isRevision: number | boolean;
@@ -123,6 +134,8 @@ export interface SdeMasalItem {
 export interface SdeMasalFilter {
   search?: string;
   statusVerifikasi?: string;
+  klasifikasiId?: string;
+  tahun?: string;
   jenisTemplate?: string;
   page?: number;
   limit?: number;

@@ -35,7 +35,9 @@
         <div v-if="showCatatanKeSE" class="mt-0">
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Catatan ke SE {{ catatanKeSELabel }}
-            <span class="text-xs font-normal text-gray-400">(wajib, hanya terlihat oleh SE {{ catatanKeSELabel }})</span>
+            <span class="text-xs font-normal text-gray-400"
+              >(wajib, hanya terlihat oleh SE {{ catatanKeSELabel }})</span
+            >
           </label>
           <textarea
             v-model="catatanKeSE"
@@ -44,7 +46,9 @@
             :class="errors.catatanKeSE ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
             :placeholder="`Catatan untuk SE ${catatanKeSELabel}...`"
           />
-          <p v-if="errors.catatanKeSE" class="text-xs text-red-500 mt-1">{{ errors.catatanKeSE }}</p>
+          <p v-if="errors.catatanKeSE" class="text-xs text-red-500 mt-1">
+            {{ errors.catatanKeSE }}
+          </p>
         </div>
         <div class="flex gap-3 pt-2">
           <button
@@ -55,9 +59,11 @@
           </button>
           <button
             class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50"
-            :class="variant === 'reject'
-              ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
-              : 'hover:opacity-90 dark:hover:opacity-90'"
+            :class="
+              variant === 'reject'
+                ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
+                : 'hover:opacity-90 dark:hover:opacity-90'
+            "
             :style="variant === 'approve' ? 'background-color: #175FA4' : {}"
             :disabled="saving"
             @click="handleConfirm"
@@ -75,32 +81,35 @@ import { ref, computed, watch } from 'vue';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
 
-const props = withDefaults(defineProps<{
-  modelValue: boolean;
-  variant?: 'approve' | 'reject';
-  title?: string;
-  description?: string;
-  warning?: string;
-  notePlaceholder?: string;
-  confirmLabel?: string;
-  saving?: boolean;
-  requireNote?: boolean;
-  minNoteLength?: number;
-  showCatatanKeSE?: boolean;
-  catatanKeSELabel?: string; // 'Pengusul' atau 'Pemberi'
-}>(), {
-  variant: 'approve',
-  title: '',
-  description: '',
-  warning: '',
-  notePlaceholder: 'Keterangan opsional',
-  confirmLabel: 'Setuju',
-  saving: false,
-  requireNote: false,
-  minNoteLength: 0,
-  showCatatanKeSE: false,
-  catatanKeSELabel: '',
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    variant?: 'approve' | 'reject';
+    title?: string;
+    description?: string;
+    warning?: string;
+    notePlaceholder?: string;
+    confirmLabel?: string;
+    saving?: boolean;
+    requireNote?: boolean;
+    minNoteLength?: number;
+    showCatatanKeSE?: boolean;
+    catatanKeSELabel?: string; // 'Pengusul' atau 'Pemberi'
+  }>(),
+  {
+    variant: 'approve',
+    title: '',
+    description: '',
+    warning: '',
+    notePlaceholder: 'Keterangan opsional',
+    confirmLabel: 'Setuju',
+    saving: false,
+    requireNote: false,
+    minNoteLength: 0,
+    showCatatanKeSE: false,
+    catatanKeSELabel: '',
+  }
+);
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
@@ -119,27 +128,46 @@ const errors = ref<Record<string, string>>({});
 const triedSubmit = ref(false);
 
 // Reset note saat modal dibuka
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    note.value = '';
-    catatanKeSE.value = '';
-    errors.value = {};
-    triedSubmit.value = false;
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      note.value = '';
+      catatanKeSE.value = '';
+      errors.value = {};
+      triedSubmit.value = false;
+    }
   }
-});
+);
 
 // Clear error saat user mengetik
-watch(note, () => { if (errors.value.note) delete errors.value.note; });
-watch(catatanKeSE, () => { if (errors.value.catatanKeSE) delete errors.value.catatanKeSE; });
+watch(note, () => {
+  if (errors.value.note) delete errors.value.note;
+});
+watch(catatanKeSE, () => {
+  if (errors.value.catatanKeSE) delete errors.value.catatanKeSE;
+});
 
 const validate = (): boolean => {
   const e: Record<string, string> = {};
   if (props.showCatatanKeSE) {
-    if (props.requireNote && !catatanKeSE.value.trim()) e.catatanKeSE = 'Catatan wajib diisi';
-    if (props.minNoteLength > 0 && catatanKeSE.value.trim().length < props.minNoteLength) e.catatanKeSE = `Minimal ${props.minNoteLength} karakter`;
+    const value = catatanKeSE.value.trim();
+    if (props.requireNote && !value) e.catatanKeSE = 'Catatan wajib diisi';
+    if (
+      (props.requireNote || value) &&
+      props.minNoteLength > 0 &&
+      value.length < props.minNoteLength
+    )
+      e.catatanKeSE = `Minimal ${props.minNoteLength} karakter`;
   } else {
-    if (props.requireNote && !note.value.trim()) e.note = 'Catatan wajib diisi';
-    if (props.minNoteLength > 0 && note.value.trim().length < props.minNoteLength) e.note = `Minimal ${props.minNoteLength} karakter`;
+    const value = note.value.trim();
+    if (props.requireNote && !value) e.note = 'Catatan wajib diisi';
+    if (
+      (props.requireNote || value) &&
+      props.minNoteLength > 0 &&
+      value.length < props.minNoteLength
+    )
+      e.note = `Minimal ${props.minNoteLength} karakter`;
   }
   errors.value = e;
   return Object.keys(e).length === 0;

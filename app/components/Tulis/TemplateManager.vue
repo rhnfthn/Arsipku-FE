@@ -5,6 +5,7 @@
         class="w-full sm:w-auto justify-center" @click="isTemplateModalOpen = true" />
       <UButton :label="$t('tmpl_template_saya')" icon="i-lucide-folder-pen" variant="soft" color="primary"
         class="w-full sm:w-auto justify-center" @click="openMyTemplateModal" />
+      <slot name="after-template-actions" />
     </div>
     <UButton :label="$t('tmpl_simpan_template')" icon="i-lucide-save" variant="soft" color="primary"
       class="w-full sm:w-auto justify-center" @click="openSaveModal(false)" />

@@ -2,6 +2,7 @@
 // halaman detail naskah dan NaskahVersiTimeline. Warna selaras antar keduanya.
 export const DOKUMEN_STATUS: Record<string, { label: string; chip: string; dot: string }> = {
   dittd: { label: 'Ditandatangani', chip: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400', dot: 'bg-green-600' },
+  proses_ttd: { label: 'Proses TTD', chip: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', dot: 'bg-amber-500' },
   revisi: { label: 'Revisi', chip: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', dot: 'bg-amber-500' },
   draf: { label: 'Draft', chip: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400', dot: 'bg-blue-500' },
   final: { label: 'Final', chip: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' },
