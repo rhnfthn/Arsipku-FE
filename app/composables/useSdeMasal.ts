@@ -105,13 +105,36 @@ export const useSdeMasal = () => {
     return res?.data ?? null;
   };
 
+  const submitVerification = async (ids: string[], verifikators: any[]) => {
+    const res: any = await apiPost('/sde-masal/submit-verification', { ids, verifikators });
+    return res?.data ?? null;
+  };
+
+  const fetchVerificationList = async (): Promise<SdeMasalItem[]> => {
+    const res: any = await apiGet('/sde-masal/verification', {}, { skipCache: true });
+    return res?.data ?? [];
+  };
+
+  const approveVerification = async (id: string, catatan?: string) => {
+    const res: any = await apiPatch(`/sde-masal/${id}/approve-verification`, { catatan });
+    return res?.data ?? null;
+  };
+
+  const rejectVerification = async (id: string, catatan?: string) => {
+    const res: any = await apiPatch(`/sde-masal/${id}/reject-verification`, { catatan });
+    return res?.data ?? null;
+  };
+
   /**
    * Parse Excel di sisi frontend untuk preview sebelum upload ke backend.
    * Menggunakan library xlsx yang sudah terinstall di frontend.
    * Membaca sheet "Data Penerima" (atau sheet pertama jika tidak ada).
    * Header case-insensitive.
    */
-  const parseExcelLocal = async (file: File): Promise<SdeMasalPenerima[]> => {
+  const parseExcelLocal = async (
+    file: File,
+    expectedColumns: string[] = []
+  ): Promise<SdeMasalPenerima[]> => {
     const XLSX = await import('xlsx');
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -122,6 +145,20 @@ export const useSdeMasal = () => {
       workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+
+    // Header harus mengikuti skema template yang dipilih. Validasi dilakukan
+    // sebelum mapping data agar file Keuangan tidak dapat dipakai untuk Umum,
+    // maupun sebaliknya.
+    const headerRow = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, range: 0 })[0] || [];
+    const normalizeHeader = (value: unknown) => String(value ?? '').trim().toLowerCase();
+    const availableHeaders = new Set(headerRow.map(normalizeHeader).filter(Boolean));
+    const missingColumns = expectedColumns.filter(
+      (column) => !availableHeaders.has(normalizeHeader(column))
+    );
+    const isTemplateValid = missingColumns.length === 0;
+    const templateValidationMessage = isTemplateValid
+      ? undefined
+      : `Template Excel tidak sesuai. Kolom wajib tidak ditemukan: ${missingColumns.join(', ')}`;
 
     // Helper: ambil nilai kolom case-insensitive
     const getCol = (row: any, ...keys: string[]): string => {
@@ -140,10 +177,8 @@ export const useSdeMasal = () => {
     let no = 0;
     rows.forEach((row) => {
       const perihalRow = getCol(row, 'Perihal', 'perihal');
+      const tertujuRow = getCol(row, 'Tertuju', 'tertuju');
       const idTertuju = getCol(row, 'id_tertuju', 'idTertuju');
-      const idramount = getCol(row, 'idramount');
-      const usdamount = getCol(row, 'usdamount');
-      const namacro = getCol(row, 'namacro');
       const email = getCol(row, 'email', 'Email');
       const tembusan = getCol(row, 'tembusan', 'Tembusan');
       const isRevisionRaw = getCol(row, 'is_revision', 'isRevision');
@@ -168,14 +203,18 @@ export const useSdeMasal = () => {
       const nominalDolar = getCol(row, 'nominal_dolar', 'nominalDolar');
       const tembusan1 = getCol(row, 'tembusan_1', 'tembusan1');
       const tembusan2 = getCol(row, 'tembusan_2', 'tembusan2');
+      const variables = Object.fromEntries(
+        Object.entries(row).map(([key, value]) => [
+          String(key).trim().toLowerCase(),
+          value === null || value === undefined ? '' : String(value).trim(),
+        ])
+      );
 
-      // Skip baris kosong (semua field kosong)
-      if (
+      // Baris dengan kolom yang tidak dikenali tetap perlu ditampilkan sebagai
+      // invalid bila template tidak sesuai; jangan sampai preview terlihat kosong.
+      const hasNoKnownValue =
         !perihalRow &&
         !idTertuju &&
-        !idramount &&
-        !usdamount &&
-        !namacro &&
         !email &&
         !tembusan &&
         !emailTertuju &&
@@ -194,31 +233,34 @@ export const useSdeMasal = () => {
         !nominalRupiah &&
         !nominalDolar &&
         !tembusan1 &&
-        !tembusan2
-      ) {
+        !tembusan2;
+      const hasAnyValue = Object.values(row).some(
+        (value) => value !== null && value !== undefined && String(value).trim() !== ''
+      );
+
+      // Hanya abaikan baris Excel yang benar-benar kosong.
+      if (hasNoKnownValue && !hasAnyValue) {
         return;
       }
 
       no++;
       // Validasi: Perihal wajib
-      const isValid = !!perihalRow;
+      const isValid = !!perihalRow && !!tertujuRow && isTemplateValid;
       const isRevision = isRevisionRaw === '1' || isRevisionRaw.toLowerCase() === 'true' ? 1 : 0;
 
       result.push({
+        variables,
         no,
         persnum: '',
         nama: '',
         jabatan: '',
-        tertuju: idTertuju || perihalRow || '',
+        tertuju: tertujuRow || idTertuju || '',
         alamat: null,
         kota: null,
         kodePos: null,
         keterangan: null,
         perihal: perihalRow || '',
         idTertuju: idTertuju || '',
-        idramount: idramount || '',
-        usdamount: usdamount || '',
-        namacro: namacro || '',
         email: email || '',
         tembusan: tembusan || '',
         isRevision,
@@ -232,7 +274,6 @@ export const useSdeMasal = () => {
         jabatanSigner: jabatanSigner || '',
         namaSigner: namaSigner || '',
         jumlahLampiran: jumlahLampiran || '',
-        jabatanPenerima: jabatanPenerima || '',
         alamatPenerima: alamatPenerima || '',
         panggilanPenerima: panggilanPenerima || '',
         nominalRupiah: nominalRupiah || '',
@@ -240,7 +281,9 @@ export const useSdeMasal = () => {
         tembusan1: tembusan1 || '',
         tembusan2: tembusan2 || '',
         isValid,
-        validationMessage: isValid ? undefined : 'Perihal wajib diisi',
+        validationMessage: isValid
+          ? undefined
+          : templateValidationMessage || 'Perihal dan tertuju wajib diisi',
       });
     });
 
@@ -342,6 +385,10 @@ export const useSdeMasal = () => {
     downloadTemplate,
     generateMassal,
     generateNaskah,
+    submitVerification,
+    fetchVerificationList,
+    approveVerification,
+    rejectVerification,
     parseExcelLocal,
     fetchList,
     fetchSummary,
