@@ -35,6 +35,15 @@
 
       <!-- Form -->
       <div v-else class="flex-1 overflow-y-auto space-y-1">
+        <UAlert
+          v-if="isPhysicalMetadataMode"
+          icon="i-lucide-info"
+          color="primary"
+          variant="soft"
+          title="Pelengkapan data naskah TTD fisik"
+          description="Hanya data penandatangan yang disimpan sebagai arsip sistem. Perubahan ini tidak mengubah dokumen final, tahapan, atau alur persetujuan yang telah selesai."
+          class="mb-2"
+        />
         <!-- Banner revisi (naskah dikembalikan ke pemrakarsa) -->
         <UAlert
           v-if="isRevisi"
@@ -45,6 +54,77 @@
           description="Periksa catatan pengembalian di halaman detail. Lengkapi revisi (termasuk unggah ulang naskah dari template bila isi berubah), lalu Kirim untuk approval ulang."
           class="mb-2"
         />
+
+        <!-- ── Section 0: Metode Tanda Tangan (di atas jenis naskah) ─── -->
+        <div
+          v-if="!isPhysicalMetadataMode"
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border-2 border-primary-200 bg-primary-50/60 p-4 dark:border-primary-800 dark:bg-primary-900/10 sm:p-5"
+        >
+          <div class="w-full sm:w-44 shrink-0">
+            <span
+              class="flex items-center gap-1.5 text-sm font-semibold text-primary-700 dark:text-primary-300"
+            >
+              <UIcon name="i-lucide-pen-tool" class="w-4 h-4" />
+              Metode Tanda Tangan
+            </span>
+          </div>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-left transition-all duration-200"
+              :class="
+                form.signOption === 'qr_only'
+                  ? 'border-primary-500 bg-primary-500 shadow-sm ring-2 ring-primary-500/30'
+                  : 'border-gray-200 hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700'
+              "
+              @click="selectSignOption('qr_only')"
+            >
+              <UIcon
+                name="i-lucide-file-signature"
+                class="w-5 h-5"
+                :class="
+                  form.signOption === 'qr_only'
+                    ? 'text-white'
+                    : 'text-primary-600 dark:text-primary-400'
+                "
+              />
+              <span
+                class="text-sm font-semibold"
+                :class="
+                  form.signOption === 'qr_only' ? 'text-white' : 'text-gray-900 dark:text-white'
+                "
+                >Digital</span
+              >
+            </button>
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-left transition-all duration-200"
+              :class="
+                form.signOption === 'ttd_basah'
+                  ? 'border-primary-500 bg-primary-500 shadow-sm ring-2 ring-primary-500/30'
+                  : 'border-gray-200 hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700'
+              "
+              @click="selectSignOption('ttd_basah')"
+            >
+              <UIcon
+                name="i-lucide-pen-line"
+                class="w-5 h-5"
+                :class="
+                  form.signOption === 'ttd_basah'
+                    ? 'text-white'
+                    : 'text-primary-600 dark:text-primary-400'
+                "
+              />
+              <span
+                class="text-sm font-semibold"
+                :class="
+                  form.signOption === 'ttd_basah' ? 'text-white' : 'text-gray-900 dark:text-white'
+                "
+                >Fisik</span
+              >
+            </button>
+          </div>
+        </div>
 
         <!-- Jenis Naskah -->
         <div
@@ -160,7 +240,7 @@
 
         <!-- Penandatangan dinamis: satu single-select per slot -->
         <div
-          v-if="signerSlotCount > 0"
+          v-if="signerSlotCount > 0 || isPhysicalMetadataMode"
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
         >
           <span
@@ -168,16 +248,22 @@
           >
             Urutan Penandatangan
             <span class="block text-xs text-gray-400 font-normal"
-              >({{ signerSlotCount }} slot)</span
+              >({{ editableSignerSlots.length }} slot)</span
             >
           </span>
           <div class="flex-1 w-full space-y-2">
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Urutan sesuai posisi
-              <code class="text-xs">{<!-- -->{tanda_tangan_N}<!-- -->}</code> di template. Pilih
-              penandatangan untuk setiap slot sesuai urutan penandatangan.
+              {{
+                isPhysicalMetadataMode
+                  ? 'Data ini hanya dicatat di sistem dan tidak mengaktifkan proses tanda tangan kembali.'
+                  : 'Urutan sesuai posisi placeholder tanda_tangan_N di template. Pilih penandatangan untuk setiap slot sesuai urutan penandatangan.'
+              }}
             </p>
-            <div v-for="slot in signerSlots" :key="slot.index" class="flex items-center gap-2">
+            <div
+              v-for="slot in editableSignerSlots"
+              :key="slot.index"
+              class="flex items-center gap-2"
+            >
               <span
                 class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500 text-white text-xs font-bold shrink-0"
               >
@@ -203,7 +289,7 @@
                 <template #default>
                   <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
                     <span
-                      v-if="slotSigners[slot.index - 1]"
+                      v-if="selectedSlotLabel(slot.index - 1)"
                       class="text-sm text-left truncate text-gray-900 dark:text-white"
                     >
                       {{ selectedSlotLabel(slot.index - 1) }}
@@ -214,11 +300,29 @@
                   </div>
                 </template>
               </USelectMenu>
+              <button
+                v-if="isPhysicalMetadataMode && editableSignerSlots.length > 1"
+                type="button"
+                class="shrink-0 text-gray-400 transition-colors hover:text-error"
+                :aria-label="`Hapus penandatangan ${slot.index}`"
+                @click="removeMetadataSigner(slot.index - 1)"
+              >
+                <UIcon name="i-lucide-x" class="size-4" />
+              </button>
             </div>
+            <UButton
+              v-if="isPhysicalMetadataMode"
+              color="primary"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-plus"
+              @click="addMetadataSigner"
+              >Tambah Penandatangan</UButton
+            >
           </div>
         </div>
         <div
-          v-else-if="!loadingSigners && form.jenis"
+          v-else-if="!isPhysicalMetadataMode && !loadingSigners && form.jenis"
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
         >
           <span
@@ -325,7 +429,7 @@
         </div>
 
         <!-- ── Section 2: Template & Upload ──────────────────────────── -->
-        <div class="pt-6">
+        <div v-if="!isPhysicalMetadataMode" class="pt-6">
           <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 pb-3">
             Template &amp; Upload
           </h3>
@@ -440,8 +544,45 @@
           </div>
         </div>
 
+        <div
+          v-if="isPhysicalMetadataMode"
+          class="rounded-xl border border-primary-200 bg-primary-50/50 p-4 dark:border-primary-800 dark:bg-primary-900/10 sm:p-5"
+        >
+          <div class="mb-3 flex items-start gap-3">
+            <span
+              class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300"
+            >
+              <UIcon name="i-lucide-file-up" class="size-5" />
+            </span>
+            <div>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                Dokumen Final TTD Fisik
+              </h3>
+              <p class="mt-0.5 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                Unggah naskah yang sudah ditandatangani fisik. Upload berhasil akan mengubah status
+                menjadi Selesai - Final.
+              </p>
+            </div>
+          </div>
+          <FileUpload
+            :model-value="manualFinalFiles"
+            :multiple="false"
+            accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            :disabled="manualFinalBusy"
+            label="Unggah Dokumen Final"
+            @update:model-value="onManualFinalFiles"
+          />
+          <p
+            v-if="detail?.manualFinalFileUploaded"
+            class="mt-3 flex items-center gap-1.5 text-xs font-medium text-green-700 dark:text-green-400"
+          >
+            <UIcon name="i-lucide-circle-check" class="size-3.5" />
+            Dokumen final sudah tersimpan dan dapat diganti.
+          </p>
+        </div>
+
         <!-- ── Section 3: Butuh Legal Drafting (konfirmasi akhir) ───── -->
-        <div class="pt-6">
+        <div v-if="!isPhysicalMetadataMode" class="pt-6">
           <div
             class="rounded-xl border-2 border-primary-200 dark:border-primary-800 bg-primary-50/60 dark:bg-primary-900/10 p-4 sm:p-5"
           >
@@ -521,6 +662,26 @@
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end bg-white dark:bg-gray-800"
         >
           <UButton
+            v-if="isPhysicalMetadataMode"
+            label="Batal"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            class="px-8"
+            :to="`/naskah-lainnya/${createdId}`"
+          />
+          <UButton
+            v-if="isPhysicalMetadataMode"
+            label="Simpan Data Sistem"
+            color="primary"
+            size="lg"
+            icon="i-lucide-save"
+            class="px-8 font-bold"
+            :disabled="saving"
+            @click="handleSaveDraft"
+          />
+          <UButton
+            v-else
             label="Draft"
             color="neutral"
             variant="outline"
@@ -531,7 +692,8 @@
             @click="handleSaveDraft"
           />
           <UButton
-            label="Kirim"
+            v-if="!isPhysicalMetadataMode"
+            :label="isPhysicalSigning ? 'Submit' : 'Kirim'"
             color="primary"
             size="lg"
             icon="i-heroicons-paper-airplane"
@@ -546,98 +708,16 @@
     <!-- Konfirmasi Draft -->
     <ConfirmModal
       v-model="showDraftConfirm"
-      title="Simpan Draft?"
-      description="Naskah akan disimpan sebagai draft dan dapat dilihat di halaman Draf."
+      :title="isPhysicalMetadataMode ? 'Simpan Data Penandatangan?' : 'Simpan Draft?'"
+      :description="
+        isPhysicalMetadataMode
+          ? 'Data penandatangan disimpan sebagai metadata sistem tanpa mengubah alur naskah.'
+          : 'Naskah akan disimpan sebagai draft dan dapat dilihat di halaman Draf.'
+      "
       variant="primary"
       :loading="saving"
       @confirm="confirmSaveDraft"
     />
-
-    <!-- Pilih Metode Tanda Tangan (muncul saat klik Kirim) -->
-    <UModal v-model:open="showSignOptionModal" :ui="{ content: 'max-w-lg' }">
-      <template #content>
-        <div class="p-6">
-          <div class="flex items-start gap-3">
-            <span
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400"
-            >
-              <UIcon name="i-lucide-pen-tool" class="size-5" />
-            </span>
-            <div class="min-w-0">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-                Pilih Metode Tanda Tangan
-              </h3>
-              <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                Tentukan cara naskah ditandatangani sebelum dikirim untuk persetujuan.
-              </p>
-            </div>
-          </div>
-
-          <div class="mt-4 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              :disabled="saving"
-              class="flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition-all disabled:opacity-60"
-              :class="
-                form.signOption === 'qr_only'
-                  ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20'
-                  : 'border-gray-200 hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700'
-              "
-              @click="selectSignOption('qr_only')"
-            >
-              <span
-                class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400"
-              >
-                <UIcon name="i-lucide-file-signature" class="size-5" />
-              </span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">Digital</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400"
-                >Tanda tangan digital (e-signature/QR).</span
-              >
-            </button>
-            <button
-              type="button"
-              :disabled="saving"
-              class="flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition-all disabled:opacity-60"
-              :class="
-                form.signOption === 'ttd_basah'
-                  ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20'
-                  : 'border-gray-200 hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700'
-              "
-              @click="selectSignOption('ttd_basah')"
-            >
-              <span
-                class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400"
-              >
-                <UIcon name="i-lucide-pen-line" class="size-5" />
-              </span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">Fisik</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400"
-                >Tanda tangan basah / offline.</span
-              >
-            </button>
-          </div>
-
-          <div class="mt-4 flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              :disabled="saving"
-              @click="showSignOptionModal = false"
-              >Batal</UButton
-            >
-            <UButton
-              color="primary"
-              icon="i-heroicons-paper-airplane"
-              :loading="saving"
-              @click="confirmKirimWithSelectedOption"
-            >
-              Kirim
-            </UButton>
-          </div>
-        </div>
-      </template>
-    </UModal>
   </div>
 </template>
 
@@ -646,6 +726,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { CalendarDate, parseDate } from '@internationalized/date';
 import { renderAsync } from 'docx-preview';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
+import { Alert } from '~/composables/useAlert';
 import type {
   BuatNaskahPayload,
   JenisNaskah,
@@ -679,11 +760,15 @@ const {
   createdId,
   fetchDetail,
   detail,
+  updateMetadataPenandatanganFisik,
+  uploadDokumenFinalManual,
 } = useNaskahLainnya();
 const { verifikatorList, fetchVerifikator } = useNaskahDinas();
 
 // Revisi naskah yang dikembalikan (perlu_perbaikan) — tampilkan banner revisi.
 const isRevisi = computed(() => detail.value?.tahapan === 'perlu_perbaikan');
+const isPhysicalMetadataMode = computed(() => route.query.mode === 'data-sistem');
+const isPhysicalSigning = computed(() => form.value.signOption === 'ttd_basah');
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -773,7 +858,7 @@ const form = ref<BuatNaskahPayload & { penandatanganList: Penandatangan[] }>({
   penandatanganList: [],
   sifat: 'biasa',
   signOption: 'qr_only',
-  butuhLegal: true,
+  butuhLegal: false,
   perihal: '',
 });
 
@@ -782,6 +867,41 @@ const form = ref<BuatNaskahPayload & { penandatanganList: Penandatangan[] }>({
 const signerSlotCount = ref(0);
 const signerSlots = ref<{ index: number }[]>([]);
 const loadingSigners = ref(false);
+const isRestoringDraft = ref(false);
+const editableSignerSlots = computed(() => {
+  const count = isPhysicalMetadataMode.value
+    ? Math.max(1, signerSlotCount.value, form.value.penandatanganList?.length ?? 0)
+    : signerSlotCount.value;
+  return Array.from({ length: count }, (_, index) => ({ index: index + 1 }));
+});
+
+function addMetadataSigner() {
+  if (!isPhysicalMetadataMode.value) return;
+  slotSigners.value.push(null);
+  form.value.penandatanganList.push({ nama: '', jabatan: '' });
+}
+
+function removeMetadataSigner(index: number) {
+  if (!isPhysicalMetadataMode.value) return;
+  slotSigners.value.splice(index, 1);
+  form.value.penandatanganList.splice(index, 1);
+}
+
+async function onManualFinalFiles(files: File[]) {
+  const file = files[files.length - 1];
+  manualFinalFiles.value = files;
+  if (!file || !createdId.value || manualFinalBusy.value) return;
+  manualFinalBusy.value = true;
+  try {
+    await uploadDokumenFinalManual(createdId.value, file);
+    useToast().add({ title: 'Dokumen final berhasil diunggah', color: 'success' });
+  } catch (e: any) {
+    const message = e?.response?.data?.message ?? 'Gagal mengunggah dokumen final.';
+    useToast().add({ title: 'Unggah gagal', description: message, color: 'error' });
+  } finally {
+    manualFinalBusy.value = false;
+  }
+}
 
 async function fetchTemplateSigners(jenis: string) {
   if (!jenis) {
@@ -794,7 +914,7 @@ async function fetchTemplateSigners(jenis: string) {
   loadingSigners.value = true;
   try {
     const res = await apiGet<{ data: { count: number; slots: { index: number }[] } }>(
-      `/naskah-lainnya/template-signers/${encodeURIComponent(jenis)}`
+      `/naskah-lainnya/template-signers/${encodeURIComponent(jenis)}${form.value.signOption ? `?signOption=${form.value.signOption}` : ''}`
     );
     const { count, slots } = res.data;
     signerSlotCount.value = count;
@@ -814,8 +934,9 @@ async function fetchTemplateSigners(jenis: string) {
 }
 
 watch(
-  () => form.value.jenis,
-  (jenis) => {
+  () => [form.value.jenis, form.value.signOption],
+  ([jenis]) => {
+    if (isRestoringDraft.value) return;
     fetchTemplateSigners(jenis as string);
   }
 );
@@ -855,7 +976,7 @@ function resolveSlotSigner(value: string | null, fallbackIndex: number): Penanda
 function findSignerValue(stored: Partial<Penandatangan>): string | null {
   const match = penandatanganItems.value.find((item) => {
     const raw = item.raw;
-    if (stored.persnum != null && raw?.persnum === stored.persnum) return true;
+    if (stored.persnum != null && String(raw?.persnum) === String(stored.persnum)) return true;
     if (stored.positionId != null && String(raw?.positionId) === String(stored.positionId))
       return true;
     if (stored.nama != null && raw?.nama?.toLowerCase() === stored.nama.toLowerCase()) return true;
@@ -868,6 +989,7 @@ function findSignerValue(stored: Partial<Penandatangan>): string | null {
 watch(
   slotSigners,
   (values) => {
+    if (isRestoringDraft.value) return;
     form.value.penandatanganList = values.map((val, i) => resolveSlotSigner(val, i));
   },
   { deep: true }
@@ -952,6 +1074,8 @@ watch(approvalPicker, (persnum) => {
 const uploadStatus = ref<'idle' | 'reading' | 'done' | 'error'>('idle');
 const detected = ref<{ perihal: string; tanggal: string } | null>(null);
 const saving = ref(false);
+const manualFinalBusy = ref(false);
+const manualFinalFiles = ref<File[]>([]);
 const dokumenOk = computed(() => uploadStatus.value === 'done' || previewFile.value !== null);
 
 const naskahFiles = ref<File[]>([]);
@@ -1065,6 +1189,7 @@ onMounted(async () => {
   const draftId = route.query.draft_id as string;
   if (draftId) {
     try {
+      isRestoringDraft.value = true;
       await fetchDetail(draftId);
       const d = detail.value as NaskahDetail | null;
       if (d) {
@@ -1112,7 +1237,10 @@ onMounted(async () => {
         }
         if (storedSigners.length) {
           // Simpan data asli sebagai fallback bila tidak cocok dengan daftar pejabat.
-          form.value.penandatanganList = Array.from({ length: signerSlotCount.value }, (_, i) => {
+          const restoredSignerCount = isPhysicalMetadataMode.value
+            ? Math.max(1, signerSlotCount.value, storedSigners.length)
+            : signerSlotCount.value;
+          form.value.penandatanganList = Array.from({ length: restoredSignerCount }, (_, i) => {
             const sp = storedSigners[i];
             if (!sp) return { nama: '', jabatan: '' };
             return {
@@ -1122,8 +1250,11 @@ onMounted(async () => {
               jabatan: sp.jabatan || '',
             } as Penandatangan;
           });
-          slotSigners.value = signerSlots.value.map((_, i) => findSignerValue(storedSigners[i]));
+          slotSigners.value = Array.from({ length: restoredSignerCount }, (_, i) =>
+            findSignerValue(storedSigners[i] ?? {})
+          );
         }
+        await nextTick();
         // Restore file naskah + preview dari BE proxy
         if (d.id) {
           try {
@@ -1171,7 +1302,11 @@ onMounted(async () => {
       }
     } catch {
       // abaikan — form kosong jika draft tidak ditemukan
+    } finally {
+      isRestoringDraft.value = false;
     }
+  } else {
+    await fetchTemplateSigners(form.value.jenis as string);
   }
 });
 
@@ -1225,7 +1360,7 @@ const buildPayload = (): BuatNaskahPayload => {
 
 async function downloadTemplate() {
   try {
-    const res = await getTemplateUrl(form.value.jenis);
+    const res = await getTemplateUrl(form.value.jenis, form.value.signOption);
     window.open(res.data, '_blank');
   } catch {
     useToast().add({
@@ -1407,6 +1542,31 @@ async function handleSaveDraft() {
 
 async function confirmSaveDraft() {
   showDraftConfirm.value = false;
+  if (isPhysicalMetadataMode.value) {
+    const signers = (form.value.penandatanganList ?? []).map((signer) => ({
+      nama: signer.nama?.trim() ?? '',
+      jabatan: signer.jabatan?.trim() ?? '',
+      positionId: signer.positionId || undefined,
+      persnum: signer.persnum,
+    }));
+    if (!signers.length || signers.some((signer) => !signer.nama || !signer.jabatan)) {
+      useToast().add({
+        title: 'Lengkapi penandatangan',
+        description: 'Nama dan jabatan setiap penandatangan wajib diisi.',
+        color: 'warning',
+      });
+      return;
+    }
+    saving.value = true;
+    try {
+      await updateMetadataPenandatanganFisik(createdId.value, signers);
+      useToast().add({ title: 'Data penandatangan disimpan', color: 'success' });
+      await navigateTo(`/naskah-lainnya/${createdId.value}`);
+    } finally {
+      saving.value = false;
+    }
+    return;
+  }
   if (!validateSigners()) return;
   saving.value = true;
   try {
@@ -1429,20 +1589,23 @@ async function confirmSaveDraft() {
   }
 }
 
-// ── Kirim: pop up pilih metode tanda tangan sebelum submit ──
-const showSignOptionModal = ref(false);
-
-function handleConfirmKirim() {
-  showSignOptionModal.value = true;
+// ── Kirim: metode tanda tangan sudah dipilih di toggle atas form ──
+async function handleConfirmKirim() {
+  const isPhysical = isPhysicalSigning.value;
+  const ok = await Alert.confirm(
+    isPhysical ? 'Submit Naskah Fisik?' : 'Kirim Naskah?',
+    isPhysical
+      ? 'Naskah fisik akan disubmit untuk persetujuan. Statusnya tetap Belum Final sampai dokumen final diunggah.'
+      : 'Naskah akan dikirim untuk persetujuan dan tidak dapat diedit lagi. Pastikan isi & dokumen sudah benar.',
+    isPhysical ? 'Submit' : 'Kirim',
+    'Batal'
+  );
+  if (!ok) return;
+  doKirim();
 }
 
 function selectSignOption(option: 'qr_only' | 'ttd_basah') {
   form.value.signOption = option;
-}
-
-function confirmKirimWithSelectedOption() {
-  showSignOptionModal.value = false;
-  doKirim();
 }
 
 const doKirim = async () => {
@@ -1463,7 +1626,12 @@ const doKirim = async () => {
     if (!(await commitNaskahIfDirty())) return;
     await onSubmitPendukung(createdId.value);
     await kirim(createdId.value);
-    useToast().add({ title: 'Naskah berhasil dikirim untuk approval', color: 'success' });
+    useToast().add({
+      title: isPhysicalSigning.value
+        ? 'Naskah fisik berhasil disubmit untuk approval'
+        : 'Naskah berhasil dikirim untuk approval',
+      color: 'success',
+    });
     navigateTo(`/naskah-lainnya/${createdId.value}`);
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message || 'Gagal mengirim naskah';

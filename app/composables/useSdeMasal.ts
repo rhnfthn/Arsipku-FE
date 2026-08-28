@@ -258,7 +258,6 @@ export const useSdeMasal = () => {
         alamat: null,
         kota: null,
         kodePos: null,
-        jabatanPenerima: null,
         keterangan: null,
         perihal: perihalRow || '',
         idTertuju: idTertuju || '',

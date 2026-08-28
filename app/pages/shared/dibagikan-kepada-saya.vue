@@ -196,6 +196,8 @@ const handleOpenPdf = async (share: any) => {
     }
     // Refresh data agar status recipient (SEKALI_LIHAT → BERAKHIR) terupdate di UI
     loadData();
+    // Refresh badge unread — berkurang karena recipient sudah DIBACA/BERAKHIR
+    fetchShareCounts(true);
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || '';
     pdfViewerUrl.value = '';
@@ -214,11 +216,9 @@ const handleOpenPdf = async (share: any) => {
 };
 
 onMounted(async () => {
-  // loadData memanggil fetchShares yang auto-mark recipient TERKIRIM → DIBACA di BE.
-  // Tunggu selesai dulu, baru fetch count supaya red dot tidak muncul lagi.
+  // Badge unread hanya berkurang saat user benar-benar membuka naskah
+  // (tombol "Buka" → openNaskah), bukan saat halaman dibuka.
   await loadData();
-  // Clear badge unread + re-fetch counts untuk update badge sidebar
-  clearUnreadBadge();
   fetchShareCounts(true);
 });
 </script>

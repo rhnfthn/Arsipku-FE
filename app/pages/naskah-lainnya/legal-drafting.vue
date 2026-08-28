@@ -84,6 +84,124 @@
             </Transition>
           </div>
 
+          <!-- FILTER JENIS -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterJenis"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[160px] justify-between"
+            >
+              <span class="truncate">{{ jenisLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterJenis }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterJenis"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[280px]"
+              >
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon
+                      name="i-lucide-search"
+                      class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="jenisFilterSearch"
+                      type="text"
+                      placeholder="Cari jenis naskah…"
+                      class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:bg-white dark:border-gray-700 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-800"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+                <div class="max-h-72 overflow-y-auto">
+                  <button
+                    v-for="opt in filteredJenisOptions"
+                    :key="opt.value"
+                    type="button"
+                    @click.stop="selectFilterJenis(opt.value)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterJenis === opt.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ opt.label }}
+                  </button>
+                  <div
+                    v-if="filteredJenisOptions.length === 0"
+                    class="px-4 py-3 text-sm text-gray-400"
+                  >
+                    Jenis naskah tidak ditemukan.
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- FILTER TAHAPAN -->
+          <div class="relative" data-custom-dropdown>
+            <button
+              type="button"
+              @click.stop="toggleFilterTahapan"
+              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[170px] justify-between"
+            >
+              <span class="truncate">{{ tahapanLabel }}</span>
+              <ChevronDown
+                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': openFilterTahapan }"
+              />
+            </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openFilterTahapan"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[280px]"
+              >
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon
+                      name="i-lucide-search"
+                      class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="tahapanFilterSearch"
+                      type="text"
+                      placeholder="Cari tahapan…"
+                      class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:bg-white dark:border-gray-700 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-800"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+                <div class="max-h-72 overflow-y-auto">
+                  <button
+                    v-for="opt in filteredTahapanOptions"
+                    :key="opt.value"
+                    type="button"
+                    @click.stop="selectFilterTahapan(opt.value)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterTahapan === opt.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ opt.label }}
+                  </button>
+                  <div
+                    v-if="filteredTahapanOptions.length === 0"
+                    class="px-4 py-3 text-sm text-gray-400"
+                  >
+                    Tahapan tidak ditemukan.
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
           <div class="relative flex-1 min-w-[180px]">
             <UIcon
               name="i-lucide-search"
@@ -126,10 +244,18 @@
         @sort="handleSort"
       >
         <template #cell-nomor="{ row }">
-          <button class="font-mono text-xs text-primary-600 hover:underline" @click="openAction(row)">{{ row.nomor }}</button>
+          <button
+            class="font-mono text-xs text-primary-600 hover:underline"
+            @click="openAction(row)"
+          >
+            {{ row.nomor }}
+          </button>
         </template>
         <template #cell-jenis="{ row }">
-          <span class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">{{ row.jenis }}</span>
+          <span
+            class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+            >{{ row.jenis }}</span
+          >
         </template>
         <template #cell-perihal="{ row }">
           <div class="text-sm text-gray-700 dark:text-gray-300">{{ row.perihal }}</div>
@@ -141,7 +267,9 @@
           <StatusBadge :status="row.statusLegal" />
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="openAction(row)">Detail</UButton>
+          <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
+            >Detail</UButton
+          >
         </template>
       </DataTable>
 
@@ -153,7 +281,12 @@
       />
     </div>
 
-    <div v-if="error" class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</div>
+    <div
+      v-if="error"
+      class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300"
+    >
+      {{ errorMessage }}
+    </div>
   </div>
 </template>
 
@@ -163,13 +296,32 @@ import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import { useToast } from '#imports';
 import { downloadCsv } from '~/utils/csv-export';
-import type { NaskahListItem } from '~/types/naskah-lainnya';
+import type { NaskahListItem, Tahapan } from '~/types/naskah-lainnya';
+import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 
 const { legalDrafting, pending, error, fetchLegalDrafting } = useNaskahLainnya();
 const toast = useToast();
 const { t } = useI18n();
+const route = useRoute();
+
+type LegalDraftingFilter = 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya';
+
+function normalizeFilterStatus(value: unknown): LegalDraftingFilter {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (
+    raw === 'semua' ||
+    raw === 'belum-dikirim' ||
+    raw === 'menunggu' ||
+    raw === 'revisi' ||
+    raw === 'aksi-saya'
+  ) {
+    return raw;
+  }
+  if (raw === 'sudah-dikerjakan' || raw === 'sudah_dikerjakan') return 'aksi-saya';
+  return 'belum-dikirim';
+}
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -178,6 +330,10 @@ const breadcrumbs = computed(() => [
 ]);
 
 const search = ref('');
+const filterJenis = ref('');
+const filterTahapan = ref('');
+const jenisFilterSearch = ref('');
+const tahapanFilterSearch = ref('');
 const perPage = ref(10);
 const currentPage = ref(1);
 const sortKey = ref('nomor');
@@ -185,8 +341,8 @@ const sortDir = ref<'asc' | 'desc'>('asc');
 const isExporting = ref(false);
 
 // Filter status persetujuan legal (sesuai action di halaman legal drafting).
-const filterStatus = ref<'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya'>('belum-dikirim');
-const filterTabs: { value: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya'; label: string }[] = [
+const filterStatus = ref<LegalDraftingFilter>(normalizeFilterStatus(route.query.status));
+const filterTabs: { value: LegalDraftingFilter; label: string }[] = [
   { value: 'semua', label: 'Semua' },
   { value: 'belum-dikirim', label: 'Belum Dikirim' },
   { value: 'menunggu', label: 'Menunggu Persetujuan' },
@@ -194,7 +350,54 @@ const filterTabs: { value: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | '
   { value: 'aksi-saya', label: 'Sudah Dikerjakan' },
 ];
 const currentFilterLabel = computed(
-  () => filterTabs.find((t) => t.value === filterStatus.value)?.label ?? 'Filter',
+  () => filterTabs.find((t) => t.value === filterStatus.value)?.label ?? 'Filter'
+);
+const jenisOptions = [
+  { label: 'Semua Naskah', value: '' },
+  ...Object.entries(JENIS_LABELS).map(([value, label]) => ({
+    label: `${value} — ${label}`,
+    value,
+  })),
+];
+const tahapanFilterLabels: Record<Tahapan, string> = {
+  konsep: 'Konsep',
+  persetujuan: 'Persetujuan',
+  legal_drafting: 'Legal Drafting',
+  evaluasi: 'Evaluasi',
+  persetujuan_direksi: 'Persetujuan Direksi',
+  tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
+  blanko_verbal: 'Blanko Verbal',
+  tanda_tangan_legal: 'TTD Legal',
+  tanda_tangan_pejabat: 'TTD Pejabat',
+  tanda_tangan: 'Menunggu Tanda Tangan',
+  selesai: 'Selesai',
+  perlu_perbaikan: 'Perlu Perbaikan',
+  ditolak: 'Ditolak',
+  dibatalkan: 'Dibatalkan',
+};
+const tahapanOptions = [
+  { label: 'Semua Tahapan', value: '' },
+  ...Object.keys(TAHAPAN_STEP).map((value) => ({
+    label: tahapanFilterLabels[value as Tahapan] ?? value.replace(/_/g, ' '),
+    value,
+  })),
+];
+const filterOptionBySearch = (query: string, opt: { label: string; value: string }) => {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [opt.label, opt.value].some((v) => v.toLowerCase().includes(q));
+};
+const filteredJenisOptions = computed(() =>
+  jenisOptions.filter((opt) => filterOptionBySearch(jenisFilterSearch.value, opt))
+);
+const filteredTahapanOptions = computed(() =>
+  tahapanOptions.filter((opt) => filterOptionBySearch(tahapanFilterSearch.value, opt))
+);
+const jenisLabel = computed(
+  () => jenisOptions.find((o) => o.value === filterJenis.value)?.label ?? 'Semua Naskah'
+);
+const tahapanLabel = computed(
+  () => tahapanOptions.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
 );
 // Label badge per-row statusLegal (BE mengirim statusLegal per naskah). Dipakai
 // untuk kolom Status & export — terutama filter 'semua' yang mencampur sub-status.
@@ -213,10 +416,10 @@ const STATUS_LEGAL_LABEL: Record<string, string> = {
 // dan tab "Sudah Dikerjakan" benar-benar memfilter statusLegal=sudah_dikerjakan
 // (bukan sekadar "aksi-saya" berdasarkan aktor).
 const STATUS_FILTER_MAP: Record<string, string | null> = {
-  'semua': null,
+  semua: null,
   'belum-dikirim': 'belum_dikirim',
-  'menunggu': 'menunggu_persetujuan',
-  'revisi': 'revisi',
+  menunggu: 'menunggu_persetujuan',
+  revisi: 'revisi',
   'aksi-saya': 'sudah_dikerjakan',
 };
 
@@ -233,19 +436,62 @@ const columns = [
 // ── Custom Dropdown Toolbar State ──
 const openRowsPerPage = ref(false);
 const openFilterStatus = ref(false);
-function toggleRowsPerPage() { openRowsPerPage.value = !openRowsPerPage.value; }
-function selectRowsPerPage(n: number) { perPage.value = n; openRowsPerPage.value = false; }
-function toggleFilterStatus() { openFilterStatus.value = !openFilterStatus.value; }
+const openFilterJenis = ref(false);
+const openFilterTahapan = ref(false);
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+  openFilterJenis.value = false;
+  openFilterTahapan.value = false;
+}
+function selectRowsPerPage(n: number) {
+  perPage.value = n;
+  openRowsPerPage.value = false;
+}
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
+  openFilterJenis.value = false;
+  openFilterTahapan.value = false;
+}
 function selectFilterStatus(v: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya') {
   filterStatus.value = v;
   openFilterStatus.value = false;
 }
+function toggleFilterJenis() {
+  openFilterJenis.value = !openFilterJenis.value;
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+  openFilterTahapan.value = false;
+}
+function selectFilterJenis(value: string) {
+  filterJenis.value = value;
+  jenisFilterSearch.value = '';
+  openFilterJenis.value = false;
+}
+function toggleFilterTahapan() {
+  openFilterTahapan.value = !openFilterTahapan.value;
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+  openFilterJenis.value = false;
+}
+function selectFilterTahapan(value: string) {
+  filterTahapan.value = value;
+  tahapanFilterSearch.value = '';
+  openFilterTahapan.value = false;
+}
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const els = document.querySelectorAll('[data-custom-dropdown]');
-  for (const el of Array.from(els)) { if (el.contains(target)) return; }
+  for (const el of Array.from(els)) {
+    if (el.contains(target)) return;
+  }
   openRowsPerPage.value = false;
   openFilterStatus.value = false;
+  openFilterJenis.value = false;
+  openFilterTahapan.value = false;
+  jenisFilterSearch.value = '';
+  tahapanFilterSearch.value = '';
 }
 
 // ── Search + Sort + Pagination (client-side) ──
@@ -258,10 +504,20 @@ const filteredRows = computed(() => {
   if (statusFilter) {
     rows = rows.filter((r) => (r.statusLegal ?? '') === statusFilter);
   }
+  if (filterJenis.value) {
+    rows = rows.filter((r) => r.jenis === filterJenis.value);
+  }
+  if (filterTahapan.value) {
+    rows = rows.filter((r) => r.tahapan === filterTahapan.value);
+  }
   const q = search.value.trim().toLowerCase();
   if (!q) return rows;
   return rows.filter((r) =>
-    [r.nomor, r.perihal, r.pemrakarsa.nama].some((v) => String(v ?? '').toLowerCase().includes(q))
+    [r.nomor, r.perihal, r.pemrakarsa.nama].some((v) =>
+      String(v ?? '')
+        .toLowerCase()
+        .includes(q)
+    )
   );
 });
 
@@ -275,7 +531,7 @@ const displayRows = computed(() =>
     tahapan: r.tahapan.replace(/_/g, ' '),
     statusLegal: r.statusLegal ?? '',
     status: STATUS_LEGAL_LABEL[r.statusLegal ?? ''] ?? r.statusLegal ?? '',
-  })),
+  }))
 );
 
 const sortedRows = computed(() => {
@@ -295,17 +551,27 @@ const tableRows = computed(() => {
   return sortedRows.value.slice(start, start + perPage.value);
 });
 
-const errorMessage = computed(() => (error.value as any)?.response?.data?.message ?? 'Gagal memuat antrian legal drafting.');
+const errorMessage = computed(
+  () => (error.value as any)?.response?.data?.message ?? 'Gagal memuat antrian legal drafting.'
+);
 
 function handleSort(key: string) {
-  if (sortKey.value === key) { sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'; }
-  else { sortKey.value = key; sortDir.value = 'asc'; }
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
 }
 
 // ── Aksi ──
 function openAction(row: any) {
   const n = legalDrafting.value.find((i) => i.id === row.id);
   if (!n) return;
+  if (n.tahapan === 'legal_drafting' && n.statusLegal === 'menunggu_persetujuan') {
+    navigateTo(`/naskah-lainnya/${n.id}/persetujuan?tahap=legal_drafting`);
+    return;
+  }
   // Ke halaman detail — aksi "Mulai Legal Drafting" ada di sana (availableActions).
   navigateTo(`/naskah-lainnya/${n.id}`);
 }
@@ -313,20 +579,32 @@ function openAction(row: any) {
 // ── Export CSV ──
 async function exportData() {
   if (totalItems.value === 0) {
-    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    toast.add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
     return;
   }
   isExporting.value = true;
   try {
     const rows = displayRows.value;
     if (!rows.length) {
-      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Tidak ada data untuk diexport',
+        color: 'warning',
+      });
       return;
     }
     const headers = ['Naskah', 'Pemrakarsa', 'Perihal', 'Tahapan', 'Status'];
     const csvRows = rows.map((r) => [r.nomor, r.pemrakarsa, r.perihal, r.tahapan, r.status]);
     downloadCsv(`legal-drafting_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+    toast.add({
+      title: 'Berhasil',
+      description: `${rows.length} data berhasil diexport`,
+      color: 'success',
+    });
   } catch (e) {
     console.error('Gagal export legal drafting:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
@@ -336,12 +614,15 @@ async function exportData() {
 }
 
 // ── Watchers ──
-watch(search, () => {
+watch([search, filterJenis, filterTahapan], () => {
   if (currentPage.value !== 1) currentPage.value = 1;
   else fetchLegalDrafting(filterStatus.value);
 });
 watch([currentPage, perPage], ([, newPerPage], [, oldPerPage]) => {
-  if (newPerPage !== oldPerPage && currentPage.value !== 1) { currentPage.value = 1; return; }
+  if (newPerPage !== oldPerPage && currentPage.value !== 1) {
+    currentPage.value = 1;
+    return;
+  }
   fetchLegalDrafting(filterStatus.value);
 });
 watch([sortKey, sortDir], () => {
