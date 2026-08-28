@@ -1,18 +1,18 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'auth'
-})
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { Search, ArrowUpDown, RotateCcw, Plus, Pencil, Trash2, ChevronDown } from 'lucide-vue-next'
+  middleware: 'auth',
+});
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { Search, ArrowUpDown, RotateCcw, Plus, Pencil, Trash2, ChevronDown } from 'lucide-vue-next';
 
-import Modal from '~/components/Modal.vue'
-import ConfirmPopup from '~/components/ConfirmPopup.vue'
-import Heading from '~/components/Heading.vue'
+import Modal from '~/components/Modal.vue';
+import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import Heading from '~/components/Heading.vue';
 
-import { useDelegasi } from '~/composables/useDelegasi'
-import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/delegasi'
+import { useDelegasi } from '~/composables/useDelegasi';
+import type { JabatanItem, PersonilItem, PositionStatusItem } from '~/types/delegasi';
 
-const toast = useToast()
+const toast = useToast();
 
 const { hasPermission } = useAuth();
 
@@ -23,105 +23,105 @@ const {
   getJabatanList,
   createDelegasi,
   updateDelegasi,
-  deleteDelegasi
-} = useDelegasi()
+  deleteDelegasi,
+} = useDelegasi();
 
 // STATE
-const isLoading = ref(false)
-const isSubmitting = ref(false)
-const search = ref('')
-const filterStatus = ref('Semua')
-const filterLokasi = ref('Semua')
-const filterJabatan = ref('Semua')
-const sortDirection = ref<'asc' | 'desc' | null>(null)
+const isLoading = ref(false);
+const isSubmitting = ref(false);
+const search = ref('');
+const filterStatus = ref('Semua');
+const filterLokasi = ref('Semua');
+const filterJabatan = ref('Semua');
+const sortDirection = ref<'asc' | 'desc' | null>(null);
 
-const showAddModal = ref(false)
-const showEditModal = ref(false)
+const showAddModal = ref(false);
+const showEditModal = ref(false);
 
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Delegasi', to: '/delegasi' }
-]
+  { label: 'Delegasi', to: '/delegasi' },
+];
 
-const listDelegasi = ref<any[]>([])
-const totalItems = ref(0)
-const totalPagesApi = ref(1)
+const listDelegasi = ref<any[]>([]);
+const totalItems = ref(0);
+const totalPagesApi = ref(1);
 
 const listLokasi = computed(() => {
-  const set = new Set(listDelegasi.value.map((item) => item.lokasi))
-  return Array.from(set).sort()
-})
+  const set = new Set(listDelegasi.value.map((item) => item.lokasi));
+  return Array.from(set).sort();
+});
 
 const listJabatanFilter = computed(() => {
-  const set = new Set(listDelegasi.value.map((item) => item.jabatan))
-  return Array.from(set).sort()
-})
+  const set = new Set(listDelegasi.value.map((item) => item.jabatan));
+  return Array.from(set).sort();
+});
 
 // FILTER DROPDOWN STATE
-const openFilterStatus = ref(false)
-const openFilterLokasi = ref(false)
-const openFilterJabatan = ref(false)
+const openFilterStatus = ref(false);
+const openFilterLokasi = ref(false);
+const openFilterJabatan = ref(false);
 // NEW: rows per page dropdown state
-const openRowsPerPage = ref(false)
+const openRowsPerPage = ref(false);
 
 const statusOptions = [
   { label: 'Semua Status', value: 'Semua' },
   { label: 'Aktif', value: 'aktif' },
   { label: 'Akan Datang', value: 'tidak_aktif' },
-  { label: 'Kadaluwarsa', value: 'kedaluwarsa' }
-]
+  { label: 'Kadaluwarsa', value: 'kedaluwarsa' },
+];
 
-const rowsPerPageOptions = [5, 10, 15, 20, 50]
+const rowsPerPageOptions = [5, 10, 15, 20, 50];
 
 const statusLabel = computed(
   () => statusOptions.find((s) => s.value === filterStatus.value)?.label ?? 'Semua Status'
-)
+);
 const lokasiLabel = computed(() =>
   filterLokasi.value === 'Semua' ? 'Semua Lokasi' : filterLokasi.value
-)
+);
 const jabatanLabel = computed(() =>
   filterJabatan.value === 'Semua' ? 'Semua Jabatan' : filterJabatan.value
-)
+);
 
 function toggleFilterStatus() {
-  openFilterStatus.value = !openFilterStatus.value
-  openFilterLokasi.value = false
-  openFilterJabatan.value = false
-  openRowsPerPage.value = false
+  openFilterStatus.value = !openFilterStatus.value;
+  openFilterLokasi.value = false;
+  openFilterJabatan.value = false;
+  openRowsPerPage.value = false;
 }
 function toggleFilterLokasi() {
-  openFilterLokasi.value = !openFilterLokasi.value
-  openFilterStatus.value = false
-  openFilterJabatan.value = false
-  openRowsPerPage.value = false
+  openFilterLokasi.value = !openFilterLokasi.value;
+  openFilterStatus.value = false;
+  openFilterJabatan.value = false;
+  openRowsPerPage.value = false;
 }
 function toggleFilterJabatan() {
-  openFilterJabatan.value = !openFilterJabatan.value
-  openFilterStatus.value = false
-  openFilterLokasi.value = false
-  openRowsPerPage.value = false
+  openFilterJabatan.value = !openFilterJabatan.value;
+  openFilterStatus.value = false;
+  openFilterLokasi.value = false;
+  openRowsPerPage.value = false;
 }
 function toggleRowsPerPage() {
-  openRowsPerPage.value = !openRowsPerPage.value
-  openFilterStatus.value = false
-  openFilterLokasi.value = false
-  openFilterJabatan.value = false
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+  openFilterLokasi.value = false;
+  openFilterJabatan.value = false;
 }
 function selectFilterStatus(val: string) {
-  filterStatus.value = val
-  openFilterStatus.value = false
+  filterStatus.value = val;
+  openFilterStatus.value = false;
 }
 function selectFilterLokasi(val: string) {
-  filterLokasi.value = val
-  openFilterLokasi.value = false
+  filterLokasi.value = val;
+  openFilterLokasi.value = false;
 }
 function selectFilterJabatan(val: string) {
-  filterJabatan.value = val
-  openFilterJabatan.value = false
+  filterJabatan.value = val;
+  openFilterJabatan.value = false;
 }
 function selectRowsPerPage(val: number) {
-  rowsPerPage.value = val
-  openRowsPerPage.value = false
+  rowsPerPage.value = val;
+  openRowsPerPage.value = false;
 }
 
 const escapeHtml = (value: string) =>
@@ -130,23 +130,23 @@ const escapeHtml = (value: string) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+    .replace(/'/g, '&#39;');
 
 function highlight(text: string | null | undefined, keyword: string): string {
-  const safeText = escapeHtml(String(text ?? '-'))
-  const q = keyword.trim()
-  if (!q) return safeText
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const regex = new RegExp(`(${escaped})`, 'gi')
+  const safeText = escapeHtml(String(text ?? '-'));
+  const q = keyword.trim();
+  if (!q) return safeText;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
   return safeText.replace(
     regex,
     '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
-  )
+  );
 }
 
 // FETCH DATA
-const rowsPerPage = ref(10)
-const currentPage = ref(1)
+const rowsPerPage = ref(10);
+const currentPage = ref(1);
 
 const mapDelegasiItem = (item: any) => ({
   id: item.id,
@@ -158,199 +158,199 @@ const mapDelegasiItem = (item: any) => ({
   jabatan: item.as_position_text || '-',
   tanggal: `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
   status: item.status?.label || '-',
-  raw: item
-})
+  raw: item,
+});
 
 const fetchData = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
     const params = {
       page: currentPage.value,
       limit: rowsPerPage.value,
       search: search.value,
-      status: filterStatus.value === 'Semua' ? undefined : filterStatus.value
-    }
-    const res = await getDelegasiList(params)
-    const wrapper = res.data
-    const dataArray = wrapper?.data || []
-    const meta = wrapper?.meta
+      status: filterStatus.value === 'Semua' ? undefined : filterStatus.value,
+    };
+    const res = await getDelegasiList(params);
+    const wrapper = res.data;
+    const dataArray = wrapper?.data || [];
+    const meta = wrapper?.meta;
     if (!Array.isArray(dataArray)) {
-      listDelegasi.value = []
-      return
+      listDelegasi.value = [];
+      return;
     }
-    listDelegasi.value = dataArray.map(mapDelegasiItem)
+    listDelegasi.value = dataArray.map(mapDelegasiItem);
     if (meta) {
-      totalItems.value = meta.total
-      totalPagesApi.value = meta.totalPages
+      totalItems.value = meta.total;
+      totalPagesApi.value = meta.totalPages;
     }
   } catch (error) {
-    console.error('Gagal mengambil data:', error)
+    console.error('Gagal mengambil data:', error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return ''
-  const [y, m, d] = dateStr.split('-')
-  return `${d}.${m}.${y}`
-}
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}.${m}.${y}`;
+};
 
 const handleApiError = (error: any) => {
-  let message = 'Terjadi kesalahan pada sistem.'
-  const errData = error.data || error.response?._data || error.response?.data
+  let message = 'Terjadi kesalahan pada sistem.';
+  const errData = error.data || error.response?._data || error.response?.data;
   if (errData) {
-    if (Array.isArray(errData.message)) message = errData.message[0]
-    else if (typeof errData.message === 'string') message = errData.message
+    if (Array.isArray(errData.message)) message = errData.message[0];
+    else if (typeof errData.message === 'string') message = errData.message;
   } else if (error.message) {
-    message = error.message
+    message = error.message;
   }
-  toast.add({ title: 'Gagal', description: message, color: 'error' })
-}
+  toast.add({ title: 'Gagal', description: message, color: 'error' });
+};
 
 const validateDates = (start: string, end: string) => {
-  if (!start || !end) return 'Tanggal mulai dan sampai harus diisi.'
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-  if (startDate < today) return 'Tanggal mulai tidak boleh kurang dari hari ini.'
-  if (endDate < startDate) return 'Tanggal sampai tidak boleh kurang dari tanggal mulai.'
-  return null
-}
+  if (!start || !end) return 'Tanggal mulai dan sampai harus diisi.';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (startDate < today) return 'Tanggal mulai tidak boleh kurang dari hari ini.';
+  if (endDate < startDate) return 'Tanggal sampai tidak boleh kurang dari tanggal mulai.';
+  return null;
+};
 
 const toggleSort = () => {
-  if (!sortDirection.value) sortDirection.value = 'asc'
-  else if (sortDirection.value === 'asc') sortDirection.value = 'desc'
-  else sortDirection.value = null
-}
+  if (!sortDirection.value) sortDirection.value = 'asc';
+  else if (sortDirection.value === 'asc') sortDirection.value = 'desc';
+  else sortDirection.value = null;
+};
 
 const refreshData = () => {
-  search.value = ''
-  filterStatus.value = 'Semua'
-  filterLokasi.value = 'Semua'
-  filterJabatan.value = 'Semua'
-  sortDirection.value = null
-  currentPage.value = 1
-  fetchData()
-}
+  search.value = '';
+  filterStatus.value = 'Semua';
+  filterLokasi.value = 'Semua';
+  filterJabatan.value = 'Semua';
+  sortDirection.value = null;
+  currentPage.value = 1;
+  fetchData();
+};
 
 const filteredData = computed(() => {
-  let data = [...listDelegasi.value]
+  let data = [...listDelegasi.value];
   if (filterLokasi.value !== 'Semua')
-    data = data.filter((item) => item.lokasi === filterLokasi.value)
+    data = data.filter((item) => item.lokasi === filterLokasi.value);
   if (filterJabatan.value !== 'Semua')
-    data = data.filter((item) => item.jabatan === filterJabatan.value)
-  if (sortDirection.value === 'asc') data.sort((a, b) => a.nama.localeCompare(b.nama))
-  if (sortDirection.value === 'desc') data.sort((a, b) => b.nama.localeCompare(a.nama))
-  return data
-})
+    data = data.filter((item) => item.jabatan === filterJabatan.value);
+  if (sortDirection.value === 'asc') data.sort((a, b) => a.nama.localeCompare(b.nama));
+  if (sortDirection.value === 'desc') data.sort((a, b) => b.nama.localeCompare(a.nama));
+  return data;
+});
 
 // DELETE
-const confirmDeleteOpen = ref(false)
-const itemToDelete = ref<any>(null)
+const confirmDeleteOpen = ref(false);
+const itemToDelete = ref<any>(null);
 
 const openDelete = (item: any) => {
-  itemToDelete.value = item
-  confirmDeleteOpen.value = true
-}
+  itemToDelete.value = item;
+  confirmDeleteOpen.value = true;
+};
 
 const deleteNow = async () => {
-  if (!itemToDelete.value) return
-  isSubmitting.value = true
+  if (!itemToDelete.value) return;
+  isSubmitting.value = true;
   try {
-    await deleteDelegasi(itemToDelete.value.id)
-    confirmDeleteOpen.value = false
+    await deleteDelegasi(itemToDelete.value.id);
+    confirmDeleteOpen.value = false;
     toast.add({
       title: 'Berhasil',
       description: `Data delegasi ${itemToDelete.value.nama} berhasil dihapus.`,
-      color: 'success'
-    })
-    fetchData()
+      color: 'success',
+    });
+    fetchData();
   } catch (error) {
-    handleApiError(error)
+    handleApiError(error);
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
-}
+};
 
 // DROPDOWN DATA API
-const personilOptions = ref<PersonilItem[]>([])
-const sebagaiOptions = ref<PositionStatusItem[]>([])
-const jabatanOptions = ref<JabatanItem[]>([])
-const jabatanSearch = ref('')
-const personilSearch = ref('')
-const sebagaiSearch = ref('')
+const personilOptions = ref<PersonilItem[]>([]);
+const sebagaiOptions = ref<PositionStatusItem[]>([]);
+const jabatanOptions = ref<JabatanItem[]>([]);
+const jabatanSearch = ref('');
+const personilSearch = ref('');
+const sebagaiSearch = ref('');
 
 const jabatanList = computed(() =>
   jabatanOptions.value.map((j) => ({
     id: j.id,
-    label: `${j.persnumText || 'empty'} - ${j.displayText || 'empty'}`,
+    label: `${j.persnumText || 'Belum ada pejabat'} - ${j.displayText || 'Jabatan tanpa nama'}`,
     value: j.id,
-    raw: j
+    raw: j,
   }))
-)
+);
 const filteredJabatanList = computed(() => {
-  const query = jabatanSearch.value.toLowerCase()
-  if (!query) return jabatanList.value.slice(0, 10)
-  return jabatanList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10)
-})
+  const query = jabatanSearch.value.toLowerCase();
+  if (!query) return jabatanList.value.slice(0, 10);
+  return jabatanList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
+});
 const personilList = computed(() =>
   personilOptions.value.map((p) => ({
     id: p.persnum,
     label: p.displayText,
     value: p.persnum,
-    raw: p
+    raw: p,
   }))
-)
+);
 const filteredPersonilList = computed(() => {
-  const query = personilSearch.value.toLowerCase()
-  if (!query) return personilList.value.slice(0, 10)
-  return personilList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10)
-})
+  const query = personilSearch.value.toLowerCase();
+  if (!query) return personilList.value.slice(0, 10);
+  return personilList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
+});
 const sebagaiList = computed(() =>
   sebagaiOptions.value.map((s) => ({
     id: s.value,
     label: s.label,
-    value: s.value
+    value: s.value,
   }))
-)
+);
 const filteredSebagaiList = computed(() => {
-  const query = sebagaiSearch.value.toLowerCase()
-  if (!query) return sebagaiList.value.slice(0, 10)
-  return sebagaiList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10)
-})
+  const query = sebagaiSearch.value.toLowerCase();
+  if (!query) return sebagaiList.value.slice(0, 10);
+  return sebagaiList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
+});
 
-const openNewPersonil = ref(false)
-const openNewSebagai = ref(false)
-const openNewJabatan = ref(false)
-const openEditPersonil = ref(false)
-const openEditSebagai = ref(false)
-const openEditJabatan = ref(false)
+const openNewPersonil = ref(false);
+const openNewSebagai = ref(false);
+const openNewJabatan = ref(false);
+const openEditPersonil = ref(false);
+const openEditSebagai = ref(false);
+const openEditJabatan = ref(false);
 
 function toggleNewJabatan() {
-  openNewJabatan.value = !openNewJabatan.value
-  if (openNewJabatan.value) jabatanSearch.value = ''
+  openNewJabatan.value = !openNewJabatan.value;
+  if (openNewJabatan.value) jabatanSearch.value = '';
 }
 function toggleEditJabatan() {
-  openEditJabatan.value = !openEditJabatan.value
-  if (openEditJabatan.value) jabatanSearch.value = ''
+  openEditJabatan.value = !openEditJabatan.value;
+  if (openEditJabatan.value) jabatanSearch.value = '';
 }
 function toggleNewPersonil() {
-  openNewPersonil.value = !openNewPersonil.value
-  if (openNewPersonil.value) personilSearch.value = ''
+  openNewPersonil.value = !openNewPersonil.value;
+  if (openNewPersonil.value) personilSearch.value = '';
 }
 function toggleEditPersonil() {
-  openEditPersonil.value = !openEditPersonil.value
-  if (openEditPersonil.value) personilSearch.value = ''
+  openEditPersonil.value = !openEditPersonil.value;
+  if (openEditPersonil.value) personilSearch.value = '';
 }
 function toggleNewSebagai() {
-  openNewSebagai.value = !openNewSebagai.value
-  if (openNewSebagai.value) sebagaiSearch.value = ''
+  openNewSebagai.value = !openNewSebagai.value;
+  if (openNewSebagai.value) sebagaiSearch.value = '';
 }
 function toggleEditSebagai() {
-  openEditSebagai.value = !openEditSebagai.value
-  if (openEditSebagai.value) sebagaiSearch.value = ''
+  openEditSebagai.value = !openEditSebagai.value;
+  if (openEditSebagai.value) sebagaiSearch.value = '';
 }
 
 onMounted(async () => {
@@ -358,23 +358,23 @@ onMounted(async () => {
     fetchData(),
     getPersonilList().then((res) => (personilOptions.value = res)),
     getPositionStatuses().then((res) => (sebagaiOptions.value = res)),
-    getJabatanList().then((res) => (jabatanOptions.value = res))
-  ])
-  document.addEventListener('click', handleDocumentClick)
-})
+    getJabatanList().then((res) => (jabatanOptions.value = res)),
+  ]);
+  document.addEventListener('click', handleDocumentClick);
+});
 
 // ERRORS
-const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' })
-const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' })
+const newErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
+const editErrors = ref({ personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' });
 
 const validateForm = (form: any, errors: typeof newErrors.value) => {
-  errors.personil = form.personil ? '' : 'Personil wajib dipilih'
-  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih'
-  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih'
-  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi'
-  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi'
-  return !Object.values(errors).some(Boolean)
-}
+  errors.personil = form.personil ? '' : 'Personil wajib dipilih';
+  errors.sebagai = form.sebagai ? '' : 'Peran wajib dipilih';
+  errors.jabatan = form.jabatan ? '' : 'Jabatan wajib dipilih';
+  errors.mulai = form.mulai ? '' : 'Tanggal mulai wajib diisi';
+  errors.sampai = form.sampai ? '' : 'Tanggal sampai wajib diisi';
+  return !Object.values(errors).some(Boolean);
+};
 
 // ADD
 const newDelegasi = ref({
@@ -382,88 +382,88 @@ const newDelegasi = ref({
   sebagai: '',
   jabatan: '',
   mulai: '',
-  sampai: ''
-})
+  sampai: '',
+});
 const getPersonilLabel = (val: string) =>
-  personilList.value.find((p) => p.value === val)?.label || val
+  personilList.value.find((p) => p.value === val)?.label || val;
 const getSebagaiLabel = (val: string) =>
-  sebagaiList.value.find((s) => s.value === val)?.label || val
+  sebagaiList.value.find((s) => s.value === val)?.label || val;
 const getJabatanLabel = (val: string) =>
-  jabatanList.value.find((j) => j.value === val)?.label || val
+  jabatanList.value.find((j) => j.value === val)?.label || val;
 
 const openAdd = () => {
-  newDelegasi.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' }
-  newErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' }
-  showAddModal.value = true
-}
+  newDelegasi.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
+  newErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
+  showAddModal.value = true;
+};
 
 const saveDelegasi = async () => {
-  if (!validateForm(newDelegasi.value, newErrors.value)) return
-  const errorMsg = validateDates(newDelegasi.value.mulai, newDelegasi.value.sampai)
+  if (!validateForm(newDelegasi.value, newErrors.value)) return;
+  const errorMsg = validateDates(newDelegasi.value.mulai, newDelegasi.value.sampai);
   if (errorMsg) {
-    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' })
-    return
+    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
+    return;
   }
-  isSubmitting.value = true
+  isSubmitting.value = true;
   try {
     const selectedPersonil = personilOptions.value.find(
       (p) => p.persnum === newDelegasi.value.personil
-    )
+    );
     const payload = {
       start_date: newDelegasi.value.mulai,
       end_date: newDelegasi.value.sampai,
       position_status: newDelegasi.value.sebagai,
       as_persnum: newDelegasi.value.personil,
       as_name: selectedPersonil?.name,
-      as_position: newDelegasi.value.jabatan
-    }
-    await createDelegasi(payload)
-    showAddModal.value = false
+      as_position: newDelegasi.value.jabatan,
+    };
+    await createDelegasi(payload);
+    showAddModal.value = false;
     toast.add({
       title: 'Berhasil',
       description:
         newDelegasi.value.sebagai === 'SE'
           ? 'Delegasi dan role Sekretaris Delegasi berhasil dibuat'
           : 'Data delegasi berhasil ditambahkan.',
-      color: 'success'
-    })
-    fetchData()
+      color: 'success',
+    });
+    fetchData();
   } catch (error) {
-    handleApiError(error)
+    handleApiError(error);
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
-}
+};
 
 function selectNewPersonil(val: string) {
-  newDelegasi.value.personil = val
-  newErrors.value.personil = ''
-  openNewPersonil.value = false
+  newDelegasi.value.personil = val;
+  newErrors.value.personil = '';
+  openNewPersonil.value = false;
 }
 function selectNewSebagai(val: string) {
-  newDelegasi.value.sebagai = val
-  newErrors.value.sebagai = ''
-  openNewSebagai.value = false
+  newDelegasi.value.sebagai = val;
+  newErrors.value.sebagai = '';
+  openNewSebagai.value = false;
 }
 function selectNewJabatan(val: string) {
-  newDelegasi.value.jabatan = val
-  newErrors.value.jabatan = ''
-  openNewJabatan.value = false
+  newDelegasi.value.jabatan = val;
+  newErrors.value.jabatan = '';
+  openNewJabatan.value = false;
 }
 function selectEditPersonil(val: string) {
-  editDelegasi.value.personil = val
-  editErrors.value.personil = ''
-  openEditPersonil.value = false
+  editDelegasi.value.personil = val;
+  editErrors.value.personil = '';
+  openEditPersonil.value = false;
 }
 function selectEditSebagai(val: string) {
-  editDelegasi.value.sebagai = val
-  editErrors.value.sebagai = ''
-  openEditSebagai.value = false
+  editDelegasi.value.sebagai = val;
+  editErrors.value.sebagai = '';
+  openEditSebagai.value = false;
 }
 function selectEditJabatan(val: string) {
-  editDelegasi.value.jabatan = val
-  editErrors.value.jabatan = ''
-  openEditJabatan.value = false
+  editDelegasi.value.jabatan = val;
+  editErrors.value.jabatan = '';
+  openEditJabatan.value = false;
 }
 
 // EDIT
@@ -473,22 +473,22 @@ const editDelegasi = ref({
   sebagai: '',
   jabatan: '',
   mulai: '',
-  sampai: ''
-})
+  sampai: '',
+});
 
 const openEdit = (item: any) => {
-  const raw = item.raw
+  const raw = item.raw;
   editDelegasi.value = {
     id: item.id,
     personil: raw.as_persnum || '',
     sebagai: raw.position_status || 'PH',
     jabatan: raw.as_position || '',
     mulai: raw.start_date,
-    sampai: raw.end_date
-  }
-  editErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' }
-  showEditModal.value = true
-}
+    sampai: raw.end_date,
+  };
+  editErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
+  showEditModal.value = true;
+};
 
 const saveEditDelegasi = async () => {
   const editForm = {
@@ -496,133 +496,133 @@ const saveEditDelegasi = async () => {
     sebagai: editDelegasi.value.sebagai,
     jabatan: editDelegasi.value.jabatan,
     mulai: editDelegasi.value.mulai,
-    sampai: editDelegasi.value.sampai
-  }
-  if (!validateForm(editForm, editErrors.value)) return
-  const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai)
+    sampai: editDelegasi.value.sampai,
+  };
+  if (!validateForm(editForm, editErrors.value)) return;
+  const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai);
   if (errorMsg) {
-    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' })
-    return
+    toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
+    return;
   }
-  isSubmitting.value = true
+  isSubmitting.value = true;
   try {
     const payload = {
       start_date: editDelegasi.value.mulai,
       end_date: editDelegasi.value.sampai,
       position_status: editDelegasi.value.sebagai,
       as_persnum: editDelegasi.value.personil,
-      as_position: editDelegasi.value.jabatan
-    }
-    await updateDelegasi(editDelegasi.value.id, payload)
-    showEditModal.value = false
+      as_position: editDelegasi.value.jabatan,
+    };
+    await updateDelegasi(editDelegasi.value.id, payload);
+    showEditModal.value = false;
     toast.add({
       title: 'Berhasil',
       description: 'Data delegasi berhasil diperbarui.',
-      color: 'success'
-    })
-    fetchData()
+      color: 'success',
+    });
+    fetchData();
   } catch (error) {
-    handleApiError(error)
+    handleApiError(error);
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
-}
+};
 
-const paginatedDelegasi = computed(() => filteredData.value)
-const totalPages = computed(() => totalPagesApi.value)
+const paginatedDelegasi = computed(() => filteredData.value);
+const totalPages = computed(() => totalPagesApi.value);
 
 const paginationPages = computed(() => {
   const total = totalPages.value,
-    current = currentPage.value
-  const pages: number[] = []
+    current = currentPage.value;
+  const pages: number[] = [];
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else {
-    if (current <= 2) pages.push(1, 2, 3, 4, 5)
-    else if (current >= total - 1) pages.push(total - 2, total - 1, total)
-    else pages.push(current - 1, current, current + 1)
+    if (current <= 2) pages.push(1, 2, 3, 4, 5);
+    else if (current >= total - 1) pages.push(total - 2, total - 1, total);
+    else pages.push(current - 1, current, current + 1);
   }
-  return pages
-})
+  return pages;
+});
 
 watch(
   [search, filterStatus, filterLokasi, filterJabatan, rowsPerPage],
   () => {
-    currentPage.value = 1
-    fetchData()
+    currentPage.value = 1;
+    fetchData();
   },
   { deep: true }
-)
+);
 watch(currentPage, () => {
-  fetchData()
-})
+  fetchData();
+});
 
 function handleDocumentClick(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]')
+  const target = e.target as HTMLElement;
+  const dropdownEls = document.querySelectorAll('[data-custom-dropdown]');
   for (const el of Array.from(dropdownEls)) {
-    if (el.contains(target)) return
+    if (el.contains(target)) return;
   }
-  openNewPersonil.value = false
-  openNewSebagai.value = false
-  openNewJabatan.value = false
-  openEditPersonil.value = false
-  openEditSebagai.value = false
-  openEditJabatan.value = false
-  openFilterStatus.value = false
-  openFilterLokasi.value = false
-  openFilterJabatan.value = false
-  openRowsPerPage.value = false
+  openNewPersonil.value = false;
+  openNewSebagai.value = false;
+  openNewJabatan.value = false;
+  openEditPersonil.value = false;
+  openEditSebagai.value = false;
+  openEditJabatan.value = false;
+  openFilterStatus.value = false;
+  openFilterLokasi.value = false;
+  openFilterJabatan.value = false;
+  openRowsPerPage.value = false;
 }
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-})
+  document.removeEventListener('click', handleDocumentClick);
+});
 
 // ─── EXPORT: fetch ALL data, not just current page ───────────────────────────
-const isExporting = ref(false)
+const isExporting = ref(false);
 
 const exportData = async () => {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
       description: 'Tidak ada data untuk diexport',
-      color: 'warning'
-    })
-    return
+      color: 'warning',
+    });
+    return;
   }
 
-  isExporting.value = true
+  isExporting.value = true;
   try {
     // Fetch all data in one request using totalItems as limit
     const res = await getDelegasiList({
       page: 1,
       limit: totalItems.value || 9999,
       search: search.value,
-      status: filterStatus.value === 'Semua' ? undefined : filterStatus.value
-    })
-    const wrapper = res.data
-    const dataArray = wrapper?.data || []
+      status: filterStatus.value === 'Semua' ? undefined : filterStatus.value,
+    });
+    const wrapper = res.data;
+    const dataArray = wrapper?.data || [];
     if (!Array.isArray(dataArray) || dataArray.length === 0) {
       toast.add({
         title: 'Tidak ada data',
         description: 'Tidak ada data untuk diexport',
-        color: 'warning'
-      })
-      return
+        color: 'warning',
+      });
+      return;
     }
 
     // Map to full objects
-    const allData = dataArray.map(mapDelegasiItem)
+    const allData = dataArray.map(mapDelegasiItem);
 
     // Apply client-side filters (lokasi, jabatan) same as filteredData
-    let exportRows = [...allData]
+    let exportRows = [...allData];
     if (filterLokasi.value !== 'Semua')
-      exportRows = exportRows.filter((item) => item.lokasi === filterLokasi.value)
+      exportRows = exportRows.filter((item) => item.lokasi === filterLokasi.value);
     if (filterJabatan.value !== 'Semua')
-      exportRows = exportRows.filter((item) => item.jabatan === filterJabatan.value)
-    if (sortDirection.value === 'asc') exportRows.sort((a, b) => a.nama.localeCompare(b.nama))
-    if (sortDirection.value === 'desc') exportRows.sort((a, b) => b.nama.localeCompare(a.nama))
+      exportRows = exportRows.filter((item) => item.jabatan === filterJabatan.value);
+    if (sortDirection.value === 'asc') exportRows.sort((a, b) => a.nama.localeCompare(b.nama));
+    if (sortDirection.value === 'desc') exportRows.sort((a, b) => b.nama.localeCompare(a.nama));
 
     // All table columns including Delegator
     const headers = [
@@ -633,8 +633,8 @@ const exportData = async () => {
       'Status Peran',
       'Sebagai Jabatan',
       'Periode',
-      'Status'
-    ]
+      'Status',
+    ];
     const rows = exportRows.map((i) => [
       i.delegator_nama,
       i.delegator_jabatan,
@@ -643,551 +643,555 @@ const exportData = async () => {
       i.sebagai,
       i.jabatan,
       i.tanggal,
-      i.status === 'Tidak Aktif' || i.status === 'tidak_aktif' ? 'Akan Datang' : i.status
-    ])
+      i.status === 'Tidak Aktif' || i.status === 'tidak_aktif' ? 'Akan Datang' : i.status,
+    ]);
 
     // Escape CSV values (handle commas and quotes)
     const escapeCSV = (val: string) => {
-      const str = String(val ?? '')
+      const str = String(val ?? '');
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`
+        return `"${str.replace(/"/g, '""')}"`;
       }
-      return str
-    }
+      return str;
+    };
 
-    const csvContent = [headers, ...rows].map((row) => row.map(escapeCSV).join(',')).join('\n')
+    const csvContent = [headers, ...rows].map((row) => row.map(escapeCSV).join(',')).join('\n');
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
     link.setAttribute(
       'download',
       `delegasi_${filterStatus.value}_${new Date().toISOString().slice(0, 10)}.csv`
-    )
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     toast.add({
       title: 'Berhasil',
       description: `${exportRows.length} data berhasil diexport`,
-      color: 'success'
-    })
+      color: 'success',
+    });
   } catch (error) {
-    handleApiError(error)
+    handleApiError(error);
   } finally {
-    isExporting.value = false
+    isExporting.value = false;
   }
-}
+};
 </script>
 
 <template>
   <AccessDenied v-if="!hasPermission('delegasi', 'read')" />
   <div v-else class="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <div class="space-y-6">
-    <div class="flex items-center justify-between w-full mb-5">
-      <div>
-        <Heading variant="heading6b" class="text-mobile-md dark:text-white">Delegasi</Heading>
-        <PageHeader :items="breadcrumbs" />
-      </div>
-      <button
-        v-if="hasPermission('delegasi', 'create')"
-        @click="openAdd"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
-      >
-        <Plus class="w-4 h-4" />
-        Tambah Delegasi
-      </button>
-    </div>
-
-    <div
-      class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
-    >
-      <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full">
-        <div class="flex items-center gap-3 flex-wrap flex-1">
-          <!-- ROWS PER PAGE — custom dropdown (same style as filter dropdowns) -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              type="button"
-              @click.stop="toggleRowsPerPage"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
-            >
-              <span>{{ rowsPerPage }}</span>
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-180': openRowsPerPage }"
-              />
-            </button>
-            <Transition name="filter-dd">
-              <div
-                v-if="openRowsPerPage"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]"
-              >
-                <button
-                  v-for="n in rowsPerPageOptions"
-                  :key="n"
-                  type="button"
-                  @click.stop="selectRowsPerPage(n)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    rowsPerPage === n
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                  ]"
-                >
-                  {{ n }}
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button
-              @click="toggleSort"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              :title="
-                sortDirection === 'asc'
-                  ? 'Urutan A-Z'
-                  : sortDirection === 'desc'
-                    ? 'Urutan Z-A'
-                    : 'Urutkan'
-              "
-              :class="{ 'text-primary dark:text-primary-400': sortDirection !== null }"
-            >
-              <ArrowUpDown class="w-4 h-4" />
-            </button>
-            <button
-              @click="refreshData"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
-              title="Refresh"
-            >
-              <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
-            </button>
-          </div>
-
-          <!-- FILTER STATUS -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              type="button"
-              @click.stop="toggleFilterStatus"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
-            >
-              <span class="truncate">{{ statusLabel }}</span>
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-180': openFilterStatus }"
-              />
-            </button>
-            <Transition name="filter-dd">
-              <div
-                v-if="openFilterStatus"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]"
-              >
-                <button
-                  v-for="opt in statusOptions"
-                  :key="opt.value"
-                  type="button"
-                  @click.stop="selectFilterStatus(opt.value)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    filterStatus === opt.value
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                  ]"
-                >
-                  {{ opt.label }}
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- FILTER LOKASI -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              type="button"
-              @click.stop="toggleFilterLokasi"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
-            >
-              <span class="truncate">{{ lokasiLabel }}</span>
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-180': openFilterLokasi }"
-              />
-            </button>
-            <Transition name="filter-dd">
-              <div
-                v-if="openFilterLokasi"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
-              >
-                <button
-                  type="button"
-                  @click.stop="selectFilterLokasi('Semua')"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
-                    filterLokasi === 'Semua'
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                  ]"
-                >
-                  Semua Lokasi
-                </button>
-                <button
-                  v-for="lok in listLokasi"
-                  :key="lok"
-                  type="button"
-                  @click.stop="selectFilterLokasi(lok)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    filterLokasi === lok
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                  ]"
-                >
-                  {{ lok }}
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- FILTER JABATAN -->
-          <div class="relative" data-custom-dropdown>
-            <button
-              type="button"
-              @click.stop="toggleFilterJabatan"
-              class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
-            >
-              <span class="truncate">{{ jabatanLabel }}</span>
-              <ChevronDown
-                class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-180': openFilterJabatan }"
-              />
-            </button>
-            <Transition name="filter-dd">
-              <div
-                v-if="openFilterJabatan"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px] max-h-56 overflow-y-auto"
-              >
-                <button
-                  type="button"
-                  @click.stop="selectFilterJabatan('Semua')"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
-                    filterJabatan === 'Semua'
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                  ]"
-                >
-                  Semua Jabatan
-                </button>
-                <button
-                  v-for="jab in listJabatanFilter"
-                  :key="jab"
-                  type="button"
-                  @click.stop="selectFilterJabatan(jab)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    filterJabatan === jab
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-                  ]"
-                >
-                  {{ jab }}
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- SEARCH — memanjang mengisi sisa ruang -->
-          <div class="relative flex-1 min-w-[160px]">
-            <Search
-              class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            />
-            <input
-              v-model="search"
-              @input="
-                () => {
-                  currentPage = 1
-                  fetchData()
-                }
-              "
-              :placeholder="$t('del_cari_placeholder')"
-              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
-            />
-          </div>
+      <div class="flex items-center justify-between w-full mb-5">
+        <div>
+          <Heading variant="heading6b" class="text-mobile-md dark:text-white">Delegasi</Heading>
+          <PageHeader :items="breadcrumbs" />
         </div>
-
         <button
-          v-if="hasPermission('delegasi', 'export')"
-          @click="exportData"
-          :disabled="isExporting"
-          class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+          v-if="hasPermission('delegasi', 'create')"
+          @click="openAdd"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
         >
-          <span
-            v-if="isExporting"
-            class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
-          />
-          {{ isExporting ? 'Mengexport...' : 'Export' }}
+          <Plus class="w-4 h-4" />
+          Tambah Delegasi
         </button>
       </div>
 
-      <div class="overflow-x-auto relative">
-        <table class="min-w-full text-sm">
-          <thead class="bg-primary dark:bg-primary-700">
-            <tr>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
-                Delegator
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
-                Penerima Delegasi
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
-                Sebagai Jabatan
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
-                Periode
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
-                Status
-              </th>
-              <th class="px-4 py-3 text-center text-sm font-semibold text-white whitespace-nowrap">
-                Aksi
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-            <template v-if="isLoading">
-              <tr
-                v-for="n in rowsPerPage"
-                :key="'skeleton-' + n"
-                class="animate-pulse bg-white dark:bg-gray-800"
+      <div
+        class="flex flex-col w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
+      >
+        <div
+          class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-3 w-full"
+        >
+          <div class="flex items-center gap-3 flex-wrap flex-1">
+            <!-- ROWS PER PAGE — custom dropdown (same style as filter dropdowns) -->
+            <div class="relative" data-custom-dropdown>
+              <button
+                type="button"
+                @click.stop="toggleRowsPerPage"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
               >
-                <td class="px-4 py-2">
-                  <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                  <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-                    <div>
-                      <div class="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                      <div class="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                  <div class="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="flex justify-center gap-3">
-                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-                    <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-                  </div>
-                </td>
-              </tr>
-            </template>
-            <template v-else-if="paginatedDelegasi.length === 0">
-              <tr>
-                <td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-400">
-                  Tidak ada data ditemukan
-                </td>
-              </tr>
-            </template>
-            <template v-else>
-              <tr
-                v-for="item in paginatedDelegasi"
-                :key="item.id"
-                class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <td class="px-4 py-2 min-w-[220px]">
-                  <div class="flex flex-col">
-                    <span
-                      class="text-gray-900 dark:text-white font-medium"
-                      v-html="highlight(item.delegator_nama, search)"
-                    />
-                    <span
-                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
-                      v-html="highlight(item.delegator_jabatan, search)"
-                    />
-                  </div>
-                </td>
-                <td class="px-4 py-2 min-w-[220px]">
-                  <div class="flex flex-col">
-                    <span
-                      class="text-gray-900 dark:text-white font-medium"
-                      v-html="highlight(item.nama, search)"
-                    />
-                    <span
-                      class="text-gray-500 dark:text-gray-400 text-xs mt-1"
-                      v-html="highlight(item.lokasi, search)"
-                    />
-                  </div>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="flex flex-col">
-                    <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1">
-                      Status: <span v-html="highlight(item.sebagai, search)" />
-                    </span>
-                    <span
-                      class="text-gray-900 dark:text-white font-medium leading-snug"
-                      v-html="highlight(item.jabatan, search)"
-                    />
-                  </div>
-                </td>
-                <td class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
-                  <span v-html="highlight(item.tanggal, search)" />
-                </td>
-                <td class="px-4 py-2">
-                  <span
+                <span>{{ rowsPerPage }}</span>
+                <ChevronDown
+                  class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                  :class="{ 'rotate-180': openRowsPerPage }"
+                />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="openRowsPerPage"
+                  class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]"
+                >
+                  <button
+                    v-for="n in rowsPerPageOptions"
+                    :key="n"
+                    type="button"
+                    @click.stop="selectRowsPerPage(n)"
                     :class="[
-                      'inline-flex px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap',
-                      item.status === 'Aktif'
-                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                        : item.status === 'Akan Datang' ||
-                            item.status === 'Tidak Aktif' ||
-                            item.status === 'tidak_aktif'
-                          ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-                          : item.status === 'Kedaluwarsa'
-                            ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      rowsPerPage === n
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
                     ]"
                   >
-                    {{
-                      item.status === 'Tidak Aktif' || item.status === 'tidak_aktif'
-                        ? 'Akan Datang'
-                        : item.status
-                    }}
-                  </span>
-                </td>
-                <td class="px-4 py-2">
-                  <div class="flex justify-center gap-3">
-                    <button
-                      v-if="hasPermission('delegasi', 'update')"
-                      @click="openEdit(item)"
-                      :disabled="item.status === 'Aktif' || item.status === 'Kedaluwarsa'"
-                      :class="[
-                        'p-2 rounded-lg transition-colors',
-                        item.status === 'Aktif' || item.status === 'Kedaluwarsa'
-                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                          : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500'
-                      ]"
-                      :title="
-                        item.status === 'Aktif' || item.status === 'Kedaluwarsa'
-                          ? 'Tidak dapat diedit'
-                          : 'Edit'
-                      "
-                    >
-                      <Pencil class="w-4 h-4" />
-                    </button>
-                    <button
-                      v-if="hasPermission('delegasi', 'delete')"
-                      @click="openDelete(item)"
-                      class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
-                      title="Hapus"
-                    >
-                      <Trash2 class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
+                    {{ n }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
 
-      <div
-        class="flex items-center justify-between px-4 py-2 border-t border-gray-100 dark:border-gray-700"
-      >
-        <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedDelegasi.length }} dari {{ totalItems }} data
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            @click="currentPage = Math.max(1, currentPage - 1)"
-            :disabled="currentPage === 1"
-            :class="[
-              'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === 1
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary hover:bg-primary-50'
-            ]"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
+            <div class="flex items-center gap-2">
+              <button
+                @click="toggleSort"
+                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
+                :title="
+                  sortDirection === 'asc'
+                    ? 'Urutan A-Z'
+                    : sortDirection === 'desc'
+                      ? 'Urutan Z-A'
+                      : 'Urutkan'
+                "
+                :class="{ 'text-primary dark:text-primary-400': sortDirection !== null }"
+              >
+                <ArrowUpDown class="w-4 h-4" />
+              </button>
+              <button
+                @click="refreshData"
+                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 transition-colors"
+                title="Refresh"
+              >
+                <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
+              </button>
+            </div>
+
+            <!-- FILTER STATUS -->
+            <div class="relative" data-custom-dropdown>
+              <button
+                type="button"
+                @click.stop="toggleFilterStatus"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] justify-between"
+              >
+                <span class="truncate">{{ statusLabel }}</span>
+                <ChevronDown
+                  class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                  :class="{ 'rotate-180': openFilterStatus }"
+                />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="openFilterStatus"
+                  class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]"
+                >
+                  <button
+                    v-for="opt in statusOptions"
+                    :key="opt.value"
+                    type="button"
+                    @click.stop="selectFilterStatus(opt.value)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterStatus === opt.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- FILTER LOKASI -->
+            <div class="relative" data-custom-dropdown>
+              <button
+                type="button"
+                @click.stop="toggleFilterLokasi"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
+              >
+                <span class="truncate">{{ lokasiLabel }}</span>
+                <ChevronDown
+                  class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                  :class="{ 'rotate-180': openFilterLokasi }"
+                />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="openFilterLokasi"
+                  class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-56 overflow-y-auto"
+                >
+                  <button
+                    type="button"
+                    @click.stop="selectFilterLokasi('Semua')"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
+                      filterLokasi === 'Semua'
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    Semua Lokasi
+                  </button>
+                  <button
+                    v-for="lok in listLokasi"
+                    :key="lok"
+                    type="button"
+                    @click.stop="selectFilterLokasi(lok)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterLokasi === lok
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ lok }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- FILTER JABATAN -->
+            <div class="relative" data-custom-dropdown>
+              <button
+                type="button"
+                @click.stop="toggleFilterJabatan"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[130px] max-w-[200px] justify-between"
+              >
+                <span class="truncate">{{ jabatanLabel }}</span>
+                <ChevronDown
+                  class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+                  :class="{ 'rotate-180': openFilterJabatan }"
+                />
+              </button>
+              <Transition name="filter-dd">
+                <div
+                  v-if="openFilterJabatan"
+                  class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[200px] max-h-56 overflow-y-auto"
+                >
+                  <button
+                    type="button"
+                    @click.stop="selectFilterJabatan('Semua')"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700',
+                      filterJabatan === 'Semua'
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    Semua Jabatan
+                  </button>
+                  <button
+                    v-for="jab in listJabatanFilter"
+                    :key="jab"
+                    type="button"
+                    @click.stop="selectFilterJabatan(jab)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterJabatan === jab
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ jab }}
+                  </button>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- SEARCH — memanjang mengisi sisa ruang -->
+            <div class="relative flex-1 min-w-[160px]">
+              <Search
+                class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
               />
-            </svg>
-            Sebelumnya
+              <input
+                v-model="search"
+                @input="
+                  () => {
+                    currentPage = 1;
+                    fetchData();
+                  }
+                "
+                :placeholder="$t('del_cari_placeholder')"
+                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+              />
+            </div>
+          </div>
+
+          <button
+            v-if="hasPermission('delegasi', 'export')"
+            @click="exportData"
+            :disabled="isExporting"
+            class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <span
+              v-if="isExporting"
+              class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
+            />
+            {{ isExporting ? 'Mengexport...' : 'Export' }}
           </button>
-          <div class="flex items-center gap-1">
+        </div>
+
+        <div class="overflow-x-auto relative">
+          <table class="min-w-full text-sm">
+            <thead class="bg-primary dark:bg-primary-700">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                  Delegator
+                </th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                  Penerima Delegasi
+                </th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                  Sebagai Jabatan
+                </th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                  Periode
+                </th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
+                  Status
+                </th>
+                <th
+                  class="px-4 py-3 text-center text-sm font-semibold text-white whitespace-nowrap"
+                >
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <template v-if="isLoading">
+                <tr
+                  v-for="n in rowsPerPage"
+                  :key="'skeleton-' + n"
+                  class="animate-pulse bg-white dark:bg-gray-800"
+                >
+                  <td class="px-4 py-2">
+                    <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                    <div class="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                      <div>
+                        <div class="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                        <div class="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                    <div class="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="flex justify-center gap-3">
+                      <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                      <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+              <template v-else-if="paginatedDelegasi.length === 0">
+                <tr>
+                  <td colspan="6" class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    Tidak ada data ditemukan
+                  </td>
+                </tr>
+              </template>
+              <template v-else>
+                <tr
+                  v-for="item in paginatedDelegasi"
+                  :key="item.id"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <td class="px-4 py-2 min-w-[220px]">
+                    <div class="flex flex-col">
+                      <span
+                        class="text-gray-900 dark:text-white font-medium"
+                        v-html="highlight(item.delegator_nama, search)"
+                      />
+                      <span
+                        class="text-gray-500 dark:text-gray-400 text-xs mt-1"
+                        v-html="highlight(item.delegator_jabatan, search)"
+                      />
+                    </div>
+                  </td>
+                  <td class="px-4 py-2 min-w-[220px]">
+                    <div class="flex flex-col">
+                      <span
+                        class="text-gray-900 dark:text-white font-medium"
+                        v-html="highlight(item.nama, search)"
+                      />
+                      <span
+                        class="text-gray-500 dark:text-gray-400 text-xs mt-1"
+                        v-html="highlight(item.lokasi, search)"
+                      />
+                    </div>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="flex flex-col">
+                      <span class="text-primary dark:text-primary-400 font-semibold text-xs mb-1">
+                        Status: <span v-html="highlight(item.sebagai, search)" />
+                      </span>
+                      <span
+                        class="text-gray-900 dark:text-white font-medium leading-snug"
+                        v-html="highlight(item.jabatan, search)"
+                      />
+                    </div>
+                  </td>
+                  <td class="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
+                    <span v-html="highlight(item.tanggal, search)" />
+                  </td>
+                  <td class="px-4 py-2">
+                    <span
+                      :class="[
+                        'inline-flex px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap',
+                        item.status === 'Aktif'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                          : item.status === 'Akan Datang' ||
+                              item.status === 'Tidak Aktif' ||
+                              item.status === 'tidak_aktif'
+                            ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                            : item.status === 'Kedaluwarsa'
+                              ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300',
+                      ]"
+                    >
+                      {{
+                        item.status === 'Tidak Aktif' || item.status === 'tidak_aktif'
+                          ? 'Akan Datang'
+                          : item.status
+                      }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2">
+                    <div class="flex justify-center gap-3">
+                      <button
+                        v-if="hasPermission('delegasi', 'update')"
+                        @click="openEdit(item)"
+                        :disabled="item.status === 'Aktif' || item.status === 'Kedaluwarsa'"
+                        :class="[
+                          'p-2 rounded-lg transition-colors',
+                          item.status === 'Aktif' || item.status === 'Kedaluwarsa'
+                            ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                            : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500',
+                        ]"
+                        :title="
+                          item.status === 'Aktif' || item.status === 'Kedaluwarsa'
+                            ? 'Tidak dapat diedit'
+                            : 'Edit'
+                        "
+                      >
+                        <Pencil class="w-4 h-4" />
+                      </button>
+                      <button
+                        v-if="hasPermission('delegasi', 'delete')"
+                        @click="openDelete(item)"
+                        class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
+                        title="Hapus"
+                      >
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          class="flex items-center justify-between px-4 py-2 border-t border-gray-100 dark:border-gray-700"
+        >
+          <div class="text-xs text-gray-600 dark:text-gray-400">
+            Menampilkan {{ paginatedDelegasi.length }} dari {{ totalItems }} data
+          </div>
+          <div class="flex items-center gap-2">
             <button
-              v-if="paginationPages[0] > 1"
-              @click="currentPage = 1"
-              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary text-gray-700 dark:text-gray-300 transition-all font-medium"
-            >
-              1
-            </button>
-            <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 text-sm">...</span>
-            <button
-              v-for="page in paginationPages"
-              :key="page"
-              @click="currentPage = page"
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
               :class="[
-                'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
-                currentPage === page
-                  ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 hover:text-primary'
+                'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === 1
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary border border-primary hover:bg-primary-50',
               ]"
             >
-              {{ page }}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Sebelumnya
             </button>
-            <span
-              v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
-              class="px-2 text-gray-400 text-sm"
-              >...</span
-            >
+            <div class="flex items-center gap-1">
+              <button
+                v-if="paginationPages[0] > 1"
+                @click="currentPage = 1"
+                class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary text-gray-700 dark:text-gray-300 transition-all font-medium"
+              >
+                1
+              </button>
+              <span v-if="paginationPages[0] > 2" class="px-2 text-gray-400 text-sm">...</span>
+              <button
+                v-for="page in paginationPages"
+                :key="page"
+                @click="currentPage = page"
+                :class="[
+                  'w-8 h-8 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                  currentPage === page
+                    ? 'bg-primary dark:bg-primary-600 text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 hover:text-primary',
+                ]"
+              >
+                {{ page }}
+              </button>
+              <span
+                v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
+                class="px-2 text-gray-400 text-sm"
+                >...</span
+              >
+              <button
+                v-if="paginationPages[paginationPages.length - 1] < totalPages"
+                @click="currentPage = totalPages"
+                class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary text-gray-700 dark:text-gray-300 transition-all font-medium"
+              >
+                {{ totalPages }}
+              </button>
+            </div>
             <button
-              v-if="paginationPages[paginationPages.length - 1] < totalPages"
-              @click="currentPage = totalPages"
-              class="w-9 h-9 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 hover:text-primary text-gray-700 dark:text-gray-300 transition-all font-medium"
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              :class="[
+                'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary border border-primary hover:bg-primary-50',
+              ]"
             >
-              {{ totalPages }}
+              Selanjutnya
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
             </button>
           </div>
-          <button
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            :class="[
-              'flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-lg transition-all',
-              currentPage === totalPages
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white dark:bg-gray-700 text-primary border border-primary hover:bg-primary-50'
-            ]"
-          >
-            Selanjutnya
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
         </div>
       </div>
-    </div>
     </div>
 
     <!-- MODAL TAMBAH -->
@@ -1213,7 +1217,7 @@ const exportData = async () => {
                   'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
                   newErrors.personil
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
                 ]"
                 @click.stop="toggleNewPersonil"
               >
@@ -1278,7 +1282,7 @@ const exportData = async () => {
                   'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
                   newErrors.sebagai
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
                 ]"
                 @click.stop="toggleNewSebagai"
               >
@@ -1343,7 +1347,7 @@ const exportData = async () => {
                   'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
                   newErrors.jabatan
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
                 ]"
                 @click.stop="toggleNewJabatan"
               >
@@ -1410,7 +1414,7 @@ const exportData = async () => {
                   'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
                   newErrors.mulai
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary',
                 ]"
               />
               <p v-if="newErrors.mulai" class="text-red-500 text-xs mt-1">{{ newErrors.mulai }}</p>
@@ -1427,7 +1431,7 @@ const exportData = async () => {
                   'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
                   newErrors.sampai
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary',
                 ]"
               />
               <p v-if="newErrors.sampai" class="text-red-500 text-xs mt-1">
@@ -1462,7 +1466,7 @@ const exportData = async () => {
                   'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
                   editErrors.personil
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
                 ]"
                 @click.stop="toggleEditPersonil"
               >
@@ -1527,7 +1531,7 @@ const exportData = async () => {
                   'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
                   editErrors.sebagai
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
                 ]"
                 @click.stop="toggleEditSebagai"
               >
@@ -1592,7 +1596,7 @@ const exportData = async () => {
                   'mt-1 w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between hover:border-primary focus:ring-2 transition-all dark:bg-gray-700 dark:text-white',
                   editErrors.jabatan
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
                 ]"
                 @click.stop="toggleEditJabatan"
               >
@@ -1659,7 +1663,7 @@ const exportData = async () => {
                   'w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
                   editErrors.mulai
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary',
                 ]"
               />
               <p v-if="editErrors.mulai" class="text-red-500 text-xs mt-1">
@@ -1678,7 +1682,7 @@ const exportData = async () => {
                   'w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary transition-all dark:bg-gray-700 dark:text-white',
                   editErrors.sampai
                     ? 'border-red-500 focus:ring-red-300'
-                    : 'border-gray-200 dark:border-gray-600 focus:border-primary'
+                    : 'border-gray-200 dark:border-gray-600 focus:border-primary',
                 ]"
               />
               <p v-if="editErrors.sampai" class="text-red-500 text-xs mt-1">
