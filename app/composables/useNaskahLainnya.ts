@@ -315,10 +315,34 @@ export function useNaskahLainnya() {
       }
     );
 
+  const ubahNomorFinalManual = (id: string, nomor: string) =>
+    run<NaskahDetail>(
+      () =>
+        apiPut<ApiResponse<NaskahDetail>>(`/naskah-lainnya/${id}/nomor-final-manual`, { nomor }),
+      (d) => {
+        detail.value = d;
+      }
+    );
+
+  const updateMetadataPenandatanganFisik = (
+    id: string,
+    penandatangan: { nama: string; jabatan: string; positionId?: string; persnum?: number }[]
+  ) =>
+    run<NaskahDetail>(
+      () =>
+        apiPut<ApiResponse<NaskahDetail>>(`/naskah-lainnya/${id}/metadata-penandatangan-fisik`, {
+          penandatangan,
+        }),
+      (d) => {
+        detail.value = d;
+      }
+    );
+
   const deleteDokumenTambahan = (id: string, dokumenId: string) =>
     apiDelete<ApiResponse<{ id: string }>>(`/naskah-lainnya/${id}/dokumen/${dokumenId}`);
 
-  const getTemplateUrl = (jenis: string) => apiGet(`/naskah-lainnya/template/${jenis}`);
+  const getTemplateUrl = (jenis: string, signOption?: string) =>
+    apiGet(`/naskah-lainnya/template/${jenis}${signOption ? `?signOption=${signOption}` : ''}`);
 
   const deleteDraft = (id: string) =>
     apiDelete<ApiResponse<{ id: string }>>(`/naskah-lainnya/${id}`);
@@ -361,6 +385,8 @@ export function useNaskahLainnya() {
     unggahTtdFisik,
     uploadDokumenFinalManual,
     ubahStatusFinalManual,
+    ubahNomorFinalManual,
+    updateMetadataPenandatanganFisik,
     deleteDokumenTambahan,
     getTemplateUrl,
     deleteDraft,
