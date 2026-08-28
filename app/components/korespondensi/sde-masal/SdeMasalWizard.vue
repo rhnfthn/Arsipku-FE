@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <PageHeader title="SDE Masal (Surat Dinas Eksternal Massal)" :items="breadcrumbs" />
+    <PageHeader title="SDE Masal" :items="breadcrumbs" />
 
     
     <!-- Stepper -->
@@ -52,31 +52,62 @@
         :parent-naskah-id="parentNaskahId"
       />
 
-      <!-- Step 2: Upload Penerima Massal -->
-      <SdeMasalStepUpload
-        v-else-if="currentStep === 2"
-        v-model="wizardState.penerimaList"
-        :konsep="wizardState.konsep"
-        @update:skema-template="wizardState.skemaTemplate = $event"
-      />
+      <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->
+      <div v-else-if="currentStep === 2" class="space-y-6">
+        <div class="overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm dark:border-primary-900/50 dark:bg-gray-800">
+          <div class="flex items-center gap-3 border-b border-primary-100 bg-primary-50/70 px-5 py-3 dark:border-primary-900/50 dark:bg-primary-950/30">
+            <div class="flex size-9 items-center justify-center rounded-lg bg-primary-500 text-white shadow-sm">
+              <UIcon name="i-lucide-file-text" class="size-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Konsep Surat</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Informasi surat yang akan dibuat massal</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-3 bg-slate-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4 dark:bg-gray-900/20">
+            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
+              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-calendar-days" class="size-3.5 text-primary-500" />Tanggal</div>
+              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.tanggalKonsep || '-' }}</p>
+            </div>
+            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
+              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-tags" class="size-3.5 text-primary-500" />Klasifikasi</div>
+              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.klasifikasiName || '-' }}</p>
+            </div>
+            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
+              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-user-round" class="size-3.5 text-primary-500" />Pengirim</div>
+              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.pengirimName || '-' }}</p>
+            </div>
+            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
+              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-shield-check" class="size-3.5 text-primary-500" />Sifat</div>
+              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold capitalize text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.sifat === 'biasa' ? 'Biasa / Terbuka' : wizardState.konsep?.sifat || '-' }}</p>
+            </div>
+          </div>
+        </div>
+        <SdeMasalStepTemplate
+          v-model="wizardState.template"
+          :konsep="wizardState.konsep"
+          :penerima-list="wizardState.penerimaList"
+          @update:variables="wizardState.variables = $event"
+        />
+        <SdeMasalStepUpload
+          v-model="wizardState.penerimaList"
+          :konsep="wizardState.konsep"
+          :dynamic-variables="wizardState.variables"
+        />
+      </div>
 
-      <!-- Step 3: Template dan Konten -->
-      <SdeMasalStepTemplate
-        v-else-if="currentStep === 3"
-        v-model="wizardState.template"
-        :konsep="wizardState.konsep"
-        :penerima-list="wizardState.penerimaList"
-        :default-skema="wizardState.skemaTemplate"
-      />
-
-      <!-- Step 4: Preview dan Konfirmasi -->
+      <!-- Step 3: Preview dan Konfirmasi -->
       <SdeMasalStepPreview
-        v-else-if="currentStep === 4"
+        v-else-if="currentStep === 3"
         :konsep="wizardState.konsep"
         :penerima-list="wizardState.penerimaList"
         :template="wizardState.template"
         :generating="generating"
-        @generate="handleGenerate"
+        @submit-verification="handleSubmitVerification"
       />
     </UCard>
 
@@ -96,7 +127,7 @@
       <!-- Selanjutnya / Generate -->
       <div class="flex items-center gap-2">
         <UButton
-          v-if="currentStep < 4"
+          v-if="currentStep < 3"
           label="Selanjutnya"
           color="primary"
           icon="i-lucide-arrow-right"
@@ -109,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue';
+import { reactive, computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useToast } from '#imports';
@@ -125,29 +156,67 @@ const props = defineProps<{
 
 const router = useRouter();
 const toast = useToast();
-const { generateMassal, generateNaskah } = useSdeMasal();
+const { generateMassal, saveConcept, submitVerification } = useSdeMasal();
 
 const steps = [
   { id: 1, label: 'Konsep Surat' },
-  { id: 2, label: 'Upload Penerima' },
-  { id: 3, label: 'Template & Konten' },
-  { id: 4, label: 'Preview & Kirim' },
+  { id: 2, label: 'Template & Penerima' },
+  { id: 3, label: 'Preview & Kirim' },
 ];
 
 const currentStep = ref(1);
 const generating = ref(false);
+const conceptId = ref<string | null>(null);
 
 const wizardState = reactive<{
   konsep: SdeMasalConcept | null;
   penerimaList: SdeMasalPenerima[];
   template: SdeMasalTemplate | null;
-  skemaTemplate: 'KEUANGAN' | 'UMUM' | null;
+  variables: string[];
 }>({
   konsep: null,
   penerimaList: [],
   template: null,
-  skemaTemplate: null,
+  variables: [],
 });
+
+const draftStorageKey = `sde-masal-wizard:${props.parentNaskahId || 'new'}`;
+const persistenceReady = ref(false);
+
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(draftStorageKey);
+    if (saved) {
+      const draft = JSON.parse(saved);
+      wizardState.konsep = draft.konsep || null;
+      wizardState.penerimaList = Array.isArray(draft.penerimaList) ? draft.penerimaList : [];
+      wizardState.template = draft.template || null;
+      wizardState.variables = Array.isArray(draft.variables) ? draft.variables : [];
+      conceptId.value = draft.conceptId || null;
+      currentStep.value = [1, 2, 3].includes(draft.currentStep) ? draft.currentStep : 1;
+    }
+  } catch (error) {
+    console.warn('Gagal memulihkan draft SDE Masal:', error);
+  } finally {
+    persistenceReady.value = true;
+  }
+});
+
+watch(
+  () => ({
+    konsep: wizardState.konsep,
+    penerimaList: wizardState.penerimaList,
+    template: wizardState.template,
+    variables: wizardState.variables,
+    conceptId: conceptId.value,
+    currentStep: currentStep.value,
+  }),
+  (draft) => {
+    if (!persistenceReady.value) return;
+    localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+  },
+  { deep: true },
+);
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -158,14 +227,21 @@ const breadcrumbs = computed(() => [
 // Validasi per step
 const canProceed = computed(() => {
   if (currentStep.value === 1) {
-    const k = wizardState.konsep;
-    return !!(k && k.tanggalKonsep && k.klasifikasiId && k.pengirimId && k.pengirimName);
+    return !!(
+      wizardState.konsep?.tanggalKonsep &&
+      wizardState.konsep?.klasifikasiId &&
+      wizardState.konsep?.pengirimId
+    );
   }
   if (currentStep.value === 2) {
-    return wizardState.penerimaList.length > 0 && wizardState.penerimaList.every((p) => p.isValid);
-  }
-  if (currentStep.value === 3) {
-    return !!(wizardState.template && wizardState.template.skema && wizardState.template.konten);
+    return !!(
+      wizardState.konsep?.tanggalKonsep &&
+      wizardState.konsep?.klasifikasiId &&
+      wizardState.konsep?.pengirimId &&
+      wizardState.template?.konten &&
+      wizardState.penerimaList.length > 0 &&
+      wizardState.penerimaList.every((p) => p.isValid)
+    );
   }
   return true;
 });
@@ -174,38 +250,51 @@ const goBack = () => {
   if (currentStep.value > 1) currentStep.value--;
 };
 
-const goNext = () => {
+const goNext = async () => {
   if (!canProceed.value) {
     toast.add({ title: 'Validasi Gagal', description: 'Mohon lengkapi data pada step ini terlebih dahulu', color: 'error' });
     return;
   }
-  if (currentStep.value < 4) currentStep.value++;
+  if (wizardState.konsep && !conceptId.value) {
+    try {
+      const saved = await saveConcept(wizardState.konsep);
+      conceptId.value = saved?.id ?? null;
+      toast.add({ title: 'Konsep tersimpan', description: 'Data konsep surat disimpan sebagai draft.', color: 'success' });
+    } catch (error: any) {
+      toast.add({ title: 'Gagal menyimpan konsep', description: error?.message || 'Coba lagi.', color: 'error' });
+      return;
+    }
+  }
+  if (currentStep.value < 3) currentStep.value++;
 };
 
-const handleGenerate = async () => {
+const handleSubmitVerification = async (verifikators: any[]) => {
   if (!wizardState.konsep || !wizardState.template) {
     toast.add({ title: 'Error', description: 'Data wizard tidak lengkap', color: 'error' });
+    return;
+  }
+  if (!Array.isArray(verifikators) || verifikators.length === 0) {
+    toast.add({ title: 'Verifikator belum dipilih', description: 'Pilih minimal satu verifikator.', color: 'error' });
     return;
   }
 
   generating.value = true;
   try {
-    // Step 1: Simpan data wizard ke sde_masal (staging table)
     const result = await generateMassal({
       konsep: wizardState.konsep,
+      conceptId: conceptId.value || undefined,
       penerimaList: wizardState.penerimaList,
       template: wizardState.template,
     });
 
-    // Step 2: Generate naskah SDE individual per penerima
     const ids = result?.items?.map((item: any) => item.id) || [];
     if (ids.length > 0) {
-      await generateNaskah(ids);
+      await submitVerification(ids, verifikators);
     }
 
     toast.add({
       title: 'Berhasil',
-      description: `${ids.length} naskah SDE berhasil dibuat dan dikirim`,
+      description: `${ids.length} SDE Massal berhasil diajukan ke verifikator`,
       color: 'success',
     });
 
@@ -213,16 +302,21 @@ const handleGenerate = async () => {
     wizardState.konsep = null;
     wizardState.penerimaList = [];
     wizardState.template = null;
-    wizardState.skemaTemplate = null;
+    wizardState.variables = [];
+    conceptId.value = null;
     currentStep.value = 1;
+    persistenceReady.value = false;
+    localStorage.removeItem(draftStorageKey);
 
-    // Redirect ke dashboard
-    router.push('/korespondensi/sde-masal');
+    router.push({
+      path: '/korespondensi/sde-masal',
+      query: ids[0] ? { detail: ids[0] } : undefined,
+    });
   } catch (e: any) {
-    console.error('Gagal generate massal:', e);
+    console.error('Gagal mengajukan verifikasi SDE Massal:', e);
     toast.add({
-      title: 'Gagal Generate',
-      description: e?.message || 'Terjadi kesalahan saat generate massal',
+      title: 'Gagal Mengajukan',
+      description: e?.message || 'Terjadi kesalahan saat mengajukan verifikasi',
       color: 'error',
     });
   } finally {

@@ -2,66 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-      <PageHeader title="Dashboard SDE Masal" :items="items" />
-    </div>
-
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-[#457fb6]/10">
-            <UIcon name="i-lucide-file-stack" class="w-5 h-5 text-[#457fb6]" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Total</p>
-            <p class="text-2xl font-bold text-[#457fb6]">{{ summary?.total ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-            <UIcon name="i-lucide-clock" class="w-5 h-5 text-yellow-500" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Menunggu</p>
-            <p class="text-2xl font-bold text-yellow-500">{{ summary?.menunggu ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <UIcon name="i-lucide-send" class="w-5 h-5 text-blue-500" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Terkirim</p>
-            <p class="text-2xl font-bold text-blue-500">{{ summary?.terkirim ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-            <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-emerald-500" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Terverifikasi</p>
-            <p class="text-2xl font-bold text-emerald-500">{{ summary?.terverifikasi ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-red-50 dark:bg-red-900/20">
-            <UIcon name="i-lucide-x-circle" class="w-5 h-5 text-red-500" />
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Gagal/Ditolak</p>
-            <p class="text-2xl font-bold text-red-500">{{ (summary?.ditolak ?? 0) + (summary?.gagal ?? 0) }}</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader title="SDE Masal" :items="items" />
     </div>
 
     <!-- Tombol Kirim Naskah Massal (untuk item MENUNGGU) -->
@@ -78,58 +19,42 @@
       <span class="text-xs text-gray-400">Buat naskah SDE individual untuk semua item menunggu</span>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        <!-- Search -->
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Pencarian</label>
-          <div class="relative">
-            <UIcon name="i-heroicons-magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              v-model="f.search"
-              type="text"
-              placeholder="Cari perihal, tertuju..."
-              class="w-full h-10 pl-9 pr-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-              @keydown.enter="reload"
-            />
-          </div>
-        </div>
-        <!-- Status -->
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Status Verifikasi</label>
-          <select
-            v-model="f.statusVerifikasi"
-            class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-          >
-            <option value="">Semua Status</option>
-            <option value="MENUNGGU">Menunggu</option>
-            <option value="TERVERIFIKASI">Terverifikasi</option>
-            <option value="DITOLAK">Ditolak</option>
-          </select>
-        </div>
-        <!-- Buttons -->
-        <div class="flex items-end gap-2">
-          <button
-            @click="reload"
-            class="h-10 flex-1 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap flex items-center justify-center gap-1.5"
-          >
-            <UIcon name="i-lucide-search" class="w-4 h-4" />
-            Tampilkan
-          </button>
-          <button
-            @click="resetFilter"
-            class="h-10 px-4 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap flex items-center gap-1.5"
-          >
-            <UIcon name="i-lucide-rotate-ccw" class="w-4 h-4" />
-            Reset
-          </button>
-        </div>
+    <!-- Daftar SDE Masal: filter, tabel, dan pagination dalam satu card. -->
+    <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
+      <!-- Filter Bar -->
+      <div class="flex flex-row items-center gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
+      <select v-model="f.limit" class="h-10 w-20 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @change="reload">
+        <option :value="10">10</option>
+        <option :value="25">25</option>
+        <option :value="50">50</option>
+      </select>
+      <select v-model="f.statusVerifikasi" class="h-10 w-40 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @change="reload">
+        <option value="">Semua Status</option>
+        <option value="MENUNGGU">Menunggu</option>
+        <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
+        <option value="TERKIRIM">Terkirim</option>
+        <option value="TERVERIFIKASI">Terverifikasi</option>
+        <option value="DITOLAK">Ditolak</option>
+        <option value="GAGAL">Gagal</option>
+      </select>
+      <select v-model="f.klasifikasiId" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @change="reload">
+        <option value="">Semua Klasifikasi</option>
+        <option v-for="klasifikasi in klasifikasiOptions" :key="klasifikasi.id" :value="klasifikasi.id">{{ klasifikasi.klasifikasi }} - {{ klasifikasi.klasifikasi_text }}</option>
+      </select>
+      <select v-model="f.tahun" class="h-10 w-36 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @change="reload">
+        <option value="">Semua Tahun</option>
+        <option v-for="tahun in tahunOptions" :key="tahun" :value="tahun">{{ tahun }}</option>
+      </select>
+      <button @click="resetFilter" class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" title="Reset filter"><UIcon name="i-lucide-rotate-ccw" class="size-5" /></button>
+      <div class="relative min-w-0 flex-1">
+        <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+        <input v-model="f.search" type="text" placeholder="Cari Berkas..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @keydown.enter="reload" />
       </div>
-    </div>
+      <button @click="exportData" :disabled="exporting" class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-400 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-50"><UIcon :name="exporting ? 'i-lucide-loader-2' : 'i-lucide-download'" :class="['size-4', exporting && 'animate-spin']" />Export</button>
+      </div>
 
-    <!-- Table -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+      <!-- Table -->
+      <div>
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-10">
         <UIcon name="i-lucide-loader-2" class="w-6 h-6 animate-spin text-[#457fb6]" />
@@ -145,47 +70,52 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
-              <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">No</th>
-              <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">Perihal</th>
-              <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">Tertuju</th>
-              <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
-              <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">Naskah</th>
-              <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">Template</th>
-              <th class="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">Aksi</th>
+            <tr class="bg-primary text-left text-white dark:bg-primary-700">
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Perihal</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Tertuju</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Klasifikasi</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Status</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Naskah</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="(item, idx) in sdeItems"
+              v-for="item in sdeItems"
               :key="item.id"
               class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
             >
-              <td class="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">{{ (meta?.page ?? 1) * (f.limit ?? 10) - (f.limit ?? 10) + idx + 1 }}</td>
               <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[200px] truncate" :title="item.perihal">{{ item.perihal || '-' }}</td>
               <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[150px] truncate" :title="item.tertuju">{{ item.tertuju || '-' }}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="item.klasifikasiName || ''">{{ item.klasifikasiName || '-' }}</td>
               <td class="px-4 py-2.5">
                 <span :class="statusBadge(item.statusVerifikasi)">{{ statusLabel(item.statusVerifikasi) }}</span>
               </td>
               <td class="px-4 py-2.5 text-xs whitespace-nowrap">
-                <NuxtLink
-                  v-if="item.naskahId"
-                  :to="`/korespondensi/sde-masal/${item.naskahId}`"
-                  class="text-[#457fb6] hover:underline flex items-center gap-1"
-                >
-                  <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5" />
-                  Detail Surat
-                </NuxtLink>
-                <span v-else class="text-gray-400">-</span>
+                <div class="flex flex-col gap-1">
+                  <NuxtLink
+                    v-if="item.naskahId"
+                    :to="`/korespondensi/sde-masal/${item.naskahId}`"
+                    class="text-[#457fb6] hover:underline flex items-center gap-1"
+                  >
+                    <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5" />
+                    Detail Surat
+                  </NuxtLink>
+                  <NuxtLink
+                    v-if="item.parentNaskahId"
+                    :to="`/korespondensi/kotak-masuk/${item.parentNaskahId}`"
+                    class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                  >
+                    <UIcon name="i-lucide-inbox" class="w-3.5 h-3.5" />
+                    Detail Disposisi
+                  </NuxtLink>
+                  <span v-if="!item.naskahId && !item.parentNaskahId" class="text-gray-400">-</span>
+                </div>
               </td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ formatTemplate(item) }}</td>
               <td class="px-4 py-2.5">
                 <div class="flex items-center justify-center gap-1">
                   <button @click="showDetail(item)" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-[#457fb6] transition-colors" title="Lihat Detail">
                     <UIcon name="i-heroicons-eye" class="w-4 h-4" />
-                  </button>
-                  <button @click="showEdit(item)" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-[#457fb6] transition-colors" title="Edit Data">
-                    <UIcon name="i-lucide-pencil" class="w-4 h-4" />
                   </button>
                   <button @click="showUploadLampiran(item)" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-[#457fb6] transition-colors" title="Upload Lampiran">
                     <UIcon name="i-lucide-paperclip" class="w-4 h-4" />
@@ -205,24 +135,11 @@
         v-if="meta && meta.total > 0"
         class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
       >
-        <!-- Info + Rows per page -->
-        <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
           <span>
             Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }}
             dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ meta.total }}</span> SDE Masal
           </span>
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs">Baris:</span>
-            <select
-              v-model="f.limit"
-              @change="reload"
-              class="h-8 px-2 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-1 focus:ring-[#457fb6]"
-            >
-              <option :value="10">10</option>
-              <option :value="25">25</option>
-              <option :value="50">50</option>
-            </select>
-          </div>
         </div>
         <!-- Page buttons -->
         <div v-if="meta.totalPages > 1" class="flex items-center gap-1">
@@ -246,108 +163,30 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- Detail Modal -->
     <Teleport to="body">
       <div v-if="detailModal && selectedItem" class="fixed inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-sm pt-10 sm:pt-20" @click.self="detailModal = false">
-        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] flex flex-col">
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[85vh] flex flex-col">
           <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-5 py-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail SDE Masal</h3>
             <button @click="detailModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
               <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
             </button>
           </div>
-          <div class="overflow-y-auto px-5 py-4 space-y-3 flex-1">
-            <div v-for="(value, key) in detailFields" :key="key" class="text-sm border-b border-gray-100 dark:border-gray-700/50 pb-2">
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">{{ value.label }}</label>
-              <p class="text-gray-900 dark:text-white break-words">{{ value.value ?? '-' }}</p>
+          <div class="overflow-y-auto flex-1 bg-gray-100 dark:bg-gray-900 p-4">
+            <div class="mx-auto w-full max-w-[794px] bg-white shadow-sm">
+              <SdeMasalLetterPreview
+                :konsep="detailKonsep"
+                :penerima-list="detailPenerimaList"
+                :template="detailTemplate"
+                :penerima-index="0"
+              />
             </div>
           </div>
           <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 flex justify-end">
             <button @click="detailModal = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Tutup</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Edit Modal -->
-    <Teleport to="body">
-      <div v-if="editModal && selectedItem" class="fixed inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-sm pt-10 sm:pt-20" @click.self="editModal = false">
-        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] flex flex-col">
-          <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-5 py-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit SDE Masal</h3>
-            <button @click="editModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-              <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-            <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Perihal</label>
-              <input v-model="editForm.perihal" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tertuju</label>
-              <input v-model="editForm.tertuju" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jenis Template</label>
-              <select v-model="editForm.jenisTemplate" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none">
-                <option value="">Pilih skema...</option>
-                <option value="KEUANGAN">Keuangan / Tagihan PINP</option>
-                <option value="UMUM">Umum</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ID Tertuju</label>
-                <input v-model="editForm.idTertuju" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Perihal Penerima</label>
-                <input v-model="editForm.perihal" type="text" disabled class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 outline-none" />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jumlah Tagihan IDR</label>
-                <input v-model="editForm.jumlahTagihanIdr" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jumlah Tagihan USD</label>
-                <input v-model="editForm.jumlahTagihanUsd" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nama CRO</label>
-                <input v-model="editForm.namaCro" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email CRO</label>
-                <input v-model="editForm.emailCro" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jabatan Signer</label>
-                <input v-model="editForm.jabatanSigner" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Nama Signer</label>
-                <input v-model="editForm.namaSigner" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tembusan</label>
-              <input v-model="editForm.tembusan" type="text" class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] outline-none" />
-            </div>
-          </div>
-          <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 flex justify-end gap-2">
-            <button @click="editModal = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Batal</button>
-            <button @click="submitEdit" :disabled="editSubmitting" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 flex items-center gap-1.5">
-              <UIcon v-if="editSubmitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-              Simpan
-            </button>
           </div>
         </div>
       </div>
@@ -419,12 +258,18 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useToast } from '#imports';
-import type { SdeMasalItem, SdeMasalFilter } from '~/types/sde-masal';
+import type { SdeMasalItem, SdeMasalFilter, SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
+import type { Klasifikasi } from '~/types/klasifikasi';
+import SdeMasalLetterPreview from '~/components/korespondensi/sde-masal/SdeMasalLetterPreview.vue';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
 
 const toast = useToast();
-const { items: sdeItems, summary, loading, meta, fetchList, fetchSummary, updateItem, deleteItem, uploadLampiran, generateNaskah } = useSdeMasal();
+const route = useRoute();
+const router = useRouter();
+const { apiGet } = useApi();
+const { getKlasifikasiList } = useKlasifikasi();
+const { items: sdeItems, summary, loading, meta, fetchList, fetchSummary, deleteItem, uploadLampiran, generateNaskah } = useSdeMasal();
 
 const items = [
   { label: 'Beranda', to: '/beranda' },
@@ -435,94 +280,91 @@ const items = [
 const f = reactive<SdeMasalFilter>({
   search: '',
   statusVerifikasi: '',
+  klasifikasiId: '',
+  tahun: '',
   jenisTemplate: '',
   page: 1,
   limit: 10,
 });
+const klasifikasiOptions = ref<Klasifikasi[]>([]);
+const exporting = ref(false);
+const tahunOptions = Array.from({ length: 5 }, (_, index) => String(new Date().getFullYear() - index));
 
 const selectedItem = ref<SdeMasalItem | null>(null);
 const detailModal = ref(false);
-const editModal = ref(false);
 const lampiranModal = ref(false);
 const deleteModal = ref(false);
 const lampiranFile = ref<File | null>(null);
 const lampiranUploading = ref(false);
 const lampiranInput = ref<HTMLInputElement | null>(null);
-const editSubmitting = ref(false);
 const deleteSubmitting = ref(false);
 const generatingNaskah = ref(false);
+const detailQueryHandled = ref(false);
 
-const editForm = reactive({
-  perihal: '',
-  tertuju: '',
-  jenisTemplate: '',
-  idTertuju: '',
-  idramount: '',
-  usdamount: '',
-  namacro: '',
-  email: '',
-  tembusan: '',
-  emailTertuju: '',
-  emailCc: '',
-  emailBcc: '',
-  jumlahTagihanIdr: '',
-  jumlahTagihanUsd: '',
-  namaCro: '',
-  emailCro: '',
-  jabatanSigner: '',
-  namaSigner: '',
+// --- Detail preview (SdeMasalLetterPreview) ---
+const detailKonsep = computed<SdeMasalConcept | null>(() => {
+  const s = selectedItem.value;
+  if (!s) return null;
+  return {
+    tanggalKonsep: s.tanggalKonsep || '',
+    klasifikasiId: s.klasifikasiId || '',
+    klasifikasiName: s.klasifikasiName || '',
+    pengirimId: s.pengirimId || '',
+    pengirimName: s.pengirimName || '',
+    sifat: s.sifatSurat || 'biasa',
+    perihal: s.perihal,
+    parentNaskahId: s.parentNaskahId || undefined,
+  };
 });
 
-// --- Helpers ---
-const formatTemplate = (item: SdeMasalItem): string => {
-  // Handle object, string, or null for jenisTemplate/skemaTemplate
-  const getVal = (v: any): string => {
-    if (!v) return '-';
-    if (typeof v === 'string') return v;
-    if (typeof v === 'object') return v.label || v.name || v.value || '-';
-    return String(v);
-  };
-  const skema = getVal(item.skemaTemplate || item.jenisTemplate);
-  const versi = getVal(item.versiTemplate);
-  if (skema === '-' && versi === '-') return '-';
-  if (versi === '-') return skema;
-  return `${skema} / ${versi}`;
-};
-
-const detailFields = computed(() => {
-  if (!selectedItem.value) return [];
+const detailPenerimaList = computed<SdeMasalPenerima[]>(() => {
   const s = selectedItem.value;
-  return [
-    { label: 'Perihal', value: s.perihal },
-    { label: 'Tertuju', value: s.tertuju },
-    { label: 'Alamat', value: s.alamat },
-    { label: 'Kota', value: s.kota },
-    { label: 'Kode Pos', value: s.kodePos },
-    { label: 'Jabatan Penerima', value: s.jabatanPenerima },
-    { label: 'Isi Ringkasan', value: s.isiRingkasan },
-    { label: 'Template', value: formatTemplate(s) },
-    { label: 'Status', value: statusLabel(s.statusVerifikasi) },
-    { label: 'ID Tertuju', value: s.idTertuju },
-    { label: 'Jumlah Tagihan IDR', value: s.jumlahTagihanIdr },
-    { label: 'Jumlah Tagihan USD', value: s.jumlahTagihanUsd },
-    { label: 'Nama CRO', value: s.namaCro },
-    { label: 'Email CRO', value: s.emailCro },
-    { label: 'Jabatan Signer', value: s.jabatanSigner },
-    { label: 'Nama Signer', value: s.namaSigner },
-    { label: 'Tembusan', value: s.tembusan },
-    { label: 'Nomor Surat', value: s.nomorSurat },
-    { label: 'Naskah ID', value: s.naskahId },
-    { label: 'Error', value: s.errorMessage },
-    { label: 'Pengirim', value: s.pengirimName },
-    { label: 'Klasifikasi', value: s.klasifikasiName },
-    { label: 'Lampiran', value: s.lampiranUrl },
-    { label: 'Dibuat', value: s.createdAt ? new Date(s.createdAt).toLocaleString('id-ID') : null },
-  ];
+  if (!s) return [];
+  return [{
+    no: 1,
+    tertuju: s.tertuju,
+    alamat: s.alamat,
+    kota: s.kota,
+    kodePos: s.kodePos,
+    jabatanPenerima: s.jabatanPenerima,
+    perihal: s.perihal,
+    idTertuju: s.idTertuju || undefined,
+    email: s.email || undefined,
+    tembusan: s.tembusan || undefined,
+    emailTertuju: s.emailTertuju || undefined,
+    emailCc: s.emailCc || undefined,
+    emailBcc: s.emailBcc || undefined,
+    jumlahTagihanIdr: s.jumlahTagihanIdr || undefined,
+    jumlahTagihanUsd: s.jumlahTagihanUsd || undefined,
+    namaCro: s.namaCro || undefined,
+    emailCro: s.emailCro || undefined,
+    jabatanSigner: s.jabatanSigner || undefined,
+    namaSigner: s.namaSigner || undefined,
+    jumlahLampiran: s.jumlahLampiran || undefined,
+    alamatPenerima: s.alamatPenerima || undefined,
+    panggilanPenerima: s.panggilanPenerima || undefined,
+    nominalRupiah: s.nominalRupiah || undefined,
+    nominalDolar: s.nominalDolar || undefined,
+    tembusan1: s.tembusan1 || undefined,
+    tembusan2: s.tembusan2 || undefined,
+    isValid: true,
+  }];
+});
+
+const detailTemplate = computed<SdeMasalTemplate | null>(() => {
+  const s = selectedItem.value;
+  if (!s) return null;
+  return {
+    skema: s.skemaTemplate || s.jenisTemplate || 'DINAMIS',
+    versi: s.versiTemplate || 'v1',
+    konten: s.isiRingkasan || '',
+  };
 });
 
 // --- Data loading ---
 const loadData = async () => {
   await Promise.all([fetchList({ ...f }), fetchSummary()]);
+  openDetailFromQuery();
 };
 
 const reload = () => {
@@ -533,6 +375,8 @@ const reload = () => {
 const resetFilter = () => {
   f.search = '';
   f.statusVerifikasi = '';
+  f.klasifikasiId = '';
+  f.tahun = '';
   f.jenisTemplate = '';
   f.page = 1;
   loadData();
@@ -543,48 +387,52 @@ const goPage = (page: number) => {
   loadData();
 };
 
+const exportData = async () => {
+  exporting.value = true;
+  try {
+    const response: any = await apiGet('/sde-masal', { params: { ...f, page: 1, limit: 200 } });
+    const records: SdeMasalItem[] = response?.data ?? [];
+    if (!records.length) {
+      toast.add({ title: 'Tidak ada data', description: 'Tidak ada SDE Massal untuk diekspor.', color: 'warning' });
+      return;
+    }
+    const XLSX = await import('xlsx');
+    const worksheet = XLSX.utils.json_to_sheet(records.map((item) => ({
+      Perihal: item.perihal,
+      Tertuju: item.tertuju,
+      Klasifikasi: item.klasifikasiName || '-',
+      Status: statusLabel(item.statusVerifikasi),
+      'Nomor Surat': item.nomorSurat || '-',
+      Pengirim: item.pengirimName || '-',
+      'Tanggal Konsep': item.tanggalKonsep || '-',
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'SDE Massal');
+    XLSX.writeFile(workbook, 'sde-massal.xlsx');
+  } catch (error: any) {
+    toast.add({ title: 'Gagal export', description: error?.message || 'Data SDE Massal tidak dapat diekspor.', color: 'error' });
+  } finally {
+    exporting.value = false;
+  }
+};
+
 // --- Actions ---
 const showDetail = (item: SdeMasalItem) => {
   selectedItem.value = item;
   detailModal.value = true;
 };
 
-const showEdit = (item: SdeMasalItem) => {
-  selectedItem.value = item;
-  editForm.perihal = item.perihal;
-  editForm.tertuju = item.tertuju;
-  editForm.jenisTemplate = typeof item.jenisTemplate === 'string' ? item.jenisTemplate : (item.jenisTemplate?.value || '');
-  editForm.idTertuju = item.idTertuju || '';
-  editForm.idramount = item.idramount || '';
-  editForm.usdamount = item.usdamount || '';
-  editForm.namacro = item.namacro || '';
-  editForm.email = item.email || '';
-  editForm.tembusan = item.tembusan || '';
-  editForm.emailTertuju = item.emailTertuju || '';
-  editForm.emailCc = item.emailCc || '';
-  editForm.emailBcc = item.emailBcc || '';
-  editForm.jumlahTagihanIdr = item.jumlahTagihanIdr || '';
-  editForm.jumlahTagihanUsd = item.jumlahTagihanUsd || '';
-  editForm.namaCro = item.namaCro || '';
-  editForm.emailCro = item.emailCro || '';
-  editForm.jabatanSigner = item.jabatanSigner || '';
-  editForm.namaSigner = item.namaSigner || '';
-  editModal.value = true;
-};
+const openDetailFromQuery = () => {
+  if (detailQueryHandled.value) return;
+  const detailId = Array.isArray(route.query.detail) ? route.query.detail[0] : route.query.detail;
+  if (!detailId) return;
 
-const submitEdit = async () => {
-  if (!selectedItem.value) return;
-  editSubmitting.value = true;
-  try {
-    await updateItem(selectedItem.value.id, { ...editForm });
-    editModal.value = false;
-    toast.add({ title: 'Berhasil', description: 'Data berhasil diperbarui', color: 'success' });
-    loadData();
-  } catch (e: any) {
-    toast.add({ title: 'Gagal', description: e?.message || 'Gagal mengupdate data', color: 'error' });
-  } finally {
-    editSubmitting.value = false;
-  }
+  const item = sdeItems.value.find((row) => row.id === detailId || row.naskahId === detailId);
+  if (!item) return;
+
+  detailQueryHandled.value = true;
+  showDetail(item);
+  router.replace({ path: route.path, query: { ...route.query, detail: undefined } });
 };
 
 const showUploadLampiran = (item: SdeMasalItem) => {
@@ -636,13 +484,14 @@ const submitDelete = async () => {
 };
 
 const statusLabel = (s: string) => {
-  const m: Record<string, string> = { MENUNGGU: 'Menunggu', TERKIRIM: 'Terkirim', TERVERIFIKASI: 'Terverifikasi', DITOLAK: 'Ditolak', GAGAL: 'Gagal' };
+  const m: Record<string, string> = { MENUNGGU: 'Menunggu', MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi', TERKIRIM: 'Terkirim', TERVERIFIKASI: 'Terverifikasi', DITOLAK: 'Ditolak', GAGAL: 'Gagal' };
   return m[s] || s || '-';
 };
 
 const statusBadge = (s: string) => {
   const m: Record<string, string> = {
     MENUNGGU: 'px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 font-medium whitespace-nowrap',
+    MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium whitespace-nowrap',
     TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium whitespace-nowrap',
     TERVERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-medium whitespace-nowrap',
     DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-medium whitespace-nowrap',
@@ -653,6 +502,7 @@ const statusBadge = (s: string) => {
 
 onMounted(() => {
   loadData();
+  getKlasifikasiList().then((data) => { klasifikasiOptions.value = data; });
 });
 
 // --- Generate Naskah Massal ---
