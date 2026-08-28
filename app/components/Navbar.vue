@@ -11,9 +11,7 @@
       </button>
 
       <NuxtLink to="/beranda" class="md:hidden">
-        <h1 class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white">
-          ArsipKu
-        </h1>
+        <h1 class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white">ArsipKu</h1>
       </NuxtLink>
 
       <!-- SEARCH BUTTON (DESKTOP) -->
@@ -83,7 +81,7 @@
                 'px-4 py-2.5 cursor-pointer flex items-start gap-3 transition-colors',
                 selectedIndex === idx
                   ? 'bg-primary-50 dark:bg-gray-700'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/60',
               ]"
               @mouseenter="selectedIndex = idx"
               @mousedown.prevent="selectSuggestion(item)"
@@ -107,7 +105,9 @@
                     v-html="item._formatted?.perihal || item.perihal || '(tanpa perihal)'"
                   />
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1.5">
+                <div
+                  class="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1.5"
+                >
                   <span
                     class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                   >
@@ -157,7 +157,7 @@
         :ui="{
           content: 'w-72 dark:bg-gray-900 dark:ring-gray-800 max-h-[70vh] overflow-y-auto',
           item: 'px-4 py-3',
-          itemLabel: 'text-sm'
+          itemLabel: 'text-sm',
         }"
       >
         <div class="flex items-center gap-2.5 cursor-pointer group pl-2">
@@ -234,12 +234,24 @@
             </div>
 
             <div class="flex flex-col gap-0.5 w-full">
-              <div v-if="item.uiPosition" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 leading-snug">
-                <UIcon name="i-lucide-briefcase" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500" />
+              <div
+                v-if="item.uiPosition"
+                class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 leading-snug"
+              >
+                <UIcon
+                  name="i-lucide-briefcase"
+                  class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500"
+                />
                 <span class="truncate">{{ item.uiPosition }}</span>
               </div>
-              <div v-if="item.uiArea" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 leading-snug">
-                <UIcon name="i-lucide-map-pin" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500" />
+              <div
+                v-if="item.uiArea"
+                class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 leading-snug"
+              >
+                <UIcon
+                  name="i-lucide-map-pin"
+                  class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500"
+                />
                 <span class="truncate">{{ item.uiArea }}</span>
               </div>
             </div>
@@ -301,9 +313,7 @@
                 </button>
               </div>
               <template #fallback>
-                <div
-                  class="flex items-center p-0.5 rounded-full border border-gray-200 bg-gray-50"
-                >
+                <div class="flex items-center p-0.5 rounded-full border border-gray-200 bg-gray-50">
                   <div class="w-7 h-7" />
                   <div class="w-7 h-7" />
                 </div>
@@ -571,7 +581,7 @@
                           getCategoryStyle(opt.value || ''),
                           advancedFilters.jenis === opt.value
                             ? 'ring-2 ring-offset-1 ring-gray-400 opacity-100 font-bold shadow-sm'
-                            : 'opacity-90 hover:opacity-100 hover:shadow-sm'
+                            : 'opacity-90 hover:opacity-100 hover:shadow-sm',
                         ]"
                       >
                         {{ opt.label }}
@@ -622,7 +632,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.sifat === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
                               ]"
                             >
                               {{ opt.label }}
@@ -673,7 +683,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.status === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
                               ]"
                             >
                               {{ opt.label }}
@@ -727,7 +737,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.hasAttachment === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
                               ]"
                             >
                               {{ opt.label }}
@@ -778,7 +788,7 @@
                                 'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0',
                                 advancedFilters.priority === opt.value
                                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
                               ]"
                             >
                               {{ opt.label }}
@@ -906,8 +916,8 @@
           <!-- BODY -->
           <div class="px-6 py-5 space-y-4">
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Pratinjau visualisasi tanda tangan digital berdasarkan profil aktif Anda.
-              Ukuran kanvas <span class="font-medium">960×240 px</span>.
+              Pratinjau visualisasi tanda tangan digital berdasarkan profil aktif Anda. Ukuran
+              kanvas <span class="font-medium">960×240 px</span>.
             </p>
 
             <div
@@ -947,10 +957,7 @@
               @click="copyDigsigText"
               class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors"
             >
-              <UIcon
-                :name="digsigCopied ? 'i-lucide-check' : 'i-lucide-copy'"
-                class="w-4 h-4"
-              />
+              <UIcon :name="digsigCopied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-4 h-4" />
               {{ digsigCopied ? 'Tersalin' : 'Salin Teks' }}
             </button>
             <button
@@ -1051,11 +1058,7 @@ const drawDigsigCanvas = () => {
     const namaLines = countWrapLines(ctx, nama, textMaxW);
 
     const totalH =
-      headerLines * lhBase +
-      gapBetween +
-      jabatanLines * lhBase +
-      gapNama +
-      namaLines * lhName;
+      headerLines * lhBase + gapBetween + jabatanLines * lhBase + gapNama + namaLines * lhName;
 
     let cy = (H - totalH) / 2;
 
@@ -1095,11 +1098,7 @@ const drawDigsigCanvas = () => {
   logo.src = '/logoAirnav.png';
 };
 
-const countWrapLines = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): number => {
+const countWrapLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): number => {
   const words = text.split(' ');
   let line = '';
   let lines = 1;
@@ -1179,7 +1178,7 @@ const copyDigsigText = async () => {
     title: t('sr_berhasil_disalin'),
     description: t('sr_digsig_disalin'),
     icon: 'i-heroicons-check-circle',
-    color: 'success'
+    color: 'success',
   });
   setTimeout(() => (digsigCopied.value = false), 1500);
 };
@@ -1204,8 +1203,8 @@ const handleQuickSearch = () => {
       limit: 20,
       sortBy: 'tanggal',
       sortOrder: 'DESC',
-      perihal: quickSearch.value.trim()
-    }
+      perihal: quickSearch.value.trim(),
+    },
   });
   quickSearch.value = '';
 };
@@ -1234,9 +1233,9 @@ const fetchQuickSuggestions = async (q: string) => {
         page: 1,
         limit: 5,
         sortBy: 'tanggal',
-        sortOrder: 'DESC'
+        sortOrder: 'DESC',
       },
-      signal: suggestionAbort.signal
+      signal: suggestionAbort.signal,
     });
     if (res?.success) {
       suggestionItems.value = res.data?.items ?? [];
@@ -1328,34 +1327,34 @@ const resolveSourceMeta = (item: any) => {
     return {
       icon: 'i-lucide-file-edit',
       label: 'Draf',
-      color: 'text-amber-500 dark:text-amber-400'
+      color: 'text-amber-500 dark:text-amber-400',
     };
   }
   if (item.status === 'pending') {
     return {
       icon: 'i-lucide-clock',
       label: 'Tertunda',
-      color: 'text-orange-500 dark:text-orange-400'
+      color: 'text-orange-500 dark:text-orange-400',
     };
   }
   if (roles.includes('pengirim') || ['sent', 'keluar', 'outbox'].some((k) => type.includes(k))) {
     return {
       icon: 'i-lucide-send',
       label: 'Terkirim',
-      color: 'text-sky-500 dark:text-sky-400'
+      color: 'text-sky-500 dark:text-sky-400',
     };
   }
   if (['draft', 'konsep'].some((k) => type.includes(k))) {
     return {
       icon: 'i-lucide-file-text',
       label: 'Konsep',
-      color: 'text-purple-500 dark:text-purple-400'
+      color: 'text-purple-500 dark:text-purple-400',
     };
   }
   return {
     icon: 'i-lucide-inbox',
     label: 'Kotak Masuk',
-    color: 'text-emerald-500 dark:text-emerald-400'
+    color: 'text-emerald-500 dark:text-emerald-400',
   };
 };
 
@@ -1413,7 +1412,7 @@ const advancedFilters = reactive({
   sifat: '' as string | null,
   status: '' as string | null,
   hasAttachment: 'all',
-  priority: null as boolean | null
+  priority: null as boolean | null,
 });
 
 const jenisOptions = computed(() => [
@@ -1423,7 +1422,7 @@ const jenisOptions = computed(() => [
   { label: 'Surat Dinas Eksternal (SDE)', value: 'SDE' },
   { label: 'Disposisi (DI)', value: 'DI' },
   { label: 'Kajian (KA)', value: 'KA' },
-  { label: 'Konsep (K)', value: 'K' }
+  { label: 'Konsep (K)', value: 'K' },
 ]);
 
 // "Semua" sudah ada di index-0 masing-masing, tidak perlu duplikat di template
@@ -1433,20 +1432,20 @@ const sifatOptions = computed(() => [
   { label: t('sr_terbatas'), value: 'terbatas' },
   { label: t('sr_rahasia'), value: 'rahasia' },
   { label: t('sr_sangat_rahasia'), value: 'sangat_rahasia' },
-  { label: t('sr_terbuka'), value: 'terbuka' }
+  { label: t('sr_terbuka'), value: 'terbuka' },
 ]);
 
 const statusOptions = computed(() => [
   { label: t('sr_semua'), value: null },
   { label: t('sr_draf'), value: 'draf' },
   { label: t('sr_final'), value: 'final' },
-  { label: t('sr_final_tte'), value: 'final_tte' }
+  { label: t('sr_final_tte'), value: 'final_tte' },
 ]);
 
 const attachmentOptions = computed(() => [
   { label: t('sr_semua'), value: 'all' },
   { label: t('sr_ya'), value: true },
-  { label: t('sr_tidak'), value: false }
+  { label: t('sr_tidak'), value: false },
 ]);
 
 // --- CUSTOM DROPDOWN STATE ---
@@ -1463,7 +1462,10 @@ const statusLabel = computed(
 const lampiranLabel = computed(() => {
   if (advancedFilters.hasAttachment === 'all' || advancedFilters.hasAttachment === null)
     return t('sr_semua');
-  return attachmentOptions.value.find((a) => a.value === advancedFilters.hasAttachment)?.label ?? t('sr_semua');
+  return (
+    attachmentOptions.value.find((a) => a.value === advancedFilters.hasAttachment)?.label ??
+    t('sr_semua')
+  );
 });
 
 function toggleSifat() {
@@ -1505,12 +1507,13 @@ watch(isSearchModalOpen, (val) => {
 
 const priorityOptions = computed(() => [
   { label: t('sr_semua'), value: null },
-  { label: t('sr_prioritas'), value: true }
+  { label: t('sr_prioritas'), value: true },
 ]);
 const openPriority = ref(false);
 
 const priorityLabel = computed(
-  () => priorityOptions.value.find((p) => p.value === advancedFilters.priority)?.label ?? t('sr_semua')
+  () =>
+    priorityOptions.value.find((p) => p.value === advancedFilters.priority)?.label ?? t('sr_semua')
 );
 
 function togglePriority() {
@@ -1532,13 +1535,13 @@ interface UserSuggestion {
 const {
   suggestions: pengirimSuggestions,
   isSuggestionsLoading: isPengirimLoading,
-  fetchSuggestions: fetchPengirimSuggestions
+  fetchSuggestions: fetchPengirimSuggestions,
 } = useSearch();
 
 const {
   suggestions: penerimasuggestions,
   isSuggestionsLoading: isPenerimaLoading,
-  fetchSuggestions: fetchPenerimaSuggestions
+  fetchSuggestions: fetchPenerimaSuggestions,
 } = useSearch();
 
 // AFTER
@@ -1639,7 +1642,8 @@ const initActiveState = () => {
     activeDelegationId.value = localStorage.getItem('arsipku_active_delegation_id');
     // JANGAN overwrite active_profile jika user sudah pilih profile manual
     // (unit_dokumen / sekretaris / akun_asli). Hanya set default jika belum ada.
-    const currentStored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    const currentStored =
+      localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
     if (!currentStored) {
       // Default: akun_asli
       localStorage.setItem('active_profile', 'akun_asli');
@@ -1706,7 +1710,7 @@ const detectUnitDokumenDelegation = async () => {
   }
   // 2. Fallback: query endpoint check-user (akurat, untuk JWT lama).
   try {
-    const result = await checkUser(user.value.persnum) as any;
+    const result = (await checkUser(user.value.persnum)) as any;
     if (result?.has_unit_dokumen) {
       hasUnitDokumenDelegation.value = true;
       // Simpan assignment unit_dokumen untuk label.
@@ -1731,14 +1735,23 @@ const detectUnitDokumenDelegation = async () => {
 // Baca active_profile dari localStorage (sumber utama), default 'akun_asli'.
 const readStoredProfile = (): 'akun_asli' | 'unit_dokumen' | 'sekretaris' => {
   if (process.client) {
-    const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
-    if (stored === 'akun_asli' || stored === 'unit_dokumen' || stored === 'sekretaris') return stored;
+    const stored =
+      localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (stored === 'akun_asli' || stored === 'unit_dokumen' || stored === 'sekretaris')
+      return stored;
   }
   return 'akun_asli';
 };
 const currentProfile = ref(readStoredProfile());
 
 const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris') => {
+  // PT/PH/PS memakai bucket active_profile='akun_asli'. Karena itu cek reset
+  // harus dilakukan sebelum early-return profile yang sama; jika tidak, klik
+  // Akun Utama saat sedang menjadi aktor delegasi tidak pernah mengembalikan JWT.
+  if (process.client && profile === 'akun_asli' && user.value?.position_status) {
+    handleSwitchRole({ type: 'reset' });
+    return;
+  }
   if (profile === currentProfile.value) return;
   if (process.client) {
     // Balik ke akun asli dari mode delegasi JWT: JWT masih membawa jabatan &
@@ -1748,10 +1761,6 @@ const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris
     // masih tampil di profile utama. `position_status` adalah sinyal otoritatif
     // (Spec A); delegasi organization_tu (unit_dokumen/sekretaris) tidak pernah
     // mengubah JWT, jadi untuk kasus itu tetap toggle localStorage.
-    if (profile === 'akun_asli' && user.value?.position_status) {
-      handleSwitchRole({ type: 'reset' });
-      return;
-    }
     localStorage.setItem('active_profile', profile);
     localStorage.setItem('arsipku_active_profile', profile);
     // Reset state delegasi (sumber kebenaran kedua) agar tidak ada centang
@@ -1837,7 +1846,7 @@ const handleSwitchRole = async (target: { type: 'delegasi' | 'reset'; id?: strin
     toast.add({
       title: 'Gagal',
       description: 'Gagal mengganti role.',
-      color: 'error'
+      color: 'error',
     });
     isSwitching.value = false;
   }
@@ -1862,7 +1871,7 @@ const confirmLogout = async () => {
 const searchConfig = computed(() => ({
   show: hasPermission('smart-search', 'search'),
   placeholder: 'Cari surat...',
-  key: ''
+  key: '',
 }));
 
 const openSearchModal = () => {
@@ -1874,7 +1883,7 @@ const handleAdvancedSearch = () => {
     page: 1,
     limit: 20,
     sortBy: 'tanggal',
-    sortOrder: 'DESC'
+    sortOrder: 'DESC',
   };
   if (advancedFilters.priority === true) {
     queryParams.scope = 'priority';
@@ -1935,7 +1944,7 @@ const handleReset = () => {
 const isDark = useDark();
 const locales = [
   { code: 'id', name: 'ID' },
-  { code: 'en', name: 'EN' }
+  { code: 'en', name: 'EN' },
 ];
 const { locale, setLocale, t } = useI18n();
 const currentLocale = locale;
@@ -1968,10 +1977,13 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     uiArea: user.value?.areaText || user.value?.companyText || '',
     label: originalRoleLabel.value,
     slot: 'delegation-item',
-    isActive: currentProfile.value === 'akun_asli',
+    // PT/PH/PS tetap memakai profile bucket `akun_asli`, tetapi bukan berarti
+    // akun utama aktif. Saat ada delegation id aktif, centang hanya milik kartu
+    // delegasinya agar tidak tampil dua aktor aktif sekaligus.
+    isActive: isMainAccountActive && currentProfile.value === 'akun_asli',
     disabled: false,
     click: () => handleSwitchProfile('akun_asli'),
-    onSelect: () => handleSwitchProfile('akun_asli')
+    onSelect: () => handleSwitchProfile('akun_asli'),
   };
 
   const delegasiItems = (delegationRoles.value || []).map((role) => {
@@ -1990,7 +2002,9 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       }
     }
     return {
-      uiName: details.name || 'Nama Tidak Tersedia',
+      uiName: details.position_status
+        ? `${details.position_status}. ${details.name || 'Nama Tidak Tersedia'}`
+        : details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
       uiPosition,
       uiArea: details.area_text || details.company_text || '',
@@ -2007,7 +2021,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
           ? currentProfile.value === 'sekretaris'
           : currentProfile.value === 'akun_asli' && currentId === role.id,
       click: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
-      onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id })
+      onSelect: () => handleSwitchRole({ type: 'delegasi', id: role.id }),
     };
   });
 
@@ -2018,7 +2032,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   // Cek apakah delegasi SE (Sekretaris) sudah ada di delegasiItems (dari tabel delegasi).
   // Jika sudah ada, jangan push card Sekretaris lagi (hindari duplikat).
   const hasSekretarisInDelegasiItems = (delegationRoles.value || []).some(
-    (r: any) => r?.delegated_role?.position_status === 'SE',
+    (r: any) => r?.delegated_role?.position_status === 'SE'
   );
 
   // Tambahkan card Sekretaris hanya jika punya delegasi sekretaris dari organization_tu
@@ -2059,18 +2073,21 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
         label: 'Profil & Pengaturan AI',
         icon: 'i-lucide-user-cog',
         class: itemClass,
-        onSelect: () => navigateTo('/profil')
+        onSelect: () => navigateTo('/profil'),
       },
-      { label: 'Pindah Perusahaan', icon: 'i-lucide-building-2', class: itemClass,
+      {
+        label: 'Pindah Perusahaan',
+        icon: 'i-lucide-building-2',
+        class: itemClass,
         onSelect: () => {
           navigateTo('/switch');
-        }
+        },
       },
       {
         label: 'Visualisasi Digsig (Visible)',
         icon: 'i-lucide-signature',
         class: itemClass,
-        onSelect: () => openDigsigVisual()
+        onSelect: () => openDigsigVisual(),
       },
     ],
     [{ slot: 'theme-label', type: 'label' }],
@@ -2080,9 +2097,9 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
         label: 'Keluar',
         icon: 'i-lucide-log-out',
         class: 'text-sm text-error',
-        onSelect: () => openLogoutPopup()
-      }
-    ]
+        onSelect: () => openLogoutPopup(),
+      },
+    ],
   ];
 });
 
@@ -2104,7 +2121,7 @@ onMounted(() => {
         title: 'Berhasil',
         description: successMsg,
         icon: 'i-heroicons-check-circle',
-        color: 'success'
+        color: 'success',
       });
       localStorage.removeItem('switch_role_message');
     }
