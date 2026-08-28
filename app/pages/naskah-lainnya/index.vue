@@ -1,9 +1,6 @@
 <template>
   <div class="flex flex-col gap-4">
-    <PageHeader
-      title="Naskah Lainnya"
-      :items="breadcrumbs"
-    />
+    <PageHeader title="Naskah Lainnya" :items="breadcrumbs" />
 
     <!-- Table Card (pola berkas-saya: toolbar + DataTable + DataPagination) -->
     <div
@@ -64,22 +61,45 @@
             <Transition name="filter-dd">
               <div
                 v-if="openFilterJenis"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[280px]"
               >
-                <button
-                  v-for="opt in jenisOptions"
-                  :key="opt.value"
-                  type="button"
-                  @click.stop="selectFilterJenis(opt.value)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    filterJenis === opt.value
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
-                  ]"
-                >
-                  {{ opt.label }}
-                </button>
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon
+                      name="i-lucide-search"
+                      class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="jenisFilterSearch"
+                      type="text"
+                      placeholder="Cari jenis naskah…"
+                      class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:bg-white dark:border-gray-700 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-800"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+                <div class="max-h-72 overflow-y-auto">
+                  <button
+                    v-for="opt in filteredJenisOptions"
+                    :key="opt.value"
+                    type="button"
+                    @click.stop="selectFilterJenis(opt.value)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterJenis === opt.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ opt.label }}
+                  </button>
+                  <div
+                    v-if="filteredJenisOptions.length === 0"
+                    class="px-4 py-3 text-sm text-gray-400"
+                  >
+                    Jenis naskah tidak ditemukan.
+                  </div>
+                </div>
               </div>
             </Transition>
           </div>
@@ -100,22 +120,45 @@
             <Transition name="filter-dd">
               <div
                 v-if="openFilterTahapan"
-                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[180px] max-h-72 overflow-y-auto"
+                class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[280px]"
               >
-                <button
-                  v-for="opt in tahapanOptions"
-                  :key="opt.value"
-                  type="button"
-                  @click.stop="selectFilterTahapan(opt.value)"
-                  :class="[
-                    'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
-                    filterTahapan === opt.value
-                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
-                  ]"
-                >
-                  {{ opt.label }}
-                </button>
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon
+                      name="i-lucide-search"
+                      class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="tahapanFilterSearch"
+                      type="text"
+                      placeholder="Cari tahapan…"
+                      class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:bg-white dark:border-gray-700 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-800"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+                <div class="max-h-72 overflow-y-auto">
+                  <button
+                    v-for="opt in filteredTahapanOptions"
+                    :key="opt.value"
+                    type="button"
+                    @click.stop="selectFilterTahapan(opt.value)"
+                    :class="[
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                      filterTahapan === opt.value
+                        ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                        : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    {{ opt.label }}
+                  </button>
+                  <div
+                    v-if="filteredTahapanOptions.length === 0"
+                    class="px-4 py-3 text-sm text-gray-400"
+                  >
+                    Tahapan tidak ditemukan.
+                  </div>
+                </div>
               </div>
             </Transition>
           </div>
@@ -171,13 +214,20 @@
         @sort="handleSort"
       >
         <template #cell-nomor="{ row }">
-          <button class="font-mono text-xs text-primary-600 hover:underline" @click="goDetail(row.id)">{{ row.nomor }}</button>
+          <button
+            class="font-mono text-xs text-primary-600 hover:underline"
+            @click="goDetail(row.id)"
+          >
+            {{ row.nomor }}
+          </button>
         </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge :status="row.tahapan" />
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row.id)">Lihat</UButton>
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row.id)"
+            >Lihat</UButton
+          >
         </template>
       </DataTable>
 
@@ -189,7 +239,10 @@
       />
     </div>
 
-    <div v-if="error" class="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+    <div
+      v-if="error"
+      class="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+    >
       <UIcon name="i-lucide-circle-alert" class="mt-0.5 h-5 w-5 shrink-0" />
       <span>{{ errorMessage }}</span>
     </div>
@@ -200,6 +253,8 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { RotateCcw, ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
+import type { Tahapan } from '~/types/naskah-lainnya';
+import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
 import { downloadCsv } from '~/utils/csv-export';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
@@ -210,6 +265,8 @@ const toast = useToast();
 const search = ref('');
 const filterJenis = ref('');
 const filterTahapan = ref('');
+const jenisFilterSearch = ref('');
+const tahapanFilterSearch = ref('');
 const perPage = ref(10);
 const currentPage = ref(1);
 const sortKey = ref('terakhirDiubah');
@@ -224,17 +281,46 @@ const breadcrumbs = computed(() => [
 ]);
 
 const jenisOptions = [
-  { label: 'Semua Jenis', value: '' },
-  ...['PER', 'KEP', 'INS', 'PKS', 'UND', 'BA'].map((v) => ({ label: v, value: v })),
+  { label: 'Semua Naskah', value: '' },
+  ...Object.entries(JENIS_LABELS).map(([value, label]) => ({
+    label: `${value} — ${label}`,
+    value,
+  })),
 ];
+const tahapanFilterLabels: Record<Tahapan, string> = {
+  konsep: 'Konsep',
+  persetujuan: 'Persetujuan',
+  legal_drafting: 'Legal Drafting',
+  evaluasi: 'Evaluasi',
+  persetujuan_direksi: 'Persetujuan Direksi',
+  tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
+  blanko_verbal: 'Blanko Verbal',
+  tanda_tangan_legal: 'TTD Legal',
+  tanda_tangan_pejabat: 'TTD Pejabat',
+  tanda_tangan: 'Menunggu Tanda Tangan',
+  selesai: 'Selesai',
+  perlu_perbaikan: 'Perlu Perbaikan',
+  ditolak: 'Ditolak',
+  dibatalkan: 'Dibatalkan',
+};
 const tahapanOptions = [
-  { label: 'Semua Tahapan', value: '' }, { label: 'Konsep', value: 'konsep' },
-  { label: 'Persetujuan', value: 'persetujuan' }, { label: 'Legal Drafting', value: 'legal_drafting' },
-  { label: 'Evaluasi', value: 'evaluasi' }, { label: 'Persetujuan Direksi', value: 'persetujuan_direksi' },
-  { label: 'TTD Pemrakarsa', value: 'tanda_tangan_pemrakarsa' },
-  { label: 'Blanko Verbal', value: 'blanko_verbal' }, { label: 'TTD Legal', value: 'tanda_tangan_legal' },
-  { label: 'TTD Pejabat', value: 'tanda_tangan_pejabat' }, { label: 'Selesai', value: 'selesai' },
+  { label: 'Semua Tahapan', value: '' },
+  ...Object.keys(TAHAPAN_STEP).map((value) => ({
+    label: tahapanFilterLabels[value as Tahapan] ?? value.replace(/_/g, ' '),
+    value,
+  })),
 ];
+const filterOptionBySearch = (query: string, opt: { label: string; value: string }) => {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [opt.label, opt.value].some((v) => v.toLowerCase().includes(q));
+};
+const filteredJenisOptions = computed(() =>
+  jenisOptions.filter((opt) => filterOptionBySearch(jenisFilterSearch.value, opt))
+);
+const filteredTahapanOptions = computed(() =>
+  tahapanOptions.filter((opt) => filterOptionBySearch(tahapanFilterSearch.value, opt))
+);
 
 const columns = [
   { key: 'nomor', label: 'Nomor', sortable: true },
@@ -253,7 +339,7 @@ const openFilterJenis = ref(false);
 const openFilterTahapan = ref(false);
 
 const jenisLabel = computed(
-  () => jenisOptions.find((o) => o.value === filterJenis.value)?.label ?? 'Semua Jenis'
+  () => jenisOptions.find((o) => o.value === filterJenis.value)?.label ?? 'Semua Naskah'
 );
 const tahapanLabel = computed(
   () => tahapanOptions.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
@@ -280,15 +366,19 @@ function selectRowsPerPage(n: number) {
 }
 function selectFilterJenis(val: string) {
   filterJenis.value = val;
+  jenisFilterSearch.value = '';
   openFilterJenis.value = false;
 }
 function selectFilterTahapan(val: string) {
   filterTahapan.value = val;
+  tahapanFilterSearch.value = '';
   openFilterTahapan.value = false;
 }
 function resetFilters() {
   filterJenis.value = '';
   filterTahapan.value = '';
+  jenisFilterSearch.value = '';
+  tahapanFilterSearch.value = '';
   currentPage.value = 1;
 }
 
@@ -299,6 +389,8 @@ function handleDocumentClick(e: MouseEvent) {
     if (el.contains(target)) return;
   }
   openRowsPerPage.value = openFilterJenis.value = openFilterTahapan.value = false;
+  jenisFilterSearch.value = '';
+  tahapanFilterSearch.value = '';
 }
 
 // ── Sort + Pagination (client-side; API mengembalikan list penuh) ─
@@ -310,9 +402,14 @@ const displayRows = computed(() =>
     jenis: r.jenis,
     perihal: r.perihal,
     pemrakarsa: r.pemrakarsa.nama,
-    tahapan: r.tahapan,
+    tahapan:
+      r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
+        ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
+          ? 'selesai_final'
+          : 'selesai_belum_final'
+        : r.tahapan,
     terakhirDiubah: r.terakhirDiubah,
-  })),
+  }))
 );
 
 const sortedRows = computed(() => {
@@ -332,11 +429,17 @@ const tableRows = computed(() => {
   const start = (currentPage.value - 1) * perPage.value;
   return sortedRows.value.slice(start, start + perPage.value).map((r) => ({
     ...r,
-    terakhirDiubah: new Date(r.terakhirDiubah).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+    terakhirDiubah: new Date(r.terakhirDiubah).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }),
   }));
 });
 
-const errorMessage = computed(() => (error.value as any)?.response?.data?.message ?? 'Gagal memuat daftar naskah.');
+const errorMessage = computed(
+  () => (error.value as any)?.response?.data?.message ?? 'Gagal memuat daftar naskah.'
+);
 
 function handleSort(key: string) {
   if (sortKey.value === key) {
@@ -350,15 +453,25 @@ function handleSort(key: string) {
 // ── Data Fetching ─────────────────────────────────────────────────
 
 function load() {
-  return fetchList({ search: search.value, jenis: filterJenis.value, tahapan: filterTahapan.value });
+  return fetchList({
+    search: search.value,
+    jenis: filterJenis.value,
+    tahapan: filterTahapan.value,
+  });
 }
-function goDetail(id: string) { navigateTo(`/naskah-lainnya/${id}`); }
+function goDetail(id: string) {
+  navigateTo(`/naskah-lainnya/${id}`);
+}
 
 // ── Export CSV ───────────────────────────────────────────────────
 
 async function exportData() {
   if (totalItems.value === 0) {
-    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    toast.add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
     return;
   }
   isExporting.value = true;
@@ -366,13 +479,28 @@ async function exportData() {
     await load();
     const rows = displayRows.value;
     if (!rows.length) {
-      toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+      toast.add({
+        title: 'Tidak ada data',
+        description: 'Tidak ada data untuk diexport',
+        color: 'warning',
+      });
       return;
     }
     const headers = ['Nomor', 'Jenis', 'Perihal', 'Pemrakarsa', 'Tahapan', 'Diubah'];
-    const csvRows = rows.map((r) => [r.nomor, r.jenis, r.perihal, r.pemrakarsa, r.tahapan, r.terakhirDiubah]);
+    const csvRows = rows.map((r) => [
+      r.nomor,
+      r.jenis,
+      r.perihal,
+      r.pemrakarsa,
+      r.tahapan,
+      r.terakhirDiubah,
+    ]);
     downloadCsv(`naskah-lainnya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
+    toast.add({
+      title: 'Berhasil',
+      description: `${rows.length} data berhasil diexport`,
+      color: 'success',
+    });
   } catch (e) {
     console.error('Gagal export naskah:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });

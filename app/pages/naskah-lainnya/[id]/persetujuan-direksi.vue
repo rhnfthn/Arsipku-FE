@@ -2,7 +2,9 @@
   <div class="space-y-5">
     <PageHeader :items="breadcrumbs">
       <template #title>
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {{ detail?.perihal || 'Memuat…' }}
+        </h1>
       </template>
     </PageHeader>
 
@@ -20,29 +22,40 @@
       <!-- Banner mode: susun lembar (edit) vs menunggu paraf direksi (read-only) -->
       <div
         class="flex items-start gap-3 rounded-xl border px-4 py-3.5"
-        :class="canEditSheet
-          ? 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30'
-          : 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30'"
+        :class="
+          canEditSheet
+            ? 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30'
+            : 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30'
+        "
       >
         <span
           class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
           :class="canEditSheet ? 'bg-primary-500' : 'bg-violet-500'"
         >
-          <UIcon :name="canEditSheet ? 'i-lucide-file-pen-line' : 'i-lucide-stamp'" class="size-5" />
+          <UIcon
+            :name="canEditSheet ? 'i-lucide-file-pen-line' : 'i-lucide-stamp'"
+            class="size-5"
+          />
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-bold text-gray-900 dark:text-white">{{ canEditSheet ? 'Susun Lembar Persetujuan Direksi' : 'Menunggu Paraf Direksi' }}</p>
+          <p class="text-sm font-bold text-gray-900 dark:text-white">
+            {{ canEditSheet ? 'Susun Lembar Persetujuan Direksi' : 'Menunggu Paraf Direksi' }}
+          </p>
           <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
-            {{ canEditSheet
-              ? 'Lengkapi data lembar di bawah, tinjau pratinjau PDF, lalu kirim ke direksi untuk diparaf.'
-              : `${parafDone}/${pdDirectors.length} direksi telah memaraf${nextDirector ? ' — giliran ' + nextDirector.nama + '.' : '.'}` }}
+            {{
+              canEditSheet
+                ? 'Lengkapi data lembar di bawah, tinjau pratinjau PDF, lalu kirim ke direksi untuk diparaf.'
+                : `${parafDone}/${pdDirectors.length} direksi telah memaraf${nextDirector ? ' — giliran ' + nextDirector.nama + '.' : '.'}`
+            }}
           </p>
         </div>
       </div>
 
       <UCard
         variant="soft"
-        :ui="{ root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors' }"
+        :ui="{
+          root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors',
+        }"
       >
         <div class="flex-1 overflow-y-auto space-y-1">
           <!-- ── Form fields (editable mode only) ── -->
@@ -53,7 +66,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Diusulkan Oleh</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Diusulkan Oleh</span
+                >
                 <input
                   type="text"
                   v-model="sheet.diusulkanOleh"
@@ -63,11 +79,34 @@
               </div>
             </div>
 
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
+                v-model="sheet.ditetapkanOleh"
+                label="Ditetapkan/Disahkan Oleh"
+                hint="nama bisa diganti bila delegasi"
+                placeholder="Pilih direksi penetap"
+                :recipients="selectableDirectors"
+              />
+            </div>
+
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
+                v-model="sheet.diketahuiOleh"
+                label="Diketahui Oleh"
+                hint="urutan paraf direksi"
+                placeholder="Pilih direksi paraf"
+                :recipients="selectableDirectors"
+              />
+            </div>
+
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Jabatan</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Jabatan</span
+                >
                 <input
                   type="text"
                   v-model="sheet.jabatanDiusulkan"
@@ -81,7 +120,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Perihal</span
+                >
                 <input
                   type="text"
                   v-model="sheet.perihal"
@@ -96,7 +138,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Referensi Dari</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Referensi Dari</span
+                >
                 <input
                   type="text"
                   v-model="sheet.referensiDari"
@@ -110,7 +155,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Referensi Nomor</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Referensi Nomor</span
+                >
                 <input
                   type="text"
                   v-model="sheet.referensiNomor"
@@ -126,7 +174,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Klasifikasi</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Klasifikasi</span
+                >
                 <input
                   type="text"
                   v-model="sheet.klasifikasi"
@@ -140,7 +191,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Lampiran</span
+                >
                 <input
                   type="text"
                   v-model="sheet.lampiran"
@@ -154,7 +208,10 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Catatan</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Catatan</span
+                >
                 <textarea
                   v-model="catatan"
                   rows="2"
@@ -180,17 +237,46 @@
           <template v-if="!canEditSheet && pdDirectors.length > 0">
             <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
               <div class="flex items-center gap-2 mb-3">
-                <UIcon name="i-lucide-users" class="size-4 text-primary-600 dark:text-primary-400" />
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Progress Persetujuan Direksi</h3>
+                <UIcon
+                  name="i-lucide-users"
+                  class="size-4 text-primary-600 dark:text-primary-400"
+                />
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  Progress Persetujuan Direksi
+                </h3>
               </div>
-              <DireksiApprovalProgress
-                :directors="pdDirectors"
-                :is-current-user-approver="isCurrentUserApprover"
-                :can-approve="canApprove"
-                :busy="busy"
-                @paraf="openParafModal"
-                @tolak="openTolakModal"
-              />
+              <div class="space-y-4">
+                <div v-if="pdDitetapkanDirectors.length" class="space-y-2">
+                  <h4
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    Ditetapkan/Disahkan Oleh
+                  </h4>
+                  <DireksiApprovalProgress
+                    :directors="pdDitetapkanDirectors"
+                    :is-current-user-approver="isCurrentUserApprover"
+                    :can-approve="canApprove"
+                    :busy="busy"
+                    @paraf="openParafModal"
+                    @tolak="openTolakModal"
+                  />
+                </div>
+                <div v-if="pdDiketahuiDirectors.length" class="space-y-2">
+                  <h4
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    Diketahui Oleh
+                  </h4>
+                  <DireksiApprovalProgress
+                    :directors="pdDiketahuiDirectors"
+                    :is-current-user-approver="isCurrentUserApprover"
+                    :can-approve="canApprove"
+                    :busy="busy"
+                    @paraf="openParafModal"
+                    @tolak="openTolakModal"
+                  />
+                </div>
+              </div>
             </div>
           </template>
 
@@ -199,9 +285,11 @@
             class="flex flex-col gap-3 border-t border-gray-100 py-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
           >
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ canEditSheet
-                ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim lembar ke direksi untuk diparaf.'
-                : 'Lembar sedang menunggu proses paraf direksi.' }}
+              {{
+                canEditSheet
+                  ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim lembar ke direksi untuk diparaf.'
+                  : 'Lembar sedang menunggu proses paraf direksi.'
+              }}
             </p>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
               <UButton
@@ -233,7 +321,11 @@
       >
         <template #body>
           <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-            <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
+            <iframe
+              v-if="pdfUrl"
+              :src="pdfUrl"
+              class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+            />
             <div v-else class="flex flex-col items-center gap-2">
               <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
               <span class="text-gray-500">Memuat pratinjau…</span>
@@ -290,6 +382,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { CalendarDate } from '@internationalized/date';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
+import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelector.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
@@ -303,9 +396,12 @@ const toast = useToast();
 const { t } = useI18n();
 
 const {
-  detail, fetchDetail,
-  fetchBodDirectors, previewLembarPersetujuanDireksi,
-  kirimLembarPersetujuanDireksi, parafLembarPersetujuanDireksi,
+  detail,
+  fetchDetail,
+  fetchBodDirectors,
+  previewLembarPersetujuanDireksi,
+  kirimLembarPersetujuanDireksi,
+  parafLembarPersetujuanDireksi,
   tolakLembarPersetujuanDireksi,
 } = useNaskahLainnya();
 
@@ -331,24 +427,28 @@ const parafModalOpen = ref(false);
 const tolakModalOpen = ref(false);
 const activeDirector = ref<DirectorApprovalItem | null>(null);
 
-
 const sheet = ref<SheetFormModel>({
   lampiran: '1 (satu) berkas',
-  bodyHtml: '<p>Dengan hormat,</p><p>Bersama ini disampaikan usulan persetujuan direksi terkait hal tersebut di atas.</p>',
+  bodyHtml:
+    '<p>Dengan hormat,</p><p>Bersama ini disampaikan usulan persetujuan direksi terkait hal tersebut di atas.</p>',
 });
 
 // CalendarDate for TulisInputTanggal (synced with sheet.tanggal string)
 const today = new Date();
 const formDate = ref<CalendarDate>(
-  new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()),
+  new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate())
 );
 
 // Sync formDate → sheet.tanggal (YYYY-MM-DD)
-watch(formDate, (d) => {
-  if (d) {
-    sheet.value.tanggal = `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
-  }
-}, { immediate: true });
+watch(
+  formDate,
+  (d) => {
+    if (d) {
+      sheet.value.tanggal = `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
+    }
+  },
+  { immediate: true }
+);
 
 // Referensi Tanggal: CalendarDate (TulisInputTanggal) ↔ sheet.referensiTanggal (YYYY-MM-DD)
 const refDate = ref<CalendarDate | null>(null);
@@ -359,31 +459,122 @@ watch(refDate, (d) => {
 });
 
 // Sync catatan → sheet.catatan (agar tampil di preview inline, konsisten dgn PDF)
-watch(catatan, (v) => { sheet.value.catatan = v; });
+watch(catatan, (v) => {
+  sheet.value.catatan = v;
+});
 
 const isEvaluasi = computed(() => detail.value?.tahapan === 'evaluasi');
 const isPd = computed(() => detail.value?.tahapan === 'persetujuan_direksi');
 const pdRows = computed(() =>
-  (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi'),
+  (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi')
+);
+const pdDitetapkanRows = computed(() =>
+  (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi_ditetapkan')
 );
 // Editable saat evaluasi (alur normal: kirim = transisi ke PD) atau saat sudah di
 // persetujuan_direksi tapi baris BOD belum ada (recovery naskah yang masuk PD tanpa lembar).
 const canEditSheet = computed(() => isEvaluasi.value || (isPd.value && pdRows.value.length === 0));
 
-const pdDirectors = computed<DirectorApprovalItem[]>(() =>
-  pdRows.value.map((a, idx) => ({
-    index: a.urutan ?? idx + 1,
-    nama: a.nama,
-    jabatan: a.jabatan,
-    status: a.status,
-    positionId: a.positionId,
-    persnum: a.persnum,
-    catatan: a.catatan,
-  })),
+const mapApprovalDirector = (
+  a: ApprovalRow,
+  idx: number,
+  roleLabel: string
+): DirectorApprovalItem => ({
+  index: idx + 1,
+  nama: a.nama,
+  jabatan: a.jabatan,
+  status: a.status,
+  positionId: a.positionId,
+  persnum: a.persnum,
+  catatan: a.catatan,
+  roleLabel,
+});
+
+const pdDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
+  pdDitetapkanRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Ditetapkan/Disahkan Oleh'))
 );
+const pdDiketahuiDirectors = computed<DirectorApprovalItem[]>(() =>
+  pdRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Diketahui Oleh'))
+);
+const pdDirectors = computed<DirectorApprovalItem[]>(() => [
+  ...pdDitetapkanDirectors.value,
+  ...pdDiketahuiDirectors.value,
+]);
+const selectableDirectors = computed(() => bodDirectors.value.filter((d) => d.nama || d.jabatan));
 
 const parafDone = computed(() => pdDirectors.value.filter((d) => d.status === 'verified').length);
 const nextDirector = computed(() => pdDirectors.value.find((d) => d.status === 'waiting') ?? null);
+
+function isDirut(director: DirectorApprovalItem) {
+  return /direktur\s*utama/i.test(director.jabatan || '');
+}
+
+function compactDirector(director: DirectorApprovalItem): DirectorApprovalItem {
+  return {
+    nama: director.nama,
+    jabatan: director.jabatan,
+    positionId: director.positionId,
+    persnum: director.persnum,
+  };
+}
+
+function cleanSheetPayload(): SheetFormModel {
+  const cleanDirector = (director: DirectorApprovalItem) => ({
+    nama: director.nama,
+    jabatan: director.jabatan,
+    positionId: director.positionId,
+    persnum: director.persnum,
+  });
+  return {
+    ...sheet.value,
+    ditetapkanOleh: sheet.value.ditetapkanOleh?.map(cleanDirector),
+    diketahuiOleh: sheet.value.diketahuiOleh?.map(cleanDirector),
+  };
+}
+
+function latestPemrakarsaApproval() {
+  const rows = (detail.value?.riwayat ?? [])
+    .filter((row) => row.tahap === 'persetujuan' && row.aksi !== 'tolak')
+    .sort((a, b) => (a.tanggal < b.tanggal ? 1 : a.tanggal > b.tanggal ? -1 : 0));
+  return rows[0] ?? null;
+}
+
+function initDirectorSelection() {
+  if (!canEditSheet.value && (pdDirectors.value.length || pdDitetapkanRows.value.length)) {
+    sheet.value.diketahuiOleh = pdRows.value.map((a, idx) =>
+      compactDirector({
+        index: a.urutan ?? idx + 1,
+        nama: a.nama,
+        jabatan: a.jabatan,
+        positionId: a.positionId,
+        persnum: a.persnum,
+      })
+    );
+    if (pdDitetapkanRows.value.length) {
+      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map((a, idx) =>
+        compactDirector({
+          index: a.urutan ?? idx + 1,
+          nama: a.nama,
+          jabatan: a.jabatan,
+          positionId: a.positionId,
+          persnum: a.persnum,
+        })
+      );
+    }
+    return;
+  }
+  if (!selectableDirectors.value.length) return;
+  if (!Array.isArray(sheet.value.ditetapkanOleh)) {
+    const dirut = selectableDirectors.value.find(isDirut);
+    sheet.value.ditetapkanOleh = [compactDirector(dirut ?? selectableDirectors.value[0])];
+  }
+  if (!Array.isArray(sheet.value.diketahuiOleh)) {
+    const nonDirut = selectableDirectors.value.filter((d) => !isDirut(d));
+    sheet.value.diketahuiOleh = (nonDirut.length ? nonDirut : selectableDirectors.value).map(
+      compactDirector
+    );
+  }
+}
 
 function isUserApprover(row: ApprovalRow) {
   if (row.status !== 'waiting') return false;
@@ -399,12 +590,17 @@ function isUserApprover(row: ApprovalRow) {
   );
 }
 
-const isCurrentUserApprover = computed(() => pdRows.value.some(isUserApprover));
+const isCurrentUserApprover = computed(() =>
+  [...pdRows.value, ...pdDitetapkanRows.value].some(isUserApprover)
+);
 const canApprove = computed(() => isCurrentUserApprover.value);
 
 function initSheet() {
   const d = detail.value;
   if (!d) return;
+  const pemrakarsaApproval = latestPemrakarsaApproval();
+  const pemrakarsaNama = pemrakarsaApproval?.aktor || d.pemrakarsa?.nama || '';
+  const pemrakarsaJabatan = pemrakarsaApproval?.jabatan || d.pemrakarsa?.jabatan || '';
   if (d.tanggal) {
     sheet.value.tanggal = d.tanggal;
     const parts = d.tanggal.split('-');
@@ -413,10 +609,10 @@ function initSheet() {
     }
   }
   sheet.value.perihal = d.perihal || sheet.value.perihal;
-  sheet.value.diusulkanOleh = d.pemrakarsa?.nama || sheet.value.diusulkanOleh;
-  sheet.value.jabatanDiusulkan = d.pemrakarsa?.jabatan || sheet.value.jabatanDiusulkan;
+  sheet.value.diusulkanOleh = pemrakarsaNama || sheet.value.diusulkanOleh;
+  sheet.value.jabatanDiusulkan = pemrakarsaJabatan || sheet.value.jabatanDiusulkan;
   sheet.value.klasifikasi = d.klasifikasi || sheet.value.klasifikasi;
-  sheet.value.referensiDari = sheet.value.referensiDari || d.pemrakarsa?.nama || '';
+  sheet.value.referensiDari = sheet.value.referensiDari || pemrakarsaNama;
   sheet.value.alamatInfo = user.value?.alamatInfo || sheet.value.alamatInfo;
 }
 
@@ -425,6 +621,7 @@ async function loadDetail() {
   try {
     await fetchDetail(id.value);
     initSheet();
+    initDirectorSelection();
   } catch {
     toast.add({ title: 'Gagal memuat detail naskah', color: 'error' });
   } finally {
@@ -435,6 +632,7 @@ async function loadDetail() {
 async function loadBod() {
   try {
     bodDirectors.value = await fetchBodDirectors();
+    initDirectorSelection();
   } catch {
     toast.add({ title: 'Gagal memuat daftar direksi', color: 'error' });
   }
@@ -446,13 +644,28 @@ function apiErrorMessage(e) {
 }
 
 async function previewPdf() {
+  if (!sheet.value.diketahuiOleh?.length) {
+    toast.add({
+      title: 'Pilih minimal satu direksi pada Diketahui Oleh',
+      color: 'warning',
+    });
+    return;
+  }
   busy.value = true;
   busyMessage.value = 'Memproses pratinjau…';
   try {
-    pdfUrl.value = await previewLembarPersetujuanDireksi(id.value, sheet.value, catatan.value);
+    pdfUrl.value = await previewLembarPersetujuanDireksi(
+      id.value,
+      cleanSheetPayload(),
+      catatan.value
+    );
     pdfModalOpen.value = true;
   } catch (e) {
-    toast.add({ title: 'Gagal membuat preview PDF', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal membuat preview PDF',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     busyMessage.value = '';
@@ -460,15 +673,26 @@ async function previewPdf() {
 }
 
 async function kirimSheet() {
+  if (!sheet.value.diketahuiOleh?.length) {
+    toast.add({
+      title: 'Pilih minimal satu direksi pada Diketahui Oleh',
+      color: 'warning',
+    });
+    return;
+  }
   busy.value = true;
   busyMessage.value = 'Mengirim lembar persetujuan direksi…';
   try {
-    await kirimLembarPersetujuanDireksi(id.value, sheet.value, catatan.value);
+    await kirimLembarPersetujuanDireksi(id.value, cleanSheetPayload(), catatan.value);
     toast.add({ title: 'Lembar persetujuan direksi dikirim', color: 'success' });
     pdfModalOpen.value = false;
-    await loadDetail();
+    await navigateTo('/naskah-lainnya/legal-drafting?status=menunggu');
   } catch (e) {
-    toast.add({ title: 'Gagal mengirim lembar persetujuan direksi', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal mengirim lembar persetujuan direksi',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     busyMessage.value = '';
@@ -490,7 +714,7 @@ async function confirmParaf(note) {
   busy.value = true;
   busyMessage.value = 'Mencatat paraf…';
   try {
-    await parafLembarPersetujuanDireksi(id.value, sheet.value, note ?? '');
+    await parafLembarPersetujuanDireksi(id.value, cleanSheetPayload(), note ?? '');
     toast.add({ title: 'Paraf tercatat', color: 'success' });
     parafModalOpen.value = false;
     activeDirector.value = null;
@@ -516,7 +740,11 @@ async function confirmTolak(note) {
     activeDirector.value = null;
     navigateTo(`/naskah-lainnya/${id.value}/legal-drafting`);
   } catch (e) {
-    toast.add({ title: 'Gagal menolak lembar persetujuan', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal menolak lembar persetujuan',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     busyMessage.value = '';

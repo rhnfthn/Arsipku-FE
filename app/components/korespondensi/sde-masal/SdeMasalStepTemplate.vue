@@ -1,72 +1,97 @@
 <template>
   <div class="flex-1 overflow-y-auto space-y-4">
-    <!-- Ringkasan singkat -->
-    <div class="bg-[#457fb6]/10 dark:bg-[#457fb6]/20 rounded-lg p-3 flex items-center gap-2">
-      <UIcon name="i-lucide-users" class="w-4 h-4 text-[#457fb6]" />
-      <span class="text-sm text-gray-700 dark:text-gray-200">
-        Total penerima: <strong>{{ penerimaList.length }}</strong> surat akan digenerate
-      </span>
-    </div>
-
-    <!-- Pilih Skema Template -->
-    <div>
-      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-        Skema Template <span class="text-red-500">*</span>
-      </label>
-      <USelectMenu
-        v-model="skemaModel"
-        :items="skemaOptions"
-        value-key="value"
-        placeholder="Pilih skema template..."
-        class="w-full"
-        variant="outline"
-      />
-    </div>
-
-    <!-- Pilih Versi Template -->
-    <div>
-      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-        Versi Template <span class="text-red-500">*</span>
-      </label>
-      <USelectMenu
-        v-model="versiModel"
-        :items="versiOptions"
-        value-key="value"
-        placeholder="Pilih versi template..."
-        class="w-full"
-        variant="outline"
-      />
-    </div>
-
-    <!-- Template Manager (existing) -->
+    <!-- Template manager ditempatkan setelah variabel dinamis. -->
     <div class="pt-2">
-      <TulisTemplateManager :current-content="kontenModel" @apply="handleApplyTemplate" />
+      <TulisTemplateManager :current-content="kontenModel" @apply="handleApplyTemplate">
+        <template #after-template-actions>
+          <UButton label="Lihat Variabel Dinamis" color="primary" variant="soft" icon="i-lucide-braces" class="w-full justify-center sm:w-auto" @click="showVariables = true" />
+        </template>
+      </TulisTemplateManager>
     </div>
 
-    <!-- Info variabel dinamis -->
-    <div class="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/30 px-4 py-3">
-      <p class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Variabel Dinamis untuk Massal</p>
-      <p class="text-xs text-blue-700 dark:text-blue-400">Gunakan variabel berikut dalam konten, akan otomatis diganti per penerima:</p>
-      <div class="flex flex-wrap gap-2 mt-2">
-        <code v-for="v in dynamicVariables" :key="v.var" class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-mono cursor-pointer" @click="insertVariable(v.var)">
-          {{ v.var }} <span class="opacity-60">({{ v.desc }})</span>
-        </code>
-      </div>
-    </div>
-
-    <!-- Editor Konten -->
+    <!-- Kanvas surat mengikuti struktur Surat Dinas Eksternal. -->
     <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-4 font-['Times_New_Roman']">
-      <div class="bg-white pt-6 pb-6 border-b border-gray-100 select-none text-black min-h-[400px]">
-        <ClientOnly>
-          <TinymceEditorAsync
-            api-key="no-api-key"
-            v-model="kontenModel"
-            :initial-value="kontenModel"
-            :init="tinyMceInit"
-          />
-        </ClientOnly>
+      <div class="bg-white pb-10 pt-10 border-b border-gray-100 select-none text-black min-h-[900px]">
+        <div class="flex items-center px-10">
+          <div class="flex items-end gap-4">
+            <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
+            <span class="mb-1 text-[18px] font-bold tracking-wide">AirNav Indonesia</span>
+          </div>
+          <div class="ml-auto w-[260px] text-left text-[10px] leading-[1.15] text-slate-700">
+            <div class="font-bold uppercase">KANTOR PUSAT PERUM LPPNPI</div>
+            <div>Gedung AirNav Indonesia Tangerang</div>
+            <div>Jl. Ir. H. Juanda No. 1 Tangerang</div>
+            <div>Banten 15121 Indonesia</div>
+            <div>Telp : 021-55915000</div>
+            <div>www.airnavindonesia.co.id</div>
+          </div>
+        </div>
+
+        <div class="mt-16 px-10 text-[14px]">{{ formattedDate }}</div>
+        <div class="mt-8 px-10 text-[14px]">
+          <table class="w-full">
+            <tbody>
+              <tr><td class="w-20 align-top">Nomor</td><td class="w-3 align-top">:</td><td>................................................</td></tr>
+              <tr><td class="align-top">Sifat</td><td class="align-top">:</td><td class="capitalize">{{ konsep?.sifat || 'Biasa' }}</td></tr>
+              <tr><td class="align-top">Lampiran</td><td class="align-top">:</td><td>-</td></tr>
+              <tr><td class="align-top">Perihal</td><td class="align-top">:</td><td class="font-bold" v-pre>{{perihal}}</td></tr>
+            </tbody>
+          </table>
+          <div class="mt-10">Kepada Yth.</div>
+          <div class="mb-3 font-bold" v-pre>{{tertuju}}</div>
+          <div>Di Tempat</div>
+        </div>
+
+        <div class="mt-16 min-h-[300px] border-t border-gray-200 relative group dark:border-gray-700">
+          <ClientOnly>
+            <TinymceEditorAsync
+              api-key="no-api-key"
+              v-model="kontenModel"
+              :initial-value="kontenModel"
+              :init="tinyMceInit"
+            />
+          </ClientOnly>
+        </div>
+
+        <div class="mt-12 flex px-10 text-black">
+          <div class="min-w-[250px] text-center">
+            <div class="mb-24 text-[14px]"><div class="font-bold">{{ signaturePosition }}</div></div>
+            <div class="text-[14px] font-bold underline">{{ signatureName }}</div>
+          </div>
+        </div>
+        <div class="mt-8 px-10 text-[12px] text-black">
+          <div class="mb-1 font-bold underline">Tembusan :</div>
+          <div class="ml-4 pl-2" v-pre>{{tembusan}}</div>
+        </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showVariables" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showVariables = false" />
+        <div class="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-xl dark:bg-gray-800">
+          <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+            <div>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Variabel Dinamis</h3>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Klik variabel untuk memasukkannya ke isi surat.</p>
+            </div>
+            <UButton color="neutral" variant="ghost" icon="i-heroicons-x-mark" aria-label="Tutup" @click="showVariables = false" />
+          </div>
+          <div class="grid grid-cols-1 gap-2 overflow-y-auto p-5 sm:grid-cols-2">
+            <button
+              v-for="variable in dynamicVariables"
+              :key="`${variable.var}-${variable.skema}`"
+              type="button"
+              class="flex min-w-0 items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-left transition-colors hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-700 dark:hover:bg-primary-950/30"
+              @click="insertVariable(variable.var)"
+            >
+              <code class="shrink-0 text-xs font-semibold text-primary-600 dark:text-primary-400">{{ variable.var }}</code>
+              <span class="min-w-0 truncate text-xs text-gray-600 dark:text-gray-300">{{ variable.desc }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Preview perwakilan 1 surat -->
     <div class="pt-2">
@@ -93,13 +118,14 @@
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                 Preview untuk penerima
               </label>
-              <USelectMenu
-                v-model="previewIndex"
-                :items="previewOptions"
-                value-key="value"
-                class="w-full"
-                variant="outline"
-              />
+              <select
+                v-model.number="previewIndex"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option v-for="option in previewOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
             <SdeMasalLetterPreview
               :konsep="konsep"
@@ -128,23 +154,24 @@ const props = defineProps<{
 }>();
 
 const model = defineModel<SdeMasalTemplate | null>({ default: null });
+const emit = defineEmits<{ 'update:variables': [variables: string[]] }>();
 
-const skemaModel = ref<string>('');
-const versiModel = ref<string>('');
+const skemaModel = ref<string>('DINAMIS');
+const versiModel = ref<string>('v1');
 const kontenModel = ref<string>('');
 const showPreview = ref(false);
+const showVariables = ref(false);
 const previewIndex = ref<number>(0);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
-
-const skemaOptions = [
-  { label: 'Keuangan / Tagihan PINP', value: 'KEUANGAN' },
-  { label: 'Umum', value: 'UMUM' },
-];
-
-const versiOptions = [
-  { label: 'v1', value: 'v1' },
-  { label: 'v2', value: 'v2' },
-];
+const { user, getProfile } = useAuth();
+const formattedDate = computed(() => {
+  if (!props.konsep?.tanggalKonsep) return 'Tangerang, Tanggal surat';
+  const date = new Date(`${props.konsep.tanggalKonsep}T00:00:00`);
+  return `${user.value?.areaText?.replace('Kantor', '') || 'Tangerang'}, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+});
+const signatureParts = computed(() => (props.konsep?.pengirimName || '').split(' - ').map((value) => value.trim()).filter(Boolean));
+const signatureName = computed(() => signatureParts.value[0] || 'Nama Lengkap');
+const signaturePosition = computed(() => signatureParts.value.slice(1).join(' - ') || 'Nama Jabatan');
 
 const allVariables = [
   { var: '{{tertuju}}', desc: 'Nama - Jabatan', skema: 'all' },
@@ -163,9 +190,7 @@ const allVariables = [
   { var: '{{panggilan_penerima}}', desc: 'Panggilan Penerima', skema: 'UMUM' },
   { var: '{{nominal_rupiah}}', desc: 'Nominal Rupiah', skema: 'UMUM' },
   { var: '{{nominal_dolar}}', desc: 'Nominal Dolar', skema: 'UMUM' },
-  { var: '{{idramount}}', desc: 'IDR Amount', skema: 'UMUM' },
-  { var: '{{usdamount}}', desc: 'USD Amount', skema: 'UMUM' },
-  { var: '{{namacro}}', desc: 'Nama Macro', skema: 'UMUM' },
+  { var: '{{nama_cro}}', desc: 'Nama CRO', skema: 'UMUM' },
   { var: '{{email}}', desc: 'Email', skema: 'UMUM' },
   { var: '{{tembusan_1}}', desc: 'Tembusan 1', skema: 'UMUM' },
   { var: '{{tembusan_2}}', desc: 'Tembusan 2', skema: 'UMUM' },
@@ -191,6 +216,10 @@ const dynamicVariables = computed(() => {
   }
   return allVariables;
 });
+
+const detectedVariables = computed(() => [...new Set(
+  Array.from(kontenModel.value.matchAll(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g)).map((match) => match[1]),
+)]);
 
 // Template konten default untuk skema KEUANGAN (sesuai desain surat PINP)
 const keuanganTemplateContent = `<p style="text-align: center;"><strong style="font-size: 14pt;">{{perihal}}</strong></p>
@@ -280,6 +309,7 @@ const umumTemplateContent = `<p style="text-align: right;">Tangerang, {{tanggal_
 
 // Auto-set skema & konten dari defaultSkema (dari Step 2) saat step dibuka
 onMounted(() => {
+  if (!user.value) getProfile();
   if (props.defaultSkema && !skemaModel.value) {
     skemaModel.value = props.defaultSkema;
     // Auto-fill konten sesuai skema
@@ -315,7 +345,7 @@ const tinyMceInit = {
   menubar: false,
   promotion: false,
   branding: false,
-  placeholder: 'Ketik konten surat... Gunakan variabel {{tertuju}}, {{alamat}}, dll untuk personalisasi massal.',
+  placeholder: 'Ketik konten disini...',
   plugins: 'lists advlist link image code table fullscreen',
   toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
@@ -343,6 +373,12 @@ const insertVariable = (varName: string) => {
   }
 };
 
+watch(model, (template) => {
+  if (!template || kontenModel.value || !template.konten) return;
+  kontenModel.value = template.konten;
+  if (tinymceEditor.value) tinymceEditor.value.setContent(template.konten);
+}, { immediate: true, deep: true });
+
 
 
 // Auto-fill konten ketika skema dipilih (hanya jika konten masih kosong)
@@ -367,4 +403,27 @@ watch([skemaModel, versiModel, kontenModel], () => {
     konten: kontenModel.value,
   };
 }, { deep: true });
+
+watch(detectedVariables, (variables) => emit('update:variables', variables), { immediate: true });
 </script>
+
+<style scoped>
+:deep(.tox-tinymce) {
+  border: none !important;
+}
+
+.tox-fullscreen {
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.tox-dialog-wrap,
+.tox-dropzone,
+.tox-promotions {
+  z-index: 10000 !important;
+}
+</style>
