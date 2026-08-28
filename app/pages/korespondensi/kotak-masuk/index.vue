@@ -167,7 +167,7 @@ const handleAddToBerkas = async () => {
     isAddingToBerkas.value = false;
   }
 };
-const { inboxCount, init: initRealtimeSocket } = useRealtimeSocket();
+const { inboxCount, flagUpdate, init: initRealtimeSocket } = useRealtimeSocket();
 const { notifications, init: initNotifications } = useNotifications();
 
 // ── UI State ──────────────────────────────────────────────────────────────────
@@ -739,6 +739,26 @@ watch(searchQuery, () => {
 watch(inboxCount, (_newValue, oldValue) => {
   if (oldValue === undefined) return;
   scheduleRealtimeRefresh();
+});
+
+// Realtime flag sync — update item flags in place saat diubah dari device/web lain.
+watch(flagUpdate, (payload) => {
+  if (!payload) return;
+  const item = items.value.find((i) => i.id === payload.id_sirkulasi || i.sirkulasiId === payload.id_sirkulasi);
+  if (!item) return;
+  const flagKeyMap: Record<string, string> = {
+    favorit: 'isStarred',
+    arsip: 'isArsip',
+    note: 'isNote',
+    lock: 'isLocked',
+    tindak_lanjut: 'isTinjut',
+  };
+  const key = flagKeyMap[payload.flag_type];
+  if (!key) return;
+  (item as any)[key] = payload.new_value;
+  if (payload.flag_type === 'note') {
+    (item as any).noteText = payload.new_value ? (payload.note_text || '') : '';
+  }
 });
 
 watch(

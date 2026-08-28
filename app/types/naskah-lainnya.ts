@@ -66,7 +66,8 @@ export type JenisAksi =
   | 'preview-blanko-verbal'
   | 'kirim-blanko-verbal'
   | 'paraf-blanko-verbal'
-  | 'tolak-blanko-verbal';
+  | 'tolak-blanko-verbal'
+  | 'paraf';
 
 export interface Persona {
   positionId?: string;
@@ -82,6 +83,11 @@ export interface NaskahListItem {
   perihal: string;
   pemrakarsa: Persona;
   tahapan: Tahapan;
+  /** Metadata status dokumen untuk badge daftar, khususnya TTD fisik. */
+  signOption?: SignOption;
+  documentStatus?: string;
+  isTtdFisik?: boolean;
+  manualFinalStatus?: 'final' | 'belum_final';
   butuhLegal: boolean;
   penandatangan: Persona;
   tanggal: string; // YYYY-MM-DD
@@ -94,10 +100,16 @@ export interface NaskahListItem {
 export interface DokumenFile {
   id: string;
   nama: string;
-  tipe: 'naskah' | 'naskah_fisik' | 'blanko_verbal' | 'pendukung';
+  tipe:
+    | 'naskah'
+    | 'naskah_fisik'
+    | 'blanko_verbal'
+    | 'blanko_verbal_pdf'
+    | 'lembar_persetujuan_direksi_pdf'
+    | 'pendukung';
   ukuran: string; // "48 KB"
   tanggal?: string;
-  status: 'terbaca' | 'final' | 'revisi' | 'belum_diunggah' | 'draf' | 'dittd';
+  status: 'terbaca' | 'final' | 'revisi' | 'belum_diunggah' | 'draf' | 'dittd' | 'proses_ttd';
   parameter?: { nomor?: string; perihal?: string; tanggal?: string };
   // Field versi naskah (hanya untuk tipe 'naskah'):
   uploaderNama?: string;
@@ -112,7 +124,9 @@ export type TahapApproval =
   | 'approval_blanko'
   | 'approval_penandatangan'
   | 'persetujuan_direksi'
-  | 'blanko_verbal';
+  | 'persetujuan_direksi_ditetapkan'
+  | 'blanko_verbal'
+  | 'blanko_verbal_ditetapkan';
 
 export interface ApprovalRow {
   id: string;
@@ -245,6 +259,8 @@ export interface SheetFormModel {
   legalDrafterJabatan?: string;
   legalChecker?: string;
   legalCheckerJabatan?: string;
+  ditetapkanOleh?: DirectorApprovalItem[];
+  diketahuiOleh?: DirectorApprovalItem[];
   alamatInfo?: {
     kantor?: string;
     gedung?: string;
@@ -255,13 +271,14 @@ export interface SheetFormModel {
 
 /** Baris persetujuan direksi untuk lembar/blanko. */
 export interface DirectorApprovalItem {
-  index: number;
+  index?: number;
   nama: string;
   jabatan: string;
   status?: StatusApprover;
   positionId?: string;
   persnum?: number;
   catatan?: string;
+  roleLabel?: string;
 }
 
 export interface TandaTanganPayload {
@@ -279,6 +296,8 @@ export interface LegalRecipient {
   level: number;
   chief: boolean;
   isActive: boolean;
+  isDelegasi?: boolean;
+  positionStatus?: 'PT' | 'PH' | 'PS' | null;
 }
 
 // Payload kirim approval legal drafting — array approver dari unit legal (urutan = urutan persetujuan).

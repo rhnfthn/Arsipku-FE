@@ -2,12 +2,11 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { CalendarDate } from '@internationalized/date';
 import BlankoVerbalTemplate from '~/components/NaskahLainnya/BlankoVerbalTemplate.vue';
+import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelector.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
-import type {
-  SheetFormModel, DirectorApprovalItem, ApprovalRow,
-} from '~/types/naskah-lainnya';
+import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 useHead({ title: 'Blanko Verbal' });
@@ -20,10 +19,14 @@ const { user, getProfile } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 
 const {
-  detail, fetchDetail,
-  fetchBodDirectors, previewBlankoVerbal,
-  kirimBlankoVerbal, parafBlankoVerbal,
-  tolakBlankoVerbal, kirimApprovalBlanko,
+  detail,
+  fetchDetail,
+  fetchBodDirectors,
+  previewBlankoVerbal,
+  kirimBlankoVerbal,
+  parafBlankoVerbal,
+  tolakBlankoVerbal,
+  kirimApprovalBlanko,
 } = useNaskahLainnya();
 
 const breadcrumbs = computed(() => [
@@ -49,24 +52,29 @@ const parafCatatan = ref('');
 const tolakCatatan = ref('');
 const activeDirector = ref<DirectorApprovalItem | null>(null);
 
-
 const form = ref<SheetFormModel>({
   lampiran: '1 (satu) berkas',
 });
 
 // Sync catatan → form.catatan (agar tampil di preview inline, konsisten dgn PDF)
-watch(catatan, (v) => { form.value.catatan = v; });
+watch(catatan, (v) => {
+  form.value.catatan = v;
+});
 
 // CalendarDate for TulisInputTanggal (synced with form.tanggal string)
 const _today = new Date();
 const formDate = ref<CalendarDate>(
-  new CalendarDate(_today.getFullYear(), _today.getMonth() + 1, _today.getDate()),
+  new CalendarDate(_today.getFullYear(), _today.getMonth() + 1, _today.getDate())
 );
-watch(formDate, (d) => {
-  if (d) {
-    form.value.tanggal = `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
-  }
-}, { immediate: true });
+watch(
+  formDate,
+  (d) => {
+    if (d) {
+      form.value.tanggal = `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
+    }
+  },
+  { immediate: true }
+);
 
 // Referensi Tanggal: CalendarDate (TulisInputTanggal) ↔ form.referensiTanggal (YYYY-MM-DD)
 const refDate = ref<CalendarDate | null>(null);
@@ -79,24 +87,43 @@ watch(refDate, (d) => {
 const isBlankoVerbal = computed(() => detail.value?.tahapan === 'blanko_verbal');
 
 const bvRows = computed(() =>
-  (detail.value?.approval ?? []).filter((a) => a.tahap === 'blanko_verbal'),
+  (detail.value?.approval ?? []).filter((a) => a.tahap === 'blanko_verbal')
+);
+const bvDitetapkanRows = computed(() =>
+  (detail.value?.approval ?? []).filter((a) => a.tahap === 'blanko_verbal_ditetapkan')
 );
 
-const bvDirectors = computed(() =>
-  bvRows.value.map((a, idx) => ({
-    index: a.urutan ?? idx + 1,
-    nama: a.nama,
-    jabatan: a.jabatan,
-    status: a.status,
-    positionId: a.positionId,
-    persnum: a.persnum,
-    catatan: a.catatan,
-  })),
-);
+const mapApprovalDirector = (
+  a: ApprovalRow,
+  idx: number,
+  roleLabel: string
+): DirectorApprovalItem => ({
+  index: idx + 1,
+  nama: a.nama,
+  jabatan: a.jabatan,
+  status: a.status,
+  positionId: a.positionId,
+  persnum: a.persnum,
+  catatan: a.catatan,
+  roleLabel,
+});
 
-const allBvVerified = computed(() =>
-  bvRows.value.length > 0 && bvRows.value.every((r) => r.status === 'verified'),
+const bvDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
+  bvDitetapkanRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Ditetapkan/Disahkan Oleh'))
 );
+const bvDiketahuiDirectors = computed<DirectorApprovalItem[]>(() =>
+  bvRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Diketahui Oleh'))
+);
+const bvDirectors = computed<DirectorApprovalItem[]>(() => [
+  ...bvDitetapkanDirectors.value,
+  ...bvDiketahuiDirectors.value,
+]);
+const selectableDirectors = computed(() => bodDirectors.value.filter((d) => d.nama || d.jabatan));
+
+const allBvVerified = computed(() => {
+  const rows = [...bvRows.value, ...bvDitetapkanRows.value];
+  return rows.length > 0 && rows.every((r) => r.status === 'verified');
+});
 
 const isCompleted = computed(() => allBvVerified.value);
 const isEditable = computed(() => isBlankoVerbal.value && !isCompleted.value);
@@ -161,13 +188,89 @@ function isUserApprover(row: ApprovalRow) {
   );
 }
 
-const isCurrentUserApprover = computed(() => bvRows.value.some(isUserApprover));
+const isCurrentUserApprover = computed(() =>
+  [...bvRows.value, ...bvDitetapkanRows.value].some(isUserApprover)
+);
 const canApprove = computed(() => isCurrentUserApprover.value);
+
+function isDirut(director: DirectorApprovalItem) {
+  return /direktur\s*utama/i.test(director.jabatan || '');
+}
+
+function compactDirector(director: DirectorApprovalItem): DirectorApprovalItem {
+  return {
+    nama: director.nama,
+    jabatan: director.jabatan,
+    positionId: director.positionId,
+    persnum: director.persnum,
+  };
+}
+
+function cleanFormPayload(): SheetFormModel {
+  const cleanDirector = (director: DirectorApprovalItem) => ({
+    nama: director.nama,
+    jabatan: director.jabatan,
+    positionId: director.positionId,
+    persnum: director.persnum,
+  });
+  return {
+    ...form.value,
+    ditetapkanOleh: form.value.ditetapkanOleh?.map(cleanDirector),
+    diketahuiOleh: form.value.diketahuiOleh?.map(cleanDirector),
+  };
+}
+
+function latestPemrakarsaApproval() {
+  const rows = (detail.value?.riwayat ?? [])
+    .filter((row) => row.tahap === 'persetujuan' && row.aksi !== 'tolak')
+    .sort((a, b) => (a.tanggal < b.tanggal ? 1 : a.tanggal > b.tanggal ? -1 : 0));
+  return rows[0] ?? null;
+}
+
+function initDirectorSelection() {
+  if (!isEditable.value && (bvDirectors.value.length || bvDitetapkanRows.value.length)) {
+    form.value.diketahuiOleh = bvRows.value.map((a, idx) =>
+      compactDirector({
+        index: a.urutan ?? idx + 1,
+        nama: a.nama,
+        jabatan: a.jabatan,
+        positionId: a.positionId,
+        persnum: a.persnum,
+      })
+    );
+    if (bvDitetapkanRows.value.length) {
+      form.value.ditetapkanOleh = bvDitetapkanRows.value.map((a, idx) =>
+        compactDirector({
+          index: a.urutan ?? idx + 1,
+          nama: a.nama,
+          jabatan: a.jabatan,
+          positionId: a.positionId,
+          persnum: a.persnum,
+        })
+      );
+    }
+    return;
+  }
+  if (!selectableDirectors.value.length) return;
+  if (!Array.isArray(form.value.ditetapkanOleh)) {
+    const dirut = selectableDirectors.value.find(isDirut);
+    form.value.ditetapkanOleh = [compactDirector(dirut ?? selectableDirectors.value[0])];
+  }
+  if (!Array.isArray(form.value.diketahuiOleh)) {
+    const nonDirut = selectableDirectors.value.filter((d) => !isDirut(d));
+    form.value.diketahuiOleh = (nonDirut.length ? nonDirut : selectableDirectors.value).map(
+      compactDirector
+    );
+  }
+}
 
 function buildInitialForm() {
   const d = detail.value;
   const u = user.value;
   if (!d) return;
+  const pemrakarsaApproval = latestPemrakarsaApproval();
+  const pemrakarsaNama = pemrakarsaApproval?.aktor || d.pemrakarsa?.nama || '';
+  const pemrakarsaJabatan = pemrakarsaApproval?.jabatan || d.pemrakarsa?.jabatan || '';
   if (d.tanggal) {
     form.value.tanggal = d.tanggal;
     const parts = d.tanggal.split('-');
@@ -177,10 +280,10 @@ function buildInitialForm() {
   }
   form.value.nomor = form.value.nomor ?? d.nomor ?? '';
   form.value.perihal = form.value.perihal ?? d.perihal ?? '';
-  form.value.diusulkanOleh = form.value.diusulkanOleh ?? d.pemrakarsa?.nama ?? '';
-  form.value.jabatanDiusulkan = form.value.jabatanDiusulkan ?? d.pemrakarsa?.jabatan ?? '';
+  form.value.diusulkanOleh = form.value.diusulkanOleh ?? pemrakarsaNama;
+  form.value.jabatanDiusulkan = form.value.jabatanDiusulkan ?? pemrakarsaJabatan;
   form.value.klasifikasi = form.value.klasifikasi ?? d.klasifikasi ?? '';
-  form.value.referensiDari = form.value.referensiDari ?? d.pemrakarsa?.nama ?? '';
+  form.value.referensiDari = form.value.referensiDari ?? pemrakarsaNama;
   form.value.alamatInfo = form.value.alamatInfo ?? u?.alamatInfo;
   form.value.lampiran = form.value.lampiran ?? '1 (satu) berkas';
 
@@ -219,6 +322,7 @@ async function loadDetail() {
   try {
     await fetchDetail(id.value);
     buildInitialForm();
+    initDirectorSelection();
   } catch {
     toast.add({ title: 'Gagal memuat detail naskah', color: 'error' });
   } finally {
@@ -229,6 +333,7 @@ async function loadDetail() {
 async function loadBod() {
   try {
     bodDirectors.value = await fetchBodDirectors();
+    initDirectorSelection();
   } catch {
     toast.add({ title: 'Gagal memuat daftar direksi', color: 'error' });
   }
@@ -240,13 +345,24 @@ function apiErrorMessage(e) {
 }
 
 async function generatePreviewPdf() {
+  if (!form.value.diketahuiOleh?.length) {
+    toast.add({
+      title: 'Pilih minimal satu direksi pada Diketahui Oleh',
+      color: 'warning',
+    });
+    return;
+  }
   busy.value = true;
   loadingMessage.value = t('kj_memproses_pratinjau');
   try {
-    pdfUrl.value = await previewBlankoVerbal(id.value, form.value, catatan.value);
+    pdfUrl.value = await previewBlankoVerbal(id.value, cleanFormPayload(), catatan.value);
     pdfModalOpen.value = true;
   } catch (e) {
-    toast.add({ title: 'Gagal membuat preview PDF', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal membuat preview PDF',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     loadingMessage.value = '';
@@ -254,15 +370,26 @@ async function generatePreviewPdf() {
 }
 
 async function kirim() {
+  if (!form.value.diketahuiOleh?.length) {
+    toast.add({
+      title: 'Pilih minimal satu direksi pada Diketahui Oleh',
+      color: 'warning',
+    });
+    return;
+  }
   busy.value = true;
   loadingMessage.value = 'Mengirim blanko verbal…';
   try {
-    await kirimBlankoVerbal(id.value, form.value, catatan.value);
+    await kirimBlankoVerbal(id.value, cleanFormPayload(), catatan.value);
     toast.add({ title: 'Blanko verbal dikirim', color: 'success' });
     pdfModalOpen.value = false;
-    await loadDetail();
+    await navigateTo('/naskah-lainnya/legal-drafting?status=menunggu');
   } catch (e) {
-    toast.add({ title: 'Gagal mengirim blanko verbal', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal mengirim blanko verbal',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     loadingMessage.value = '';
@@ -278,7 +405,11 @@ async function lanjutTandaTangan() {
     advanceModalOpen.value = false;
     navigateTo(`/naskah-lainnya/${id.value}/tanda-tangan`);
   } catch (e) {
-    toast.add({ title: 'Gagal meneruskan ke tanda tangan', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal meneruskan ke tanda tangan',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     loadingMessage.value = '';
@@ -301,7 +432,7 @@ async function confirmParaf(note: string) {
   busy.value = true;
   loadingMessage.value = 'Menyimpan paraf…';
   try {
-    await parafBlankoVerbal(id.value, form.value, note || undefined);
+    await parafBlankoVerbal(id.value, cleanFormPayload(), note || undefined);
     toast.add({ title: 'Paraf tercatat', color: 'success' });
     parafModalOpen.value = false;
     parafCatatan.value = '';
@@ -330,7 +461,11 @@ async function confirmTolak(note: string) {
     activeDirector.value = null;
     navigateTo(`/naskah-lainnya/${id.value}/legal-drafting`);
   } catch (e) {
-    toast.add({ title: 'Gagal menolak blanko verbal', description: apiErrorMessage(e), color: 'error' });
+    toast.add({
+      title: 'Gagal menolak blanko verbal',
+      description: apiErrorMessage(e),
+      color: 'error',
+    });
   } finally {
     busy.value = false;
     loadingMessage.value = '';
@@ -348,7 +483,9 @@ onMounted(async () => {
   <div v-else class="space-y-5">
     <PageHeader :items="breadcrumbs">
       <template #title>
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ detail?.perihal || 'Memuat…' }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {{ detail?.perihal || 'Memuat…' }}
+        </h1>
       </template>
     </PageHeader>
 
@@ -379,7 +516,9 @@ onMounted(async () => {
 
       <UCard
         variant="soft"
-        :ui="{ root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors' }"
+        :ui="{
+          root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors',
+        }"
       >
         <div class="flex-1 overflow-y-auto space-y-1">
           <!-- Banner: ditolak dari persetujuan direksi -->
@@ -387,15 +526,22 @@ onMounted(async () => {
             v-if="rejectedPersetujuanDireksiRow"
             class="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 dark:border-red-900/50 dark:bg-red-950/30"
           >
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm"
+            >
               <UIcon name="i-lucide-circle-x" class="size-5" />
             </span>
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-bold text-red-700 dark:text-red-300">Ditolak dari Persetujuan Direksi</p>
+              <p class="text-sm font-bold text-red-700 dark:text-red-300">
+                Ditolak dari Persetujuan Direksi
+              </p>
               <p class="mt-0.5 text-xs text-red-600/80 dark:text-red-400/80">
                 Perbaiki naskah sesuai alasan penolakan, lalu kirim ulang blanko verbal:
               </p>
-              <p v-if="rejectedPersetujuanDireksiRow.catatan" class="mt-1 text-sm italic text-gray-800 dark:text-gray-100">
+              <p
+                v-if="rejectedPersetujuanDireksiRow.catatan"
+                class="mt-1 text-sm italic text-gray-800 dark:text-gray-100"
+              >
                 &ldquo;{{ rejectedPersetujuanDireksiRow.catatan }}&rdquo;
               </p>
             </div>
@@ -407,7 +553,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Nomor</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Nomor</span
+                >
                 <input
                   type="text"
                   v-model="form.nomor"
@@ -423,7 +572,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Diusulkan Oleh</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Diusulkan Oleh</span
+                >
                 <input
                   type="text"
                   v-model="form.diusulkanOleh"
@@ -433,11 +585,34 @@ onMounted(async () => {
               </div>
             </div>
 
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
+                v-model="form.ditetapkanOleh"
+                label="Ditetapkan/Disahkan Oleh"
+                hint="nama bisa diganti bila delegasi"
+                placeholder="Pilih direksi penetap"
+                :recipients="selectableDirectors"
+              />
+            </div>
+
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
+                v-model="form.diketahuiOleh"
+                label="Diketahui Oleh"
+                hint="urutan paraf direksi"
+                placeholder="Pilih direksi paraf"
+                :recipients="selectableDirectors"
+              />
+            </div>
+
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Jabatan</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Jabatan</span
+                >
                 <input
                   type="text"
                   v-model="form.jabatanDiusulkan"
@@ -451,7 +626,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Perihal</span
+                >
                 <input
                   type="text"
                   v-model="form.perihal"
@@ -465,7 +643,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Referensi Dari</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Referensi Dari</span
+                >
                 <input
                   type="text"
                   v-model="form.referensiDari"
@@ -479,7 +660,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Referensi Nomor</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Referensi Nomor</span
+                >
                 <input
                   type="text"
                   v-model="form.referensiNomor"
@@ -495,7 +679,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Klasifikasi</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Klasifikasi</span
+                >
                 <input
                   type="text"
                   v-model="form.klasifikasi"
@@ -509,7 +696,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Lampiran</span
+                >
                 <input
                   type="text"
                   v-model="form.lampiran"
@@ -523,7 +713,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Legal Drafter</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Legal Drafter</span
+                >
                 <input
                   type="text"
                   v-model="form.legalDrafter"
@@ -537,7 +730,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Legal Checker</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Legal Checker</span
+                >
                 <input
                   type="text"
                   v-model="form.legalChecker"
@@ -552,7 +748,10 @@ onMounted(async () => {
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
             >
               <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Catatan</span>
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Catatan</span
+                >
                 <textarea
                   v-model="catatan"
                   rows="2"
@@ -578,17 +777,46 @@ onMounted(async () => {
           <template v-if="!isEditable && bvDirectors.length > 0">
             <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
               <div class="flex items-center gap-2 mb-3">
-                <UIcon name="i-lucide-users" class="size-4 text-primary-600 dark:text-primary-400" />
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Progress Persetujuan Blanko Verbal</h3>
+                <UIcon
+                  name="i-lucide-users"
+                  class="size-4 text-primary-600 dark:text-primary-400"
+                />
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  Progress Persetujuan Blanko Verbal
+                </h3>
               </div>
-              <DireksiApprovalProgress
-                :directors="bvDirectors"
-                :is-current-user-approver="isCurrentUserApprover"
-                :can-approve="canApprove"
-                :busy="busy"
-                @paraf="paraf"
-                @tolak="tolak"
-              />
+              <div class="space-y-4">
+                <div v-if="bvDitetapkanDirectors.length" class="space-y-2">
+                  <h4
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    Ditetapkan/Disahkan Oleh
+                  </h4>
+                  <DireksiApprovalProgress
+                    :directors="bvDitetapkanDirectors"
+                    :is-current-user-approver="isCurrentUserApprover"
+                    :can-approve="canApprove"
+                    :busy="busy"
+                    @paraf="paraf"
+                    @tolak="tolak"
+                  />
+                </div>
+                <div v-if="bvDiketahuiDirectors.length" class="space-y-2">
+                  <h4
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    Diketahui Oleh
+                  </h4>
+                  <DireksiApprovalProgress
+                    :directors="bvDiketahuiDirectors"
+                    :is-current-user-approver="isCurrentUserApprover"
+                    :can-approve="canApprove"
+                    :busy="busy"
+                    @paraf="paraf"
+                    @tolak="tolak"
+                  />
+                </div>
+              </div>
             </div>
           </template>
 
@@ -597,11 +825,13 @@ onMounted(async () => {
             class="flex flex-col gap-3 border-t border-gray-100 py-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
           >
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ isEditable
-                ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim blanko ke direksi untuk diparaf.'
-                : isCompleted
-                  ? 'Seluruh direksi telah memaraf. Teruskan naskah ke tahap tanda tangan.'
-                  : 'Blanko verbal sedang menunggu proses paraf direksi.' }}
+              {{
+                isEditable
+                  ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim blanko ke direksi untuk diparaf.'
+                  : isCompleted
+                    ? 'Seluruh direksi telah memaraf. Teruskan naskah ke tahap tanda tangan.'
+                    : 'Blanko verbal sedang menunggu proses paraf direksi.'
+              }}
             </p>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
               <UButton
@@ -624,12 +854,17 @@ onMounted(async () => {
       >
         <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400"
+            >
               <UIcon name="i-lucide-signature" class="size-5" />
             </span>
             <div>
               <h3 class="font-semibold text-gray-900 dark:text-white">Lanjutkan ke Tanda Tangan</h3>
-              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Seluruh direksi telah memberikan paraf. Naskah dapat diteruskan ke tahap tanda tangan.</p>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Seluruh direksi telah memberikan paraf. Naskah dapat diteruskan ke tahap tanda
+                tangan.
+              </p>
             </div>
           </div>
           <UButton
@@ -661,7 +896,11 @@ onMounted(async () => {
       >
         <template #body>
           <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-            <iframe v-if="pdfUrl" :src="pdfUrl" class="w-full h-full rounded-lg shadow-lg border border-gray-200" />
+            <iframe
+              v-if="pdfUrl"
+              :src="pdfUrl"
+              class="w-full h-full rounded-lg shadow-lg border border-gray-200"
+            />
             <div v-else class="flex flex-col items-center gap-2">
               <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
               <span class="text-gray-500">Memuat pratinjau…</span>
