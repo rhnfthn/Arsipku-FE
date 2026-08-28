@@ -207,7 +207,9 @@ export const useAuth = () => {
 
   const hasPermission = (resource: string, action: string): boolean => {
     // Superadmin bypass — punya semua permission
-    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '').toUpperCase();
+    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '')
+      .toUpperCase()
+      .replace(/[\s_-]/g, '');
     if (role === 'SUPERADMIN') return true;
     const perms = user.value?.activePermissions || [];
     return perms.some(
@@ -228,9 +230,10 @@ export const useAuth = () => {
 
   const hasRole = (roleName: string): boolean => {
     const active = user.value?.activeRole?.name;
-    if (active && active.toUpperCase() === roleName.toUpperCase()) return true;
+    const normalizeRole = (role: string) => role.toUpperCase().replace(/[\s_-]/g, '');
+    if (active && normalizeRole(active) === normalizeRole(roleName)) return true;
     const fallback = user.value?.role;
-    return !!fallback && fallback.toLowerCase() === roleName.toLowerCase();
+    return !!fallback && normalizeRole(fallback) === normalizeRole(roleName);
   };
 
   const hasAnyRole = (roleNames: string[]): boolean => roleNames.some(hasRole);

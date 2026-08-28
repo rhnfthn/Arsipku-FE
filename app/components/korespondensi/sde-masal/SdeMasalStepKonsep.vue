@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 overflow-y-auto">
     <!-- Section: Konsep Surat -->
-    <div class="space-y-1">
+    <div class="sde-masal-konsep-form space-y-1">
       <!-- Tanggal Konsep Surat -->
       <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" />
 
@@ -23,27 +23,6 @@
       <!-- Sifat Surat (opsional) -->
       <TulisInputSifat v-model="sifatModel" />
 
-      <!-- Perihal -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-        <div class="flex flex-col sm:flex-row sm:items-center w-full">
-          <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
-          <div class="flex items-center flex-1 w-full gap-2">
-            <input
-              type="text"
-              v-model="perihalModel"
-              :maxlength="maxPerihal"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-              placeholder="Ketik Perihal Surat"
-            />
-            <span
-              class="text-[10px] font-mono shrink-0 transition-colors"
-              :class="(perihalModel || '').length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'"
-            >
-              {{ (perihalModel || '').length }}/{{ maxPerihal }}
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -71,7 +50,6 @@ const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const senderItems = ref<any[]>([]);
 const senderLoading = ref(false);
-const maxPerihal = 200;
 
 const setSenderItems = (rows: any[]) => {
   senderItems.value = rows.map((r: any) => ({
@@ -100,7 +78,22 @@ const dateModel = ref<CalendarDate>(
 const klasifikasiModel = ref<string | null>(null);
 const senderModel = ref<any>(undefined);
 const sifatModel = ref<string | null>('biasa');
-const perihalModel = ref<string>('');
+const restoredFromDraft = ref(false);
+
+const restoreDraftForm = () => {
+  if (restoredFromDraft.value || !model.value) return;
+  const saved = model.value;
+  if (saved.tanggalKonsep) {
+    const [year, month, day] = saved.tanggalKonsep.split('-').map(Number);
+    if (year && month && day) dateModel.value = new CalendarDate(year, month, day);
+  }
+  klasifikasiModel.value = saved.klasifikasiId || null;
+  senderModel.value = saved.pengirimId
+    ? { value: saved.pengirimId, label: saved.pengirimName }
+    : undefined;
+  sifatModel.value = saved.sifat || 'biasa';
+  restoredFromDraft.value = true;
+};
 
 // --- Computed untuk konversi tanggal ---
 const tanggalKonsepStr = computed(() => {
@@ -112,7 +105,7 @@ const klasifikasiObj = computed(() => klasifikasiList.value.find((k: Klasifikasi
 
 // --- Sync ke model parent ---
 watch(
-  [dateModel, klasifikasiModel, senderModel, sifatModel, perihalModel],
+  [dateModel, klasifikasiModel, senderModel, sifatModel],
   () => {
     model.value = {
       tanggalKonsep: tanggalKonsepStr.value,
@@ -123,12 +116,13 @@ watch(
       pengirimId: String(senderModel.value?.value || ''),
       pengirimName: senderModel.value?.label || '',
       sifat: sifatModel.value || 'biasa',
-      perihal: perihalModel.value || '',
       parentNaskahId: props.parentNaskahId || undefined,
     };
   },
   { deep: true }
 );
+
+watch(model, restoreDraftForm, { immediate: true, deep: true });
 
 // --- Fetch pengirim (dengan fallback ke managerial) ---
 const fetchSenderList = async (posId: string | number) => {
@@ -201,3 +195,11 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+@media (min-width: 640px) {
+  :deep(.sde-masal-konsep-form > div > div:last-child) {
+    margin-left: 1.5rem;
+  }
+}
+</style>
