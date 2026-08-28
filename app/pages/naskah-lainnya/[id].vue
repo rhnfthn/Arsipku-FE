@@ -18,8 +18,15 @@ useHead({ title: 'Detail Naskah Lainnya' });
 
 const route = useRoute();
 const { t } = useI18n();
-const { detail, pending, error, fetchDetail, uploadDokumenFinalManual, ubahStatusFinalManual } =
-  useNaskahLainnya();
+const {
+  detail,
+  pending,
+  error,
+  fetchDetail,
+  uploadDokumenFinalManual,
+  ubahStatusFinalManual,
+  ubahNomorFinalManual,
+} = useNaskahLainnya();
 const { apiGet } = useApi();
 const { user } = useAuth();
 const toast = useToast();
@@ -54,6 +61,14 @@ const canManageManualFinal = computed(() =>
 const isManualFinal = computed(() => detail.value?.manualFinalStatus === 'final');
 const manualFinalBusy = ref(false);
 const manualFinalInput = ref<HTMLInputElement | null>(null);
+const manualFinalNomor = ref('');
+watch(
+  () => detail.value?.nomor,
+  (nomor) => {
+    manualFinalNomor.value = nomor ?? '';
+  },
+  { immediate: true }
+);
 
 // ── Approval dikelompokkan per tahap (fase) — pemrakarsa & legal unit terpisah ──
 const APPROVAL_TAHAP_ORDER = [
@@ -61,7 +76,9 @@ const APPROVAL_TAHAP_ORDER = [
   'persetujuan',
   'legal_drafting',
   'evaluasi',
+  'persetujuan_direksi_ditetapkan',
   'persetujuan_direksi',
+  'blanko_verbal_ditetapkan',
   'blanko_verbal',
   'tanda_tangan',
 ];
@@ -70,8 +87,10 @@ const APPROVAL_TAHAP_LABEL: Record<string, string> = {
   persetujuan: 'Approval Pemrakarsa',
   legal_drafting: 'Approval Legal Unit',
   evaluasi: 'Evaluasi',
-  persetujuan_direksi: 'Persetujuan Direksi',
-  blanko_verbal: 'Blanko Verbal',
+  persetujuan_direksi_ditetapkan: 'Ditetapkan/Disahkan Oleh',
+  persetujuan_direksi: 'Diketahui Oleh',
+  blanko_verbal_ditetapkan: 'Ditetapkan/Disahkan Oleh',
+  blanko_verbal: 'Diketahui Oleh',
   tanda_tangan: 'Tanda Tangan',
 };
 const tahapLabel = (t: string) => APPROVAL_TAHAP_LABEL[t] ?? t;
@@ -80,7 +99,14 @@ const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRo
   const byTahap = detail.value?.approvalByTahap;
   let map: Record<string, ApprovalRow[]>;
   if (byTahap) {
-    map = byTahap;
+    map = { ...byTahap };
+    // approvalByTahap dapat dibatasi sesuai POV, sedangkan flat approval selalu
+    // lengkap. Gabungkan per ID agar satu tahap yang sudah memiliki satu baris
+    // (mis. Direksi) tetap menerima baris approver lainnya.
+    for (const a of detail.value?.approval ?? []) {
+      const rows = (map[a.tahap] ??= []);
+      if (!rows.some((row) => row.id === a.id)) rows.push(a);
+    }
   } else {
     // Fallback: kelompokkan flat approval client-side (sebelum BE restart).
     map = {};
@@ -90,6 +116,63 @@ const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRo
   const ordered = APPROVAL_TAHAP_ORDER.filter((k) => present.includes(k));
   const rest = present.filter((k) => !APPROVAL_TAHAP_ORDER.includes(k));
   return [...ordered, ...rest].map((k) => ({ tahap: k, label: tahapLabel(k), rows: map[k] ?? [] }));
+});
+
+type ApprovalDisplayGroup = {
+  tahap: string;
+  label: string;
+  rows: ApprovalRow[];
+  children?: { tahap: string; label: string; rows: ApprovalRow[] }[];
+};
+
+const approvalDisplayGroups = computed<ApprovalDisplayGroup[]>(() => {
+  const byTahap = new Map(approvalGroups.value.map((group) => [group.tahap, group]));
+  const used = new Set<string>();
+  const groups: ApprovalDisplayGroup[] = [];
+
+  function buildComposite(
+    tahap: string,
+    label: string,
+    children: { tahap: string; label: string }[]
+  ) {
+    const presentChildren = children
+      .map((child) => {
+        const group = byTahap.get(child.tahap);
+        return group ? { tahap: child.tahap, label: child.label, rows: group.rows } : null;
+      })
+      .filter(Boolean) as { tahap: string; label: string; rows: ApprovalRow[] }[];
+    if (!presentChildren.length) return null;
+    presentChildren.forEach((child) => used.add(child.tahap));
+    return {
+      tahap,
+      label,
+      rows: presentChildren.flatMap((child) => child.rows),
+      children: presentChildren,
+    };
+  }
+
+  for (const group of approvalGroups.value) {
+    if (used.has(group.tahap)) continue;
+    if (group.tahap === 'persetujuan_direksi_ditetapkan' || group.tahap === 'persetujuan_direksi') {
+      const composite = buildComposite('persetujuan_direksi', 'Persetujuan Direksi', [
+        { tahap: 'persetujuan_direksi_ditetapkan', label: 'Ditetapkan/Disahkan Oleh' },
+        { tahap: 'persetujuan_direksi', label: 'Diketahui Oleh' },
+      ]);
+      if (composite) groups.push(composite);
+      continue;
+    }
+    if (group.tahap === 'blanko_verbal_ditetapkan' || group.tahap === 'blanko_verbal') {
+      const composite = buildComposite('blanko_verbal', 'Blanko Verbal', [
+        { tahap: 'blanko_verbal_ditetapkan', label: 'Ditetapkan/Disahkan Oleh' },
+        { tahap: 'blanko_verbal', label: 'Diketahui Oleh' },
+      ]);
+      if (composite) groups.push(composite);
+      continue;
+    }
+    groups.push(group);
+  }
+
+  return groups;
 });
 
 // ── Langkah Verifikasi (stepper dari approval berjenjang, per fase) ──
@@ -113,18 +196,39 @@ const stepStyle = (status: string) => ({
 });
 
 const approvalStepGroups = computed(() =>
-  approvalGroups.value.map((g) => ({
+  approvalDisplayGroups.value.map((g) => ({
     tahap: g.tahap,
     label: g.label,
-    steps: g.rows.map((a, index) => ({
-      id: a.id || `${g.tahap}-${index}`,
-      label: a.nama || `Verifikator ${index + 1}`,
-      status: a.status,
-      num: index + 1,
-      ...stepStyle(a.status),
+    children: (g.children?.length ? g.children : [g]).map((child) => ({
+      tahap: child.tahap,
+      label: child.label,
+      // Approval direksi/blanko dikirim ke seluruh direksi secara bersamaan;
+      // bukan rantai approval berjenjang, sehingga tidak boleh divisualkan
+      // dengan nomor dan garis urutan.
+      isParallel: [
+        'persetujuan_direksi_ditetapkan',
+        'persetujuan_direksi',
+        'blanko_verbal_ditetapkan',
+        'blanko_verbal',
+      ].includes(child.tahap),
+      steps: child.rows.map((a, index) => ({
+        id: a.id || `${child.tahap}-${index}`,
+        label: a.nama || `Verifikator ${index + 1}`,
+        jabatan: a.jabatan || '',
+        status: a.status,
+        num: index + 1,
+        ...stepStyle(a.status),
+      })),
     })),
   }))
 );
+
+const approvalStatusLabel = (status: string) => {
+  if (status === 'verified') return 'Disetujui';
+  if (status === 'rejected') return 'Ditolak';
+  if (status === 'waiting') return 'Menunggu';
+  return 'Belum diproses';
+};
 
 const progressLabel = computed(() => {
   const list = detail.value?.approval ?? [];
@@ -187,7 +291,7 @@ const canBuatLembarPersetujuanDireksi = computed(() =>
 
 // Approver legal dengan giliran aktif (baris waiting urutan terendah = milik user).
 // availableActions=[] saat ada waiting legal rows → toolbar aksi hide, jadi butuh
-// jalur sendiri untuk mengarahkan approver ke halaman legal-drafting (setuju/tolak).
+// jalur sendiri untuk mengarahkan approver ke workspace approval legal.
 const canProsesLegalApproval = computed(() => {
   if (tahapan.value !== 'legal_drafting' || !user.value) return false;
   const rows = (detail.value?.approval ?? [])
@@ -200,6 +304,10 @@ const canProsesLegalApproval = computed(() => {
   if (r === 'SUPERADMIN' || ar === 'SUPERADMIN') return true;
   return !!(active.nama && user.value.nama && active.nama === user.value.nama);
 });
+
+function goToLegalApprovalWorkspace() {
+  navigateTo(`/naskah-lainnya/${id.value}/persetujuan?tahap=legal_drafting`);
+}
 
 const actionDescription = computed(() => {
   const t = tahapan.value;
@@ -230,6 +338,11 @@ const actionDescription = computed(() => {
 // ── Toggle expand timeline ──
 const timelineExpanded = ref(true);
 const workflowExpanded = ref(true);
+const verificationExpanded = ref(true);
+const approvalExpanded = ref(true);
+const informationExpanded = ref(true);
+const documentExpanded = ref(true);
+const signerExpanded = ref(true);
 
 // ── Modal Setuju/Tolak (standarisasi VerifyActionModal) ──
 const showApproveModal = ref(false);
@@ -346,10 +459,9 @@ function fileMeta(d: DokumenFile) {
 const dokumenTab = ref(0);
 const dokumenTabs = [
   { label: 'Naskah', icon: 'i-lucide-file-text' },
-  { label: 'Naskah Fisik', icon: 'i-lucide-folder' },
+  { label: 'Lembar PD', icon: 'i-lucide-stamp' },
   { label: 'Blanko Verbal', icon: 'i-lucide-file-check' },
   { label: 'Dok. Pendukung', icon: 'i-lucide-paperclip' },
-  { label: 'Lembar PD', icon: 'i-lucide-stamp' },
 ];
 
 const dokumenTerkait = computed<DokumenFile[]>(() => {
@@ -358,13 +470,22 @@ const dokumenTerkait = computed<DokumenFile[]>(() => {
   if (!Array.isArray(all)) return [];
   const t = dokumenTab.value;
   const tipe = [
-    'naskah',
-    'naskah_fisik',
-    'blanko_verbal',
-    'pendukung',
+    ['naskah', 'naskah_fisik'],
     'lembar_persetujuan_direksi_pdf',
+    ['blanko_verbal', 'blanko_verbal_pdf'],
+    'pendukung',
   ][t];
-  return all.filter((d) => d.tipe === tipe);
+  const filtered = all.filter((d) =>
+    Array.isArray(tipe) ? tipe.includes(d.tipe) : d.tipe === tipe
+  );
+  // Dokumen final adalah artefak utama yang harus langsung terlihat. Sisanya
+  // tetap diurutkan berdasarkan pembaruan terbaru di bawahnya.
+  return filtered.sort((a, b) => {
+    const rank = (d: DokumenFile) => (['final', 'dittd'].includes(d.status) ? 0 : 1);
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+    return new Date(b.tanggal ?? 0).getTime() - new Date(a.tanggal ?? 0).getTime();
+  });
 });
 
 // Bangun URL proxy file naskah dari BE (`/naskah-lainnya/:id/file`).
@@ -420,7 +541,10 @@ async function openPreviewFromBlob(blob: Blob, nama: string) {
   }
   previewDocxBuffer.value = null;
   if (isPdf) {
-    previewUrl.value = window.URL.createObjectURL(blob);
+    // Re-wrap sebagai application/pdf → viewer bawaan browser (Chromium PDFium)
+    // merender toolbar download/print/zoom, sama seperti pratinjau kotak masuk.
+    const pdf = new Blob([await blob.arrayBuffer()], { type: 'application/pdf' });
+    previewUrl.value = window.URL.createObjectURL(pdf);
     previewOpen.value = true;
   } else if (isDocx) {
     previewDocxBuffer.value = await blob.arrayBuffer();
@@ -557,6 +681,25 @@ async function setManualFinalStatus(final: boolean) {
   }
 }
 
+async function saveManualFinalNomor() {
+  if (!canManageManualFinal.value || manualFinalBusy.value) return;
+  const nomor = manualFinalNomor.value.trim();
+  if (!nomor) {
+    toast.add({ title: 'Nomor naskah wajib diisi', color: 'warning' });
+    return;
+  }
+  manualFinalBusy.value = true;
+  try {
+    await ubahNomorFinalManual(id.value, nomor);
+    toast.add({ title: 'Nomor naskah fisik diperbarui', color: 'success' });
+  } catch (e: any) {
+    const message = e?.response?.data?.message ?? 'Gagal mengubah nomor naskah.';
+    toast.add({ title: 'Perubahan nomor gagal', description: message, color: 'error' });
+  } finally {
+    manualFinalBusy.value = false;
+  }
+}
+
 // ── Aksi per-versi naskah (timeline) — pakai endpoint per dokumenId (tipe-agnostic). ──
 async function lihatVersi(dokumenId: string) {
   const id_ = detail.value?.id;
@@ -654,6 +797,7 @@ const ACTION_META: Record<
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
   },
+  paraf: { label: 'Setujui', icon: 'i-lucide-check', color: 'success', variant: 'approve' },
   'tanda-tangan': {
     label: 'Tanda Tangani',
     icon: 'i-lucide-pen-tool',
@@ -675,8 +819,14 @@ const actionTo = (a: JenisAksi) => {
 // naskah saat ini. Dipakai setuju/tolak persetujuan maupun legal_drafting.
 function activeApprovalRow() {
   const tahapNow = detail.value?.tahapan;
+  const tahaps =
+    tahapNow === 'persetujuan_direksi'
+      ? ['persetujuan_direksi_ditetapkan', 'persetujuan_direksi']
+      : tahapNow === 'blanko_verbal'
+        ? ['blanko_verbal_ditetapkan', 'blanko_verbal']
+        : [tahapNow];
   return detail.value?.approval
-    .filter((ap) => ap.status === 'waiting' && ap.tahap === tahapNow)
+    .filter((ap) => ap.status === 'waiting' && tahaps.includes(ap.tahap))
     .sort((x, y) => x.urutan - y.urutan)[0];
 }
 
@@ -688,7 +838,7 @@ function openActionModal(a: JenisAksi) {
     return;
   }
   pendingAction.value = a;
-  if (a === 'setuju') {
+  if (a === 'setuju' || a === 'paraf') {
     showApproveModal.value = true;
   } else if (a === 'tolak') {
     showRejectModal.value = true;
@@ -701,6 +851,35 @@ function openActionModal(a: JenisAksi) {
   }
 }
 
+function buildSheetActionPayload() {
+  const rows = detail.value?.approval ?? [];
+  const directorPayload = (tahap: string) =>
+    rows
+      .filter((row) => row.tahap === tahap)
+      .map((row) => ({
+        nama: row.nama,
+        jabatan: row.jabatan,
+        positionId: row.positionId,
+        persnum: row.persnum,
+      }));
+  const tahapan = detail.value?.tahapan;
+  return {
+    tanggal: detail.value?.tanggal,
+    nomor: detail.value?.nomor,
+    diusulkanOleh: detail.value?.pemrakarsa?.nama,
+    jabatanDiusulkan: detail.value?.pemrakarsa?.jabatan,
+    perihal: detail.value?.perihal,
+    klasifikasi: detail.value?.klasifikasi,
+    lampiran: '1 (satu) berkas',
+    ditetapkanOleh: directorPayload(
+      tahapan === 'blanko_verbal' ? 'blanko_verbal_ditetapkan' : 'persetujuan_direksi_ditetapkan'
+    ),
+    diketahuiOleh: directorPayload(
+      tahapan === 'blanko_verbal' ? 'blanko_verbal' : 'persetujuan_direksi'
+    ),
+  };
+}
+
 async function handleApprove(catatan: string) {
   const a = pendingAction.value;
   if (!a) return;
@@ -708,7 +887,17 @@ async function handleApprove(catatan: string) {
   savingAction.value = true;
   try {
     const nl = useNaskahLainnya();
-    if (a === 'setuju') {
+    if (a === 'paraf') {
+      if (detail.value?.tahapan === 'persetujuan_direksi') {
+        await nl.parafLembarPersetujuanDireksi(
+          naskahId,
+          buildSheetActionPayload(),
+          catatan || undefined
+        );
+      } else if (detail.value?.tahapan === 'blanko_verbal') {
+        await nl.parafBlankoVerbal(naskahId, buildSheetActionPayload(), catatan || undefined);
+      }
+    } else if (a === 'setuju') {
       const approval = activeApprovalRow();
       if (approval) await nl.setuju(naskahId, approval.id, catatan || undefined);
     } else if (a === 'kirim') {
@@ -738,7 +927,11 @@ async function handleReject(catatan: string) {
   savingAction.value = true;
   try {
     const nl = useNaskahLainnya();
-    if (a === 'tolak') {
+    if (a === 'tolak' && detail.value?.tahapan === 'persetujuan_direksi') {
+      await nl.tolakLembarPersetujuanDireksi(naskahId, catatan);
+    } else if (a === 'tolak' && detail.value?.tahapan === 'blanko_verbal') {
+      await nl.tolakBlankoVerbal(naskahId, catatan);
+    } else if (a === 'tolak') {
       const approval = activeApprovalRow();
       if (approval) await nl.tolak(naskahId, approval.id, catatan);
     } else if (a === 'evaluasi') {
@@ -1073,8 +1266,10 @@ const signLabel = computed(() =>
           v-if="approvalStepGroups.length && !isPemrakarsa"
           class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
         >
-          <div
-            class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30"
+            @click="verificationExpanded = !verificationExpanded"
           >
             <span
               class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
@@ -1092,46 +1287,122 @@ const signLabel = computed(() =>
             >
               {{ progressLabel }}
             </span>
-          </div>
-          <div class="space-y-4 px-5 py-5">
+            <UIcon
+              :name="verificationExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              class="size-5 shrink-0 text-gray-400"
+            />
+          </button>
+          <div v-show="verificationExpanded" class="space-y-4 px-5 py-5">
             <div v-for="group in approvalStepGroups" :key="group.tahap">
               <div class="mb-2 flex items-center gap-2">
                 <span
                   class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
                   >{{ group.label }}</span
                 >
-                <span class="text-xs text-gray-400">· {{ group.steps.length }}</span>
+                <span class="text-xs text-gray-400"
+                  >·
+                  {{ group.children.reduce((total, child) => total + child.steps.length, 0) }}</span
+                >
                 <div class="h-px flex-1 bg-gray-100 dark:bg-gray-700"></div>
               </div>
-              <div class="overflow-x-auto">
-                <div class="flex min-w-[400px] items-center px-1 py-2">
-                  <template v-for="(step, index) in group.steps" :key="step.id">
-                    <div class="flex min-w-36 items-center gap-3">
-                      <div
-                        class="flex size-12 shrink-0 items-center justify-center rounded-full text-base font-bold"
+              <div class="space-y-3">
+                <div
+                  v-for="child in group.children"
+                  :key="child.tahap"
+                  class="rounded-xl bg-gray-50/70 px-3 py-2.5 dark:bg-gray-900/30"
+                >
+                  <div
+                    v-if="group.children.length > 1"
+                    class="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    <span>{{ child.label }} · {{ child.steps.length }}</span>
+                    <UBadge v-if="child.isParallel" color="neutral" variant="soft" size="xs"
+                      >Paralel</UBadge
+                    >
+                  </div>
+                  <!-- Direksi & blanko: seluruh pihak menerima approval bersamaan. -->
+                  <div v-if="child.isParallel" class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    <div
+                      v-for="step in child.steps"
+                      :key="step.id"
+                      class="flex min-w-0 items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800"
+                    >
+                      <span
+                        class="flex size-9 shrink-0 items-center justify-center rounded-full"
                         :class="step.className"
                       >
                         <UIcon
                           v-if="step.status === 'verified'"
                           name="i-lucide-check"
-                          class="size-5"
+                          class="size-4"
                         />
                         <UIcon
                           v-else-if="step.status === 'rejected'"
                           name="i-lucide-x"
-                          class="size-5"
+                          class="size-4"
                         />
-                        <span v-else>{{ step.num }}</span>
+                        <UIcon v-else name="i-lucide-clock-3" class="size-4" />
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                          {{ step.label }}
+                        </p>
+                        <p
+                          v-if="step.jabatan"
+                          class="truncate text-xs text-gray-500 dark:text-gray-400"
+                        >
+                          {{ step.jabatan }}
+                        </p>
                       </div>
-                      <span class="text-sm font-semibold" :class="step.textClass">{{
-                        step.label
-                      }}</span>
+                      <span class="shrink-0 text-xs font-medium" :class="step.textClass">
+                        {{ approvalStatusLabel(step.status) }}
+                      </span>
                     </div>
                     <div
-                      v-if="index < group.steps.length - 1"
-                      class="mx-4 h-0.5 min-w-12 flex-1 bg-gray-300 dark:bg-gray-600"
-                    />
-                  </template>
+                      v-if="child.steps.length === 0"
+                      class="text-sm text-gray-400 dark:text-gray-500"
+                    >
+                      Belum ada data.
+                    </div>
+                  </div>
+                  <!-- Approval biasa tetap berjenjang. -->
+                  <div v-else class="overflow-x-auto">
+                    <div class="flex min-w-[400px] items-center px-1 py-2">
+                      <template v-for="(step, index) in child.steps" :key="step.id">
+                        <div class="flex min-w-36 items-center gap-3">
+                          <div
+                            class="flex size-12 shrink-0 items-center justify-center rounded-full text-base font-bold"
+                            :class="step.className"
+                          >
+                            <UIcon
+                              v-if="step.status === 'verified'"
+                              name="i-lucide-check"
+                              class="size-5"
+                            />
+                            <UIcon
+                              v-else-if="step.status === 'rejected'"
+                              name="i-lucide-x"
+                              class="size-5"
+                            />
+                            <span v-else>{{ step.num }}</span>
+                          </div>
+                          <span class="text-sm font-semibold" :class="step.textClass">{{
+                            step.label
+                          }}</span>
+                        </div>
+                        <div
+                          v-if="index < child.steps.length - 1"
+                          class="mx-4 h-0.5 min-w-12 flex-1 bg-gray-300 dark:bg-gray-600"
+                        />
+                      </template>
+                      <div
+                        v-if="child.steps.length === 0"
+                        class="text-sm text-gray-400 dark:text-gray-500"
+                      >
+                        Belum ada data.
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1147,8 +1418,10 @@ const signLabel = computed(() =>
           >
             <!-- Informasi Naskah -->
             <div>
-              <div
-                class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30"
+                @click="informationExpanded = !informationExpanded"
               >
                 <span
                   class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
@@ -1158,14 +1431,18 @@ const signLabel = computed(() =>
                     class="size-5 text-primary-600 dark:text-primary-400"
                   />
                 </span>
-                <div>
+                <div class="flex-1">
                   <h2 class="font-semibold text-gray-900 dark:text-white">Informasi Naskah</h2>
                   <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                     Detail metadata naskah.
                   </p>
                 </div>
-              </div>
-              <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
+                <UIcon
+                  :name="informationExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="size-5 shrink-0 text-gray-400"
+                />
+              </button>
+              <dl v-show="informationExpanded" class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
                 <div
                   class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700"
                 >
@@ -1361,8 +1638,10 @@ const signLabel = computed(() =>
 
             <!-- Dokumen -->
             <div>
-              <div
-                class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30"
+                @click="documentExpanded = !documentExpanded"
               >
                 <span
                   class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
@@ -1378,9 +1657,14 @@ const signLabel = computed(() =>
                     Dokumen terkait naskah.
                   </p>
                 </div>
-              </div>
+                <UIcon
+                  :name="documentExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="size-5 shrink-0 text-gray-400"
+                />
+              </button>
               <!-- Sub-tabs -->
               <div
+                v-show="documentExpanded"
                 class="flex gap-1 px-4 pt-3 border-b border-gray-100 dark:border-gray-700 overflow-x-auto"
               >
                 <button
@@ -1398,7 +1682,7 @@ const signLabel = computed(() =>
                   {{ tab.label }}
                 </button>
               </div>
-              <div class="p-4">
+              <div v-show="documentExpanded" class="p-4">
                 <NaskahVersiTimeline
                   v-if="dokumenTab === 0"
                   :items="dokumenTerkait"
@@ -1478,8 +1762,10 @@ const signLabel = computed(() =>
 
             <!-- Approval Chain -->
             <div>
-              <div
-                class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30"
+                @click="approvalExpanded = !approvalExpanded"
               >
                 <span
                   class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
@@ -1489,14 +1775,18 @@ const signLabel = computed(() =>
                     class="size-5 text-primary-600 dark:text-primary-400"
                   />
                 </span>
-                <div>
+                <div class="flex-1">
                   <h2 class="font-semibold text-gray-900 dark:text-white">Approval</h2>
                   <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    Daftar approver berjenjang.
+                    Daftar approver dan status persetujuan.
                   </p>
                 </div>
-              </div>
-              <div class="px-4 py-3">
+                <UIcon
+                  :name="approvalExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="size-5 shrink-0 text-gray-400"
+                />
+              </button>
+              <div v-show="approvalExpanded" class="px-4 py-3">
                 <div
                   v-if="detail.approval.length === 0"
                   class="flex items-center gap-2 py-4 text-sm text-gray-400 dark:text-gray-500"
@@ -1505,7 +1795,7 @@ const signLabel = computed(() =>
                   <span>Belum ada baris approval.</span>
                 </div>
                 <div v-else class="space-y-4">
-                  <div v-for="group in approvalGroups" :key="group.tahap" class="space-y-2">
+                  <div v-for="group in approvalDisplayGroups" :key="group.tahap" class="space-y-3">
                     <div class="flex items-center gap-2">
                       <span
                         class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
@@ -1515,31 +1805,51 @@ const signLabel = computed(() =>
                       <div class="h-px flex-1 bg-gray-100 dark:bg-gray-700"></div>
                     </div>
                     <div
-                      v-for="(a, i) in group.rows"
-                      :key="a.id"
-                      class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-gray-700"
+                      v-for="child in group.children?.length ? group.children : [group]"
+                      :key="child.tahap"
+                      class="space-y-2 rounded-xl bg-gray-50/70 p-3 dark:bg-gray-900/30"
                     >
-                      <span
-                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
-                        :class="approvalDotClass(a.status)"
-                        >{{ i + 1 }}</span
+                      <div
+                        v-if="group.children?.length"
+                        class="text-[11px] font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400"
                       >
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 dark:text-white">
-                          {{ a.nama }}
-                        </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ personaMeta(a) }}</p>
-                        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                          urutan {{ a.urutan }} · {{ fmtDateTime(a.tanggal) }}
-                        </p>
-                        <p
-                          v-if="a.catatan"
-                          class="mt-1 text-xs italic text-gray-400 dark:text-gray-500"
-                        >
-                          "{{ a.catatan }}"
-                        </p>
+                        {{ child.label }} · {{ child.rows.length }}
                       </div>
-                      <StatusBadge :status="a.status" />
+                      <div
+                        v-for="(a, i) in child.rows"
+                        :key="a.id"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800"
+                      >
+                        <span
+                          class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                          :class="approvalDotClass(a.status)"
+                          >{{ i + 1 }}</span
+                        >
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ a.nama }}
+                          </p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ personaMeta(a) }}
+                          </p>
+                          <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                            urutan {{ a.urutan }} · {{ fmtDateTime(a.tanggal) }}
+                          </p>
+                          <p
+                            v-if="a.catatan"
+                            class="mt-1 text-xs italic text-gray-400 dark:text-gray-500"
+                          >
+                            "{{ a.catatan }}"
+                          </p>
+                        </div>
+                        <StatusBadge :status="a.status" />
+                      </div>
+                      <div
+                        v-if="child.rows.length === 0"
+                        class="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-sm text-gray-400 dark:border-gray-700 dark:text-gray-500"
+                      >
+                        Belum ada data.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1548,8 +1858,10 @@ const signLabel = computed(() =>
 
             <!-- Penandatangan -->
             <div>
-              <div
-                class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700"
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 border-b border-gray-100 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/30"
+                @click="signerExpanded = !signerExpanded"
               >
                 <span
                   class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30"
@@ -1559,7 +1871,7 @@ const signLabel = computed(() =>
                     class="size-5 text-primary-600 dark:text-primary-400"
                   />
                 </span>
-                <div>
+                <div class="flex-1">
                   <h2 class="font-semibold text-gray-900 dark:text-white">Penandatangan</h2>
                   <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                     Daftar penandatangan naskah.
@@ -1567,13 +1879,17 @@ const signLabel = computed(() =>
                 </div>
                 <span
                   v-if="signedCount > 0"
-                  class="ml-auto inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400"
                 >
                   <UIcon name="i-lucide-check" class="size-3" />
                   {{ signedCount }}/{{ penandatanganList.length }} ditandatangani
                 </span>
-              </div>
-              <div class="px-4 py-3">
+                <UIcon
+                  :name="signerExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="size-5 shrink-0 text-gray-400"
+                />
+              </button>
+              <div v-show="signerExpanded" class="px-4 py-3">
                 <div
                   v-if="penandatanganList.length === 0"
                   class="flex items-center gap-2 py-4 text-sm text-gray-400 dark:text-gray-500"
@@ -1827,8 +2143,7 @@ const signLabel = computed(() =>
                 icon="i-lucide-circle-x"
                 size="lg"
                 class="w-full sm:w-auto"
-                :loading="pendingAction === 'tolak' && savingAction"
-                @click="openActionModal('tolak')"
+                @click="goToLegalApprovalWorkspace"
                 >Tolak</UButton
               >
               <UButton
@@ -1836,8 +2151,7 @@ const signLabel = computed(() =>
                 icon="i-lucide-check"
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
-                :loading="pendingAction === 'setuju' && savingAction"
-                @click="openActionModal('setuju')"
+                @click="goToLegalApprovalWorkspace"
                 >Proses Persetujuan Legal</UButton
               >
             </div>
@@ -1847,7 +2161,7 @@ const signLabel = computed(() =>
         <!-- TTD fisik/manual: tidak ada signing task. Pemrakarsa mengelola satu
            dokumen final dan statusnya langsung dari halaman detail. -->
         <section
-          v-if="showManualFinalPanel"
+          v-if="false && showManualFinalPanel"
           class="overflow-hidden rounded-xl border shadow-sm"
           :class="
             isManualFinal
@@ -1910,6 +2224,24 @@ const signLabel = computed(() =>
             </div>
 
             <div v-if="canManageManualFinal" class="flex shrink-0 flex-col gap-3 sm:items-end">
+              <div class="flex w-full gap-2 sm:w-auto">
+                <input
+                  v-model="manualFinalNomor"
+                  type="text"
+                  class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-900 outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:w-72"
+                  placeholder="Nomor naskah fisik"
+                  :disabled="manualFinalBusy"
+                />
+                <UButton
+                  color="primary"
+                  variant="soft"
+                  size="sm"
+                  icon="i-lucide-save"
+                  :loading="manualFinalBusy"
+                  @click="saveManualFinalNomor"
+                  >Simpan Nomor</UButton
+                >
+              </div>
               <div
                 class="flex w-full rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:w-auto"
               >
@@ -1943,6 +2275,14 @@ const signLabel = computed(() =>
                   detail.manualFinalFileUploaded ? 'Ganti Dokumen Final' : 'Unggah Dokumen Final'
                 }}</UButton
               >
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-pencil-line"
+                :to="`/naskah-lainnya/tulis?draft_id=${id}&mode=data-sistem`"
+                >Lengkapi Data Penandatangan</UButton
+              >
               <input
                 ref="manualFinalInput"
                 type="file"
@@ -1964,7 +2304,7 @@ const signLabel = computed(() =>
         <!-- Selesai toolbar: link kembali ke halaman selesai (naskah sudah final,
            availableActions kosong → pengganti action toolbar). -->
         <section
-          v-if="detail.tahapan === 'selesai' && (!showManualFinalPanel || isManualFinal)"
+          v-if="detail.tahapan === 'selesai'"
           class="overflow-hidden rounded-xl border border-green-200 bg-linear-to-br from-green-50 to-white p-5 shadow-sm dark:border-green-900/40 dark:from-green-900/20 dark:to-gray-800"
         >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1983,6 +2323,16 @@ const signLabel = computed(() =>
             </div>
             <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
               <UButton
+                v-if="detail.signOption === 'ttd_basah' && isPemrakarsa"
+                color="primary"
+                variant="soft"
+                size="lg"
+                icon="i-lucide-file-pen-line"
+                class="w-full font-semibold sm:w-auto"
+                :to="`/naskah-lainnya/tulis?draft_id=${id}&mode=data-sistem`"
+                >Lengkapi Data & Dokumen Final</UButton
+              >
+              <UButton
                 color="primary"
                 size="lg"
                 icon="i-lucide-eye"
@@ -1994,9 +2344,10 @@ const signLabel = computed(() =>
           </div>
         </section>
 
-        <!-- Action toolbar (di paling bawah) -->
+        <!-- Action toolbar (di paling bawah) — disembunyikan saat canProsesLegalApproval
+             karena sudah ada panel khusus "Persetujuan Legal Menunggu Anda" (hindari dobel aksi). -->
         <section
-          v-if="detail.availableActions.length"
+          v-if="detail.availableActions.length && !canProsesLegalApproval"
           class="overflow-hidden rounded-xl border border-primary-100 bg-linear-to-br from-primary-50 to-white p-5 shadow-sm dark:border-primary-900/40 dark:from-primary-900/20 dark:to-gray-800"
         >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -2014,11 +2365,12 @@ const signLabel = computed(() =>
               </div>
             </div>
             <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              <!-- Approval actions: Tolak + Setujui (untuk persetujuan) -->
+              <!-- Approval pemrakarsa dari detail hanya diarahkan ke halaman kerja persetujuan.
+                   Aksi Tolak disediakan di halaman tersebut agar user review dokumen dulu. -->
               <UButton
                 v-if="
-                  detail.availableActions.includes('setuju') ||
-                  detail.availableActions.includes('kembalikan')
+                  detail.availableActions.includes('kembalikan') &&
+                  !detail.availableActions.includes('setuju')
                 "
                 class="w-full sm:w-auto"
                 color="error"
@@ -2036,7 +2388,31 @@ const signLabel = computed(() =>
                 size="lg"
                 icon="i-lucide-arrow-right"
                 :loading="savingAction"
-                @click="openActionModal('setuju')"
+                @click="navigateTo(`/naskah-lainnya/${id}/persetujuan`)"
+                >Setujui</UButton
+              >
+              <UButton
+                v-if="
+                  detail.availableActions.includes('tolak') &&
+                  (tahapan === 'persetujuan_direksi' || tahapan === 'blanko_verbal')
+                "
+                class="w-full sm:w-auto"
+                color="error"
+                variant="outline"
+                size="lg"
+                icon="i-lucide-circle-x"
+                :loading="pendingAction === 'tolak' && savingAction"
+                @click="openActionModal('tolak')"
+                >Tolak</UButton
+              >
+              <UButton
+                v-if="detail.availableActions.includes('paraf')"
+                class="font-semibold w-full sm:w-auto"
+                color="primary"
+                size="lg"
+                icon="i-lucide-check"
+                :loading="pendingAction === 'paraf' && savingAction"
+                @click="openActionModal('paraf')"
                 >Setujui</UButton
               >
 
@@ -2121,18 +2497,6 @@ const signLabel = computed(() =>
                 >Kirim</UButton
               >
 
-              <!-- Evaluasi -->
-              <UButton
-                v-if="detail.availableActions.includes('evaluasi')"
-                color="primary"
-                icon="i-lucide-clipboard-check"
-                size="lg"
-                class="font-semibold w-full sm:w-auto"
-                :loading="pendingAction === 'evaluasi' && savingAction"
-                @click="openActionModal('evaluasi')"
-                >Evaluasi</UButton
-              >
-
               <!-- Kembalikan ke Legal Drafting (dari step evaluasi, alasan wajib) -->
               <UButton
                 v-if="detail.availableActions.includes('kembalikan-evaluasi')"
@@ -2144,6 +2508,18 @@ const signLabel = computed(() =>
                 :loading="pendingAction === 'kembalikan-evaluasi' && savingAction"
                 @click="openActionModal('kembalikan-evaluasi')"
                 >Kembalikan ke Legal</UButton
+              >
+
+              <!-- Evaluasi -->
+              <UButton
+                v-if="detail.availableActions.includes('evaluasi')"
+                color="primary"
+                icon="i-lucide-clipboard-check"
+                size="lg"
+                class="font-semibold w-full sm:w-auto"
+                :loading="pendingAction === 'evaluasi' && savingAction"
+                @click="openActionModal('evaluasi')"
+                >Evaluasi</UButton
               >
             </div>
           </div>
@@ -2224,39 +2600,34 @@ const signLabel = computed(() =>
         @confirm="handleReturn"
       />
 
-      <!-- Preview Dokumen (PDF iframe / DOCX renderAsync) -->
-      <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-4xl' }">
-        <template #content>
-          <div class="flex flex-col h-[85vh]">
+      <!-- Preview Dokumen (PDF iframe / DOCX renderAsync) — fullscreen, pola USlideover side="bottom" -->
+      <USlideover
+        v-model:open="previewOpen"
+        title="Pratinjau Dokumen"
+        description="Pratinjau dokumen"
+        side="bottom"
+        :ui="{
+          content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+          body: 'p-0',
+        }"
+      >
+        <template #body>
+          <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
             <div
-              class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+              v-if="previewLoading"
+              class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
             >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Pratinjau Dokumen</h3>
-              <UButton
-                icon="i-lucide-x"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                @click="closePreview"
-              />
+              <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
             </div>
-            <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-900">
-              <div
-                v-if="previewLoading"
-                class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
-              >
-                <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
-              </div>
-              <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
-              <div
-                v-else
-                ref="previewDocxContainer"
-                class="docx-preview-container w-full h-full overflow-auto"
-              ></div>
-            </div>
+            <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
+            <div
+              v-else
+              ref="previewDocxContainer"
+              class="docx-preview-container w-full h-full overflow-auto"
+            ></div>
           </div>
         </template>
-      </UModal>
+      </USlideover>
     </template>
 
     <!-- Nested route outlet (legal-drafting, evaluasi, tanda-tangan, dll) -->

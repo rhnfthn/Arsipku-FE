@@ -2,9 +2,12 @@
   <div class="space-y-3">
     <div
       v-for="(d, idx) in directors"
-      :key="d.index ?? idx"
+      :key="`${d.roleLabel || 'direksi'}-${d.positionId || d.nama || idx}-${idx}`"
       class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
-      :class="{ 'ring-1 ring-primary-400 dark:ring-primary-600': isCurrentUserApprover && d.status === 'waiting' }"
+      :class="{
+        'ring-1 ring-primary-400 dark:ring-primary-600':
+          isCurrentUserApprover && d.status === 'waiting',
+      }"
     >
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-start gap-3">
@@ -14,7 +17,9 @@
             {{ d.index ?? idx + 1 }}
           </div>
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ d.nama || '-' }}</p>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {{ d.nama || '-' }}
+            </p>
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ d.jabatan || '-' }}</p>
             <p v-if="d.catatan" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               <span class="font-medium">Catatan:</span> {{ d.catatan }}

@@ -93,7 +93,9 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
       path: `/korespondensi/kotak-masuk/${encodeURIComponent(naskahId)}`,
       query: {
         ...detailQuery,
-        jenis: detailQuery.jenis || (action === 'OPEN_DISPOSISI_DETAIL' || type.startsWith('DISPOSISI') ? 'DI' : 'ND'),
+        jenis:
+          detailQuery.jenis ||
+          (action === 'OPEN_DISPOSISI_DETAIL' || type.startsWith('DISPOSISI') ? 'DI' : 'ND'),
       },
     };
   }
@@ -110,6 +112,8 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_DIGSIG_DETAIL: '/digsig/penandatanganan',
     OPEN_NASKAH_DINAS_VERIFIKATOR: '/naskah-dinas/verifikator',
     OPEN_NASKAH_DINAS_DETAIL: '/naskah-dinas',
+    OPEN_NASKAH_LAINNYA_PERSETUJUAN: '/naskah-lainnya/persetujuan',
+    OPEN_NASKAH_LAINNYA_LEGAL_DRAFTING: '/naskah-lainnya/legal-drafting',
     OPEN_DELEGASI: '/delegasi',
     OPEN_SYSTEM_ANNOUNCEMENT: '/pengumuman',
   };
@@ -135,19 +139,20 @@ export const useNotifications = () => {
   const fetchNotifications = async (
     pageOrOptions: number | NotificationFetchOptions = 1,
     limit = 20,
-    force = false,
+    force = false
   ): Promise<NotificationItem[]> => {
     const options: NotificationFetchOptions =
-      typeof pageOrOptions === 'number'
-        ? { page: pageOrOptions, limit }
-        : pageOrOptions;
+      typeof pageOrOptions === 'number' ? { page: pageOrOptions, limit } : pageOrOptions;
 
     // Inflight guard — jika fetch yang sama sedang berjalan, tunggu itu saja
     if (inflightNotifications && !force) return inflightNotifications;
 
     // Stale guard — jika fetch page 1 limit 20 baru saja dilakukan (<3s), skip
     const isDefaultFetch =
-      (options.page ?? 1) === 1 && (options.limit ?? 20) === 20 && options.isRead == null && !options.type;
+      (options.page ?? 1) === 1 &&
+      (options.limit ?? 20) === 20 &&
+      options.isRead == null &&
+      !options.type;
     if (!force && isDefaultFetch && Date.now() - lastNotificationsFetchAt < FETCH_DEDUP_MS) {
       return notifications.value;
     }
@@ -165,9 +170,13 @@ export const useNotifications = () => {
 
     inflightNotifications = (async () => {
       try {
-        const res = (await apiGet('/notifications', {
-          params,
-        }, { skipCache: true })) as NotificationListResponse;
+        const res = (await apiGet(
+          '/notifications',
+          {
+            params,
+          },
+          { skipCache: true }
+        )) as NotificationListResponse;
         const list = res?.data ?? [];
         notifications.value = list;
         notificationMeta.value = res?.meta ?? {
@@ -202,7 +211,11 @@ export const useNotifications = () => {
 
     inflightUnreadCount = (async () => {
       try {
-        const res = (await apiGet('/notifications/unread-count', {}, { skipCache: true })) as UnreadCountResponse;
+        const res = (await apiGet(
+          '/notifications/unread-count',
+          {},
+          { skipCache: true }
+        )) as UnreadCountResponse;
         const count = res?.data?.count ?? 0;
         unreadCount.value = count;
         lastUnreadCountFetchAt = Date.now();
@@ -241,8 +254,7 @@ export const useNotifications = () => {
       let changed = 0;
       notifications.value.forEach((n) => {
         const data = n.data || {};
-        const relatedNaskahId =
-          data.naskahId || data.idNaskah || data.id_naskah || data.naskah_id;
+        const relatedNaskahId = data.naskahId || data.idNaskah || data.id_naskah || data.naskah_id;
         if (String(relatedNaskahId || '') === String(naskahId) && !n.isRead) {
           n.isRead = true;
           n.readAt = new Date().toISOString();
@@ -301,7 +313,13 @@ export const useNotifications = () => {
 
     connectPromise = new Promise<void>((resolve) => {
       let settled = false;
-      const done = () => { if (!settled) { settled = true; connectPromise = null; resolve(); } };
+      const done = () => {
+        if (!settled) {
+          settled = true;
+          connectPromise = null;
+          resolve();
+        }
+      };
 
       const token = getToken();
       if (!token) {
@@ -409,22 +427,28 @@ export const useNotifications = () => {
         await Promise.all([fetchUnreadCount(true), fetchNotifications(1, 20, true)]);
       });
 
-      socket.on('rbac:role-changed', async (payload: { persnum: number; action: string; roleName?: string }) => {
-        const authUser = useState<any>('user');
-        if (authUser.value?.persnum === payload.persnum) {
-          const { refreshPermissions } = useAuth();
-          await refreshPermissions().catch(() => {});
+      socket.on(
+        'rbac:role-changed',
+        async (payload: { persnum: number; action: string; roleName?: string }) => {
+          const authUser = useState<any>('user');
+          if (authUser.value?.persnum === payload.persnum) {
+            const { refreshPermissions } = useAuth();
+            await refreshPermissions().catch(() => {});
+          }
         }
-      });
+      );
 
-      socket.on('rbac:permission-changed', async (payload: { roleName: string; roleId: string }) => {
-        const authUser = useState<any>('user');
-        const currentRole = authUser.value?.activeRole?.name || authUser.value?.role;
-        if (currentRole && currentRole.toUpperCase() === payload.roleName.toUpperCase()) {
-          const { refreshPermissions } = useAuth();
-          await refreshPermissions().catch(() => {});
+      socket.on(
+        'rbac:permission-changed',
+        async (payload: { roleName: string; roleId: string }) => {
+          const authUser = useState<any>('user');
+          const currentRole = authUser.value?.activeRole?.name || authUser.value?.role;
+          if (currentRole && currentRole.toUpperCase() === payload.roleName.toUpperCase()) {
+            const { refreshPermissions } = useAuth();
+            await refreshPermissions().catch(() => {});
+          }
         }
-      });
+      );
 
       // Don't resolve here — resolved on 'connect' or 'connect_error' events above
     });

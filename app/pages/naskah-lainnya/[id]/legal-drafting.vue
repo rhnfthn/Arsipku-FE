@@ -59,6 +59,7 @@
         :docx-url="`/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="true"
+        staged-success-description="Revisi siap dikirim bersama approval legal"
         divided
         v-model="catatanLegal"
         @preview="previewNaskah"
@@ -193,7 +194,9 @@
                     {{ idx + 1 }}
                   </span>
                   <div class="flex-1 min-w-40">
-                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ v.nama }}</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                      {{ legalRecipientName(v) }}
+                    </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ v.jabatan }}</p>
                   </div>
                   <button
@@ -285,31 +288,34 @@
       </div>
     </div>
 
-    <!-- Preview Modal (PDF iframe / DOCX renderAsync) -->
-    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-4xl' }">
-      <template #content>
-        <div class="flex h-[85vh] flex-col">
-          <div class="flex items-center justify-between border-b px-4 py-3 dark:border-gray-700">
-            <h3 class="font-semibold text-gray-900 dark:text-white">Preview Dokumen</h3>
-            <UButton size="sm" variant="ghost" icon="i-lucide-x" @click="closePreview" />
+    <!-- Preview Dokumen (PDF iframe / DOCX renderAsync) — fullscreen, pola USlideover side="bottom" -->
+    <USlideover
+      v-model:open="previewOpen"
+      title="Preview Dokumen"
+      description="Pratinjau dokumen"
+      side="bottom"
+      :ui="{
+        content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+        body: 'p-0',
+      }"
+    >
+      <template #body>
+        <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
+          <div
+            v-if="previewLoading"
+            class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
+          >
+            <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
           </div>
-          <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-900">
-            <div
-              v-if="previewLoading"
-              class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
-            >
-              <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
-            </div>
-            <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
-            <div
-              v-else
-              ref="previewDocxContainer"
-              class="docx-preview-container w-full h-full overflow-auto"
-            ></div>
-          </div>
+          <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
+          <div
+            v-else
+            ref="previewDocxContainer"
+            class="docx-preview-container w-full h-full overflow-auto"
+          ></div>
         </div>
       </template>
-    </UModal>
+    </USlideover>
 
     <!-- Kirim Approval Legal Modal (item #8: popup alasan sebelum kirim) -->
     <VerifyActionModal
@@ -317,8 +323,8 @@
       variant="approve"
       title="Kirim Approval Legal"
       description="Naskah dikirim ke pemberi persetujuan legal untuk persetujuan berjenjang. Catatan legal akan disimpan."
-      :require-note="true"
-      note-placeholder="Tuliskan alasan kirim approval legal…"
+      :require-note="false"
+      note-placeholder="Tuliskan alasan kirim approval legal (opsional)…"
       confirm-label="Kirim Approval"
       :saving="sendingApproval"
       @confirm="(note) => kirimApproval(note)"
@@ -477,6 +483,11 @@ const ldBanner = computed(() => {
 });
 
 // Eligible: aktif, bukan user sendiri (urutan pemilihan = urutan persetujuan).
+const legalRecipientName = (recipient) =>
+  recipient.isDelegasi && recipient.positionStatus
+    ? `${recipient.positionStatus}. ${recipient.nama}`
+    : recipient.nama;
+
 const eligibleRecipients = computed(() => {
   const myPosId = String(user.value?.position ?? user.value?.positionId ?? '');
   const myPersnum = user.value?.persnum;
@@ -489,7 +500,7 @@ const eligibleRecipients = computed(() => {
 const approverOptions = computed(() =>
   eligibleRecipients.value.map((v) => ({
     value: v.positionId,
-    label: v.nama,
+    label: legalRecipientName(v),
     jabatan: v.jabatan || v.unitName || '',
   }))
 );
@@ -498,7 +509,7 @@ const approverOptions = computed(() =>
 const selectedApproverItems = computed(() =>
   legalApprovers.value.map((v) => ({
     value: v.positionId,
-    label: v.nama,
+    label: legalRecipientName(v),
     jabatan: v.jabatan || v.unitName || '',
   }))
 );
@@ -579,7 +590,10 @@ async function openPreviewFromBlob(blob, nama) {
   }
   previewDocxBuffer.value = null;
   if (isPdf) {
-    previewUrl.value = window.URL.createObjectURL(blob);
+    // Re-wrap sebagai application/pdf → viewer bawaan browser (Chromium PDFium)
+    // merender toolbar download/print/zoom, sama seperti pratinjau kotak masuk.
+    const pdf = new Blob([await blob.arrayBuffer()], { type: 'application/pdf' });
+    previewUrl.value = window.URL.createObjectURL(pdf);
     previewOpen.value = true;
   } else if (isDocx) {
     previewDocxBuffer.value = await blob.arrayBuffer();
@@ -635,7 +649,9 @@ async function kirimApproval(note) {
   try {
     const approvers = legalApprovers.value.map((v) => ({
       positionId: v.positionId,
-      nama: v.nama,
+      // Simpan label aktor PT/PH/PS pada approval agar seluruh halaman detail
+      // naskah menampilkan konteks aktor, bukan hanya dropdown pemilihan.
+      nama: legalRecipientName(v),
       jabatan: v.jabatan,
     }));
     // catatan = alasan kirim (→ riwayat, item #8); catatanLegal = catatan legal persist (item #4).
@@ -654,7 +670,7 @@ async function kirimApproval(note) {
     toast.add({ title: 'Approval legal dikirim', color: 'success' });
     showKirimModal.value = false;
     stagedRevisi.value = null;
-    await loadDetail(); // tetap di halaman → tampilkan status menunggu approver + catatan legal ter-load
+    await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;
     const errMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
