@@ -133,6 +133,18 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-green-700 dark:text-green-400',
     dot: 'bg-green-700',
   },
+  selesai_belum_final: {
+    label: 'Selesai - Belum Final',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
+  },
+  selesai_final: {
+    label: 'Selesai - Final',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
+  },
   sudah_dikerjakan: {
     label: 'Sudah Dikerjakan',
     bg: 'bg-green-100 dark:bg-green-900/30',
@@ -169,6 +181,18 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     bg: 'bg-gray-100 dark:bg-gray-700',
     text: 'text-gray-600 dark:text-gray-300',
     dot: 'bg-gray-400',
+  },
+  draf: {
+    label: 'Draf',
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-600 dark:text-gray-300',
+    dot: 'bg-gray-400',
+  },
+  final: {
+    label: 'Final',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+    text: 'text-green-700 dark:text-green-400',
+    dot: 'bg-green-700',
   },
   // ——— Naskah Lainnya: badge status filter Legal Drafting ———
   belum_dikirim: {

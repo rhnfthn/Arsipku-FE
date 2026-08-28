@@ -42,6 +42,8 @@ const nomorCounts = ref<{
 }>({});
 const naskahDinasVerifikatorWaitingCount = ref<number>(0);
 const arsipPersetujuanWaitingCount = ref<number>(0);
+const naskahLainnyaPersetujuanWaitingCount = ref<number>(0);
+const naskahLainnyaLegalDraftingWaitingCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
 
@@ -171,8 +173,16 @@ const connectSocket = async (): Promise<void> => {
         );
       }
       if (payload.arsipPersetujuanWaitingCount != null) {
-        arsipPersetujuanWaitingCount.value = Number(
-          payload.arsipPersetujuanWaitingCount
+        arsipPersetujuanWaitingCount.value = Number(payload.arsipPersetujuanWaitingCount);
+      }
+      if (payload.naskahLainnyaPersetujuanWaitingCount != null) {
+        naskahLainnyaPersetujuanWaitingCount.value = Number(
+          payload.naskahLainnyaPersetujuanWaitingCount
+        );
+      }
+      if (payload.naskahLainnyaLegalDraftingWaitingCount != null) {
+        naskahLainnyaLegalDraftingWaitingCount.value = Number(
+          payload.naskahLainnyaLegalDraftingWaitingCount
         );
       }
       if (payload.nomorCounts && typeof payload.nomorCounts === 'object') {
@@ -216,6 +226,18 @@ const connectSocket = async (): Promise<void> => {
     socket.on('arsip:persetujuan-count', (payload: any) => {
       if (payload && typeof payload.waiting === 'number') {
         arsipPersetujuanWaitingCount.value = payload.waiting;
+      }
+    });
+
+    socket.on('naskah-lainnya:persetujuan-count', (payload: any) => {
+      if (payload && typeof payload.waiting === 'number') {
+        naskahLainnyaPersetujuanWaitingCount.value = payload.waiting;
+      }
+    });
+
+    socket.on('naskah-lainnya:legal-drafting-count', (payload: any) => {
+      if (payload && typeof payload.waiting === 'number') {
+        naskahLainnyaLegalDraftingWaitingCount.value = payload.waiting;
       }
     });
 
@@ -296,6 +318,8 @@ export function useRealtimeSocket() {
     nomorCounts,
     naskahDinasVerifikatorWaitingCount,
     arsipPersetujuanWaitingCount,
+    naskahLainnyaPersetujuanWaitingCount,
+    naskahLainnyaLegalDraftingWaitingCount,
     flagUpdate,
     isConnected,
     hasBsreAlert,

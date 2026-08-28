@@ -155,7 +155,7 @@
               <p class="text-xs text-green-600 dark:text-green-400">
                 {{
                   stageUpload
-                    ? 'Revisi siap dikirim bersama approval legal'
+                    ? stagedSuccessDescription
                     : 'Revisi berhasil diunggah — naskah diperbarui'
                 }}
               </p>
@@ -258,6 +258,10 @@ const props = defineProps({
   // File di-stage di FE (preview lokal), baru di-commit saat user klik "Kirim Approval Legal".
   // Default false → tanda-tangan tetap persist langsung (perilaku lama).
   stageUpload: { type: Boolean, default: false },
+  stagedSuccessDescription: {
+    type: String,
+    default: 'Revisi siap dikirim bersama aksi',
+  },
   // sembunyikan Section 2 (Area Kerja — upload revisi). blanko-verbal tidak merevisi
   // naskah (naskah final), upload blanko ditangani halaman terpisah. Default true (tanda-tangan/legal-drafting tidak berubah).
   showAreaKerja: { type: Boolean, default: true },

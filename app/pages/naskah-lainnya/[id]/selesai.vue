@@ -371,39 +371,34 @@
       </div>
     </div>
 
-    <!-- Preview Modal (PDF iframe / DOCX renderAsync) -->
-    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-4xl' }">
-      <template #content>
-        <div class="flex h-[85vh] flex-col">
-          <div class="flex items-center justify-between border-b px-4 py-3 dark:border-gray-700">
-            <h3 class="font-semibold text-gray-900 dark:text-white truncate pr-3">
-              {{ previewTitle }}
-            </h3>
-            <UButton
-              size="sm"
-              variant="ghost"
-              icon="i-lucide-x"
-              aria-label="Tutup preview"
-              @click="closePreview"
-            />
+    <!-- Preview Dokumen (PDF iframe / DOCX renderAsync) — fullscreen, pola USlideover side="bottom" -->
+    <USlideover
+      v-model:open="previewOpen"
+      :title="previewTitle"
+      description="Pratinjau dokumen"
+      side="bottom"
+      :ui="{
+        content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+        body: 'p-0',
+      }"
+    >
+      <template #body>
+        <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
+          <div
+            v-if="previewLoading"
+            class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
+          >
+            <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
           </div>
-          <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-900">
-            <div
-              v-if="previewLoading"
-              class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10"
-            >
-              <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6 text-primary-500" />
-            </div>
-            <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
-            <div
-              v-else
-              ref="previewDocxContainer"
-              class="docx-preview-container w-full h-full overflow-auto"
-            ></div>
-          </div>
+          <iframe v-if="previewUrl" :src="previewUrl" class="w-full h-full border-0 bg-white" />
+          <div
+            v-else
+            ref="previewDocxContainer"
+            class="docx-preview-container w-full h-full overflow-auto"
+          ></div>
         </div>
       </template>
-    </UModal>
+    </USlideover>
   </div>
 </template>
 
@@ -597,7 +592,10 @@ async function openPreviewFromBlob(blob, nama) {
   }
   previewDocxBuffer.value = null;
   if (isPdf) {
-    previewUrl.value = window.URL.createObjectURL(blob);
+    // Re-wrap sebagai application/pdf → viewer bawaan browser (Chromium PDFium)
+    // merender toolbar download/print/zoom, sama seperti pratinjau kotak masuk.
+    const pdf = new Blob([await blob.arrayBuffer()], { type: 'application/pdf' });
+    previewUrl.value = window.URL.createObjectURL(pdf);
     previewOpen.value = true;
   } else if (isDocx) {
     previewDocxBuffer.value = await blob.arrayBuffer();
