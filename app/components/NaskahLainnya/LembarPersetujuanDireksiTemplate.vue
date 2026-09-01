@@ -100,7 +100,7 @@
               >
                 {{ item.jabatan || 'DIREKTUR' }}<br />
                 <div class="lpd-signature-name">
-                  {{ (item.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                  {{ nameOf(item) }}
                 </div>
               </div>
             </div>
@@ -109,7 +109,7 @@
             <div class="lpd-director-item" v-if="directorSlots[0]">
               {{ directorSlots[0].index ?? 1 }}. {{ directorSlots[0].jabatan || '' }}
               <div class="lpd-director-name">
-                {{ (directorSlots[0].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[0]) }}
               </div>
             </div>
           </td>
@@ -126,7 +126,7 @@
             <div class="lpd-director-item" v-if="directorSlots[1]">
               {{ directorSlots[1].index ?? 2 }}. {{ directorSlots[1].jabatan || '' }}
               <div class="lpd-director-name">
-                {{ (directorSlots[1].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[1]) }}
               </div>
             </div>
           </td>
@@ -139,7 +139,7 @@
             <div class="lpd-director-item" v-if="directorSlots[2]">
               {{ directorSlots[2].index ?? 3 }}. {{ directorSlots[2].jabatan || '' }}
               <div class="lpd-director-name">
-                {{ (directorSlots[2].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[2]) }}
               </div>
             </div>
           </td>
@@ -152,7 +152,7 @@
             <div class="lpd-director-item" v-if="directorSlots[3]">
               {{ directorSlots[3].index ?? 4 }}. {{ directorSlots[3].jabatan || '' }}
               <div class="lpd-director-name">
-                {{ (directorSlots[3].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[3]) }}
               </div>
             </div>
           </td>
@@ -165,7 +165,7 @@
             <div class="lpd-director-item" v-if="directorSlots[4]">
               {{ directorSlots[4].index ?? 5 }}. {{ directorSlots[4].jabatan || '' }}
               <div class="lpd-director-name">
-                {{ (directorSlots[4].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[4]) }}
               </div>
             </div>
           </td>
@@ -181,22 +181,27 @@
   </div>
 </template>
 
-<script setup>
-const modelValue = defineModel({ default: () => ({}) });
+<script setup lang="ts">
+import type { PropType } from 'vue';
+import type { SheetFormModel, DirectorApprovalItem } from '~/types/naskah-lainnya';
+
+// Sebelumnya untyped (defineModel({ default: () => ({}) })) — mismatch dengan
+// v-model ref<SheetFormModel> di halaman. Selaraskan dengan BlankoVerbalTemplate.
+const modelValue = defineModel<SheetFormModel>({ default: () => ({}) });
 
 const props = defineProps({
-  directors: { type: Array, default: () => [] },
+  directors: { type: Array as PropType<DirectorApprovalItem[]>, default: () => [] },
   showPlaceholders: { type: Boolean, default: true },
   readOnly: { type: Boolean, default: false },
 });
 
 // Fallback daftar direksi standar LPPNPI bila daftar direksi belum dimuat.
-const STANDARD_DIREKSI = [
-  { index: 1, jabatan: 'DIREKTUR OPERASI' },
-  { index: 2, jabatan: 'DIREKTUR TEKNIK' },
-  { index: 3, jabatan: 'DIREKTUR KESELAMATAN KEAMANAN DAN STANDARISASI' },
-  { index: 4, jabatan: 'DIREKTUR KEUANGAN' },
-  { index: 5, jabatan: 'DIREKTUR SDM & UMUM' },
+const STANDARD_DIREKSI: DirectorApprovalItem[] = [
+  { index: 1, nama: '', jabatan: 'DIREKTUR OPERASI' },
+  { index: 2, nama: '', jabatan: 'DIREKTUR TEKNIK' },
+  { index: 3, nama: '', jabatan: 'DIREKTUR KESELAMATAN KEAMANAN DAN STANDARISASI' },
+  { index: 4, nama: '', jabatan: 'DIREKTUR KEUANGAN' },
+  { index: 5, nama: '', jabatan: 'DIREKTUR SDM & UMUM' },
 ];
 const directorSlots = computed(() => {
   const selected = modelValue.value?.diketahuiOleh;
@@ -212,7 +217,15 @@ const ditetapkanSlots = computed(() => {
   return dirut ? [dirut] : [{ index: 1, nama: '', jabatan: 'DIREKTUR UTAMA' }];
 });
 
-function formatTanggal(value) {
+// Nama pengganti diawali status delegasi (PT/PH/PS); 'ybs' = pejabat
+// bersangkungan sendiri, tanpa prefix.
+function nameOf(director?: { nama?: string; delegator?: string }) {
+  const raw = (director?.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase();
+  const status = director?.delegator?.trim();
+  return status && status !== 'ybs' ? `${status}. ${raw}` : raw;
+}
+
+function formatTanggal(value?: string) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;

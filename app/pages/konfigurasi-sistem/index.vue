@@ -58,6 +58,15 @@
               <UIcon name="i-lucide-scale" class="w-4 h-4" />
               Unit Legal
             </button>
+            <button @click="activeTab = 'naskah-lainnya'" :class="[
+              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+              activeTab === 'naskah-lainnya'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+            ]">
+              <UIcon name="i-lucide-files" class="w-4 h-4" />
+              Naskah Lainnya
+            </button>
             <button @click="activeTab = 'search'" :class="[
               'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
               activeTab === 'search'
@@ -348,6 +357,11 @@
         <!-- ===================== TAB: UNIT LEGAL ===================== -->
         <div v-if="activeTab === 'unit-legal'">
           <UnitLegalTab />
+        </div>
+
+        <!-- ===================== TAB: NASKAH LAINNYA ===================== -->
+        <div v-if="activeTab === 'naskah-lainnya'">
+          <NaskahLainnyaTab />
         </div>
 
         <!-- ===================== TAB: SEARCH ENGINE ===================== -->

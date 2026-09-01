@@ -292,9 +292,11 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   persetujuan: 'Persetujuan',
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
+  persetujuan_lanjutan: 'Persetujuan Lanjutan',
+  evaluasi_final: 'Evaluasi Final EVP',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal',
+  blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
   tanda_tangan_legal: 'TTD Legal',
   tanda_tangan_pejabat: 'TTD Pejabat',
   tanda_tangan: 'Menunggu Tanda Tangan',
@@ -401,7 +403,7 @@ const displayRows = computed(() =>
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
     perihal: r.perihal,
-    pemrakarsa: r.pemrakarsa.nama,
+    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
     tahapan:
       r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
         ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
