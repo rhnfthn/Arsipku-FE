@@ -32,9 +32,9 @@ export function useUsulanAksesBerkasViewed() {
    * Kembalikan true jika usulan pernah dibuka (BE field isViewedByMe atau
    * optimistic local cache).
    */
-  const isViewed = (usulan: { id: string; isViewedByMe?: boolean } | null | undefined): boolean => {
+  const isViewed = (usulan: { id: string; is_viewed_by_me?: boolean } | null | undefined): boolean => {
     if (!usulan) return false;
-    if (usulan.isViewedByMe === true) return true;
+    if (usulan.is_viewed_by_me === true) return true;
     return optimisticRef.value.has(usulan.id);
   };
 
