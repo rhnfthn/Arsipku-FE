@@ -28,8 +28,20 @@
               <UIcon name="i-lucide-user-check" class="w-3 h-3" />
               {{ d.delegatePositionStatus }} · a.n. {{ d.delegateName }}
               <template v-if="isLegal && d.status === 'waiting'">
-                <button type="button" class="underline hover:no-underline" @click="$emit('editDelegate', d)">Ubah</button>
-                <button type="button" class="underline hover:no-underline text-red-500" @click="$emit('removeDelegate', d)">Hapus</button>
+                <button
+                  type="button"
+                  class="underline hover:no-underline"
+                  @click="$emit('editDelegate', d)"
+                >
+                  Ubah
+                </button>
+                <button
+                  type="button"
+                  class="underline hover:no-underline text-red-500"
+                  @click="$emit('removeDelegate', d)"
+                >
+                  Hapus
+                </button>
               </template>
             </div>
             <button
@@ -91,7 +103,7 @@ defineProps<{
   canApprove?: boolean;
   canApproveItem?: (item: DirectorApprovalItem) => boolean;
   busy?: boolean;
-  // Blanko verbal: kelompok Ditetapkan/Disahkan → 'Paraf & Tanda Tangan Naskah'.
+  // Label aksi dapat diringkas oleh halaman pemakai (mis. "Setuju").
   parafLabel?: string;
   isLegal?: boolean;
 }>();

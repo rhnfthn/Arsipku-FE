@@ -16,15 +16,21 @@ const props = withDefaults(
   defineProps<{
     nama?: string;
     jabatan?: string;
+    // Status delegasi: PT/PH/PS di-prefix di depan jabatan; 'ybs' tanpa prefix.
+    delegator?: string;
     variant?: 'compact' | 'wide';
   }>(),
-  { nama: '', jabatan: '', variant: 'compact' }
+  { nama: '', jabatan: '', delegator: '', variant: 'compact' }
 );
 
 const namaLabel = computed(() =>
   (props.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase()
 );
-const jabatanLabel = computed(() => props.jabatan || 'DIREKTUR');
+const jabatanLabel = computed(() => {
+  const status = props.delegator?.trim();
+  const jabatan = props.jabatan || 'DIREKTUR';
+  return status && status !== 'ybs' ? `${status}. ${jabatan}` : jabatan;
+});
 </script>
 
 <style scoped>

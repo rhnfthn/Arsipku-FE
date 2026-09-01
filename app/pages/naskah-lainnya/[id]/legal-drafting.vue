@@ -58,7 +58,7 @@
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
-        :stage-upload="true"
+        :stage-upload="canActLegalDrafting"
         staged-success-description="Revisi siap dikirim bersama approval legal"
         divided
         v-model="catatanLegal"
@@ -68,69 +68,63 @@
         @stage-revisi="onStageRevisi"
       />
 
-      <!-- Pemberi Persetujuan Legal (recipients khusus unit legal) -->
+      <!-- Rantai Legal Drafting dan pejabat pengesah -->
       <div class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
-          <UIcon name="i-lucide-users" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+          <UIcon
+            name="i-lucide-badge-check"
+            class="h-4 w-4 text-primary-600 dark:text-primary-400"
+          />
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-            Pemberi Persetujuan Legal
+            Pejabat yang Mengesahkan
           </h3>
-          <span class="text-xs text-gray-400">(berjenjang — dari unit legal)</span>
+          <span class="text-xs text-red-500">*</span>
         </div>
 
-        <!-- Naskah ditolak pemberi persetujuan legal → tampilkan alasan agar drafter
-             legal tahu apa yang direvisi sebelum kirim ulang (tolak → kembali ke legal drafting). -->
         <div
-          v-if="hasRejectedLegalRows && !hasWaitingLegalRows"
-          class="mb-3 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3"
+          v-if="selectedCertifierFromChain"
+          class="rounded-lg border border-primary-200 bg-primary-50/60 px-3 py-2.5 dark:border-primary-800 dark:bg-primary-900/20"
         >
-          <div class="flex items-center gap-2 mb-2">
-            <UIcon
-              name="i-lucide-circle-x"
-              class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0"
-            />
-            <p class="text-sm font-semibold text-red-700 dark:text-red-300">
-              Naskah Ditolak Pemberi Persetujuan Legal
-            </p>
-          </div>
-          <p class="text-xs text-red-600/80 dark:text-red-400/80 mb-2">
-            Perbaiki naskah di area kerja, lalu kirim ulang approval. Alasan penolakan:
+          <p class="text-sm font-semibold text-gray-900 dark:text-white">
+            {{ selectedCertifierFromChain.nama }}
           </p>
-          <div class="space-y-1.5">
-            <div
-              v-for="r in rejectedLegalRows"
-              :key="r.id"
-              class="rounded-md bg-white/60 dark:bg-gray-800/60 px-2.5 py-1.5"
-            >
-              <div class="flex items-center gap-2">
-                <span
-                  class="flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold shrink-0"
-                  >{{ r.urutan }}</span
-                >
-                <p class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
-                  {{ r.nama }}
-                </p>
-                <StatusBadge status="rejected" />
-              </div>
-              <p v-if="r.catatan" class="mt-1 text-xs text-gray-600 dark:text-gray-300 italic pl-7">
-                &ldquo;{{ r.catatan }}&rdquo;
-              </p>
-            </div>
-          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ selectedCertifierFromChain.jabatan }}
+          </p>
         </div>
+        <USelectMenu
+          v-else
+          v-model="selectedCertifierId"
+          :items="certifierOptions"
+          value-key="value"
+          :filter-fields="['label', 'jabatan']"
+          placeholder="Pilih pejabat manajerial Unit Legal…"
+          class="w-full"
+          :disabled="!canActLegalDrafting"
+        >
+          <template #item="{ item }">
+            <div class="min-w-0 py-1">
+              <p class="truncate text-sm text-gray-900 dark:text-white">{{ item.label }}</p>
+              <p class="truncate text-xs text-gray-400">{{ item.jabatan }}</p>
+            </div>
+          </template>
+        </USelectMenu>
+        <p class="mt-2 text-xs text-gray-400">
+          Pejabat ini menjadi titik akhir yang mengesahkan dan memfinalkan Legal Drafting.
+        </p>
 
-        <!-- Status menunggu approver (berjenjang — read-only kecuali baris aktif milik user) -->
-        <div v-if="hasWaitingLegalRows" class="space-y-2">
+        <div v-if="legalApprovalRows.length" class="mt-5 space-y-2">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Alur Legal Drafting
+          </p>
           <div
-            v-for="r in visibleLegalApprovalRows"
+            v-for="r in sortedLegalRows"
             :key="r.id"
             class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5"
             :class="
               r.status === 'waiting'
                 ? 'border-primary-300 bg-primary-50/60 ring-1 ring-primary-200 dark:border-primary-800 dark:bg-primary-900/20 dark:ring-primary-900/50'
-                : r.status === 'verified'
-                  ? 'border-gray-200 dark:border-gray-700'
-                  : 'border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
+                : 'border-gray-200 dark:border-gray-700'
             "
           >
             <span
@@ -138,13 +132,12 @@
               :class="
                 r.status === 'verified'
                   ? 'bg-green-500 text-white'
-                  : r.status === 'rejected'
-                    ? 'bg-red-500 text-white'
+                  : r.status === 'waiting'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
               "
             >
               <UIcon v-if="r.status === 'verified'" name="i-lucide-check" class="size-3" />
-              <UIcon v-else-if="r.status === 'rejected'" name="i-lucide-x" class="size-3" />
               <template v-else>{{ r.urutan }}</template>
             </span>
             <div class="flex-1 min-w-40">
@@ -155,101 +148,65 @@
               v-if="r.status === 'verified'"
               class="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
             >
-              <UIcon name="i-lucide-check" class="size-3" />Disetujui
+              <UIcon name="i-lucide-check" class="size-3" />Selesai
             </span>
             <span
               v-else-if="r.status === 'waiting'"
               class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
             >
-              <UIcon name="i-lucide-clock" class="size-3" />Menunggu
+              <UIcon name="i-lucide-pencil-line" class="size-3" />Sedang mengerjakan
+            </span>
+            <span
+              v-else-if="r.status === 'pending'"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            >
+              <UIcon name="i-lucide-clock" class="size-3" />Menunggu alur kembali
             </span>
             <StatusBadge v-else :status="r.status" />
           </div>
-          <p v-if="pendingAfterCount > 0" class="text-xs text-gray-400 pl-1">
-            Dan {{ pendingAfterCount }} pemberi persetujuan lain menunggu giliran.
-          </p>
         </div>
 
-        <!-- Form pilih approver (editable saat tidak ada baris waiting) -->
-        <div v-else>
+        <div v-if="canActLegalDrafting" class="mt-5">
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <label class="block text-sm font-semibold text-gray-900 dark:text-white">
+              Teruskan kepada
+            </label>
+            <UButton
+              v-if="selectedForwardRecipient"
+              color="neutral"
+              variant="link"
+              size="xs"
+              icon="i-lucide-x"
+              class="shrink-0 px-0"
+              @click="selectedForwardId = ''"
+            >
+              Hapus pilihan
+            </UButton>
+          </div>
           <USelectMenu
-            v-if="eligibleRecipients.length"
-            :items="approverOptions"
-            :model-value="selectedApproverItems"
-            multiple
+            v-model="selectedForwardId"
+            :items="forwardOptions"
+            value-key="value"
             :filter-fields="['label', 'jabatan']"
-            placeholder="Pilih pemberi persetujuan legal…"
+            placeholder="Pilih penerima berikutnya di Unit Legal…"
             class="w-full"
           >
-            <template #default>
-              <div class="flex flex-col gap-1.5 w-full">
-                <div
-                  v-for="(v, idx) in legalApprovers"
-                  :key="v.positionId"
-                  class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-primary-300 bg-primary-50/60 px-3 py-2.5 ring-1 ring-primary-200 dark:border-primary-800 dark:bg-primary-900/20 dark:ring-primary-900/50"
-                >
-                  <span
-                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300"
-                  >
-                    {{ idx + 1 }}
-                  </span>
-                  <div class="flex-1 min-w-40">
-                    <p class="text-sm font-medium text-gray-900 dark:text-white">
-                      {{ legalRecipientName(v) }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ v.jabatan }}</p>
-                  </div>
-                  <button
-                    type="button"
-                    class="text-gray-400 hover:text-red-500 shrink-0"
-                    @click.stop="removeApprover(v.positionId)"
-                    aria-label="Hapus approver"
-                  >
-                    <UIcon name="i-lucide-x" class="w-4 h-4" />
-                  </button>
-                </div>
-                <span
-                  v-if="!legalApprovers.length"
-                  class="text-sm text-gray-400 dark:text-gray-500 py-1"
-                >
-                  Pilih pemberi persetujuan legal…
-                </span>
-              </div>
-            </template>
-
             <template #item="{ item }">
-              <div
-                class="flex items-center gap-2 w-full py-1 cursor-pointer"
-                @click.stop.prevent="toggleApprover(item)"
-              >
-                <UCheckbox
-                  :model-value="isApproverSelected(item)"
-                  class="pointer-events-none shrink-0"
-                  :ui="{ base: 'w-4 h-4' }"
-                />
-                <div class="flex-1 min-w-0">
-                  <span class="block text-sm text-left truncate text-gray-900 dark:text-white">{{
-                    item.label
-                  }}</span>
-                  <span class="block text-xs text-left truncate text-gray-400">{{
-                    item.jabatan || ''
-                  }}</span>
-                </div>
+              <div class="min-w-0 py-1">
+                <p class="truncate text-sm text-gray-900 dark:text-white">{{ item.label }}</p>
+                <p class="truncate text-xs text-gray-400">{{ item.jabatan }}</p>
               </div>
             </template>
           </USelectMenu>
-
-          <UAlert
-            v-else
-            icon="i-lucide-info"
-            color="neutral"
-            variant="soft"
-            title="Tidak ada kandidat"
-            description="Tidak ada anggota unit legal aktif lain yang dapat dipilih."
-          />
-
-          <p class="mt-2 text-xs text-gray-400">
-            Pilih pemberi persetujuan dari unit legal. Urutan pilihan = urutan persetujuan.
+          <p
+            class="mt-2 text-xs"
+            :class="selectedForwardRecipient ? 'font-medium text-primary-600' : 'text-gray-400'"
+          >
+            {{
+              selectedForwardRecipient
+                ? `Aksi yang tersedia: teruskan kepada ${selectedForwardRecipient.nama}. Hapus pilihan untuk mengaktifkan aksi Kirim.`
+                : 'Opsional. Kosongkan field ini untuk mengirim hasil kembali mengikuti rantai ke pejabat pengesah.'
+            }}
           </p>
         </div>
       </div>
@@ -264,26 +221,33 @@
               <UIcon name="i-lucide-send" class="size-5" />
             </span>
             <div>
-              <h3 class="font-semibold text-gray-900 dark:text-white">Kirim Approval Legal</h3>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Aksi Legal Drafting</h3>
               <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                {{
-                  hasWaitingLegalRows
-                    ? 'Naskah sudah dikirim. Menunggu persetujuan berjenjang.'
-                    : 'Kirim naskah ke pemberi persetujuan legal untuk persetujuan berjenjang.'
-                }}
+                {{ legalActionDescription }}
               </p>
             </div>
           </div>
-          <UButton
-            color="primary"
-            icon="i-lucide-send"
-            size="lg"
-            class="w-full font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
-            :loading="sendingApproval"
-            :disabled="hasWaitingLegalRows || legalApprovers.length === 0"
-            @click="showKirimModal = true"
-            >Kirim Approval Legal</UButton
-          >
+          <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-forward"
+              size="lg"
+              class="w-full justify-center font-semibold sm:w-auto"
+              :disabled="!canContinueLegalDrafting"
+              @click="showTeruskanModal = true"
+              >Teruskan</UButton
+            >
+            <UButton
+              color="primary"
+              icon="i-lucide-send"
+              size="lg"
+              class="w-full justify-center font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
+              :disabled="!canSendLegalDrafting"
+              @click="showKirimModal = true"
+              >Kirim</UButton
+            >
+          </div>
         </div>
       </div>
     </div>
@@ -317,15 +281,26 @@
       </template>
     </USlideover>
 
-    <!-- Kirim Approval Legal Modal (item #8: popup alasan sebelum kirim) -->
+    <VerifyActionModal
+      v-model="showTeruskanModal"
+      variant="approve"
+      title="Teruskan Legal Drafting"
+      :description="`Naskah akan diteruskan kepada ${selectedForwardRecipient?.nama || 'penerima terpilih'}.`"
+      :require-note="false"
+      note-placeholder="Catatan untuk penerima berikutnya (opsional)…"
+      confirm-label="Teruskan"
+      :saving="sendingApproval"
+      @confirm="(note) => continueLegalDrafting(note)"
+    />
+
     <VerifyActionModal
       v-model="showKirimModal"
       variant="approve"
-      title="Kirim Approval Legal"
-      description="Naskah dikirim ke pemberi persetujuan legal untuk persetujuan berjenjang. Catatan legal akan disimpan."
+      title="Kirim Legal Drafting"
+      :description="sendModalDescription"
       :require-note="false"
-      note-placeholder="Tuliskan alasan kirim approval legal (opsional)…"
-      confirm-label="Kirim Approval"
+      note-placeholder="Catatan pengiriman (opsional)…"
+      confirm-label="Kirim"
       :saving="sendingApproval"
       @confirm="(note) => kirimApproval(note)"
     />
@@ -344,6 +319,7 @@ const {
   detail,
   uploadRevisiDokumen,
   kirimApprovalLegal,
+  teruskanLegalDrafting,
   fetchLegalRecipients,
   legalRecipients,
 } = useNaskahLainnya();
@@ -363,6 +339,7 @@ const dokumenPendukung = ref([]);
 const catatanLegal = ref('');
 const sendingApproval = ref(false);
 const showKirimModal = ref(false);
+const showTeruskanModal = ref(false);
 // ── Popup preview dokumen pendukung (PDF iframe / DOCX renderAsync) ──
 const previewOpen = ref(false);
 const previewUrl = ref(null);
@@ -374,8 +351,8 @@ const previewLoading = ref(false);
 // tidak menumpuk versi sebelum legal drafting benar-benar dikirim.
 const stagedRevisi = ref({ docx: null, pdf: null });
 
-// ── Pemberi Persetujuan Legal (recipients dari unit legal saja) ──
-const legalApprovers = ref([]);
+const selectedCertifierId = ref('');
+const selectedForwardId = ref('');
 
 const legalApprovalRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'legal_drafting')
@@ -384,31 +361,8 @@ const hasWaitingLegalRows = computed(() =>
   legalApprovalRows.value.some((r) => r.status === 'waiting')
 );
 
-// ── Berjenjang: hanya baris sudah diproses (verified/rejected) + baris waiting
-// urutan terendah (giliran aktif) yang ditampilkan. Baris waiting urutan lebih
-// tinggi disembunyikan — baru muncul setelah giliran sebelumnya selesai (lihat
-// applyApproval lowerWaiting check di BE: urutan 2 tidak bisa diproses sebelum
-// urutan 1 verified).
 const sortedLegalRows = computed(() =>
   [...legalApprovalRows.value].sort((a, b) => a.urutan - b.urutan)
-);
-const lowestWaitingUrutan = computed(() => {
-  const ws = sortedLegalRows.value.filter((r) => r.status === 'waiting').map((r) => r.urutan);
-  return ws.length ? Math.min(...ws) : null;
-});
-const visibleLegalApprovalRows = computed(() =>
-  sortedLegalRows.value.filter(
-    (r) => r.status !== 'waiting' || r.urutan === lowestWaitingUrutan.value
-  )
-);
-const pendingAfterCount = computed(
-  () =>
-    sortedLegalRows.value.filter(
-      (r) =>
-        r.status === 'waiting' &&
-        lowestWaitingUrutan.value != null &&
-        r.urutan > lowestWaitingUrutan.value
-    ).length
 );
 
 // Naskah ditolak pemberi persetujuan legal → kembali ke step legal drafting (tolak,
@@ -434,8 +388,27 @@ const verifiedLegalCount = computed(
   () => legalApprovalRows.value.filter((r) => r.status === 'verified').length
 );
 const currentLegalApprover = computed(
-  () => visibleLegalApprovalRows.value.find((r) => r.status === 'waiting') ?? null
+  () => sortedLegalRows.value.find((r) => r.status === 'waiting') ?? null
 );
+
+const currentPositionId = computed(() =>
+  String(user.value?.positionId ?? user.value?.position ?? '')
+);
+const isCurrentLegalRecipient = computed(() => {
+  const active = currentLegalApprover.value;
+  if (!active) return false;
+  if (active.positionId) return String(active.positionId) === currentPositionId.value;
+  return Boolean(
+    active.nama &&
+    user.value?.nama &&
+    active.nama.trim().toLowerCase() === user.value.nama.trim().toLowerCase()
+  );
+});
+const canActLegalDrafting = computed(() => {
+  if (detail.value?.tahapan !== 'legal_drafting') return false;
+  if (currentLegalApprover.value) return isCurrentLegalRecipient.value;
+  return (detail.value?.availableActions ?? []).includes('kirim-approval-legal');
+});
 
 // Banner status (selaras dgn ttBanner tanda-tangan: cardBg + ikon bulat + judul/desc).
 const ldBanner = computed(() => {
@@ -482,53 +455,99 @@ const ldBanner = computed(() => {
   };
 });
 
-// Eligible: aktif, bukan user sendiri (urutan pemilihan = urutan persetujuan).
 const legalRecipientName = (recipient) =>
   recipient.isDelegasi && recipient.positionStatus
     ? `${recipient.positionStatus}. ${recipient.nama}`
     : recipient.nama;
 
-const eligibleRecipients = computed(() => {
-  const myPosId = String(user.value?.position ?? user.value?.positionId ?? '');
-  const myPersnum = user.value?.persnum;
-  return legalRecipients.value.filter(
-    (v) => v.isActive && v.positionId !== myPosId && !(myPersnum != null && v.persnum === myPersnum)
+const certifierOptions = computed(() =>
+  legalRecipients.value
+    .filter((v) => v.isActive && v.chief)
+    .map((v) => ({
+      value: v.positionId,
+      label: legalRecipientName(v),
+      jabatan: v.jabatan || v.unitName || '',
+    }))
+);
+const selectedCertifierFromChain = computed(() =>
+  hasWaitingLegalRows.value
+    ? (sortedLegalRows.value.filter((row) => row.status !== 'rejected').at(-1) ?? null)
+    : null
+);
+const selectedCertifierRecipient = computed(() =>
+  legalRecipients.value.find((v) => String(v.positionId) === String(selectedCertifierId.value))
+);
+const usedPositionIds = computed(
+  () =>
+    new Set(
+      (hasWaitingLegalRows.value ? sortedLegalRows.value : [])
+        .map((row) => String(row.positionId ?? ''))
+        .filter(Boolean)
+    )
+);
+const forwardOptions = computed(() =>
+  legalRecipients.value
+    .filter(
+      (v) =>
+        v.isActive &&
+        String(v.positionId) !== currentPositionId.value &&
+        !usedPositionIds.value.has(String(v.positionId))
+    )
+    .map((v) => ({
+      value: v.positionId,
+      label: legalRecipientName(v),
+      jabatan: v.jabatan || v.unitName || '',
+    }))
+);
+const selectedForwardRecipient = computed(() =>
+  legalRecipients.value.find((v) => String(v.positionId) === String(selectedForwardId.value))
+);
+const nextUpwardRecipient = computed(() => {
+  const active = currentLegalApprover.value;
+  if (!active) return selectedCertifierRecipient.value ?? null;
+  return sortedLegalRows.value.find(
+    (row) => row.urutan > active.urutan && row.status === 'pending'
   );
 });
-
-// Opsi dropdown — item object shape sesuai pola USelectMenu (lihat InputPenerima).
-const approverOptions = computed(() =>
-  eligibleRecipients.value.map((v) => ({
-    value: v.positionId,
-    label: legalRecipientName(v),
-    jabatan: v.jabatan || v.unitName || '',
-  }))
+const currentIsCertifier = computed(() =>
+  Boolean(
+    (currentLegalApprover.value &&
+      selectedCertifierFromChain.value &&
+      currentLegalApprover.value.id === selectedCertifierFromChain.value.id) ||
+    (!currentLegalApprover.value &&
+      selectedCertifierRecipient.value &&
+      String(selectedCertifierRecipient.value.positionId) === currentPositionId.value)
+  )
 );
-
-// Model satu arah ke USelectMenu: array of object (selected).
-const selectedApproverItems = computed(() =>
-  legalApprovers.value.map((v) => ({
-    value: v.positionId,
-    label: legalRecipientName(v),
-    jabatan: v.jabatan || v.unitName || '',
-  }))
+const hasSelectedCertifier = computed(() =>
+  Boolean(selectedCertifierFromChain.value || selectedCertifierRecipient.value)
 );
-
-function isApproverSelected(item) {
-  return legalApprovers.value.some((a) => a.positionId === item.value);
-}
-function toggleApprover(item) {
-  const posId = item.value;
-  if (legalApprovers.value.some((a) => a.positionId === posId)) {
-    legalApprovers.value = legalApprovers.value.filter((a) => a.positionId !== posId);
-  } else {
-    const v = legalRecipients.value.find((x) => x.positionId === posId);
-    if (v) legalApprovers.value.push(v);
-  }
-}
-function removeApprover(positionId) {
-  legalApprovers.value = legalApprovers.value.filter((v) => v.positionId !== positionId);
-}
+const canContinueLegalDrafting = computed(
+  () =>
+    canActLegalDrafting.value &&
+    hasSelectedCertifier.value &&
+    Boolean(selectedForwardRecipient.value)
+);
+const canSendLegalDrafting = computed(
+  () => canActLegalDrafting.value && hasSelectedCertifier.value && !selectedForwardRecipient.value
+);
+const legalActionDescription = computed(() => {
+  if (!canActLegalDrafting.value) return 'Menunggu penerima aktif menyelesaikan Legal Drafting.';
+  if (selectedForwardRecipient.value)
+    return `Naskah akan diteruskan kepada ${selectedForwardRecipient.value.nama}. Aksi Kirim dinonaktifkan agar tujuan tidak ambigu.`;
+  if (currentIsCertifier.value)
+    return 'Kirim akan memfinalkan Legal Drafting dan melanjutkan ke tahap Evaluasi.';
+  if (nextUpwardRecipient.value)
+    return `Kirim akan mengembalikan hasil kepada ${nextUpwardRecipient.value.nama}.`;
+  return 'Pilih pejabat pengesah, lalu kirim hasil atau teruskan pekerjaan ke penerima lain.';
+});
+const sendModalDescription = computed(() => {
+  if (currentIsCertifier.value)
+    return 'Anda adalah Pejabat yang Mengesahkan. Naskah akan difinalkan pada tahap Legal Drafting dan dilanjutkan ke Evaluasi.';
+  if (nextUpwardRecipient.value)
+    return `Hasil Legal Drafting akan dikirim kembali kepada ${nextUpwardRecipient.value.nama}.`;
+  return `Hasil Legal Drafting akan dikirim kepada ${selectedCertifierRecipient.value?.nama || 'Pejabat yang Mengesahkan'}.`;
+});
 
 async function loadDetail() {
   loading.value = true;
@@ -652,29 +671,39 @@ function hasIncompleteRevisionPair() {
   return true;
 }
 
-async function kirimApproval(note) {
-  if (hasWaitingLegalRows.value) return;
+async function commitStagedRevision() {
   if (hasIncompleteRevisionPair()) return;
-  if (legalApprovers.value.length === 0) {
-    toast.add({ title: 'Pilih pemberi persetujuan legal', color: 'warning' });
+  if (stagedRevisi.value.docx && stagedRevisi.value.pdf) {
+    await uploadRevisiDokumen(id.value, stagedRevisi.value);
+  }
+  return true;
+}
+
+function approvalPayload(recipient) {
+  if (!recipient) return null;
+  return {
+    positionId: recipient.positionId,
+    nama: legalRecipientName(recipient),
+    jabatan: recipient.jabatan || recipient.unitName || '',
+  };
+}
+
+async function kirimApproval(note) {
+  if (!canSendLegalDrafting.value) {
+    toast.add({ title: 'Pilih Pejabat yang Mengesahkan', color: 'warning' });
     return;
   }
   sendingApproval.value = true;
   try {
-    const approvers = legalApprovers.value.map((v) => ({
-      positionId: v.positionId,
-      // Simpan label aktor PT/PH/PS pada approval agar seluruh halaman detail
-      // naskah menampilkan konteks aktor, bukan hanya dropdown pemilihan.
-      nama: legalRecipientName(v),
-      jabatan: v.jabatan,
-    }));
-    // Simpan pasangan revisi sebelum pekerjaan berpindah ke approver agar preview
-    // PDF selalu menunjuk versi yang sama dengan DOCX terbaru.
-    if (stagedRevisi.value.docx && stagedRevisi.value.pdf) {
-      await uploadRevisiDokumen(id.value, stagedRevisi.value);
-    }
-    await kirimApprovalLegal(id.value, approvers, note, catatanLegal.value);
-    toast.add({ title: 'Approval legal dikirim', color: 'success' });
+    if (!(await commitStagedRevision())) return;
+    const certifier = approvalPayload(selectedCertifierRecipient.value);
+    await kirimApprovalLegal(id.value, certifier ? [certifier] : [], note, catatanLegal.value);
+    toast.add({
+      title: currentIsCertifier.value
+        ? 'Legal Drafting selesai dan dilanjutkan ke Evaluasi'
+        : 'Hasil Legal Drafting berhasil dikirim',
+      color: 'success',
+    });
     showKirimModal.value = false;
     stagedRevisi.value = { docx: null, pdf: null };
     await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
@@ -684,6 +713,42 @@ async function kirimApproval(note) {
     toast.add({
       title: 'Gagal mengirim approval legal',
       description: errMsg || '',
+      color: 'error',
+    });
+  } finally {
+    sendingApproval.value = false;
+  }
+}
+
+async function continueLegalDrafting(note) {
+  if (!canContinueLegalDrafting.value) {
+    toast.add({ title: 'Pilih penerima Legal Drafting berikutnya', color: 'warning' });
+    return;
+  }
+  sendingApproval.value = true;
+  try {
+    if (!(await commitStagedRevision())) return;
+    const recipient = approvalPayload(selectedForwardRecipient.value);
+    const certifier = approvalPayload(selectedCertifierRecipient.value);
+    await teruskanLegalDrafting(
+      id.value,
+      recipient,
+      selectedCertifierFromChain.value ? undefined : certifier,
+      note,
+      catatanLegal.value
+    );
+    toast.add({
+      title: `Legal Drafting diteruskan kepada ${selectedForwardRecipient.value.nama}`,
+      color: 'success',
+    });
+    showTeruskanModal.value = false;
+    stagedRevisi.value = { docx: null, pdf: null };
+    await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
+  } catch (e) {
+    const rawMsg = e?.response?.data?.message || e?.message;
+    toast.add({
+      title: 'Gagal meneruskan Legal Drafting',
+      description: Array.isArray(rawMsg) ? rawMsg[0] : rawMsg || '',
       color: 'error',
     });
   } finally {

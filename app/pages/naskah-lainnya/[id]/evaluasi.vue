@@ -74,49 +74,62 @@
           </div>
         </div>
 
-        <USelectMenu
-          v-if="loadingCandidates || recipientOptions.length"
-          v-model="selectedRecipientId"
-          :items="recipientOptions"
-          :loading="loadingCandidates"
-          :disabled="isBusy"
-          value-key="value"
-          searchable
-          :filter-fields="['label', 'jabatan']"
-          :placeholder="recipientPlaceholder"
-          class="w-full"
-          :content="{ side: 'bottom', align: 'start', collisionPadding: 8 }"
-        >
-          <template #default>
-            <div v-if="selectedRecipient" class="flex min-w-0 flex-1 items-center gap-3 text-left">
-              <div
-                class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30"
-              >
-                <UIcon name="i-lucide-user" class="size-4 text-primary-600 dark:text-primary-400" />
+        <div v-if="loadingCandidates || recipientOptions.length" class="flex items-center gap-2">
+          <USelectMenu
+            v-model="selectedRecipientId"
+            :items="recipientOptions"
+            :loading="loadingCandidates"
+            :disabled="isBusy"
+            value-key="value"
+            searchable
+            :filter-fields="['label', 'jabatan']"
+            :placeholder="recipientPlaceholder"
+            class="min-w-0 flex-1"
+            :content="{ side: 'bottom', align: 'start', collisionPadding: 8 }"
+          >
+            <template #default>
+              <div v-if="selectedRecipient" class="flex min-w-0 flex-1 items-center gap-3 text-left">
+                <div
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30"
+                >
+                  <UIcon name="i-lucide-user" class="size-4 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                    {{ selectedRecipient.label }}
+                  </div>
+                  <div class="truncate text-xs text-gray-500 dark:text-gray-400">
+                    {{ selectedRecipient.jabatan }}
+                  </div>
+                </div>
               </div>
-              <div class="min-w-0 flex-1">
+              <span v-else class="text-gray-500">{{ recipientPlaceholder }}</span>
+            </template>
+
+            <template #item="{ item }">
+              <div class="min-w-0 py-0.5">
                 <div class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                  {{ selectedRecipient.label }}
+                  {{ item.label }}
                 </div>
                 <div class="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {{ selectedRecipient.jabatan }}
+                  {{ item.jabatan }}
                 </div>
               </div>
-            </div>
-            <span v-else class="text-gray-500">{{ recipientPlaceholder }}</span>
-          </template>
+            </template>
+          </USelectMenu>
 
-          <template #item="{ item }">
-            <div class="min-w-0 py-0.5">
-              <div class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                {{ item.label }}
-              </div>
-              <div class="truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ item.jabatan }}
-              </div>
-            </div>
-          </template>
-        </USelectMenu>
+          <!-- Hapus pilihan penerima (kembali ke tanpa penerima). -->
+          <UButton
+            v-if="selectedRecipientId"
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash-2"
+            size="sm"
+            :disabled="isBusy"
+            aria-label="Hapus penerima"
+            @click="clearSelectedRecipient"
+          />
+        </div>
 
         <UAlert
           v-else
@@ -177,15 +190,26 @@
 
           <div v-else class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <UButton
+              color="warning"
+              variant="outline"
+              size="lg"
+              icon="i-lucide-rotate-ccw"
+              class="w-full justify-center font-semibold sm:w-auto"
+              :disabled="isBusy"
+              @click="openRejection('legal_drafting_ulang')"
+            >
+              Legal Drafting Ulang
+            </UButton>
+            <UButton
               color="error"
               variant="outline"
               size="lg"
-              icon="i-lucide-x"
+              icon="i-lucide-ban"
               class="w-full justify-center font-semibold sm:w-auto"
               :disabled="isBusy"
-              @click="openEvaluationRejection"
+              @click="openRejection('batalkan')"
             >
-              Tolak
+              Batalkan
             </UButton>
             <UButton
               color="primary"
@@ -223,52 +247,54 @@
         <template #title>
           <Heading
             variant="heading9b"
-            class="ml-5 mt-5 mb-2 text-sm font-bold text-red-600 dark:text-red-400"
+            class="ml-5 mt-5 mb-2 text-sm font-bold"
+            :class="
+              pendingDecision === 'batalkan'
+                ? 'text-red-600 dark:text-red-400'
+                : 'text-amber-600 dark:text-amber-400'
+            "
           >
-            Tolak Evaluasi
+            {{ rejectionModalTitle }}
           </Heading>
         </template>
 
         <div class="space-y-4 px-6 pb-6">
           <p class="text-sm text-gray-700 dark:text-gray-300">
-            Isi alasan penolakan, kemudian tentukan apakah naskah dikembalikan untuk Legal Drafting
-            Ulang atau dibatalkan.
+            {{ rejectionModalDescription }}
           </p>
 
-          <UFormField label="Alasan Penolakan" required>
+          <UFormField label="Alasan" required>
             <UTextarea
               v-model="rejectionReason"
               :rows="4"
               autoresize
-              placeholder="Tuliskan alasan penolakan…"
+              placeholder="Tuliskan alasan keputusan Anda…"
               size="lg"
               class="w-full"
             />
           </UFormField>
 
-          <div class="grid gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:grid-cols-2">
+          <div
+            class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:flex-row sm:justify-end"
+          >
             <UButton
-              block
+              color="neutral"
+              variant="ghost"
               size="lg"
-              color="warning"
-              variant="soft"
-              icon="i-lucide-rotate-ccw"
-              :loading="activeAction === 'reject-legal'"
-              :disabled="isBusy || !rejectionReason.trim()"
-              @click="submitEvaluationDecision('legal_drafting_ulang')"
+              :disabled="isBusy"
+              @click="showEvaluationRejectOptions = false"
             >
-              Legal Drafting Ulang
+              Batal
             </UButton>
             <UButton
-              block
               size="lg"
-              color="error"
-              icon="i-lucide-ban"
-              :loading="activeAction === 'reject-cancel'"
+              :color="pendingDecision === 'batalkan' ? 'error' : 'warning'"
+              :icon="pendingDecision === 'batalkan' ? 'i-lucide-ban' : 'i-lucide-rotate-ccw'"
+              :loading="pendingDecision === 'batalkan' ? activeAction === 'reject-cancel' : activeAction === 'reject-legal'"
               :disabled="isBusy || !rejectionReason.trim()"
-              @click="submitEvaluationDecision('batalkan')"
+              @click="submitPendingDecision"
             >
-              Batalkan Naskah
+              {{ rejectionModalTitle }}
             </UButton>
           </div>
         </div>
@@ -318,6 +344,7 @@ const selectedRecipientId = ref<string | null>(null);
 const stagedRevision = ref<RevisionFilePair>({ docx: null, pdf: null });
 const showEvaluationRejectOptions = ref(false);
 const rejectionReason = ref('');
+const pendingDecision = ref<'legal_drafting_ulang' | 'batalkan' | null>(null);
 
 const actions = computed(() => detail.value?.availableActions ?? []);
 const supportingDocuments = computed(() =>
@@ -331,7 +358,6 @@ const breadcrumbs = computed(() => [
   { label: canDecideEvaluation.value ? 'Evaluasi EVP' : 'Persetujuan Lanjutan' },
 ]);
 
-const canSendEvaluation = computed(() => actions.value.includes('kirim-evaluasi'));
 const canDecideEvaluation = computed(() =>
   ['lanjut-persetujuan', 'legal-drafting-ulang', 'batalkan-evaluasi'].some((action) =>
     actions.value.includes(action as (typeof actions.value)[number])
@@ -404,7 +430,7 @@ const recipientPlaceholder = computed(() =>
 );
 const emptyRecipientDescription = computed(() =>
   canDecideEvaluation.value
-    ? 'Tidak ditemukan verifikator lain dalam unit EVP. Lanjut Persetujuan tanpa penerima akan mengarahkan naskah ke Blanko Verbal Persetujuan Direksi.'
+    ? 'Tidak ditemukan verifikator lain dalam unit EVP. Lanjut Persetujuan tanpa penerima akan mengarahkan naskah ke Blanko Verbal.'
     : 'Tidak ditemukan verifikator lain dalam unit yang sama. Anda tetap dapat menyelesaikan pekerjaan dan mengembalikannya ke EVP.'
 );
 const actionSectionTitle = computed(() =>
@@ -430,6 +456,12 @@ const selectedRecipient = computed(
   () => recipientOptions.value.find((item) => item.value === selectedRecipientId.value) ?? null
 );
 
+// Hapus pilihan penerima — kembali ke "tanpa penerima" (opsional).
+const clearSelectedRecipient = () => {
+  if (isBusy.value) return;
+  selectedRecipientId.value = null;
+};
+
 const actionDescription = computed(() => {
   if (canDecideEvaluation.value) {
     if (isFinalEvaluation.value) {
@@ -438,7 +470,7 @@ const actionDescription = computed(() => {
     if (selectedRecipient.value) {
       return `Lanjutkan kepada ${selectedRecipient.value.label}, atau tolak hasil evaluasi.`;
     }
-    return 'Tanpa penerima, Lanjut Persetujuan akan mengarahkan naskah ke Blanko Verbal Persetujuan Direksi.';
+    return 'Tanpa penerima, Lanjut Persetujuan akan mengarahkan naskah ke Blanko Verbal.';
   }
   if (selectedRecipient.value) {
     return `Teruskan kepada ${selectedRecipient.value.label}, atau selesaikan pekerjaan untuk dikembalikan ke EVP.`;
@@ -452,9 +484,25 @@ const getErrorMessage = (err: unknown, fallback: string) => {
   return Array.isArray(message) ? message.join(', ') : message || fallback;
 };
 
-const openEvaluationRejection = () => {
+const rejectionModalTitle = computed(() =>
+  pendingDecision.value === 'batalkan' ? 'Batalkan Naskah' : 'Legal Drafting Ulang'
+);
+const rejectionModalDescription = computed(() =>
+  pendingDecision.value === 'batalkan'
+    ? 'Naskah akan dibatalkan dan tidak dilanjutkan. Tuliskan alasan pembatalan.'
+    : 'Naskah dikembalikan ke konseptor pemrakarsa untuk menyunting ulang form awal. Tuliskan alasan pengembalian.'
+);
+
+const openRejection = (decision: 'legal_drafting_ulang' | 'batalkan') => {
+  if (isBusy.value) return;
+  pendingDecision.value = decision;
   rejectionReason.value = '';
   showEvaluationRejectOptions.value = true;
+};
+
+const submitPendingDecision = () => {
+  if (!pendingDecision.value) return;
+  submitEvaluationDecision(pendingDecision.value);
 };
 
 const submitEvaluationDecision = async (
@@ -617,11 +665,6 @@ onMounted(async () => {
   }
 
   loading.value = false;
-
-  if (canSendEvaluation.value) {
-    await router.replace(`/naskah-lainnya/${id.value}`);
-    return;
-  }
 
   if (canProcessContinuation.value || (canDecideEvaluation.value && !isFinalEvaluation.value)) {
     await loadContinuationCandidates();
