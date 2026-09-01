@@ -14,6 +14,7 @@
         <p class="text-sm text-gray-700 dark:text-gray-300">
           {{ description }}
         </p>
+        <slot name="highlight" />
         <!-- Banner warning (untuk tolak yang bersifat terminal/closed) -->
         <div
           v-if="warning"

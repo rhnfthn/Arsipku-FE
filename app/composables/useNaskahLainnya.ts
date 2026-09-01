@@ -5,6 +5,9 @@ import type {
   NaskahDetail,
   BuatNaskahPayload,
   EvaluasiPayload,
+  KirimEvaluasiPayload,
+  KeputusanEvaluasiPayload,
+  ApprovalItem,
   BlankoPayload,
   TandaTanganPayload,
   ApiResponse,
@@ -14,7 +17,7 @@ import type {
 } from '~/types/naskah-lainnya';
 
 export function useNaskahLainnya() {
-  const { apiGet, apiPost, apiPut, apiDelete } = useApi();
+  const { apiGet, apiGetFresh, apiPost, apiPut, apiDelete } = useApi();
 
   const items = ref<NaskahListItem[]>([]);
   const persetujuan = ref<NaskahListItem[]>([]);
@@ -146,6 +149,19 @@ export function useNaskahLainnya() {
       body: { catatan: b?.catatan },
     }),
     evaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi`, body: b }),
+    kirimEvaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi/kirim`, body: b }),
+    keputusanEvaluasi: (id, b) => ({
+      url: `/naskah-lainnya/${id}/evaluasi/keputusan`,
+      body: b,
+    }),
+    teruskanPersetujuan: (id, b) => ({
+      url: `/naskah-lainnya/${id}/persetujuan-lanjutan/teruskan`,
+      body: b,
+    }),
+    selesaiPersetujuan: (id, b) => ({
+      url: `/naskah-lainnya/${id}/persetujuan-lanjutan/selesai`,
+      body: b,
+    }),
     kembalikanEvaluasi: (id, b) => ({
       url: `/naskah-lainnya/${id}/evaluasi/kembalikan`,
       body: { catatan: b?.catatan },
@@ -153,6 +169,10 @@ export function useNaskahLainnya() {
     simpanBlanko: (id, b) => ({ url: `/naskah-lainnya/${id}/blanko-verbal`, body: b }),
     kirimApprovalBlanko: (id) => ({ url: `/naskah-lainnya/${id}/blanko-verbal/kirim-approval` }),
     tandaTangan: (id, b) => ({ url: `/naskah-lainnya/${id}/tanda-tangan`, body: b ?? {} }),
+    tolakTandaTangan: (id, b) => ({
+      url: `/naskah-lainnya/${id}/tanda-tangan/tolak`,
+      body: { catatan: b?.catatan },
+    }),
     // Lembar Persetujuan Direksi
     kirimLembarPersetujuanDireksi: (id, b) => ({
       url: `/naskah-lainnya/${id}/lembar-persetujuan-direksi/kirim`,
@@ -182,6 +202,18 @@ export function useNaskahLainnya() {
     );
   };
 
+  // DTO Approval backend hanya membutuhkan identitas posisi dan label pejabat.
+  // Jangan meneruskan seluruh object hasil org-data agar field tambahan tidak
+  // ditolak oleh whitelist validation pada endpoint workflow.
+  const toApprovalPayload = (item?: ApprovalItem) =>
+    item
+      ? {
+          positionId: item.positionId ? String(item.positionId) : undefined,
+          nama: item.nama,
+          jabatan: item.jabatan,
+        }
+      : undefined;
+
   const kirim = (id: string) => act(id, 'kirim');
   const setuju = (id: string, approvalId: string, catatan?: string) =>
     act(id, 'setuju', { approvalId, catatan });
@@ -195,11 +227,65 @@ export function useNaskahLainnya() {
     approvers: { positionId?: string; nama: string; jabatan: string; persnum?: number }[],
     catatan?: string,
     catatanLegal?: string
-  ) => act(id, 'kirimApprovalLegal', { approval: approvers, catatan, catatan_legal: catatanLegal });
+  ) =>
+    act(id, 'kirimApprovalLegal', {
+      approval: approvers.map((item) => toApprovalPayload(item)),
+      catatan,
+      catatan_legal: catatanLegal,
+    });
   const kembalikanLegal = (id: string, catatan: string) => act(id, 'kembalikanLegal', { catatan });
   const evaluasi = (id: string, payload: EvaluasiPayload) => act(id, 'evaluasi', payload);
+  const kirimEvaluasi = (id: string, payload: KirimEvaluasiPayload) =>
+    act(id, 'kirimEvaluasi', {
+      ...payload,
+      verifikator: toApprovalPayload(payload.verifikator),
+    });
+  const keputusanEvaluasi = (id: string, payload: KeputusanEvaluasiPayload) =>
+    act(id, 'keputusanEvaluasi', {
+      ...payload,
+      penerimaPertama: toApprovalPayload(payload.penerimaPertama),
+    });
+  const fetchKandidatPersetujuan = async (id: string): Promise<ApprovalItem[]> => {
+    const res: any = await apiGetFresh(`/naskah-lainnya/${id}/persetujuan-lanjutan/kandidat`);
+    const rows = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.data)
+          ? res.data.data
+          : Array.isArray(res?.items)
+            ? res.items
+            : [];
+
+    // Endpoint kandidat mengambil data langsung dari org-data sehingga nama
+    // field-nya berbeda dari ApprovalItem workflow. Normalisasi di satu tempat
+    // agar dropdown detail dan halaman persetujuan lanjutan konsisten.
+    const normalized = rows
+      .map(
+        (row: any): ApprovalItem => ({
+          positionId: String(row.position ?? row.positionId ?? ''),
+          persnum: Number(row.persnum_person ?? row.persnum) || undefined,
+          nama: row.persnum_person_text ?? row.nama ?? 'Tanpa nama',
+          jabatan: row.position_text ?? row.jabatan ?? '',
+        })
+      )
+      .filter((row: ApprovalItem) => Boolean(row.positionId));
+
+    return Array.from(
+      new Map(normalized.map((row: ApprovalItem) => [String(row.positionId), row])).values()
+    );
+  };
+  const teruskanPersetujuan = (id: string, penerima: ApprovalItem, catatan?: string) =>
+    act(id, 'teruskanPersetujuan', {
+      penerima: toApprovalPayload(penerima),
+      catatan,
+    });
+  const selesaiPersetujuan = (id: string, catatan?: string) =>
+    act(id, 'selesaiPersetujuan', { catatan });
   const kembalikanEvaluasi = (id: string, catatan: string) =>
     act(id, 'kembalikanEvaluasi', { catatan });
+  const tolakTandaTangan = (id: string, catatan: string) =>
+    act(id, 'tolakTandaTangan', { catatan });
   const simpanBlanko = (id: string, payload: BlankoPayload) => act(id, 'simpanBlanko', payload);
   const kirimApprovalBlanko = (id: string) => act(id, 'kirimApprovalBlanko');
   const tandaTangan = (id: string, payload: TandaTanganPayload = {}) =>
@@ -265,6 +351,19 @@ export function useNaskahLainnya() {
     fd.append('file', file);
     return apiPost<ApiResponse<{ parameter: { perihal: string; tanggal: string } }>>(
       `/naskah-lainnya/${id}/dokumen`,
+      fd
+    );
+  };
+
+  const uploadRevisiDokumen = async (id: string, pair: { docx: File | null; pdf: File | null }) => {
+    if (!pair.docx || !pair.pdf) {
+      throw new Error('Revisi wajib dilengkapi dengan file DOCX dan PDF.');
+    }
+    const fd = new FormData();
+    fd.append('docx', pair.docx);
+    fd.append('pdf', pair.pdf);
+    return apiPost<ApiResponse<{ parameter: { perihal: string; tanggal: string } }>>(
+      `/naskah-lainnya/${id}/dokumen/revisi`,
       fd
     );
   };
@@ -375,11 +474,18 @@ export function useNaskahLainnya() {
     kirimApprovalLegal,
     kembalikanLegal,
     evaluasi,
+    kirimEvaluasi,
+    keputusanEvaluasi,
+    fetchKandidatPersetujuan,
+    teruskanPersetujuan,
+    selesaiPersetujuan,
     kembalikanEvaluasi,
     simpanBlanko,
     kirimApprovalBlanko,
     tandaTangan,
+    tolakTandaTangan,
     uploadDokumen,
+    uploadRevisiDokumen,
     uploadDokumenTambahan,
     parseDokumen,
     unggahTtdFisik,

@@ -61,7 +61,12 @@
                 <span class="text-sm text-gray-500">Memuat pratinjau...</span>
               </div>
             </div>
-            <div ref="awalPreviewContainer" class="docx-preview-container"></div>
+            <iframe
+              v-if="isPdfPreviewUrl && awalPdfPreviewUrl"
+              :src="awalPdfPreviewUrl"
+              class="h-[500px] w-full border-0 bg-white"
+            />
+            <div v-else ref="awalPreviewContainer" class="docx-preview-container"></div>
           </div>
         </div>
 
@@ -118,14 +123,32 @@
           >
         </div>
 
-        <!-- Upload zone (item #9: FileUpload sesuai tulis.vue) -->
-        <FileUpload
-          :model-value="revisiFile ? [revisiFile] : []"
-          :multiple="false"
-          accept=".docx"
-          label="Pilih File & Unggah"
-          description=".docx — hasil revisi di luar aplikasi"
-          @update:model-value="onRevisiFiles"
+        <div class="grid gap-4 lg:grid-cols-2">
+          <FileUpload
+            :model-value="revisiDocx ? [revisiDocx] : []"
+            :multiple="false"
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            label="Unggah Versi DOCX"
+            description="File editable untuk diunduh dan direvisi kembali"
+            @update:model-value="onRevisiDocxFiles"
+          />
+          <FileUpload
+            :model-value="revisiPdf ? [revisiPdf] : []"
+            :multiple="false"
+            accept=".pdf,application/pdf"
+            label="Unggah Versi PDF"
+            description="File dengan isi yang sama, khusus untuk pratinjau"
+            @update:model-value="onRevisiPdfFiles"
+          />
+        </div>
+
+        <UAlert
+          v-if="hasPartialPair"
+          icon="i-lucide-triangle-alert"
+          color="warning"
+          variant="soft"
+          title="Pasangan file belum lengkap"
+          description="DOCX dan PDF wajib diunggah bersamaan sebelum aksi dapat diproses."
         />
 
         <!-- Parsing state -->
@@ -143,14 +166,14 @@
         </div>
 
         <!-- Parse result -->
-        <div v-if="revisiFile && !parsing" class="space-y-4">
+        <div v-if="hasCompletePair && !parsing" class="space-y-4">
           <div
             class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/40"
           >
             <UIcon name="i-lucide-check-circle" class="h-5 w-5 text-green-600" />
             <div class="flex-1">
               <p class="text-sm font-medium text-green-800 dark:text-green-300">
-                {{ revisiFile.name }}
+                {{ revisiDocx.name }} + {{ revisiPdf.name }}
               </p>
               <p class="text-xs text-green-600 dark:text-green-400">
                 {{
@@ -162,7 +185,7 @@
             </div>
           </div>
 
-          <!-- Pratinjau revisi collapsible (item #3) -->
+          <!-- Pratinjau revisi selalu memakai pasangan PDF. -->
           <div>
             <button
               type="button"
@@ -179,7 +202,11 @@
               v-show="revisiPreviewOpen"
               class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 overflow-auto max-h-[500px] relative"
             >
-              <div ref="revisiPreviewContainer" class="docx-preview-container"></div>
+              <iframe
+                v-if="revisiPreviewUrl"
+                :src="revisiPreviewUrl"
+                class="h-[500px] w-full border-0 bg-white"
+              />
             </div>
           </div>
         </div>
@@ -295,8 +322,11 @@ const headClass = computed(() =>
 const { apiGet } = useApi();
 const toast = useToast();
 
-const revisiFile = ref(null);
+const revisiDocx = ref(null);
+const revisiPdf = ref(null);
 const parsing = ref(false);
+const hasCompletePair = computed(() => !!revisiDocx.value && !!revisiPdf.value);
+const hasPartialPair = computed(() => !!revisiDocx.value !== !!revisiPdf.value);
 
 // Nama file naskah kanonik (display + download) — rumus shared di utils/naskah-file-name,
 // identik dengan BE agar konsisten di semua halaman + object storage.
@@ -307,6 +337,16 @@ const awalPreviewOpen = ref(false);
 const awalPreviewLoading = ref(false);
 const awalPreviewContainer = ref(null);
 const awalPreviewBuffer = ref(null);
+const awalPdfPreviewUrl = ref('');
+const isPdfPreviewUrl = computed(() => props.docxUrl.includes('preview=1'));
+
+function resetAwalPreview() {
+  awalPreviewBuffer.value = null;
+  if (awalPdfPreviewUrl.value) {
+    URL.revokeObjectURL(awalPdfPreviewUrl.value);
+    awalPdfPreviewUrl.value = '';
+  }
+}
 
 async function toggleAwalPreview() {
   awalPreviewOpen.value = !awalPreviewOpen.value;
@@ -315,6 +355,18 @@ async function toggleAwalPreview() {
   awalPreviewLoading.value = true;
   await nextTick();
   try {
+    if (isPdfPreviewUrl.value) {
+      if (!awalPdfPreviewUrl.value) {
+        const response = await apiGet(props.docxUrl, { responseType: 'blob' });
+        const pdf =
+          response instanceof Blob
+            ? new Blob([await response.arrayBuffer()], { type: 'application/pdf' })
+            : new Blob([response], { type: 'application/pdf' });
+        awalPdfPreviewUrl.value = URL.createObjectURL(pdf);
+      }
+      return;
+    }
+
     if (!awalPreviewBuffer.value) {
       const buf = await apiGet(props.docxUrl, { responseType: 'arraybuffer' });
       awalPreviewBuffer.value = buf;
@@ -339,52 +391,65 @@ async function toggleAwalPreview() {
 
 // ── Section 2: upload revisi via FileUpload (item #9) + collapsible preview (item #3) ──
 const revisiPreviewOpen = ref(false);
-const revisiPreviewContainer = ref(null);
+const revisiPreviewUrl = ref('');
 
-async function onRevisiFiles(files) {
-  if (!files || !files.length) {
-    revisiFile.value = null;
-    if (props.stageUpload) emit('stage-revisi', null);
-    return;
-  }
-  const file = files[files.length - 1];
-  revisiFile.value = file;
+function emitRevisionPair() {
+  emit('stage-revisi', {
+    docx: revisiDocx.value,
+    pdf: revisiPdf.value,
+  });
+}
+
+function resetPreviewUrl() {
+  if (revisiPreviewUrl.value) URL.revokeObjectURL(revisiPreviewUrl.value);
+  revisiPreviewUrl.value = revisiPdf.value ? URL.createObjectURL(revisiPdf.value) : '';
+}
+
+async function onRevisiDocxFiles(files) {
+  revisiDocx.value = files?.[files.length - 1] ?? null;
   revisiPreviewOpen.value = false;
-  if (props.stageUpload) {
-    // staging mode (legal-drafting): jangan persist ke naskah. File hanya di-stage
-    // di FE untuk pratinjau; baru masuk ke dokumen saat "Kirim Approval Legal".
-    emit('stage-revisi', file);
-    return;
-  }
+  emitRevisionPair();
+  await persistPairIfReady();
+}
+
+async function onRevisiPdfFiles(files) {
+  revisiPdf.value = files?.[files.length - 1] ?? null;
+  revisiPreviewOpen.value = false;
+  resetPreviewUrl();
+  emitRevisionPair();
+  await persistPairIfReady();
+}
+
+async function persistPairIfReady() {
+  if (props.stageUpload || !hasCompletePair.value) return;
   parsing.value = true;
   try {
-    await emit('upload-revisi', file);
+    await emit('upload-revisi', {
+      docx: revisiDocx.value,
+      pdf: revisiPdf.value,
+    });
   } catch {
     toast.add({ title: 'Gagal mengunggah revisi', color: 'error' });
-    revisiFile.value = null;
   } finally {
     parsing.value = false;
   }
 }
 
-// Render pratinjau revisi (File lokal) saat container terpasang / revisiFile berubah.
-watch([revisiFile, revisiPreviewOpen], async () => {
-  if (!revisiFile.value || !revisiPreviewOpen.value) return;
-  await nextTick();
-  const el = revisiPreviewContainer.value;
-  if (!el) return;
-  el.innerHTML = '';
-  try {
-    await renderAsync(revisiFile.value, el, undefined, {
-      className: 'docx',
-      inWrapper: true,
-      ignoreWidth: false,
-      ignoreHeight: false,
-      breakPages: true,
-    });
-  } catch {
-    toast.add({ title: 'Gagal merender pratinjau revisi', color: 'error' });
+watch(revisiPreviewOpen, (open) => {
+  if (open && revisiPdf.value && !revisiPreviewUrl.value) resetPreviewUrl();
+});
+
+watch(
+  () => props.docxUrl,
+  () => {
+    awalPreviewOpen.value = false;
+    resetAwalPreview();
   }
+);
+
+onBeforeUnmount(() => {
+  resetAwalPreview();
+  if (revisiPreviewUrl.value) URL.revokeObjectURL(revisiPreviewUrl.value);
 });
 
 // ── Section 3: TinyMCE init (item #4) — disederhanakan dari layanan-email pattern ──

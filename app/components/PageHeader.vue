@@ -3,6 +3,8 @@ const props = defineProps({
   title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   items: { type: Array, default: () => [] },
+  // Route tujuan tombol back di samping judul (mis. halaman detail naskah).
+  backTo: { type: String, default: '' },
 });
 </script>
 
@@ -10,7 +12,18 @@ const props = defineProps({
   <div class="space-y-1 mb-5">
     <!-- TITLE -->
     <!-- <Heading variant="heading6sb" class="text-gray-900 dark:text-white"> -->
-    <div v-if="title || $slots.title" class="flex flex-wrap items-center gap-3">
+    <div v-if="title || $slots.title || backTo" class="flex flex-wrap items-center gap-3">
+      <UTooltip v-if="backTo" text="Kembali">
+        <UButton
+          :to="backTo"
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          class="rounded-full"
+          aria-label="Kembali"
+        />
+      </UTooltip>
       <slot name="title">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           {{ title }}
