@@ -257,8 +257,12 @@
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :busy="busy"
+                    :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
                 <div v-if="pdDiketahuiDirectors.length" class="space-y-2">
@@ -272,8 +276,12 @@
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :busy="busy"
+                    :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
               </div>
@@ -400,6 +408,19 @@
         @confirm="confirmTolak"
       />
     </template>
+
+    <DelegateDireksiPickerModal
+      v-if="delegasiTarget"
+      v-model:open="delegasiModalOpen"
+      :naskah-id="id"
+      :approval-id="delegasiTarget.approvalId ?? ''"
+      :company-id="companyId"
+      :mode="delegasiMode"
+      :current-delegate-name="delegasiTarget.delegateName"
+      :current-delegate-persnum="delegasiTarget.delegatePersnum"
+      :current-position-status="delegasiTarget.delegatePositionStatus ?? 'PT'"
+      @saved="onDelegasiSaved"
+    />
   </div>
 </template>
 
@@ -416,7 +437,7 @@ definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const id = computed(() => route.params.id as string);
-const { user } = useAuth();
+const { user, isLegalRole } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -428,6 +449,7 @@ const {
   kirimLembarPersetujuanDireksi,
   parafLembarPersetujuanDireksi,
   tolakLembarPersetujuanDireksi,
+  removeDelegasiDireksi,
 } = useNaskahLainnya();
 
 const breadcrumbs = computed(() => [
@@ -451,6 +473,35 @@ const pdfUrl = ref('');
 const parafModalOpen = ref(false);
 const tolakModalOpen = ref(false);
 const activeDirector = ref<DirectorApprovalItem | null>(null);
+
+const delegasiModalOpen = ref(false);
+const delegasiTarget = ref<DirectorApprovalItem | null>(null);
+const delegasiMode = ref<'add' | 'edit'>('add');
+const companyId = computed(() => detail.value?.companyId ?? '');
+
+function openAddDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'add';
+  delegasiModalOpen.value = true;
+}
+function openEditDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'edit';
+  delegasiModalOpen.value = true;
+}
+async function removeDelegate(d: DirectorApprovalItem) {
+  if (!d.approvalId) return;
+  try {
+    await removeDelegasiDireksi(id.value, d.approvalId);
+    await fetchDetail(id.value);
+    toast.add({ title: 'Delegate dihapus', color: 'success' });
+  } catch {
+    toast.add({ title: 'Gagal menghapus delegate', color: 'error' });
+  }
+}
+async function onDelegasiSaved() {
+  await fetchDetail(id.value);
+}
 
 const sheet = ref<SheetFormModel>({
   lampiran: '1 (satu) berkas',
@@ -513,6 +564,10 @@ const mapApprovalDirector = (
   persnum: a.persnum,
   catatan: a.catatan,
   roleLabel,
+  approvalId: a.id,
+  delegatePersnum: a.delegatePersnum,
+  delegateName: a.delegateName,
+  delegatePositionStatus: a.delegatePositionStatus,
 });
 
 const pdDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
@@ -610,6 +665,7 @@ function isUserApprover(row: ApprovalRow) {
   const nama = (u.nama ?? '').trim().toLowerCase();
   return (
     (row.persnum && String(row.persnum) === uid) ||
+    (row.delegatePersnum && String(row.delegatePersnum) === uid) ||
     (row.positionId && String(row.positionId) === pos) ||
     (row.nama && row.nama.trim().toLowerCase() === nama)
   );

@@ -15,7 +15,7 @@ const route = useRoute();
 const id = computed(() => route.params.id as string);
 const { t } = useI18n();
 const toast = useToast();
-const { user, getProfile } = useAuth();
+const { user, getProfile, isLegalRole } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 
 const {
@@ -25,6 +25,7 @@ const {
   kirimBlankoVerbal,
   parafBlankoVerbal,
   tolakBlankoVerbal,
+  removeDelegasiDireksi,
 } = useNaskahLainnya();
 
 const breadcrumbs = computed(() => [
@@ -47,6 +48,35 @@ const tolakModalOpen = ref(false);
 const parafCatatan = ref('');
 const tolakCatatan = ref('');
 const activeDirector = ref<DirectorApprovalItem | null>(null);
+
+const delegasiModalOpen = ref(false);
+const delegasiTarget = ref<DirectorApprovalItem | null>(null);
+const delegasiMode = ref<'add' | 'edit'>('add');
+const companyId = computed(() => detail.value?.companyId ?? '');
+
+function openAddDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'add';
+  delegasiModalOpen.value = true;
+}
+function openEditDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'edit';
+  delegasiModalOpen.value = true;
+}
+async function removeDelegate(d: DirectorApprovalItem) {
+  if (!d.approvalId) return;
+  try {
+    await removeDelegasiDireksi(id.value, d.approvalId);
+    await fetchDetail(id.value);
+    toast.add({ title: 'Delegate dihapus', color: 'success' });
+  } catch {
+    toast.add({ title: 'Gagal menghapus delegate', color: 'error' });
+  }
+}
+async function onDelegasiSaved() {
+  await fetchDetail(id.value);
+}
 
 const form = ref<SheetFormModel>({
   lampiran: '1 (satu) berkas',
@@ -100,6 +130,10 @@ const mapApprovalDirector = (
   persnum: a.persnum,
   catatan: a.catatan,
   roleLabel,
+  approvalId: a.id,
+  delegatePersnum: a.delegatePersnum,
+  delegateName: a.delegateName,
+  delegatePositionStatus: a.delegatePositionStatus,
 });
 
 const bvDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
@@ -206,6 +240,7 @@ function isUserApprover(row: ApprovalRow) {
   const nama = (u.nama ?? '').trim().toLowerCase();
   return Boolean(
     (row.persnum && String(row.persnum) === uid) ||
+      (row.delegatePersnum && String(row.delegatePersnum) === uid) ||
       (row.positionId && String(row.positionId) === pos) ||
       (row.nama && row.nama.trim().toLowerCase() === nama)
   );
@@ -796,8 +831,12 @@ onMounted(async () => {
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
+                    :is-legal="isLegalRole"
                     @paraf="paraf"
                     @tolak="tolak"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
                 <div v-if="bvDitetapkanDirectors.length" class="space-y-2">
@@ -817,8 +856,12 @@ onMounted(async () => {
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
                     paraf-label="Paraf & Tanda Tangan Naskah"
+                    :is-legal="isLegalRole"
                     @paraf="paraf"
                     @tolak="tolak"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
               </div>
@@ -931,6 +974,19 @@ onMounted(async () => {
         @confirm="confirmTolak"
       />
     </template>
+
+    <DelegateDireksiPickerModal
+      v-if="delegasiTarget"
+      v-model:open="delegasiModalOpen"
+      :naskah-id="id"
+      :approval-id="delegasiTarget.approvalId ?? ''"
+      :company-id="companyId"
+      :mode="delegasiMode"
+      :current-delegate-name="delegasiTarget.delegateName"
+      :current-delegate-persnum="delegasiTarget.delegatePersnum"
+      :current-position-status="delegasiTarget.delegatePositionStatus ?? 'PT'"
+      @saved="onDelegasiSaved"
+    />
   </div>
 </template>
 

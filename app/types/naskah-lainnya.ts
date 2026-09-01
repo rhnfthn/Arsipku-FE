@@ -204,6 +204,8 @@ export interface NaskahDetail extends NaskahListItem {
   riwayatByTahap?: RiwayatByTahap;
   stepper: StepperStep[];
   availableActions: JenisAksi[]; // dihitung BE/mock dari role + tahapan
+  // BE `getDetail` exposes the naskah's company id (for delegasi direksi lookup).
+  companyId?: string | null;
   // Daftar penandatangan (array). BE baru mengirim array.
   // `penandatangan` (inherited dari NaskahListItem) tetap dipertahankan untuk backward compat (item pertama).
   penandatanganList?: Penandatangan[];
