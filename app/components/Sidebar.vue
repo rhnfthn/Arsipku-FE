@@ -1115,12 +1115,6 @@ const unitDokumenKelolaMenus = computed(() => [
         icon: 'i-lucide-folder-plus',
       },
       {
-        label: 'Usulan Akses',
-        to: '/kelola/penggunaan/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
         label: 'Penerimaan Usulan',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
@@ -1136,6 +1130,12 @@ const unitDokumenKelolaMenus = computed(() => [
     label: 'Penggunaan',
     icon: 'i-lucide-folder-open',
     children: [
+      {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
       {
         label: 'Verifikasi Usulan Akses',
         to: '/kelola/penggunaan/verifikasi-usulan',
@@ -1233,6 +1233,17 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
+        label: 'Verifikasi Usulan',
+        to: '/maintenance/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+      },
+    ],
+  },
+  {
+    label: 'Penggunaan',
+    icon: 'i-lucide-folder-open',
+    children: [
+      {
         label: 'Usulan Akses',
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
@@ -1244,17 +1255,6 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         icon: 'i-lucide-file-check',
         badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
-      {
-        label: 'Verifikasi Usulan',
-        to: '/maintenance/verifikasi-usulan',
-        icon: 'i-lucide-file-check-2',
-      },
-    ],
-  },
-  {
-    label: 'Penggunaan',
-    icon: 'i-lucide-folder-open',
-    children: [
       {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
@@ -1293,18 +1293,6 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
-        label: 'Usulan Akses',
-        to: '/kelola/penggunaan/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
-        label: 'Verifikasi Usulan Akses',
-        to: '/kelola/penggunaan/verifikasi-usulan',
-        icon: 'i-lucide-file-check',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
         label: 'Verifikasi Persetujuan',
         to: '/maintenance/verifikasi-persetujuan-tu',
         icon: 'i-lucide-file-check-2',
@@ -1320,6 +1308,18 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
     label: 'Penggunaan',
     icon: 'i-lucide-folder-open',
     children: [
+      {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
+        label: 'Verifikasi Usulan Akses',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check',
+        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
       {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
@@ -1398,13 +1398,6 @@ const adminMenuKelola = computed(() => {
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
     {
-      label: 'Usulan Akses',
-      to: '/kelola/penggunaan/usulan-akses-berkas',
-      icon: 'i-lucide-folder-key',
-      permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    },
-    {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
@@ -1455,10 +1448,12 @@ const adminMenuKelola = computed(() => {
   // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
   // Tiap child tampil berdasarkan actor:
   //   - Usulan Saya: SE (buat usulan)
+  //   - Usulan Akses: user dengan permission read (list semua usulan)
   //   - Verifikasi Usulan Akses: verifikator managerial & SE pemberi
   //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
   const penggunaanChildren = [];
 
+  // Usulan Akses (list) — untuk SE, manager, admin/superadmin yang punya permission
   if (isSekretarisActor.value) {
     penggunaanChildren.push({
       label: 'Usulan Saya',
@@ -1466,6 +1461,15 @@ const adminMenuKelola = computed(() => {
       icon: 'i-lucide-file-plus',
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
+    });
+  } else {
+    // Non-SE: tampilkan "Usulan Akses" (list)
+    penggunaanChildren.push({
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     });
   }
 
@@ -1606,9 +1610,18 @@ const userMenuKelola = computed(() => {
   ];
 
   // ── Menu Penggunaan (Usulan Akses Berkas) ──
+  // Urutan konsisten: Usulan Akses → Verifikasi → Pemberian
+  // Usulan Akses: list semua usulan (untuk non-SE lihat)
   // Verifikasi Usulan Akses: verifikator managerial (EVP/AVP/VP/BOD) & SE pemberi.
   // Pemberian: list akses yang sudah diterbitkan (semua user).
   const penggunaanChildrenKelola = [
+    {
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+    },
     {
       label: 'Verifikasi Usulan Akses',
       to: '/kelola/penggunaan/verifikasi-usulan',
