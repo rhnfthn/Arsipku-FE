@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <PageHeader :items="breadcrumbs">
+    <PageHeader :items="breadcrumbs" :back-to="`/naskah-lainnya/${id}`">
       <template #title>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">
           {{ detail?.perihal || 'Memuat…' }}
@@ -52,7 +52,7 @@
         :catatan-title="workspaceCopy.catatanTitle"
         :catatan-placeholder="workspaceCopy.catatanPlaceholder"
         :show-actions="false"
-        :docx-url="`/naskah-lainnya/${id}/file`"
+        :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="canProcess"
         staged-success-description="Revisi siap diunggah bersama aksi persetujuan"
@@ -137,7 +137,8 @@
               Aksi Persetujuan
             </h3>
             <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Upload naskah revisi bersifat opsional. Jika kosong, naskah sebelumnya tetap dipakai.
+              Revisi bersifat opsional. Jika mengunggah revisi, DOCX dan PDF wajib dilengkapi
+              bersamaan dengan isi yang sama.
             </p>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row">
@@ -222,7 +223,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { renderAsync } from 'docx-preview';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
-import type { ApprovalRow, TahapApproval } from '~/types/naskah-lainnya';
+import type { ApprovalRow, RevisionFilePair, TahapApproval } from '~/types/naskah-lainnya';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 
@@ -230,7 +231,7 @@ const route = useRoute();
 const id = computed(() => route.params.id as string);
 const { apiGet } = useApi();
 const { user, getProfile } = useAuth();
-const { detail, fetchDetail, uploadDokumen, setuju, tolak } = useNaskahLainnya();
+const { detail, fetchDetail, uploadRevisiDokumen, setuju, tolak } = useNaskahLainnya();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -239,7 +240,7 @@ const busy = ref(false);
 const activeAction = ref<'setuju' | 'tolak' | null>(null);
 const catatan = ref('');
 const dokumenPendukung = ref<any[]>([]);
-const stagedRevisi = ref<File | null>(null);
+const stagedRevisi = ref<RevisionFilePair>({ docx: null, pdf: null });
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 
@@ -438,7 +439,9 @@ async function loadDetail() {
 
 async function downloadNaskah(name?: string) {
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, { responseType: 'blob' });
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+      responseType: 'blob',
+    });
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
@@ -526,14 +529,23 @@ async function previewPendukung(doc: any) {
   }
 }
 
-function onStageRevisi(file: File | null) {
-  stagedRevisi.value = file;
+function onStageRevisi(pair: RevisionFilePair) {
+  stagedRevisi.value = pair;
 }
 
 async function commitStagedRevisi() {
-  if (!stagedRevisi.value) return;
-  await uploadDokumen(id.value, stagedRevisi.value);
-  stagedRevisi.value = null;
+  const { docx, pdf } = stagedRevisi.value;
+  if (!docx && !pdf) return;
+  if (!docx || !pdf) {
+    toast.add({
+      title: 'Lengkapi pasangan file revisi',
+      description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
+      color: 'warning',
+    });
+    throw new Error('Pasangan file revisi belum lengkap');
+  }
+  await uploadRevisiDokumen(id.value, stagedRevisi.value);
+  stagedRevisi.value = { docx: null, pdf: null };
 }
 
 async function runApprovalAction(action: 'setuju' | 'tolak', note?: string) {

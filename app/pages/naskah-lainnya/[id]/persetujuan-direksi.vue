@@ -1,12 +1,19 @@
 <template>
   <div class="space-y-5">
-    <PageHeader :items="breadcrumbs">
+    <PageHeader :items="breadcrumbs" :back-to="`/naskah-lainnya/${id}`">
       <template #title>
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           {{ detail?.perihal || 'Memuat…' }}
         </h1>
       </template>
     </PageHeader>
+
+    <TemplateDireksiSelector
+      v-if="detail && isBlankoStage"
+      :model-value="selectedTemplate"
+      :disabled="templateLocked"
+      @update:model-value="changeTemplate"
+    />
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -257,8 +264,13 @@
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :busy="busy"
+                    paraf-label="Setuju"
+                    :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
                 <div v-if="pdDiketahuiDirectors.length" class="space-y-2">
@@ -272,8 +284,13 @@
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :busy="busy"
+                    paraf-label="Setuju"
+                    :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
               </div>
@@ -352,19 +369,44 @@
       <VerifyActionModal
         v-model="parafModalOpen"
         variant="approve"
-        title="Paraf Lembar Persetujuan Direksi"
-        :description="`Anda akan memberikan paraf sebagai <strong>${activeDirector?.nama || '-'}</strong>.`"
+        title="Setuju"
+        description="Anda akan menyetujui lembar persetujuan direksi atas nama pejabat berikut."
         note-placeholder="Catatan opsional…"
-        confirm-label="Paraf"
+        confirm-label="Setuju"
         :saving="busy"
         @confirm="confirmParaf"
-      />
+      >
+        <template #highlight>
+          <div
+            class="flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 dark:border-primary-800 dark:bg-primary-900/20"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm"
+            >
+              <UIcon name="i-lucide-user-check" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p
+                class="text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400"
+              >
+                {{ activeDirector?.roleLabel || 'Penandatangan' }}
+              </p>
+              <p class="truncate text-base font-bold text-gray-950 dark:text-white">
+                {{ activeDirector?.nama || '-' }}
+              </p>
+              <p class="truncate text-sm font-medium text-gray-600 dark:text-gray-300">
+                {{ activeDirector?.jabatan || '-' }}
+              </p>
+            </div>
+          </div>
+        </template>
+      </VerifyActionModal>
 
       <!-- ── Tolak Modal ── -->
       <VerifyActionModal
         v-model="tolakModalOpen"
         variant="reject"
-        title="Tolak Lembar Persetujuan Direksi"
+        title="Tolak"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
         note-placeholder="Alasan penolakan (minimal 5 karakter)…"
@@ -375,6 +417,19 @@
         @confirm="confirmTolak"
       />
     </template>
+
+    <DelegateDireksiPickerModal
+      v-if="delegasiTarget"
+      v-model:open="delegasiModalOpen"
+      :naskah-id="id"
+      :approval-id="delegasiTarget.approvalId ?? ''"
+      :company-id="companyId"
+      :mode="delegasiMode"
+      :current-delegate-name="delegasiTarget.delegateName"
+      :current-delegate-persnum="delegasiTarget.delegatePersnum"
+      :current-position-status="delegasiTarget.delegatePositionStatus ?? 'PT'"
+      @saved="onDelegasiSaved"
+    />
   </div>
 </template>
 
@@ -384,6 +439,8 @@ import { CalendarDate } from '@internationalized/date';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
 import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelector.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
+import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
+import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
@@ -391,7 +448,7 @@ definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const id = computed(() => route.params.id as string);
-const { user } = useAuth();
+const { user, isLegalRole } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -403,13 +460,14 @@ const {
   kirimLembarPersetujuanDireksi,
   parafLembarPersetujuanDireksi,
   tolakLembarPersetujuanDireksi,
+  removeDelegasiDireksi,
 } = useNaskahLainnya();
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('naskah_lainnya'), to: '/naskah-lainnya' },
   { label: detail.value?.perihal || 'Detail', to: `/naskah-lainnya/${id.value}` },
-  { label: 'Persetujuan Direksi', to: '#' },
+  { label: 'Blanko Verbal', to: '#' },
 ]);
 
 const maxPerihal = 200;
@@ -422,10 +480,42 @@ const bodDirectors = ref<DirectorApprovalItem[]>([]);
 
 const pdfModalOpen = ref(false);
 const pdfUrl = ref('');
+const selectedTemplate = ref<'blanko_verbal' | 'lembar_persetujuan_direksi'>(
+  'lembar_persetujuan_direksi'
+);
 
 const parafModalOpen = ref(false);
 const tolakModalOpen = ref(false);
 const activeDirector = ref<DirectorApprovalItem | null>(null);
+
+const delegasiModalOpen = ref(false);
+const delegasiTarget = ref<DirectorApprovalItem | null>(null);
+const delegasiMode = ref<'add' | 'edit'>('add');
+const companyId = computed(() => detail.value?.companyId ?? '');
+
+function openAddDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'add';
+  delegasiModalOpen.value = true;
+}
+function openEditDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'edit';
+  delegasiModalOpen.value = true;
+}
+async function removeDelegate(d: DirectorApprovalItem) {
+  if (!d.approvalId) return;
+  try {
+    await removeDelegasiDireksi(id.value, d.approvalId);
+    await fetchDetail(id.value);
+    toast.add({ title: 'Delegate dihapus', color: 'success' });
+  } catch {
+    toast.add({ title: 'Gagal menghapus delegate', color: 'error' });
+  }
+}
+async function onDelegasiSaved() {
+  await fetchDetail(id.value);
+}
 
 const sheet = ref<SheetFormModel>({
   lampiran: '1 (satu) berkas',
@@ -465,15 +555,50 @@ watch(catatan, (v) => {
 
 const isEvaluasi = computed(() => detail.value?.tahapan === 'evaluasi');
 const isPd = computed(() => detail.value?.tahapan === 'persetujuan_direksi');
+const isBlankoStage = computed(() => detail.value?.tahapan === 'blanko_verbal');
 const pdRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi')
 );
 const pdDitetapkanRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi_ditetapkan')
 );
+const hasActiveBlankoVerbal = computed(() =>
+  (detail.value?.approval ?? []).some(
+    (a) =>
+      (a.tahap === 'blanko_verbal' || a.tahap === 'blanko_verbal_ditetapkan') &&
+      (a.status === 'waiting' || a.status === 'pending')
+  )
+);
+const templateLocked = computed(
+  () =>
+    hasActiveBlankoVerbal.value ||
+    [...pdRows.value, ...pdDitetapkanRows.value].some(
+      (a) => a.status === 'waiting' || a.status === 'pending'
+    )
+);
+const hasActiveLembarPersetujuan = computed(() =>
+  [...pdRows.value, ...pdDitetapkanRows.value].some(
+    (a) => a.status === 'waiting' || a.status === 'pending'
+  )
+);
+
+async function changeTemplate(value: 'blanko_verbal' | 'lembar_persetujuan_direksi') {
+  if (templateLocked.value || value === selectedTemplate.value) return;
+  selectedTemplate.value = value;
+  if (value === 'blanko_verbal') {
+    await navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`);
+  }
+}
 // Editable saat evaluasi (alur normal: kirim = transisi ke PD) atau saat sudah di
 // persetujuan_direksi tapi baris BOD belum ada (recovery naskah yang masuk PD tanpa lembar).
-const canEditSheet = computed(() => isEvaluasi.value || (isPd.value && pdRows.value.length === 0));
+const canEditSheet = computed(
+  () =>
+    isEvaluasi.value ||
+    (isPd.value && !hasActiveLembarPersetujuan.value) ||
+    (isBlankoStage.value &&
+      !hasActiveLembarPersetujuan.value &&
+      Boolean(detail.value?.availableActions?.includes('kirim-approval-blanko')))
+);
 
 const mapApprovalDirector = (
   a: ApprovalRow,
@@ -488,6 +613,10 @@ const mapApprovalDirector = (
   persnum: a.persnum,
   catatan: a.catatan,
   roleLabel,
+  approvalId: a.id,
+  delegatePersnum: a.delegatePersnum,
+  delegateName: a.delegateName,
+  delegatePositionStatus: a.delegatePositionStatus,
 });
 
 const pdDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
@@ -515,6 +644,11 @@ function compactDirector(director: DirectorApprovalItem): DirectorApprovalItem {
     jabatan: director.jabatan,
     positionId: director.positionId,
     persnum: director.persnum,
+    delegator: director.delegator?.trim() || 'ybs',
+    // Routing delegasi — ikut round-trip agar restore form tidak hilang.
+    delegatePersnum: director.delegatePersnum,
+    delegateName: director.delegateName,
+    delegatePositionStatus: director.delegatePositionStatus,
   };
 }
 
@@ -524,6 +658,12 @@ function cleanSheetPayload(): SheetFormModel {
     jabatan: director.jabatan,
     positionId: director.positionId,
     persnum: director.persnum,
+    delegator: director.delegator?.trim() || 'ybs',
+    // Routing delegasi ke pengganti (persnum) — tanpa ini BE tidak bisa
+    // mengarahkan paraf ke pengganti saat seeding approval.
+    delegatePersnum: director.delegatePersnum,
+    delegateName: director.delegateName,
+    delegatePositionStatus: director.delegatePositionStatus,
   });
   return {
     ...sheet.value,
@@ -541,25 +681,23 @@ function latestPemrakarsaApproval() {
 
 function initDirectorSelection() {
   if (!canEditSheet.value && (pdDirectors.value.length || pdDitetapkanRows.value.length)) {
-    sheet.value.diketahuiOleh = pdRows.value.map((a, idx) =>
+    // Baris delegasi: nama approval row adalah ybs direksi — untuk preview
+    // template, kembalikan ke nama pengganti + status (prefix PT/PH/PS).
+    const fromRow = (a: ApprovalRow, idx: number) =>
       compactDirector({
         index: a.urutan ?? idx + 1,
-        nama: a.nama,
+        nama: a.delegatePersnum ? a.delegateName || a.nama : a.nama,
         jabatan: a.jabatan,
         positionId: a.positionId,
         persnum: a.persnum,
-      })
-    );
+        delegator: a.delegatePersnum ? a.delegatePositionStatus || 'ybs' : 'ybs',
+        delegatePersnum: a.delegatePersnum,
+        delegateName: a.delegateName,
+        delegatePositionStatus: a.delegatePositionStatus,
+      });
+    sheet.value.diketahuiOleh = pdRows.value.map(fromRow);
     if (pdDitetapkanRows.value.length) {
-      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map((a, idx) =>
-        compactDirector({
-          index: a.urutan ?? idx + 1,
-          nama: a.nama,
-          jabatan: a.jabatan,
-          positionId: a.positionId,
-          persnum: a.persnum,
-        })
-      );
+      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map(fromRow);
     }
     return;
   }
@@ -585,6 +723,7 @@ function isUserApprover(row: ApprovalRow) {
   const nama = (u.nama ?? '').trim().toLowerCase();
   return (
     (row.persnum && String(row.persnum) === uid) ||
+    (row.delegatePersnum && String(row.delegatePersnum) === uid) ||
     (row.positionId && String(row.positionId) === pos) ||
     (row.nama && row.nama.trim().toLowerCase() === nama)
   );
@@ -620,6 +759,10 @@ async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
+    if (isBlankoStage.value && hasActiveBlankoVerbal.value) {
+      await navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`, { replace: true });
+      return;
+    }
     initSheet();
     initDirectorSelection();
   } catch {
@@ -715,13 +858,10 @@ async function confirmParaf(note) {
   busyMessage.value = 'Mencatat paraf…';
   try {
     await parafLembarPersetujuanDireksi(id.value, cleanSheetPayload(), note ?? '');
-    toast.add({ title: 'Paraf tercatat', color: 'success' });
+    toast.add({ title: 'Persetujuan tercatat', color: 'success' });
     parafModalOpen.value = false;
     activeDirector.value = null;
     await loadDetail();
-    if (detail.value?.tahapan === 'blanko_verbal') {
-      navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`);
-    }
   } catch (e) {
     toast.add({ title: 'Gagal mencatat paraf', description: apiErrorMessage(e), color: 'error' });
   } finally {
