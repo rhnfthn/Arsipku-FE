@@ -63,9 +63,9 @@ const exportData = () => {
     const headers = ['Perihal', 'Tipe', 'Nomor Surat', 'Tanggal'];
     const csvRows = filteredNaskah.value.map((n: any) => [
       n.perihal || '(Tanpa perihal)',
-      n.naskahTipe || '-',
-      n.nomorSurat || '-',
-      formatDate(n.tanggalNaskah),
+      n.naskah_tipe || '-',
+      n.nomor_surat || '-',
+      formatDate(n.tanggal_naskah),
     ]);
     downloadCsv(`naskah-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
     toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
@@ -81,7 +81,7 @@ const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
-  { label: berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
+  { label: berkasDetail.value?.judul_berkas || 'Berkas', to: '#' },
 ]);
 
 const formatDate = (dateStr: string | null) => {
@@ -109,13 +109,13 @@ const loadAll = async () => {
 
     // 2. Simpan semua berkas items untuk selector
     berkasItems.value = items;
-    activeBerkasId.value = items[0].berkasId;
+    activeBerkasId.value = items[0].berkas_id;
 
     // 3. Fetch detail berkas pertama
-    berkasDetail.value = await fetchBerkasDetail(items[0].berkasId);
+    berkasDetail.value = await fetchBerkasDetail(items[0].berkas_id);
 
     // 4. Load naskah di dalam berkas
-    await loadNaskah(items[0].berkasId);
+    await loadNaskah(items[0].berkas_id);
   } catch (err: any) {
     toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
   }
@@ -152,7 +152,7 @@ const loadNaskah = async (berkasId?: string) => {
 
 const openNaskah = (row: any) => {
   // Buka PDF naskah langsung (bukan halaman detail)
-  const pdfUrl = row.finalPdf || row.final_pdf;
+  const pdfUrl = row.final_pdf || row.finalPdf;
   if (!pdfUrl) {
     toast.add({ title: 'PDF tidak tersedia', description: 'Naskah ini belum memiliki file PDF.', color: 'warning' });
     return;
@@ -181,7 +181,7 @@ const filteredNaskah = computed(() => {
   if (!search.value.trim()) return naskahList.value;
   const q = search.value.toLowerCase();
   return naskahList.value.filter(
-    (n) => (n.perihal || '').toLowerCase().includes(q) || (n.nomorSurat || '').toLowerCase().includes(q),
+    (n) => (n.perihal || '').toLowerCase().includes(q) || (n.nomor_surat || '').toLowerCase().includes(q),
   );
 });
 
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader
-        :title="berkasDetail?.judulBerkas || 'Berkas yang Diberikan'"
+        :title="berkasDetail?.judul_berkas || 'Berkas yang Diberikan'"
         :items="breadcrumbs"
       />
       <button
@@ -241,19 +241,19 @@ onBeforeUnmount(() => {
         <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <User class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.pengusulInfo?.nama || '-' }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.pengusul_info?.nama || '-' }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Building2 class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPengusulNama || '-' }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisi_pengusul_nama || '-' }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <FileText class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judulUsulan || '-' }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judul_usulan || '-' }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Folder class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.jenis_berkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
           </div>
         </dl>
       </div>
@@ -264,17 +264,17 @@ onBeforeUnmount(() => {
         <div class="flex flex-wrap gap-2">
           <button
             v-for="b in berkasItems"
-            :key="b.berkasId"
+            :key="b.berkas_id"
             type="button"
-            @click="switchBerkas(b.berkasId)"
+            @click="switchBerkas(b.berkas_id)"
             :class="[
               'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border',
-              activeBerkasId === b.berkasId
+              activeBerkasId === b.berkas_id
                 ? 'border-primary bg-primary/10 text-primary dark:text-primary-400'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
             ]"
           >
-            {{ b.judulBerkas || b.berkasId }}
+            {{ b.judul_berkas || b.berkas_id }}
           </button>
         </div>
       </div>
@@ -290,19 +290,19 @@ onBeforeUnmount(() => {
         <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <FileText class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judulBerkas }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judul_berkas }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Folder class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Kode/Klasifikasi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasi }} — {{ berkasDetail.klasifikasiTeks }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Kode/Klasifikasi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasi }} — {{ berkasDetail.klasifikasi_teks }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Building2 class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisiPemberiNama }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.divisi_pemberi_nama }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <User class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">EVP Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evpPemberiNama }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">EVP Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evp_pemberi_nama }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Key class="mt-0.5 h-4 w-4 text-gray-500" />
@@ -310,12 +310,12 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Clock class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggalMulai) }} — {{ formatDate(berkasDetail.tanggalSelesai) }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggal_mulai) }} — {{ formatDate(berkasDetail.tanggal_selesai) }}</dd></div>
           </div>
         </dl>
-        <div v-if="berkasDetail.tujuanAkses" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
+        <div v-if="berkasDetail.tujuan_akses" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
           <p class="mb-1 text-xs font-medium uppercase text-gray-500">Tujuan Akses</p>
-          <p class="text-sm text-gray-800 dark:text-gray-200">{{ berkasDetail.tujuanAkses }}</p>
+          <p class="text-sm text-gray-800 dark:text-gray-200">{{ berkasDetail.tujuan_akses }}</p>
         </div>
       </div>
 
@@ -388,13 +388,13 @@ onBeforeUnmount(() => {
             </div>
           </template>
           <template #cell-naskahTipe="{ row }">
-            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">{{ row.naskahTipe }}</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">{{ row.naskah_tipe }}</span>
           </template>
           <template #cell-nomorSurat="{ row }">
-            <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ row.nomorSurat || '-' }}</span>
+            <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ row.nomor_surat || '-' }}</span>
           </template>
           <template #cell-tanggalNaskah="{ row }">
-            <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalNaskah) }}</span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggal_naskah) }}</span>
           </template>
           <template #cell-aksi="{ row }">
             <button @click="openNaskah(row)"

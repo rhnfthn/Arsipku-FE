@@ -24,7 +24,7 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const filterStatus = ref('Semua');
-const sortKey = ref('tanggalMulai');
+const sortKey = ref('tanggal_mulai');
 const sortDir = ref<'asc' | 'desc'>('desc');
 const isExporting = ref(false);
 
@@ -43,8 +43,8 @@ const activeEntitlements = computed(() => {
   const now = Date.now();
   return entitlementList.value.filter((e: any) => {
     // Harus punya tanggal mulai (sudah dimulai)
-    if (!e.tanggalMulai) return false;
-    if (new Date(e.tanggalMulai).getTime() > now) return false; // belum mulai
+    if (!e.tanggal_mulai) return false;
+    if (new Date(e.tanggal_mulai).getTime() > now) return false; // belum mulai
     return true; // sudah mulai (baik masih berjalan atau sudah habis)
   });
 });
@@ -62,35 +62,35 @@ const filteredEntitlements = computed(() => {
     const q = searchQuery.value.toLowerCase();
     rows = rows.filter(
       (e: any) =>
-        (e.judulUsulan || '').toLowerCase().includes(q) ||
-        (e.nomorUsulanTerbaru || '').toLowerCase().includes(q) ||
-        (e.divisiPemberiNama || '').toLowerCase().includes(q) ||
-        (e.judulBerkas || '').toLowerCase().includes(q),
+        (e.judul_usulan || '').toLowerCase().includes(q) ||
+        (e.nomor_usulan_terbaru || '').toLowerCase().includes(q) ||
+        (e.divisi_pemberi_nama || '').toLowerCase().includes(q) ||
+        (e.judul_berkas || '').toLowerCase().includes(q),
     );
   }
   // Sort
   const dir = sortDir.value === 'asc' ? 1 : -1;
   rows = [...rows].sort((a: any, b: any) => {
-    if (sortKey.value === 'judulUsulan') {
-      return (a.judulUsulan || '').localeCompare(b.judulUsulan || '') * dir;
+    if (sortKey.value === 'judul_usulan') {
+      return (a.judul_usulan || '').localeCompare(b.judul_usulan || '') * dir;
     }
-    if (sortKey.value === 'jenisBerkas') {
-      return (a.jenisBerkas || '').localeCompare(b.jenisBerkas || '') * dir;
+    if (sortKey.value === 'jenis_berkas') {
+      return (a.jenis_berkas || '').localeCompare(b.jenis_berkas || '') * dir;
     }
-    if (sortKey.value === 'nomorUsulan') {
-      return (a.nomorUsulanTerbaru || '').localeCompare(b.nomorUsulanTerbaru || '') * dir;
+    if (sortKey.value === 'nomor_usulan') {
+      return (a.nomor_usulan_terbaru || '').localeCompare(b.nomor_usulan_terbaru || '') * dir;
     }
-    if (sortKey.value === 'divisiPemberi') {
-      return (a.divisiPemberiNama || '').localeCompare(b.divisiPemberiNama || '') * dir;
+    if (sortKey.value === 'divisi_pemberi') {
+      return (a.divisi_pemberi_nama || '').localeCompare(b.divisi_pemberi_nama || '') * dir;
     }
-    if (sortKey.value === 'tanggalMulai') {
-      const ta = new Date(a.tanggalMulai || 0).getTime();
-      const tb = new Date(b.tanggalMulai || 0).getTime();
+    if (sortKey.value === 'tanggal_mulai') {
+      const ta = new Date(a.tanggal_mulai || 0).getTime();
+      const tb = new Date(b.tanggal_mulai || 0).getTime();
       return (ta - tb) * dir;
     }
     // default: tanggalSelesai
-    const ta = new Date(a.tanggalSelesai || 0).getTime();
-    const tb = new Date(b.tanggalSelesai || 0).getTime();
+    const ta = new Date(a.tanggal_selesai || 0).getTime();
+    const tb = new Date(b.tanggal_selesai || 0).getTime();
     return (ta - tb) * dir;
   });
   return rows;
@@ -143,11 +143,11 @@ const exportData = async () => {
   try {
     const headers = ['Tanggal', 'Nomor Usulan', 'Divisi Pemberi', 'Jenis Berkas', 'Judul Usulan', 'Progress', 'Status'];
     const csvRows = filteredEntitlements.value.map((r: any) => [
-      formatDate(r.tanggalMulai),
-      r.nomorUsulanTerbaru || '-',
-      r.divisiPemberiNama || r.divisiPemberiId || '-',
-      r.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif',
-      r.judulUsulan || '-',
+      formatDate(r.tanggal_mulai),
+      r.nomor_usulan_terbaru || '-',
+      r.divisi_pemberi_nama || r.divisi_pemberi_id || '-',
+      r.jenis_berkas === 'AKTIF' ? 'Aktif' : 'Inaktif',
+      r.judul_usulan || '-',
       getProgressPercent(r) >= 100 ? 'Habis' : `${getProgressPercent(r)}%`,
       getProgressPercent(r) >= 100 ? 'Habis' : 'Aktif',
     ]);
@@ -173,15 +173,15 @@ watch(itemsPerPage, () => { currentPage.value = 1; });
 
 const goToDetail = (row: any) => {
   // Ambil usulanId pertama dari daftar usulan yang terkait berkas ini
-  const usulanId = row?.usulanIds?.[0];
+  const usulanId = row?.usulan_ids?.[0];
   if (!usulanId) {
     toast.add({ title: 'Error', description: 'Usulan tidak ditemukan untuk berkas ini', color: 'error' });
     return;
   }
   // Tandai berkas sebagai sudah dibaca (isRead=true) + update badge sidebar
-  if (row?.berkasId && !row?.isRead) {
-    row.isRead = true; // optimistic UI
-    markBerkasRead(row.berkasId);
+  if (row?.berkas_id && !row?.is_read) {
+    row.is_read = true; // optimistic UI
+    markBerkasRead(row.berkas_id);
     fetchCounts(true);
   }
   // Langsung ke halaman berkas (table naskah), bukan usulan detail
@@ -231,9 +231,9 @@ function handleDocumentClick(e: MouseEvent) {
 
 // ── Progress bar ──
 const getProgressPercent = (row: any): number => {
-  if (!row.tanggalMulai || !row.tanggalSelesai) return 0;
-  const mulai = new Date(row.tanggalMulai).getTime();
-  const selesai = new Date(row.tanggalSelesai).getTime();
+  if (!row.tanggal_mulai || !row.tanggal_selesai) return 0;
+  const mulai = new Date(row.tanggal_mulai).getTime();
+  const selesai = new Date(row.tanggal_selesai).getTime();
   const now = Date.now();
   if (now <= mulai) return 0;
   if (now >= selesai) return 100;
@@ -247,8 +247,8 @@ const getProgressBarClass = (percent: number): string => {
 };
 
 const getProgressLabel = (row: any): string => {
-  if (!row.tanggalSelesai) return '-';
-  const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (!row.tanggal_selesai) return '-';
+  const sisa = Math.ceil((new Date(row.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (sisa <= 0) return 'Habis';
   return `${sisa} hari`;
 };
@@ -256,11 +256,11 @@ const getProgressLabel = (row: any): string => {
 // ── Columns ──
 // Urutan: Tanggal, Nomor Usulan, Divisi Pemberi, Jenis Berkas, Judul Usulan, Progress, Aksi
 const columns = [
-  { key: 'tanggalMulai', label: 'Tanggal', sortable: true },
-  { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
-  { key: 'divisiPemberi', label: 'Divisi Pemberi', sortable: true },
-  { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true, headerClass: 'text-center', class: 'text-center' },
-  { key: 'judulUsulan', label: 'Judul Usulan', sortable: true },
+  { key: 'tanggal_mulai', label: 'Tanggal', sortable: true },
+  { key: 'nomor_usulan', label: 'Nomor Usulan', sortable: true },
+  { key: 'divisi_pemberi', label: 'Divisi Pemberi', sortable: true },
+  { key: 'jenis_berkas', label: 'Jenis Berkas', sortable: true, headerClass: 'text-center', class: 'text-center' },
+  { key: 'judul_usulan', label: 'Judul Usulan', sortable: true },
   { key: 'progress', label: 'Progress' },
   { key: 'aksi', label: 'Aksi' },
 ];
@@ -419,32 +419,32 @@ onBeforeUnmount(() => {
         empty-message="Belum ada akses berkas yang diberikan kepada Anda."
         @sort="handleSort"
       >
-        <template #cell-tanggalMulai="{ row }">
-          <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalMulai) }}</span>
+        <template #cell-tanggal_mulai="{ row }">
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggal_mulai) }}</span>
         </template>
-        <template #cell-nomorUsulan="{ row }">
-          <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomorUsulanTerbaru || '-' }}</span>
+        <template #cell-nomor_usulan="{ row }">
+          <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomor_usulan_terbaru || '-' }}</span>
         </template>
-        <template #cell-divisiPemberi="{ row }">
-          <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisiPemberiNama || row.divisiPemberiId || '-' }}</span>
+        <template #cell-divisi_pemberi="{ row }">
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisi_pemberi_nama || row.divisi_pemberi_id || '-' }}</span>
         </template>
-        <template #cell-jenisBerkas="{ row }">
+        <template #cell-jenis_berkas="{ row }">
           <span
             class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-            :class="row.jenisBerkas === 'AKTIF'
+            :class="row.jenis_berkas === 'AKTIF'
               ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
               : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
           >
-            {{ row.jenisBerkas }}
+            {{ row.jenis_berkas }}
           </span>
         </template>
-        <template #cell-judulUsulan="{ row }">
+        <template #cell-judul_usulan="{ row }">
           <div class="max-w-[260px]">
-            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ row.judulUsulan || '-' }}</p>
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ row.judul_usulan || '-' }}</p>
           </div>
         </template>
-        <template #cell-tanggalSelesai="{ row }">
-          <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggalSelesai) }}</span>
+        <template #cell-tanggal_selesai="{ row }">
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.tanggal_selesai) }}</span>
         </template>
         <template #cell-progress="{ row }">
           <div class="flex items-center gap-2 min-w-[140px]">
@@ -465,12 +465,12 @@ onBeforeUnmount(() => {
               @click="goToDetail(row)"
               :class="[
                 'relative inline-flex rounded-md p-1.5 transition-colors',
-                row.isRead
+                row.is_read
                   ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300'
                   : 'hover:bg-[#457FB6]/10'
               ]"
-              :style="!row.isRead ? { color: '#457FB6' } : {}"
-              :title="row.isRead ? 'Sudah dibaca' : 'Lihat Naskah'"
+              :style="!row.is_read ? { color: '#457FB6' } : {}"
+              :title="row.is_read ? 'Sudah dibaca' : 'Lihat Naskah'"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </button>
