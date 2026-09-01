@@ -670,7 +670,7 @@ const userMenuUtama = computed(() => [
         badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
       },
       ...(isLegalRole.value ? [{
-        label: 'Legal Drafting',
+        label: 'Legal',
         to: '/naskah-lainnya/legal-drafting',
         badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
       }] : []),
@@ -858,7 +858,7 @@ const adminMenuUtama = computed(() => [
         badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
       },
       ...(isLegalRole.value ? [{
-        label: 'Legal Drafting',
+        label: 'Legal',
         to: '/naskah-lainnya/legal-drafting',
         badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
       }] : []),
