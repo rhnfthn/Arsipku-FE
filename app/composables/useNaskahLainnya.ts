@@ -14,6 +14,7 @@ import type {
   LegalRecipient,
   DirectorApprovalItem,
   SheetFormModel,
+  ApprovalRow,
 } from '~/types/naskah-lainnya';
 
 export function useNaskahLainnya() {
@@ -346,6 +347,22 @@ export function useNaskahLainnya() {
   const tolakBlankoVerbal = (id: string, catatan: string) =>
     act(id, 'tolakBlankoVerbal', { catatan });
 
+  // ── Delegasi Direksi per-naskah ──
+  const assignDelegasiDireksi = (
+    id: string,
+    approvalId: string,
+    payload: { delegatePersnum: number; delegateName: string; positionStatus: 'PT' | 'PH' | 'PS' },
+  ) =>
+    apiPut<ApiResponse<ApprovalRow>>(
+      `/naskah-lainnya/${id}/approval/${approvalId}/delegasi`,
+      payload,
+    );
+
+  const removeDelegasiDireksi = (id: string, approvalId: string) =>
+    apiDelete<ApiResponse<{ id: string }>>(
+      `/naskah-lainnya/${id}/approval/${approvalId}/delegasi`,
+    );
+
   const uploadDokumen = async (id: string, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
@@ -506,5 +523,7 @@ export function useNaskahLainnya() {
     kirimBlankoVerbal,
     parafBlankoVerbal,
     tolakBlankoVerbal,
+    assignDelegasiDireksi,
+    removeDelegasiDireksi,
   };
 }

@@ -159,6 +159,9 @@ export interface ApprovalRow {
   urutan: number;
   status: StatusApprover;
   catatan?: string;
+  delegatePersnum?: number;
+  delegateName?: string;
+  delegatePositionStatus?: 'PT' | 'PH' | 'PS' | null;
   tanggal?: string;
 }
 
@@ -312,6 +315,10 @@ export interface DirectorApprovalItem {
   positionId?: string;
   persnum?: number;
   catatan?: string;
+  delegatePersnum?: number;
+  delegateName?: string;
+  delegatePositionStatus?: 'PT' | 'PH' | 'PS' | null;
+  approvalId?: string;
   roleLabel?: string;
 }
 
