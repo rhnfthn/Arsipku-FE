@@ -62,8 +62,8 @@ const selectedVerifikatorPersnums = ref<{ persnum: number; catatan: string }[]>(
 interface PenerimaTambahanItem {
   persnum: number;
   nama: string;
-  positionText: string;
-  organizationText: string;
+  position_text: string;
+  organization_text: string;
 }
 const eligiblePenerimaTambahan = ref<PenerimaTambahanItem[]>([]);
 const selectedPenerimaTambahan = ref<number[]>([]);
@@ -266,7 +266,7 @@ const availableVerifikator = computed(() => {
   // Ambil levelJabatan yang sudah dipilih
   const selectedLevels = new Set(
     selectedVerifikatorPersnums.value
-      .map((p) => getVerifikator(p.persnum)?.levelJabatan)
+      .map((p) => getVerifikator(p.persnum)?.level_jabatan)
       .filter(Boolean) as string[],
   );
   const selectedPersnums = new Set(selectedVerifikatorPersnums.value.map((v) => v.persnum));
@@ -274,9 +274,9 @@ const availableVerifikator = computed(() => {
     .filter(
       (v) =>
         !selectedPersnums.has(v.persnum) &&
-        !selectedLevels.has(v.levelJabatan),
+        !selectedLevels.has(v.level_jabatan),
     )
-    .sort((a, b) => (LEVEL_ORDER[a.levelJabatan] ?? 99) - (LEVEL_ORDER[b.levelJabatan] ?? 99));
+    .sort((a, b) => (LEVEL_ORDER[a.level_jabatan] ?? 99) - (LEVEL_ORDER[b.level_jabatan] ?? 99));
 });
 
 // Filtered verifikator dengan search query
@@ -286,7 +286,7 @@ const filteredAvailableVerifikator = computed(() => {
   return availableVerifikator.value.filter((v) =>
     (v.nama || '').toLowerCase().includes(q) ||
     (v.jabatan || '').toLowerCase().includes(q) ||
-    (v.levelJabatan || '').toLowerCase().includes(q) ||
+    (v.level_jabatan || '').toLowerCase().includes(q) ||
     String(v.persnum || '').includes(q),
   );
 });
@@ -296,8 +296,8 @@ const sortedSelectedVerifikator = computed(() => {
   return [...selectedVerifikatorPersnums.value].sort((a, b) => {
     const va = getVerifikator(a.persnum);
     const vb = getVerifikator(b.persnum);
-    const la = va?.levelJabatan ?? '';
-    const lb = vb?.levelJabatan ?? '';
+    const la = va?.level_jabatan ?? '';
+    const lb = vb?.level_jabatan ?? '';
     // Normalize BOD-1/2/3 → BOD untuk sorting
     const na = la.startsWith('BOD') ? 'BOD' : la;
     const nb = lb.startsWith('BOD') ? 'BOD' : lb;
@@ -329,7 +329,7 @@ const filteredPenerimaTambahan = computed(() => {
       if (!q) return true;
       return (
         (p.nama || '').toLowerCase().includes(q) ||
-        (p.positionText || '').toLowerCase().includes(q)
+        (p.position_text || '').toLowerCase().includes(q)
       );
     });
 });
@@ -383,25 +383,25 @@ const handleSubmit = async () => {
     .map((item) => {
       const v = verifikatorList.value.find((x) => x.persnum === item.persnum);
       if (!v) return null;
-      return { persnum: v.persnum, levelJabatan: v.levelJabatan as LevelJabatan, ...(item.catatan ? { catatan: item.catatan } : {}) };
+      return { persnum: v.persnum, level_jabatan: v.level_jabatan as LevelJabatan, ...(item.catatan ? { catatan: item.catatan } : {}) };
     })
-    .filter(Boolean) as { persnum: number; levelJabatan: LevelJabatan; catatan?: string }[];
+    .filter(Boolean) as { persnum: number; level_jabatan: LevelJabatan; catatan?: string }[];
 
   try {
     await createUsulan({
-      jenisBerkas: jenisBerkas.value,
-      divisiPemberiId: isINAKTIF.value ? undefined : Number(divisiPemberiId.value),
-      judulUsulan: judulUsulan.value.trim(),
-      tujuanAkses: tujuanAkses.value.trim(),
-      durasiAkses: durasiAkses.value,
-      customTanggalSelesai:
+      jenis_berkas: jenisBerkas.value,
+      divisi_pemberi_id: isINAKTIF.value ? undefined : Number(divisiPemberiId.value),
+      judul_usulan: judulUsulan.value.trim(),
+      tujuan_akses: tujuanAkses.value.trim(),
+      durasi_akses: durasiAkses.value,
+      custom_tanggal_selesai:
         durasiAkses.value === DurasiPreset.CUSTOM
           ? customTanggalSelesai.value
           : undefined,
-      jenisAkses: jenisAksesSelected.value,
-      verifikatorPengusul,
+      jenis_akses: jenisAksesSelected.value,
+      verifikator_pengusul: verifikatorPengusul,
       ...(selectedPenerimaTambahan.value.length > 0
-        ? { penerimaAksesTambahan: selectedPenerimaTambahan.value }
+        ? { penerima_akses_tambahan: selectedPenerimaTambahan.value }
         : {}),
     });
     resetForm();
@@ -705,7 +705,7 @@ onMounted(() => {
                     {{ getVerifikator(item.persnum)?.nama || `Persnum ${item.persnum}` }}
                   </div>
                   <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">
-                    {{ getVerifikator(item.persnum)?.jabatan || getVerifikator(item.persnum)?.levelJabatan || '' }}
+                    {{ getVerifikator(item.persnum)?.jabatan || getVerifikator(item.persnum)?.level_jabatan || '' }}
                   </div>
                 </div>
                 <button
@@ -767,7 +767,7 @@ onMounted(() => {
                   class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 >
                   <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
-                  <span class="text-xs text-gray-400">{{ v.jabatan || v.levelJabatan || '' }}</span>
+                  <span class="text-xs text-gray-400">{{ v.jabatan || v.level_jabatan || '' }}</span>
                 </button>
                 <div v-if="filteredAvailableVerifikator.length === 0" class="px-3 py-4 text-center text-sm text-gray-400">
                   Tidak ada verifikator ditemukan
@@ -862,7 +862,7 @@ onMounted(() => {
                     />
                     <div class="min-w-0 flex-1">
                       <div class="truncate text-sm font-medium">{{ p.nama || `Persnum ${p.persnum}` }}</div>
-                      <div class="truncate text-xs text-gray-400">{{ p.positionText || '' }}</div>
+                      <div class="truncate text-xs text-gray-400">{{ p.position_text || '' }}</div>
                     </div>
                   </button>
                   <div v-if="filteredPenerimaTambahan.length === 0" class="px-3 py-4 text-center text-sm text-gray-400">
