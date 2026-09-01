@@ -54,7 +54,7 @@ export function useUsulanAksesBerkas() {
       const query = divisiId ? `?divisiId=${divisiId}` : '';
       const res = await apiGet<{
         success: boolean;
-        data: { persnum: number; nama: string; positionText: string; organizationText: string }[];
+        data: { persnum: number; nama: string; position_text: string; organization_text: string }[];
         total: number;
       }>(`/usulan-akses-berkas/eligible-penerima-tambahan${query}`, undefined, { skipCache: true });
       return (res as any)?.data ?? [];
