@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <PageHeader :items="breadcrumbs">
+    <PageHeader :items="breadcrumbs" :back-to="`/naskah-lainnya/${id}`">
       <template #title>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">
           {{ detail?.perihal || 'Memuat…' }}
@@ -56,16 +56,14 @@
         catatan-title="Catatan Penandatangan"
         catatan-placeholder="Tuliskan catatan hasil tinjauan…"
         :show-actions="false"
-        :docx-url="`/naskah-lainnya/${id}/file`"
+        :show-area-kerja="false"
+        :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
-        :stage-upload="true"
-        staged-success-description="Revisi siap diunggah bersama tanda tangan"
         divided
         v-model="catatan"
         @preview="previewNaskah"
         @download="downloadNaskah"
         @preview-pendukung="previewPendukung"
-        @stage-revisi="onStageRevisi"
       />
 
       <!-- Daftar Penandatangan (analog dgn "Pemberi Persetujuan Legal" di legal-drafting) -->
@@ -263,7 +261,7 @@ import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModa
 const route = useRoute();
 const id = computed(() => route.params.id);
 const { apiGet } = useApi();
-const { detail, fetchDetail, uploadDokumen, tandaTangan, unggahTtdFisik } = useNaskahLainnya();
+const { detail, fetchDetail, tandaTangan, unggahTtdFisik } = useNaskahLainnya();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -287,11 +285,6 @@ const previewUrl = ref(null);
 const previewDocxBuffer = ref(null);
 const previewDocxContainer = ref(null);
 const previewLoading = ref(false);
-// Revisi di-stage di FE (preview lokal). Baru di-commit ke naskah saat user klik
-// "Tandatangani Naskah" (qr_only) atau "Unggah Naskah Ditandatangani" (ttd_basah) —
-// bukan saat unggah — agar naskah tidak menumpuk versi sebelum sign benar-benar jalan.
-const stagedRevisi = ref(null);
-
 const tahapan = computed(() => detail.value?.tahapan ?? '');
 const signOption = computed(() => detail.value?.signOption ?? 'qr_only');
 
@@ -303,11 +296,9 @@ const actionToolbarTitle = computed(() =>
   signOption.value === 'ttd_basah' ? 'Tanda Tangan Basah' : 'Tanda Tangan Digital'
 );
 const actionToolbarDesc = computed(() =>
-  stagedRevisi.value
-    ? 'Revisi di-stage akan diunggah bersama tandatangan.'
-    : signOption.value === 'ttd_basah'
-      ? 'Unduh naskah, tandatangani secara fisik, lalu unggah hasilnya.'
-      : 'Klik Tandatangani untuk menyuntuh QR dan menyelesaikan naskah.'
+  signOption.value === 'ttd_basah'
+    ? 'Unduh naskah, tandatangani secara fisik, lalu unggah hasilnya.'
+    : 'Klik Tandatangani untuk menyuntuh QR dan menyelesaikan naskah.'
 );
 
 // BE getDetail mengirim rantai penandatangan sebagai `penandatangan` (array),
@@ -381,7 +372,9 @@ async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
-    if (detail.value?.signOption === 'ttd_basah') {
+    // Alur penandatangan modern diproses langsung dari halaman detail: hanya
+    // periksa, tanda tangani, atau tolak ke legal tanpa workspace unggah/revisi.
+    if (detail.value?.tahapan === 'tanda_tangan' || detail.value?.signOption === 'ttd_basah') {
       await navigateTo(`/naskah-lainnya/${id.value}`, { replace: true });
       return;
     }
@@ -484,23 +477,6 @@ async function previewPendukung(doc) {
   }
 }
 
-function onStageRevisi(file) {
-  stagedRevisi.value = file;
-}
-
-// Commit revisi yang di-stage ke naskah (1 versi per sign sukses). Dipanggil
-// BERSAMA tindakan sign — bukan saat unggah — agar sign gagal tidak meninggalkan
-// versi naskah yang numpuk (sama dengan pola legal-drafting).
-async function commitStagedRevisi() {
-  if (!stagedRevisi.value) return;
-  try {
-    await uploadDokumen(id.value, stagedRevisi.value);
-  } catch {
-    toast.add({ title: 'Revisi gagal diunggah, melanjutkan sign', color: 'warning' });
-  }
-  stagedRevisi.value = null;
-}
-
 async function afterSignNavigate() {
   // Setelah menandatangani, naskah menjadi riwayat aksi penandatangan ini.
   // Redirect ke filter Disetujui, baik masih ada penandatangan berikutnya maupun
@@ -511,7 +487,6 @@ async function afterSignNavigate() {
 async function tandaTanganConfirm() {
   busy.value = true;
   try {
-    await commitStagedRevisi();
     await tandaTangan(id.value);
     toast.add({ title: 'Naskah ditandatangani', color: 'success' });
     showSignModal.value = false;
@@ -531,7 +506,6 @@ async function onUnggahTtdFisik(ev) {
   if (!file) return;
   busy.value = true;
   try {
-    await commitStagedRevisi();
     await unggahTtdFisik(id.value, file);
     toast.add({ title: 'Naskah ditandatangani (fisik) diunggah', color: 'success' });
     await afterSignNavigate();
