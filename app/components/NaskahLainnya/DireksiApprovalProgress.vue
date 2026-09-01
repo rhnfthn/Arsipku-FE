@@ -21,6 +21,25 @@
               {{ d.nama || '-' }}
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ d.jabatan || '-' }}</p>
+            <div
+              v-if="d.delegatePersnum"
+              class="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium"
+            >
+              <UIcon name="i-lucide-user-check" class="w-3 h-3" />
+              {{ d.delegatePositionStatus }} · a.n. {{ d.delegateName }}
+              <template v-if="isLegal && d.status === 'waiting'">
+                <button type="button" class="underline hover:no-underline" @click="$emit('editDelegate', d)">Ubah</button>
+                <button type="button" class="underline hover:no-underline text-red-500" @click="$emit('removeDelegate', d)">Hapus</button>
+              </template>
+            </div>
+            <button
+              v-else-if="isLegal && d.status === 'waiting'"
+              type="button"
+              class="inline-flex items-center gap-1 mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+              @click="$emit('addDelegate', d)"
+            >
+              <UIcon name="i-lucide-plus" class="w-3 h-3" /> Tambah Delegate
+            </button>
             <p v-if="d.catatan" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               <span class="font-medium">Catatan:</span> {{ d.catatan }}
             </p>
@@ -74,10 +93,14 @@ defineProps<{
   busy?: boolean;
   // Blanko verbal: kelompok Ditetapkan/Disahkan → 'Paraf & Tanda Tangan Naskah'.
   parafLabel?: string;
+  isLegal?: boolean;
 }>();
 
 defineEmits<{
   (e: 'paraf', item: DirectorApprovalItem): void;
   (e: 'tolak', item: DirectorApprovalItem): void;
+  (e: 'addDelegate', item: DirectorApprovalItem): void;
+  (e: 'editDelegate', item: DirectorApprovalItem): void;
+  (e: 'removeDelegate', item: DirectorApprovalItem): void;
 }>();
 </script>
