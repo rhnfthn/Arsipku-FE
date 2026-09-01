@@ -352,12 +352,20 @@
       <div class="flex flex-col gap-3">
         <p class="text-sm text-gray-500">Alasan wajib diisi; sertakan dokumen revisi bila ada.</p>
         <UTextarea v-model="alasan" placeholder="Alasan…" />
-        <FileUpload
-          v-model="revisiFiles"
-          :multiple="false"
-          accept=".docx"
-          label="+ Dokumen Revisi (opsional)"
-        />
+        <div class="grid gap-3 sm:grid-cols-2">
+          <FileUpload
+            v-model="revisiDocxFiles"
+            :multiple="false"
+            accept=".docx"
+            label="+ Revisi DOCX (opsional)"
+          />
+          <FileUpload
+            v-model="revisiPdfFiles"
+            :multiple="false"
+            accept=".pdf"
+            label="+ Preview PDF (wajib bersama DOCX)"
+          />
+        </div>
         <div class="flex justify-end gap-2">
           <UButton color="neutral" variant="ghost" @click="kembaliOpen = false">Batal</UButton>
           <UButton
@@ -394,6 +402,7 @@ const {
   setuju,
   tolak,
   kembalikan,
+  uploadRevisiDokumen,
 } = useNaskahLainnya();
 const { t } = useI18n();
 const toast = useToast();
@@ -412,7 +421,8 @@ const kembaliOpen = ref(false);
 const catatan = ref('');
 const alasan = ref('');
 const busy = ref(false);
-const revisiFiles = ref<File[]>([]);
+const revisiDocxFiles = ref<File[]>([]);
+const revisiPdfFiles = ref<File[]>([]);
 
 const search = ref('');
 const filterJenis = ref('');
@@ -461,9 +471,11 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   persetujuan: 'Persetujuan',
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
+  persetujuan_lanjutan: 'Persetujuan Lanjutan',
+  evaluasi_final: 'Evaluasi Final EVP',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal',
+  blanko_verbal: 'Blanko Verbal Persetujuan Direksi',
   tanda_tangan_legal: 'TTD Legal',
   tanda_tangan_pejabat: 'TTD Pejabat',
   tanda_tangan: 'Menunggu Tanda Tangan',
@@ -666,9 +678,17 @@ async function openAction(row: any) {
     await fetchDetail(n.id);
     const activeActions = detail.value?.availableActions ?? [];
     if (
-      !['setuju', 'tolak', 'kembalikan', 'paraf', 'tanda-tangan'].some((a) =>
-        activeActions.includes(a as any)
-      )
+      ![
+        'setuju',
+        'tolak',
+        'kembalikan',
+        'paraf',
+        'tanda-tangan',
+        'tolak-tanda-tangan',
+        'lanjut-persetujuan',
+        'teruskan-persetujuan',
+        'selesai-persetujuan',
+      ].some((a) => activeActions.includes(a as any))
     ) {
       await navigateTo(`/naskah-lainnya/${n.id}`);
       return;
@@ -676,20 +696,31 @@ async function openAction(row: any) {
   } catch {
     // Bila detail gagal dimuat, navigasi tahap di bawah tetap menjadi fallback.
   }
-  if (n.tahapan === 'persetujuan_direksi' || n.tahapan === 'blanko_verbal') {
+  if (n.tahapan === 'blanko_verbal') {
+    navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);
+    return;
+  }
+  if (n.tahapan === 'persetujuan_direksi') {
     navigateTo(`/naskah-lainnya/${n.id}`);
     return;
   }
-  // Penandatangan aktif mengerjakan naskah di workspace Tanda Tangan, bukan
-  // halaman approval pemrakarsa. Fallback /persetujuan hanya untuk approval
-  // pemrakarsa dan approval legal.
+  if (
+    n.tahapan === 'evaluasi' ||
+    n.tahapan === 'persetujuan_lanjutan' ||
+    n.tahapan === 'evaluasi_final'
+  ) {
+    navigateTo(`/naskah-lainnya/${n.id}/evaluasi`);
+    return;
+  }
+  // Penandatangan cukup meninjau lalu menyetujui/menolak dari halaman detail;
+  // tidak masuk workspace upload/revisi.
   if (
     n.tahapan === 'tanda_tangan' ||
     n.tahapan === 'tanda_tangan_pemrakarsa' ||
     n.tahapan === 'tanda_tangan_legal' ||
     n.tahapan === 'tanda_tangan_pejabat'
   ) {
-    navigateTo(`/naskah-lainnya/${n.id}/tanda-tangan`);
+    navigateTo(`/naskah-lainnya/${n.id}`);
     return;
   }
   // POV approval pemrakarsa punya halaman kerja sendiri agar approver bisa
@@ -726,13 +757,28 @@ async function doTolak() {
 
 async function doKembali() {
   if (!selected.value) return;
+  const docx = revisiDocxFiles.value.at(-1) ?? null;
+  const pdf = revisiPdfFiles.value.at(-1) ?? null;
+  if (!!docx !== !!pdf) {
+    toast.add({
+      title: 'Lengkapi pasangan file revisi',
+      description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
+      color: 'warning',
+    });
+    return;
+  }
   busy.value = true;
   try {
+    if (docx && pdf) {
+      await uploadRevisiDokumen(selected.value.id, { docx, pdf });
+    }
     const approvalId = await firstWaitingId();
     await kembalikan(selected.value.id, approvalId, alasan.value);
     await fetchPersetujuan(filterStatus.value);
     kembaliOpen.value = false;
     modalOpen.value = false;
+    revisiDocxFiles.value = [];
+    revisiPdfFiles.value = [];
   } finally {
     busy.value = false;
   }

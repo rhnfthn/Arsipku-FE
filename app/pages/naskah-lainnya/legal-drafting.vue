@@ -366,7 +366,7 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   evaluasi: 'Evaluasi',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal',
+  blanko_verbal: 'Blanko Verbal Persetujuan Direksi',
   tanda_tangan_legal: 'TTD Legal',
   tanda_tangan_pejabat: 'TTD Pejabat',
   tanda_tangan: 'Menunggu Tanda Tangan',
@@ -407,7 +407,7 @@ const STATUS_LEGAL_LABEL: Record<string, string> = {
   revisi: 'Revisi',
   sudah_dikerjakan: 'Sudah Dikerjakan',
   persetujuan_direksi: 'Persetujuan Direksi',
-  blanko_verbal: 'Blanko Verbal',
+  blanko_verbal: 'Blanko Verbal Persetujuan Direksi',
 };
 
 // Pemetaan tab filter → nilai statusLegal yang ditampilkan. 'semua' = null (tidak
@@ -568,6 +568,10 @@ function handleSort(key: string) {
 function openAction(row: any) {
   const n = legalDrafting.value.find((i) => i.id === row.id);
   if (!n) return;
+  if (n.tahapan === 'blanko_verbal') {
+    navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);
+    return;
+  }
   if (n.tahapan === 'legal_drafting' && n.statusLegal === 'menunggu_persetujuan') {
     navigateTo(`/naskah-lainnya/${n.id}/persetujuan?tahap=legal_drafting`);
     return;

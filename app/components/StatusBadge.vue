@@ -87,6 +87,19 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-blue-700 dark:text-blue-400',
     dot: 'bg-blue-700',
   },
+  // Keluarga warna mengikuti fase induknya (persetujuan → amber, evaluasi → biru).
+  persetujuan_lanjutan: {
+    label: 'Persetujuan Lanjutan',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-700',
+  },
+  evaluasi_final: {
+    label: 'Evaluasi Final EVP',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    text: 'text-blue-700 dark:text-blue-400',
+    dot: 'bg-blue-700',
+  },
   persetujuan_direksi: {
     label: 'Persetujuan Direksi',
     bg: 'bg-indigo-100 dark:bg-indigo-900/30',
@@ -100,7 +113,7 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-blue-700',
   },
   blanko_verbal: {
-    label: 'Blanko Verbal',
+    label: 'Blanko Verbal Persetujuan Direksi',
     bg: 'bg-purple-100 dark:bg-purple-900/30',
     text: 'text-purple-700 dark:text-purple-400',
     dot: 'bg-purple-700',

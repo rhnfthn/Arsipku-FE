@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <PageHeader :items="breadcrumbs">
+    <PageHeader :items="breadcrumbs" :back-to="`/naskah-lainnya/${id}`">
       <template #title>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">
           {{ detail?.perihal || 'Memuat…' }}
@@ -56,7 +56,7 @@
         catatan-title="Catatan Legal"
         catatan-placeholder="Catatan hasil pemeriksaan legal…"
         :show-actions="false"
-        :docx-url="`/naskah-lainnya/${id}/file`"
+        :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="true"
         staged-success-description="Revisi siap dikirim bersama approval legal"
@@ -342,7 +342,7 @@ const { apiGet } = useApi();
 const {
   fetchDetail,
   detail,
-  uploadDokumen,
+  uploadRevisiDokumen,
   kirimApprovalLegal,
   fetchLegalRecipients,
   legalRecipients,
@@ -372,7 +372,7 @@ const previewLoading = ref(false);
 // Revisi hasil legal drafting di-stage di FE (preview lokal). Baru di-commit ke
 // naskah saat user klik "Kirim Approval Legal" — bukan saat unggah — agar naskah
 // tidak menumpuk versi sebelum legal drafting benar-benar dikirim.
-const stagedRevisi = ref(null);
+const stagedRevisi = ref({ docx: null, pdf: null });
 
 // ── Pemberi Persetujuan Legal (recipients dari unit legal saja) ──
 const legalApprovers = ref([]);
@@ -560,7 +560,9 @@ async function downloadNaskah(name) {
 
 async function previewNaskah() {
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, { responseType: 'blob' });
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+      responseType: 'blob',
+    });
     window.open(window.URL.createObjectURL(blob), '_blank');
   } catch {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
@@ -639,8 +641,20 @@ function onStageRevisi(file) {
   stagedRevisi.value = file;
 }
 
+function hasIncompleteRevisionPair() {
+  const { docx, pdf } = stagedRevisi.value;
+  if (!!docx === !!pdf) return false;
+  toast.add({
+    title: 'Lengkapi pasangan file revisi',
+    description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
+    color: 'warning',
+  });
+  return true;
+}
+
 async function kirimApproval(note) {
   if (hasWaitingLegalRows.value) return;
+  if (hasIncompleteRevisionPair()) return;
   if (legalApprovers.value.length === 0) {
     toast.add({ title: 'Pilih pemberi persetujuan legal', color: 'warning' });
     return;
@@ -654,22 +668,15 @@ async function kirimApproval(note) {
       nama: legalRecipientName(v),
       jabatan: v.jabatan,
     }));
-    // catatan = alasan kirim (→ riwayat, item #8); catatanLegal = catatan legal persist (item #4).
-    // Kirim approval DULU. Bila gagal (validasi BE), revisi TIDAK di-commit ke
-    // storage → tidak ada versi naskah yang masuk. User bebas unggah/hapus/unggah
-    // ulang lalu kirim lagi sampai berhasil, tanpa versi numpuk dari kirim gagal.
-    await kirimApprovalLegal(id.value, approvers, note, catatanLegal.value);
-    // Setelah approval terkirim → commit revisi (1 versi per kirim sukses).
-    if (stagedRevisi.value) {
-      try {
-        await uploadDokumen(id.value, stagedRevisi.value);
-      } catch {
-        toast.add({ title: 'Approval terkirim, tapi revisi gagal diunggah', color: 'warning' });
-      }
+    // Simpan pasangan revisi sebelum pekerjaan berpindah ke approver agar preview
+    // PDF selalu menunjuk versi yang sama dengan DOCX terbaru.
+    if (stagedRevisi.value.docx && stagedRevisi.value.pdf) {
+      await uploadRevisiDokumen(id.value, stagedRevisi.value);
     }
+    await kirimApprovalLegal(id.value, approvers, note, catatanLegal.value);
     toast.add({ title: 'Approval legal dikirim', color: 'success' });
     showKirimModal.value = false;
-    stagedRevisi.value = null;
+    stagedRevisi.value = { docx: null, pdf: null };
     await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;

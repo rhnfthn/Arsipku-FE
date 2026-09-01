@@ -30,21 +30,23 @@
         <div class="flex flex-wrap items-center gap-2">
           <StatusBadge :status="d.status || 'pending'" />
 
-          <template v-if="d.status === 'waiting' && canApprove">
+          <template
+            v-if="d.status === 'waiting' && canApprove && (!canApproveItem || canApproveItem(d))"
+          >
             <UButton
-              size="xs"
-              color="success"
-              icon="i-lucide-check"
+              color="primary"
+              icon="i-lucide-pen-line"
+              class="font-semibold shadow-sm shadow-primary-500/20"
               :loading="busy"
               @click="$emit('paraf', d)"
             >
-              Paraf
+              {{ parafLabel || 'Paraf' }}
             </UButton>
             <UButton
-              size="xs"
               color="error"
-              variant="outline"
+              variant="soft"
               icon="i-lucide-x"
+              class="font-semibold"
               :loading="busy"
               @click="$emit('tolak', d)"
             >
@@ -68,7 +70,10 @@ defineProps<{
   directors: DirectorApprovalItem[];
   isCurrentUserApprover?: boolean;
   canApprove?: boolean;
+  canApproveItem?: (item: DirectorApprovalItem) => boolean;
   busy?: boolean;
+  // Blanko verbal: kelompok Ditetapkan/Disahkan → 'Paraf & Tanda Tangan Naskah'.
+  parafLabel?: string;
 }>();
 
 defineEmits<{

@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5">
-    <PageHeader :items="breadcrumbs">
+    <PageHeader :items="breadcrumbs" :back-to="`/naskah-lainnya/${id}`">
       <template #title>
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           {{ detail?.perihal || 'Memuat…' }}
@@ -353,12 +353,37 @@
         v-model="parafModalOpen"
         variant="approve"
         title="Paraf Lembar Persetujuan Direksi"
-        :description="`Anda akan memberikan paraf sebagai <strong>${activeDirector?.nama || '-'}</strong>.`"
+        description="Anda akan memberikan paraf lembar persetujuan direksi atas nama pejabat berikut."
         note-placeholder="Catatan opsional…"
         confirm-label="Paraf"
         :saving="busy"
         @confirm="confirmParaf"
-      />
+      >
+        <template #highlight>
+          <div
+            class="flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 dark:border-primary-800 dark:bg-primary-900/20"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm"
+            >
+              <UIcon name="i-lucide-user-check" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p
+                class="text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400"
+              >
+                {{ activeDirector?.roleLabel || 'Penandatangan' }}
+              </p>
+              <p class="truncate text-base font-bold text-gray-950 dark:text-white">
+                {{ activeDirector?.nama || '-' }}
+              </p>
+              <p class="truncate text-sm font-medium text-gray-600 dark:text-gray-300">
+                {{ activeDirector?.jabatan || '-' }}
+              </p>
+            </div>
+          </div>
+        </template>
+      </VerifyActionModal>
 
       <!-- ── Tolak Modal ── -->
       <VerifyActionModal
