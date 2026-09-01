@@ -69,17 +69,17 @@ const vpbDurasiDropdownRef = ref<HTMLElement | null>(null);
 const showVerifikasiPengusul = ref(false);
 const vpForm = ref<VerifikasiPengusulPayload>({
   catatan: '',
-  catatanRevisi: '',
-  catatanKeSE: '',
+  catatan_revisi: '',
+  catatan_ke_se: '',
   keputusan: Keputusan.SETUJU,
 });
 
 // ── Verifikasi Pemberi form (checkbox dihapus) ──
 const showVerifikasiPemberi = ref(false);
 const vpbForm = ref<VerifikasiPemberiPayload>({
-  durasiAksesDisetujui: undefined,
-  customTanggalSelesai: '',
-  catatanPerubahanDurasi: '',
+  durasi_akses_disetujui: undefined,
+  custom_tanggal_selesai: '',
+  catatan_perubahan_durasi: '',
   catatan: '',
   keputusan: Keputusan.LANJUT,
 });
@@ -88,18 +88,18 @@ const vpbForm = ref<VerifikasiPemberiPayload>({
 const showPersetujuanPemberi = ref(false);
 const ppForm = ref<PersetujuanPemberiPayload>({
   catatan: '',
-  catatanRevisi: '',
-  catatanKeSE: '',
+  catatan_revisi: '',
+  catatan_ke_se: '',
   keputusan: Keputusan.SETUJU,
-  durasiAksesDisetujui: undefined,
-  catatanPerubahanDurasi: '',
+  durasi_akses_disetujui: undefined,
+  catatan_perubahan_durasi: '',
 });
 
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Usulan Saya', to: '/kelola/penggunaan/usulan-akses-berkas' },
-  { label: usulanDetail.value?.nomorUsulan || 'Detail', to: '#' },
+  { label: usulanDetail.value?.nomor_usulan || 'Detail', to: '#' },
 ]);
 
 const durasiOptions = [
@@ -125,7 +125,7 @@ function formatDurasiLabel(preset: string, customDate?: string | null): string {
 // Label durasi dari pengusul (untuk ditampilkan di modal Verifikasi Pemberi)
 const durasiUsulanLabel = computed(() => {
   if (!usulanDetail.value) return '-';
-  return formatDurasiLabel(usulanDetail.value.durasiAkses, usulanDetail.value.customTanggalSelesai);
+  return formatDurasiLabel(usulanDetail.value.durasi_akses, usulanDetail.value.custom_tanggal_selesai);
 });
 
 // Position status: SE = Sekretaris, null/YBS/PT/PH/PS = Managerial
@@ -151,17 +151,17 @@ const normalizeLevelJabatan = (level?: string | null): string => {
 // ── Pilih Berkas form (SE pemberi) ──────────────
 const showPilihBerkas = ref(false);
 const pilihBerkasForm = ref<PilihBerkasPayload>({
-  berkasIds: [],
-  catatanPenerusan: '',
-  verifikatorPemberi: [],
+  berkas_ids: [],
+  catatan_penerusan: '',
+  verifikator_pemberi: [],
 });
 
 // State untuk modal Pilih Berkas
 interface BerkasItem {
   id: string;
-  judulBerkas: string;
+  judul_berkas: string;
   klasifikasi?: string;
-  klasifikasiTeks?: string;
+  klasifikasi_teks?: string;
   nomorBerkas?: string;
   status?: string;
   lokasi?: string;
@@ -179,9 +179,9 @@ const filteredBerkas = computed(() => {
   const q = berkasSearch.value.toLowerCase();
   return berkasEligibleList.value.filter(
     (b) =>
-      (b.judulBerkas || '').toLowerCase().includes(q) ||
+      (b.judul_berkas || '').toLowerCase().includes(q) ||
       (b.klasifikasi || '').toLowerCase().includes(q) ||
-      (b.klasifikasiTeks || '').toLowerCase().includes(q) ||
+      (b.klasifikasi_teks || '').toLowerCase().includes(q) ||
       (b.nomorBerkas || '').toLowerCase().includes(q),
   );
 });
@@ -191,30 +191,30 @@ const verifikatorPemberiList = ref<VerifikatorItem[]>([]);
 const verifikatorPemberiLoading = ref(false);
 
 const toggleBerkas = (id: string) => {
-  const idx = pilihBerkasForm.value.berkasIds.indexOf(id);
+  const idx = pilihBerkasForm.value.berkas_ids.indexOf(id);
   if (idx === -1) {
-    pilihBerkasForm.value.berkasIds.push(id);
+    pilihBerkasForm.value.berkas_ids.push(id);
   } else {
-    pilihBerkasForm.value.berkasIds.splice(idx, 1);
+    pilihBerkasForm.value.berkas_ids.splice(idx, 1);
   }
 };
 
 const toggleVerifikatorPemberi = (persnum: number, levelJabatan: LevelJabatan) => {
-  const idx = pilihBerkasForm.value.verifikatorPemberi.findIndex(
+  const idx = pilihBerkasForm.value.verifikator_pemberi.findIndex(
     (v) => v.persnum === persnum,
   );
   if (idx === -1) {
-    pilihBerkasForm.value.verifikatorPemberi.push({ persnum, levelJabatan });
+    pilihBerkasForm.value.verifikator_pemberi.push({ persnum, level_jabatan: levelJabatan });
   } else {
-    pilihBerkasForm.value.verifikatorPemberi.splice(idx, 1);
+    pilihBerkasForm.value.verifikator_pemberi.splice(idx, 1);
   }
 };
 
 const isBerkasSelected = (id: string) =>
-  pilihBerkasForm.value.berkasIds.includes(id);
+  pilihBerkasForm.value.berkas_ids.includes(id);
 
 const isVerifikatorPemberiSelected = (persnum: number) =>
-  pilihBerkasForm.value.verifikatorPemberi.some((v) => v.persnum === persnum);
+  pilihBerkasForm.value.verifikator_pemberi.some((v) => v.persnum === persnum);
 
 // Sort order for verifikator pemberi chips: EVP → VP → AVP → BOD
 const LEVEL_ORDER_PEMBERI: Record<string, number> = {
@@ -226,9 +226,9 @@ const getVerifikatorPemberiItem = (persnum: number) =>
   verifikatorPemberiList.value.find((v) => v.persnum === persnum);
 
 const sortedVerifikatorPemberi = computed(() => {
-  return [...pilihBerkasForm.value.verifikatorPemberi].sort((a, b) => {
-    const la = a.levelJabatan ?? '';
-    const lb = b.levelJabatan ?? '';
+  return [...pilihBerkasForm.value.verifikator_pemberi].sort((a, b) => {
+    const la = a.level_jabatan ?? '';
+    const lb = b.level_jabatan ?? '';
     const na = la.startsWith('BOD') ? 'BOD' : la;
     const nb = lb.startsWith('BOD') ? 'BOD' : lb;
     return (LEVEL_ORDER_PEMBERI[na] ?? 99) - (LEVEL_ORDER_PEMBERI[nb] ?? 99);
@@ -239,11 +239,11 @@ const sortedVerifikatorPemberi = computed(() => {
 });
 
 const availableVerifikatorPemberi = computed(() => {
-  const selectedPersnums = new Set(pilihBerkasForm.value.verifikatorPemberi.map((v) => v.persnum));
-  const selectedLevels = new Set(pilihBerkasForm.value.verifikatorPemberi.map((v) => v.levelJabatan));
+  const selectedPersnums = new Set(pilihBerkasForm.value.verifikator_pemberi.map((v) => v.persnum));
+  const selectedLevels = new Set(pilihBerkasForm.value.verifikator_pemberi.map((v) => v.level_jabatan));
   return verifikatorPemberiList.value
-    .filter((v) => !selectedPersnums.has(v.persnum) && !selectedLevels.has(v.levelJabatan))
-    .sort((a, b) => (LEVEL_ORDER_PEMBERI[a.levelJabatan] ?? 99) - (LEVEL_ORDER_PEMBERI[b.levelJabatan] ?? 99));
+    .filter((v) => !selectedPersnums.has(v.persnum) && !selectedLevels.has(v.level_jabatan))
+    .sort((a, b) => (LEVEL_ORDER_PEMBERI[a.level_jabatan] ?? 99) - (LEVEL_ORDER_PEMBERI[b.level_jabatan] ?? 99));
 });
 
 const onSelectVerifikatorPemberi = (value: any) => {
@@ -251,11 +251,11 @@ const onSelectVerifikatorPemberi = (value: any) => {
   if (!persnum || isNaN(persnum)) return;
   const item = verifikatorPemberiList.value.find((v) => v.persnum === persnum);
   if (item && !isVerifikatorPemberiSelected(persnum)) {
-    if (pilihBerkasForm.value.verifikatorPemberi.length >= 3) {
+    if (pilihBerkasForm.value.verifikator_pemberi.length >= 3) {
       toast.add({ title: 'Maksimal 3 verifikator', color: 'error' });
       return;
     }
-    pilihBerkasForm.value.verifikatorPemberi.push({ persnum, levelJabatan: item.levelJabatan, catatan: '' });
+    pilihBerkasForm.value.verifikator_pemberi.push({ persnum, level_jabatan: item.level_jabatan, catatan: '' });
   }
 };
 
@@ -266,8 +266,8 @@ const loadBerkasEligible = async () => {
     // Untuk jenisBerkas AKTIF: BE filter hanya berkas milik divisi pemberi.
     // Untuk jenisBerkas INAKTIF: semua berkas tertutup (tidak filter unit).
     const status = 'closed_retensi_aktif';
-    const jenisBerkas = usulanDetail.value?.jenisBerkas;
-    const divisiPemberiId = Number(usulanDetail.value?.divisiPemberiId);
+    const jenisBerkas = usulanDetail.value?.jenis_berkas;
+    const divisiPemberiId = Number(usulanDetail.value?.divisi_pemberi_id);
     berkasEligibleList.value = await fetchBerkasEligible(
       status,
       jenisBerkas,
@@ -289,7 +289,7 @@ const loadVerifikatorPemberi = async () => {
   try {
     // Fetch BOD + delegasi aktif di divisi pemberi (dari usulan).
     // Ini penting karena SE bisa didelegasikan dari divisi lain.
-    const divisiPemberiId = usulanDetail.value?.divisiPemberiId;
+    const divisiPemberiId = usulanDetail.value?.divisi_pemberi_id;
     await fetchVerifikatorBod(divisiPemberiId ? Number(divisiPemberiId) : undefined);
     verifikatorPemberiList.value = verifikatorList.value || [];
   } catch (err: any) {
@@ -306,8 +306,8 @@ const loadVerifikatorPemberi = async () => {
 // Reset state saat modal Verifikasi Pemberi dibuka — default kosong
 watch(showVerifikasiPemberi, (newVal) => {
   if (newVal) {
-    vpbForm.value.durasiAksesDisetujui = undefined;
-    vpbForm.value.customTanggalSelesai = '';
+    vpbForm.value.durasi_akses_disetujui = undefined;
+    vpbForm.value.custom_tanggal_selesai = '';
     vpbForm.value.catatan = '';
   }
 });
@@ -316,15 +316,15 @@ watch(showVerifikasiPemberi, (newVal) => {
 watch(showPilihBerkas, async (newVal) => {
   if (newVal) {
     // Pre-fill berkas yang sudah dipilih sebelumnya (jika ada — revisi case)
-    const prevBerkas = (usulanDetail.value?.selectedBerkas || []).map((b: any) => b.berkasId);
-    const prevVerifikator = (usulanDetail.value?.verifikatorPemberi || []).map((v: any) => ({
+    const prevBerkas = (usulanDetail.value?.selected_berkas || []).map((b: any) => b.berkas_id);
+    const prevVerifikator = (usulanDetail.value?.verifikator_pemberi || []).map((v: any) => ({
       persnum: v.persnum,
-      levelJabatan: v.levelJabatan,
+      level_jabatan: v.level_jabatan,
       catatan: v.catatan || '',
     }));
-    pilihBerkasForm.value.berkasIds = prevBerkas;
-    pilihBerkasForm.value.verifikatorPemberi = prevVerifikator;
-    pilihBerkasForm.value.catatanPenerusan = '';
+    pilihBerkasForm.value.berkas_ids = prevBerkas;
+    pilihBerkasForm.value.verifikator_pemberi = prevVerifikator;
+    pilihBerkasForm.value.catatan_penerusan = '';
     berkasSearch.value = '';
     await Promise.all([loadBerkasEligible(), loadVerifikatorPemberi()]);
   }
@@ -341,7 +341,7 @@ const handleClickOutsideVerikPemberi = (e: MouseEvent) => {
 const isSekretarisPemberi = computed(() => {
   if (!isSekretaris.value) return false;
   const userOrg = Number(user.value?.organization);
-  const pemberiId = Number(usulanDetail.value?.divisiPemberiId);
+  const pemberiId = Number(usulanDetail.value?.divisi_pemberi_id);
   return userOrg === pemberiId;
 });
 
@@ -356,7 +356,7 @@ const isVerifikatorPengusulAktif = computed(() => {
   else if (s === StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL) expectedUrutan = 2;
   else if (s === StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL) expectedUrutan = 3;
   if (expectedUrutan === null) return false;
-  const verifikator = usulanDetail.value.verifikatorPengusul?.find(
+  const verifikator = usulanDetail.value.verifikator_pengusul?.find(
     (v: any) => v.urutan === expectedUrutan,
   );
   return verifikator?.persnum === userPersnum;
@@ -372,7 +372,7 @@ const isVerifikatorPemberiAktif = computed(() => {
   else if (s === StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI) expectedUrutan = 2;
   else if (s === StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI) expectedUrutan = 3;
   if (expectedUrutan === null) return false;
-  const verifikator = usulanDetail.value.verifikatorPemberi?.find(
+  const verifikator = usulanDetail.value.verifikator_pemberi?.find(
     (v: any) => v.urutan === expectedUrutan,
   );
   return verifikator?.persnum === userPersnum;
@@ -398,21 +398,21 @@ const canRejectPemberiClosed = computed(() => {
   if (!isSekretarisPemberi.value) return false;
   return (usulanDetail.value?.status === StatusUsulan.REVISI_PEMBERI ||
           usulanDetail.value?.status === StatusUsulan.TERKIRIM_KE_PEMBERI) &&
-         !!usulanDetail.value?.catatanRevisiPemberi;
+         !!usulanDetail.value?.catatan_revisi_pemberi;
 });
 
 // Nama & jabatan verifikator pemberi yang memberikan revisi (step pemberi terbaru dengan TOLAK/REVISI)
 const revisiPemberiVerifier = computed(() => {
   const steps = usulanDetail.value?.steps || [];
   const pemberiRejectSteps = steps
-    .filter((s: any) => s.roleTahap?.includes('PEMBERI') && s.roleTahap !== 'SEKRETARIS_PEMBERI' &&
+    .filter((s: any) => s.role_tahap?.includes('PEMBERI') && s.role_tahap !== 'SEKRETARIS_PEMBERI' &&
             (s.keputusan === Keputusan.TOLAK || s.keputusan === Keputusan.REVISI))
-    .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime());
+    .sort((a: any, b: any) => new Date(b.verified_at).getTime() - new Date(a.verified_at).getTime());
   const step = pemberiRejectSteps[0];
   if (!step) return null;
   return {
-    nama: step.verifierNama || null,
-    jabatan: step.verifierJabatan || null,
+    nama: step.verifier_nama || null,
+    jabatan: step.verifier_jabatan || null,
   };
 });
 
@@ -454,16 +454,16 @@ const DURASI_HARI: Record<string, number> = {
 const tanggalBerakhirDurasi = computed(() => {
   if (!usulanDetail.value) return null;
   // Jika sudah ada tanggalSelesai (sudah diterbitkan), pakai itu
-  if (usulanDetail.value.tanggalSelesai) return usulanDetail.value.tanggalSelesai;
+  if (usulanDetail.value.tanggal_selesai) return usulanDetail.value.tanggal_selesai;
   // Custom: pakai customTanggalSelesai yang dipilih pengusul
-  if (usulanDetail.value.durasiAkses === 'CUSTOM' && usulanDetail.value.customTanggalSelesai) {
-    return usulanDetail.value.customTanggalSelesai;
+  if (usulanDetail.value.durasi_akses === 'CUSTOM' && usulanDetail.value.custom_tanggal_selesai) {
+    return usulanDetail.value.custom_tanggal_selesai;
   }
-  if (usulanDetail.value.durasiAkses === 'CUSTOM') return null;
+  if (usulanDetail.value.durasi_akses === 'CUSTOM') return null;
   // Hitung dari createdAt + durasi
-  const hari = DURASI_HARI[usulanDetail.value.durasiAkses];
+  const hari = DURASI_HARI[usulanDetail.value.durasi_akses];
   if (!hari) return null;
-  const base = new Date(usulanDetail.value.createdAt);
+  const base = new Date(usulanDetail.value.created_at);
   base.setDate(base.getDate() + hari);
   return base.toISOString();
 });
@@ -481,7 +481,7 @@ const isAccessExpired = computed(() => {
 // - ATAU user adalah verifikator pemberi yang sedang aktif (status menunggu persetujuan pemberi)
 // - ATAU user adalah SE pemberi yang sedang memilih berkas / menerima revisi
 const isBerkasViewable = computed(() => {
-  if (!usulanDetail.value || !usulanDetail.value.selectedBerkas?.length) return false;
+  if (!usulanDetail.value || !usulanDetail.value.selected_berkas?.length) return false;
   // Case 1: Sudah diterbitkan dan belum expired
   if (usulanDetail.value.status === StatusUsulan.AKSES_DITERBITKAN && !isAccessExpired.value) return true;
   // Case 2: User adalah verifikator pemberi yang sedang aktif
@@ -503,15 +503,15 @@ interface TimelineEntry {
   actionColor: string;
   timestamp: string;
   catatan?: string | null;
-  catatanRevisi?: string | null;
-  catatanKeSE?: string | null; // catatan khusus dari verifikator ke SE-nya
+  catatan_revisi?: string | null;
+  catatan_ke_se?: string | null; // catatan khusus dari verifikator ke SE-nya
   isPengusulStep?: boolean; // true jika step ini dari verifikator pengusul
 }
 
 const timelineEntries = computed<TimelineEntry[]>(() => {
   if (!usulanDetail.value) return [];
   const userPersnum = Number(user.value?.persnum);
-  const pengusulPersnum = Number(usulanDetail.value.pengusulPersnum);
+  const pengusulPersnum = Number(usulanDetail.value.pengusul_persnum);
   const isPengusul = userPersnum === pengusulPersnum;
 
   const entries: TimelineEntry[] = [];
@@ -521,18 +521,18 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     id: 'created',
     icon: 'i-lucide-file-plus',
     iconBg: 'bg-primary-500',
-    title: usulanDetail.value.pengusulInfo?.nama || `Persnum ${pengusulPersnum}`,
-    jabatan: usulanDetail.value.pengusulInfo?.jabatan,
+    title: usulanDetail.value.pengusul_info?.nama || `Persnum ${pengusulPersnum}`,
+    jabatan: usulanDetail.value.pengusul_info?.jabatan,
     action: 'Pembuat Usulan',
     actionColor: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
-    timestamp: usulanDetail.value.createdAt,
+    timestamp: usulanDetail.value.created_at,
   });
 
   // Helper: build a step entry
   const buildStepEntry = (step: any): TimelineEntry => {
-    const isCatatanOwner = Number(step.verifierPersnum) === userPersnum;
-    const isPengusulStep = step.roleTahap?.includes('PENGUSUL');
-    const isPemberiStep = step.roleTahap?.includes('PEMBERI') && step.roleTahap !== 'SEKRETARIS_PEMBERI';
+    const isCatatanOwner = Number(step.verifier_persnum) === userPersnum;
+    const isPengusulStep = step.role_tahap?.includes('PENGUSUL');
+    const isPemberiStep = step.role_tahap?.includes('PEMBERI') && step.role_tahap !== 'SEKRETARIS_PEMBERI';
     // catatan verifikasi biasa: hanya verifikator itu + SE terkait (pengusul/pemberi)
     const canSeeCatatan = isCatatanOwner ||
       (isPengusulStep && isPengusul) ||
@@ -553,8 +553,8 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
           : step.keputusan === Keputusan.TOLAK
             ? 'bg-red-500'
             : 'bg-orange-500',
-      title: step.verifierNama || `Persnum ${step.verifierPersnum}`,
-      jabatan: step.verifierJabatan,
+      title: step.verifier_nama || `Persnum ${step.verifier_persnum}`,
+      jabatan: step.verifier_jabatan,
       action:
         step.keputusan === Keputusan.SETUJU ? 'Disetujui'
         : step.keputusan === Keputusan.TOLAK ? 'Ditolak'
@@ -567,10 +567,10 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
           : step.keputusan === Keputusan.TOLAK
             ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
             : 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-      timestamp: step.verifiedAt,
+      timestamp: step.verified_at,
       catatan: canSeeCatatan ? step.catatan : null,
-      catatanRevisi: canSeeCatatan ? step.catatanRevisi : null,
-      catatanKeSE: canSeeCatatanKeSE ? step.catatanKeSE : null,
+      catatan_revisi: canSeeCatatan ? step.catatan_revisi : null,
+      catatan_ke_se: canSeeCatatanKeSE ? step.catatan_ke_se : null,
       isPengusulStep,
     };
   };
@@ -579,8 +579,8 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
 
   // Phase 1: Verifikator Pengusul steps (urut by verifiedAt)
   const pengusulSteps = allSteps
-    .filter((s: any) => s.roleTahap?.includes('PENGUSUL'))
-    .sort((a: any, b: any) => new Date(a.verifiedAt).getTime() - new Date(b.verifiedAt).getTime());
+    .filter((s: any) => s.role_tahap?.includes('PENGUSUL'))
+    .sort((a: any, b: any) => new Date(a.verified_at).getTime() - new Date(b.verified_at).getTime());
   for (const step of pengusulSteps) {
     entries.push(buildStepEntry(step));
   }
@@ -595,47 +595,47 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       usulanDetail.value.status === StatusUsulan.SELESAI) {
     const lanjutStep = allSteps
       .filter((s: any) => s.keputusan === Keputusan.LANJUT)
-      .sort((a: any, b: any) => new Date(b.verifiedAt).getTime() - new Date(a.verifiedAt).getTime())[0];
+      .sort((a: any, b: any) => new Date(b.verified_at).getTime() - new Date(a.verified_at).getTime())[0];
     entries.push({
       id: 'sent-to-pemberi',
       icon: 'i-lucide-send',
       iconBg: 'bg-primary-500',
-      title: usulanDetail.value.divisiPemberiNama || 'Divisi Pemberi',
+      title: usulanDetail.value.divisi_pemberi_nama || 'Divisi Pemberi',
       jabatan: 'Sekretaris Divisi Pemberi',
       action: 'Terkirim ke Pemberi',
       actionColor: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
-      timestamp: lanjutStep?.verifiedAt || usulanDetail.value.updatedAt,
+      timestamp: lanjutStep?.verified_at || usulanDetail.value.updated_at,
     });
   }
 
   // Phase 3: SE Pemberi step (LANJUT/TOLAK)
   const sePemberiSteps = allSteps
-    .filter((s: any) => s.roleTahap === 'SEKRETARIS_PEMBERI')
-    .sort((a: any, b: any) => new Date(a.verifiedAt).getTime() - new Date(b.verifiedAt).getTime());
+    .filter((s: any) => s.role_tahap === 'SEKRETARIS_PEMBERI')
+    .sort((a: any, b: any) => new Date(a.verified_at).getTime() - new Date(b.verified_at).getTime());
   for (const step of sePemberiSteps) {
     entries.push(buildStepEntry(step));
   }
 
   // Phase 4: Milestone — Berkas Dipilih (setelah SE pemberi pilih berkas)
-  if (usulanDetail.value.selectedBerkas && usulanDetail.value.selectedBerkas.length > 0) {
+  if (usulanDetail.value.selected_berkas && usulanDetail.value.selected_berkas.length > 0) {
     // Timestamp = step SEKRETARIS_PEMBERI terbaru, atau updatedAt
     const lastSePemberi = sePemberiSteps[sePemberiSteps.length - 1];
     entries.push({
       id: 'berkas-selected',
       icon: 'i-lucide-folder-check',
       iconBg: 'bg-green-500',
-      title: usulanDetail.value.divisiPemberiNama || 'Divisi Pemberi',
+      title: usulanDetail.value.divisi_pemberi_nama || 'Divisi Pemberi',
       jabatan: 'Sekretaris Divisi Pemberi',
       action: 'Berkas Dipilih',
       actionColor: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      timestamp: lastSePemberi?.verifiedAt || usulanDetail.value.updatedAt,
+      timestamp: lastSePemberi?.verified_at || usulanDetail.value.updated_at,
     });
   }
 
   // Phase 5: Verifikator Pemberi steps (urut by verifiedAt)
   const pemberiSteps = allSteps
-    .filter((s: any) => s.roleTahap?.includes('PEMBERI') && s.roleTahap !== 'SEKRETARIS_PEMBERI')
-    .sort((a: any, b: any) => new Date(a.verifiedAt).getTime() - new Date(b.verifiedAt).getTime());
+    .filter((s: any) => s.role_tahap?.includes('PEMBERI') && s.role_tahap !== 'SEKRETARIS_PEMBERI')
+    .sort((a: any, b: any) => new Date(a.verified_at).getTime() - new Date(b.verified_at).getTime());
   for (const step of pemberiSteps) {
     entries.push(buildStepEntry(step));
   }
@@ -649,10 +649,10 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       icon: 'i-lucide-badge-check',
       iconBg: 'bg-green-500',
       title: 'Akses Diterbitkan',
-      jabatan: `${usulanDetail.value.selectedBerkas?.length || 0} berkas diberikan`,
+      jabatan: `${usulanDetail.value.selected_berkas?.length || 0} berkas diberikan`,
       action: 'Selesai',
       actionColor: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      timestamp: lastPemberiStep?.verifiedAt || usulanDetail.value.updatedAt,
+      timestamp: lastPemberiStep?.verified_at || usulanDetail.value.updated_at,
     });
   }
 
@@ -663,12 +663,12 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       icon: 'i-lucide-hourglass',
       iconBg: 'bg-gray-400',
       title: 'Menunggu Berakhir',
-      jabatan: usulanDetail.value.tanggalSelesai
-        ? `Berakhir: ${formatDate(usulanDetail.value.tanggalSelesai)}`
+      jabatan: usulanDetail.value.tanggal_selesai
+        ? `Berakhir: ${formatDate(usulanDetail.value.tanggal_selesai)}`
         : 'Akses aktif sampai tanggal selesai',
       action: 'Akses Aktif',
       actionColor: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-      timestamp: usulanDetail.value.tanggalSelesai || usulanDetail.value.updatedAt,
+      timestamp: usulanDetail.value.tanggal_selesai || usulanDetail.value.updated_at,
     });
   }
 
@@ -682,7 +682,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
       title: 'Usulan Ditolak',
       action: usulanDetail.value.status === StatusUsulan.DITOLAK_PENGUSUL ? 'Ditolak Pengusul' : 'Ditolak Pemberi',
       actionColor: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-      timestamp: usulanDetail.value.updatedAt,
+      timestamp: usulanDetail.value.updated_at,
     });
   }
 
@@ -701,7 +701,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     if (entry.id === 'ditolak') return 'DITOLAK';
     // verification step: lookup roleTahap by id
     const step = (usulanDetail.value.steps || []).find((s: any) => s.id === entry.id);
-    return step?.roleTahap || null;
+    return step?.role_tahap || null;
   };
   const orderIndex = (entry: TimelineEntry): number => {
     const role = stepRoleTahap(entry);
@@ -745,12 +745,12 @@ const nextActionInfo = computed(() => {
     let expectedUrutan = 1;
     if (s === StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL) expectedUrutan = 2;
     if (s === StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL) expectedUrutan = 3;
-    const verifikator = usulanDetail.value.verifikatorPengusul?.find((v: any) => v.urutan === expectedUrutan);
+    const verifikator = usulanDetail.value.verifikator_pengusul?.find((v: any) => v.urutan === expectedUrutan);
     if (verifikator) {
       return {
         label: `Menunggu verifikasi pengusul jenjang ${expectedUrutan}`,
         oleh: verifikator.nama || `Persnum ${verifikator.persnum}`,
-        jabatan: verifikator.jabatan || verifikator.levelJabatan || '',
+        jabatan: verifikator.jabatan || verifikator.level_jabatan || '',
       };
     }
   }
@@ -759,14 +759,14 @@ const nextActionInfo = computed(() => {
   if (s === StatusUsulan.TERKIRIM_KE_PEMBERI) {
     return {
       label: 'Menunggu konfirmasi pemberi (Sekretaris)',
-      oleh: usulanDetail.value.divisiPemberiNama || '-',
+      oleh: usulanDetail.value.divisi_pemberi_nama || '-',
       jabatan: 'Sekretaris Divisi Pemberi',
     };
   }
   if (s === StatusUsulan.PEMILIHAN_BERKAS) {
     return {
       label: 'Menunggu pemilihan berkas oleh pemberi',
-      oleh: usulanDetail.value.divisiPemberiNama || '-',
+      oleh: usulanDetail.value.divisi_pemberi_nama || '-',
       jabatan: 'Sekretaris Divisi Pemberi',
     };
   }
@@ -774,12 +774,12 @@ const nextActionInfo = computed(() => {
     let expectedUrutan = 1;
     if (s === StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI) expectedUrutan = 2;
     if (s === StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI) expectedUrutan = 3;
-    const verifikator = usulanDetail.value.verifikatorPemberi?.find((v: any) => v.urutan === expectedUrutan);
+    const verifikator = usulanDetail.value.verifikator_pemberi?.find((v: any) => v.urutan === expectedUrutan);
     if (verifikator) {
       return {
         label: `Menunggu persetujuan pemberi jenjang ${expectedUrutan}`,
         oleh: verifikator.nama || `Persnum ${verifikator.persnum}`,
-        jabatan: verifikator.jabatan || verifikator.levelJabatan || '',
+        jabatan: verifikator.jabatan || verifikator.level_jabatan || '',
       };
     }
   }
@@ -805,13 +805,13 @@ const loadDetail = async () => {
 };
 
 const submitVerifikasiPengusul = async () => {
-  if (vpForm.value.keputusan === Keputusan.REVISI && (!vpForm.value.catatanRevisi?.trim() || vpForm.value.catatanRevisi.trim().length < 5)) {
+  if (vpForm.value.keputusan === Keputusan.REVISI && (!vpForm.value.catatan_revisi?.trim() || vpForm.value.catatan_revisi.trim().length < 5)) {
     toast.add({ title: 'Catatan revisi wajib diisi (minimal 5 karakter)', color: 'error' });
     return;
   }
   // Cari jenjang user dari verifikatorPengusul
   const userPersnum = Number(user.value?.persnum);
-  const verifikator = usulanDetail.value?.verifikatorPengusul?.find(
+  const verifikator = usulanDetail.value?.verifikator_pengusul?.find(
     (v: any) => v.persnum === userPersnum,
   );
   if (!verifikator) {
@@ -830,12 +830,12 @@ const submitVerifikasiPengusul = async () => {
 };
 
 const submitVerifikasiPengusulRevisi = async () => {
-  if (!vpForm.value.catatanRevisi?.trim() || vpForm.value.catatanRevisi.trim().length < 5) {
+  if (!vpForm.value.catatan_revisi?.trim() || vpForm.value.catatan_revisi.trim().length < 5) {
     toast.add({ title: 'Catatan revisi wajib diisi (minimal 5 karakter)', color: 'error' });
     return;
   }
   const userPersnum = Number(user.value?.persnum);
-  const verifikator = usulanDetail.value?.verifikatorPengusul?.find(
+  const verifikator = usulanDetail.value?.verifikator_pengusul?.find(
     (v: any) => v.persnum === userPersnum,
   );
   if (!verifikator) {
@@ -846,14 +846,14 @@ const submitVerifikasiPengusulRevisi = async () => {
   try {
     await verifikasiPengusul(id.value, jenjang, {
       catatan: '',
-      catatanRevisi: vpForm.value.catatanRevisi,
-      catatanKeSE: vpForm.value.catatanKeSE || undefined,
+      catatan_revisi: vpForm.value.catatan_revisi,
+      catatan_ke_se: vpForm.value.catatan_ke_se || undefined,
       keputusan: Keputusan.REVISI,
     });
     toast.add({ title: 'Berhasil', description: 'Permintaan revisi terkirim', color: 'success' });
     showVerifikasiPengusul.value = false;
-    vpForm.value.catatanRevisi = '';
-    vpForm.value.catatanKeSE = '';
+    vpForm.value.catatan_revisi = '';
+    vpForm.value.catatan_ke_se = '';
     await loadDetail();
   } catch (err: any) {
     toast.add({ title: 'Gagal Kirim Revisi', description: extractErrorMessage(err), color: 'error' });
@@ -862,7 +862,7 @@ const submitVerifikasiPengusulRevisi = async () => {
 
 const submitVerifikasiPemberi = async () => {
   // Validasi: jika CUSTOM, tanggal berakhir wajib diisi
-  if (vpbForm.value.durasiAksesDisetujui === 'CUSTOM' && !vpbForm.value.customTanggalSelesai) {
+  if (vpbForm.value.durasi_akses_disetujui === 'CUSTOM' && !vpbForm.value.custom_tanggal_selesai) {
     toast.add({ title: 'Tanggal berakhir wajib diisi untuk durasi Custom', color: 'error' });
     return;
   }
@@ -878,15 +878,15 @@ const submitVerifikasiPemberi = async () => {
 
 const submitVerifikasiPemberiLanjut = async () => {
   // Validasi: jika CUSTOM, tanggal berakhir wajib diisi
-  if (vpbForm.value.durasiAksesDisetujui === 'CUSTOM' && !vpbForm.value.customTanggalSelesai) {
+  if (vpbForm.value.durasi_akses_disetujui === 'CUSTOM' && !vpbForm.value.custom_tanggal_selesai) {
     toast.add({ title: 'Tanggal berakhir wajib diisi untuk durasi Custom', color: 'error' });
     return;
   }
   try {
     await verifikasiPemberi(id.value, {
-      durasiAksesDisetujui: vpbForm.value.durasiAksesDisetujui,
-      customTanggalSelesai: vpbForm.value.customTanggalSelesai || undefined,
-      catatanPerubahanDurasi: '',
+      durasi_akses_disetujui: vpbForm.value.durasi_akses_disetujui,
+      custom_tanggal_selesai: vpbForm.value.custom_tanggal_selesai || undefined,
+      catatan_perubahan_durasi: '',
       catatan: vpbForm.value.catatan,
       keputusan: Keputusan.LANJUT,
     });
@@ -899,13 +899,13 @@ const submitVerifikasiPemberiLanjut = async () => {
 };
 
 const submitPersetujuanPemberi = async () => {
-  if (ppForm.value.keputusan === Keputusan.REVISI && (!ppForm.value.catatanRevisi?.trim() || ppForm.value.catatanRevisi.trim().length < 5)) {
+  if (ppForm.value.keputusan === Keputusan.REVISI && (!ppForm.value.catatan_revisi?.trim() || ppForm.value.catatan_revisi.trim().length < 5)) {
     toast.add({ title: 'Catatan revisi wajib diisi (minimal 5 karakter)', color: 'error' });
     return;
   }
   // Cari jenjang user dari verifikatorPemberi
   const userPersnum = Number(user.value?.persnum);
-  const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
+  const verifikator = usulanDetail.value?.verifikator_pemberi?.find(
     (v: any) => v.persnum === userPersnum,
   );
   if (!verifikator) {
@@ -924,12 +924,12 @@ const submitPersetujuanPemberi = async () => {
 };
 
 const submitPersetujuanPemberiRevisi = async () => {
-  if (!ppForm.value.catatanRevisi?.trim() || ppForm.value.catatanRevisi.trim().length < 5) {
+  if (!ppForm.value.catatan_revisi?.trim() || ppForm.value.catatan_revisi.trim().length < 5) {
     toast.add({ title: 'Catatan revisi wajib diisi (minimal 5 karakter)', color: 'error' });
     return;
   }
   const userPersnum = Number(user.value?.persnum);
-  const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
+  const verifikator = usulanDetail.value?.verifikator_pemberi?.find(
     (v: any) => v.persnum === userPersnum,
   );
   if (!verifikator) {
@@ -940,16 +940,16 @@ const submitPersetujuanPemberiRevisi = async () => {
   try {
     await persetujuanPemberi(id.value, jenjang, {
       catatan: '',
-      catatanRevisi: ppForm.value.catatanRevisi,
-      catatanKeSE: ppForm.value.catatanKeSE || undefined,
+      catatan_revisi: ppForm.value.catatan_revisi,
+      catatan_ke_se: ppForm.value.catatan_ke_se || undefined,
       keputusan: Keputusan.REVISI,
-      durasiAksesDisetujui: undefined,
-      catatanPerubahanDurasi: '',
+      durasi_akses_disetujui: undefined,
+      catatan_perubahan_durasi: '',
     });
     toast.add({ title: 'Berhasil', description: 'Permintaan revisi terkirim', color: 'success' });
     showPersetujuanPemberi.value = false;
-    ppForm.value.catatanRevisi = '';
-    ppForm.value.catatanKeSE = '';
+    ppForm.value.catatan_revisi = '';
+    ppForm.value.catatan_ke_se = '';
     await loadDetail();
   } catch (err: any) {
     toast.add({ title: 'Gagal Kirim Revisi', description: extractErrorMessage(err), color: 'error' });
@@ -957,11 +957,11 @@ const submitPersetujuanPemberiRevisi = async () => {
 };
 
 const submitPilihBerkas = async () => {
-  if (pilihBerkasForm.value.berkasIds.length === 0) {
+  if (pilihBerkasForm.value.berkas_ids.length === 0) {
     toast.add({ title: 'Pilih minimal 1 berkas', color: 'error' });
     return;
   }
-  if (pilihBerkasForm.value.verifikatorPemberi.length === 0) {
+  if (pilihBerkasForm.value.verifikator_pemberi.length === 0) {
     toast.add({ title: 'Pilih minimal 1 verifikator pemberi', color: 'error' });
     return;
   }
@@ -978,7 +978,7 @@ const submitPilihBerkas = async () => {
 // ── Quick verify: Setuju/Tolak langsung dengan VerifyActionModal ──
 const quickVerifyPengusul = (keputusan: Keputusan) => {
   const userPersnum = Number(user.value?.persnum);
-  const verifikator = usulanDetail.value?.verifikatorPengusul?.find(
+  const verifikator = usulanDetail.value?.verifikator_pengusul?.find(
     (v: any) => v.persnum === userPersnum,
   );
   if (!verifikator) {
@@ -994,8 +994,8 @@ const quickVerifyPengusul = (keputusan: Keputusan) => {
       try {
         await verifikasiPengusul(id.value, jenjang, {
           catatan: note,
-          catatanRevisi: '',
-          catatanKeSE,
+          catatan_revisi: '',
+          catatan_ke_se: catatanKeSE,
           keputusan,
         });
         toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
@@ -1016,7 +1016,7 @@ const quickVerifyPengusul = (keputusan: Keputusan) => {
     try {
       await verifikasiPengusul(id.value, jenjang, {
         catatan: note,
-        catatanRevisi: '',
+        catatan_revisi: '',
         keputusan,
       });
       toast.add({ title: 'Berhasil', description: 'Usulan disetujui', color: 'success' });
@@ -1035,8 +1035,8 @@ const quickRejectPemberi = () => {
   pendingRejectAction.value = async (note: string, _catatanKeSE?: string) => {
     try {
       await verifikasiPemberi(id.value, {
-        durasiAksesDisetujui: usulanDetail.value?.durasiAkses || DurasiPreset.SATU_TAHUN,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: usulanDetail.value?.durasi_akses || DurasiPreset.SATU_TAHUN,
+        catatan_perubahan_durasi: '',
         catatan: note,
         keputusan: Keputusan.TOLAK,
       });
@@ -1058,8 +1058,8 @@ const rejectPemberiClosed = () => {
   pendingRejectAction.value = async (note: string, _catatanKeSE?: string) => {
     try {
       await verifikasiPemberi(id.value, {
-        durasiAksesDisetujui: usulanDetail.value?.durasiAkses || DurasiPreset.SATU_TAHUN,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: usulanDetail.value?.durasi_akses || DurasiPreset.SATU_TAHUN,
+        catatan_perubahan_durasi: '',
         catatan: note,
         keputusan: Keputusan.TOLAK,
       });
@@ -1075,7 +1075,7 @@ const rejectPemberiClosed = () => {
 
 const quickApprovePemberi = (keputusan: Keputusan) => {
   const userPersnum = Number(user.value?.persnum);
-  const verifikator = usulanDetail.value?.verifikatorPemberi?.find(
+  const verifikator = usulanDetail.value?.verifikator_pemberi?.find(
     (v: any) => v.persnum === userPersnum,
   );
   if (!verifikator) {
@@ -1091,11 +1091,11 @@ const quickApprovePemberi = (keputusan: Keputusan) => {
       try {
         await persetujuanPemberi(id.value, jenjang, {
           catatan: note,
-          catatanRevisi: '',
-          catatanKeSE,
+          catatan_revisi: '',
+          catatan_ke_se: catatanKeSE,
           keputusan,
-          durasiAksesDisetujui: undefined,
-          catatanPerubahanDurasi: '',
+          durasi_akses_disetujui: undefined,
+          catatan_perubahan_durasi: '',
         });
         toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
         await loadDetail();
@@ -1115,10 +1115,10 @@ const quickApprovePemberi = (keputusan: Keputusan) => {
     try {
       await persetujuanPemberi(id.value, jenjang, {
         catatan: note,
-        catatanRevisi: '',
+        catatan_revisi: '',
         keputusan,
-        durasiAksesDisetujui: undefined,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: undefined,
+        catatan_perubahan_durasi: '',
       });
       toast.add({ title: 'Berhasil', description: 'Persetujuan terkirim', color: 'success' });
       await loadDetail();
@@ -1191,7 +1191,7 @@ onBeforeUnmount(() => {
     <PageHeader :items="breadcrumbs">
       <template #title>
         <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-2xl">
-          {{ usulanDetail?.nomorUsulan || 'Detail Usulan' }}
+          {{ usulanDetail?.nomor_usulan || 'Detail Usulan' }}
         </h1>
       </template>
     </PageHeader>
@@ -1233,7 +1233,7 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Judul Usulan</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judulUsulan || '-' }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judul_usulan || '-' }}</dd>
                 </div>
               </div>
               <!-- Nomor Usulan -->
@@ -1243,7 +1243,7 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Nomor Usulan</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.nomorUsulan || '-' }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.nomor_usulan || '-' }}</dd>
                 </div>
               </div>
               <!-- Jenis Berkas -->
@@ -1253,7 +1253,7 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Jenis Berkas</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenisBerkas }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenis_berkas }}</dd>
                 </div>
               </div>
               <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
@@ -1262,8 +1262,8 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Pengusul</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.pengusulInfo?.nama || usulanDetail.pengusulPersnum }}</dd>
-                  <dd v-if="usulanDetail.pengusulInfo?.jabatan" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ usulanDetail.pengusulInfo.jabatan }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.pengusul_info?.nama || usulanDetail.pengusul_persnum }}</dd>
+                  <dd v-if="usulanDetail.pengusul_info?.jabatan" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ usulanDetail.pengusul_info.jabatan }}</dd>
                 </div>
               </div>
               <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
@@ -1272,7 +1272,7 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Divisi Pengusul</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisiPengusulNama || usulanDetail.divisiPengusulId }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisi_pengusul_nama || usulanDetail.divisi_pengusul_id }}</dd>
                 </div>
               </div>
               <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
@@ -1281,7 +1281,7 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Divisi Pemberi</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisiPemberiNama || usulanDetail.divisiPemberiId }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisi_pemberi_nama || usulanDetail.divisi_pemberi_id }}</dd>
                 </div>
               </div>
               <div class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700">
@@ -1290,23 +1290,23 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Durasi Akses</dt>
-                  <dd v-if="usulanDetail.durasiAksesDisetujui" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">
-                    {{ formatDurasiLabel(usulanDetail.durasiAksesDisetujui, usulanDetail.customTanggalSelesai) }}
-                    <UTooltip v-if="usulanDetail.durasiAkses && usulanDetail.durasiAkses !== usulanDetail.durasiAksesDisetujui" :text="`Durasi usulan: ${formatDurasiLabel(usulanDetail.durasiAkses, usulanDetail.customTanggalSelesai)}`" :delay-duration="0">
+                  <dd v-if="usulanDetail.durasi_akses_disetujui" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">
+                    {{ formatDurasiLabel(usulanDetail.durasi_akses_disetujui, usulanDetail.custom_tanggal_selesai) }}
+                    <UTooltip v-if="usulanDetail.durasi_akses && usulanDetail.durasi_akses !== usulanDetail.durasi_akses_disetujui" :text="`Durasi usulan: ${formatDurasiLabel(usulanDetail.durasi_akses, usulanDetail.custom_tanggal_selesai)}`" :delay-duration="0">
                       <UIcon name="i-lucide-info" class="ml-1 inline-block h-3.5 w-3.5 cursor-help align-middle text-gray-400 hover:text-primary-500" />
                     </UTooltip>
                   </dd>
-                  <dd v-else-if="usulanDetail.durasiAkses === 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(tanggalBerakhirDurasi) }}</dd>
-                  <dd v-else class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDurasiLabel(usulanDetail.durasiAkses, usulanDetail.customTanggalSelesai) }}</dd>
+                  <dd v-else-if="usulanDetail.durasi_akses === 'CUSTOM' && tanggalBerakhirDurasi" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(tanggalBerakhirDurasi) }}</dd>
+                  <dd v-else class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDurasiLabel(usulanDetail.durasi_akses, usulanDetail.custom_tanggal_selesai) }}</dd>
                 </div>
               </div>
-              <div v-if="usulanDetail.tanggalMulai" class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700 sm:col-span-2">
+              <div v-if="usulanDetail.tanggal_mulai" class="flex items-start gap-3 border-b border-gray-100 py-3 dark:border-gray-700 sm:col-span-2">
                 <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
                   <UIcon name="i-lucide-calendar" class="h-4 w-4" />
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Periode Akses</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(usulanDetail.tanggalMulai) }} <UIcon name="i-lucide-arrow-right" class="mx-1 inline-block h-4 w-4 align-middle text-primary-500" /> {{ formatDateOnly(usulanDetail.tanggalSelesai) }}</dd>
+                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(usulanDetail.tanggal_mulai) }} <UIcon name="i-lucide-arrow-right" class="mx-1 inline-block h-4 w-4 align-middle text-primary-500" /> {{ formatDateOnly(usulanDetail.tanggal_selesai) }}</dd>
                 </div>
               </div>
             </dl>
@@ -1325,13 +1325,13 @@ onBeforeUnmount(() => {
             </div>
             <div class="px-4 py-3">
               <p class="whitespace-pre-line border-l-2 border-primary-300 pl-3 text-sm leading-5 text-gray-600 dark:border-primary-700 dark:text-gray-300">
-                {{ usulanDetail.tujuanAkses || 'Tidak ada tujuan akses diisi.' }}
+                {{ usulanDetail.tujuan_akses || 'Tidak ada tujuan akses diisi.' }}
               </p>
             </div>
           </div>
 
           <!-- Penerima Akses Tambahan (jika ada) -->
-          <div v-if="usulanDetail.penerimaAksesTambahan?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div v-if="usulanDetail.penerima_akses_tambahan?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
               <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <UIcon name="i-lucide-users" class="size-5 text-primary-600 dark:text-primary-400" />
@@ -1344,7 +1344,7 @@ onBeforeUnmount(() => {
             <div class="px-5 py-4">
               <div class="flex flex-wrap gap-2">
                 <span
-                  v-for="p in usulanDetail.penerimaAksesTambahan"
+                  v-for="p in usulanDetail.penerima_akses_tambahan"
                   :key="p.persnum"
                   class="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
                 >
@@ -1359,7 +1359,7 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Berkas Dipilih -->
-          <div v-if="usulanDetail.selectedBerkas?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div v-if="usulanDetail.selected_berkas?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
               <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <UIcon name="i-lucide-paperclip" class="size-5 text-primary-600 dark:text-primary-400" />
@@ -1368,16 +1368,16 @@ onBeforeUnmount(() => {
                 <h2 class="font-semibold text-gray-900 dark:text-white">Berkas Dipilih</h2>
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Berkas yang dipilih oleh Sekretaris pemberi.</p>
               </div>
-              <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selectedBerkas.length }} berkas</span>
+              <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selected_berkas.length }} berkas</span>
             </div>
             <div class="divide-y divide-gray-100 dark:divide-gray-700">
-              <div v-for="b in usulanDetail.selectedBerkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
+              <div v-for="b in usulanDetail.selected_berkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
                 <UIcon name="i-lucide-file" class="mt-0.5 size-4 shrink-0 text-gray-400" />
                 <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judulBerkas || b.berkasId }}</p>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judul_berkas || b.berkas_id }}</p>
                   <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span v-if="b.kodeBerkas">{{ b.kodeBerkas }} · </span>
-                    <span>{{ b.klasifikasiTeks || '-' }}</span>
+                    <span v-if="b.kode_berkas">{{ b.kode_berkas }} · </span>
+                    <span>{{ b.klasifikasi_teks || '-' }}</span>
                   </p>
                 </div>
                 <!-- Tombol buka naskah — tampil jika berkas sudah dipilih
@@ -1447,8 +1447,8 @@ onBeforeUnmount(() => {
                     <p v-if="entry.catatan" class="mt-1 rounded bg-gray-50 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700/50 dark:text-gray-300">
                       <span class="font-medium">Catatan:</span> {{ entry.catatan }}
                     </p>
-                    <p v-if="entry.catatanKeSE" class="mt-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                      <span class="font-medium">Catatan ke SE {{ entry.isPengusulStep ? 'Pengusul' : 'Pemberi' }}:</span> {{ entry.catatanKeSE }}
+                    <p v-if="entry.catatan_ke_se" class="mt-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                      <span class="font-medium">Catatan ke SE {{ entry.isPengusulStep ? 'Pengusul' : 'Pemberi' }}:</span> {{ entry.catatan_ke_se }}
                     </p>
                   </div>
                 </li>
@@ -1470,34 +1470,34 @@ onBeforeUnmount(() => {
             <div class="px-4 py-3">
               <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Pengusul</p>
               <div class="space-y-2">
-                <div v-for="(v, idx) in usulanDetail.verifikatorPengusul" :key="idx">
+                <div v-for="(v, idx) in usulanDetail.verifikator_pengusul" :key="idx">
                   <div class="flex items-center gap-2">
                     <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
                       {{ idx + 1 }}
                     </span>
                     <div class="flex-1 min-w-0">
                       <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
-                      <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                      <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.level_jabatan }}</div>
                     </div>
                   </div>
                   <!-- Catatan dari SE pengusul: hanya terlihat oleh verifikator itu sendiri & SE pengusul -->
-                  <div v-if="v.catatan && (Number(user?.persnum) === v.persnum || Number(user?.persnum) === Number(usulanDetail.pengusulPersnum))" class="ml-7 mt-1 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-900/20">
+                  <div v-if="v.catatan && (Number(user?.persnum) === v.persnum || Number(user?.persnum) === Number(usulanDetail.pengusul_persnum))" class="ml-7 mt-1 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-900/20">
                     <p class="text-[10px] font-medium text-amber-600 dark:text-amber-400">Catatan untuk Verifikator:</p>
                     <p class="text-[11px] text-amber-800 dark:text-amber-300">{{ v.catatan }}</p>
                   </div>
                 </div>
               </div>
-              <div v-if="usulanDetail.verifikatorPemberi?.length" class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+              <div v-if="usulanDetail.verifikator_pemberi?.length" class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
                 <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Pemberi</p>
                 <div class="space-y-2">
-                  <div v-for="(v, idx) in usulanDetail.verifikatorPemberi" :key="idx">
+                  <div v-for="(v, idx) in usulanDetail.verifikator_pemberi" :key="idx">
                     <div class="flex items-center gap-2">
                       <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600 dark:bg-gray-600 dark:text-gray-300">
                         {{ idx + 1 }}
                       </span>
                       <div class="flex-1 min-w-0">
                         <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
-                        <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                        <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.level_jabatan }}</div>
                       </div>
                     </div>
                     <!-- Catatan dari SE pemberi: hanya terlihat oleh verifikator itu sendiri & SE pemberi -->
@@ -1512,7 +1512,7 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Banner Revisi Pemberi -->
-          <div v-if="usulanDetail?.catatanRevisiPemberi && isSekretarisPemberi && (usulanDetail?.status === StatusUsulan.REVISI_PEMBERI || usulanDetail?.status === StatusUsulan.TERKIRIM_KE_PEMBERI)" class="rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-900/20">
+          <div v-if="usulanDetail?.catatan_revisi_pemberi && isSekretarisPemberi && (usulanDetail?.status === StatusUsulan.REVISI_PEMBERI || usulanDetail?.status === StatusUsulan.TERKIRIM_KE_PEMBERI)" class="rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-900/20">
             <div class="flex items-start gap-3">
               <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-5 shrink-0 text-orange-600 dark:text-orange-400" />
               <div>
@@ -1526,8 +1526,8 @@ onBeforeUnmount(() => {
                 <p class="mt-1 text-xs text-orange-700 dark:text-orange-400">
                   Verifikator pemberi menolak usulan ini. Silakan verifikasi ulang dan/atau revisi berkas.
                 </p>
-                <p v-if="usulanDetail?.catatanRevisiPemberi" class="mt-2 rounded-md bg-white px-3 py-2 text-xs text-orange-800 dark:bg-gray-800 dark:text-orange-300">
-                  <span class="font-medium">Catatan dari Verifikator:</span> {{ usulanDetail.catatanRevisiPemberi }}
+                <p v-if="usulanDetail?.catatan_revisi_pemberi" class="mt-2 rounded-md bg-white px-3 py-2 text-xs text-orange-800 dark:bg-gray-800 dark:text-orange-300">
+                  <span class="font-medium">Catatan dari Verifikator:</span> {{ usulanDetail.catatan_revisi_pemberi }}
                 </p>
               </div>
             </div>
@@ -1594,7 +1594,7 @@ onBeforeUnmount(() => {
             <!-- Pilih Berkas (SE): buka modal form (berkas + verifikator) -->
             <div v-if="canSelectBerkas" class="space-y-2">
               <p class="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {{ (usulanDetail?.selectedBerkas?.length ?? 0) > 0 ? 'Revisi Berkas' : 'Pilih Berkas' }}
+                {{ (usulanDetail?.selected_berkas?.length ?? 0) > 0 ? 'Revisi Berkas' : 'Pilih Berkas' }}
               </p>
               <UButton
                 icon="i-lucide-folder-search"
@@ -1604,7 +1604,7 @@ onBeforeUnmount(() => {
                 class="justify-center"
                 @click="showPilihBerkas = true"
               >
-                {{ (usulanDetail?.selectedBerkas?.length ?? 0) > 0 ? 'Revisi Berkas & Verifikator' : 'Pilih Berkas & Verifikator' }}
+                {{ (usulanDetail?.selected_berkas?.length ?? 0) > 0 ? 'Revisi Berkas & Verifikator' : 'Pilih Berkas & Verifikator' }}
               </UButton>
             </div>
 
@@ -1706,13 +1706,13 @@ onBeforeUnmount(() => {
             Catatan Revisi <span class="text-error-500">*</span>
           </label>
           <textarea
-            v-model="vpForm.catatanRevisi"
+            v-model="vpForm.catatan_revisi"
             rows="4"
             class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             placeholder="Jelaskan revisi yang diminta (min 5 karakter)…"
           />
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-            {{ (vpForm.catatanRevisi || '').trim().length }}/5 karakter minimum
+            {{ (vpForm.catatan_revisi || '').trim().length }}/5 karakter minimum
           </p>
         </div>
 
@@ -1723,7 +1723,7 @@ onBeforeUnmount(() => {
             <span class="text-xs font-normal text-gray-400">(opsional, hanya terlihat oleh SE Pengusul)</span>
           </label>
           <textarea
-            v-model="vpForm.catatanKeSE"
+            v-model="vpForm.catatan_ke_se"
             rows="2"
             class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Catatan khusus untuk SE Pengusul..."
@@ -1739,7 +1739,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
-            :disabled="(vpForm.catatanRevisi?.trim().length || 0) < 5 || pending"
+            :disabled="(vpForm.catatan_revisi?.trim().length || 0) < 5 || pending"
             @click="submitVerifikasiPengusulRevisi"
           >
             {{ pending ? 'Memproses...' : 'Kirim Revisi' }}
@@ -1774,7 +1774,7 @@ onBeforeUnmount(() => {
               @click="showVpbDurasiDropdown = !showVpbDurasiDropdown"
               class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white transition hover:border-gray-400"
             >
-              <span :class="vpbForm.durasiAksesDisetujui ? '' : 'text-gray-400 dark:text-gray-500'">{{ vpbForm.durasiAksesDisetujui === 'CUSTOM' && vpbForm.customTanggalSelesai ? formatDurasiLabel('CUSTOM', vpbForm.customTanggalSelesai) : vpbForm.durasiAksesDisetujui ? formatDurasiLabel(vpbForm.durasiAksesDisetujui) : 'Ingin mengubah durasi akses?' }}</span>
+              <span :class="vpbForm.durasi_akses_disetujui ? '' : 'text-gray-400 dark:text-gray-500'">{{ vpbForm.durasi_akses_disetujui === 'CUSTOM' && vpbForm.custom_tanggal_selesai ? formatDurasiLabel('CUSTOM', vpbForm.custom_tanggal_selesai) : vpbForm.durasi_akses_disetujui ? formatDurasiLabel(vpbForm.durasi_akses_disetujui) : 'Ingin mengubah durasi akses?' }}</span>
               <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showVpbDurasiDropdown }" />
             </button>
             <div
@@ -1786,9 +1786,9 @@ onBeforeUnmount(() => {
                   v-for="d in durasiOptions"
                   :key="d.value"
                   type="button"
-                  @click="vpbForm.durasiAksesDisetujui = d.value; if (d.value !== 'CUSTOM') vpbForm.customTanggalSelesai = ''; showVpbDurasiDropdown = false"
+                  @click="vpbForm.durasi_akses_disetujui = d.value; if (d.value !== 'CUSTOM') vpbForm.custom_tanggal_selesai = ''; showVpbDurasiDropdown = false"
                   class="flex w-full items-center px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
-                  :class="vpbForm.durasiAksesDisetujui === d.value ? 'bg-blue-50 font-medium text-blue-700 dark:bg-gray-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'"
+                  :class="vpbForm.durasi_akses_disetujui === d.value ? 'bg-blue-50 font-medium text-blue-700 dark:bg-gray-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'"
                 >
                   {{ d.label }}
                 </button>
@@ -1797,12 +1797,12 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <!-- Custom: date picker muncul saat Custom dipilih -->
-        <div v-if="vpbForm.durasiAksesDisetujui === 'CUSTOM'" class="mt-3">
+        <div v-if="vpbForm.durasi_akses_disetujui === 'CUSTOM'" class="mt-3">
           <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Tanggal Berakhir <span class="text-error-500">*</span>
           </label>
           <input
-            v-model="vpbForm.customTanggalSelesai"
+            v-model="vpbForm.custom_tanggal_selesai"
             type="date"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -1834,7 +1834,7 @@ onBeforeUnmount(() => {
           <button
             class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
             style="background-color: #175FA4"
-            :disabled="pending || (vpbForm.durasiAksesDisetujui === 'CUSTOM' && !vpbForm.customTanggalSelesai)"
+            :disabled="pending || (vpbForm.durasi_akses_disetujui === 'CUSTOM' && !vpbForm.custom_tanggal_selesai)"
             @click="submitVerifikasiPemberiLanjut"
           >
             {{ pending ? 'Memproses...' : 'Lanjutkan' }}
@@ -1864,13 +1864,13 @@ onBeforeUnmount(() => {
             Catatan Revisi <span class="text-error-500">*</span>
           </label>
           <textarea
-            v-model="ppForm.catatanRevisi"
+            v-model="ppForm.catatan_revisi"
             rows="4"
             class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             placeholder="Jelaskan revisi yang diminta (min 5 karakter)…"
           />
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-            {{ (ppForm.catatanRevisi || '').trim().length }}/5 karakter minimum
+            {{ (ppForm.catatan_revisi || '').trim().length }}/5 karakter minimum
           </p>
         </div>
 
@@ -1881,7 +1881,7 @@ onBeforeUnmount(() => {
             <span class="text-xs font-normal text-gray-400">(opsional, hanya terlihat oleh SE Pemberi)</span>
           </label>
           <textarea
-            v-model="ppForm.catatanKeSE"
+            v-model="ppForm.catatan_ke_se"
             rows="2"
             class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Catatan khusus untuk SE Pemberi..."
@@ -1897,7 +1897,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
-            :disabled="(ppForm.catatanRevisi?.trim().length || 0) < 5 || pending"
+            :disabled="(ppForm.catatan_revisi?.trim().length || 0) < 5 || pending"
             @click="submitPersetujuanPemberiRevisi"
           >
             {{ pending ? 'Memproses...' : 'Kirim Revisi' }}
@@ -1954,20 +1954,20 @@ onBeforeUnmount(() => {
                 />
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-1.5">
-                    <p class="truncate text-xs font-medium text-gray-900 dark:text-white">{{ b.judulBerkas }}</p>
+                    <p class="truncate text-xs font-medium text-gray-900 dark:text-white">{{ b.judul_berkas }}</p>
                     <span class="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                       {{ b.status || '-' }}
                     </span>
                   </div>
                   <p class="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
                     <span v-if="b.nomorBerkas">{{ b.nomorBerkas }} · </span>
-                    <span>{{ b.klasifikasiTeks || b.klasifikasi }}</span>
+                    <span>{{ b.klasifikasi_teks || b.klasifikasi }}</span>
                   </p>
                 </div>
               </label>
             </div>
-            <p v-if="pilihBerkasForm.berkasIds.length > 0" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-              {{ pilihBerkasForm.berkasIds.length }} berkas dipilih
+            <p v-if="pilihBerkasForm.berkas_ids.length > 0" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ pilihBerkasForm.berkas_ids.length }} berkas dipilih
             </p>
           </div>
         </div>
@@ -1980,7 +1980,7 @@ onBeforeUnmount(() => {
           </span>
           <div class="flex-1">
             <!-- Selected verifikator chips + per-verifikator catatan -->
-            <div v-if="pilihBerkasForm.verifikatorPemberi.length > 0" class="mb-2 flex flex-col gap-2">
+            <div v-if="pilihBerkasForm.verifikator_pemberi.length > 0" class="mb-2 flex flex-col gap-2">
               <div
                 v-for="(v, idx) in sortedVerifikatorPemberi"
                 :key="v.persnum"
@@ -1992,11 +1992,11 @@ onBeforeUnmount(() => {
                   </span>
                   <div class="flex-1 min-w-0">
                     <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
-                    <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.levelJabatan }}</div>
+                    <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.level_jabatan }}</div>
                   </div>
                   <button
                     type="button"
-                    @click="toggleVerifikatorPemberi(v.persnum, v.levelJabatan as LevelJabatan)"
+                    @click="toggleVerifikatorPemberi(v.persnum, v.level_jabatan as LevelJabatan)"
                     class="ml-0.5 shrink-0 text-gray-400 transition-colors hover:text-red-500"
                     aria-label="Hapus verifikator"
                   >
@@ -2029,7 +2029,7 @@ onBeforeUnmount(() => {
                 @click="showVerikPemberiDropdown = !showVerikPemberiDropdown"
                 class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               >
-                <span class="text-gray-400">+ Pilih verifikator ({{ pilihBerkasForm.verifikatorPemberi.length }}/3)</span>
+                <span class="text-gray-400">+ Pilih verifikator ({{ pilihBerkasForm.verifikator_pemberi.length }}/3)</span>
                 <UIcon name="i-lucide-chevron-down" class="size-4 shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': showVerikPemberiDropdown }" />
               </button>
               <div
@@ -2045,12 +2045,12 @@ onBeforeUnmount(() => {
                     class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
-                    <span class="text-xs text-gray-400">{{ v.jabatan || v.levelJabatan || '' }}</span>
+                    <span class="text-xs text-gray-400">{{ v.jabatan || v.level_jabatan || '' }}</span>
                   </button>
                 </div>
               </div>
             </div>
-            <p v-else-if="pilihBerkasForm.verifikatorPemberi.length >= 3" class="text-xs text-gray-400">
+            <p v-else-if="pilihBerkasForm.verifikator_pemberi.length >= 3" class="text-xs text-gray-400">
               Maksimal 3 verifikator. Hapus salah satu untuk mengganti.
             </p>
             <p v-else class="text-xs text-gray-400">
@@ -2073,7 +2073,7 @@ onBeforeUnmount(() => {
         <button
           class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
           style="background-color: #175FA4"
-          :disabled="pilihBerkasForm.berkasIds.length === 0 || pilihBerkasForm.verifikatorPemberi.length === 0 || pending"
+          :disabled="pilihBerkasForm.berkas_ids.length === 0 || pilihBerkasForm.verifikator_pemberi.length === 0 || pending"
           @click="submitPilihBerkas"
         >
           {{ pending ? 'Memproses...' : 'Kirim' }}

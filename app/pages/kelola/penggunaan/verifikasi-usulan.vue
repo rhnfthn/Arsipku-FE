@@ -36,7 +36,7 @@ const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const isRefreshing = ref(false);
 const isExporting = ref(false);
-const sortKey = ref('createdAt');
+const sortKey = ref('created_at');
 const sortDir = ref<'asc' | 'desc'>('desc');
 
 const statusOptions = [
@@ -75,11 +75,11 @@ const exportData = () => {
   try {
     const headers = ['Tanggal', 'Nomor Usulan', 'Divisi Pengusul', 'Jenis Berkas', 'Judul Usulan', 'Status'];
     const csvRows = rows.map((r: any) => [
-      formatDate(r.createdAt),
-      r.nomorUsulan || '-',
-      r.divisiPengusulNama || '-',
-      r.jenisBerkas || '-',
-      r.judulUsulan || '-',
+      formatDate(r.created_at),
+      r.nomor_usulan || '-',
+      r.divisi_pengusul_nama || '-',
+      r.jenis_berkas || '-',
+      r.judul_usulan || '-',
       r.status || '-',
     ]);
     downloadCsv(`verifikasi-usulan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
@@ -178,7 +178,7 @@ const canVerifyRow = (row: any): boolean => {
     case StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI: expectedUrutan = 3; break;
     default: return false;
   }
-  return row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum && v.urutan === expectedUrutan) ?? false;
+  return row.verifikator_pemberi?.some((v: any) => v.persnum === userPersnum && v.urutan === expectedUrutan) ?? false;
 };
 
 const handleApprove = async (note: string) => {
@@ -216,11 +216,11 @@ const handleReject = async (note: string) => {
 };
 
 const columns = [
-  { key: 'createdAt', label: 'Tanggal', sortable: true },
-  { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
-  { key: 'divisiPengusulNama', label: 'Divisi Pengusul', sortable: true },
-  { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true },
-  { key: 'judulUsulan', label: 'Judul Usulan', sortable: true },
+  { key: 'created_at', label: 'Tanggal', sortable: true },
+  { key: 'nomor_usulan', label: 'Nomor Usulan', sortable: true },
+  { key: 'divisi_pengusul_nama', label: 'Divisi Pengusul', sortable: true },
+  { key: 'jenis_berkas', label: 'Jenis Berkas', sortable: true },
+  { key: 'judul_usulan', label: 'Judul Usulan', sortable: true },
   { key: 'progress', label: 'Progress', sortable: false },
   { key: 'status', label: 'Status', sortable: true },
   { key: 'aksi', label: 'Aksi' },
@@ -228,9 +228,9 @@ const columns = [
 
 const getProgressPercent = (row: any): number => {
   if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return 0;
-  if (!row.tanggalMulai || !row.tanggalSelesai) return 0;
-  const mulai = new Date(row.tanggalMulai).getTime();
-  const selesai = new Date(row.tanggalSelesai).getTime();
+  if (!row.tanggal_mulai || !row.tanggal_selesai) return 0;
+  const mulai = new Date(row.tanggal_mulai).getTime();
+  const selesai = new Date(row.tanggal_selesai).getTime();
   const now = Date.now();
   if (now <= mulai) return 0;
   if (now >= selesai) return 100;
@@ -247,8 +247,8 @@ const getProgressLabel = (row: any): string => {
   if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return '-';
   const percent = getProgressPercent(row);
   if (percent >= 100) return 'Habis';
-  if (!row.tanggalSelesai) return '-';
-  const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (!row.tanggal_selesai) return '-';
+  const sisa = Math.ceil((new Date(row.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (sisa <= 0) return 'Habis';
   return `${sisa} hari lagi`;
 };
@@ -360,23 +360,23 @@ const getProgressLabel = (row: any): string => {
           empty-message="Belum ada usulan masuk."
           @sort="handleSort"
         >
-          <template #cell-createdAt="{ row }">
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.createdAt) }}</span>
+          <template #cell-created_at="{ row }">
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.created_at) }}</span>
           </template>
-          <template #cell-nomorUsulan="{ row }">
-            <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomorUsulan }}</span>
+          <template #cell-nomor_usulan="{ row }">
+            <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomor_usulan }}</span>
           </template>
-          <template #cell-divisiPengusulNama="{ row }">
-            <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisiPengusulNama || '-' }}</span>
+          <template #cell-divisi_pengusul_nama="{ row }">
+            <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisi_pengusul_nama || '-' }}</span>
           </template>
-          <template #cell-jenisBerkas="{ row }">
+          <template #cell-jenis_berkas="{ row }">
             <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-              :class="row.jenisBerkas === 'AKTIF' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'">
-              {{ row.jenisBerkas }}
+              :class="row.jenis_berkas === 'AKTIF' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'">
+              {{ row.jenis_berkas }}
             </span>
           </template>
-          <template #cell-judulUsulan="{ row }">
-            <span class="text-xs text-gray-700 dark:text-gray-300 truncate max-w-[200px] block">{{ row.judulUsulan || '-' }}</span>
+          <template #cell-judul_usulan="{ row }">
+            <span class="text-xs text-gray-700 dark:text-gray-300 truncate max-w-[200px] block">{{ row.judul_usulan || '-' }}</span>
           </template>
           <template #cell-status="{ row }">
             <UsulanAksesBerkasBadge :status="row.status" />
