@@ -8,6 +8,13 @@
       </template>
     </PageHeader>
 
+    <TemplateDireksiSelector
+      v-if="detail && isBlankoStage"
+      :model-value="selectedTemplate"
+      :disabled="templateLocked"
+      @update:model-value="changeTemplate"
+    />
+
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
       <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary-500" />
@@ -257,6 +264,7 @@
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :busy="busy"
+                    paraf-label="Setuju"
                     :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
@@ -276,6 +284,7 @@
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :busy="busy"
+                    paraf-label="Setuju"
                     :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
@@ -360,10 +369,10 @@
       <VerifyActionModal
         v-model="parafModalOpen"
         variant="approve"
-        title="Paraf Lembar Persetujuan Direksi"
-        description="Anda akan memberikan paraf lembar persetujuan direksi atas nama pejabat berikut."
+        title="Setuju"
+        description="Anda akan menyetujui lembar persetujuan direksi atas nama pejabat berikut."
         note-placeholder="Catatan opsional…"
-        confirm-label="Paraf"
+        confirm-label="Setuju"
         :saving="busy"
         @confirm="confirmParaf"
       >
@@ -397,7 +406,7 @@
       <VerifyActionModal
         v-model="tolakModalOpen"
         variant="reject"
-        title="Tolak Lembar Persetujuan Direksi"
+        title="Tolak"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
         note-placeholder="Alasan penolakan (minimal 5 karakter)…"
@@ -430,6 +439,8 @@ import { CalendarDate } from '@internationalized/date';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
 import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelector.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
+import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
+import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
@@ -456,7 +467,7 @@ const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('naskah_lainnya'), to: '/naskah-lainnya' },
   { label: detail.value?.perihal || 'Detail', to: `/naskah-lainnya/${id.value}` },
-  { label: 'Persetujuan Direksi', to: '#' },
+  { label: 'Blanko Verbal', to: '#' },
 ]);
 
 const maxPerihal = 200;
@@ -469,6 +480,9 @@ const bodDirectors = ref<DirectorApprovalItem[]>([]);
 
 const pdfModalOpen = ref(false);
 const pdfUrl = ref('');
+const selectedTemplate = ref<'blanko_verbal' | 'lembar_persetujuan_direksi'>(
+  'lembar_persetujuan_direksi'
+);
 
 const parafModalOpen = ref(false);
 const tolakModalOpen = ref(false);
@@ -541,15 +555,50 @@ watch(catatan, (v) => {
 
 const isEvaluasi = computed(() => detail.value?.tahapan === 'evaluasi');
 const isPd = computed(() => detail.value?.tahapan === 'persetujuan_direksi');
+const isBlankoStage = computed(() => detail.value?.tahapan === 'blanko_verbal');
 const pdRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi')
 );
 const pdDitetapkanRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi_ditetapkan')
 );
+const hasActiveBlankoVerbal = computed(() =>
+  (detail.value?.approval ?? []).some(
+    (a) =>
+      (a.tahap === 'blanko_verbal' || a.tahap === 'blanko_verbal_ditetapkan') &&
+      (a.status === 'waiting' || a.status === 'pending')
+  )
+);
+const templateLocked = computed(
+  () =>
+    hasActiveBlankoVerbal.value ||
+    [...pdRows.value, ...pdDitetapkanRows.value].some(
+      (a) => a.status === 'waiting' || a.status === 'pending'
+    )
+);
+const hasActiveLembarPersetujuan = computed(() =>
+  [...pdRows.value, ...pdDitetapkanRows.value].some(
+    (a) => a.status === 'waiting' || a.status === 'pending'
+  )
+);
+
+async function changeTemplate(value: 'blanko_verbal' | 'lembar_persetujuan_direksi') {
+  if (templateLocked.value || value === selectedTemplate.value) return;
+  selectedTemplate.value = value;
+  if (value === 'blanko_verbal') {
+    await navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`);
+  }
+}
 // Editable saat evaluasi (alur normal: kirim = transisi ke PD) atau saat sudah di
 // persetujuan_direksi tapi baris BOD belum ada (recovery naskah yang masuk PD tanpa lembar).
-const canEditSheet = computed(() => isEvaluasi.value || (isPd.value && pdRows.value.length === 0));
+const canEditSheet = computed(
+  () =>
+    isEvaluasi.value ||
+    (isPd.value && !hasActiveLembarPersetujuan.value) ||
+    (isBlankoStage.value &&
+      !hasActiveLembarPersetujuan.value &&
+      Boolean(detail.value?.availableActions?.includes('kirim-approval-blanko')))
+);
 
 const mapApprovalDirector = (
   a: ApprovalRow,
@@ -595,6 +644,11 @@ function compactDirector(director: DirectorApprovalItem): DirectorApprovalItem {
     jabatan: director.jabatan,
     positionId: director.positionId,
     persnum: director.persnum,
+    delegator: director.delegator?.trim() || 'ybs',
+    // Routing delegasi — ikut round-trip agar restore form tidak hilang.
+    delegatePersnum: director.delegatePersnum,
+    delegateName: director.delegateName,
+    delegatePositionStatus: director.delegatePositionStatus,
   };
 }
 
@@ -604,6 +658,12 @@ function cleanSheetPayload(): SheetFormModel {
     jabatan: director.jabatan,
     positionId: director.positionId,
     persnum: director.persnum,
+    delegator: director.delegator?.trim() || 'ybs',
+    // Routing delegasi ke pengganti (persnum) — tanpa ini BE tidak bisa
+    // mengarahkan paraf ke pengganti saat seeding approval.
+    delegatePersnum: director.delegatePersnum,
+    delegateName: director.delegateName,
+    delegatePositionStatus: director.delegatePositionStatus,
   });
   return {
     ...sheet.value,
@@ -621,25 +681,23 @@ function latestPemrakarsaApproval() {
 
 function initDirectorSelection() {
   if (!canEditSheet.value && (pdDirectors.value.length || pdDitetapkanRows.value.length)) {
-    sheet.value.diketahuiOleh = pdRows.value.map((a, idx) =>
+    // Baris delegasi: nama approval row adalah ybs direksi — untuk preview
+    // template, kembalikan ke nama pengganti + status (prefix PT/PH/PS).
+    const fromRow = (a: ApprovalRow, idx: number) =>
       compactDirector({
         index: a.urutan ?? idx + 1,
-        nama: a.nama,
+        nama: a.delegatePersnum ? a.delegateName || a.nama : a.nama,
         jabatan: a.jabatan,
         positionId: a.positionId,
         persnum: a.persnum,
-      })
-    );
+        delegator: a.delegatePersnum ? a.delegatePositionStatus || 'ybs' : 'ybs',
+        delegatePersnum: a.delegatePersnum,
+        delegateName: a.delegateName,
+        delegatePositionStatus: a.delegatePositionStatus,
+      });
+    sheet.value.diketahuiOleh = pdRows.value.map(fromRow);
     if (pdDitetapkanRows.value.length) {
-      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map((a, idx) =>
-        compactDirector({
-          index: a.urutan ?? idx + 1,
-          nama: a.nama,
-          jabatan: a.jabatan,
-          positionId: a.positionId,
-          persnum: a.persnum,
-        })
-      );
+      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map(fromRow);
     }
     return;
   }
@@ -701,6 +759,10 @@ async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
+    if (isBlankoStage.value && hasActiveBlankoVerbal.value) {
+      await navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`, { replace: true });
+      return;
+    }
     initSheet();
     initDirectorSelection();
   } catch {
@@ -796,13 +858,10 @@ async function confirmParaf(note) {
   busyMessage.value = 'Mencatat paraf…';
   try {
     await parafLembarPersetujuanDireksi(id.value, cleanSheetPayload(), note ?? '');
-    toast.add({ title: 'Paraf tercatat', color: 'success' });
+    toast.add({ title: 'Persetujuan tercatat', color: 'success' });
     parafModalOpen.value = false;
     activeDirector.value = null;
     await loadDetail();
-    if (detail.value?.tahapan === 'blanko_verbal') {
-      navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`);
-    }
   } catch (e) {
     toast.add({ title: 'Gagal mencatat paraf', description: apiErrorMessage(e), color: 'error' });
   } finally {

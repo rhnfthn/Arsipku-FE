@@ -393,7 +393,9 @@ const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 const canAccessSdeMasalPenyusunan = computed(() => {
-  const tag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  const tag = String(user.value?.bodTag ?? '')
+    .trim()
+    .toUpperCase();
   return ['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
 });
 
@@ -709,7 +711,7 @@ const userMenuUtama = computed(() => [
       ...(isLegalRole.value
         ? [
             {
-              label: 'Legal Drafting',
+              label: 'Legal',
               to: '/naskah-lainnya/legal-drafting',
               badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
             },
@@ -937,7 +939,7 @@ const adminMenuUtama = computed(() => [
       ...(isLegalRole.value
         ? [
             {
-              label: 'Legal Drafting',
+              label: 'Legal',
               to: '/naskah-lainnya/legal-drafting',
               badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
             },

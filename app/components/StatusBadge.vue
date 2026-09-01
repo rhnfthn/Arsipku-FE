@@ -113,7 +113,8 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-blue-700',
   },
   blanko_verbal: {
-    label: 'Blanko Verbal Persetujuan Direksi',
+    // Tahap bercabang: user memilih template Blanko Verbal atau Persetujuan Direksi.
+    label: 'Blanko Verbal / Persetujuan Direksi',
     bg: 'bg-purple-100 dark:bg-purple-900/30',
     text: 'text-purple-700 dark:text-purple-400',
     dot: 'bg-purple-700',

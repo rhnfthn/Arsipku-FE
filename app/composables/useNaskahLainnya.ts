@@ -5,7 +5,6 @@ import type {
   NaskahDetail,
   BuatNaskahPayload,
   EvaluasiPayload,
-  KirimEvaluasiPayload,
   KeputusanEvaluasiPayload,
   ApprovalItem,
   BlankoPayload,
@@ -145,12 +144,15 @@ export function useNaskahLainnya() {
       url: `/naskah-lainnya/${id}/legal-drafting/kirim-approval`,
       body: b,
     }),
+    teruskanLegalDrafting: (id, b) => ({
+      url: `/naskah-lainnya/${id}/legal-drafting/teruskan`,
+      body: b,
+    }),
     kembalikanLegal: (id, b) => ({
       url: `/naskah-lainnya/${id}/legal-drafting/kembalikan`,
       body: { catatan: b?.catatan },
     }),
     evaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi`, body: b }),
-    kirimEvaluasi: (id, b) => ({ url: `/naskah-lainnya/${id}/evaluasi/kirim`, body: b }),
     keputusanEvaluasi: (id, b) => ({
       url: `/naskah-lainnya/${id}/evaluasi/keputusan`,
       body: b,
@@ -234,13 +236,21 @@ export function useNaskahLainnya() {
       catatan,
       catatan_legal: catatanLegal,
     });
+  const teruskanLegalDrafting = (
+    id: string,
+    penerima: { positionId?: string; nama: string; jabatan: string; persnum?: number },
+    pengesah?: { positionId?: string; nama: string; jabatan: string; persnum?: number },
+    catatan?: string,
+    catatanLegal?: string
+  ) =>
+    act(id, 'teruskanLegalDrafting', {
+      penerima: toApprovalPayload(penerima),
+      pengesah: pengesah ? toApprovalPayload(pengesah) : undefined,
+      catatan,
+      catatan_legal: catatanLegal,
+    });
   const kembalikanLegal = (id: string, catatan: string) => act(id, 'kembalikanLegal', { catatan });
   const evaluasi = (id: string, payload: EvaluasiPayload) => act(id, 'evaluasi', payload);
-  const kirimEvaluasi = (id: string, payload: KirimEvaluasiPayload) =>
-    act(id, 'kirimEvaluasi', {
-      ...payload,
-      verifikator: toApprovalPayload(payload.verifikator),
-    });
   const keputusanEvaluasi = (id: string, payload: KeputusanEvaluasiPayload) =>
     act(id, 'keputusanEvaluasi', {
       ...payload,
@@ -304,6 +314,14 @@ export function useNaskahLainnya() {
     return (Array.isArray(arr) ? arr : []) as DirectorApprovalItem[];
   };
 
+  // ── BOD & BOD-1 (opsi pengganti penandatanga direksi) ──
+  const fetchBodBod1 = async (): Promise<DirectorApprovalItem[]> => {
+    const res: any = await apiGet('/org-data/bod-bod1', {}, { skipCache: true });
+    const mid = Array.isArray(res) ? res : res?.data;
+    const arr = Array.isArray(mid) ? mid : mid?.data;
+    return (Array.isArray(arr) ? arr : []) as DirectorApprovalItem[];
+  };
+
   // ── Lembar Persetujuan Direksi ──
   const previewLembarPersetujuanDireksi = async (
     id: string,
@@ -351,17 +369,15 @@ export function useNaskahLainnya() {
   const assignDelegasiDireksi = (
     id: string,
     approvalId: string,
-    payload: { delegatePersnum: number; delegateName: string; positionStatus: 'PT' | 'PH' | 'PS' },
+    payload: { delegatePersnum: number; delegateName: string; positionStatus: 'PT' | 'PH' | 'PS' }
   ) =>
     apiPut<ApiResponse<ApprovalRow>>(
       `/naskah-lainnya/${id}/approval/${approvalId}/delegasi`,
-      payload,
+      payload
     );
 
   const removeDelegasiDireksi = (id: string, approvalId: string) =>
-    apiDelete<ApiResponse<{ id: string }>>(
-      `/naskah-lainnya/${id}/approval/${approvalId}/delegasi`,
-    );
+    apiDelete<ApiResponse<{ id: string }>>(`/naskah-lainnya/${id}/approval/${approvalId}/delegasi`);
 
   const uploadDokumen = async (id: string, file: File) => {
     const fd = new FormData();
@@ -489,9 +505,9 @@ export function useNaskahLainnya() {
     kembalikan,
     mulaiLegal,
     kirimApprovalLegal,
+    teruskanLegalDrafting,
     kembalikanLegal,
     evaluasi,
-    kirimEvaluasi,
     keputusanEvaluasi,
     fetchKandidatPersetujuan,
     teruskanPersetujuan,
@@ -515,6 +531,7 @@ export function useNaskahLainnya() {
     deleteDraft,
     // Direksi / lembar / blanko
     fetchBodDirectors,
+    fetchBodBod1,
     previewLembarPersetujuanDireksi,
     kirimLembarPersetujuanDireksi,
     parafLembarPersetujuanDireksi,

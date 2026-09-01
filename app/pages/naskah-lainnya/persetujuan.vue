@@ -475,7 +475,7 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   evaluasi_final: 'Evaluasi Final EVP',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal Persetujuan Direksi',
+  blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
   tanda_tangan_legal: 'TTD Legal',
   tanda_tangan_pejabat: 'TTD Pejabat',
   tanda_tangan: 'Menunggu Tanda Tangan',
@@ -592,7 +592,7 @@ const filteredRows = computed(() => {
     const matchesTahapan = !filterTahapan.value || r.tahapan === filterTahapan.value;
     const matchesSearch =
       !q ||
-      [r.nomor, r.perihal, r.pemrakarsa.nama].some((v) =>
+      [r.nomor, r.perihal, r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama].some((v) =>
         String(v ?? '')
           .toLowerCase()
           .includes(q)
@@ -622,7 +622,7 @@ const displayRows = computed(() =>
     id: r.id,
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
-    pemrakarsa: r.pemrakarsa.nama,
+    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
@@ -688,6 +688,7 @@ async function openAction(row: any) {
         'lanjut-persetujuan',
         'teruskan-persetujuan',
         'selesai-persetujuan',
+        'kirim-approval-legal',
       ].some((a) => activeActions.includes(a as any))
     ) {
       await navigateTo(`/naskah-lainnya/${n.id}`);
@@ -695,6 +696,10 @@ async function openAction(row: any) {
     }
   } catch {
     // Bila detail gagal dimuat, navigasi tahap di bawah tetap menjadi fallback.
+  }
+  if (n.tahapan === 'legal_drafting') {
+    navigateTo(`/naskah-lainnya/${n.id}/legal-drafting`);
+    return;
   }
   if (n.tahapan === 'blanko_verbal') {
     navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);

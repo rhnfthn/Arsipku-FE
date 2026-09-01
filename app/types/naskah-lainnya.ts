@@ -58,7 +58,6 @@ export type JenisAksi =
   | 'kembalikan-legal'
   | 'evaluasi'
   | 'kembalikan-evaluasi'
-  | 'kirim-evaluasi'
   | 'lanjut-persetujuan'
   | 'legal-drafting-ulang'
   | 'batalkan-evaluasi'
@@ -92,6 +91,8 @@ export interface NaskahListItem {
   jenis: JenisNaskah;
   perihal: string;
   pemrakarsa: Persona;
+  /** Pejabat terakhir/tertinggi pada approval awal milik pemrakarsa. */
+  pemrakarsaPejabat?: Persona;
   tahapan: Tahapan;
   /** Metadata status dokumen untuk badge daftar, khususnya TTD fisik. */
   signOption?: SignOption;
@@ -260,12 +261,6 @@ export interface EvaluasiPayload {
   catatan?: string;
 }
 
-export interface KirimEvaluasiPayload {
-  verifikator?: ApprovalItem;
-  checklist?: string[];
-  catatan?: string;
-}
-
 export interface KeputusanEvaluasiPayload {
   keputusan: 'lanjut_persetujuan' | 'legal_drafting_ulang' | 'batalkan';
   penerimaPertama?: ApprovalItem;
@@ -322,6 +317,10 @@ export interface DirectorApprovalItem {
   delegatePositionStatus?: 'PT' | 'PH' | 'PS' | null;
   approvalId?: string;
   roleLabel?: string;
+  /** Status delegasi direksi: 'ybs' (default) / 'PT'/'PH'/'PS' — di-prefix di depan nama pengganti di template. */
+  delegator?: string;
+  /** Tag level org data — 'BOD' (direksi) / 'BOD-1' (EVP), untuk grouping dropdown pengganti. */
+  bodTag?: string;
 }
 
 export interface TandaTanganPayload {
@@ -431,7 +430,7 @@ export const FASE_LABEL: Record<string, string> = {
   evaluasi: 'Evaluasi',
   persetujuan_direksi: 'Blanko Verbal Persetujuan Direksi (Legacy)',
   tanda_tangan_pemrakarsa: 'Tanda Tangan Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal Persetujuan Direksi',
+  blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
   tanda_tangan_legal: 'Tanda Tangan Legal',
   tanda_tangan_pejabat: 'Tanda Tangan Pejabat',
   tanda_tangan: 'Tanda Tangan',

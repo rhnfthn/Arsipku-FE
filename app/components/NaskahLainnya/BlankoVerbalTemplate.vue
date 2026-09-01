@@ -1,7 +1,7 @@
 <template>
   <div class="bv-page">
     <div class="bv-header">
-      BLANKO VERBAL PERSETUJUAN DIREKSI<br />
+      BLANKO VERBAL<br />
       PERUSAHAAN UMUM (PERUM) LEMBAGA PENYELENGGARA PELAYANAN<br />
       NAVIGASI PENERBANGAN INDONESIA
     </div>
@@ -130,43 +130,46 @@
                   v-if="isSigned(item)"
                   :nama="item.nama"
                   :jabatan="item.jabatan"
+                  :delegator="item.delegator"
                   variant="wide"
                 />
                 <div class="bv-signature-name">
-                  {{ (item.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                  {{ nameOf(item) }}
                 </div>
               </div>
             </div>
           </td>
           <td style="vertical-align: top">
             <div
+              v-if="directorSlots[0]"
               class="bv-director-item bv-director-divider"
               :class="{ 'bv-signed': directorSlots[0] && isSigned(directorSlots[0]) }"
-              v-if="directorSlots[0]"
             >
               {{ directorSlots[0].index ?? 1 }}. {{ directorSlots[0].jabatan || '' }}
               <VisibleDigsig
                 v-if="isSigned(directorSlots[0])"
                 :nama="directorSlots[0].nama"
                 :jabatan="directorSlots[0].jabatan"
+                :delegator="directorSlots[0].delegator"
               />
               <div class="bv-director-name">
-                {{ (directorSlots[0].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[0]) }}
               </div>
             </div>
             <div
+              v-if="directorSlots[1]"
               class="bv-director-item"
               :class="{ 'bv-signed': directorSlots[1] && isSigned(directorSlots[1]) }"
-              v-if="directorSlots[1]"
             >
               {{ directorSlots[1].index ?? 2 }}. {{ directorSlots[1].jabatan || '' }}
               <VisibleDigsig
                 v-if="isSigned(directorSlots[1])"
                 :nama="directorSlots[1].nama"
                 :jabatan="directorSlots[1].jabatan"
+                :delegator="directorSlots[1].delegator"
               />
               <div class="bv-director-name">
-                {{ (directorSlots[1].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[1]) }}
               </div>
             </div>
           </td>
@@ -181,18 +184,19 @@
           </td>
           <td style="vertical-align: top">
             <div
+              v-if="directorSlots[2]"
               class="bv-director-item"
               :class="{ 'bv-signed': directorSlots[2] && isSigned(directorSlots[2]) }"
-              v-if="directorSlots[2]"
             >
               {{ directorSlots[2].index ?? 3 }}. {{ directorSlots[2].jabatan || '' }}
               <VisibleDigsig
                 v-if="isSigned(directorSlots[2])"
                 :nama="directorSlots[2].nama"
                 :jabatan="directorSlots[2].jabatan"
+                :delegator="directorSlots[2].delegator"
               />
               <div class="bv-director-name">
-                {{ (directorSlots[2].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[2]) }}
               </div>
             </div>
           </td>
@@ -203,18 +207,19 @@
           <td>{{ modelValue?.klasifikasi || 'Penting' }}</td>
           <td style="vertical-align: top">
             <div
+              v-if="directorSlots[3]"
               class="bv-director-item"
               :class="{ 'bv-signed': directorSlots[3] && isSigned(directorSlots[3]) }"
-              v-if="directorSlots[3]"
             >
               {{ directorSlots[3].index ?? 4 }}. {{ directorSlots[3].jabatan || '' }}
               <VisibleDigsig
                 v-if="isSigned(directorSlots[3])"
                 :nama="directorSlots[3].nama"
                 :jabatan="directorSlots[3].jabatan"
+                :delegator="directorSlots[3].delegator"
               />
               <div class="bv-director-name">
-                {{ (directorSlots[3].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[3]) }}
               </div>
             </div>
           </td>
@@ -225,18 +230,19 @@
           <td>{{ modelValue?.lampiran || '1 (satu) berkas' }}</td>
           <td style="vertical-align: top">
             <div
+              v-if="directorSlots[4]"
               class="bv-director-item"
               :class="{ 'bv-signed': directorSlots[4] && isSigned(directorSlots[4]) }"
-              v-if="directorSlots[4]"
             >
               {{ directorSlots[4].index ?? 5 }}. {{ directorSlots[4].jabatan || '' }}
               <VisibleDigsig
                 v-if="isSigned(directorSlots[4])"
                 :nama="directorSlots[4].nama"
                 :jabatan="directorSlots[4].jabatan"
+                :delegator="directorSlots[4].delegator"
               />
               <div class="bv-director-name">
-                {{ (directorSlots[4].nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase() }}
+                {{ nameOf(directorSlots[4]) }}
               </div>
             </div>
           </td>
@@ -309,6 +315,14 @@ const ditetapkanSlots = computed(() => {
   const dirut = dirs.find((d) => /direktur\s*utama/i.test(d.jabatan || ''));
   return dirut ? [dirut] : [{ index: 1, nama: '', jabatan: 'DIREKTUR UTAMA' }];
 });
+
+// Nama pengganti diawali status delegasi (PT/PH/PS); 'ybs' = pejabat
+// bersangkungan sendiri, tanpa prefix.
+function nameOf(director?: DirectorApprovalItem) {
+  const raw = (director?.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase();
+  const status = director?.delegator?.trim();
+  return status && status !== 'ybs' ? `${status}. ${raw}` : raw;
+}
 
 function formatTanggal(value?: string) {
   if (!value) return '';

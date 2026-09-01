@@ -310,11 +310,17 @@ const canProsesLegalApproval = computed(() => {
   const r = String(user.value?.role ?? '').toUpperCase();
   const ar = String(user.value?.activeRole?.name ?? '').toUpperCase();
   if (r === 'SUPERADMIN' || ar === 'SUPERADMIN') return true;
-  return !!(active.nama && user.value.nama && active.nama === user.value.nama);
+  const userPositionId = String(user.value?.positionId ?? user.value?.position ?? '');
+  if (active.positionId) return String(active.positionId) === userPositionId;
+  return !!(
+    active.nama &&
+    user.value.nama &&
+    active.nama.trim().toLowerCase() === user.value.nama.trim().toLowerCase()
+  );
 });
 
 function goToLegalApprovalWorkspace() {
-  navigateTo(`/naskah-lainnya/${id.value}/persetujuan?tahap=legal_drafting`);
+  navigateTo(`/naskah-lainnya/${id.value}/legal-drafting`);
 }
 
 const actionDescription = computed(() => {
@@ -363,18 +369,8 @@ const signerExpanded = ref(true);
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 const showReturnModal = ref(false);
-const showEvaluationNotice = ref(false);
 const savingAction = ref(false);
-const sendingEvaluation = ref(false);
 const pendingAction = ref<JenisAksi | null>(null);
-
-const defaultEvaluationVerifier = computed(() => {
-  const stored = detail.value?.approvalChain ?? [];
-  return stored.length ? stored[stored.length - 1] : undefined;
-});
-const evaluationNoticeDescription = computed(() => {
-  return 'Evaluasi akan dikirim kepada approval terakhir/tertinggi yang dipilih pada form awal Naskah Lainnya.';
-});
 // Nomor bersih untuk tampilan: sembunyikan placeholder mentah {{...}} (legacy scrape
 // pra-Task-8 menangkap {{nomor}} dari template docx dan menyimpannya sebagai nomor).
 // Konsumen beri fallback masing-masing ('—' untuk info row, 'Detail' untuk breadcrumb).
@@ -482,7 +478,7 @@ function fileMeta(d: DokumenFile) {
 const dokumenTab = ref(0);
 const dokumenTabs = [
   { label: 'Naskah', icon: 'i-lucide-file-text' },
-  { label: 'Blanko Verbal Persetujuan Direksi', icon: 'i-lucide-file-check' },
+  { label: 'Blanko Verbal', icon: 'i-lucide-file-check' },
   { label: 'Dok. Pendukung', icon: 'i-lucide-paperclip' },
 ];
 
@@ -552,8 +548,7 @@ async function openPreviewFromBlob(blob: Blob, nama: string) {
   const isPdf = lower.endsWith('.pdf') || blob.type === 'application/pdf';
   const isDocx =
     lower.endsWith('.docx') ||
-    blob.type ===
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    blob.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   // reset state sebelumnya
   if (previewUrl.value) {
     window.URL.revokeObjectURL(previewUrl.value);
@@ -814,11 +809,6 @@ const ACTION_META: Record<
     color: 'warning',
     variant: 'return',
   },
-  'kirim-evaluasi': {
-    label: 'Kirim Evaluasi ke EVP',
-    icon: 'i-lucide-send',
-    color: 'primary',
-  },
   'lanjut-persetujuan': {
     label: 'Evaluasi',
     icon: 'i-lucide-clipboard-check',
@@ -843,7 +833,7 @@ const ACTION_META: Record<
     to: (id: string) => `/naskah-lainnya/${id}/evaluasi`,
   },
   'simpan-blanko': {
-    label: 'Buat Blanko Verbal Persetujuan Direksi',
+    label: 'Buat Blanko Verbal',
     icon: 'i-lucide-file-check',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
@@ -949,41 +939,6 @@ function buildSheetActionPayload() {
       tahapan === 'blanko_verbal' ? 'blanko_verbal' : 'persetujuan_direksi'
     ),
   };
-}
-
-function openEvaluationNotice() {
-  if (!defaultEvaluationVerifier.value?.positionId) {
-    toast.add({
-      title: 'Verifikator evaluasi tidak tersedia',
-      description: 'Approval terakhir/tertinggi dari form awal tidak ditemukan.',
-      color: 'warning',
-    });
-    return;
-  }
-  showEvaluationNotice.value = true;
-}
-
-async function confirmSendEvaluation() {
-  sendingEvaluation.value = true;
-  try {
-    const nl = useNaskahLainnya();
-    await nl.kirimEvaluasi(id.value, {});
-    toast.add({
-      title: 'Evaluasi berhasil dikirim',
-      description: `Evaluasi dikirim kepada ${defaultEvaluationVerifier.value?.nama ?? 'verifikator terakhir'}.`,
-      color: 'success',
-    });
-    showEvaluationNotice.value = false;
-    await fetchDetail(id.value);
-  } catch (err: any) {
-    toast.add({
-      title: 'Gagal mengirim evaluasi',
-      description: err?.response?.data?.message ?? err?.message ?? 'Terjadi kesalahan',
-      color: 'error',
-    });
-  } finally {
-    sendingEvaluation.value = false;
-  }
 }
 
 async function handleApprove(catatan: string) {
@@ -2534,7 +2489,11 @@ const signLabel = computed(() =>
                 size="lg"
                 icon="i-lucide-circle-x"
                 :loading="pendingAction === 'tolak' && savingAction"
-                @click="openActionModal('tolak')"
+                @click="
+                  tahapan === 'blanko_verbal'
+                    ? navigateTo(`/naskah-lainnya/${id}/blanko-verbal`)
+                    : openActionModal('tolak')
+                "
                 >Tolak</UButton
               >
               <UButton
@@ -2598,8 +2557,8 @@ const signLabel = computed(() =>
                 :to="`/naskah-lainnya/${id}/blanko-verbal`"
                 >{{
                   canBuatBlanko
-                    ? 'Buat Blanko Verbal Persetujuan Direksi'
-                    : 'Lihat Progres Blanko Verbal Persetujuan Direksi'
+                    ? 'Buat Blanko Verbal'
+                    : 'Lihat Progres Blanko Verbal'
                 }}</UButton
               >
 
@@ -2666,16 +2625,6 @@ const signLabel = computed(() =>
 
               <!-- Evaluasi -->
               <UButton
-                v-if="detail.availableActions.includes('kirim-evaluasi')"
-                color="primary"
-                icon="i-lucide-clipboard-check"
-                size="lg"
-                class="font-semibold w-full sm:w-auto"
-                :loading="sendingEvaluation"
-                @click="openEvaluationNotice"
-                >Evaluasi</UButton
-              >
-              <UButton
                 v-if="detail.availableActions.includes('lanjut-persetujuan')"
                 color="primary"
                 icon="i-lucide-clipboard-check"
@@ -2713,43 +2662,6 @@ const signLabel = computed(() =>
           </div>
         </section>
       </main>
-
-      <VerifyActionModal
-        v-model="showEvaluationNotice"
-        variant="approve"
-        title="Kirim Evaluasi?"
-        :description="evaluationNoticeDescription"
-        warning="Penerima mengikuti approval terakhir/tertinggi dari form awal dan tidak perlu dipilih ulang."
-        confirm-label="Ya, Kirim Evaluasi"
-        :saving="sendingEvaluation"
-        :require-note="false"
-        @confirm="confirmSendEvaluation"
-      >
-        <template #highlight>
-          <div
-            class="flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 dark:border-primary-800 dark:bg-primary-900/20"
-          >
-            <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm"
-            >
-              <UIcon name="i-lucide-user-check" class="size-5" />
-            </span>
-            <div class="min-w-0 flex-1">
-              <p
-                class="text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400"
-              >
-                Penerima Evaluasi
-              </p>
-              <p class="truncate text-base font-bold text-gray-950 dark:text-white">
-                {{ defaultEvaluationVerifier?.nama }}
-              </p>
-              <p class="truncate text-sm font-medium text-gray-600 dark:text-gray-300">
-                {{ defaultEvaluationVerifier?.jabatan }}
-              </p>
-            </div>
-          </div>
-        </template>
-      </VerifyActionModal>
 
       <!-- Modal Setuju (standarisasi VerifyActionModal) -->
       <VerifyActionModal
