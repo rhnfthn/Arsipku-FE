@@ -229,11 +229,11 @@ function handleDocumentClick(e: MouseEvent) {
 // ── DataTable columns (pemberkasan style) ───────────────────────
 // Urutan: Tanggal, Nomor Usulan, Divisi Pemberi, Jenis Berkas, Judul Usulan, Status, Aksi
 const columns = [
-  { key: 'createdAt', label: 'Tanggal', sortable: true },
-  { key: 'nomorUsulan', label: 'Nomor Usulan', sortable: true },
+  { key: 'created_at', label: 'Tanggal', sortable: true },
+  { key: 'nomor_usulan', label: 'Nomor Usulan', sortable: true },
   { key: 'divisiPemberi', label: 'Divisi Pemberi', sortable: true },
-  { key: 'jenisBerkas', label: 'Jenis Berkas', sortable: true, headerClass: 'text-center', class: 'text-center' },
-  { key: 'judulUsulan', label: 'Judul Usulan', sortable: true },
+  { key: 'jenis_berkas', label: 'Jenis Berkas', sortable: true, headerClass: 'text-center', class: 'text-center' },
+  { key: 'judul_usulan', label: 'Judul Usulan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
@@ -244,9 +244,9 @@ const columns = [
 // Warna: hijau (0-50%), kuning (50-80%), merah (80-100%)
 const getProgressPercent = (row: any): number => {
   if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return 0;
-  if (!row.tanggalMulai || !row.tanggalSelesai) return 0;
-  const mulai = new Date(row.tanggalMulai).getTime();
-  const selesai = new Date(row.tanggalSelesai).getTime();
+  if (!row.tanggal_mulai || !row.tanggal_selesai) return 0;
+  const mulai = new Date(row.tanggal_mulai).getTime();
+  const selesai = new Date(row.tanggal_selesai).getTime();
   const now = Date.now();
   if (now <= mulai) return 0;
   if (now >= selesai) return 100;
@@ -263,8 +263,8 @@ const getProgressLabel = (row: any): string => {
   if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return '-';
   const percent = getProgressPercent(row);
   if (percent >= 100) return 'Habis';
-  if (!row.tanggalSelesai) return '-';
-  const sisa = Math.ceil((new Date(row.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (!row.tanggal_selesai) return '-';
+  const sisa = Math.ceil((new Date(row.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (sisa <= 0) return 'Habis';
   return `${sisa} hari lagi`;
 };
@@ -297,13 +297,13 @@ const canVerifyRow = (row: any): boolean => {
   }
   // Cek verifikatorPengusul — hanya urutan aktif yang boleh approve
   if (expectedUrutanPengusul !== null) {
-    return row.verifikatorPengusul?.some(
+    return row.verifikator_pengusul?.some(
       (v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPengusul,
     ) ?? false;
   }
   // Cek verifikatorPemberi — hanya urutan aktif (SE=0, AVP=1, VP=2, EVP=3)
   if (expectedUrutanPemberi !== null) {
-    return row.verifikatorPemberi?.some(
+    return row.verifikator_pemberi?.some(
       (v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPemberi,
     ) ?? false;
   }
@@ -344,8 +344,8 @@ const openRejectModal = (row: any) => {
 // Tentukan jenis verifikasi berdasarkan status & verifikator
 const getVerificationType = (row: any): 'pengusul' | 'pemberi' | 'persetujuan-pemberi' | null => {
   const userPersnum = Number(user.value?.persnum);
-  const isPengusulVerifier = row.verifikatorPengusul?.some((v: any) => v.persnum === userPersnum);
-  const isPemberiVerifier = row.verifikatorPemberi?.some((v: any) => v.persnum === userPersnum);
+  const isPengusulVerifier = row.verifikator_pengusul?.some((v: any) => v.persnum === userPersnum);
+  const isPemberiVerifier = row.verifikator_pemberi?.some((v: any) => v.persnum === userPersnum);
 
   if (isPengusulVerifier) {
     if ([StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL].includes(row.status)) {
@@ -370,29 +370,29 @@ const handleApprove = async (note: string) => {
     const type = getVerificationType(row);
 
     if (type === 'pengusul') {
-      const verifikator = row.verifikatorPengusul.find((v: any) => v.persnum === userPersnum);
+      const verifikator = row.verifikator_pengusul.find((v: any) => v.persnum === userPersnum);
       const jenjang = verifikator?.urutan as 1 | 2 | 3;
       await verifikasiPengusul(row.id, jenjang, {
         catatan: note,
-        catatanRevisi: '',
+        catatan_revisi: '',
         keputusan: Keputusan.SETUJU,
       });
     } else if (type === 'pemberi') {
       await verifikasiPemberi(row.id, {
-        durasiAksesDisetujui: row.durasiAkses,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: row.durasi_akses,
+        catatan_perubahan_durasi: '',
         catatan: note,
         keputusan: Keputusan.LANJUT,
       });
     } else if (type === 'persetujuan-pemberi') {
-      const verifikator = row.verifikatorPemberi.find((v: any) => v.persnum === userPersnum);
+      const verifikator = row.verifikator_pemberi.find((v: any) => v.persnum === userPersnum);
       const jenjang = verifikator?.urutan as 1 | 2 | 3;
       await persetujuanPemberi(row.id, jenjang, {
         catatan: note,
-        catatanRevisi: '',
+        catatan_revisi: '',
         keputusan: Keputusan.SETUJU,
-        durasiAksesDisetujui: undefined,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: undefined,
+        catatan_perubahan_durasi: '',
       });
     }
 
@@ -420,29 +420,29 @@ const handleReject = async (note: string) => {
     const type = getVerificationType(row);
 
     if (type === 'pengusul') {
-      const verifikator = row.verifikatorPengusul.find((v: any) => v.persnum === userPersnum);
+      const verifikator = row.verifikator_pengusul.find((v: any) => v.persnum === userPersnum);
       const jenjang = verifikator?.urutan as 1 | 2 | 3;
       await verifikasiPengusul(row.id, jenjang, {
         catatan: note,
-        catatanRevisi: '',
+        catatan_revisi: '',
         keputusan: Keputusan.TOLAK,
       });
     } else if (type === 'pemberi') {
       await verifikasiPemberi(row.id, {
-        durasiAksesDisetujui: row.durasiAkses,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: row.durasi_akses,
+        catatan_perubahan_durasi: '',
         catatan: note,
         keputusan: Keputusan.TOLAK,
       });
     } else if (type === 'persetujuan-pemberi') {
-      const verifikator = row.verifikatorPemberi.find((v: any) => v.persnum === userPersnum);
+      const verifikator = row.verifikator_pemberi.find((v: any) => v.persnum === userPersnum);
       const jenjang = verifikator?.urutan as 1 | 2 | 3;
       await persetujuanPemberi(row.id, jenjang, {
         catatan: note,
-        catatanRevisi: '',
+        catatan_revisi: '',
         keputusan: Keputusan.TOLAK,
-        durasiAksesDisetujui: undefined,
-        catatanPerubahanDurasi: '',
+        durasi_akses_disetujui: undefined,
+        catatan_perubahan_durasi: '',
       });
     }
 
@@ -458,7 +458,7 @@ const handleReject = async (note: string) => {
 };
 
 // ── Sort ────────────────────────────────────────────────────────
-const sortKey = ref('createdAt');
+const sortKey = ref('created_at');
 const sortDir = ref<'asc' | 'desc'>('desc');
 
 const handleSort = (key: string) => {
@@ -504,11 +504,11 @@ const exportData = async () => {
     }
     const headers = ['Nomor Usulan', 'Jenis Berkas', 'Durasi', 'Status', 'Dibuat'];
     const csvRows = rows.map((r: any) => [
-      r.nomorUsulan,
-      r.jenisBerkas,
-      formatDurasiLabel(r.durasiAkses, r.customTanggalSelesai),
+      r.nomor_usulan,
+      r.jenis_berkas,
+      formatDurasiLabel(r.durasi_akses, r.custom_tanggal_selesai),
       r.status,
-      formatDate(r.createdAt),
+      formatDate(r.created_at),
     ]);
     downloadCsv(`usulan-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
     toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
@@ -699,28 +699,28 @@ onBeforeUnmount(() => {
         empty-message="Belum ada usulan akses berkas."
         @sort="handleSort"
       >
-        <template #cell-createdAt="{ row }">
-          <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.createdAt) }}</span>
+        <template #cell-created_at="{ row }">
+          <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.created_at) }}</span>
         </template>
-        <template #cell-nomorUsulan="{ row }">
-          <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomorUsulan }}</span>
+        <template #cell-nomor_usulan="{ row }">
+          <span class="font-mono text-xs text-gray-800 dark:text-gray-200">{{ row.nomor_usulan }}</span>
         </template>
         <template #cell-divisiPemberi="{ row }">
-          <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisiPemberiNama || row.divisiPemberiId || '-' }}</span>
+          <span class="text-xs text-gray-600 dark:text-gray-400">{{ row.divisi_pemberi_nama || row.divisi_pemberi_id || '-' }}</span>
         </template>
-        <template #cell-jenisBerkas="{ row }">
+        <template #cell-jenis_berkas="{ row }">
           <span
             class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-            :class="row.jenisBerkas === 'AKTIF'
+            :class="row.jenis_berkas === 'AKTIF'
               ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
               : 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
           >
-            {{ row.jenisBerkas }}
+            {{ row.jenis_berkas }}
           </span>
         </template>
-        <template #cell-judulUsulan="{ row }">
+        <template #cell-judul_usulan="{ row }">
           <div class="max-w-[260px]">
-            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ row.judulUsulan || '-' }}</p>
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ row.judul_usulan || '-' }}</p>
           </div>
         </template>
         <template #cell-status="{ row }">

@@ -24,7 +24,7 @@ const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
-  { label: usulanDetail.value?.nomorUsulan || 'Detail', to: '#' },
+  { label: usulanDetail.value?.nomor_usulan || 'Detail', to: '#' },
 ]);
 
 const formatDate = (dateStr: string | null) => {
@@ -44,9 +44,9 @@ onMounted(() => { loadDetail(); });
 
 // ── Progress & Status helpers (sinkron dengan tabel pemberian) ──
 const getProgressPercent = (detail: any): number => {
-  if (!detail?.tanggalMulai || !detail?.tanggalSelesai) return 0;
-  const mulai = new Date(detail.tanggalMulai).getTime();
-  const selesai = new Date(detail.tanggalSelesai).getTime();
+  if (!detail?.tanggal_mulai || !detail?.tanggal_selesai) return 0;
+  const mulai = new Date(detail.tanggal_mulai).getTime();
+  const selesai = new Date(detail.tanggal_selesai).getTime();
   const now = Date.now();
   if (now <= mulai) return 0;
   if (now >= selesai) return 100;
@@ -60,8 +60,8 @@ const getProgressBarClass = (percent: number): string => {
 };
 
 const getProgressLabel = (detail: any): string => {
-  if (!detail?.tanggalSelesai) return '-';
-  const sisa = Math.ceil((new Date(detail.tanggalSelesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (!detail?.tanggal_selesai) return '-';
+  const sisa = Math.ceil((new Date(detail.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (sisa <= 0) return 'Habis';
   return `${sisa} hari`;
 };
@@ -73,7 +73,7 @@ const getProgressLabel = (detail: any): string => {
       <template #title>
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            {{ usulanDetail?.nomorUsulan || 'Detail Pemberian' }}
+            {{ usulanDetail?.nomor_usulan || 'Detail Pemberian' }}
           </h1>
           <UsulanAksesBerkasBadge v-if="usulanDetail" :status="usulanDetail.status" />
         </div>
@@ -104,43 +104,43 @@ const getProgressLabel = (detail: any): string => {
         <dl class="grid grid-cols-1 gap-x-8 gap-y-5 px-5 py-5 sm:grid-cols-2">
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><User class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.pengusulInfo?.nama || usulanDetail.pengusulPersnum }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.pengusul_info?.nama || usulanDetail.pengusul_persnum }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Building2 class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisiPemberiNama || usulanDetail.divisiPemberiId }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisi_pemberi_nama || usulanDetail.divisi_pemberi_id }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Building2 class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisiPengusulNama || usulanDetail.divisiPengusulId }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisi_pengusul_nama || usulanDetail.divisi_pengusul_id }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Key class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenisAkses?.join(', ') }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenis_akses?.join(', ') }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><FileText class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judulUsulan || '-' }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judul_usulan || '-' }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><FileText class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenisBerkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenis_berkas === 'AKTIF' ? 'Aktif' : 'Inaktif' }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Clock class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(usulanDetail.tanggalMulai) }} — {{ formatDate(usulanDetail.tanggalSelesai) }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(usulanDetail.tanggal_mulai) }} — {{ formatDate(usulanDetail.tanggal_selesai) }}</dd></div>
           </div>
         </dl>
         <div class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
           <p class="mb-1 text-xs font-medium uppercase text-gray-500">Tujuan Akses</p>
-          <p class="text-sm text-gray-800 dark:text-gray-200">{{ usulanDetail.tujuanAkses }}</p>
+          <p class="text-sm text-gray-800 dark:text-gray-200">{{ usulanDetail.tujuan_akses }}</p>
         </div>
         <!-- Penerima Akses Tambahan (jika ada) -->
-        <div v-if="usulanDetail.penerimaAksesTambahan?.length" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
+        <div v-if="usulanDetail.penerima_akses_tambahan?.length" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
           <p class="mb-2 text-xs font-medium uppercase text-gray-500">Penerima Akses Tambahan</p>
           <div class="flex flex-wrap gap-2">
             <span
-              v-for="p in usulanDetail.penerimaAksesTambahan"
+              v-for="p in usulanDetail.penerima_akses_tambahan"
               :key="p.persnum"
               class="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
             >
@@ -188,7 +188,7 @@ const getProgressLabel = (detail: any): string => {
       </section>
 
       <!-- Verifikator Pengusul & Pemberi -->
-      <section v-if="usulanDetail.verifikatorPengusul?.length || usulanDetail.verifikatorPemberi?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <section v-if="usulanDetail.verifikator_pengusul?.length || usulanDetail.verifikator_pemberi?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
             <Users class="size-5 text-primary-600 dark:text-primary-400" />
@@ -200,31 +200,31 @@ const getProgressLabel = (detail: any): string => {
         </div>
         <div class="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2">
           <!-- Verifikator Pengusul -->
-          <div v-if="usulanDetail.verifikatorPengusul?.length">
+          <div v-if="usulanDetail.verifikator_pengusul?.length">
             <p class="mb-2 text-xs font-medium uppercase text-gray-500">Verifikator Pengusul</p>
             <div class="space-y-2">
-              <div v-for="v in usulanDetail.verifikatorPengusul" :key="v.persnum" class="flex items-center gap-2">
+              <div v-for="v in usulanDetail.verifikator_pengusul" :key="v.persnum" class="flex items-center gap-2">
                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
                   {{ (v.nama || String(v.persnum)).charAt(0).toUpperCase() }}
                 </span>
                 <div class="min-w-0">
                   <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `Persnum ${v.persnum}` }}</p>
-                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.levelJabatan }}<span v-if="v.divisiNama"> · {{ v.divisiNama }}</span></p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.level_jabatan }}<span v-if="v.divisi_nama"> · {{ v.divisi_nama }}</span></p>
                 </div>
               </div>
             </div>
           </div>
           <!-- Verifikator Pemberi -->
-          <div v-if="usulanDetail.verifikatorPemberi?.length">
+          <div v-if="usulanDetail.verifikator_pemberi?.length">
             <p class="mb-2 text-xs font-medium uppercase text-gray-500">Verifikator Pemberi</p>
             <div class="space-y-2">
-              <div v-for="v in usulanDetail.verifikatorPemberi" :key="v.persnum" class="flex items-center gap-2">
+              <div v-for="v in usulanDetail.verifikator_pemberi" :key="v.persnum" class="flex items-center gap-2">
                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
                   {{ (v.nama || String(v.persnum)).charAt(0).toUpperCase() }}
                 </span>
                 <div class="min-w-0">
                   <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `Persnum ${v.persnum}` }}</p>
-                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.levelJabatan }}<span v-if="v.divisiNama"> · {{ v.divisiNama }}</span></p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.level_jabatan }}<span v-if="v.divisi_nama"> · {{ v.divisi_nama }}</span></p>
                 </div>
               </div>
             </div>
@@ -233,7 +233,7 @@ const getProgressLabel = (detail: any): string => {
       </section>
 
       <!-- Berkas Dipilih -->
-      <section v-if="usulanDetail.selectedBerkas?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <section v-if="usulanDetail.selected_berkas?.length" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
           <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
             <Paperclip class="size-5 text-primary-600 dark:text-primary-400" />
@@ -242,17 +242,17 @@ const getProgressLabel = (detail: any): string => {
             <h2 class="font-semibold text-gray-900 dark:text-white">Berkas Dipilih</h2>
             <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Berkas yang dipilih oleh Sekretaris pemberi.</p>
           </div>
-          <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selectedBerkas.length }} berkas</span>
+          <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selected_berkas.length }} berkas</span>
         </div>
         <div class="divide-y divide-gray-100 dark:divide-gray-700">
-          <div v-for="b in usulanDetail.selectedBerkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
+          <div v-for="b in usulanDetail.selected_berkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
             <UIcon name="i-lucide-file" class="mt-0.5 size-4 shrink-0 text-gray-400" />
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judulBerkas || b.berkasId }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judul_berkas || b.berkas_id }}</p>
               <p class="text-[10px] text-gray-500 dark:text-gray-400">
-                <span v-if="b.kodeBerkas">{{ b.kodeBerkas }}</span>
-                <span v-if="b.klasifikasiTeks"> · {{ b.klasifikasiTeks }}</span>
-                <span v-if="b.berkasStatus"> · {{ b.berkasStatus }}</span>
+                <span v-if="b.kode_berkas">{{ b.kode_berkas }}</span>
+                <span v-if="b.klasifikasi_teks"> · {{ b.klasifikasi_teks }}</span>
+                <span v-if="b.berkas_status"> · {{ b.berkas_status }}</span>
               </p>
             </div>
           </div>
@@ -282,17 +282,17 @@ const getProgressLabel = (detail: any): string => {
             </div>
             <div class="flex-1 border-l-2 border-gray-100 pb-4 pl-4 dark:border-gray-700">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ step.roleTahap }}</span>
+                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ step.role_tahap }}</span>
                 <span class="rounded-full px-2 py-0.5 text-xs font-medium"
                   :class="{ 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400': step.keputusan === Keputusan.SETUJU || step.keputusan === Keputusan.LANJUT, 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400': step.keputusan === Keputusan.TOLAK, 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400': step.keputusan === Keputusan.REVISI }">
                   {{ step.keputusan }}
                 </span>
               </div>
               <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {{ step.verifierNama || `Persnum ${step.verifierPersnum}` }}<span v-if="step.verifierJabatan"> · {{ step.verifierJabatan }}</span> · {{ formatDate(step.verifiedAt) }}
+                {{ step.verifier_nama || `Persnum ${step.verifier_persnum}` }}<span v-if="step.verifier_jabatan"> · {{ step.verifier_jabatan }}</span> · {{ formatDate(step.verified_at) }}
               </div>
               <div v-if="step.catatan" class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ step.catatan }}</div>
-              <div v-if="step.catatanRevisi" class="mt-1 text-sm text-orange-600 dark:text-orange-400">Revisi: {{ step.catatanRevisi }}</div>
+              <div v-if="step.catatan_revisi" class="mt-1 text-sm text-orange-600 dark:text-orange-400">Revisi: {{ step.catatan_revisi }}</div>
             </div>
           </div>
         </div>
