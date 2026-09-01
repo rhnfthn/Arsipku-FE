@@ -54,9 +54,9 @@ export function useUsulanAksesBerkasCounts() {
       );
       const data = (res as any)?.data ?? res;
       counts.value = {
-        menungguVerifikasi: data?.menungguVerifikasi ?? 0,
-        pilihBerkas: data?.pilihBerkas ?? 0,
-        aksesDiterbitkanBaru: data?.aksesDiterbitkanBaru ?? 0,
+        menungguVerifikasi: data?.menunggu_verifikasi ?? 0,
+        pilihBerkas: data?.pilih_berkas ?? 0,
+        aksesDiterbitkanBaru: data?.akses_diterbitkan_baru ?? 0,
       };
       lastFetchAt.value = Date.now();
     } catch (err: any) {
