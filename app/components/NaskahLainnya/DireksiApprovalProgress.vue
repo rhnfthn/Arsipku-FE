@@ -18,31 +18,29 @@
           </div>
           <div class="min-w-0">
             <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-              {{ d.nama || '-' }}
+              {{ displayName(d) }}
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ d.jabatan || '-' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {{ displayPosition(d) }}
+            </p>
             <div
-              v-if="d.delegatePersnum"
-              class="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium"
+              v-if="d.delegatePersnum && isLegal && d.status === 'waiting'"
+              class="mt-1 inline-flex items-center gap-2 text-xs font-medium"
             >
-              <UIcon name="i-lucide-user-check" class="w-3 h-3" />
-              {{ d.delegatePositionStatus }} · a.n. {{ d.delegateName }}
-              <template v-if="isLegal && d.status === 'waiting'">
-                <button
-                  type="button"
-                  class="underline hover:no-underline"
-                  @click="$emit('editDelegate', d)"
-                >
-                  Ubah
-                </button>
-                <button
-                  type="button"
-                  class="underline hover:no-underline text-red-500"
-                  @click="$emit('removeDelegate', d)"
-                >
-                  Hapus
-                </button>
-              </template>
+              <button
+                type="button"
+                class="text-primary-600 hover:underline dark:text-primary-400"
+                @click="$emit('editDelegate', d)"
+              >
+                Ubah delegasi
+              </button>
+              <button
+                type="button"
+                class="text-red-500 hover:underline"
+                @click="$emit('removeDelegate', d)"
+              >
+                Hapus
+              </button>
             </div>
             <button
               v-else-if="isLegal && d.status === 'waiting'"
@@ -96,6 +94,17 @@
 
 <script setup lang="ts">
 import type { DirectorApprovalItem } from '~/types/naskah-lainnya';
+
+function displayName(director: DirectorApprovalItem) {
+  return director.delegateName?.trim() || director.nama || '-';
+}
+
+function displayPosition(director: DirectorApprovalItem) {
+  const position = director.jabatan?.trim() || '-';
+  const status = director.delegatePositionStatus?.trim();
+  if (!director.delegateName?.trim() || !status || position === '-') return position;
+  return new RegExp(`^${status}\\.?\\s+`, 'i').test(position) ? position : `${status}. ${position}`;
+}
 
 defineProps<{
   directors: DirectorApprovalItem[];
