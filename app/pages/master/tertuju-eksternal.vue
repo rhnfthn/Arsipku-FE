@@ -688,11 +688,12 @@ const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
 const openRowsDropdown = ref(false);
 
-// Sorting
-const sortColumn = ref<string>('nama');
-const sortDirection = ref<'asc' | 'desc'>('asc');
+// Default sort: data terbaru di atas (BE sudah urutkan created_at DESC,
+// tapi FE sort ulang by nama — ubah ke created_at DESC).
+const sortColumn = ref<string>('created_at');
+const sortDirection = ref<'asc' | 'desc'>('desc');
 const sortKey = ref('');
-const sortOrder = ref('asc');
+const sortOrder = ref('desc');
 
 const onPhoneKeydown = (e: KeyboardEvent) => {
   const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'];
@@ -903,6 +904,15 @@ const filteredData = computed(() => {
 // Sorted data
 const sortedData = computed(() => {
   const sorted = [...filteredData.value];
+  // created_at: handle sebagai Date ISO string
+  if (sortColumn.value === 'created_at') {
+    sorted.sort((a, b) => {
+      const aT = new Date((a as any).created_at || 0).getTime();
+      const bT = new Date((b as any).created_at || 0).getTime();
+      return sortDirection.value === 'asc' ? aT - bT : bT - aT;
+    });
+    return sorted;
+  }
   sorted.sort((a, b) => {
     const aVal = String((a as any)[sortColumn.value] || '').toLowerCase();
     const bVal = String((b as any)[sortColumn.value] || '').toLowerCase();
