@@ -339,11 +339,15 @@ export function useNaskahLainnya() {
   const kirimLembarPersetujuanDireksi = (id: string, sheet: SheetFormModel, catatan?: string) =>
     act(id, 'kirimLembarPersetujuanDireksi', { ...sheet, catatan });
 
-  const parafLembarPersetujuanDireksi = (id: string, sheet: SheetFormModel, catatan?: string) =>
-    act(id, 'parafLembarPersetujuanDireksi', { ...sheet, catatan });
+  const parafLembarPersetujuanDireksi = (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+    approvalId?: string
+  ) => act(id, 'parafLembarPersetujuanDireksi', { ...sheet, catatan, approvalId });
 
-  const tolakLembarPersetujuanDireksi = (id: string, catatan: string) =>
-    act(id, 'tolakLembarPersetujuanDireksi', { catatan });
+  const tolakLembarPersetujuanDireksi = (id: string, catatan: string, approvalId?: string) =>
+    act(id, 'tolakLembarPersetujuanDireksi', { catatan, approvalId });
 
   // ── Blanko Verbal ──
   const previewBlankoVerbal = async (
@@ -359,11 +363,15 @@ export function useNaskahLainnya() {
   const kirimBlankoVerbal = (id: string, sheet: SheetFormModel, catatan?: string) =>
     act(id, 'kirimBlankoVerbal', { ...sheet, catatan });
 
-  const parafBlankoVerbal = (id: string, sheet: SheetFormModel, catatan?: string) =>
-    act(id, 'parafBlankoVerbal', { ...sheet, catatan });
+  const parafBlankoVerbal = (
+    id: string,
+    sheet: SheetFormModel,
+    catatan?: string,
+    approvalId?: string
+  ) => act(id, 'parafBlankoVerbal', { ...sheet, catatan, approvalId });
 
-  const tolakBlankoVerbal = (id: string, catatan: string) =>
-    act(id, 'tolakBlankoVerbal', { catatan });
+  const tolakBlankoVerbal = (id: string, catatan: string, approvalId?: string) =>
+    act(id, 'tolakBlankoVerbal', { catatan, approvalId });
 
   // ── Delegasi Direksi per-naskah ──
   const assignDelegasiDireksi = (

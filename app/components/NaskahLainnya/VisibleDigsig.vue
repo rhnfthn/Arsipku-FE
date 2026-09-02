@@ -23,13 +23,12 @@ const props = withDefaults(
   { nama: '', jabatan: '', delegator: '', variant: 'compact' }
 );
 
-const namaLabel = computed(() =>
-  (props.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase()
-);
+const namaLabel = computed(() => (props.nama || 'NAMA LENGKAP TANPA GELAR').toUpperCase());
 const jabatanLabel = computed(() => {
   const status = props.delegator?.trim();
   const jabatan = props.jabatan || 'DIREKTUR';
-  return status && status !== 'ybs' ? `${status}. ${jabatan}` : jabatan;
+  if (!status || status === 'ybs') return jabatan;
+  return new RegExp(`^${status}\\.?\\s+`, 'i').test(jabatan) ? jabatan : `${status}. ${jabatan}`;
 });
 </script>
 

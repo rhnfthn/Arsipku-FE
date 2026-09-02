@@ -258,7 +258,7 @@
           >
         </template>
         <template #cell-perihal="{ row }">
-          <div class="text-sm text-gray-700 dark:text-gray-300">{{ row.perihal }}</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</div>
           <div v-if="row.tahapanRaw === 'perlu_perbaikan'" class="text-xs text-orange-500">
             Perlu revisi — lihat detail naskah.
           </div>
@@ -503,10 +503,11 @@ const columns = [
   { key: 'nomor', label: 'Nomor', sortable: true },
   { key: 'jenis', label: 'Jenis', sortable: true },
   { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
+  { key: 'konseptor', label: 'Konseptor', sortable: true },
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
-  { key: 'aksi', label: '' },
+  { key: 'aksi', label: 'Aksi' },
 ];
 
 // ── Custom Dropdown Toolbar State (pola berkas-saya) ──────────────
@@ -623,6 +624,7 @@ const displayRows = computed(() =>
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
     pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
+    konseptor: r.pemrakarsa.nama,
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
@@ -706,7 +708,7 @@ async function openAction(row: any) {
     return;
   }
   if (n.tahapan === 'persetujuan_direksi') {
-    navigateTo(`/naskah-lainnya/${n.id}`);
+    navigateTo(`/naskah-lainnya/${n.id}/persetujuan-direksi`);
     return;
   }
   if (

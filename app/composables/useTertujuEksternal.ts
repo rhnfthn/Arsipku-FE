@@ -16,6 +16,8 @@ export interface TertujuEksternal {
 
   aktif: boolean;
   nama_pembuat: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const useTertujuEksternal = () => {
