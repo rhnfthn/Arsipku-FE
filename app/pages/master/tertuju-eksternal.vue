@@ -173,7 +173,19 @@
             <td
               class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap"
             >
-              {{ item.kode || '-' }}
+              <div class="flex items-center gap-2">
+                <span>{{ item.kode || '-' }}</span>
+                <button
+                  v-if="item.kode"
+                  type="button"
+                  @click="copyKode(item.kode)"
+                  class="p-1 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  :title="$t('te_copy_id') || 'Salin ID'"
+                >
+                  <Check v-if="copiedKode === item.kode" class="w-3.5 h-3.5 text-green-500" />
+                  <Copy v-else class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </td>
 
             <td
@@ -361,8 +373,26 @@
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             ID
           </Heading>
+          <div v-if="editId" class="flex items-center gap-2">
+            <input
+              :value="form.kode"
+              type="text"
+              readonly
+              class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
+            />
+            <button
+              type="button"
+              @click="copyKode(form.kode)"
+              class="p-2 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+              :title="$t('te_copy_id') || 'Salin ID'"
+            >
+              <Check v-if="copiedKode === form.kode" class="w-4 h-4 text-green-500" />
+              <Copy v-else class="w-4 h-4" />
+            </button>
+          </div>
           <input
-            :value="editId ? form.kode : '(Otomatis 3 digit dari 100)'"
+            v-else
+            value="ID akan digenerate otomatis"
             type="text"
             readonly
             class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
@@ -443,14 +473,21 @@
         <!-- FIELD EMAIL -->
         <div class="flex flex-col gap-2">
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            Email
+            Email <span class="text-red-500">*</span>
           </Heading>
           <input
             v-model="form.email"
             type="email"
             placeholder="email@example.com"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+            :class="[
+              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+              formErrors.email
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+            ]"
+            @input="formErrors.email = false"
           />
+          <p v-if="formErrors.email" class="text-xs text-red-500 mt-1">Email</p>
         </div>
 
         <!-- FIELD STATUS -->
@@ -474,6 +511,11 @@
           </select>
           <p v-if="formErrors.aktif" class="text-xs text-red-500 mt-1">Status</p>
         </div>
+
+        <!-- TANGGAL DIBUAT (teks kecil, paling bawah, hanya saat edit) -->
+        <p v-if="editId && form.created_at" class="px-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+          {{ formatDate(form.created_at) }}
+        </p>
       </Modal>
     </Teleport>
 
@@ -504,7 +546,9 @@ import {
   Plus,
   ArrowUpDown,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Copy,
+  Check
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -542,7 +586,7 @@ const showToast = (
 
 const items = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('tertuju'), to: '/admin/master/tertuju-eksternal' }
+  { label: t('tertuju'), to: '/master/tertuju-eksternal' }
 ]);
 
 const auth = useAuth();
@@ -587,13 +631,16 @@ const form = ref({
   alamat: '',
   telephone: '',
   email: '',
-  aktif: '' as boolean | ''
+  aktif: '' as boolean | '',
+  created_at: '',
+  updated_at: ''
 });
 
 const formErrors = ref({
   nama: false,
   alamat: false,
   telephone: false,
+  email: false,
   aktif: false
 });
 
@@ -606,6 +653,34 @@ onMounted(async () => {
 const showModal = ref(false);
 const editId = ref<string | null>(null);
 const isSavingForm = ref(false);
+
+// Copy ID
+const copiedKode = ref<string | null>(null);
+const copyKode = async (kode: string) => {
+  try {
+    await navigator.clipboard.writeText(kode);
+    copiedKode.value = kode;
+    showToast('Berhasil', `ID ${kode} disalin.`, 'success');
+    setTimeout(() => {
+      if (copiedKode.value === kode) copiedKode.value = null;
+    }, 2000);
+  } catch {
+    showToast('Gagal', 'Gagal menyalin ID.', 'error');
+  }
+};
+
+// Format tanggal dibuat
+const formatDate = (value: string) => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = d.toLocaleString('id-ID', { month: 'long' });
+  const year = d.getFullYear();
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  return `${day} ${month} ${year} pukul ${hour}.${minute}`;
+};
 
 // Pagination
 const rowsPerPage = ref<number>(10);
@@ -663,12 +738,14 @@ const handleSave = async () => {
   formErrors.value.nama = !form.value.nama.trim();
   formErrors.value.alamat = !form.value.alamat.trim();
   formErrors.value.telephone = !form.value.telephone.trim();
+  formErrors.value.email = !form.value.email.trim();
   formErrors.value.aktif = form.value.aktif === '';
 
   const emptyFields: string[] = [];
   if (formErrors.value.nama) emptyFields.push(t('te_nama') || 'Nama');
   if (formErrors.value.alamat) emptyFields.push(t('te_alamat') || 'Alamat');
   if (formErrors.value.telephone) emptyFields.push(t('te_telepon') || 'Telepon');
+  if (formErrors.value.email) emptyFields.push('Email');
   if (formErrors.value.aktif) emptyFields.push('Status');
 
   if (emptyFields.length > 0) {
@@ -713,7 +790,9 @@ const handleSave = async () => {
       alamat: '',
       telephone: '',
       email: '',
-      aktif: ''
+      aktif: '',
+      created_at: '',
+      updated_at: ''
     };
   } catch (err: any) {
     const response = err?.response?.data ?? err?.data;
@@ -737,12 +816,15 @@ const resetForm = () => {
     alamat: '',
     telephone: '',
     email: '',
-    aktif: ''
+    aktif: '',
+    created_at: '',
+    updated_at: ''
   };
   formErrors.value = {
     nama: false,
     alamat: false,
     telephone: false,
+    email: false,
     aktif: false
   };
 };
@@ -782,7 +864,9 @@ const openEdit = (item: any) => {
     alamat: item.alamat,
     telephone: item.telepon,
     email: item.email || '',
-    aktif: item.aktif
+    aktif: item.aktif,
+    created_at: item.created_at || '',
+    updated_at: item.updated_at || ''
   };
   showModal.value = true;
 };
