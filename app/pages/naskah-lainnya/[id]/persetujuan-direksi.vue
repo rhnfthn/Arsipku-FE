@@ -72,6 +72,23 @@
               </div>
             </div>
 
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center w-full">
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Jabatan</span
+                >
+                <input
+                  type="text"
+                  v-model="sheet.jabatanDiusulkan"
+                  class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                  placeholder="Jabatan pemrakarsa"
+                />
+              </div>
+            </div>
+
             <div class="py-3 border-b border-gray-200 dark:border-gray-600">
               <DirectorOrderSelector
                 v-model="sheet.ditetapkanOleh"
@@ -90,23 +107,6 @@
                 placeholder="Pilih direksi paraf"
                 :recipients="selectableDirectors"
               />
-            </div>
-
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
-            >
-              <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span
-                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
-                  >Jabatan</span
-                >
-                <input
-                  type="text"
-                  v-model="sheet.jabatanDiusulkan"
-                  class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                  placeholder="Jabatan pemrakarsa"
-                />
-              </div>
             </div>
 
             <div
@@ -217,13 +217,26 @@
 
           <!-- ── Inline paper preview ── -->
           <ClientOnly>
-            <div class="mt-6 overflow-x-auto">
-              <LembarPersetujuanDireksiTemplate
-                v-model="sheet"
-                :directors="bodDirectors"
-                :signed-directors="pdSignedDirectors"
-                :read-only="!canEditSheet"
-              />
+            <div class="mt-6">
+              <div class="flex items-center gap-2 mb-3">
+                <UIcon
+                  name="i-lucide-file-text"
+                  class="size-4 text-primary-600 dark:text-primary-400"
+                />
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  Pratinjau Lembar Persetujuan Direksi
+                </h3>
+              </div>
+              <div
+                class="rounded-xl border border-primary-200 bg-primary-50/40 p-4 dark:border-primary-900/50 dark:bg-primary-950/20 overflow-x-auto"
+              >
+                <LembarPersetujuanDireksiTemplate
+                  v-model="sheet"
+                  :directors="bodDirectors"
+                  :signed-directors="pdSignedDirectors"
+                  :read-only="!canEditSheet"
+                />
+              </div>
             </div>
           </ClientOnly>
 
