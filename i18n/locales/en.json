@@ -782,6 +782,7 @@
   "mp_nama_panjang": "Full Name",
   "mp_nama_panjang_placeholder": "Example: PT Telekomunikasi Indonesia (Persero) Tbk",
   "mp_col_tgl_mulai": "Start Date",
+  "mp_col_tgl": "Date",
   "mp_col_tgl_berakhir": "End Date",
   "mp_col_kode": "Code",
   "mp_col_nama_pendek": "Short Name",
