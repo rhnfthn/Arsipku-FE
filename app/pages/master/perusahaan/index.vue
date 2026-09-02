@@ -46,7 +46,7 @@
                   @click="toggleSortTanggalMulai"
                   class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap cursor-pointer select-none flex items-center gap-2"
                 >
-                  {{ t('mp_col_tgl_mulai') }}
+                  {{ t('mp_col_tgl') }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
@@ -54,9 +54,6 @@
                       'rotate-0': sortBy !== 'desc'
                     }"
                   />
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">
-                  {{ t('mp_col_tgl_berakhir') }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
                   {{ t('mp_col_kode') }}
@@ -83,9 +80,6 @@
               >
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   <span v-html="highlight(formatDateSlash(row.tanggalMulai), search)"></span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <span v-html="highlight(formatDateSlash(row.tanggalBerakhir), search)"></span>
                 </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
@@ -162,56 +156,20 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
-              </Heading>
-              <input
-                v-model="formCompany.tanggalMulai"
-                type="date"
-                :class="[
-                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                  formErrors.tanggalMulai
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-                ]"
-                @input="formErrors.tanggalMulai = false"
-              />
-            </div>
-            <div>
-              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t('mp_tgl_berakhir') }} <span class="text-red-500">*</span>
-              </Heading>
-              <input
-                v-model="formCompany.tanggalBerakhir"
-                type="date"
-                :class="[
-                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                  formErrors.tanggalBerakhir
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-                ]"
-                @input="formErrors.tanggalBerakhir = false"
-              />
-            </div>
-          </div>
-
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_kode') }} <span class="text-red-500">*</span>
+              {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
             </Heading>
             <input
-              v-model="formCompany.kode"
-              type="text"
-              :placeholder="t('mp_kode_placeholder')"
+              v-model="formCompany.tanggalMulai"
+              type="date"
               :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-                formErrors.kode
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                formErrors.tanggalMulai
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.kode = false"
+              @input="formErrors.tanggalMulai = false"
             />
           </div>
 
@@ -266,41 +224,22 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
-              </Heading>
-              <input
-                v-model="editForm.tanggalMulai"
-                type="date"
-                :class="[
-                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                  editFormErrors.tanggalMulai
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-                ]"
-                @input="editFormErrors.tanggalMulai = false"
-              />
-            </div>
-            <div>
-              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t('mp_tgl_berakhir') }} <span class="text-red-500">*</span>
-              </Heading>
-              <input
-                v-model="editForm.tanggalBerakhir"
-                type="date"
-                :class="[
-                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                  editFormErrors.tanggalBerakhir
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-                ]"
-                @input="editFormErrors.tanggalBerakhir = false"
-              />
-            </div>
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="editForm.tanggalMulai"
+              type="date"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                editFormErrors.tanggalMulai
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="editFormErrors.tanggalMulai = false"
+            />
           </div>
-          <p class="text-xs text-red-500">{{ t('mp_tgl_warning') }}</p>
 
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
@@ -308,13 +247,8 @@
             </Heading>
             <input
               v-model="editForm.kode"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                editFormErrors.kode
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="editFormErrors.kode = false"
+              disabled
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed"
             />
           </div>
 
@@ -398,6 +332,7 @@ const breadcrumbs = computed(() => [
 // COMPOSABLE & STATE
 // ─────────────────────────────────────────────
 const { getCompanies, createCompany, updateCompany, deleteCompany } = useCompany();
+const { clearApiCache } = useApi();
 
 import { useToast } from '#imports';
 const toast = useToast();
@@ -455,8 +390,10 @@ const fetchCompanies = async () => {
     const res = await getCompanies();
     const validRows: any[] = [];
     for (const item of res.data) {
+      // Jangan auto-delete di sini — itu menyebabkan 404 saat fetch ulang
+      // (perusahaan sudah dihapus manual tapi masih ada di cache). Cukup
+      // sembunyikan yang expired dari tampilan.
       if (isExpired(item.endDate)) {
-        await deleteCompany(item.id);
         continue;
       }
       validRows.push({
@@ -534,17 +471,12 @@ const formatDateWarningMessage = () => {
 // ─────────────────────────────────────────────
 const validateAddForm = (): boolean => {
   // Set error states
-  formErrors.value.kode = !formCompany.value.kode.trim();
   formErrors.value.namaPendek = !formCompany.value.namaPendek.trim();
   formErrors.value.namaPanjang = !formCompany.value.namaPanjang.trim();
   formErrors.value.tanggalMulai = !formCompany.value.tanggalMulai;
-  formErrors.value.tanggalBerakhir = !formCompany.value.tanggalBerakhir;
 
   const emptyFields: string[] = [];
 
-  if (formErrors.value.kode) {
-    emptyFields.push(t('mp_kode'));
-  }
   if (formErrors.value.namaPendek) {
     emptyFields.push(t('mp_nama_pendek'));
   }
@@ -554,25 +486,11 @@ const validateAddForm = (): boolean => {
   if (formErrors.value.tanggalMulai) {
     emptyFields.push(t('mp_tgl_mulai'));
   }
-  if (formErrors.value.tanggalBerakhir) {
-    emptyFields.push(t('mp_tgl_berakhir'));
-  }
 
   if (emptyFields.length > 0) {
     toast.add({
       title: t('gagal'),
       description: `${emptyFields.join(', ')} wajib diisi`,
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return false;
-  }
-
-  // Validate date range
-  if (isEndDateInvalid(formCompany.value.tanggalMulai, formCompany.value.tanggalBerakhir)) {
-    toast.add({
-      title: t('gagal'),
-      description: formatDateWarningMessage(),
       color: 'error',
       icon: 'i-lucide-x-circle'
     });
@@ -587,27 +505,18 @@ const handleSaveCompany = async () => {
 
   // Validate required fields first
   if (!validateAddForm()) return;
-  if (isNaN(Number(formCompany.value.kode))) {
-    toast.add({
-      title: t('gagal'),
-      description: t('mp_val_kode_angka'),
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return;
-  }
 
   isSavingAddCompany.value = true;
 
   try {
     await createCompany({
-      company: Number(formCompany.value.kode),
       shortText: formCompany.value.namaPendek,
       longText: formCompany.value.namaPanjang,
-      startDate: formCompany.value.tanggalMulai,
-      endDate: formCompany.value.tanggalBerakhir
+      startDate: formCompany.value.tanggalMulai
     });
 
+    // Invalidate cache agar list ter-refresh setelah create
+    clearApiCache();
     await fetchCompanies();
 
     toast.add({
@@ -687,17 +596,12 @@ const openEditModal = (row: any) => {
 
 const validateEditForm = (): boolean => {
   // Set error states
-  editFormErrors.value.kode = !editForm.value.kode.trim();
   editFormErrors.value.namaPendek = !editForm.value.namaPendek.trim();
   editFormErrors.value.namaPanjang = !editForm.value.namaPanjang.trim();
   editFormErrors.value.tanggalMulai = !editForm.value.tanggalMulai;
-  editFormErrors.value.tanggalBerakhir = !editForm.value.tanggalBerakhir;
 
   const emptyFields: string[] = [];
 
-  if (editFormErrors.value.kode) {
-    emptyFields.push(t('mp_kode'));
-  }
   if (editFormErrors.value.namaPendek) {
     emptyFields.push(t('mp_nama_pendek'));
   }
@@ -707,25 +611,11 @@ const validateEditForm = (): boolean => {
   if (editFormErrors.value.tanggalMulai) {
     emptyFields.push(t('mp_tgl_mulai'));
   }
-  if (editFormErrors.value.tanggalBerakhir) {
-    emptyFields.push(t('mp_tgl_berakhir'));
-  }
 
   if (emptyFields.length > 0) {
     toast.add({
       title: t('gagal'),
       description: `${emptyFields.join(', ')} wajib diisi`,
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return false;
-  }
-
-  // Validate date range
-  if (isEndDateInvalid(editForm.value.tanggalMulai, editForm.value.tanggalBerakhir)) {
-    toast.add({
-      title: t('gagal'),
-      description: formatDateWarningMessage(),
       color: 'error',
       icon: 'i-lucide-x-circle'
     });
@@ -740,27 +630,18 @@ const handleSaveEdit = async () => {
 
   // Validate required fields first
   if (!validateEditForm()) return;
-  if (isNaN(Number(editForm.value.kode))) {
-    toast.add({
-      title: t('gagal'),
-      description: t('mp_val_kode_angka'),
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return;
-  }
 
   isSavingEditCompany.value = true;
 
   try {
     await updateCompany(editForm.value.id, {
-      company: Number(editForm.value.kode),
       shortText: editForm.value.namaPendek,
       longText: editForm.value.namaPanjang,
-      startDate: editForm.value.tanggalMulai,
-      endDate: editForm.value.tanggalBerakhir
+      startDate: editForm.value.tanggalMulai
     });
 
+    // Invalidate FE cache + force fresh fetch (BE cache juga sudah 5 detik)
+    clearApiCache();
     await fetchCompanies();
 
     toast.add({
@@ -798,6 +679,9 @@ const handleDelete = async () => {
   try {
     isDeleting.value = true;
     await deleteCompany(selectedRow.value.id);
+
+    // Invalidate FE cache + force fresh fetch (BE cache juga sudah 5 detik)
+    clearApiCache();
     await fetchCompanies();
 
     toast.add({
