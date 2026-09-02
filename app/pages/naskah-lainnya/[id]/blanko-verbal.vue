@@ -182,7 +182,7 @@ const allBvVerified = computed(() => {
 
 const isCompleted = computed(() => allBvVerified.value);
 const isEditable = computed(() =>
-  Boolean(detail.value?.availableActions?.includes('kirim-approval-blanko'))
+  Boolean(!allBvVerified.value && detail.value?.availableActions?.includes('kirim-approval-blanko'))
 );
 
 const bvDone = computed(() => bvDirectors.value.filter((d) => d.status === 'verified').length);
@@ -494,7 +494,12 @@ async function confirmParaf(note: string) {
   busy.value = true;
   loadingMessage.value = 'Menyimpan paraf…';
   try {
-    await parafBlankoVerbal(id.value, cleanFormPayload(), note || undefined);
+    await parafBlankoVerbal(
+      id.value,
+      cleanFormPayload(),
+      note || undefined,
+      activeDirector.value?.approvalId
+    );
     toast.add({
       title:
         activeDirector.value?.roleLabel === 'Ditetapkan/Disahkan Oleh'
@@ -522,7 +527,7 @@ async function confirmTolak(note: string) {
   busy.value = true;
   loadingMessage.value = 'Menolak blanko verbal…';
   try {
-    await tolakBlankoVerbal(id.value, note.trim());
+    await tolakBlankoVerbal(id.value, note.trim(), activeDirector.value?.approvalId);
     toast.add({ title: 'Blanko verbal ditolak', color: 'success' });
     tolakModalOpen.value = false;
     tolakCatatan.value = '';
@@ -558,7 +563,7 @@ onMounted(async () => {
     </PageHeader>
 
     <TemplateDireksiSelector
-      v-if="detail"
+      v-if="detail && isEditable"
       :model-value="selectedTemplate"
       :disabled="templateLocked"
       @update:model-value="changeTemplate"
@@ -607,9 +612,7 @@ onMounted(async () => {
               <UIcon name="i-lucide-circle-x" class="size-5" />
             </span>
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-bold text-red-700 dark:text-red-300">
-                Blanko Verbal Ditolak
-              </p>
+              <p class="text-sm font-bold text-red-700 dark:text-red-300">Blanko Verbal Ditolak</p>
               <p class="mt-0.5 text-xs text-red-600/80 dark:text-red-400/80">
                 Perbaiki naskah sesuai alasan penolakan, lalu kirim ulang blanko verbal:
               </p>

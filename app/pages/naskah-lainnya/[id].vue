@@ -127,6 +127,17 @@ type ApprovalDisplayGroup = {
   children?: { tahap: string; label: string; rows: ApprovalRow[] }[];
 };
 
+function approvalDisplayName(approval: ApprovalRow) {
+  return approval.delegateName?.trim() || approval.nama || '—';
+}
+
+function approvalDisplayPosition(approval: ApprovalRow) {
+  const position = approval.jabatan?.trim() || '—';
+  const status = approval.delegatePositionStatus?.trim();
+  if (!approval.delegateName || !status) return position;
+  return new RegExp(`^${status}\\.\\s*`, 'i').test(position) ? position : `${status}. ${position}`;
+}
+
 const approvalDisplayGroups = computed<ApprovalDisplayGroup[]>(() => {
   const byTahap = new Map(approvalGroups.value.map((group) => [group.tahap, group]));
   const used = new Set<string>();
@@ -215,8 +226,8 @@ const approvalStepGroups = computed(() =>
       ].includes(child.tahap),
       steps: child.rows.map((a, index) => ({
         id: a.id || `${child.tahap}-${index}`,
-        label: a.nama || `Verifikator ${index + 1}`,
-        jabatan: a.jabatan || '',
+        label: approvalDisplayName(a) || `Verifikator ${index + 1}`,
+        jabatan: approvalDisplayPosition(a),
         status: a.status,
         num: index + 1,
         ...stepStyle(a.status),
@@ -478,7 +489,7 @@ function fileMeta(d: DokumenFile) {
 const dokumenTab = ref(0);
 const dokumenTabs = [
   { label: 'Naskah', icon: 'i-lucide-file-text' },
-  { label: 'Blanko Verbal', icon: 'i-lucide-file-check' },
+  { label: 'Blanko Verbal/ Persetujuan Direksi', icon: 'i-lucide-file-check' },
   { label: 'Dok. Pendukung', icon: 'i-lucide-paperclip' },
 ];
 
@@ -487,7 +498,11 @@ const dokumenTerkait = computed<DokumenFile[]>(() => {
   const all = detail.value.dokumen;
   if (!Array.isArray(all)) return [];
   const t = dokumenTab.value;
-  const tipe = [['naskah', 'naskah_fisik'], ['blanko_verbal', 'blanko_verbal_pdf'], 'pendukung'][t];
+  const tipe = [
+    ['naskah', 'naskah_fisik'],
+    ['blanko_verbal', 'blanko_verbal_pdf', 'lembar_persetujuan_direksi_pdf'],
+    'pendukung',
+  ][t];
   const filtered = all.filter((d) =>
     Array.isArray(tipe) ? tipe.includes(d.tipe) : d.tipe === tipe
   );
@@ -1907,10 +1922,10 @@ const signLabel = computed(() =>
                         >
                         <div class="flex-1 min-w-0">
                           <p class="text-sm font-medium text-gray-900 dark:text-white">
-                            {{ a.nama }}
+                            {{ approvalDisplayName(a) }}
                           </p>
                           <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ personaMeta(a) }}
+                            {{ approvalDisplayPosition(a) }}
                           </p>
                           <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                             urutan {{ a.urutan }} · {{ fmtDateTime(a.tanggal) }}
@@ -2555,11 +2570,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/blanko-verbal`"
-                >{{
-                  canBuatBlanko
-                    ? 'Buat Blanko Verbal'
-                    : 'Lihat Progres Blanko Verbal'
-                }}</UButton
+                >{{ canBuatBlanko ? 'Buat Blanko Verbal' : 'Lihat Progres Blanko Verbal' }}</UButton
               >
 
               <!-- Buat Lembar Persetujuan Direksi: legal menyusun lembar saat evaluasi (butuhLegal) -->

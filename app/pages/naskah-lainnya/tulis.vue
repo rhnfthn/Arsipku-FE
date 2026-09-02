@@ -1016,7 +1016,12 @@ async function applyJenisConfigDefault(jenis: string) {
       const found = klasifikasiList.value.find(
         (k: any) => k.klasifikasi === cfg.defaultKlasifikasi
       );
-      if (found) selectedKlasifikasiId.value = found.id;
+      // Default tidak ditemukan di master klasifikasi → kosongkan, jangan
+      // biarkan pilihan jenis sebelumnya nyangkut.
+      selectedKlasifikasiId.value = found ? found.id : null;
+    } else {
+      // Jenis tanpa default klasifikasi → form kosong.
+      selectedKlasifikasiId.value = null;
     }
   } catch {
     // konfigurasi belum diset / gagal — biarkan form apa adanya
