@@ -258,7 +258,7 @@
           >
         </template>
         <template #cell-perihal="{ row }">
-          <div class="text-sm text-gray-700 dark:text-gray-300">{{ row.perihal }}</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</div>
         </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge :status="row.tahapan" />
@@ -427,10 +427,11 @@ const columns = [
   { key: 'nomor', label: 'Nomor', sortable: true },
   { key: 'jenis', label: 'Jenis', sortable: true },
   { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
+  { key: 'konseptor', label: 'Konseptor', sortable: true },
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
-  { key: 'aksi', label: '' },
+  { key: 'aksi', label: 'Aksi' },
 ];
 
 // ── Custom Dropdown Toolbar State ──
@@ -527,6 +528,7 @@ const displayRows = computed(() =>
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
     pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
+    konseptor: r.pemrakarsa.nama,
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     statusLegal: r.statusLegal ?? '',

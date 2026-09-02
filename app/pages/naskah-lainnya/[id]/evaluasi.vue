@@ -88,11 +88,17 @@
             :content="{ side: 'bottom', align: 'start', collisionPadding: 8 }"
           >
             <template #default>
-              <div v-if="selectedRecipient" class="flex min-w-0 flex-1 items-center gap-3 text-left">
+              <div
+                v-if="selectedRecipient"
+                class="flex min-w-0 flex-1 items-center gap-3 text-left"
+              >
                 <div
                   class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30"
                 >
-                  <UIcon name="i-lucide-user" class="size-4 text-primary-600 dark:text-primary-400" />
+                  <UIcon
+                    name="i-lucide-user"
+                    class="size-4 text-primary-600 dark:text-primary-400"
+                  />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="truncate text-sm font-medium text-gray-900 dark:text-white">
@@ -218,8 +224,8 @@
               trailing
               class="w-full justify-center font-semibold shadow-sm sm:w-auto"
               :loading="activeAction === 'decision'"
-              :disabled="isBusy || loadingCandidates"
-              @click="submitEvaluationDecision('lanjut_persetujuan')"
+              :disabled="isBusy"
+              @click="openContinueConfirmation"
             >
               Lanjut Persetujuan
             </UButton>
@@ -290,7 +296,11 @@
               size="lg"
               :color="pendingDecision === 'batalkan' ? 'error' : 'warning'"
               :icon="pendingDecision === 'batalkan' ? 'i-lucide-ban' : 'i-lucide-rotate-ccw'"
-              :loading="pendingDecision === 'batalkan' ? activeAction === 'reject-cancel' : activeAction === 'reject-legal'"
+              :loading="
+                pendingDecision === 'batalkan'
+                  ? activeAction === 'reject-cancel'
+                  : activeAction === 'reject-legal'
+              "
               :disabled="isBusy || !rejectionReason.trim()"
               @click="submitPendingDecision"
             >
@@ -300,6 +310,17 @@
         </div>
       </Modal>
     </Teleport>
+
+    <ConfirmModal
+      v-model="showContinueConfirmation"
+      title="Lanjut Persetujuan?"
+      :description="continueConfirmationDescription"
+      confirm-text="Lanjut Persetujuan"
+      loading-text="Memproses..."
+      variant="primary"
+      :loading="activeAction === 'decision'"
+      @confirm="submitEvaluationDecision('lanjut_persetujuan')"
+    />
   </div>
 </template>
 
@@ -343,6 +364,7 @@ const candidates = ref<ApprovalItem[]>([]);
 const selectedRecipientId = ref<string | null>(null);
 const stagedRevision = ref<RevisionFilePair>({ docx: null, pdf: null });
 const showEvaluationRejectOptions = ref(false);
+const showContinueConfirmation = ref(false);
 const rejectionReason = ref('');
 const pendingDecision = ref<'legal_drafting_ulang' | 'batalkan' | null>(null);
 
@@ -369,9 +391,7 @@ const canProcessContinuation = computed(() =>
   )
 );
 const isFinalEvaluation = computed(() => detail.value?.tahapan === 'evaluasi_final');
-const showRecipientSelector = computed(
-  () => canProcessContinuation.value || (canDecideEvaluation.value && !isFinalEvaluation.value)
-);
+const showRecipientSelector = computed(() => canProcessContinuation.value);
 const isBusy = computed(() => activeAction.value !== null);
 
 const currentContinuation = computed(
@@ -422,16 +442,11 @@ const workspaceNotePlaceholder = computed(() =>
     ? 'Tambahkan catatan hasil evaluasi EVP...'
     : 'Tambahkan catatan untuk proses persetujuan lanjutan...'
 );
-const recipientSectionTitle = computed(() =>
-  canDecideEvaluation.value ? 'Penerima Pertama' : 'Penerima Selanjutnya'
-);
-const recipientPlaceholder = computed(() =>
-  canDecideEvaluation.value ? 'Pilih penerima pertama (opsional)' : 'Pilih penerima selanjutnya'
-);
-const emptyRecipientDescription = computed(() =>
-  canDecideEvaluation.value
-    ? 'Tidak ditemukan verifikator lain dalam unit EVP. Lanjut Persetujuan tanpa penerima akan mengarahkan naskah ke Blanko Verbal.'
-    : 'Tidak ditemukan verifikator lain dalam unit yang sama. Anda tetap dapat menyelesaikan pekerjaan dan mengembalikannya ke EVP.'
+const recipientSectionTitle = computed(() => 'Penerima Selanjutnya');
+const recipientPlaceholder = computed(() => 'Pilih penerima selanjutnya');
+const emptyRecipientDescription = computed(
+  () =>
+    'Tidak ditemukan verifikator lain dalam unit yang sama. Anda tetap dapat menyelesaikan pekerjaan dan mengembalikannya ke EVP.'
 );
 const actionSectionTitle = computed(() =>
   canDecideEvaluation.value ? 'Keputusan Evaluasi' : 'Tindakan Persetujuan'
@@ -467,10 +482,7 @@ const actionDescription = computed(() => {
     if (isFinalEvaluation.value) {
       return 'Lanjutkan ke tahap berikutnya, atau tolak untuk Legal Drafting Ulang maupun pembatalan.';
     }
-    if (selectedRecipient.value) {
-      return `Lanjutkan kepada ${selectedRecipient.value.label}, atau tolak hasil evaluasi.`;
-    }
-    return 'Tanpa penerima, Lanjut Persetujuan akan mengarahkan naskah ke Blanko Verbal.';
+    return 'Lanjut Persetujuan akan mengarahkan naskah ke Blanko Verbal Persetujuan Direksi.';
   }
   if (selectedRecipient.value) {
     return `Teruskan kepada ${selectedRecipient.value.label}, atau selesaikan pekerjaan untuk dikembalikan ke EVP.`;
@@ -492,6 +504,17 @@ const rejectionModalDescription = computed(() =>
     ? 'Naskah akan dibatalkan dan tidak dilanjutkan. Tuliskan alasan pembatalan.'
     : 'Naskah dikembalikan ke konseptor pemrakarsa untuk menyunting ulang form awal. Tuliskan alasan pengembalian.'
 );
+
+const continueConfirmationDescription = computed(() =>
+  isFinalEvaluation.value
+    ? 'Pastikan naskah dan dokumen revisi sudah sesuai sebelum melanjutkan ke tahap berikutnya.'
+    : 'Naskah akan dilanjutkan ke step Blanko Verbal Persetujuan Direksi. Pastikan naskah dan dokumen revisi sudah sesuai.'
+);
+
+const openContinueConfirmation = () => {
+  if (!canDecideEvaluation.value || isBusy.value) return;
+  showContinueConfirmation.value = true;
+};
 
 const openRejection = (decision: 'legal_drafting_ulang' | 'batalkan') => {
   if (isBusy.value) return;
@@ -528,10 +551,6 @@ const submitEvaluationDecision = async (
     if (!(await commitRevision())) return;
     await keputusanEvaluasi(id.value, {
       keputusan: decision,
-      penerimaPertama:
-        decision === 'lanjut_persetujuan' && !isFinalEvaluation.value
-          ? (selectedRecipient.value ?? undefined)
-          : undefined,
       catatan:
         decision === 'lanjut_persetujuan'
           ? catatan.value.trim() || undefined
@@ -539,6 +558,7 @@ const submitEvaluationDecision = async (
     });
     toast.add({ title: 'Keputusan evaluasi berhasil disimpan', color: 'success' });
     showEvaluationRejectOptions.value = false;
+    showContinueConfirmation.value = false;
     await router.push(`/naskah-lainnya/${id.value}`);
   } catch (err) {
     toast.add({
@@ -666,7 +686,7 @@ onMounted(async () => {
 
   loading.value = false;
 
-  if (canProcessContinuation.value || (canDecideEvaluation.value && !isFinalEvaluation.value)) {
+  if (canProcessContinuation.value) {
     await loadContinuationCandidates();
   }
 });
