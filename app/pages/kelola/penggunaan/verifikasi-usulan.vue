@@ -30,8 +30,6 @@ const breadcrumbs = computed(() => [
 ]);
 
 const searchQuery = ref('');
-// Default filter: "Menunggu Verifikasi Pemberi" — usulan yang perlu diverifikasi
-const filterStatus = ref<string>(StatusUsulan.TERKIRIM_KE_PEMBERI);
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const isRefreshing = ref(false);
@@ -39,16 +37,55 @@ const isExporting = ref(false);
 const sortKey = ref('created_at');
 const sortDir = ref<'asc' | 'desc'>('desc');
 
-const statusOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
-];
+// ── Scope dinamis (mirror mobile) ──
+// SE/PS → verify-pemberi (usulan masuk ke divisinya)
+// Managerial → verify-me (usulan yang harus dia approve)
+const activePositionStatus = computed(() => user.value?.position_status ?? null);
+const isSekretarisActor = computed(
+  () =>
+    activePositionStatus.value === 'SE' ||
+    activePositionStatus.value === 'PS' ||
+    (user.value?.tuRoles?.includes('sekretaris') ?? false),
+);
+const isManagerialPosition = computed(() => {
+  const ps = activePositionStatus.value;
+  if (ps === 'SE' || ps === 'PS' || ps === 'VI') return false;
+  const posText = (user.value?.positionText || '').toUpperCase();
+  if (posText.includes('EVP')) return true;
+  if (posText.includes('AVP')) return true;
+  if (posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP') return true;
+  if (user.value?.bodTag) return true;
+  return false;
+});
+const scope = computed(() => (isSekretarisActor.value ? 'verify-pemberi' : 'verify-me'));
+
+// Default filter: verify-pemberi → "Menunggu Verifikasi Pemberi", verify-me → semua
+const filterStatus = ref<string>('');
+
+const statusOptions = computed(() => {
+  if (scope.value === 'verify-pemberi') {
+    return [
+      { label: 'Semua', value: '' },
+      { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+    ];
+  }
+  return [
+    { label: 'Semua Status', value: '' },
+    { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
+    { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
+    { label: 'Menunggu Verifikasi Pemberi', value: StatusUsulan.TERKIRIM_KE_PEMBERI },
+    { label: 'Ditolak Verifikasi Pemberi', value: StatusUsulan.REVISI_PEMBERI },
+    { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
+    { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
+    { label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN },
+  ];
+});
 
 const loadData = async () => {
   try {
     await fetchList({
       status: filterStatus.value || undefined,
-      scope: 'verify-pemberi',
+      scope: scope.value,
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value || undefined,
@@ -128,10 +165,10 @@ function selectRowsPerPage(n: number) { itemsPerPage.value = n; openRowsPerPage.
 const openFilterStatus = ref(false);
 function toggleFilterStatus() { openFilterStatus.value = !openFilterStatus.value; }
 function selectFilterStatus(value: string) { filterStatus.value = value; openFilterStatus.value = false; currentPage.value = 1; loadData(); }
-const statusLabel = computed(() => statusOptions.find((s) => s.value === filterStatus.value)?.label || 'Semua');
+const statusLabel = computed(() => statusOptions.value.find((s) => s.value === filterStatus.value)?.label || 'Semua');
 
 function resetFilters() {
-  filterStatus.value = StatusUsulan.TERKIRIM_KE_PEMBERI;
+  filterStatus.value = scope.value === 'verify-pemberi' ? StatusUsulan.TERKIRIM_KE_PEMBERI : '';
   searchQuery.value = '';
   currentPage.value = 1;
   loadData();
@@ -147,6 +184,8 @@ function handleDocumentClick(e: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick);
+  // Set default filter sesuai scope (mirror mobile)
+  filterStatus.value = scope.value === 'verify-pemberi' ? StatusUsulan.TERKIRIM_KE_PEMBERI : '';
   loadData();
   fetchCounts();
 });
