@@ -189,7 +189,7 @@
             </td>
 
             <td
-              class="px-4 py-3 font-medium text-gray-900 dark:text-white capitalize"
+              class="px-4 py-3 font-medium text-gray-900 dark:text-white uppercase"
               v-html="highlight(item.nama, filters.search)"
             ></td>
 
