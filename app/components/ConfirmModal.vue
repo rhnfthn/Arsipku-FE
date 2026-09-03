@@ -5,8 +5,9 @@
       leave-to-class="opacity-0">
       <div v-if="modelValue" class="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center p-4"
         @click.self="onCancel">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="onCancel"></div>
         <div
-          class="bg-white dark:bg-gray-900 rounded-[var(--radius-modal)] shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800"
+          class="relative bg-white dark:bg-gray-900 rounded-[var(--radius-modal)] shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800"
           :class="contentClass">
           <div class="p-5 text-center">
             <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"

@@ -171,6 +171,11 @@
         :generating="generating"
         @submit-verification="handleSubmitVerification"
         @finalize-direct="handleFinalizeDirect"
+        @submit-all="handleSubmitAll"
+        @clear-data="handleClearData"
+        @remove-item="handleRemoveItem"
+        @edit-email="handleEditEmail"
+        @upload-lampiran="handleUploadLampiran"
       />
     </UCard>
 
@@ -199,6 +204,93 @@
         />
       </div>
     </div>
+
+    <!-- Modal Edit Email -->
+    <Teleport to="body">
+      <div v-if="showEditEmailModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" @click="showEditEmailModal = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Email</h3>
+            <button @click="showEditEmailModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email Tertuju</label>
+              <input
+                v-model="editEmailForm.emailTertuju"
+                type="email"
+                placeholder="penerima@example.com"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#457fb6]"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email CC</label>
+              <input
+                v-model="editEmailForm.emailCc"
+                type="email"
+                placeholder="cc@example.com"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#457fb6]"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email BCC</label>
+              <input
+                v-model="editEmailForm.emailBcc"
+                type="email"
+                placeholder="bcc@example.com"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#457fb6]"
+              />
+            </div>
+          </div>
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+            <button @click="showEditEmailModal = false" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              Batal
+            </button>
+            <button @click="saveEditEmail" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal Upload Lampiran -->
+    <Teleport to="body">
+      <div v-if="showUploadLampiranModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" @click="closeUploadLampiran"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-[90%] max-w-[480px] overflow-hidden z-[10000]">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Lampiran</h3>
+            <button @click="closeUploadLampiran" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <UIcon name="i-lucide-x" class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Lampiran untuk item ke-{{ (uploadLampiranIndex ?? 0) + 1 }}
+            </p>
+            <FileUpload
+              v-model="lampiranFiles"
+              accept=".pdf,.zip"
+              :multiple="false"
+              description="Format PDF atau ZIP"
+            />
+          </div>
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+            <button @click="closeUploadLampiran" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              Tutup
+            </button>
+            <button @click="doUploadLampiran" :disabled="uploadingLampiran" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors">
+              <UIcon v-if="uploadingLampiran" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+              Upload
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -206,21 +298,31 @@
 import { reactive, computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSdeMasal } from '~/composables/useSdeMasal';
+import { useApi } from '~/composables/useApi';
 import { useToast } from '#imports';
 import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
 import SdeMasalStepKonsep from './SdeMasalStepKonsep.vue';
 import SdeMasalStepUpload from './SdeMasalStepUpload.vue';
 import SdeMasalStepTemplate from './SdeMasalStepTemplate.vue';
 import SdeMasalStepPreview from './SdeMasalStepPreview.vue';
+import FileUpload from '~/components/FileUpload.vue';
 
 const props = defineProps<{
   parentNaskahId?: string;
+  folderId?: string;
 }>();
 
 const router = useRouter();
 const toast = useToast();
-const { generateMassal, createFolder, updateFolder, finalizeDirect, submitVerification } =
-  useSdeMasal();
+const { api } = useApi();
+const {
+  generateMassal,
+  createFolder,
+  updateFolder,
+  finalizeDirect,
+  submitVerification,
+  findNaskahInFolder,
+} = useSdeMasal();
 
 const steps = [
   { id: 1, label: 'Konsep Surat' },
@@ -247,7 +349,46 @@ const wizardState = reactive<{
 const draftStorageKey = `sde-masal-wizard:${props.parentNaskahId || 'new'}`;
 const persistenceReady = ref(false);
 
-onMounted(() => {
+onMounted(async () => {
+  // Jika dibuka dari halaman pengajuan (folder draft), pulihkan dari server.
+  if (props.folderId) {
+    try {
+      const data = await findNaskahInFolder(props.folderId);
+      const f = data?.folder;
+      const list = data?.items || [];
+      if (f) {
+        folderId.value = f.id;
+        wizardState.konsep = {
+          judul: f.judul || '',
+          tanggalKonsep: f.tanggal ? String(f.tanggal).slice(0, 10) : '',
+          klasifikasiId: f.klasifikasi || '',
+          klasifikasiName: [f.klasifikasi, f.klasifikasiText].filter(Boolean).join(' - '),
+          pengirimId: f.pengirimId || '',
+          pengirimName: f.pengirimName || '',
+          sifat: f.sifat || 'biasa',
+          parentNaskahId: f.parentNaskahId || undefined,
+          atasNama: f.atasNama || null,
+          atasNamaPositionId: f.atasNamaPositionId || null,
+        };
+        wizardState.template = f.kontenTemplate
+          ? { skema: 'DINAMIS', versi: 'v1', konten: f.kontenTemplate }
+          : null;
+        wizardState.variables = Array.isArray(f.dynamicVariables) ? f.dynamicVariables : [];
+        wizardState.penerimaList = list.map((item: any) => ({
+          ...(item.recipient || {}),
+          id: item.id,
+          isValid: true,
+        }));
+        currentStep.value = 3;
+      }
+    } catch (error) {
+      console.warn('Gagal memulihkan draft folder SDE Masal:', error);
+    } finally {
+      persistenceReady.value = true;
+    }
+    return;
+  }
+
   try {
     const saved = localStorage.getItem(draftStorageKey);
     if (saved) {
@@ -264,6 +405,14 @@ onMounted(() => {
   } finally {
     persistenceReady.value = true;
   }
+
+  // Jika draft dipulihkan langsung di step 3 (mis. sebelum field id ada),
+  // pastikan item sudah punya id agar upload lampiran bisa bekerja.
+  if (currentStep.value === 3 && wizardState.penerimaList.length) {
+    ensureItemsGenerated().catch((error) => {
+      console.warn('Gagal menyiapkan id item SDE Masal:', error);
+    });
+  }
 });
 
 watch(
@@ -278,9 +427,26 @@ watch(
   (draft) => {
     if (!persistenceReady.value) return;
     localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+    // Auto-save ke server saat melanjutkan draft folder (folderId dari query).
+    scheduleAutoSave();
   },
   { deep: true }
 );
+
+// Auto-save ke server (debounce) saat melanjutkan draft folder.
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const scheduleAutoSave = () => {
+  if (!props.folderId || !folderId.value) return;
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(async () => {
+    try {
+      await persistCompleteFolder();
+      await ensureItemsGenerated();
+    } catch (error) {
+      console.warn('Gagal auto-save draft SDE Masal:', error);
+    }
+  }, 1200);
+};
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -343,6 +509,18 @@ const goNext = async () => {
       return;
     }
   }
+  if (currentStep.value === 2) {
+    try {
+      await ensureItemsGenerated();
+    } catch (error: any) {
+      toast.add({
+        title: 'Gagal menyiapkan data',
+        description: error?.message || 'Coba lagi.',
+        color: 'error',
+      });
+      return;
+    }
+  }
   if (currentStep.value < 3) currentStep.value++;
 };
 
@@ -377,6 +555,39 @@ const persistCompleteFolder = async (signOption?: 'digsig' | 'qr_only' | 'ttd_ba
   return folderId.value;
 };
 
+/**
+ * Pastikan setiap item penerima sudah tersimpan di DB (punya id) agar fitur
+ * upload lampiran per item bisa bekerja. Dipanggil saat masuk step 3 dan
+ * dipakai ulang oleh submit/finalize agar tidak generate duplikat.
+ */
+const ensureItemsGenerated = async () => {
+  // Hanya generate item yang belum punya id (hindari duplikat saat user
+  // kembali ke step 2 lalu mengedit daftar penerima).
+  const missing = wizardState.penerimaList.filter(
+    (p) => p.isValid !== false && !p.id
+  );
+  if (missing.length === 0) return;
+
+  if (!folderId.value) {
+    const saved = await createFolder(buildFolderPayload());
+    folderId.value = saved?.id ?? null;
+  }
+  if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
+
+  const result = await generateMassal({
+    konsep: wizardState.konsep,
+    folderId: folderId.value,
+    penerimaList: missing,
+    template: wizardState.template,
+  });
+
+  // generateMassal mengembalikan items 1:1 dengan baris valid yang dikirim.
+  const items = result?.items || [];
+  missing.forEach((p, idx) => {
+    if (items[idx]) p.id = items[idx].id;
+  });
+};
+
 const resetWizard = () => {
   wizardState.konsep = null;
   wizardState.penerimaList = [];
@@ -396,8 +607,13 @@ const handleFinalizeDirect = async (payload: {
   generating.value = true;
   try {
     const id = await persistCompleteFolder(payload.signOption);
+    await ensureItemsGenerated();
+    const itemIds = wizardState.penerimaList
+      .filter((p) => p.id)
+      .map((p) => p.id as string);
     const result = await finalizeDirect({
       folderId: id,
+      itemIds,
       penerimaList: wizardState.penerimaList,
       signOption: payload.signOption,
       passphrase: payload.passphrase,
@@ -440,14 +656,11 @@ const handleSubmitVerification = async (
   generating.value = true;
   try {
     const id = await persistCompleteFolder(signOption);
-    const result = await generateMassal({
-      konsep: wizardState.konsep,
-      folderId: id,
-      penerimaList: wizardState.penerimaList,
-      template: wizardState.template,
-    });
+    await ensureItemsGenerated();
 
-    const ids = result?.items?.map((item: any) => item.id) || [];
+    const ids = wizardState.penerimaList
+      .filter((p) => p.id)
+      .map((p) => p.id as string);
     if (ids.length > 0) {
       await submitVerification(ids, verifikators);
     }
@@ -472,6 +685,133 @@ const handleSubmitVerification = async (
     });
   } finally {
     generating.value = false;
+  }
+};
+
+// ============================================================
+// Aksi dari Daftar SDE Masal (step 3)
+// ============================================================
+
+// Submit All → finalize semua item langsung (qr_only)
+const handleSubmitAll = () => {
+  if (!wizardState.penerimaList.length) {
+    toast.add({ title: 'Tidak ada data', description: 'Daftar SDE Masal kosong.', color: 'error' });
+    return;
+  }
+  handleFinalizeDirect({ signOption: 'qr_only' });
+};
+
+// Kosongkan Data → hapus semua penerima
+const handleClearData = () => {
+  wizardState.penerimaList = [];
+  toast.add({ title: 'Data dikosongkan', description: 'Daftar SDE Masal telah dikosongkan.', color: 'success' });
+};
+
+// Hapus satu item
+const handleRemoveItem = (index: number) => {
+  if (index < 0 || index >= wizardState.penerimaList.length) return;
+  wizardState.penerimaList.splice(index, 1);
+  toast.add({ title: 'Item dihapus', color: 'success' });
+};
+
+// Edit email (email_tertuju, email_cc, email_bcc)
+const editEmailIndex = ref<number | null>(null);
+const editEmailForm = reactive({ emailTertuju: '', emailCc: '', emailBcc: '' });
+const showEditEmailModal = computed({
+  get: () => editEmailIndex.value !== null,
+  set: (val: boolean) => {
+    if (!val) editEmailIndex.value = null;
+  },
+});
+const handleEditEmail = (index: number) => {
+  const item = wizardState.penerimaList[index];
+  if (!item) return;
+  editEmailIndex.value = index;
+  editEmailForm.emailTertuju = item.emailTertuju || '';
+  editEmailForm.emailCc = item.emailCc || '';
+  editEmailForm.emailBcc = item.emailBcc || '';
+};
+const saveEditEmail = () => {
+  if (editEmailIndex.value === null) return;
+  const item = wizardState.penerimaList[editEmailIndex.value];
+  if (item) {
+    item.emailTertuju = editEmailForm.emailTertuju;
+    item.emailCc = editEmailForm.emailCc;
+    item.emailBcc = editEmailForm.emailBcc;
+  }
+  editEmailIndex.value = null;
+  toast.add({ title: 'Email tersimpan', color: 'success' });
+};
+
+// Upload lampiran
+const uploadLampiranIndex = ref<number | null>(null);
+const showUploadLampiranModal = computed({
+  get: () => uploadLampiranIndex.value !== null,
+  set: (val: boolean) => {
+    if (!val) uploadLampiranIndex.value = null;
+  },
+});
+const handleUploadLampiran = (index: number) => {
+  uploadLampiranIndex.value = index;
+};
+const closeUploadLampiran = () => {
+  uploadLampiranIndex.value = null;
+  lampiranFiles.value = [];
+};
+
+const lampiranFileInput = ref<HTMLInputElement | null>(null);
+const lampiranFiles = ref<File[]>([]);
+const uploadingLampiran = ref(false);
+const doUploadLampiran = async () => {
+  const file = lampiranFiles.value[0];
+  if (!file || uploadLampiranIndex.value === null) {
+    toast.add({ title: 'Pilih file terlebih dahulu', color: 'error' });
+    return;
+  }
+  const item = wizardState.penerimaList[uploadLampiranIndex.value];
+  if (!item) return;
+
+  // Pastikan item sudah punya id (di-generate saat masuk step 3). Jika belum
+  // (mis. draft lama), generate dulu sebelum upload.
+  if (!item.id) {
+    try {
+      await ensureItemsGenerated();
+    } catch (e: any) {
+      toast.add({
+        title: 'Gagal menyiapkan data',
+        description: e?.message || 'Coba lagi.',
+        color: 'error',
+      });
+      return;
+    }
+  }
+  if (!item.id) {
+    toast.add({ title: 'Item belum tersimpan', color: 'error' });
+    return;
+  }
+
+  uploadingLampiran.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res: any = await api.post(`/sde-masal/${item.id}/lampiran`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    // `api` adalah instance axios mentah → res.data = body { success, data }.
+    // Data asli (lampiran key + url presigned) ada di res.data.data.
+    const body = res?.data?.data || res?.data || {};
+    item.lampiran = body?.url || body?.lampiran || null;
+    item.lampiranKey = body?.lampiran || null;
+    toast.add({ title: 'Lampiran terupload', color: 'success' });
+    closeUploadLampiran();
+  } catch (e: any) {
+    toast.add({
+      title: 'Gagal upload lampiran',
+      description: e?.response?.data?.message || e?.message || 'Coba lagi.',
+      color: 'error',
+    });
+  } finally {
+    uploadingLampiran.value = false;
   }
 };
 </script>
