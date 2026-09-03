@@ -11,7 +11,7 @@
         </div>
         <button
           v-if="hasPermission('master-data', 'create-perusahaan')"
-          @click="openAddCompany = true"
+          @click="openAddCompanyModal"
           class="flex items-center gap-2 bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
@@ -95,11 +95,11 @@
                   </NuxtLink>
                 </td>
                 <td
-                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap uppercase"
                   v-html="highlight(row.namaPendek, search)"
                 ></td>
                 <td
-                  class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300"
+                  class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 uppercase"
                   v-html="highlight(row.namaPanjang, search)"
                 ></td>
                 <td class="px-6 py-4">
@@ -156,20 +156,50 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="formCompany.tanggalMulai"
+                type="date"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  formErrors.tanggalMulai
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="formErrors.tanggalMulai = false"
+              />
+            </div>
+            <div>
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('mp_tgl_berakhir') }}
+              </Heading>
+              <input
+                v-model="formCompany.tanggalBerakhir"
+                type="date"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
+              {{ t('mp_kode') }} <span class="text-red-500">*</span>
             </Heading>
             <input
-              v-model="formCompany.tanggalMulai"
-              type="date"
+              v-model="formCompany.kode"
+              type="text"
+              :placeholder="t('mp_kode_placeholder')"
               :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                formErrors.tanggalMulai
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.kode
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.tanggalMulai = false"
+              @input="formErrors.kode = false"
             />
           </div>
 
@@ -224,21 +254,33 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="editForm.tanggalMulai"
-              type="date"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                editFormErrors.tanggalMulai
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="editFormErrors.tanggalMulai = false"
-            />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('mp_tgl_mulai') }} <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="editForm.tanggalMulai"
+                type="date"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  editFormErrors.tanggalMulai
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="editFormErrors.tanggalMulai = false"
+              />
+            </div>
+            <div>
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('mp_tgl_berakhir') }}
+              </Heading>
+              <input
+                v-model="editForm.tanggalBerakhir"
+                type="date"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
           </div>
 
           <div>
@@ -347,8 +389,8 @@ const isSavingAddCompany = ref(false);
 const isSavingEditCompany = ref(false);
 
 const formCompany = ref({
-  tanggalMulai: '',
-  tanggalBerakhir: '',
+  tanggalMulai: new Date().toISOString().slice(0, 10),
+  tanggalBerakhir: '9999-12-31',
   kode: '',
   namaPendek: '',
   namaPanjang: ''
@@ -361,6 +403,36 @@ const formErrors = ref({
   tanggalMulai: false,
   tanggalBerakhir: false
 });
+
+// Generate next company code (4 digit, mulai 1000) — max+1 dari data existing.
+const generateNextCompanyCode = () => {
+  let max = 999;
+  for (const r of rows.value) {
+    const n = parseInt(String(r.kode), 10);
+    if (!isNaN(n) && n >= 1000 && n < 10000 && n > max) max = n;
+  }
+  return String(max + 1);
+};
+
+// Reset form & buka modal tambah (dipanggil setiap kali tombol Tambah diklik,
+// sehingga form selalu bersih saat modal dibuka kembali).
+const openAddCompanyModal = () => {
+  formCompany.value = {
+    tanggalMulai: new Date().toISOString().slice(0, 10),
+    tanggalBerakhir: '9999-12-31',
+    kode: generateNextCompanyCode(),
+    namaPendek: '',
+    namaPanjang: ''
+  };
+  formErrors.value = {
+    kode: false,
+    namaPendek: false,
+    namaPanjang: false,
+    tanggalMulai: false,
+    tanggalBerakhir: false
+  };
+  openAddCompany.value = true;
+};
 
 // ─────────────────────────────────────────────
 // DELETE MESSAGE (reaktif terhadap bahasa)
@@ -471,12 +543,16 @@ const formatDateWarningMessage = () => {
 // ─────────────────────────────────────────────
 const validateAddForm = (): boolean => {
   // Set error states
+  formErrors.value.kode = !formCompany.value.kode.trim();
   formErrors.value.namaPendek = !formCompany.value.namaPendek.trim();
   formErrors.value.namaPanjang = !formCompany.value.namaPanjang.trim();
   formErrors.value.tanggalMulai = !formCompany.value.tanggalMulai;
 
   const emptyFields: string[] = [];
 
+  if (formErrors.value.kode) {
+    emptyFields.push(t('mp_kode'));
+  }
   if (formErrors.value.namaPendek) {
     emptyFields.push(t('mp_nama_pendek'));
   }
@@ -505,14 +581,25 @@ const handleSaveCompany = async () => {
 
   // Validate required fields first
   if (!validateAddForm()) return;
+  if (isNaN(Number(formCompany.value.kode))) {
+    toast.add({
+      title: t('gagal'),
+      description: t('mp_val_kode_angka'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+    return;
+  }
 
   isSavingAddCompany.value = true;
 
   try {
     await createCompany({
+      company: Number(formCompany.value.kode),
       shortText: formCompany.value.namaPendek,
       longText: formCompany.value.namaPanjang,
-      startDate: formCompany.value.tanggalMulai
+      startDate: formCompany.value.tanggalMulai,
+      endDate: formCompany.value.tanggalBerakhir
     });
 
     // Invalidate cache agar list ter-refresh setelah create
@@ -528,8 +615,8 @@ const handleSaveCompany = async () => {
 
     openAddCompany.value = false;
     formCompany.value = {
-      tanggalMulai: '',
-      tanggalBerakhir: '',
+      tanggalMulai: new Date().toISOString().slice(0, 10),
+      tanggalBerakhir: '9999-12-31',
       kode: '',
       namaPendek: '',
       namaPanjang: ''
@@ -637,7 +724,8 @@ const handleSaveEdit = async () => {
     await updateCompany(editForm.value.id, {
       shortText: editForm.value.namaPendek,
       longText: editForm.value.namaPanjang,
-      startDate: editForm.value.tanggalMulai
+      startDate: editForm.value.tanggalMulai,
+      endDate: editForm.value.tanggalBerakhir
     });
 
     // Invalidate FE cache + force fresh fetch (BE cache juga sudah 5 detik)
