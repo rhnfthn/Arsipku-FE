@@ -1221,9 +1221,42 @@ const getSubAreasForArea = (areaKode: string) => {
 };
 
 // ─── MODAL OPEN ───────────────────────────────
+// Generate next area code (A000, A001, ... A999, A1000, ...) per company.
+const generateNextAreaCode = () => {
+  let max = -1;
+  for (const a of areas.value) {
+    const m = String(a.kode || '').match(/^A(\d+)$/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  return 'A' + String(max + 1).padStart(3, '0');
+};
+
+// Generate next sub area code (1001, 1002, ...) per company.
+const generateNextSubAreaCode = () => {
+  let max = 1000;
+  for (const s of subAreas.value) {
+    const n = parseInt(String(s.kode), 10);
+    if (!isNaN(n) && n > max) max = n;
+  }
+  return String(max + 1);
+};
+
 const openAddAreaModal = () => {
   isEditing.value = false;
-  formArea.value = { nama: '', kode: '', area: '', alamat: '', mulai: '', berakhir: '' };
+  formArea.value = {
+    nama: '',
+    kode:
+      activeTab.value === 'area'
+        ? generateNextAreaCode()
+        : generateNextSubAreaCode(),
+    area: '',
+    alamat: '',
+    mulai: new Date().toISOString().slice(0, 10),
+    berakhir: '9999-12-31'
+  };
   formErrors.value = {
     nama: false,
     kode: false,
