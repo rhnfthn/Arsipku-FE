@@ -335,6 +335,27 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <!-- ID Unit -->
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              {{ $t('stu_form_id_unit') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formUnit.idUnit"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100',
+                unitErrors.idUnit
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300'
+              ]"
+              :placeholder="$t('stu_form_id_unit_placeholder')"
+              @input="unitErrors.idUnit = false"
+            />
+            <p v-if="unitErrors.idUnit" class="text-xs text-red-500 mt-1">
+              {{ $t('stu_form_id_unit') }}
+            </p>
+          </div>
+
           <!-- Nama Unit -->
           <div>
             <Heading variant="heading11m" class="text-xs">
@@ -374,27 +395,6 @@
             />
             <p v-if="unitErrors.titelatur" class="text-xs text-red-500 mt-1">
               {{ $t('stu_form_nama_pendek') }}
-            </p>
-          </div>
-
-          <!-- ID Unit -->
-          <div>
-            <Heading variant="heading11m" class="text-xs">
-              {{ $t('stu_form_id_unit') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formUnit.idUnit"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100',
-                unitErrors.idUnit
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300'
-              ]"
-              :placeholder="$t('stu_form_id_unit_placeholder')"
-              @input="unitErrors.idUnit = false"
-            />
-            <p v-if="unitErrors.idUnit" class="text-xs text-red-500 mt-1">
-              {{ $t('stu_form_id_unit') }}
             </p>
           </div>
 
@@ -528,6 +528,30 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <!-- ID Posisi -->
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              {{ $t('stu_form_id_posisi') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formPosition.idPos"
+              type="text"
+              inputmode="numeric"
+              maxlength="8"
+              :placeholder="$t('stu_form_id_posisi_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100',
+                positionErrors.idPos
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300'
+              ]"
+              @input="positionErrors.idPos = false"
+            />
+            <p v-if="positionErrors.idPos" class="text-xs text-red-500 mt-1">
+              {{ $t('stu_form_id_posisi') }}
+            </p>
+          </div>
+
           <!-- Nama Posisi -->
           <div>
             <Heading variant="heading11m" class="text-xs">
@@ -567,27 +591,6 @@
             />
             <p v-if="positionErrors.titelatur" class="text-xs text-red-500 mt-1">
               {{ $t('stu_form_titelatur') }}
-            </p>
-          </div>
-
-          <!-- ID Posisi -->
-          <div>
-            <Heading variant="heading11m" class="text-xs">
-              {{ $t('stu_form_id_posisi') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formPosition.idPos"
-              :placeholder="$t('stu_form_id_posisi_placeholder')"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100',
-                positionErrors.idPos
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300'
-              ]"
-              @input="positionErrors.idPos = false"
-            />
-            <p v-if="positionErrors.idPos" class="text-xs text-red-500 mt-1">
-              {{ $t('stu_form_id_posisi') }}
             </p>
           </div>
 
@@ -806,21 +809,21 @@
         <div v-if="editType === 'Unit'" class="space-y-5">
           <div>
             <Heading variant="heading11m" class="text-xs">
-              {{ $t('stu_form_nama_unit') }} <span class="text-red-500">*</span>
+              {{ $t('stu_form_kode_unit') }} <span class="text-red-500">*</span>
             </Heading>
             <input
-              v-model="formUnit.namaUnit"
+              v-model="formUnit.idUnit"
+              disabled
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
 
           <div>
             <Heading variant="heading11m" class="text-xs">
-              {{ $t('stu_form_kode_unit') }} <span class="text-red-500">*</span>
+              {{ $t('stu_form_nama_unit') }} <span class="text-red-500">*</span>
             </Heading>
             <input
-              v-model="formUnit.idUnit"
-              disabled
+              v-model="formUnit.namaUnit"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
             />
           </div>
@@ -856,21 +859,22 @@
         <div v-if="editType === 'Posisi'" class="space-y-5">
           <div>
             <Heading variant="heading11m" class="text-xs">
-              {{ $t('stu_form_nama_posisi') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formPosition.namaPos"
-              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <Heading variant="heading11m" class="text-xs">
               {{ $t('stu_form_kode_posisi') }} <span class="text-red-500">*</span>
             </Heading>
             <input
               v-model="formPosition.idPos"
               disabled
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <Heading variant="heading11m" class="text-xs">
+              {{ $t('stu_form_nama_posisi') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formPosition.namaPos"
+              class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
 
@@ -2258,16 +2262,30 @@ const selectSubArea = (sub: any) => {
 }
 
 // ─── Form resets ──────────────────────────────────────────────────────────────
+// Generate next unit ID (8 digit, mulai 10000000) — reset per company.
+const generateNextUnitId = () => {
+  let max = 9999999
+  const walk = (nodes: any[]) => {
+    for (const n of nodes) {
+      const code = Number(n.organizationCode)
+      if (!isNaN(code) && code >= 10000000 && code > max) max = code
+      if (n.children?.length) walk(n.children)
+    }
+  }
+  walk(organizationTree.value)
+  return String(max + 1)
+}
+
 const resetUnitForm = () => {
   formUnit.value = {
     namaUnit: '',
-    idUnit: '',
+    idUnit: generateNextUnitId(),
     titelatur: '',
     idsubArea: '',
     subarea: '',
     deskripsi: '',
-    mulai: '',
-    berakhir: ''
+    mulai: new Date().toISOString().slice(0, 10),
+    berakhir: '9999-12-31'
   }
   unitErrors.value = {
     namaUnit: false,
@@ -2280,15 +2298,31 @@ const resetUnitForm = () => {
   subAreaSearchQuery.value = ''
 }
 
+// Generate next position ID (8 digit, mulai 70000000) — reset per company.
+const generateNextPositionId = () => {
+  let max = 69999999
+  const walk = (nodes: any[]) => {
+    for (const n of nodes) {
+      if (n.type === 'position') {
+        const code = Number(n.positionCode)
+        if (!isNaN(code) && code >= 70000000 && code > max) max = code
+      }
+      if (n.children?.length) walk(n.children)
+    }
+  }
+  walk(organizationTree.value)
+  return String(max + 1)
+}
+
 const resetPositionForm = () => {
   formPosition.value = {
     namaPos: '',
-    idPos: '',
+    idPos: generateNextPositionId(),
     titelatur: '',
     chief: false,
     chiefLevel: '',
-    mulai: '',
-    berakhir: ''
+    mulai: new Date().toISOString().slice(0, 10),
+    berakhir: '9999-12-31'
   }
   positionErrors.value = {
     namaPos: false,
@@ -2301,7 +2335,12 @@ const resetPositionForm = () => {
 }
 
 const resetMemberForm = () => {
-  formMember.value = { personId: '', nama: '', mulai: '', berakhir: '' }
+  formMember.value = {
+    personId: '',
+    nama: '',
+    mulai: new Date().toISOString().slice(0, 10),
+    berakhir: '9999-12-31'
+  }
   memberErrors.value = { personId: false, mulai: false, berakhir: false }
   personSearchQuery.value = ''
   personSuggestions.value = []

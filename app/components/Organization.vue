@@ -54,9 +54,17 @@
           <template v-if="node.type !== 'member'">
             <div class="flex items-center gap-2">
               <span
-                :class="['text-sm', getNodeConfig().textColor]"
+                :class="['text-sm uppercase', getNodeConfig().textColor]"
                 v-html="highlightText(node.name)"
               ></span>
+
+              <!-- Kode unit / posisi -->
+              <span
+                v-if="node.organizationCode || node.positionCode"
+                class="text-xs font-mono text-gray-500 dark:text-gray-400"
+              >
+                ({{ node.organizationCode || node.positionCode }})
+              </span>
 
               <!-- BOD badge -->
               <span
