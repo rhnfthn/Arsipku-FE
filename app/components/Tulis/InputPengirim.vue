@@ -2,7 +2,7 @@
   <div
     class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
     <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
-      {{ label }}
+      {{ label }}<span v-if="required" class="text-red-500 ml-0.5">*</span>
     </span>
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu v-model="model" :items="items" :placeholder="placeholder" by="value" option-attribute="label"
@@ -62,6 +62,7 @@ defineProps<{
   label: string;
   placeholder?: string;
   items: any[];
+  required?: boolean;
 }>();
 
 // Menggunakan object tunggal (bukan array)

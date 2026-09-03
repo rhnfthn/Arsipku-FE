@@ -3,155 +3,140 @@
     <PageHeader title="Verifikasi SDE Massal" :items="breadcrumbs" />
 
     <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div class="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
-        <div>
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Verifikasi SDE Massal</h2>
-          <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Naskah massal yang masuk ke urutan verifikasi Anda.</p>
+      <!-- Filter Bar -->
+      <div class="flex flex-row items-center gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
+        <select v-model="f.limit" class="h-10 w-20 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
+          <option :value="10">10</option>
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+        </select>
+        <select v-model="f.status" class="h-10 w-40 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
+          <option value="">Semua Status</option>
+          <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
+          <option value="TERVERIFIKASI">Terverifikasi</option>
+          <option value="DITOLAK">Ditolak</option>
+        </select>
+        <select v-model="f.klasifikasiId" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
+          <option value="">Semua Klasifikasi</option>
+          <option v-for="klasifikasi in klasifikasiOptions" :key="klasifikasi.id" :value="klasifikasi.id">{{ klasifikasi.klasifikasi }} - {{ klasifikasi.klasifikasi_text }}</option>
+        </select>
+        <button @click="resetFilter" class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" title="Reset filter"><UIcon name="i-lucide-rotate-ccw" class="size-5" /></button>
+        <div class="relative min-w-0 flex-1">
+          <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+          <input v-model="f.search" type="text" placeholder="Cari Perihal..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
         </div>
-        <button
-          type="button"
-          class="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-          @click="loadData"
-        >
-          <UIcon name="i-lucide-refresh-cw" class="size-4" />
-          Refresh
-        </button>
+        <button @click="exportData" :disabled="exporting" class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-400 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-50"><UIcon :name="exporting ? 'i-lucide-loader-2' : 'i-lucide-download'" :class="['size-4', exporting && 'animate-spin']" />Export</button>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-          <thead class="bg-primary-400 text-white dark:bg-primary-700">
+          <thead class="bg-primary text-left text-white dark:bg-primary-700">
             <tr>
-              <th class="px-4 py-3 font-semibold">Tanggal</th>
-              <th class="px-4 py-3 font-semibold">Perihal</th>
-              <th class="px-4 py-3 font-semibold">Tertuju</th>
-              <th class="px-4 py-3 font-semibold">Klasifikasi</th>
-              <th class="px-4 py-3 font-semibold">Pengirim</th>
-              <th class="px-4 py-3 text-center font-semibold">Status</th>
-              <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Perihal</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Tertuju</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Klasifikasi</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Pengirim</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading" v-for="i in 4" :key="i" class="border-b border-gray-100 dark:border-gray-700">
-              <td v-for="j in 7" :key="j" class="px-4 py-3">
+              <td v-for="j in 6" :key="j" class="px-4 py-3">
                 <div class="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
               </td>
             </tr>
-            <tr v-else-if="rows.length === 0">
-              <td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+            <tr v-else-if="filteredRows.length === 0">
+              <td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                 Tidak ada SDE Massal untuk diverifikasi.
               </td>
             </tr>
-            <tr v-else v-for="item in rows" :key="item.id" class="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/40">
-              <td class="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">{{ formatDate(item.submittedAt || item.createdAt) }}</td>
-              <td class="max-w-[220px] truncate px-4 py-3 font-medium text-gray-900 dark:text-white" :title="item.perihal">{{ item.perihal || '-' }}</td>
-              <td class="max-w-[180px] truncate px-4 py-3 text-gray-600 dark:text-gray-300" :title="item.tertuju">{{ item.tertuju || '-' }}</td>
-              <td class="max-w-[220px] truncate px-4 py-3 text-gray-600 dark:text-gray-300" :title="item.klasifikasiName || ''">{{ item.klasifikasiName || '-' }}</td>
-              <td class="max-w-[220px] truncate px-4 py-3 text-gray-600 dark:text-gray-300" :title="item.pengirimName || ''">{{ item.pengirimName || '-' }}</td>
-              <td class="px-4 py-3 text-center">
+            <tr v-else v-for="item in paginatedRows" :key="item.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[200px] truncate" :title="item.perihal">{{ item.perihal || '-' }}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[150px] truncate" :title="item.tertuju">{{ item.tertuju || '-' }}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="item.klasifikasiName || ''">{{ item.klasifikasiName || '-' }}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate" :title="item.pengirimName || ''">{{ item.pengirimName || '-' }}</td>
+              <td class="px-4 py-2.5 text-center">
                 <span :class="statusBadge(item.statusVerifikasi)">{{ statusLabel(item.statusVerifikasi) }}</span>
               </td>
-              <td class="px-4 py-3">
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    type="button"
+              <td class="px-4 py-2.5">
+                <div class="flex items-center justify-center">
+                  <NuxtLink
+                    :to="`/korespondensi/sde-masal/verifikasi-detail/${item.id}`"
                     class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
                     title="Lihat detail"
-                    @click="openDetail(item)"
                   >
                     <UIcon name="i-lucide-eye" class="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg p-2 text-emerald-600 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-emerald-900/20"
-                    title="Setujui"
-                    :disabled="!canVerify(item) || actionLoading === item.id"
-                    @click="openDetail(item)"
-                  >
-                    <UIcon name="i-lucide-check" class="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-900/20"
-                    title="Tolak"
-                    :disabled="!canVerify(item) || actionLoading === item.id"
-                    @click="reject(item)"
-                  >
-                    <UIcon name="i-lucide-x" class="size-4" />
-                  </button>
+                  </NuxtLink>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
 
-    <Teleport to="body">
-      <div v-if="selectedItem" class="fixed inset-0 z-50 flex items-start justify-center bg-black/30 px-4 pt-10 sm:pt-20 backdrop-blur-sm" @click.self="selectedItem = null">
-        <div class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800 flex flex-col max-h-[85vh]">
-          <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Verifikasi SDE Massal</h3>
-            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="selectedItem = null">
-              <UIcon name="i-lucide-x" class="size-5" />
-            </button>
-          </div>
-          <div class="overflow-y-auto flex-1 bg-gray-100 dark:bg-gray-900 p-4">
-            <div class="mx-auto w-full max-w-[794px] bg-white shadow-sm">
-              <SdeMasalLetterPreview
-                :konsep="detailKonsep"
-                :penerima-list="detailPenerimaList"
-                :template="detailTemplate"
-                :penerima-index="0"
-              />
-            </div>
-          </div>
-          <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 flex items-center justify-between gap-3">
-            <template v-if="canVerify(selectedItem)">
-              <button
-                type="button"
-                class="px-4 py-2 text-sm font-medium rounded-lg border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:hover:bg-red-900/20 transition-colors"
-                :disabled="actionLoading === selectedItem.id"
-                @click="reject(selectedItem)"
-              >
-                Tolak
-              </button>
-              <button
-                type="button"
-                class="px-5 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors"
-                :disabled="actionLoading === selectedItem.id"
-                @click="approve(selectedItem)"
-              >
-                <UIcon v-if="actionLoading === selectedItem.id" name="i-lucide-loader-2" class="size-4 animate-spin" />
-                <UIcon v-else name="i-lucide-check" class="size-4" />
-                Setujui
-              </button>
-            </template>
-            <button v-else @click="selectedItem = null" class="ml-auto px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Tutup</button>
-          </div>
+      <!-- Pagination -->
+      <div
+        v-if="filteredRows.length > 0"
+        class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
+      >
+        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <span>
+            Menampilkan {{ (page - 1) * f.limit + 1 }}–{{ Math.min(page * f.limit, filteredRows.length) }}
+            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ filteredRows.length }}</span> SDE Massal
+          </span>
+        </div>
+        <div v-if="totalPages > 1" class="flex items-center gap-1">
+          <button
+            :disabled="page <= 1"
+            @click="page--"
+            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <UIcon name="i-heroicons-chevron-left" class="w-4 h-4" /> Prev
+          </button>
+          <span class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ page }} / {{ totalPages }}
+          </span>
+          <button
+            :disabled="page >= totalPages"
+            @click="page++"
+            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next <UIcon name="i-heroicons-chevron-right" class="w-4 h-4" />
+          </button>
         </div>
       </div>
-    </Teleport>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import type { SdeMasalItem, SdeMasalVerifikator, SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import type { SdeMasalItem } from '~/types/sde-masal';
+import type { Klasifikasi } from '~/types/klasifikasi';
 import { useSdeMasal } from '~/composables/useSdeMasal';
+import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useAuth } from '~/composables/useAuth';
-import SdeMasalLetterPreview from '~/components/korespondensi/sde-masal/SdeMasalLetterPreview.vue';
 
 definePageMeta({ middleware: ['auth'] });
 
 const toast = useToast();
 const { user, getProfile } = useAuth();
-const { fetchVerificationList, approveVerification, rejectVerification } = useSdeMasal();
+const { fetchVerificationList } = useSdeMasal();
+const { getKlasifikasiList } = useKlasifikasi();
 
 const rows = ref<SdeMasalItem[]>([]);
 const loading = ref(false);
-const actionLoading = ref<string | null>(null);
-const selectedItem = ref<SdeMasalItem | null>(null);
+const klasifikasiOptions = ref<Klasifikasi[]>([]);
+const exporting = ref(false);
+const page = ref(1);
+
+const f = reactive({
+  search: '',
+  status: '',
+  klasifikasiId: '',
+  limit: 10,
+});
 
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },
@@ -159,8 +144,88 @@ const breadcrumbs = [
   { label: 'Verifikasi SDE Massal', to: '#' },
 ];
 
-const currentPersnum = computed(() => String(user.value?.persnum ?? '').trim());
-const currentPosition = computed(() => String(user.value?.position ?? user.value?.positionId ?? '').trim());
+const filteredRows = computed(() => {
+  let result = rows.value;
+
+  // Hanya tampilkan item di mana user adalah verifikator yang sedang 'waiting'.
+  // Verifikator dengan status 'pending' (belum giliran) TIDAK muncul di list.
+  const myPersnum = String(user.value?.persnum ?? '').trim();
+  const myPosition = String(user.value?.position ?? '').trim();
+  result = result.filter((item) => {
+    const verifikators = item.verifikators || [];
+    const myVerifier = verifikators.find((v: any) => {
+      const samePersnum = myPersnum && String(v.persnum) === myPersnum;
+      const samePosition = myPosition && String(v.position) === myPosition;
+      return samePersnum || samePosition;
+    });
+    // Tampilkan hanya jika user adalah verifikator yang sedang waiting,
+    // ATAU user adalah verifikator yang sudah verified/rejected (untuk riwayat).
+    // Verifikator 'pending' (belum giliran) tidak muncul.
+    if (!myVerifier) return false;
+    return myVerifier.status === 'waiting' || myVerifier.status === 'verified' || myVerifier.status === 'rejected';
+  });
+
+  if (f.status) {
+    result = result.filter((item) => item.statusVerifikasi === f.status);
+  }
+  if (f.klasifikasiId) {
+    result = result.filter((item) => item.klasifikasiId === f.klasifikasiId);
+  }
+  if (f.search.trim()) {
+    const q = f.search.trim().toLowerCase();
+    result = result.filter((item) =>
+      (item.perihal || '').toLowerCase().includes(q) ||
+      (item.tertuju || '').toLowerCase().includes(q) ||
+      (item.pengirimName || '').toLowerCase().includes(q),
+    );
+  }
+  return result;
+});
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredRows.value.length / f.limit)));
+const paginatedRows = computed(() => {
+  const start = (page.value - 1) * f.limit;
+  return filteredRows.value.slice(start, start + f.limit);
+});
+
+watch([() => f.status, () => f.klasifikasiId, () => f.search, () => f.limit], () => {
+  page.value = 1;
+});
+
+const resetFilter = () => {
+  f.search = '';
+  f.status = '';
+  f.klasifikasiId = '';
+  f.limit = 10;
+  page.value = 1;
+};
+
+const exportData = async () => {
+  exporting.value = true;
+  try {
+    const records = filteredRows.value;
+    if (!records.length) {
+      toast.add({ title: 'Tidak ada data', description: 'Tidak ada SDE Massal untuk diekspor.', color: 'warning' });
+      return;
+    }
+    const XLSX = await import('xlsx');
+    const worksheet = XLSX.utils.json_to_sheet(records.map((item) => ({
+      Perihal: item.perihal,
+      Tertuju: item.tertuju,
+      Klasifikasi: item.klasifikasiName || '-',
+      Pengirim: item.pengirimName || '-',
+      Status: statusLabel(item.statusVerifikasi),
+      'Tanggal Konsep': item.tanggalKonsep || '-',
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi SDE Massal');
+    XLSX.writeFile(workbook, 'verifikasi-sde-massal.xlsx');
+  } catch (error: any) {
+    toast.add({ title: 'Gagal export', description: error?.message || 'Data tidak dapat diekspor.', color: 'error' });
+  } finally {
+    exporting.value = false;
+  }
+};
 
 const loadData = async () => {
   loading.value = true;
@@ -173,122 +238,11 @@ const loadData = async () => {
   }
 };
 
-const getWaitingVerifier = (item: SdeMasalItem) =>
-  (item.verifikators || []).find((v) => v.status === 'waiting');
-
-const isMe = (verifikator?: SdeMasalVerifikator) => {
-  if (!verifikator) return false;
-  return (
-    (!!currentPersnum.value && String(verifikator.persnum) === currentPersnum.value) ||
-    (!!currentPosition.value && String(verifikator.position) === currentPosition.value)
-  );
-};
-
-const canVerify = (item: SdeMasalItem) =>
-  item.statusVerifikasi === 'MENUNGGU_VERIFIKASI' && isMe(getWaitingVerifier(item));
-
-const approve = async (item: SdeMasalItem) => {
-  actionLoading.value = item.id;
-  try {
-    await approveVerification(item.id);
-    toast.add({ title: 'Berhasil', description: 'SDE Massal berhasil diverifikasi.', color: 'success' });
-    selectedItem.value = null;
-    await loadData();
-  } catch (error: any) {
-    toast.add({ title: 'Gagal verifikasi', description: error?.response?.data?.message || error?.message || 'Coba lagi.', color: 'error' });
-  } finally {
-    actionLoading.value = null;
-  }
-};
-
-const reject = async (item: SdeMasalItem) => {
-  actionLoading.value = item.id;
-  try {
-    await rejectVerification(item.id, 'Ditolak verifikator');
-    toast.add({ title: 'Ditolak', description: 'SDE Massal berhasil ditolak.', color: 'success' });
-    selectedItem.value = null;
-    await loadData();
-  } catch (error: any) {
-    toast.add({ title: 'Gagal menolak', description: error?.response?.data?.message || error?.message || 'Coba lagi.', color: 'error' });
-  } finally {
-    actionLoading.value = null;
-  }
-};
-
-const openDetail = (item: SdeMasalItem) => {
-  selectedItem.value = item;
-};
-
-// --- Detail preview (SdeMasalLetterPreview, sama dengan halaman pengirim) ---
-const detailKonsep = computed<SdeMasalConcept | null>(() => {
-  const s = selectedItem.value;
-  if (!s) return null;
-  return {
-    tanggalKonsep: s.tanggalKonsep || '',
-    klasifikasiId: s.klasifikasiId || '',
-    klasifikasiName: s.klasifikasiName || '',
-    pengirimId: s.pengirimId || '',
-    pengirimName: s.pengirimName || '',
-    sifat: s.sifatSurat || 'biasa',
-    perihal: s.perihal,
-    parentNaskahId: s.parentNaskahId || undefined,
-  };
-});
-
-const detailPenerimaList = computed<SdeMasalPenerima[]>(() => {
-  const s = selectedItem.value;
-  if (!s) return [];
-  return [{
-    no: 1,
-    tertuju: s.tertuju,
-    alamat: s.alamat,
-    kota: s.kota,
-    kodePos: s.kodePos,
-    jabatanPenerima: s.jabatanPenerima,
-    perihal: s.perihal,
-    idTertuju: s.idTertuju || undefined,
-    email: s.email || undefined,
-    tembusan: s.tembusan || undefined,
-    emailTertuju: s.emailTertuju || undefined,
-    emailCc: s.emailCc || undefined,
-    emailBcc: s.emailBcc || undefined,
-    jumlahTagihanIdr: s.jumlahTagihanIdr || undefined,
-    jumlahTagihanUsd: s.jumlahTagihanUsd || undefined,
-    namaCro: s.namaCro || undefined,
-    emailCro: s.emailCro || undefined,
-    jabatanSigner: s.jabatanSigner || undefined,
-    namaSigner: s.namaSigner || undefined,
-    jumlahLampiran: s.jumlahLampiran || undefined,
-    alamatPenerima: s.alamatPenerima || undefined,
-    panggilanPenerima: s.panggilanPenerima || undefined,
-    nominalRupiah: s.nominalRupiah || undefined,
-    nominalDolar: s.nominalDolar || undefined,
-    tembusan1: s.tembusan1 || undefined,
-    tembusan2: s.tembusan2 || undefined,
-    isValid: true,
-  }];
-});
-
-const detailTemplate = computed<SdeMasalTemplate | null>(() => {
-  const s = selectedItem.value;
-  if (!s) return null;
-  return {
-    skema: s.skemaTemplate || s.jenisTemplate || 'DINAMIS',
-    versi: s.versiTemplate || 'v1',
-    konten: s.isiRingkasan || '',
-  };
-});
-
-const formatDate = (value?: string | null) => {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-};
-
 const statusLabel = (status: string) => ({
   MENUNGGU: 'Menunggu',
   MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
-  TERKIRIM: 'Terkirim',
-  TERVERIFIKASI: 'Terverifikasi',
+  TERKIRIM: 'Dikirim',
+  TERVERIFIKASI: 'Disetujui',
   DITOLAK: 'Ditolak',
   GAGAL: 'Gagal',
 }[status] || status);
@@ -305,5 +259,6 @@ const statusBadge = (status: string) => ({
 onMounted(async () => {
   if (!user.value) await getProfile();
   await loadData();
+  getKlasifikasiList().then((data) => { klasifikasiOptions.value = data; });
 });
 </script>
