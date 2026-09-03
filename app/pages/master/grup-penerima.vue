@@ -81,6 +81,15 @@
               class="w-full h-8 pl-9 pr-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
             />
           </div>
+
+          <!-- Export -->
+          <button
+            v-if="hasPermission('master-data', 'export-grup-penerima')"
+            @click="onExport"
+            class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+          >
+            Export
+          </button>
         </div>
 
         <!-- TABLE -->
@@ -617,6 +626,8 @@ import {
   Power,
   Check as CheckIcon,
 } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const { canAccessPage } = useFeatureAccess();
 const { hasPermission, isSuperadmin } = useAuth();
@@ -788,6 +799,51 @@ const sortBy = (col: string) => {
     sortColumn.value = col;
     sortDirection.value = 'asc';
   }
+};
+
+// Export
+const onExport = () => {
+  const data = filteredData.value.map((item, idx) => ({
+    No: idx + 1,
+    [t('gp_col_name')]: item.nama,
+    [t('gp_col_company')]: item.company || '-',
+    [t('gp_col_desc')]: item.deskripsi || '-',
+    [t('gp_col_members')]: item.details?.length ?? 0,
+    [t('gp_col_status')]: item.aktif ? t('gp_active') : t('gp_inactive')
+  }));
+
+  if (data.length === 0) {
+    toast.add({
+      title: t('gagal'),
+      description: 'Tidak ada data untuk diekspor.',
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle'
+    });
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 30 },
+    { wch: 20 },
+    { wch: 40 },
+    { wch: 10 },
+    { wch: 12 }
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, t('gp_title'));
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  saveAs(blob, `master_grup_penerima_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  toast.add({
+    title: t('berhasil'),
+    description: 'Export berhasil.',
+    color: 'success',
+    icon: 'i-lucide-file-down'
+  });
 };
 
 // Add
