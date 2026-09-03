@@ -737,7 +737,12 @@ const userMenuUtilitas = computed(() => {
       icon: 'i-lucide-mail',
       permission: { resource: 'layanan-email', action: 'read' },
       children: [
-        { label: 'Kirim Email', to: '/layanan-email', permission: { resource: 'layanan-email', action: 'read' } },
+        {
+          label: 'Kirim Email',
+          to: '/layanan-email',
+          exact: true,
+          permission: { resource: 'layanan-email', action: 'read' },
+        },
         { label: 'Log Email', to: '/layanan-email/log', permission: { resource: 'layanan-email', action: 'read-log' } },
       ],
     },
@@ -925,7 +930,12 @@ const adminMenuUtilitas = computed(() => {
       icon: 'i-lucide-mail',
       permission: { resource: 'layanan-email', action: 'read' },
       children: [
-        { label: 'Kirim Email', to: '/layanan-email', permission: { resource: 'layanan-email', action: 'read' } },
+        {
+          label: 'Kirim Email',
+          to: '/layanan-email',
+          exact: true,
+          permission: { resource: 'layanan-email', action: 'read' },
+        },
         { label: 'Log Email', to: '/layanan-email/log', permission: { resource: 'layanan-email', action: 'read-log' } },
       ],
     },

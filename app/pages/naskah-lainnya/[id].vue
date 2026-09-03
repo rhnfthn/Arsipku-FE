@@ -1298,9 +1298,9 @@ const sifatLabel = computed(() =>
 
 // ── Sign option label ──
 const SIGN_LABELS: Record<string, string> = {
-  digsig: 'Tanda Tangan Digital (BSrE)',
-  qr_only: 'QR Code',
-  ttd_basah: 'Tanda Tangan Basah',
+  digsig: 'Digital',
+  qr_only: 'Digital',
+  ttd_basah: 'Fisik',
   tanpa_ttd: 'Tanpa Tanda Tangan',
 };
 const signLabel = computed(() =>
