@@ -54,10 +54,24 @@ const displayedCount = computed(() => {
   <div
     class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
   >
-    <!-- LEFT: info -->
-    <div class="text-xs text-gray-600 dark:text-gray-400">
-      Menampilkan {{ displayedCount.start }}–{{ displayedCount.end }} dari
-      <span class="font-semibold">{{ totalItems }}</span> data
+    <!-- LEFT: rows per page + info -->
+    <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+      <!-- ROWS PER PAGE dropdown -->
+      <div v-if="rowsOptions.length > 0" class="relative">
+        <select
+          v-model="selectedRows"
+          class="h-8 w-16 appearance-none rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+        >
+          <option v-for="opt in rowsOptions" :key="opt" :value="opt">{{ opt }}</option>
+        </select>
+        <ChevronRight class="pointer-events-none absolute right-1 top-1/2 w-3 h-3 -rotate-90 -translate-y-1/2 text-gray-400" />
+      </div>
+      <span>
+        Menampilkan {{ displayedCount.start }}–{{ displayedCount.end }} dari
+        <span class="font-semibold">{{ totalItems }}</span> data
+      </span>
+      <!-- Slot opsional: badge tambahan di samping info "Menampilkan ..." -->
+      <slot name="info" />
     </div>
 
     <!-- RIGHT: pagination -->

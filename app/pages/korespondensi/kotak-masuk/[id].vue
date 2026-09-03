@@ -25,16 +25,12 @@ import { pickKorespondensiListQuery } from '~/utils/korespondensi-list-state';
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
 import NaskahDetailPopup from '~/components/NaskahDetailPopup.vue';
-import SdeMasalModal from '@/components/korespondensi/sde-masal/SdeMasalModal.vue';
 
 definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const router = useRouter();
 
-// SDE Masal modal state
-const sdeMasalModalOpen = ref(false);
-const sdeMasalParentId = ref<string>('');
 // Popup detail naskah sederhana
 const showNaskahPopup = ref(false);
 const popupNaskah = ref<any>(null);
@@ -170,8 +166,9 @@ const isTerkirim = computed(() => {
 const getPermissions = (bodTag: string | null | undefined, surat: string) => {
   const suratNorm = surat?.toUpperCase();
   if (!bodTag) {
+    // Non-BOD (AVP, VP, EVP, staf) — bisa lanjut SDE Masal dari disposisi
     return {
-      create: ['KO'],
+      create: ['KO', 'SDE'],
       forward: [],
       reject: ['KO', 'K'].includes(suratNorm) ? ['Perbaiki'] : [],
       finalize: [],
@@ -198,7 +195,8 @@ const getPermissions = (bodTag: string | null | undefined, surat: string) => {
         finalize: ['Setujui', 'Tolak'],
       };
     }
-    const create = suratNorm === 'DI' ? ['DI', 'ND', 'KO'] : ['DI', 'ND'];
+    // BOD-2/BOD-3 juga bisa lanjut SDE Masal
+    const create = suratNorm === 'DI' ? ['DI', 'ND', 'KO', 'SDE'] : ['DI', 'ND', 'SDE'];
     return { create, forward: [], reject: [], finalize: [] };
   }
   return { create: [], forward: [], reject: [], finalize: [] };
@@ -1203,15 +1201,9 @@ const handleLanjutSDE = () => {
 const handleLanjutSDEMassal = () => {
   if (!ensureCanCreateFollowUpAction()) return;
   if (selected.value?.id) {
-    router.push({
-      path: '/korespondensi/tulis/sde-masal',
-      query: { parentNaskahId: selected.value.id },
-    });
+    const url = `/korespondensi/tulis/sde-masal?parentNaskahId=${encodeURIComponent(selected.value.id)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
-};
-const onSdeMasalSuccess = (result: any) => {
-  // Setelah generate massal berhasil, redirect ke dashboard SDE Masal
-  router.push('/korespondensi/sde-masal');
 };
 const handleLanjutDisposisi = () => {
   if (!ensureCanCreateFollowUpAction()) return;
@@ -1733,13 +1725,6 @@ const konsepOptions = computed(() => [
         </div>
       </template>
     </USlideover>
-
-    <!-- SDE Masal Modal -->
-    <SdeMasalModal
-      v-model="sdeMasalModalOpen"
-      :parent-naskah-id="sdeMasalParentId"
-      @success="onSdeMasalSuccess"
-    />
 
     <!-- Popup Detail Naskah (sama dengan preview-berkas) -->
     <NaskahDetailPopup
