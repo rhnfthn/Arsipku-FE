@@ -2,7 +2,6 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <PageHeader title="SDE Masal" :items="breadcrumbs" />
 
-    
     <!-- Stepper -->
     <div class="mb-6">
       <div class="flex items-center justify-between max-w-3xl mx-auto">
@@ -32,7 +31,11 @@
             <!-- Label -->
             <span
               class="mt-2 text-xs font-medium text-center transition-colors"
-              :class="currentStep >= step.id ? 'text-[#457fb6] dark:text-[#5a9fd0]' : 'text-gray-400 dark:text-gray-500'"
+              :class="
+                currentStep >= step.id
+                  ? 'text-[#457fb6] dark:text-[#5a9fd0]'
+                  : 'text-gray-400 dark:text-gray-500'
+              "
             >
               {{ step.label }}
             </span>
@@ -42,9 +45,12 @@
     </div>
 
     <!-- Step Content -->
-    <UCard variant="soft" :ui="{
-      root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
-    }">
+    <UCard
+      variant="soft"
+      :ui="{
+        root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
+      }"
+    >
       <!-- Step 1: Konsep Surat -->
       <SdeMasalStepKonsep
         v-if="currentStep === 1"
@@ -54,36 +60,90 @@
 
       <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->
       <div v-else-if="currentStep === 2" class="space-y-6">
-        <div class="overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm dark:border-primary-900/50 dark:bg-gray-800">
-          <div class="flex items-center gap-3 border-b border-primary-100 bg-primary-50/70 px-5 py-3 dark:border-primary-900/50 dark:bg-primary-950/30">
-            <div class="flex size-9 items-center justify-center rounded-lg bg-primary-500 text-white shadow-sm">
+        <div
+          class="overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm dark:border-primary-900/50 dark:bg-gray-800"
+        >
+          <div
+            class="flex items-center gap-3 border-b border-primary-100 bg-primary-50/70 px-5 py-3 dark:border-primary-900/50 dark:bg-primary-950/30"
+          >
+            <div
+              class="flex size-9 items-center justify-center rounded-lg bg-primary-500 text-white shadow-sm"
+            >
               <UIcon name="i-lucide-file-text" class="size-5" />
             </div>
             <div>
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">Konsep Surat</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Informasi surat yang akan dibuat massal</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Informasi surat yang akan dibuat massal
+              </p>
             </div>
           </div>
-          <div class="grid grid-cols-1 gap-3 bg-slate-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4 dark:bg-gray-900/20">
-            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+          <div
+            class="grid grid-cols-1 gap-3 bg-slate-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4 dark:bg-gray-900/20"
+          >
+            <div
+              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
               <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-calendar-days" class="size-3.5 text-primary-500" />Tanggal</div>
-              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.tanggalKonsep || '-' }}</p>
+              <div
+                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
+              >
+                <UIcon name="i-lucide-calendar-days" class="size-3.5 text-primary-500" />Tanggal
+              </div>
+              <p
+                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold text-gray-900 dark:border-gray-700 dark:text-white"
+              >
+                {{ wizardState.konsep?.tanggalKonsep || '-' }}
+              </p>
             </div>
-            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div
+              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
               <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-tags" class="size-3.5 text-primary-500" />Klasifikasi</div>
-              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.klasifikasiName || '-' }}</p>
+              <div
+                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
+              >
+                <UIcon name="i-lucide-tags" class="size-3.5 text-primary-500" />Klasifikasi
+              </div>
+              <p
+                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white"
+              >
+                {{ wizardState.konsep?.klasifikasiName || '-' }}
+              </p>
             </div>
-            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div
+              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
               <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-user-round" class="size-3.5 text-primary-500" />Pengirim</div>
-              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.pengirimName || '-' }}</p>
+              <div
+                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
+              >
+                <UIcon name="i-lucide-user-round" class="size-3.5 text-primary-500" />Pengirim
+              </div>
+              <p
+                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white"
+              >
+                {{ wizardState.konsep?.pengirimName || '-' }}
+              </p>
             </div>
-            <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <div
+              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
               <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"><UIcon name="i-lucide-shield-check" class="size-3.5 text-primary-500" />Sifat</div>
-              <p class="mt-3 border-t border-slate-100 pt-3 text-left text-sm font-semibold capitalize text-gray-900 dark:border-gray-700 dark:text-white">{{ wizardState.konsep?.sifat === 'biasa' ? 'Biasa / Terbuka' : wizardState.konsep?.sifat || '-' }}</p>
+              <div
+                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
+              >
+                <UIcon name="i-lucide-shield-check" class="size-3.5 text-primary-500" />Sifat
+              </div>
+              <p
+                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold capitalize text-gray-900 dark:border-gray-700 dark:text-white"
+              >
+                {{
+                  wizardState.konsep?.sifat === 'biasa'
+                    ? 'Biasa / Terbuka'
+                    : wizardState.konsep?.sifat || '-'
+                }}
+              </p>
             </div>
           </div>
         </div>
@@ -97,6 +157,7 @@
           v-model="wizardState.penerimaList"
           :konsep="wizardState.konsep"
           :dynamic-variables="wizardState.variables"
+          :template="wizardState.template"
         />
       </div>
 
@@ -106,8 +167,10 @@
         :konsep="wizardState.konsep"
         :penerima-list="wizardState.penerimaList"
         :template="wizardState.template"
+        :folder-id="folderId"
         :generating="generating"
         @submit-verification="handleSubmitVerification"
+        @finalize-direct="handleFinalizeDirect"
       />
     </UCard>
 
@@ -156,7 +219,8 @@ const props = defineProps<{
 
 const router = useRouter();
 const toast = useToast();
-const { generateMassal, saveConcept, submitVerification } = useSdeMasal();
+const { generateMassal, createFolder, updateFolder, finalizeDirect, submitVerification } =
+  useSdeMasal();
 
 const steps = [
   { id: 1, label: 'Konsep Surat' },
@@ -166,7 +230,7 @@ const steps = [
 
 const currentStep = ref(1);
 const generating = ref(false);
-const conceptId = ref<string | null>(null);
+const folderId = ref<string | null>(null);
 
 const wizardState = reactive<{
   konsep: SdeMasalConcept | null;
@@ -192,7 +256,7 @@ onMounted(() => {
       wizardState.penerimaList = Array.isArray(draft.penerimaList) ? draft.penerimaList : [];
       wizardState.template = draft.template || null;
       wizardState.variables = Array.isArray(draft.variables) ? draft.variables : [];
-      conceptId.value = draft.conceptId || null;
+      folderId.value = draft.folderId || null;
       currentStep.value = [1, 2, 3].includes(draft.currentStep) ? draft.currentStep : 1;
     }
   } catch (error) {
@@ -208,14 +272,14 @@ watch(
     penerimaList: wizardState.penerimaList,
     template: wizardState.template,
     variables: wizardState.variables,
-    conceptId: conceptId.value,
+    folderId: folderId.value,
     currentStep: currentStep.value,
   }),
   (draft) => {
     if (!persistenceReady.value) return;
     localStorage.setItem(draftStorageKey, JSON.stringify(draft));
   },
-  { deep: true },
+  { deep: true }
 );
 
 const breadcrumbs = computed(() => [
@@ -229,6 +293,7 @@ const canProceed = computed(() => {
   if (currentStep.value === 1) {
     return !!(
       wizardState.konsep?.tanggalKonsep &&
+      wizardState.konsep?.judul?.trim() &&
       wizardState.konsep?.klasifikasiId &&
       wizardState.konsep?.pengirimId
     );
@@ -236,6 +301,7 @@ const canProceed = computed(() => {
   if (currentStep.value === 2) {
     return !!(
       wizardState.konsep?.tanggalKonsep &&
+      wizardState.konsep?.judul?.trim() &&
       wizardState.konsep?.klasifikasiId &&
       wizardState.konsep?.pengirimId &&
       wizardState.template?.konten &&
@@ -252,37 +318,131 @@ const goBack = () => {
 
 const goNext = async () => {
   if (!canProceed.value) {
-    toast.add({ title: 'Validasi Gagal', description: 'Mohon lengkapi data pada step ini terlebih dahulu', color: 'error' });
+    toast.add({
+      title: 'Validasi Gagal',
+      description: 'Mohon lengkapi data pada step ini terlebih dahulu',
+      color: 'error',
+    });
     return;
   }
-  if (wizardState.konsep && !conceptId.value) {
+  if (wizardState.konsep && !folderId.value) {
     try {
-      const saved = await saveConcept(wizardState.konsep);
-      conceptId.value = saved?.id ?? null;
-      toast.add({ title: 'Konsep tersimpan', description: 'Data konsep surat disimpan sebagai draft.', color: 'success' });
+      const saved = await createFolder(buildFolderPayload());
+      folderId.value = saved?.id ?? null;
+      toast.add({
+        title: 'Folder tersimpan',
+        description: 'Konsep SDE Massal disimpan sebagai draft.',
+        color: 'success',
+      });
     } catch (error: any) {
-      toast.add({ title: 'Gagal menyimpan konsep', description: error?.message || 'Coba lagi.', color: 'error' });
+      toast.add({
+        title: 'Gagal menyimpan konsep',
+        description: error?.message || 'Coba lagi.',
+        color: 'error',
+      });
       return;
     }
   }
   if (currentStep.value < 3) currentStep.value++;
 };
 
-const handleSubmitVerification = async (verifikators: any[]) => {
+const buildFolderPayload = (signOption?: 'digsig' | 'qr_only' | 'ttd_basah') => {
+  const konsep = wizardState.konsep;
+  const [klasifikasi, ...klasifikasiText] = (konsep?.klasifikasiName || '').split(' - ');
+  return {
+    judul: konsep?.judul?.trim() || 'SDE Massal',
+    parentNaskahId: konsep?.parentNaskahId,
+    tanggal: konsep?.tanggalKonsep,
+    klasifikasi: klasifikasi || konsep?.klasifikasiId,
+    klasifikasiText: klasifikasiText.join(' - ') || konsep?.klasifikasiName,
+    pengirimId: konsep?.pengirimId,
+    pengirimName: konsep?.pengirimName,
+    sifat: konsep?.sifat || 'biasa',
+    atasNama: konsep?.atasNama || null,
+    atasNamaPositionId: konsep?.atasNamaPositionId || null,
+    kontenTemplate: wizardState.template?.konten,
+    dynamicVariables: wizardState.variables,
+    signOption,
+  };
+};
+
+const persistCompleteFolder = async (signOption?: 'digsig' | 'qr_only' | 'ttd_basah') => {
+  if (!folderId.value) {
+    const saved = await createFolder(buildFolderPayload(signOption));
+    folderId.value = saved?.id ?? null;
+  } else {
+    await updateFolder(folderId.value, buildFolderPayload(signOption));
+  }
+  if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
+  return folderId.value;
+};
+
+const resetWizard = () => {
+  wizardState.konsep = null;
+  wizardState.penerimaList = [];
+  wizardState.template = null;
+  wizardState.variables = [];
+  folderId.value = null;
+  currentStep.value = 1;
+  persistenceReady.value = false;
+  localStorage.removeItem(draftStorageKey);
+};
+
+const handleFinalizeDirect = async (payload: {
+  signOption: 'digsig' | 'qr_only' | 'ttd_basah';
+  passphrase?: string;
+}) => {
+  if (!wizardState.konsep || !wizardState.template) return;
+  generating.value = true;
+  try {
+    const id = await persistCompleteFolder(payload.signOption);
+    const result = await finalizeDirect({
+      folderId: id,
+      penerimaList: wizardState.penerimaList,
+      signOption: payload.signOption,
+      passphrase: payload.passphrase,
+    });
+    toast.add({
+      title: result?.failed ? 'Selesai dengan catatan' : 'SDE Massal terkirim',
+      description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`,
+      color: result?.failed ? 'warning' : 'success',
+    });
+    resetWizard();
+    router.push('/korespondensi/sde-masal');
+  } catch (error: any) {
+    toast.add({
+      title: 'Gagal mengirim SDE Massal',
+      description: error?.message || 'Coba lagi.',
+      color: 'error',
+    });
+  } finally {
+    generating.value = false;
+  }
+};
+
+const handleSubmitVerification = async (
+  verifikators: any[],
+  signOption: 'qr_only' | 'ttd_basah' = 'qr_only'
+) => {
   if (!wizardState.konsep || !wizardState.template) {
     toast.add({ title: 'Error', description: 'Data wizard tidak lengkap', color: 'error' });
     return;
   }
   if (!Array.isArray(verifikators) || verifikators.length === 0) {
-    toast.add({ title: 'Verifikator belum dipilih', description: 'Pilih minimal satu verifikator.', color: 'error' });
+    toast.add({
+      title: 'Verifikator belum dipilih',
+      description: 'Pilih minimal satu verifikator.',
+      color: 'error',
+    });
     return;
   }
 
   generating.value = true;
   try {
+    const id = await persistCompleteFolder(signOption);
     const result = await generateMassal({
       konsep: wizardState.konsep,
-      conceptId: conceptId.value || undefined,
+      folderId: id,
       penerimaList: wizardState.penerimaList,
       template: wizardState.template,
     });
@@ -299,19 +459,10 @@ const handleSubmitVerification = async (verifikators: any[]) => {
     });
 
     // Reset wizard state
-    wizardState.konsep = null;
-    wizardState.penerimaList = [];
-    wizardState.template = null;
-    wizardState.variables = [];
-    conceptId.value = null;
-    currentStep.value = 1;
-    persistenceReady.value = false;
-    localStorage.removeItem(draftStorageKey);
+    resetWizard();
 
-    router.push({
-      path: '/korespondensi/sde-masal',
-      query: ids[0] ? { detail: ids[0] } : undefined,
-    });
+    // Langsung diarahkan ke halaman dashboard SDE Masal (pengajuan)
+    router.push('/korespondensi/sde-masal');
   } catch (e: any) {
     console.error('Gagal mengajukan verifikasi SDE Massal:', e);
     toast.add({
