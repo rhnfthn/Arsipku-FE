@@ -11,7 +11,7 @@
         </div>
         <button
           v-if="hasPermission('master-data', 'create-perusahaan')"
-          @click="openAddCompany = true"
+          @click="openAddCompanyModal"
           class="flex items-center gap-2 bg-primary hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
@@ -25,15 +25,25 @@
       >
         <!-- Search -->
         <div class="p-5 border-b w-full border-gray-100 dark:border-gray-700">
-          <div class="relative flex-1 w-full md:w-255">
-            <Search
-              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            />
-            <input
-              v-model="search"
-              :placeholder="t('mp_cari_placeholder')"
-              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+          <div class="flex items-center gap-3">
+            <div class="relative flex-1 w-full md:w-255">
+              <Search
+                class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+              />
+              <input
+                v-model="search"
+                :placeholder="t('mp_cari_placeholder')"
+                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+            <!-- Export -->
+            <button
+              v-if="hasPermission('master-data', 'export-perusahaan')"
+              @click="onExport"
+              class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+            >
+              Export
+            </button>
           </div>
         </div>
 
@@ -46,7 +56,7 @@
                   @click="toggleSortTanggalMulai"
                   class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap cursor-pointer select-none flex items-center gap-2"
                 >
-                  {{ t('mp_col_tgl_mulai') }}
+                  {{ t('mp_col_tgl') }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
@@ -54,9 +64,6 @@
                       'rotate-0': sortBy !== 'desc'
                     }"
                   />
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">
-                  {{ t('mp_col_tgl_berakhir') }}
                 </th>
                 <th class="px-6 py-4 text-center text-sm font-semibold">
                   {{ t('mp_col_kode') }}
@@ -84,9 +91,6 @@
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   <span v-html="highlight(formatDateSlash(row.tanggalMulai), search)"></span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <span v-html="highlight(formatDateSlash(row.tanggalBerakhir), search)"></span>
-                </td>
                 <td class="px-6 py-4 items-center">
                   <NuxtLink
                     :to="`/master/perusahaan/${row.kode}/struktur`"
@@ -101,11 +105,11 @@
                   </NuxtLink>
                 </td>
                 <td
-                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap uppercase"
                   v-html="highlight(row.namaPendek, search)"
                 ></td>
                 <td
-                  class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300"
+                  class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 uppercase"
                   v-html="highlight(row.namaPanjang, search)"
                 ></td>
                 <td class="px-6 py-4">
@@ -162,6 +166,24 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ t('mp_kode') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formCompany.kode"
+              type="text"
+              :placeholder="t('mp_kode_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.kode
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.kode = false"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
@@ -181,38 +203,14 @@
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t('mp_tgl_berakhir') }} <span class="text-red-500">*</span>
+                {{ t('mp_tgl_berakhir') }}
               </Heading>
               <input
                 v-model="formCompany.tanggalBerakhir"
                 type="date"
-                :class="[
-                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                  formErrors.tanggalBerakhir
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-                ]"
-                @input="formErrors.tanggalBerakhir = false"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
-          </div>
-
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_kode') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formCompany.kode"
-              type="text"
-              :placeholder="t('mp_kode_placeholder')"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-                formErrors.kode
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="formErrors.kode = false"
-            />
           </div>
 
           <div>
@@ -229,7 +227,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.namaPendek = false"
+              @input="formErrors.namaPendek = false; formCompany.namaPendek = formCompany.namaPendek.toUpperCase()"
             />
           </div>
 
@@ -247,7 +245,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.namaPanjang = false"
+              @input="formErrors.namaPanjang = false; formCompany.namaPanjang = formCompany.namaPanjang.toUpperCase()"
             ></textarea>
           </div>
         </div>
@@ -266,6 +264,17 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ t('mp_kode_edit') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="editForm.kode"
+              disabled
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
@@ -285,37 +294,14 @@
             </div>
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                {{ t('mp_tgl_berakhir') }} <span class="text-red-500">*</span>
+                {{ t('mp_tgl_berakhir') }}
               </Heading>
               <input
                 v-model="editForm.tanggalBerakhir"
                 type="date"
-                :class="[
-                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                  editFormErrors.tanggalBerakhir
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-                ]"
-                @input="editFormErrors.tanggalBerakhir = false"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
-          </div>
-          <p class="text-xs text-red-500">{{ t('mp_tgl_warning') }}</p>
-
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_kode_edit') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="editForm.kode"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                editFormErrors.kode
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="editFormErrors.kode = false"
-            />
           </div>
 
           <div>
@@ -330,7 +316,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="editFormErrors.namaPendek = false"
+              @input="editFormErrors.namaPendek = false; editForm.namaPendek = editForm.namaPendek.toUpperCase()"
             />
           </div>
 
@@ -347,7 +333,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="editFormErrors.namaPanjang = false"
+              @input="editFormErrors.namaPanjang = false; editForm.namaPanjang = editForm.namaPanjang.toUpperCase()"
             ></textarea>
           </div>
         </div>
@@ -376,6 +362,8 @@ import { ref, computed, onMounted } from 'vue';
 import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown } from 'lucide-vue-next';
 import { useCompany } from '~/composables/useCompany';
 import { formatDateSlash } from '~/utils/mail-helpers';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 definePageMeta({
   middleware: 'auth'
@@ -398,6 +386,7 @@ const breadcrumbs = computed(() => [
 // COMPOSABLE & STATE
 // ─────────────────────────────────────────────
 const { getCompanies, createCompany, updateCompany, deleteCompany } = useCompany();
+const { clearApiCache } = useApi();
 
 import { useToast } from '#imports';
 const toast = useToast();
@@ -412,8 +401,8 @@ const isSavingAddCompany = ref(false);
 const isSavingEditCompany = ref(false);
 
 const formCompany = ref({
-  tanggalMulai: '',
-  tanggalBerakhir: '',
+  tanggalMulai: new Date().toISOString().slice(0, 10),
+  tanggalBerakhir: '9999-12-31',
   kode: '',
   namaPendek: '',
   namaPanjang: ''
@@ -426,6 +415,36 @@ const formErrors = ref({
   tanggalMulai: false,
   tanggalBerakhir: false
 });
+
+// Generate next company code (4 digit, mulai 1000) — max+1 dari data existing.
+const generateNextCompanyCode = () => {
+  let max = 999;
+  for (const r of rows.value) {
+    const n = parseInt(String(r.kode), 10);
+    if (!isNaN(n) && n >= 1000 && n < 10000 && n > max) max = n;
+  }
+  return String(max + 1);
+};
+
+// Reset form & buka modal tambah (dipanggil setiap kali tombol Tambah diklik,
+// sehingga form selalu bersih saat modal dibuka kembali).
+const openAddCompanyModal = () => {
+  formCompany.value = {
+    tanggalMulai: new Date().toISOString().slice(0, 10),
+    tanggalBerakhir: '9999-12-31',
+    kode: generateNextCompanyCode(),
+    namaPendek: '',
+    namaPanjang: ''
+  };
+  formErrors.value = {
+    kode: false,
+    namaPendek: false,
+    namaPanjang: false,
+    tanggalMulai: false,
+    tanggalBerakhir: false
+  };
+  openAddCompany.value = true;
+};
 
 // ─────────────────────────────────────────────
 // DELETE MESSAGE (reaktif terhadap bahasa)
@@ -455,8 +474,10 @@ const fetchCompanies = async () => {
     const res = await getCompanies();
     const validRows: any[] = [];
     for (const item of res.data) {
+      // Jangan auto-delete di sini — itu menyebabkan 404 saat fetch ulang
+      // (perusahaan sudah dihapus manual tapi masih ada di cache). Cukup
+      // sembunyikan yang expired dari tampilan.
       if (isExpired(item.endDate)) {
-        await deleteCompany(item.id);
         continue;
       }
       validRows.push({
@@ -510,6 +531,53 @@ const toggleSortTanggalMulai = () => {
 };
 
 // ─────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────
+const onExport = () => {
+  const data = filteredRows.value.map((row, idx) => ({
+    No: idx + 1,
+    [t('mp_col_kode')]: row.kode,
+    [t('mp_col_nama_pendek')]: row.namaPendek,
+    [t('mp_col_nama_panjang')]: row.namaPanjang,
+    [t('mp_col_tgl_mulai')]: formatDateSlash(row.tanggalMulai),
+    [t('mp_col_tgl_berakhir')]: formatDateSlash(row.tanggalBerakhir)
+  }));
+
+  if (data.length === 0) {
+    toast.add({
+      title: t('gagal'),
+      description: 'Tidak ada data untuk diekspor.',
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle'
+    });
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 12 },
+    { wch: 30 },
+    { wch: 40 },
+    { wch: 15 },
+    { wch: 15 }
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, t('mp_title'));
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  saveAs(blob, `master_perusahaan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  toast.add({
+    title: t('berhasil'),
+    description: 'Export berhasil.',
+    color: 'success',
+    icon: 'i-lucide-file-down'
+  });
+};
+
+// ─────────────────────────────────────────────
 // VALIDATION HELPERS
 // ─────────────────────────────────────────────
 const isEndDateInvalid = (startDate?: string, endDate?: string) => {
@@ -538,7 +606,6 @@ const validateAddForm = (): boolean => {
   formErrors.value.namaPendek = !formCompany.value.namaPendek.trim();
   formErrors.value.namaPanjang = !formCompany.value.namaPanjang.trim();
   formErrors.value.tanggalMulai = !formCompany.value.tanggalMulai;
-  formErrors.value.tanggalBerakhir = !formCompany.value.tanggalBerakhir;
 
   const emptyFields: string[] = [];
 
@@ -554,25 +621,11 @@ const validateAddForm = (): boolean => {
   if (formErrors.value.tanggalMulai) {
     emptyFields.push(t('mp_tgl_mulai'));
   }
-  if (formErrors.value.tanggalBerakhir) {
-    emptyFields.push(t('mp_tgl_berakhir'));
-  }
 
   if (emptyFields.length > 0) {
     toast.add({
       title: t('gagal'),
       description: `${emptyFields.join(', ')} wajib diisi`,
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return false;
-  }
-
-  // Validate date range
-  if (isEndDateInvalid(formCompany.value.tanggalMulai, formCompany.value.tanggalBerakhir)) {
-    toast.add({
-      title: t('gagal'),
-      description: formatDateWarningMessage(),
       color: 'error',
       icon: 'i-lucide-x-circle'
     });
@@ -608,6 +661,8 @@ const handleSaveCompany = async () => {
       endDate: formCompany.value.tanggalBerakhir
     });
 
+    // Invalidate cache agar list ter-refresh setelah create
+    clearApiCache();
     await fetchCompanies();
 
     toast.add({
@@ -619,8 +674,8 @@ const handleSaveCompany = async () => {
 
     openAddCompany.value = false;
     formCompany.value = {
-      tanggalMulai: '',
-      tanggalBerakhir: '',
+      tanggalMulai: new Date().toISOString().slice(0, 10),
+      tanggalBerakhir: '9999-12-31',
       kode: '',
       namaPendek: '',
       namaPanjang: ''
@@ -687,17 +742,12 @@ const openEditModal = (row: any) => {
 
 const validateEditForm = (): boolean => {
   // Set error states
-  editFormErrors.value.kode = !editForm.value.kode.trim();
   editFormErrors.value.namaPendek = !editForm.value.namaPendek.trim();
   editFormErrors.value.namaPanjang = !editForm.value.namaPanjang.trim();
   editFormErrors.value.tanggalMulai = !editForm.value.tanggalMulai;
-  editFormErrors.value.tanggalBerakhir = !editForm.value.tanggalBerakhir;
 
   const emptyFields: string[] = [];
 
-  if (editFormErrors.value.kode) {
-    emptyFields.push(t('mp_kode'));
-  }
   if (editFormErrors.value.namaPendek) {
     emptyFields.push(t('mp_nama_pendek'));
   }
@@ -707,25 +757,11 @@ const validateEditForm = (): boolean => {
   if (editFormErrors.value.tanggalMulai) {
     emptyFields.push(t('mp_tgl_mulai'));
   }
-  if (editFormErrors.value.tanggalBerakhir) {
-    emptyFields.push(t('mp_tgl_berakhir'));
-  }
 
   if (emptyFields.length > 0) {
     toast.add({
       title: t('gagal'),
       description: `${emptyFields.join(', ')} wajib diisi`,
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return false;
-  }
-
-  // Validate date range
-  if (isEndDateInvalid(editForm.value.tanggalMulai, editForm.value.tanggalBerakhir)) {
-    toast.add({
-      title: t('gagal'),
-      description: formatDateWarningMessage(),
       color: 'error',
       icon: 'i-lucide-x-circle'
     });
@@ -740,27 +776,19 @@ const handleSaveEdit = async () => {
 
   // Validate required fields first
   if (!validateEditForm()) return;
-  if (isNaN(Number(editForm.value.kode))) {
-    toast.add({
-      title: t('gagal'),
-      description: t('mp_val_kode_angka'),
-      color: 'error',
-      icon: 'i-lucide-x-circle'
-    });
-    return;
-  }
 
   isSavingEditCompany.value = true;
 
   try {
     await updateCompany(editForm.value.id, {
-      company: Number(editForm.value.kode),
       shortText: editForm.value.namaPendek,
       longText: editForm.value.namaPanjang,
       startDate: editForm.value.tanggalMulai,
       endDate: editForm.value.tanggalBerakhir
     });
 
+    // Invalidate FE cache + force fresh fetch (BE cache juga sudah 5 detik)
+    clearApiCache();
     await fetchCompanies();
 
     toast.add({
@@ -798,6 +826,9 @@ const handleDelete = async () => {
   try {
     isDeleting.value = true;
     await deleteCompany(selectedRow.value.id);
+
+    // Invalidate FE cache + force fresh fetch (BE cache juga sudah 5 detik)
+    clearApiCache();
     await fetchCompanies();
 
     toast.add({

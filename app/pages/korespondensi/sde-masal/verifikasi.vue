@@ -20,7 +20,6 @@
           <option value="">Semua Klasifikasi</option>
           <option v-for="klasifikasi in klasifikasiOptions" :key="klasifikasi.id" :value="klasifikasi.id">{{ klasifikasi.klasifikasi }} - {{ klasifikasi.klasifikasi_text }}</option>
         </select>
-        <button @click="resetFilter" class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700" title="Reset filter"><UIcon name="i-lucide-rotate-ccw" class="size-5" /></button>
         <div class="relative min-w-0 flex-1">
           <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <input v-model="f.search" type="text" placeholder="Cari Perihal..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
@@ -32,10 +31,10 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-primary text-left text-white dark:bg-primary-700">
             <tr>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap">Perihal</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap">Tertuju</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap">Klasifikasi</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Judul Folder</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap">Pengirim</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Klasifikasi</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Menunggu</th>
               <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status</th>
               <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
@@ -51,20 +50,25 @@
                 Tidak ada SDE Massal untuk diverifikasi.
               </td>
             </tr>
-            <tr v-else v-for="item in paginatedRows" :key="item.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-              <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[200px] truncate" :title="item.perihal">{{ item.perihal || '-' }}</td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[150px] truncate" :title="item.tertuju">{{ item.tertuju || '-' }}</td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="item.klasifikasiName || ''">{{ item.klasifikasiName || '-' }}</td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate" :title="item.pengirimName || ''">{{ item.pengirimName || '-' }}</td>
+            <tr v-else v-for="folder in paginatedRows" :key="folder.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[220px] truncate" :title="folder.judul">{{ folder.judul || '-' }}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate" :title="folder.pengirimName || ''">{{ folder.pengirimName || '-' }}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="folder.klasifikasi || ''">
+                {{ folder.klasifikasi || '-' }}
+                <span v-if="folder.klasifikasiText" class="text-gray-400"> · {{ folder.klasifikasiText }}</span>
+              </td>
               <td class="px-4 py-2.5 text-center">
-                <span :class="statusBadge(item.statusVerifikasi)">{{ statusLabel(item.statusVerifikasi) }}</span>
+                <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{{ folder.waitingCount ?? 0 }}</span>
+              </td>
+              <td class="px-4 py-2.5 text-center">
+                <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
               </td>
               <td class="px-4 py-2.5">
                 <div class="flex items-center justify-center">
                   <NuxtLink
-                    :to="`/korespondensi/sde-masal/verifikasi-detail/${item.id}`"
+                    :to="`/korespondensi/sde-masal/folder/${folder.id}`"
                     class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
-                    title="Lihat detail"
+                    title="Lihat naskah dalam folder"
                   >
                     <UIcon name="i-lucide-eye" class="size-4" />
                   </NuxtLink>
@@ -83,7 +87,7 @@
         <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
           <span>
             Menampilkan {{ (page - 1) * f.limit + 1 }}–{{ Math.min(page * f.limit, filteredRows.length) }}
-            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ filteredRows.length }}</span> SDE Massal
+            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ filteredRows.length }}</span> folder
           </span>
         </div>
         <div v-if="totalPages > 1" class="flex items-center gap-1">
@@ -122,10 +126,10 @@ definePageMeta({ middleware: ['auth'] });
 
 const toast = useToast();
 const { user, getProfile } = useAuth();
-const { fetchVerificationList } = useSdeMasal();
+const { fetchVerificationFolders } = useSdeMasal();
 const { getKlasifikasiList } = useKlasifikasi();
 
-const rows = ref<SdeMasalItem[]>([]);
+const rows = ref<any[]>([]);
 const loading = ref(false);
 const klasifikasiOptions = ref<Klasifikasi[]>([]);
 const exporting = ref(false);
@@ -147,36 +151,17 @@ const breadcrumbs = [
 const filteredRows = computed(() => {
   let result = rows.value;
 
-  // Hanya tampilkan item di mana user adalah verifikator yang sedang 'waiting'.
-  // Verifikator dengan status 'pending' (belum giliran) TIDAK muncul di list.
-  const myPersnum = String(user.value?.persnum ?? '').trim();
-  const myPosition = String(user.value?.position ?? '').trim();
-  result = result.filter((item) => {
-    const verifikators = item.verifikators || [];
-    const myVerifier = verifikators.find((v: any) => {
-      const samePersnum = myPersnum && String(v.persnum) === myPersnum;
-      const samePosition = myPosition && String(v.position) === myPosition;
-      return samePersnum || samePosition;
-    });
-    // Tampilkan hanya jika user adalah verifikator yang sedang waiting,
-    // ATAU user adalah verifikator yang sudah verified/rejected (untuk riwayat).
-    // Verifikator 'pending' (belum giliran) tidak muncul.
-    if (!myVerifier) return false;
-    return myVerifier.status === 'waiting' || myVerifier.status === 'verified' || myVerifier.status === 'rejected';
-  });
-
   if (f.status) {
-    result = result.filter((item) => item.statusVerifikasi === f.status);
+    result = result.filter((folder) => folder.status === f.status);
   }
   if (f.klasifikasiId) {
-    result = result.filter((item) => item.klasifikasiId === f.klasifikasiId);
+    result = result.filter((folder) => folder.klasifikasi === f.klasifikasiId);
   }
   if (f.search.trim()) {
     const q = f.search.trim().toLowerCase();
-    result = result.filter((item) =>
-      (item.perihal || '').toLowerCase().includes(q) ||
-      (item.tertuju || '').toLowerCase().includes(q) ||
-      (item.pengirimName || '').toLowerCase().includes(q),
+    result = result.filter((folder) =>
+      (folder.judul || '').toLowerCase().includes(q) ||
+      (folder.pengirimName || '').toLowerCase().includes(q),
     );
   }
   return result;
@@ -209,13 +194,12 @@ const exportData = async () => {
       return;
     }
     const XLSX = await import('xlsx');
-    const worksheet = XLSX.utils.json_to_sheet(records.map((item) => ({
-      Perihal: item.perihal,
-      Tertuju: item.tertuju,
-      Klasifikasi: item.klasifikasiName || '-',
-      Pengirim: item.pengirimName || '-',
-      Status: statusLabel(item.statusVerifikasi),
-      'Tanggal Konsep': item.tanggalKonsep || '-',
+    const worksheet = XLSX.utils.json_to_sheet(records.map((folder) => ({
+      'Judul Folder': folder.judul || '-',
+      Pengirim: folder.pengirimName || '-',
+      Klasifikasi: folder.klasifikasi || '-',
+      'Menunggu Verifikasi': folder.waitingCount ?? 0,
+      Status: statusLabel(folder.status),
     })));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi SDE Massal');
@@ -230,7 +214,7 @@ const exportData = async () => {
 const loadData = async () => {
   loading.value = true;
   try {
-    rows.value = await fetchVerificationList();
+    rows.value = await fetchVerificationFolders();
   } catch (error: any) {
     toast.add({ title: 'Gagal memuat data', description: error?.message || 'Coba lagi.', color: 'error' });
   } finally {

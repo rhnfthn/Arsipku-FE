@@ -46,12 +46,20 @@ export interface SdeMasalFolderItem {
   nomor: string | null;
   perihal: string;
   penerima: string;
+  emailTertuju?: string | null;
+  emailCc?: string | null;
+  emailBcc?: string | null;
   status: string;
+  statusVerifikasi?: string;
+  verifikators?: SdeMasalVerifikator[] | null;
+  submittedAt?: string | null;
+  recipient?: Record<string, any> | null;
   finalPdf: string | null;
   createdAt: string;
 }
 
 export interface SdeMasalPenerima {
+  id?: string;
   variables?: Record<string, string>;
   no?: number;
   persnum?: string;
@@ -89,6 +97,8 @@ export interface SdeMasalPenerima {
   nominalDolar?: string | null;
   tembusan1?: string | null;
   tembusan2?: string | null;
+  lampiran?: string | null;
+  lampiranKey?: string | null;
   isValid: boolean;
   validationMessage?: string;
 }
