@@ -9,6 +9,11 @@ export interface KlasifikasiPayload {
   deskripsi?: string | null;
   id_parent?: string;
   active?: number;
+  retensi_aktif_tahun?: number | null;
+  retensi_inaktif_tahun?: number | null;
+  penyusutan?: string | null;
+  keamanan?: string | null;
+  hak_akses?: string | null;
 }
 
 export const useKlasifikasi = () => {
@@ -17,8 +22,9 @@ export const useKlasifikasi = () => {
 
   const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
-      const response = await api.get<{ data: Klasifikasi[] }>('/persuratan/klasifikasi');
-      return response.data.data;
+      const res: any = await apiGet('/persuratan/klasifikasi', {}, { skipCache: true });
+      const data = Array.isArray(res) ? res : (res?.data ?? []);
+      return data;
     } catch (error) {
       console.error('Gagal mengambil data klasifikasi:', error);
       throw error;
