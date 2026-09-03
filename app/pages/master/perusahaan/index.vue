@@ -156,6 +156,24 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ t('mp_kode') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formCompany.kode"
+              type="text"
+              :placeholder="t('mp_kode_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.kode
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.kode = false"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
@@ -183,24 +201,6 @@
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
-          </div>
-
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_kode') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formCompany.kode"
-              type="text"
-              :placeholder="t('mp_kode_placeholder')"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-                formErrors.kode
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="formErrors.kode = false"
-            />
           </div>
 
           <div>
@@ -254,6 +254,17 @@
         </template>
 
         <div class="space-y-4 p-1">
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ t('mp_kode_edit') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="editForm.kode"
+              disabled
+              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <Heading variant="heading11m" class="text-xs dark:text-gray-200">
@@ -281,17 +292,6 @@
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
-          </div>
-
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-              {{ t('mp_kode_edit') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="editForm.kode"
-              disabled
-              class="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed"
-            />
           </div>
 
           <div>

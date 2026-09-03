@@ -617,26 +617,6 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <!-- Nama -->
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-              {{ activeTab === 'area' ? t('ar_form_nama_area') : t('ar_form_nama_subarea') }}
-              <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formArea.nama"
-              type="text"
-              :placeholder="t('ar_form_nama_placeholder')"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                formErrors.nama
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="formErrors.nama = false"
-            />
-          </div>
-
           <!-- Kode -->
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-300">
@@ -654,6 +634,26 @@
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
               @input="formErrors.kode = false"
+            />
+          </div>
+
+          <!-- Nama -->
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
+              {{ activeTab === 'area' ? t('ar_form_nama_area') : t('ar_form_nama_subarea') }}
+              <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formArea.nama"
+              type="text"
+              :placeholder="t('ar_form_nama_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                formErrors.nama
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.nama = false"
             />
           </div>
 
