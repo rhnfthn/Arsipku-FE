@@ -370,7 +370,7 @@
                   : 'border-gray-300'
               ]"
               :placeholder="$t('stu_form_nama_unit_placeholder')"
-              @input="unitErrors.namaUnit = false"
+              @input="unitErrors.namaUnit = false; formUnit.namaUnit = formUnit.namaUnit.toUpperCase()"
             />
             <p v-if="unitErrors.namaUnit" class="text-xs text-red-500 mt-1">
               {{ $t('stu_form_nama_unit') }}
@@ -391,7 +391,7 @@
                   : 'border-gray-300'
               ]"
               :placeholder="$t('stu_form_nama_pendek_placeholder')"
-              @input="unitErrors.titelatur = false"
+              @input="unitErrors.titelatur = false; formUnit.titelatur = formUnit.titelatur.toUpperCase()"
             />
             <p v-if="unitErrors.titelatur" class="text-xs text-red-500 mt-1">
               {{ $t('stu_form_nama_pendek') }}
@@ -528,7 +528,7 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <!-- ID Posisi -->
+          <!-- ID Posisi (auto-generated, editable) -->
           <div>
             <Heading variant="heading11m" class="text-xs">
               {{ $t('stu_form_id_posisi') }} <span class="text-red-500">*</span>
@@ -2148,7 +2148,10 @@ const isExpired = (endDate?: string) => {
 
 const loadPositions = async (node: any) => {
   if (node._positionsLoaded) return
-  const res = await getPositionsByOrganization(String(node.organizationCode))
+  const res = await getPositionsByOrganization(
+    String(node.organizationCode),
+    company.value?.kode
+  )
   const validPositions: any[] = []
   for (const pos of res.data) {
     validPositions.push(mapPositionToNode(pos))
@@ -2428,7 +2431,6 @@ const openAddUnitModal = async (parent: any, type: string) => {
 }
 
 const openAddPositionModal = async (parent: any) => {
-  resetPositionForm()
   selectedParentNode.value = parent
   if (!parent._positionsLoaded) await loadPositions(parent)
   parentHasChief.value = checkParentHasChief(parent)
@@ -2436,6 +2438,7 @@ const openAddPositionModal = async (parent: any) => {
     formPosition.value.chief = false
     formPosition.value.chiefLevel = ''
   }
+  resetPositionForm()
   showAddPositionModal.value = true
 }
 
@@ -2673,6 +2676,11 @@ watch(
   () => route.params.kode,
   (kode) => {
     if (!kode) return
+    // Reset tree dan state lain agar tidak bocor data perusahaan sebelumnya
+    organizationTree.value = []
+    expandedNodes.value = {}
+    selectedParentNode.value = null
+    formPosition.value.idPos = ''
     fetchData(kode as string)
   },
   { immediate: true }

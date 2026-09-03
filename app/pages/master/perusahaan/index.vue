@@ -25,15 +25,25 @@
       >
         <!-- Search -->
         <div class="p-5 border-b w-full border-gray-100 dark:border-gray-700">
-          <div class="relative flex-1 w-full md:w-255">
-            <Search
-              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            />
-            <input
-              v-model="search"
-              :placeholder="t('mp_cari_placeholder')"
-              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+          <div class="flex items-center gap-3">
+            <div class="relative flex-1 w-full md:w-255">
+              <Search
+                class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+              />
+              <input
+                v-model="search"
+                :placeholder="t('mp_cari_placeholder')"
+                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+            <!-- Export -->
+            <button
+              v-if="hasPermission('master-data', 'export-perusahaan')"
+              @click="onExport"
+              class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+            >
+              Export
+            </button>
           </div>
         </div>
 
@@ -217,7 +227,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.namaPendek = false"
+              @input="formErrors.namaPendek = false; formCompany.namaPendek = formCompany.namaPendek.toUpperCase()"
             />
           </div>
 
@@ -235,7 +245,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.namaPanjang = false"
+              @input="formErrors.namaPanjang = false; formCompany.namaPanjang = formCompany.namaPanjang.toUpperCase()"
             ></textarea>
           </div>
         </div>
@@ -306,7 +316,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="editFormErrors.namaPendek = false"
+              @input="editFormErrors.namaPendek = false; editForm.namaPendek = editForm.namaPendek.toUpperCase()"
             />
           </div>
 
@@ -323,7 +333,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="editFormErrors.namaPanjang = false"
+              @input="editFormErrors.namaPanjang = false; editForm.namaPanjang = editForm.namaPanjang.toUpperCase()"
             ></textarea>
           </div>
         </div>
@@ -352,6 +362,8 @@ import { ref, computed, onMounted } from 'vue';
 import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown } from 'lucide-vue-next';
 import { useCompany } from '~/composables/useCompany';
 import { formatDateSlash } from '~/utils/mail-helpers';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 definePageMeta({
   middleware: 'auth'
@@ -516,6 +528,53 @@ const toggleSortTanggalMulai = () => {
   if (sortBy.value === null) sortBy.value = 'asc';
   else if (sortBy.value === 'asc') sortBy.value = 'desc';
   else sortBy.value = null;
+};
+
+// ─────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────
+const onExport = () => {
+  const data = filteredRows.value.map((row, idx) => ({
+    No: idx + 1,
+    [t('mp_col_kode')]: row.kode,
+    [t('mp_col_nama_pendek')]: row.namaPendek,
+    [t('mp_col_nama_panjang')]: row.namaPanjang,
+    [t('mp_col_tgl_mulai')]: formatDateSlash(row.tanggalMulai),
+    [t('mp_col_tgl_berakhir')]: formatDateSlash(row.tanggalBerakhir)
+  }));
+
+  if (data.length === 0) {
+    toast.add({
+      title: t('gagal'),
+      description: 'Tidak ada data untuk diekspor.',
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle'
+    });
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 12 },
+    { wch: 30 },
+    { wch: 40 },
+    { wch: 15 },
+    { wch: 15 }
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, t('mp_title'));
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  saveAs(blob, `master_perusahaan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  toast.add({
+    title: t('berhasil'),
+    description: 'Export berhasil.',
+    color: 'success',
+    icon: 'i-lucide-file-down'
+  });
 };
 
 // ─────────────────────────────────────────────

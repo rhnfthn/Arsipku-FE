@@ -68,11 +68,16 @@ export const useStruktur = () => {
     }>(`/organization/${parentOrgId}/children`);
   };
 
-  const getPositionsByOrganization = (organizationId: string | number) => {
+  const getPositionsByOrganization = (
+    organizationId: string | number,
+    companyId?: string | number
+  ) => {
     return apiGet<{
       success: boolean;
       data: any[];
-    }>(`/position/organization/${organizationId}`);
+    }>(`/position/organization/${organizationId}`, {
+      params: companyId ? { company: companyId } : undefined
+    });
   };
 
   const getPersonsByPosition = (positionId: string | number) => {
