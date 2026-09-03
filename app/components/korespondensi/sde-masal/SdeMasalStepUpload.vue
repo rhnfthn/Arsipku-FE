@@ -128,7 +128,28 @@ const parsing = ref(false);
 const parseError = ref<string | null>(null);
 
 const templateColumns = computed(() => {
-  return ['perihal', 'tertuju', 'tembusan_internal', 'tembusan_eksternal', ...(props.dynamicVariables || []).filter((value) => !['perihal', 'tertuju', 'tembusan', 'tembusan_internal', 'tembusan_eksternal'].includes(value))];
+  return [
+    'perihal',
+    'tertuju',
+    'tembusan_internal',
+    'tembusan_eksternal',
+    'email_tertuju',
+    'email_cc',
+    'email_bcc',
+    ...(props.dynamicVariables || []).filter(
+      (value) =>
+        ![
+          'perihal',
+          'tertuju',
+          'tembusan',
+          'tembusan_internal',
+          'tembusan_eksternal',
+          'email_tertuju',
+          'email_cc',
+          'email_bcc',
+        ].includes(value)
+    ),
+  ];
 });
 
 const penerimaList = computed(() => model.value || []);

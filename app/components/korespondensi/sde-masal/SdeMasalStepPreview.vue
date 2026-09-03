@@ -30,98 +30,231 @@
       </div>
     </div>
 
-    <!-- Daftar Penerima -->
-    <div>
-      <div class="mb-2 flex items-center justify-between gap-3">
+    <!-- Daftar SDE Masal -->
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between gap-3 p-4 border-b border-gray-100 dark:border-gray-700">
         <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          Daftar Penerima ({{ penerimaList.length }})
+          Daftar SDE Masal
         </h4>
       </div>
-      <div
-        class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 max-h-[300px] overflow-y-auto"
-      >
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0">
-            <tr>
-              <th
-                class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"
-              >
-                No
-              </th>
-              <th
-                class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"
-              >
-                Tertuju
-              </th>
-              <th
-                class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"
-              >
-                Alamat
-              </th>
-              <th
-                class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"
-              >
-                No. Telepon
-              </th>
-              <th
-                class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"
-              >
-                Email
-              </th>
-              <th
-                class="px-3 py-2 text-center font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"
-              >
-                Aksi
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(item, idx) in penerimaList"
-              :key="item.no"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+
+      <!-- Filter Bar (pola custom dropdown naskah-lainnya) -->
+      <div class="flex flex-row items-center gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
+        <!-- ROWS PER PAGE -->
+        <div class="relative" data-custom-dropdown>
+          <button
+            type="button"
+            @click.stop="toggleRowsPerPage"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[70px] justify-between"
+          >
+            <span>{{ perPage }}</span>
+            <UIcon
+              name="i-lucide-chevron-down"
+              class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+              :class="{ 'rotate-180': openRowsPerPage }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openRowsPerPage"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[9999] overflow-hidden min-w-[80px]"
             >
-              <td
-                class="px-3 py-2 text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700"
+              <button
+                v-for="n in [10, 25, 50]"
+                :key="n"
+                type="button"
+                @click.stop="selectRowsPerPage(n)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  perPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
               >
-                {{ item.no }}
-              </td>
-              <td
-                class="px-3 py-2 text-gray-900 dark:text-white font-medium border-b border-gray-100 dark:border-gray-700"
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- FILTER STATUS -->
+        <div class="relative" data-custom-dropdown>
+          <button
+            type="button"
+            @click.stop="toggleFilterStatus"
+            class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[150px] justify-between"
+          >
+            <span class="truncate">{{ statusLabel }}</span>
+            <UIcon
+              name="i-lucide-chevron-down"
+              class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200"
+              :class="{ 'rotate-180': openFilterStatus }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openFilterStatus"
+              class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[9999] overflow-hidden min-w-[200px]"
+            >
+              <button
+                v-for="opt in statusOptions"
+                :key="opt.value"
+                type="button"
+                @click.stop="selectFilterStatus(opt.value)"
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0',
+                  statusFilter === opt.value
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700',
+                ]"
               >
-                {{ getPenerimaName(item) }}
-              </td>
-              <td
-                class="px-3 py-2 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-              >
-                {{ getTertujuEksternal(item)?.alamat || item.alamatPenerima || item.alamat || '-' }}
-              </td>
-              <td
-                class="px-3 py-2 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-              >
-                {{ getTertujuEksternal(item)?.telepon || '-' }}
-              </td>
-              <td
-                class="px-3 py-2 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700"
-              >
-                {{ getTertujuEksternal(item)?.email || item.emailTertuju || item.email || '-' }}
-              </td>
-              <td class="px-3 py-2 text-center border-b border-gray-100 dark:border-gray-700">
-                <UButton
-                  icon="i-lucide-file-text"
-                  color="primary"
-                  variant="soft"
-                  size="xs"
-                  label="Preview"
-                  :loading="isLoadingPdf && previewIndex === idx"
-                  @click="openPreview(idx)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                {{ opt.label }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <div class="relative min-w-0 flex-1">
+          <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari Perihal..."
+            class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+          />
+        </div>
+        <button
+          @click="confirmClearAll"
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          title="Hapus semua"
+        >
+          <UIcon name="i-lucide-trash-2" class="size-5" />
+        </button>
+        <button
+          @click="exportData"
+          :disabled="exporting"
+          class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-400 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <UIcon :name="exporting ? 'i-lucide-loader-2' : 'i-lucide-download'" :class="['size-4', exporting && 'animate-spin']" />
+          Export
+        </button>
       </div>
+
+      <DataTable
+        :columns="columns"
+        :rows="paginatedPenerimaList"
+        :empty-message="'Tidak ada data yang cocok.'"
+      >
+        <template #cell-perihal="{ row }">
+          <p class="max-w-[200px] truncate text-sm font-medium text-gray-900 dark:text-white" :title="row.perihal || '-'">
+            {{ row.perihal || '-' }}
+          </p>
+        </template>
+        <template #cell-tertuju="{ row }">
+          <p class="max-w-[180px] truncate text-sm text-gray-600 dark:text-gray-300" :title="getPenerimaName(row)">
+            {{ getPenerimaName(row) }}
+          </p>
+        </template>
+        <template #cell-email="{ row }">
+          <div class="flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-300">
+            <span v-if="row.emailTertuju" class="truncate" :title="row.emailTertuju">
+              <span class="text-gray-400 dark:text-gray-500">To:</span> {{ row.emailTertuju }}
+            </span>
+            <span v-if="row.emailCc" class="truncate" :title="row.emailCc">
+              <span class="text-gray-400 dark:text-gray-500">CC:</span> {{ row.emailCc }}
+            </span>
+            <span v-if="row.emailBcc" class="truncate" :title="row.emailBcc">
+              <span class="text-gray-400 dark:text-gray-500">BCC:</span> {{ row.emailBcc }}
+            </span>
+            <span v-if="!row.emailTertuju && !row.emailCc && !row.emailBcc" class="text-gray-300 dark:text-gray-600">-</span>
+          </div>
+        </template>
+        <template #cell-status="{ row }">
+          <span :class="statusVerifikasiBadge(row.statusVerifikasi)">{{ statusVerifikasiLabel(row.statusVerifikasi) }}</span>
+        </template>
+        <template #cell-lampiran="{ row }">
+          <div class="flex items-center justify-center">
+            <button
+              v-if="row.lampiran"
+              type="button"
+              class="inline-flex max-w-[180px] items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+              :title="lampiranFileName(row)"
+              @click="viewLampiran(row)"
+            >
+              <UIcon name="i-lucide-paperclip" class="size-3.5 shrink-0" />
+              <span class="truncate">{{ lampiranFileName(row) }}</span>
+            </button>
+            <span v-else class="text-gray-300 dark:text-gray-600">-</span>
+          </div>
+        </template>
+        <template #cell-aksi="{ row, index }">
+          <div class="flex items-center justify-end gap-1">
+            <UButton
+              icon="i-lucide-eye"
+              color="primary"
+              variant="soft"
+              size="xs"
+              title="Lihat"
+              :loading="isLoadingPdf && previewIndex === index"
+              @click="openPreview(index)"
+            />
+            <UButton
+              icon="i-lucide-mail"
+              color="neutral"
+              variant="soft"
+              size="xs"
+              title="Edit Email"
+              @click="openEditEmail(index)"
+            />
+            <UButton
+              icon="i-lucide-paperclip"
+              color="neutral"
+              variant="soft"
+              size="xs"
+              title="Upload Lampiran"
+              @click="openUploadLampiran(index)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="soft"
+              size="xs"
+              title="Hapus"
+              @click="confirmRemoveItem(index)"
+            />
+          </div>
+        </template>
+      </DataTable>
+
+      <!-- Pagination -->
+      <DataPagination
+        v-model:current-page="currentPage"
+        :total-items="filteredPenerimaList.length"
+        :per-page="perPage"
+      />
     </div>
+
+    <!-- Modal Konfirmasi Hapus Semua -->
+    <ConfirmModal
+      v-model="showClearConfirm"
+      title="Hapus Semua Data?"
+      description="Semua data SDE Masal akan dihapus. Tindakan ini tidak dapat dibatalkan."
+      confirm-text="Hapus Semua"
+      cancel-text="Batal"
+      variant="danger"
+      @confirm="doClearAll"
+    />
+
+    <!-- Modal Konfirmasi Hapus Item -->
+    <ConfirmModal
+      v-model="showRemoveItemConfirm"
+      title="Hapus Naskah?"
+      description="Naskah ini akan dihapus dari daftar SDE Masal."
+      confirm-text="Hapus"
+      cancel-text="Batal"
+      variant="danger"
+      @confirm="doRemoveItem"
+    />
 
     <Teleport to="body">
       <div
@@ -460,7 +593,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
 import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
 import { useApi } from '~/composables/useApi';
@@ -470,6 +603,9 @@ import {
   setInternalPositionLookup,
 } from '~/utils/sde-masal-render';
 import TulisDigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModalAsync.vue';
+import DataTable from '~/components/DataTable.vue';
+import DataPagination from '~/components/DataPagination.vue';
+import ConfirmModal from '~/components/ConfirmModal.vue';
 
 const props = defineProps<{
   konsep: SdeMasalConcept | null;
@@ -485,6 +621,11 @@ const emit = defineEmits<{
     e: 'finalize-direct',
     payload: { signOption: 'digsig' | 'qr_only' | 'ttd_basah'; passphrase?: string }
   ): void;
+  (e: 'submit-all'): void;
+  (e: 'clear-data'): void;
+  (e: 'remove-item', index: number): void;
+  (e: 'edit-email', index: number): void;
+  (e: 'upload-lampiran', index: number): void;
 }>();
 
 const showPreview = ref(false);
@@ -584,8 +725,9 @@ const handlePratinjau = async () => {
     formData.append('tembusan_internal', item.tembusanInternal || '');
     formData.append('tembusan', JSON.stringify(item.tembusan ? [item.tembusan] : []));
     formData.append('nama_tempat', user.value?.areaText?.replace('Kantor', '').trim() || 'Tangerang');
-    formData.append('nama_jabatan', user.value?.positionText || '');
-    formData.append('nama_lengkap', user.value?.nama || '');
+    // Penandatangan = pengirim yang dipilih di konsep (bukan user login)
+    formData.append('nama_jabatan', pengirimJabatan.value || user.value?.positionText || '');
+    formData.append('nama_lengkap', pengirimNama.value || user.value?.nama || '');
     if (props.konsep?.tanggalKonsep) formData.append('tgl', props.konsep.tanggalKonsep);
 
     const response = await api.post('/sde-masal/preview-pdf', formData, { responseType: 'blob' });
@@ -661,8 +803,9 @@ const generatePdfFor = async (idx: number) => {
       'nama_tempat',
       user.value?.areaText?.replace('Kantor', '').trim() || 'Tangerang'
     );
-    formData.append('nama_jabatan', user.value?.positionText || '');
-    formData.append('nama_lengkap', user.value?.nama || '');
+    // Penandatangan = pengirim yang dipilih di konsep (bukan user login)
+    formData.append('nama_jabatan', pengirimJabatan.value || user.value?.positionText || '');
+    formData.append('nama_lengkap', pengirimNama.value || user.value?.nama || '');
     if (props.konsep?.tanggalKonsep) {
       formData.append('tgl', props.konsep.tanggalKonsep);
     }
@@ -764,7 +907,22 @@ onMounted(() => {
   fetchTertujuEksternal().catch((error) => {
     console.warn('Gagal memuat master tertuju eksternal untuk daftar penerima SDE Masal', error);
   });
+  document.addEventListener('click', handleDocumentClick);
 });
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick);
+});
+
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  const els = document.querySelectorAll('[data-custom-dropdown]');
+  for (const el of Array.from(els)) {
+    if (el.contains(target)) return;
+  }
+  openRowsPerPage.value = false;
+  openFilterStatus.value = false;
+}
 
 const getTertujuEksternal = (penerima: SdeMasalPenerima) => {
   const raw = String(penerima.idTertuju || penerima.tertuju || '').trim();
@@ -779,6 +937,180 @@ const getTertujuEksternal = (penerima: SdeMasalPenerima) => {
 
 const getPenerimaName = (penerima: SdeMasalPenerima) =>
   getTertujuEksternal(penerima)?.nama || penerima.tertuju || penerima.idTertuju || '-';
+
+// Status verifikasi label + badge
+const statusVerifikasiLabel = (status?: string) =>
+  ({
+    MENUNGGU: 'Menunggu',
+    MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
+    TERVERIFIKASI: 'Terverifikasi',
+    DITOLAK: 'Ditolak',
+    TERKIRIM: 'Terkirim',
+    GAGAL: 'Gagal',
+  })[status || 'MENUNGGU'] || status || 'Menunggu';
+
+const statusVerifikasiBadge = (status?: string) =>
+  ({
+    MENUNGGU: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium',
+    MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium',
+    TERVERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium',
+    DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium',
+    TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium',
+    GAGAL: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium',
+  })[status || 'MENUNGGU'] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium';
+
+// Kolom DataTable
+const columns = [
+  { key: 'perihal', label: 'Perihal' },
+  { key: 'tertuju', label: 'Tertuju' },
+  { key: 'email', label: 'Email', headerClass: 'text-center' },
+  { key: 'status', label: 'Status Verifikasi', headerClass: 'text-center', class: 'text-center' },
+  { key: 'lampiran', label: 'Lampiran', headerClass: 'text-center', class: 'text-center' },
+  { key: 'aksi', label: 'Aksi', headerClass: 'text-center', class: 'text-center' },
+];
+
+// Filter & search
+const searchQuery = ref('');
+const statusFilter = ref('');
+const filteredPenerimaList = computed(() => {
+  let result = props.penerimaList;
+  if (statusFilter.value) {
+    result = result.filter((item) => (item.statusVerifikasi || 'MENUNGGU') === statusFilter.value);
+  }
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.trim().toLowerCase();
+    result = result.filter(
+      (item) =>
+        (item.perihal || '').toLowerCase().includes(q) ||
+        getPenerimaName(item).toLowerCase().includes(q)
+    );
+  }
+  return result;
+});
+
+// Pagination
+const perPage = ref(10);
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredPenerimaList.value.length / perPage.value)));
+const paginatedPenerimaList = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  return filteredPenerimaList.value.slice(start, start + perPage.value);
+});
+
+// Opsi dropdown (USelectMenu)
+const perPageOptions = [
+  { value: 10, label: '10' },
+  { value: 25, label: '25' },
+  { value: 50, label: '50' },
+];
+const statusOptions = [
+  { value: '', label: 'Semua Status' },
+  { value: 'MENUNGGU', label: 'Menunggu' },
+  { value: 'MENUNGGU_VERIFIKASI', label: 'Menunggu Verifikasi' },
+  { value: 'TERVERIFIKASI', label: 'Terverifikasi' },
+  { value: 'DITOLAK', label: 'Ditolak' },
+  { value: 'TERKIRIM', label: 'Terkirim' },
+  { value: 'GAGAL', label: 'Gagal' },
+];
+
+// Custom dropdown state (pola naskah-lainnya)
+const openRowsPerPage = ref(false);
+const openFilterStatus = ref(false);
+const statusLabel = computed(
+  () => statusOptions.find((o) => o.value === statusFilter.value)?.label ?? 'Semua Status'
+);
+function toggleRowsPerPage() {
+  openRowsPerPage.value = !openRowsPerPage.value;
+  openFilterStatus.value = false;
+}
+function toggleFilterStatus() {
+  openFilterStatus.value = !openFilterStatus.value;
+  openRowsPerPage.value = false;
+}
+function selectRowsPerPage(n: number) {
+  perPage.value = n;
+  currentPage.value = 1;
+  openRowsPerPage.value = false;
+}
+function selectFilterStatus(val: string) {
+  statusFilter.value = val;
+  currentPage.value = 1;
+  openFilterStatus.value = false;
+}
+
+// Export CSV
+const exporting = ref(false);
+const exportData = () => {
+  if (!filteredPenerimaList.value.length) return;
+  exporting.value = true;
+  try {
+    const header = ['Perihal', 'Tertuju', 'Status Verifikasi'];
+    const rows = filteredPenerimaList.value.map((item) => [
+      item.perihal || '',
+      getPenerimaName(item),
+      statusVerifikasiLabel(item.statusVerifikasi),
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sde-masal.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  } finally {
+    exporting.value = false;
+  }
+};
+
+// Aksi per item
+const openEditEmail = (idx: number) => emit('edit-email', idx);
+const openUploadLampiran = (idx: number) => emit('upload-lampiran', idx);
+const removeItem = (idx: number) => emit('remove-item', idx);
+
+// Lihat lampiran
+const viewLampiran = (row: any) => {
+  if (row.lampiran) window.open(row.lampiran, '_blank');
+};
+
+// Nama file lampiran (dari key MinIO atau URL presigned)
+const lampiranFileName = (row: any) => {
+  const key = row.lampiranKey || row.lampiran || '';
+  const raw = String(key).split('?')[0];
+  const name = raw.split('/').pop() || '';
+  // Buang prefix timestamp "1788422054100-" agar nama lebih bersih
+  return name.replace(/^\d+-/, '') || 'Lampiran';
+};
+
+// Konfirmasi hapus satu item
+const removeItemIndex = ref<number | null>(null);
+const showRemoveItemConfirm = computed({
+  get: () => removeItemIndex.value !== null,
+  set: (val: boolean) => {
+    if (!val) removeItemIndex.value = null;
+  },
+});
+const confirmRemoveItem = (idx: number) => {
+  removeItemIndex.value = idx;
+};
+const doRemoveItem = () => {
+  if (removeItemIndex.value !== null) {
+    emit('remove-item', removeItemIndex.value);
+  }
+  removeItemIndex.value = null;
+};
+
+// Konfirmasi hapus semua
+const showClearConfirm = ref(false);
+const confirmClearAll = () => {
+  showClearConfirm.value = true;
+};
+const doClearAll = () => {
+  showClearConfirm.value = false;
+  emit('clear-data');
+};
 
 const filteredVerifiers = computed(() => {
   const query = verifierSearch.value.toLowerCase().trim();
@@ -843,10 +1175,6 @@ const saveVerifiers = () => {
 };
 const submitVerifiers = () => {
   saveVerifiers();
-  emit(
-    'submit-verification',
-    selectedVerifiers.value,
-    signOption.value === 'ttd_basah' ? 'ttd_basah' : 'qr_only'
-  );
+  emit('submit-verification', selectedVerifiers.value, 'qr_only');
 };
 </script>

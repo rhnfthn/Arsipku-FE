@@ -66,6 +66,15 @@
               <td class="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formatDate(folder.tanggal || folder.createdAt) }}</td>
               <td class="px-4 py-2.5 text-center">
                 <NuxtLink
+                  v-if="folder.status === 'DRAFT'"
+                  :to="`/korespondensi/tulis/sde-masal?folderId=${folder.id}`"
+                  class="inline-flex items-center justify-center rounded-lg p-2 text-primary-600 transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                  title="Lanjutkan pembuatan SDE Masal"
+                >
+                  <UIcon name="i-lucide-pencil" class="size-4" />
+                </NuxtLink>
+                <NuxtLink
+                  v-else
                   :to="`/korespondensi/sde-masal/folder/${folder.id}`"
                   class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
                   title="Lihat detail"

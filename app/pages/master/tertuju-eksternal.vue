@@ -6,7 +6,7 @@
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
       <button
-        v-if="canCreateTertuju"
+        v-if="canCreateTertuju && activeTab === 'eksternal'"
         @click="openAddModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors"
       >
@@ -15,7 +15,36 @@
       </button>
     </div>
 
+    <!-- Tab Bar: Tertuju Eksternal / Tertuju Internal -->
+    <div class="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1.5 gap-2 w-fit mb-5">
+      <button
+        @click="activeTab = 'eksternal'"
+        :class="[
+          'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+          activeTab === 'eksternal'
+            ? 'bg-primary text-white shadow-lg'
+            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+        ]"
+      >
+        <UIcon name="i-lucide-building-2" class="w-4 h-4" />
+        Tertuju Eksternal
+      </button>
+      <button
+        @click="activeTab = 'internal'"
+        :class="[
+          'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+          activeTab === 'internal'
+            ? 'bg-primary text-white shadow-lg'
+            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+        ]"
+      >
+        <UIcon name="i-lucide-users" class="w-4 h-4" />
+        Tertuju Internal
+      </button>
+    </div>
+
     <div
+      v-if="activeTab === 'eksternal'"
       class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
@@ -354,6 +383,182 @@
       </div>
     </div>
 
+    <!-- ===== TAB: TERTUJU INTERNAL (position dari org_data) ===== -->
+    <div
+      v-else
+      class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
+    >
+      <!-- Top Bar -->
+      <div class="flex flex-wrap gap-2 items-center p-3">
+        <!-- Rows per page (custom dropdown) -->
+        <div class="relative">
+          <button
+            type="button"
+            @click="openInternalRowsDropdown = !openInternalRowsDropdown"
+            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
+          >
+            <span>{{ internalPerPage }}</span>
+            <ChevronDown
+              class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+              :class="{ 'rotate-180': openInternalRowsDropdown }"
+            />
+          </button>
+          <Transition name="filter-dd">
+            <div
+              v-if="openInternalRowsDropdown"
+              class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+            >
+              <button
+                v-for="n in rowsChoices"
+                :key="n"
+                type="button"
+                @click="
+                  internalPerPage = n;
+                  internalPage = 1;
+                  openInternalRowsDropdown = false;
+                "
+                :class="[
+                  'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                  internalPerPage === n
+                    ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                ]"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Refresh -->
+        <button
+          @click="fetchInternal"
+          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
+        >
+          <RotateCcw class="w-4 h-4" />
+        </button>
+
+        <!-- Search -->
+        <div class="relative flex-1 min-w-40">
+          <Search
+            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          />
+          <input
+            v-model="internalSearch"
+            placeholder="Cari jabatan atau nama..."
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+          />
+        </div>
+
+        <!-- Export -->
+        <button
+          @click="onExportInternal"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+        >
+          Export
+        </button>
+      </div>
+
+      <table class="min-w-full text-sm">
+        <thead class="text-left bg-primary-400 dark:bg-primary-700 text-white">
+          <tr>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Position ID
+            </th>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Jabatan
+            </th>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Pejabat
+            </th>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Unit Organisasi
+            </th>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              Area
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="internalLoading">
+            <td colspan="5" class="px-4 py-6">
+              <div class="space-y-4 animate-pulse">
+                <div v-for="n in 5" :key="'sk-int-' + n" class="h-12 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
+              </div>
+            </td>
+          </tr>
+          <tr
+            v-else-if="filteredInternal.length === 0"
+          >
+            <td colspan="5" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+              Tidak ada data posisi internal.
+            </td>
+          </tr>
+          <tr
+            v-else
+            v-for="(item, idx) in paginatedInternal"
+            :key="item.position"
+            class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-b-gray-200 dark:border-b-gray-700"
+          >
+            <td class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span>{{ item.position || '-' }}</span>
+                <button
+                  v-if="item.position"
+                  type="button"
+                  @click="copyKode(String(item.position))"
+                  class="p-1 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  title="Salin Position ID"
+                >
+                  <Check v-if="copiedKode === String(item.position)" class="w-3.5 h-3.5 text-green-500" />
+                  <Copy v-else class="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </td>
+            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
+              {{ item.position_text || '-' }}
+            </td>
+            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
+              {{ item.persnum_person_text || '-' }}
+            </td>
+            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
+              {{ item.organization_text || '-' }}
+            </td>
+            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
+              {{ item.area_text || '-' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination internal -->
+      <div
+        v-if="filteredInternal.length > 0"
+        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
+      >
+        <div class="text-xs text-gray-600 dark:text-gray-400">
+          Menampilkan {{ paginatedInternal.length }} dari {{ filteredInternal.length }} data
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="internalPage = Math.max(1, internalPage - 1)"
+            :disabled="internalPage === 1"
+            class="px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Sebelumnya
+          </button>
+          <span class="text-sm text-gray-700 dark:text-gray-300">{{ internalPage }} / {{ internalTotalPages }}</span>
+          <button
+            @click="internalPage = Math.min(internalTotalPages, internalPage + 1)"
+            :disabled="internalPage === internalTotalPages"
+            class="px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Selanjutnya
+          </button>
+        </div>
+      </div>
+    </div>
+
     <Teleport to="body">
       <Modal
         v-model="showModal"
@@ -554,6 +759,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
 import { useAuth } from '~/composables/useAuth';
+import { useApi } from '~/composables/useApi';
 import Modal from '@/components/Modal.vue';
 import ConfirmPopup from '@/components/ConfirmPopup.vue';
 import { useToast } from '#imports';
@@ -614,6 +820,105 @@ const {
   deleteTertujuEksternal,
   updateTertujuEksternal
 } = useTertujuEksternal();
+
+// ===== Tab state =====
+const activeTab = ref<'eksternal' | 'internal'>('eksternal');
+
+// ===== Tertuju Internal (position dari org_data) =====
+const { apiGet } = useApi();
+const internalData = ref<any[]>([]);
+const internalLoading = ref(false);
+const internalSearch = ref('');
+const internalPage = ref(1);
+const internalPerPage = ref(10);
+const openInternalRowsDropdown = ref(false);
+
+const fetchInternal = async () => {
+  internalLoading.value = true;
+  try {
+    const result: any = await apiGet(
+      `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`,
+      {},
+      { skipCache: true }
+    );
+    const rows = result?.data?.barisData || result?.barisData || [];
+    internalData.value = rows;
+  } catch (err) {
+    console.error('Gagal memuat posisi internal:', err);
+    internalData.value = [];
+  } finally {
+    internalLoading.value = false;
+  }
+};
+
+const filteredInternal = computed(() => {
+  const q = internalSearch.value.trim().toLowerCase();
+  if (!q) return internalData.value;
+  return internalData.value.filter((item) =>
+    [
+      String(item.position ?? ''),
+      item.position_text,
+      item.persnum_person_text,
+      item.organization_text,
+      item.area_text,
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(q)
+  );
+});
+
+const internalTotalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredInternal.value.length / internalPerPage.value))
+);
+
+const paginatedInternal = computed(() => {
+  const start = (internalPage.value - 1) * internalPerPage.value;
+  return filteredInternal.value.slice(start, start + internalPerPage.value);
+});
+
+const onExportInternal = () => {
+  const exportData = filteredInternal.value.map((item, idx) => ({
+    No: idx + 1,
+    'Position ID': item.position ?? '-',
+    Jabatan: item.position_text ?? '-',
+    Pejabat: item.persnum_person_text ?? '-',
+    'Unit Organisasi': item.organization_text ?? '-',
+    Area: item.area_text ?? '-',
+  }));
+
+  if (exportData.length === 0) {
+    showToast('Info', 'Tidak ada data untuk diekspor.', 'warning');
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 14 },
+    { wch: 40 },
+    { wch: 30 },
+    { wch: 30 },
+    { wch: 25 },
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Tertuju Internal');
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  saveAs(blob, `tertuju_internal_${new Date().toISOString().slice(0, 10)}.xlsx`);
+};
+
+watch(activeTab, (tab) => {
+  if (tab === 'internal' && internalData.value.length === 0) {
+    fetchInternal();
+  }
+});
+
+watch(internalSearch, () => {
+  internalPage.value = 1;
+});
 
 // sort
 const handleSort = (column: string) => {
