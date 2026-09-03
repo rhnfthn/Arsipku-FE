@@ -49,6 +49,7 @@ export const useSdeMasal = () => {
     penerimaList: SdeMasalPenerima[];
     signOption: 'digsig' | 'qr_only' | 'ttd_basah';
     passphrase?: string;
+    itemIds?: string[];
   }) => {
     const res: any = await apiPost('/sde-masal/finalize', payload);
     return res?.data ?? null;
@@ -112,6 +113,11 @@ export const useSdeMasal = () => {
 
   const fetchVerificationList = async (): Promise<SdeMasalItem[]> => {
     const res: any = await apiGet('/sde-masal/verification', {}, { skipCache: true });
+    return res?.data ?? [];
+  };
+
+  const fetchVerificationFolders = async (): Promise<any[]> => {
+    const res: any = await apiGet('/sde-masal/verification-folders', {}, { skipCache: true });
     return res?.data ?? [];
   };
 
@@ -445,6 +451,7 @@ export const useSdeMasal = () => {
     generateMassal,
     submitVerification,
     fetchVerificationList,
+    fetchVerificationFolders,
     approveVerification,
     rejectVerification,
     parseExcelLocal,
