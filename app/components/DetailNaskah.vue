@@ -17,7 +17,6 @@ import {
   Edit3,
   Send,
   Users,
-  Building2,
   Mail,
   ChevronLeft,
   ChevronRight,
@@ -28,7 +27,6 @@ import {
   Tag,
   Loader2,
   ArrowDownCircle,
-  Layers,
 } from 'lucide-vue-next';
 
 // Tambah prop
@@ -1351,24 +1349,6 @@ const removeNote = () => {
               >
                 <Users class="w-4 h-4" />
                 <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Internal</span>
-              </div>
-
-              <div
-                v-if="hasAccess(['SDE'])"
-                @click="emit('lanjut-sde')"
-                class="flex bg-sky-600 hover:bg-sky-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
-              >
-                <Building2 class="w-4 h-4" />
-                <span class="text-sm font-medium whitespace-nowrap">Lanjut Surat Eksternal</span>
-              </div>
-
-              <div
-                v-if="hasAccess(['SDE'])"
-                @click="emit('lanjut-sde-massal')"
-                class="flex bg-indigo-600 hover:bg-indigo-700 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
-              >
-                <Layers class="w-4 h-4" />
-                <span class="text-sm font-medium whitespace-nowrap">Lanjut SDE Massal</span>
               </div>
 
               <div

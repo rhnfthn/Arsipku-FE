@@ -114,6 +114,11 @@
                 </th>
                 <th class="px-4 py-3 text-left">{{ t('ka_nama') }}</th>
                 <th class="px-4 py-3 text-left">{{ t('ka_deskripsi') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('ka_retensi_aktif') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('ka_retensi_inaktif') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('ka_penyusutan') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('ka_keamanan') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('ka_hak_akses') }}</th>
                 <th class="px-4 py-3 text-center">{{ t('aksi') }}</th>
               </tr>
             </thead>
@@ -121,7 +126,7 @@
             <tbody>
               <!-- LOADING - Skeleton -->
               <tr v-if="loading">
-                <td colspan="4" class="px-4 py-6">
+                <td colspan="9" class="px-4 py-6">
                   <div class="space-y-4 animate-pulse">
                     <div
                       v-for="n in skeletonRows"
@@ -134,7 +139,7 @@
 
               <!-- EMPTY -->
               <tr v-else-if="klasifikasiList.length === 0">
-                <td colspan="4" class="py-6 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="9" class="py-6 text-center text-gray-500 dark:text-gray-400">
                   {{ t('ka_empty') }}
                 </td>
               </tr>
@@ -163,8 +168,38 @@
 
                 <td
                   class="px-4 py-3 text-gray-600 dark:text-gray-300"
-                  v-html="highlight(row.deskripsi ?? '-', search)"
-                ></td>
+                >
+                  <span
+                    class="line-clamp-5"
+                    v-html="highlight(row.deskripsi ?? '-', search)"
+                  ></span>
+                </td>
+
+                <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                  {{ row.retensi_aktif_tahun ?? '-' }}
+                </td>
+
+                <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                  {{ row.retensi_inaktif_tahun ?? '-' }}
+                </td>
+
+                <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                  {{ row.penyusutan ?? '-' }}
+                </td>
+
+                <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                  {{ row.keamanan ?? '-' }}
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                  <span
+                    v-if="row.hak_akses"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-700/20 dark:text-red-200"
+                  >
+                    {{ row.hak_akses }}
+                  </span>
+                  <span v-else class="text-gray-400 dark:text-gray-500">-</span>
+                </td>
 
                 <td class="px-4 py-3">
                   <div class="flex justify-center gap-3">
@@ -459,6 +494,99 @@
               </p>
             </div>
 
+            <!-- RETENSI AKTIF & INAKTIF -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('ka_retensi_aktif') }} <span class="text-red-500">*</span>
+                </Heading>
+                <input
+                  v-model="addForm.retensi_aktif_tahun"
+                  type="number"
+                  min="0"
+                  :placeholder="'0'"
+                  :class="[
+                    'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    addFormErrors.retensi_aktif_tahun
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  ]"
+                  @input="addFormErrors.retensi_aktif_tahun = false"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('ka_retensi_inaktif') }} <span class="text-red-500">*</span>
+                </Heading>
+                <input
+                  v-model="addForm.retensi_inaktif_tahun"
+                  type="number"
+                  min="0"
+                  :placeholder="'0'"
+                  :class="[
+                    'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                    addFormErrors.retensi_inaktif_tahun
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                  ]"
+                  @input="addFormErrors.retensi_inaktif_tahun = false"
+                />
+              </div>
+            </div>
+
+            <!-- PENYUSUTAN -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_penyusutan') }} <span class="text-red-500">*</span>
+              </Heading>
+              <select
+                v-model="addForm.penyusutan"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                  addFormErrors.penyusutan
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @change="addFormErrors.penyusutan = false"
+              >
+                <option value="Musnah">Musnah</option>
+                <option value="Permanen">Permanen</option>
+              </select>
+            </div>
+
+            <!-- KEAMANAN -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_keamanan') }}
+              </Heading>
+              <select
+                v-model="addForm.keamanan"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option value="">{{ t('ka_keamanan_placeholder') }}</option>
+                <option value="Terbuka">Terbuka</option>
+                <option value="Terbatas">Terbatas</option>
+                <option value="Rahasia">Rahasia</option>
+                <option value="Sangat Rahasia">Sangat Rahasia</option>
+              </select>
+            </div>
+
+            <!-- HAK AKSES -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_hak_akses') }}
+              </Heading>
+              <select
+                v-model="addForm.hak_akses"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option value="">{{ t('ka_hak_akses_placeholder') }}</option>
+                <option value="BOD-1">BOD-1</option>
+                <option value="BOD-2">BOD-2</option>
+                <option value="Pengawas Internal">Pengawas Internal</option>
+              </select>
+            </div>
+
             <!-- LOADING INFO -->
             <p v-if="savingAdd" class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('ka_saving') }}
@@ -538,6 +666,81 @@
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 {{ t('ka_deskripsi_hint') }}
               </p>
+            </div>
+
+            <!-- RETENSI AKTIF & INAKTIF -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('ka_retensi_aktif') }}
+                </Heading>
+                <input
+                  v-model="editForm.retensi_aktif_tahun"
+                  type="number"
+                  min="0"
+                  :placeholder="'0'"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  {{ t('ka_retensi_inaktif') }}
+                </Heading>
+                <input
+                  v-model="editForm.retensi_inaktif_tahun"
+                  type="number"
+                  min="0"
+                  :placeholder="'0'"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                />
+              </div>
+            </div>
+
+            <!-- PENYUSUTAN -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_penyusutan') }}
+              </Heading>
+              <select
+                v-model="editForm.penyusutan"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option value="Musnah">Musnah</option>
+                <option value="Permanen">Permanen</option>
+              </select>
+            </div>
+
+            <!-- KEAMANAN -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_keamanan') }}
+              </Heading>
+              <select
+                v-model="editForm.keamanan"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option value="">{{ t('ka_keamanan_placeholder') }}</option>
+                <option value="Terbuka">Terbuka</option>
+                <option value="Terbatas">Terbatas</option>
+                <option value="Rahasia">Rahasia</option>
+                <option value="Sangat Rahasia">Sangat Rahasia</option>
+              </select>
+            </div>
+
+            <!-- HAK AKSES -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_hak_akses') }}
+              </Heading>
+              <select
+                v-model="editForm.hak_akses"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option value="">{{ t('ka_hak_akses_placeholder') }}</option>
+                <option value="BOD-1">BOD-1</option>
+                <option value="BOD-2">BOD-2</option>
+                <option value="Pengawas Internal">Pengawas Internal</option>
+              </select>
             </div>
           </div>
           <p v-if="savingEdit" class="text-xs text-gray-500 dark:text-gray-400">
@@ -685,14 +888,22 @@ const savingAdd = ref(false);
 const addForm = ref({
   klasifikasi: '',
   klasifikasi_text: '',
-  deskripsi: ''
+  deskripsi: '',
+  retensi_aktif_tahun: 1 as number | null,
+  retensi_inaktif_tahun: 1 as number | null,
+  penyusutan: 'Permanen',
+  keamanan: '',
+  hak_akses: ''
 });
 
 const addErrors = ref<Record<string, string>>({});
 
 const addFormErrors = ref({
   klasifikasi: false,
-  klasifikasi_text: false
+  klasifikasi_text: false,
+  retensi_aktif_tahun: false,
+  retensi_inaktif_tahun: false,
+  penyusutan: false
 });
 
 const openAddModal = () => {
@@ -702,17 +913,44 @@ const openAddModal = () => {
 
 const resetAddForm = () => {
   addErrors.value = {};
-  addForm.value = { klasifikasi: '', klasifikasi_text: '', deskripsi: '' };
-  addFormErrors.value = { klasifikasi: false, klasifikasi_text: false };
+  addForm.value = {
+    klasifikasi: '',
+    klasifikasi_text: '',
+    deskripsi: '',
+    retensi_aktif_tahun: 1,
+    retensi_inaktif_tahun: 1,
+    penyusutan: 'Permanen',
+    keamanan: '',
+    hak_akses: ''
+  };
+  addFormErrors.value = {
+    klasifikasi: false,
+    klasifikasi_text: false,
+    retensi_aktif_tahun: false,
+    retensi_inaktif_tahun: false,
+    penyusutan: false
+  };
 };
 
 const validateAdd = () => {
   addFormErrors.value.klasifikasi = !addForm.value.klasifikasi.trim();
   addFormErrors.value.klasifikasi_text = !addForm.value.klasifikasi_text.trim();
+  addFormErrors.value.retensi_aktif_tahun =
+    addForm.value.retensi_aktif_tahun === null ||
+    addForm.value.retensi_aktif_tahun === undefined ||
+    addForm.value.retensi_aktif_tahun === '';
+  addFormErrors.value.retensi_inaktif_tahun =
+    addForm.value.retensi_inaktif_tahun === null ||
+    addForm.value.retensi_inaktif_tahun === undefined ||
+    addForm.value.retensi_inaktif_tahun === '';
+  addFormErrors.value.penyusutan = !addForm.value.penyusutan;
 
   const emptyFields: string[] = [];
   if (addFormErrors.value.klasifikasi) emptyFields.push(t('ka_kode'));
   if (addFormErrors.value.klasifikasi_text) emptyFields.push(t('ka_nama'));
+  if (addFormErrors.value.retensi_aktif_tahun) emptyFields.push(t('ka_retensi_aktif'));
+  if (addFormErrors.value.retensi_inaktif_tahun) emptyFields.push(t('ka_retensi_inaktif'));
+  if (addFormErrors.value.penyusutan) emptyFields.push(t('ka_penyusutan'));
 
   if (emptyFields.length > 0) {
     showToast({
@@ -735,7 +973,12 @@ const submitAddKlasifikasi = async () => {
       company: '10000',
       klasifikasi: addForm.value.klasifikasi,
       klasifikasi_text: addForm.value.klasifikasi_text,
-      deskripsi: addForm.value.deskripsi || null
+      deskripsi: addForm.value.deskripsi || null,
+      retensi_aktif_tahun: addForm.value.retensi_aktif_tahun,
+      retensi_inaktif_tahun: addForm.value.retensi_inaktif_tahun,
+      penyusutan: addForm.value.penyusutan || 'Permanen',
+      keamanan: addForm.value.keamanan || null,
+      hak_akses: addForm.value.hak_akses || null
     });
     showAddModal.value = false;
     await fetchKlasifikasi();
@@ -768,7 +1011,12 @@ const editId = ref<string | null>(null);
 const editForm = ref({
   klasifikasi: '',
   klasifikasi_text: '',
-  deskripsi: ''
+  deskripsi: '',
+  retensi_aktif_tahun: null as number | null,
+  retensi_inaktif_tahun: null as number | null,
+  penyusutan: 'Permanen',
+  keamanan: '',
+  hak_akses: ''
 });
 
 const editErrors = ref<Record<string, string>>({});
@@ -805,13 +1053,27 @@ const onEdit = async (row: Klasifikasi) => {
     editErrors.value = {};
     editFormErrors.value = { klasifikasi: false, klasifikasi_text: false };
     editId.value = row.id;
-    editForm.value = { klasifikasi: '', klasifikasi_text: '', deskripsi: '' };
+    editForm.value = {
+      klasifikasi: '',
+      klasifikasi_text: '',
+      deskripsi: '',
+      retensi_aktif_tahun: null,
+      retensi_inaktif_tahun: null,
+      penyusutan: 'Permanen',
+      keamanan: '',
+      hak_akses: ''
+    };
 
     const res = await getKlasifikasiDetail(row.id);
     const data = (res as any).data ?? res;
     editForm.value.klasifikasi = data.klasifikasi || '';
     editForm.value.klasifikasi_text = data.klasifikasi_text || '';
     editForm.value.deskripsi = data.deskripsi || '';
+    editForm.value.retensi_aktif_tahun = data.retensi_aktif_tahun ?? null;
+    editForm.value.retensi_inaktif_tahun = data.retensi_inaktif_tahun ?? null;
+    editForm.value.penyusutan = data.penyusutan || 'Permanen';
+    editForm.value.keamanan = data.keamanan || '';
+    editForm.value.hak_akses = data.hak_akses || '';
   } catch (e) {
     console.error('Gagal ambil data edit klasifikasi:', e);
     alert('Gagal memuat data edit');
@@ -829,7 +1091,12 @@ const submitEditKlasifikasi = async () => {
       company: '10000',
       klasifikasi: editForm.value.klasifikasi,
       klasifikasi_text: editForm.value.klasifikasi_text,
-      deskripsi: editForm.value.deskripsi || null
+      deskripsi: editForm.value.deskripsi || null,
+      retensi_aktif_tahun: editForm.value.retensi_aktif_tahun,
+      retensi_inaktif_tahun: editForm.value.retensi_inaktif_tahun,
+      penyusutan: editForm.value.penyusutan || 'Permanen',
+      keamanan: editForm.value.keamanan || null,
+      hak_akses: editForm.value.hak_akses || null
     });
     showEditModal.value = false;
     editId.value = null;
