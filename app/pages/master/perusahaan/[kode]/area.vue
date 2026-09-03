@@ -617,26 +617,6 @@
         </template>
 
         <div class="space-y-4 p-1">
-          <!-- Nama -->
-          <div>
-            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
-              {{ activeTab === 'area' ? t('ar_form_nama_area') : t('ar_form_nama_subarea') }}
-              <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="formArea.nama"
-              type="text"
-              :placeholder="t('ar_form_nama_placeholder')"
-              :class="[
-                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
-                formErrors.nama
-                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-              ]"
-              @input="formErrors.nama = false"
-            />
-          </div>
-
           <!-- Kode -->
           <div>
             <Heading variant="heading11m" class="text-xs dark:text-gray-300">
@@ -654,6 +634,26 @@
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
               @input="formErrors.kode = false"
+            />
+          </div>
+
+          <!-- Nama -->
+          <div>
+            <Heading variant="heading11m" class="text-xs dark:text-gray-300">
+              {{ activeTab === 'area' ? t('ar_form_nama_area') : t('ar_form_nama_subarea') }}
+              <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="formArea.nama"
+              type="text"
+              :placeholder="t('ar_form_nama_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                formErrors.nama
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.nama = false"
             />
           </div>
 
@@ -1221,9 +1221,42 @@ const getSubAreasForArea = (areaKode: string) => {
 };
 
 // ─── MODAL OPEN ───────────────────────────────
+// Generate next area code (A000, A001, ... A999, A1000, ...) per company.
+const generateNextAreaCode = () => {
+  let max = -1;
+  for (const a of areas.value) {
+    const m = String(a.kode || '').match(/^A(\d+)$/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  return 'A' + String(max + 1).padStart(3, '0');
+};
+
+// Generate next sub area code (1001, 1002, ...) per company.
+const generateNextSubAreaCode = () => {
+  let max = 1000;
+  for (const s of subAreas.value) {
+    const n = parseInt(String(s.kode), 10);
+    if (!isNaN(n) && n > max) max = n;
+  }
+  return String(max + 1);
+};
+
 const openAddAreaModal = () => {
   isEditing.value = false;
-  formArea.value = { nama: '', kode: '', area: '', alamat: '', mulai: '', berakhir: '' };
+  formArea.value = {
+    nama: '',
+    kode:
+      activeTab.value === 'area'
+        ? generateNextAreaCode()
+        : generateNextSubAreaCode(),
+    area: '',
+    alamat: '',
+    mulai: new Date().toISOString().slice(0, 10),
+    berakhir: '9999-12-31'
+  };
   formErrors.value = {
     nama: false,
     kode: false,
