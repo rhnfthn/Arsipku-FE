@@ -233,6 +233,16 @@ const ensureInternalPositionLookup = async () => {
 };
 let internalPositionLookupLoaded = false;
 
+// Pengirim (penandatangan) dari konsep — format "Nama - Jabatan"
+const pengirimParts = computed(() =>
+  (props.konsep?.pengirimName || '')
+    .split(' - ')
+    .map((part) => part.trim())
+    .filter(Boolean)
+);
+const pengirimNama = computed(() => pengirimParts.value[0] || '');
+const pengirimJabatan = computed(() => pengirimParts.value.slice(1).join(' - ') || '');
+
 const previewIdx = ref<number | null>(null);
 const isLoadingPdf = ref(false);
 const pdfUrl = ref<string | null>(null);
@@ -338,8 +348,9 @@ const generatePdfFor = async (idx: number) => {
       'nama_tempat',
       user.value?.areaText?.replace('Kantor', '').trim() || 'Tangerang'
     );
-    formData.append('nama_jabatan', user.value?.positionText || '');
-    formData.append('nama_lengkap', user.value?.nama || '');
+    // Penandatangan = pengirim yang dipilih di konsep (bukan user login)
+    formData.append('nama_jabatan', pengirimJabatan.value || user.value?.positionText || '');
+    formData.append('nama_lengkap', pengirimNama.value || user.value?.nama || '');
     if (props.konsep?.tanggalKonsep) {
       formData.append('tgl', props.konsep.tanggalKonsep);
     }
