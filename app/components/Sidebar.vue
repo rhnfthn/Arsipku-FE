@@ -393,7 +393,9 @@ const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 const canAccessSdeMasalPenyusunan = computed(() => {
-  const tag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  const tag = String(user.value?.bodTag ?? '')
+    .trim()
+    .toUpperCase();
   return ['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
 });
 
@@ -809,6 +811,7 @@ const userMenuUtilitas = computed(() => {
         {
           label: 'Kirim Email',
           to: '/layanan-email',
+          exact: true,
           permission: { resource: 'layanan-email', action: 'read' },
         },
         {
@@ -1041,6 +1044,7 @@ const adminMenuUtilitas = computed(() => {
         {
           label: 'Kirim Email',
           to: '/layanan-email',
+          exact: true,
           permission: { resource: 'layanan-email', action: 'read' },
         },
         {
