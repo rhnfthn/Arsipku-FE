@@ -395,6 +395,10 @@ const generatePdfFor = async (idx: number) => {
 const getValue = (item: SdeMasalPenerima, column: string) => {
   if (column === 'perihal') return item.perihal || '';
   if (column === 'tertuju') return item.tertuju || item.idTertuju || '';
+  if (column === 'lampiran') {
+    if (Array.isArray(item.lampiran)) return item.lampiran.map((ref) => ref.fileName).join(', ');
+    return item.lampiran || item.variables?.lampiran || '';
+  }
   if (column === 'tembusan') return item.tembusan || item.variables?.tembusan || '';
   const key = column.toLowerCase();
   // Cek variables dulu (key lowercase dari Excel), lalu field langsung di item

@@ -173,18 +173,17 @@
           <span :class="statusVerifikasiBadge(row.statusVerifikasi)">{{ statusVerifikasiLabel(row.statusVerifikasi) }}</span>
         </template>
         <template #cell-lampiran="{ row }">
-          <div class="flex items-center justify-center">
-            <button
-              v-if="row.lampiran"
-              type="button"
-              class="inline-flex max-w-[180px] items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
-              :title="lampiranFileName(row)"
-              @click="viewLampiran(row)"
-            >
-              <UIcon name="i-lucide-paperclip" class="size-3.5 shrink-0" />
-              <span class="truncate">{{ lampiranFileName(row) }}</span>
-            </button>
-            <span v-else class="text-gray-300 dark:text-gray-600">-</span>
+          <div class="flex max-w-[220px] flex-col items-center gap-1">
+            <UButton
+              v-if="attachmentRefs(row).length"
+              :label="`${attachmentRefs(row).length} Lampiran`"
+              icon="i-lucide-paperclip"
+              color="primary"
+              variant="soft"
+              size="xs"
+              @click="openAttachmentManager(row)"
+            />
+            <span v-if="attachmentRefs(row).length === 0" class="text-gray-300 dark:text-gray-600">-</span>
           </div>
         </template>
         <template #cell-aksi="{ row, index }">
@@ -205,14 +204,6 @@
               size="xs"
               title="Edit Email"
               @click="openEditEmail(index)"
-            />
-            <UButton
-              icon="i-lucide-paperclip"
-              color="neutral"
-              variant="soft"
-              size="xs"
-              title="Upload Lampiran"
-              @click="openUploadLampiran(index)"
             />
             <UButton
               icon="i-lucide-trash-2"
@@ -255,6 +246,36 @@
       variant="danger"
       @confirm="doRemoveItem"
     />
+
+    <!-- Modal pengelolaan lampiran per penerima -->
+    <Teleport to="body">
+      <div v-if="attachmentManagerRow" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px]" @click="closeAttachmentManager" />
+        <div class="relative w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-xl dark:bg-gray-800">
+          <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lampiran Penerima</h3>
+            <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="closeAttachmentManager" />
+          </div>
+          <div class="space-y-3 p-6">
+            <div
+              v-for="(attachment, attachmentIndex) in managedAttachments"
+              :key="`${attachment.key}-${attachmentIndex}`"
+              class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-gray-700"
+            >
+              <UIcon name="i-lucide-file-text" class="size-5 shrink-0 text-primary-500" />
+              <span class="min-w-0 flex-1 truncate text-sm text-gray-700 dark:text-gray-200">{{ attachment.fileName }}</span>
+              <UButton label="Preview" icon="i-lucide-eye" color="primary" variant="soft" size="xs" @click="viewLampiran(attachmentManagerRow, attachment, attachmentIndex)" />
+              <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs" title="Hapus lampiran" @click="removeManagedAttachment(attachmentIndex)" />
+            </div>
+            <p v-if="managedAttachments.length === 0" class="text-sm text-gray-500 dark:text-gray-400">Belum ada lampiran.</p>
+          </div>
+          <div class="flex justify-end gap-2 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+            <UButton label="Tambah / Ganti Lampiran" icon="i-lucide-upload" color="primary" variant="soft" @click="replaceManagedAttachment" />
+            <UButton label="Tutup" color="neutral" variant="outline" @click="closeAttachmentManager" />
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <Teleport to="body">
       <div
@@ -485,13 +506,13 @@
       <div class="flex items-center justify-end gap-3">
         <UButton
           v-if="!isPembuatPenandatangan"
-          label="Submit ke Verifikator"
+          label="Kirim"
           color="primary"
           size="lg"
-          icon="i-lucide-shield-check"
+          icon="i-lucide-send"
           class="font-bold"
           :loading="generating"
-          @click="openVerificationSelection"
+          @click="emit('send-to-signer')"
         />
         <UButton
           v-if="isPembuatPenandatangan"
@@ -616,6 +637,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
+  (e: 'send-to-signer'): void;
   (e: 'submit-verification', verifikators: any[], signOption: 'qr_only' | 'ttd_basah'): void;
   (
     e: 'finalize-direct',
@@ -729,6 +751,13 @@ const handlePratinjau = async () => {
     formData.append('nama_jabatan', pengirimJabatan.value || user.value?.positionText || '');
     formData.append('nama_lengkap', pengirimNama.value || user.value?.nama || '');
     if (props.konsep?.tanggalKonsep) formData.append('tgl', props.konsep.tanggalKonsep);
+    const previewAttachments = attachmentRefs(item);
+    if (previewAttachments.length > 0) {
+      formData.append(
+        'lampiran_direct_refs',
+        JSON.stringify(previewAttachments.map(({ fileName, key }) => ({ fileName, key })))
+      );
+    }
 
     const response = await api.post('/sde-masal/preview-pdf', formData, { responseType: 'blob' });
     const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -808,6 +837,13 @@ const generatePdfFor = async (idx: number) => {
     formData.append('nama_lengkap', pengirimNama.value || user.value?.nama || '');
     if (props.konsep?.tanggalKonsep) {
       formData.append('tgl', props.konsep.tanggalKonsep);
+    }
+    const previewAttachments = attachmentRefs(item);
+    if (previewAttachments.length > 0) {
+      formData.append(
+        'lampiran_direct_refs',
+        JSON.stringify(previewAttachments.map(({ fileName, key }) => ({ fileName, key })))
+      );
     }
 
     const response = await api.post('/sde-masal/preview-pdf', formData, {
@@ -1070,18 +1106,62 @@ const openEditEmail = (idx: number) => emit('edit-email', idx);
 const openUploadLampiran = (idx: number) => emit('upload-lampiran', idx);
 const removeItem = (idx: number) => emit('remove-item', idx);
 
-// Lihat lampiran
-const viewLampiran = (row: any) => {
-  if (row.lampiran) window.open(row.lampiran, '_blank');
+const attachmentManagerRow = ref<SdeMasalPenerima | null>(null);
+const managedAttachments = computed(() => attachmentManagerRow.value ? attachmentRefs(attachmentManagerRow.value) : []);
+
+const openAttachmentManager = (row: SdeMasalPenerima) => {
+  attachmentManagerRow.value = row;
 };
 
-// Nama file lampiran (dari key MinIO atau URL presigned)
-const lampiranFileName = (row: any) => {
-  const key = row.lampiranKey || row.lampiran || '';
+const closeAttachmentManager = () => {
+  attachmentManagerRow.value = null;
+};
+
+const removeManagedAttachment = (index: number) => {
+  const row = attachmentManagerRow.value;
+  if (!row) return;
+  row.lampiran = managedAttachments.value.filter((_, attachmentIndex) => attachmentIndex !== index);
+  toast.add({ title: 'Lampiran dihapus', color: 'success' });
+};
+
+const replaceManagedAttachment = () => {
+  const row = attachmentManagerRow.value;
+  if (!row) return;
+  const index = props.penerimaList.indexOf(row);
+  closeAttachmentManager();
+  if (index >= 0) openUploadLampiran(index);
+};
+
+// Lihat lampiran
+const attachmentRefs = (row: any): Array<{ fileName: string; key: string; url?: string }> => {
+  if (Array.isArray(row?.lampiran)) return row.lampiran;
+  if (typeof row?.lampiran === 'string') {
+    try {
+      const parsed = JSON.parse(row.lampiran);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Legacy scalar key/URL.
+    }
+  }
+  const key = row?.lampiranKey || (typeof row?.lampiran === 'string' ? row.lampiran : '');
+  if (!key) return [];
   const raw = String(key).split('?')[0];
-  const name = raw.split('/').pop() || '';
-  // Buang prefix timestamp "1788422054100-" agar nama lebih bersih
-  return name.replace(/^\d+-/, '') || 'Lampiran';
+  return [{ fileName: raw.split('/').pop() || 'Lampiran', key, url: row?.lampiranKey ? row.lampiran : undefined }];
+};
+
+const viewLampiran = async (row: any, attachment: { key: string; url?: string }, index: number) => {
+  if (attachment.url) {
+    window.open(attachment.url, '_blank');
+    return;
+  }
+  try {
+    const response = await api.get(`/sde-masal/${row.id}/lampiran/${index}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(response.data);
+    window.open(url, '_blank');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (error) {
+    console.error('Gagal membuka lampiran SDE Masal', error);
+  }
 };
 
 // Konfirmasi hapus satu item
