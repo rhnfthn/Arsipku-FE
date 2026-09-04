@@ -1,7 +1,5 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <AccessDenied v-if="!canAccessPage()" />
-<div v-else>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
       <!-- Left Section - Title & Breadcrumb -->
       <PageHeader :title="$t('tertuju')" :items="items" />
@@ -729,12 +727,10 @@
       @confirm="confirmDelete"
       @cancel="showConfirmDelete = false"
     />
-    </div>
   </div>
 </template>
 
-<script setup lang="ts">const { canAccessPage } = useFeatureAccess()
-
+<script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue';
 import {
   Search,

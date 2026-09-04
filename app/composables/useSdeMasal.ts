@@ -9,6 +9,7 @@ import type {
   SdeMasalTemplate,
   SdeMasalFolder,
   SdeMasalFolderItem,
+  SdeMasalAttachmentRef,
 } from '~/types/sde-masal';
 
 /**
@@ -52,6 +53,20 @@ export const useSdeMasal = () => {
     itemIds?: string[];
   }) => {
     const res: any = await apiPost('/sde-masal/finalize', payload);
+    return res?.data ?? null;
+  };
+
+  const sendToSigner = async (folderId: string, ids: string[]) => {
+    const res: any = await apiPost('/sde-masal/submit-verification', {
+      folderId,
+      ids,
+      sendToSigner: true,
+    });
+    return res?.data ?? null;
+  };
+
+  const rejectFolder = async (folderId: string, reason: string) => {
+    const res: any = await apiPost(`/sde-masal/folder/${folderId}/reject`, { reason });
     return res?.data ?? null;
   };
 
@@ -238,6 +253,7 @@ export const useSdeMasal = () => {
       const emailTertuju = getCol(row, 'email_tertuju', 'emailTertuju');
       const emailCc = getCol(row, 'email_cc', 'emailCc');
       const emailBcc = getCol(row, 'email_bcc', 'emailBcc');
+      const lampiran = getCol(row, 'lampiran', 'Lampiran');
 
       // Field skema keuangan / tagihan PINP
       const jumlahTagihanIdr = getCol(row, 'jumlah_tagihan_idr', 'jumlahTagihanIdr');
@@ -275,6 +291,7 @@ export const useSdeMasal = () => {
         !emailTertuju &&
         !emailCc &&
         !emailBcc &&
+        !lampiran &&
         !jumlahTagihanIdr &&
         !jumlahTagihanUsd &&
         !namaCro &&
@@ -329,6 +346,7 @@ export const useSdeMasal = () => {
         emailTertuju: emailTertuju || '',
         emailCc: emailCc || '',
         emailBcc: emailBcc || '',
+        lampiran: lampiran || null,
         jumlahTagihanIdr: jumlahTagihanIdr || '',
         jumlahTagihanUsd: jumlahTagihanUsd || '',
         namaCro: namaCro || '',
@@ -436,6 +454,32 @@ export const useSdeMasal = () => {
     return res?.data ?? null;
   };
 
+  const prepareMassAttachments = async (
+    folderId: string,
+    file: File,
+    requestedFileNames: string[]
+  ) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('requestedFileNames', JSON.stringify(requestedFileNames));
+    const res: any = await apiPost(
+      `/sde-masal/folder/${folderId}/lampiran-masal/prepare`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return res?.data ?? null;
+  };
+
+  const commitMassAttachments = async (
+    folderId: string,
+    items: Array<{ itemId: string; attachments: SdeMasalAttachmentRef[] }>
+  ) => {
+    const res: any = await apiPost(`/sde-masal/folder/${folderId}/lampiran-masal/commit`, {
+      items,
+    });
+    return res?.data ?? null;
+  };
+
   return {
     items,
     summary,
@@ -446,6 +490,8 @@ export const useSdeMasal = () => {
     updateFolder,
     fetchFolders,
     finalizeDirect,
+    sendToSigner,
+    rejectFolder,
     findNaskahInFolder,
     downloadTemplate,
     generateMassal,
@@ -462,5 +508,7 @@ export const useSdeMasal = () => {
     updateItem,
     deleteItem,
     uploadLampiran,
+    prepareMassAttachments,
+    commitMassAttachments,
   };
 };
