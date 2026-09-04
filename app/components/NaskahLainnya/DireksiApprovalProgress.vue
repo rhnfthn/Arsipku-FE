@@ -18,9 +18,38 @@
           </div>
           <div class="min-w-0">
             <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-              {{ d.nama || '-' }}
+              {{ displayName(d) }}
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ d.jabatan || '-' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {{ displayPosition(d) }}
+            </p>
+            <div
+              v-if="d.delegatePersnum && isLegal && d.status === 'waiting'"
+              class="mt-1 inline-flex items-center gap-2 text-xs font-medium"
+            >
+              <button
+                type="button"
+                class="text-primary-600 hover:underline dark:text-primary-400"
+                @click="$emit('editDelegate', d)"
+              >
+                Ubah delegasi
+              </button>
+              <button
+                type="button"
+                class="text-red-500 hover:underline"
+                @click="$emit('removeDelegate', d)"
+              >
+                Hapus
+              </button>
+            </div>
+            <button
+              v-else-if="isLegal && d.status === 'waiting'"
+              type="button"
+              class="inline-flex items-center gap-1 mt-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+              @click="$emit('addDelegate', d)"
+            >
+              <UIcon name="i-lucide-plus" class="w-3 h-3" /> Tambah Delegate
+            </button>
             <p v-if="d.catatan" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               <span class="font-medium">Catatan:</span> {{ d.catatan }}
             </p>
@@ -30,21 +59,23 @@
         <div class="flex flex-wrap items-center gap-2">
           <StatusBadge :status="d.status || 'pending'" />
 
-          <template v-if="d.status === 'waiting' && canApprove">
+          <template
+            v-if="d.status === 'waiting' && canApprove && (!canApproveItem || canApproveItem(d))"
+          >
             <UButton
-              size="xs"
-              color="success"
-              icon="i-lucide-check"
+              color="primary"
+              icon="i-lucide-pen-line"
+              class="font-semibold shadow-sm shadow-primary-500/20"
               :loading="busy"
               @click="$emit('paraf', d)"
             >
-              Paraf
+              {{ parafLabel || 'Paraf' }}
             </UButton>
             <UButton
-              size="xs"
               color="error"
-              variant="outline"
+              variant="soft"
               icon="i-lucide-x"
+              class="font-semibold"
               :loading="busy"
               @click="$emit('tolak', d)"
             >
@@ -64,15 +95,33 @@
 <script setup lang="ts">
 import type { DirectorApprovalItem } from '~/types/naskah-lainnya';
 
+function displayName(director: DirectorApprovalItem) {
+  return director.delegateName?.trim() || director.nama || '-';
+}
+
+function displayPosition(director: DirectorApprovalItem) {
+  const position = director.jabatan?.trim() || '-';
+  const status = director.delegatePositionStatus?.trim();
+  if (!director.delegateName?.trim() || !status || position === '-') return position;
+  return new RegExp(`^${status}\\.?\\s+`, 'i').test(position) ? position : `${status}. ${position}`;
+}
+
 defineProps<{
   directors: DirectorApprovalItem[];
   isCurrentUserApprover?: boolean;
   canApprove?: boolean;
+  canApproveItem?: (item: DirectorApprovalItem) => boolean;
   busy?: boolean;
+  // Label aksi dapat diringkas oleh halaman pemakai (mis. "Setuju").
+  parafLabel?: string;
+  isLegal?: boolean;
 }>();
 
 defineEmits<{
   (e: 'paraf', item: DirectorApprovalItem): void;
   (e: 'tolak', item: DirectorApprovalItem): void;
+  (e: 'addDelegate', item: DirectorApprovalItem): void;
+  (e: 'editDelegate', item: DirectorApprovalItem): void;
+  (e: 'removeDelegate', item: DirectorApprovalItem): void;
 }>();
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white text-black p-8 md:p-12 font-['Times_New_Roman'] text-[14px] leading-relaxed min-h-[800px]">
+  <div class="bg-white text-black p-8 md:p-12 font-['Times_New_Roman'] text-[14px] leading-relaxed min-h-[1123px]">
     <!-- Kop Surat -->
     <div class="flex items-end pb-4 mb-6 border-b-2 border-black">
       <div class="flex items-end gap-4">
@@ -57,32 +57,21 @@
       <div>{{ alamatPenerima }}</div>
     </div>
 
-    <!-- Isi Surat -->
-    <div class="text-justify text-[14px] mb-8" v-html="renderedContent" />
-
-    <!-- Tanda Tangan -->
-    <div class="flex mt-12 text-black">
-      <div class="text-left min-w-[250px]">
-        <div class="font-bold">{{ jabatanSigner }}</div>
-        <div class="h-24 flex items-center">[TTD]</div>
-        <div class="font-bold underline">{{ namaSigner }}</div>
-      </div>
-    </div>
-
-    <!-- Tembusan -->
-    <div v-if="tembusanList.length > 0" class="mt-8 text-[12px]">
-      <div class="font-bold underline mb-1">Tembusan :</div>
-      <ol class="list-decimal ml-4 pl-2">
-        <li v-for="(t, idx) in tembusanList" :key="idx">{{ tembusanLabel(t) }}</li>
-      </ol>
-    </div>
+    <!-- Isi Surat (template dirender utuh, termasuk tanda tangan & tembusan) -->
+    <div class="text-justify text-[14px]" v-html="renderedContent" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useAuth } from '~/composables/useAuth';
 import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
+import { useApi } from '~/composables/useApi';
+import {
+  renderSdeMasalKonten,
+  setTertujuEksternalLookup,
+  setInternalPositionLookup,
+} from '~/utils/sde-masal-render';
 import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
 
 const props = defineProps<{
@@ -94,12 +83,27 @@ const props = defineProps<{
 
 const { user } = useAuth();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
+// Trigger reaktif: naikkan nilainya setelah lookup posisi internal dimuat
+const internalLookupVersion = ref(0);
 
 onMounted(async () => {
   try {
     await fetchTertujuEksternal();
+    setTertujuEksternalLookup(tertujuEksternal.value);
   } catch (error) {
     console.warn('Gagal memuat master tertuju eksternal untuk preview surat SDE Masal', error);
+  }
+  // Muat posisi internal untuk resolve tembusan internal (position ID → jabatan)
+  try {
+    const { apiGet } = useApi();
+    const result: any = await apiGet(
+      `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`
+    );
+    const rows = result?.data?.barisData || result?.barisData || [];
+    setInternalPositionLookup(rows);
+    internalLookupVersion.value++;
+  } catch {
+    /* gagal load → fallback tampilkan kode position */
   }
 });
 
@@ -165,93 +169,15 @@ const alamatPenerima = computed(() => {
   return p.alamatPenerima || p.alamat || selectedTertujuEksternal.value?.alamat || 'Di tempat';
 });
 
-const jabatanSigner = computed(() => {
-  const p = selectedPenerima.value;
-  if (p?.jabatanSigner) return p.jabatanSigner;
-  return '[JABATAN_SIGNER]';
-});
-
-const namaSigner = computed(() => {
-  const p = selectedPenerima.value;
-  if (p?.namaSigner) return p.namaSigner;
-  return '[NAMA_SIGNER]';
-});
-
-const tembusanList = computed(() => {
-  const p = selectedPenerima.value;
-  const raw = p?.tembusan || '';
-  if (!raw) return [];
-  return raw
-    .split(/[;,\n]/)
-    .map((t) => t.trim())
-    .filter(Boolean);
-});
-
-const tembusanLabel = (value: string) => {
-  const tertuju = findTertujuEksternal(value);
-  if (tertuju) return tertuju.nama;
-  return value.replace(/^\s*\d+\s*(?:—|-)\s*/, '').trim();
-};
-
 const renderedContent = computed(() => {
-  const p = selectedPenerima.value;
-  let html = props.template?.konten || '<p>(Konten kosong)</p>';
-  if (!p) return html;
-
-  // Tanda tangan dan tembusan selalu ditampilkan oleh blok preview di bawah.
-  // Buang footer dari konten template agar tidak tampil dua kali.
-  const footerMarkers = [
-    html.search(/<p[^>]*>\s*a\.n\s+Direktur Utama/i),
-    html.indexOf('{{jabatan_signer}}'),
-    html.indexOf('{{nama_signer}}'),
-    html.indexOf('{{tembusan}}'),
-    html.indexOf('{{tembusan_1}}'),
-    html.indexOf('{{tembusan_2}}'),
-    html.search(/<p[^>]*>\s*Tembusan\s*:/i),
-  ].filter((index) => index >= 0);
-  if (footerMarkers.length > 0) {
-    const marker = Math.min(...footerMarkers);
-    const paragraphStart = html.lastIndexOf('<p', marker);
-    html = html.slice(0, paragraphStart >= 0 ? paragraphStart : marker);
-  }
-
-  const nama = p.nama || '';
-  const jabatan = p.jabatan || p.jabatanPenerima || '';
-  const tertuju = recipientCompanyName.value || p.idTertuju || p.tertuju || (nama && jabatan ? `${nama} - ${jabatan}` : nama || jabatan || '-');
-
-  return html
-    .replace(/\{\{tertuju\}\}/g, tertuju)
-    .replace(/\{\{nama\}\}/g, nama || '-')
-    .replace(/\{\{jabatan\}\}/g, jabatan || '-')
-    .replace(/\{\{persnum\}\}/g, p.persnum || p.kodePos || '-')
-    .replace(/\{\{keterangan\}\}/g, p.keterangan || '-')
-    .replace(/\{\{alamat\}\}/g, p.alamat || '-')
-    .replace(/\{\{kota\}\}/g, p.kota || '-')
-    .replace(/\{\{kode_pos\}\}/g, p.kodePos || '-')
-    .replace(/\{\{kodepos\}\}/g, p.kodePos || '-')
-    .replace(/\{\{perihal\}\}/g, p.perihal || props.konsep?.perihal || '-')
-    .replace(/\{\{id_tertuju\}\}/g, recipientCompanyName.value || p.idTertuju || '-')
-    .replace(/\{\{email\}\}/g, p.email || '-')
-    .replace(/\{\{tembusan\}\}/g, p.tembusan || '-')
-    .replace(/\{\{email_tertuju\}\}/g, p.emailTertuju || '-')
-    .replace(/\{\{email_cc\}\}/g, p.emailCc || '-')
-    .replace(/\{\{email_bcc\}\}/g, p.emailBcc || '-')
-    .replace(/\{\{jumlah_tagihan_idr\}\}/g, p.jumlahTagihanIdr || '-')
-    .replace(/\{\{jumlah_tagihan_usd\}\}/g, p.jumlahTagihanUsd || '-')
-    .replace(/\{\{nama_cro\}\}/g, p.namaCro || '-')
-    .replace(/\{\{email_cro\}\}/g, p.emailCro || '-')
-    .replace(/\{\{jabatan_signer\}\}/g, p.jabatanSigner || '-')
-    .replace(/\{\{nama_signer\}\}/g, p.namaSigner || '-')
-    .replace(/\{\{tanggal_surat\}\}/g, props.konsep?.tanggalKonsep ? new Date(props.konsep.tanggalKonsep).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Tanggal Surat]')
-    .replace(/\{\{nomor_surat\}\}/g, '[Nomor Surat]')
-    .replace(/\{\{sifat_surat\}\}/g, props.konsep?.sifat || 'Biasa')
-    .replace(/\{\{jumlah_lampiran\}\}/g, p.jumlahLampiran || '-')
-    .replace(/\{\{jabatan_penerima\}\}/g, p.jabatanPenerima || '-')
-    .replace(/\{\{alamat_penerima\}\}/g, p.alamatPenerima || p.alamat || 'Di tempat')
-    .replace(/\{\{panggilan_penerima\}\}/g, p.panggilanPenerima || 'Bapak/Ibu')
-    .replace(/\{\{nominal_rupiah\}\}/g, p.nominalRupiah || '-')
-    .replace(/\{\{nominal_dolar\}\}/g, p.nominalDolar || '-')
-    .replace(/\{\{tembusan_1\}\}/g, p.tembusan1 || (p.tembusan ? p.tembusan.split(';')[0] : '-'))
-    .replace(/\{\{tembusan_2\}\}/g, p.tembusan2 || (p.tembusan ? p.tembusan.split(';')[1] || '-' : '-'));
+  // internalLookupVersion: trigger reaktif agar konten dirender ulang
+  // setelah data posisi internal selesai dimuat.
+  void internalLookupVersion.value;
+  return renderSdeMasalKonten(
+    props.template?.konten || '',
+    selectedPenerima.value,
+    props.konsep,
+    recipientCompanyName.value,
+  );
 });
 </script>

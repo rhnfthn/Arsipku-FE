@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-4">
-    <PageHeader title="Legal Drafting" :items="breadcrumbs" />
+    <PageHeader title="Legal" :items="breadcrumbs" />
 
     <!-- Table Card (pola berkas-saya: toolbar + DataTable + DataPagination) -->
     <div
@@ -258,7 +258,7 @@
           >
         </template>
         <template #cell-perihal="{ row }">
-          <div class="text-sm text-gray-700 dark:text-gray-300">{{ row.perihal }}</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</div>
         </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge :status="row.tahapan" />
@@ -326,7 +326,7 @@ function normalizeFilterStatus(value: unknown): LegalDraftingFilter {
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('naskah_lainnya'), to: '/naskah-lainnya' },
-  { label: 'Legal Drafting', to: '#' },
+  { label: 'Legal', to: '#' },
 ]);
 
 const search = ref('');
@@ -366,7 +366,7 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   evaluasi: 'Evaluasi',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal',
+  blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
   tanda_tangan_legal: 'TTD Legal',
   tanda_tangan_pejabat: 'TTD Pejabat',
   tanda_tangan: 'Menunggu Tanda Tangan',
@@ -427,10 +427,11 @@ const columns = [
   { key: 'nomor', label: 'Nomor', sortable: true },
   { key: 'jenis', label: 'Jenis', sortable: true },
   { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
+  { key: 'konseptor', label: 'Konseptor', sortable: true },
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
-  { key: 'aksi', label: '' },
+  { key: 'aksi', label: 'Aksi' },
 ];
 
 // ── Custom Dropdown Toolbar State ──
@@ -513,7 +514,7 @@ const filteredRows = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return rows;
   return rows.filter((r) =>
-    [r.nomor, r.perihal, r.pemrakarsa.nama].some((v) =>
+    [r.nomor, r.perihal, r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama].some((v) =>
       String(v ?? '')
         .toLowerCase()
         .includes(q)
@@ -526,7 +527,8 @@ const displayRows = computed(() =>
     id: r.id,
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
-    pemrakarsa: r.pemrakarsa.nama,
+    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
+    konseptor: r.pemrakarsa.nama,
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     statusLegal: r.statusLegal ?? '',
@@ -568,6 +570,10 @@ function handleSort(key: string) {
 function openAction(row: any) {
   const n = legalDrafting.value.find((i) => i.id === row.id);
   if (!n) return;
+  if (n.tahapan === 'blanko_verbal') {
+    navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);
+    return;
+  }
   if (n.tahapan === 'legal_drafting' && n.statusLegal === 'menunggu_persetujuan') {
     navigateTo(`/naskah-lainnya/${n.id}/persetujuan?tahap=legal_drafting`);
     return;

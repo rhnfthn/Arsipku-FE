@@ -5,9 +5,10 @@ import type {
   SdeMasalItem,
   SdeMasalFilter,
   SdeMasalSummary,
-  SdeMasalUploadResult,
   SdeMasalPenerima,
   SdeMasalTemplate,
+  SdeMasalFolder,
+  SdeMasalFolderItem,
 } from '~/types/sde-masal';
 
 /**
@@ -23,31 +24,41 @@ export const useSdeMasal = () => {
   const error = ref<string | null>(null);
   const meta = ref<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
 
-  /**
-   * Simpan konsep SDE Masal (Step 1).
-   */
-  const saveConcept = async (data: SdeMasalConcept) => {
-    const res: any = await apiPost('/sde-masal/concept', data);
+  const createFolder = async (data: Record<string, any>): Promise<SdeMasalFolder | null> => {
+    const res: any = await apiPost('/sde-masal/folder', data);
     return res?.data ?? null;
   };
 
-  /**
-   * Upload Excel (Step 2).
-   */
-  const uploadExcel = async (
-    file: File,
-    conceptId: string,
-    skemaTemplate: string,
-    versiTemplate: string
-  ): Promise<SdeMasalUploadResult | null> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('conceptId', conceptId);
-    formData.append('skemaTemplate', skemaTemplate);
-    formData.append('versiTemplate', versiTemplate);
+  const updateFolder = async (
+    folderId: string,
+    data: Record<string, any>
+  ): Promise<SdeMasalFolder | null> => {
+    const res: any = await apiPatch(`/sde-masal/folder/${folderId}`, data);
+    return res?.data ?? null;
+  };
 
-    const formDataConfig = { headers: { 'Content-Type': 'multipart/form-data' } };
-    const res: any = await apiPost('/sde-masal/upload', formData, formDataConfig);
+  const fetchFolders = async (filter: Record<string, any> = {}) => {
+    const params = Object.fromEntries(
+      Object.entries(filter).filter(([, value]) => value !== '' && value != null)
+    );
+    return apiGet<any>('/sde-masal/folders', { params }, { skipCache: true });
+  };
+
+  const finalizeDirect = async (payload: {
+    folderId: string;
+    penerimaList: SdeMasalPenerima[];
+    signOption: 'digsig' | 'qr_only' | 'ttd_basah';
+    passphrase?: string;
+    itemIds?: string[];
+  }) => {
+    const res: any = await apiPost('/sde-masal/finalize', payload);
+    return res?.data ?? null;
+  };
+
+  const findNaskahInFolder = async (
+    folderId: string
+  ): Promise<{ folder: SdeMasalFolder; items: SdeMasalFolderItem[] } | null> => {
+    const res: any = await apiGet(`/sde-masal/folder/${folderId}/naskah`, {}, { skipCache: true });
     return res?.data ?? null;
   };
 
@@ -86,22 +97,12 @@ export const useSdeMasal = () => {
    * Mengirim seluruh data wizard ke backend untuk diproses.
    */
   const generateMassal = async (payload: {
-    conceptId?: string;
+    folderId?: string;
     konsep: SdeMasalConcept;
     penerimaList: SdeMasalPenerima[];
     template: SdeMasalTemplate;
   }) => {
     const res: any = await apiPost('/sde-masal/generate', payload);
-    return res?.data ?? null;
-  };
-
-  /**
-   * Generate naskah SDE individual per penerima.
-   * Memanggil backend untuk membuat naskah + sirkulasi per item.
-   * Body: { ids?: string[] } — jika kosong, proses semua yang MENUNGGU.
-   */
-  const generateNaskah = async (ids?: string[]) => {
-    const res: any = await apiPost('/sde-masal/generate-naskah', { ids });
     return res?.data ?? null;
   };
 
@@ -112,6 +113,11 @@ export const useSdeMasal = () => {
 
   const fetchVerificationList = async (): Promise<SdeMasalItem[]> => {
     const res: any = await apiGet('/sde-masal/verification', {}, { skipCache: true });
+    return res?.data ?? [];
+  };
+
+  const fetchVerificationFolders = async (): Promise<any[]> => {
+    const res: any = await apiGet('/sde-masal/verification-folders', {}, { skipCache: true });
     return res?.data ?? [];
   };
 
@@ -137,20 +143,25 @@ export const useSdeMasal = () => {
   ): Promise<SdeMasalPenerima[]> => {
     const XLSX = await import('xlsx');
     const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
 
     // Cari sheet "Data Penerima", fallback ke sheet pertama
     const sheetName =
       workbook.SheetNames.find((n) => n.toLowerCase().includes('data penerima')) ||
       workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+    // raw: false → kembalikan nilai sebagai teks terformat (seperti tampil di Excel).
+    // Ini mencegah "119,117" diinterpretasikan sebagai angka 119117 (koma = pemisah ribuan).
+    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null, raw: false });
 
     // Header harus mengikuti skema template yang dipilih. Validasi dilakukan
     // sebelum mapping data agar file Keuangan tidak dapat dipakai untuk Umum,
     // maupun sebaliknya.
     const headerRow = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, range: 0 })[0] || [];
-    const normalizeHeader = (value: unknown) => String(value ?? '').trim().toLowerCase();
+    const normalizeHeader = (value: unknown) =>
+      String(value ?? '')
+        .trim()
+        .toLowerCase();
     const availableHeaders = new Set(headerRow.map(normalizeHeader).filter(Boolean));
     const missingColumns = expectedColumns.filter(
       (column) => !availableHeaders.has(normalizeHeader(column))
@@ -173,6 +184,36 @@ export const useSdeMasal = () => {
       return '';
     };
 
+    // Excel menyimpan "119;117" sebagai angka 119117 (koma = pemisah ribuan).
+    // Kode eksternal = 3 digit, position ID internal = 8 digit (70xxxxxx).
+    // Jika angka 6 digit (2 kode eksternal digabung, mis 119117), chunk per 3.
+    // Jika angka 8 digit (position ID internal), JANGAN di-chunk.
+    // Pemisah antar kode = titik koma (;).
+    const reformatInternalTembusan = (value: string): string => {
+      let raw = String(value || '').trim();
+      if (!raw) return raw;
+      // Koma dari format ribuan Excel ("70,016,742" → "70016742") dibuang.
+      // Pola: koma di antara digit murni = pemisah ribuan, bukan pemisah kode.
+      if (/^\d{1,3}(,\d{3})+$/.test(raw)) {
+        raw = raw.replace(/,/g, '');
+      }
+      // Jika sudah ada titik koma, asumsikan sudah terformat dengan benar
+      if (raw.includes(';')) return raw;
+      // Jika ada koma sebagai pemisah kode (bukan format ribuan), ganti ke titik koma
+      if (raw.includes(','))
+        return raw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(';');
+      // Jika angka 6 digit (2 kode eksternal 3-digit digabung), chunk per 3
+      if (/^\d{6}$/.test(raw)) {
+        return raw.replace(/(\d{3})(?=\d)/g, '$1;');
+      }
+      // Position ID internal (8 digit, mis 70016742) — JANGAN di-chunk
+      return raw;
+    };
+
     const result: SdeMasalPenerima[] = [];
     let no = 0;
     rows.forEach((row) => {
@@ -181,6 +222,18 @@ export const useSdeMasal = () => {
       const idTertuju = getCol(row, 'id_tertuju', 'idTertuju');
       const email = getCol(row, 'email', 'Email');
       const tembusan = getCol(row, 'tembusan', 'Tembusan');
+      const tembusanInternal = getCol(
+        row,
+        'tembusan_internal',
+        'tembusanInternal',
+        'Tembusan Internal'
+      );
+      const tembusanEksternal = getCol(
+        row,
+        'tembusan_eksternal',
+        'tembusanEksternal',
+        'Tembusan Eksternal'
+      );
       const isRevisionRaw = getCol(row, 'is_revision', 'isRevision');
       const emailTertuju = getCol(row, 'email_tertuju', 'emailTertuju');
       const emailCc = getCol(row, 'email_cc', 'emailCc');
@@ -217,6 +270,8 @@ export const useSdeMasal = () => {
         !idTertuju &&
         !email &&
         !tembusan &&
+        !tembusanInternal &&
+        !tembusanEksternal &&
         !emailTertuju &&
         !emailCc &&
         !emailBcc &&
@@ -243,6 +298,11 @@ export const useSdeMasal = () => {
         return;
       }
 
+      // Skip baris tanpa perihal DAN tanpa tertuju/idTertuju — baris kosong/contoh
+      if (!perihalRow && !tertujuRow && !idTertuju) {
+        return;
+      }
+
       no++;
       // Validasi: Perihal wajib
       const isValid = !!perihalRow && !!tertujuRow && isTemplateValid;
@@ -263,6 +323,8 @@ export const useSdeMasal = () => {
         idTertuju: idTertuju || '',
         email: email || '',
         tembusan: tembusan || '',
+        tembusanInternal: reformatInternalTembusan(tembusanInternal),
+        tembusanEksternal: tembusanEksternal || '',
         isRevision,
         emailTertuju: emailTertuju || '',
         emailCc: emailCc || '',
@@ -380,13 +442,16 @@ export const useSdeMasal = () => {
     loading,
     error,
     meta,
-    saveConcept,
-    uploadExcel,
+    createFolder,
+    updateFolder,
+    fetchFolders,
+    finalizeDirect,
+    findNaskahInFolder,
     downloadTemplate,
     generateMassal,
-    generateNaskah,
     submitVerification,
     fetchVerificationList,
+    fetchVerificationFolders,
     approveVerification,
     rejectVerification,
     parseExcelLocal,

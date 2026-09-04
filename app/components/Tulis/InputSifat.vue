@@ -2,7 +2,7 @@
   <div
     class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
     <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
-      {{ $t('f_sifat') }}
+      {{ $t('f_sifat') }}<span v-if="required" class="text-red-500 ml-0.5">*</span>
     </span>
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu v-model="selected" :items="sifatOptions" :placeholder="$t('f_pilih_sifat')" class="w-full p-0"
@@ -29,6 +29,10 @@ const props = defineProps({
   modelValue: {
     type: [Object, String, null] as any,
     default: null
+  },
+  required: {
+    type: Boolean,
+    default: false
   }
 })
 

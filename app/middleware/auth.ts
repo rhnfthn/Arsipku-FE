@@ -42,7 +42,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const { user, getProfile } = useAuth();
   if (!user.value) {
-    await getProfile();
+    try {
+      await getProfile();
+    } catch {
+      // Jika getProfile gagal (token expired, network error, dll),
+      // redirect ke login di client-side.
+      if (process.server) return navigateTo('/');
+      return navigateTo('/', { replace: true });
+    }
   }
 
   const role = user.value?.role ?? roleCookie.value ?? null;

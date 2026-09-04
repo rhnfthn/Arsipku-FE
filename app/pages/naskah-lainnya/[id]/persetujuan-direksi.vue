@@ -1,12 +1,19 @@
 <template>
   <div class="space-y-5">
-    <PageHeader :items="breadcrumbs">
+    <PageHeader :items="breadcrumbs" :back-to="`/naskah-lainnya/${id}`">
       <template #title>
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           {{ detail?.perihal || 'Memuat…' }}
         </h1>
       </template>
     </PageHeader>
+
+    <TemplateDireksiSelector
+      v-if="detail && canEditSheet"
+      :model-value="selectedTemplate"
+      :disabled="templateLocked"
+      @update:model-value="changeTemplate"
+    />
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -16,37 +23,23 @@
     <div v-else-if="!detail" class="py-20 text-center text-gray-500">Naskah tidak ditemukan.</div>
 
     <template v-else>
-      <!-- LoadingOverlay for async actions (preview, kirim, paraf, tolak) -->
+      <!-- LoadingOverlay for async actions (kirim, paraf, tolak) -->
       <LoadingOverlay :loading="busy" :message="busyMessage" />
 
       <!-- Banner mode: susun lembar (edit) vs menunggu paraf direksi (read-only) -->
-      <div
-        class="flex items-start gap-3 rounded-xl border px-4 py-3.5"
-        :class="
-          canEditSheet
-            ? 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30'
-            : 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30'
-        "
-      >
+      <div class="flex items-start gap-3 rounded-xl border px-4 py-3.5" :class="pdBanner.card">
         <span
           class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm"
-          :class="canEditSheet ? 'bg-primary-500' : 'bg-violet-500'"
+          :class="pdBanner.wrap"
         >
-          <UIcon
-            :name="canEditSheet ? 'i-lucide-file-pen-line' : 'i-lucide-stamp'"
-            class="size-5"
-          />
+          <UIcon :name="pdBanner.icon" class="size-5" />
         </span>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-bold text-gray-900 dark:text-white">
-            {{ canEditSheet ? 'Susun Lembar Persetujuan Direksi' : 'Menunggu Paraf Direksi' }}
+            {{ pdBanner.title }}
           </p>
           <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
-            {{
-              canEditSheet
-                ? 'Lengkapi data lembar di bawah, tinjau pratinjau PDF, lalu kirim ke direksi untuk diparaf.'
-                : `${parafDone}/${pdDirectors.length} direksi telah memaraf${nextDirector ? ' — giliran ' + nextDirector.nama + '.' : '.'}`
-            }}
+            {{ pdBanner.desc }}
           </p>
         </div>
       </div>
@@ -79,6 +72,23 @@
               </div>
             </div>
 
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center w-full">
+                <span
+                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+                  >Jabatan</span
+                >
+                <input
+                  type="text"
+                  v-model="sheet.jabatanDiusulkan"
+                  class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+                  placeholder="Jabatan pemrakarsa"
+                />
+              </div>
+            </div>
+
             <div class="py-3 border-b border-gray-200 dark:border-gray-600">
               <DirectorOrderSelector
                 v-model="sheet.ditetapkanOleh"
@@ -97,23 +107,6 @@
                 placeholder="Pilih direksi paraf"
                 :recipients="selectableDirectors"
               />
-            </div>
-
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
-            >
-              <div class="flex flex-col sm:flex-row sm:items-center w-full">
-                <span
-                  class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
-                  >Jabatan</span
-                >
-                <input
-                  type="text"
-                  v-model="sheet.jabatanDiusulkan"
-                  class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                  placeholder="Jabatan pemrakarsa"
-                />
-              </div>
             </div>
 
             <div
@@ -224,12 +217,26 @@
 
           <!-- ── Inline paper preview ── -->
           <ClientOnly>
-            <div class="mt-6 overflow-x-auto">
-              <LembarPersetujuanDireksiTemplate
-                v-model="sheet"
-                :directors="bodDirectors"
-                :read-only="!canEditSheet"
-              />
+            <div class="mt-6">
+              <div class="flex items-center gap-2 mb-3">
+                <UIcon
+                  name="i-lucide-file-text"
+                  class="size-4 text-primary-600 dark:text-primary-400"
+                />
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  Pratinjau Lembar Persetujuan Direksi
+                </h3>
+              </div>
+              <div
+                class="rounded-xl border border-primary-200 bg-primary-50/40 p-4 dark:border-primary-900/50 dark:bg-primary-950/20 overflow-x-auto"
+              >
+                <LembarPersetujuanDireksiTemplate
+                  v-model="sheet"
+                  :directors="bodDirectors"
+                  :signed-directors="pdSignedDirectors"
+                  :read-only="!canEditSheet"
+                />
+              </div>
             </div>
           </ClientOnly>
 
@@ -256,9 +263,15 @@
                     :directors="pdDitetapkanDirectors"
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
+                    :can-approve-item="canApproveDirector"
                     :busy="busy"
+                    paraf-label="Setuju"
+                    :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
                 <div v-if="pdDiketahuiDirectors.length" class="space-y-2">
@@ -271,100 +284,111 @@
                     :directors="pdDiketahuiDirectors"
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
+                    :can-approve-item="canApproveDirector"
                     :busy="busy"
+                    paraf-label="Setuju"
+                    :is-legal="isLegalRole"
                     @paraf="openParafModal"
                     @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
                   />
                 </div>
               </div>
             </div>
           </template>
 
-          <!-- ── Action bar ── -->
-          <div
-            class="flex flex-col gap-3 border-t border-gray-100 py-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{
-                canEditSheet
-                  ? 'Tinjau pratinjau PDF terlebih dahulu, lalu kirim lembar ke direksi untuk diparaf.'
-                  : 'Lembar sedang menunggu proses paraf direksi.'
-              }}
-            </p>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <UButton
-                label="Preview PDF"
-                color="primary"
-                size="lg"
-                icon="i-lucide-eye"
-                :loading="busy"
-                @click="previewPdf"
-              />
+          <!-- ── Aksi (selaras dengan Blanko Verbal) ── -->
+          <div class="mt-2 rounded-xl bg-primary-50/50 px-4 py-4 dark:bg-primary-900/10 sm:px-5">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex items-start gap-3">
+                <span
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 shadow-sm dark:bg-primary-900/40 dark:text-primary-400"
+                >
+                  <UIcon :name="aksiLembar.icon" class="size-5" />
+                </span>
+                <div>
+                  <h3 class="font-semibold text-gray-900 dark:text-white">
+                    {{ aksiLembar.title }}
+                  </h3>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ aksiLembar.desc }}
+                  </p>
+                </div>
+              </div>
+              <div v-if="canEditSheet" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <UButton
+                  label="Kirim Lembar Persetujuan Direksi"
+                  color="primary"
+                  size="lg"
+                  icon="i-lucide-send"
+                  class="w-full justify-center font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
+                  :loading="busy && busyMessage === 'Mengirim lembar persetujuan direksi…'"
+                  :disabled="busy"
+                  @click="openKirim"
+                />
+              </div>
             </div>
           </div>
         </div>
       </UCard>
 
-      <!-- ── Preview PDF Slideover (bottom) ── -->
-      <USlideover
-        v-model:open="pdfModalOpen"
-        title="Pratinjau"
-        description="Pratinjau lembar persetujuan direksi"
-        side="bottom"
-        :dismissible="true"
-        :ui="{
-          content: 'h-screen max-h-screen',
-          body: 'p-0',
-          footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-          wrapper: 'z-50',
-        }"
-      >
-        <template #body>
-          <div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-            <iframe
-              v-if="pdfUrl"
-              :src="pdfUrl"
-              class="w-full h-full rounded-lg shadow-lg border border-gray-200"
-            />
-            <div v-else class="flex flex-col items-center gap-2">
-              <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 text-primary-500" />
-              <span class="text-gray-500">Memuat pratinjau…</span>
-            </div>
-          </div>
-        </template>
-        <template #footer>
-          <div class="flex gap-4 w-full">
-            <UButton
-              v-if="canEditSheet"
-              label="Kirim Lembar Persetujuan Direksi"
-              color="primary"
-              size="lg"
-              icon="i-heroicons-paper-airplane"
-              class="px-8 font-bold"
-              :loading="busy"
-              @click="kirimSheet"
-            />
-          </div>
-        </template>
-      </USlideover>
+      <!-- ── Kirim Modal (selaras dengan Blanko Verbal) ── -->
+      <VerifyActionModal
+        v-model="showKirimModal"
+        variant="approve"
+        title="Kirim Lembar Persetujuan Direksi"
+        description="Lembar persetujuan direksi akan dikirim ke kelompok Diketahui Oleh untuk approval berurutan."
+        :require-note="false"
+        note-placeholder="Catatan opsional…"
+        confirm-label="Kirim Lembar Persetujuan Direksi"
+        :saving="busy"
+        @confirm="kirimSheet"
+      />
 
       <!-- ── Paraf Modal ── -->
       <VerifyActionModal
         v-model="parafModalOpen"
         variant="approve"
-        title="Paraf Lembar Persetujuan Direksi"
-        :description="`Anda akan memberikan paraf sebagai <strong>${activeDirector?.nama || '-'}</strong>.`"
+        title="Setuju"
+        description="Anda akan menyetujui lembar persetujuan direksi atas nama pejabat berikut."
         note-placeholder="Catatan opsional…"
-        confirm-label="Paraf"
+        confirm-label="Setuju"
         :saving="busy"
         @confirm="confirmParaf"
-      />
+      >
+        <template #highlight>
+          <div
+            class="flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 dark:border-primary-800 dark:bg-primary-900/20"
+          >
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm"
+            >
+              <UIcon name="i-lucide-user-check" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p
+                class="text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400"
+              >
+                {{ activeDirector?.roleLabel || 'Penandatangan' }}
+              </p>
+              <p class="truncate text-base font-bold text-gray-950 dark:text-white">
+                {{ activeDirector?.nama || '-' }}
+              </p>
+              <p class="truncate text-sm font-medium text-gray-600 dark:text-gray-300">
+                {{ activeDirector?.jabatan || '-' }}
+              </p>
+            </div>
+          </div>
+        </template>
+      </VerifyActionModal>
 
       <!-- ── Tolak Modal ── -->
       <VerifyActionModal
         v-model="tolakModalOpen"
         variant="reject"
-        title="Tolak Lembar Persetujuan Direksi"
+        title="Tolak"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
         note-placeholder="Alasan penolakan (minimal 5 karakter)…"
@@ -375,6 +399,19 @@
         @confirm="confirmTolak"
       />
     </template>
+
+    <DelegateDireksiPickerModal
+      v-if="delegasiTarget"
+      v-model:open="delegasiModalOpen"
+      :naskah-id="id"
+      :approval-id="delegasiTarget.approvalId ?? ''"
+      :company-id="companyId"
+      :mode="delegasiMode"
+      :current-delegate-name="delegasiTarget.delegateName"
+      :current-delegate-persnum="delegasiTarget.delegatePersnum"
+      :current-position-status="delegasiTarget.delegatePositionStatus ?? 'PT'"
+      @saved="onDelegasiSaved"
+    />
   </div>
 </template>
 
@@ -384,6 +421,8 @@ import { CalendarDate } from '@internationalized/date';
 import LembarPersetujuanDireksiTemplate from '~/components/NaskahLainnya/LembarPersetujuanDireksiTemplate.vue';
 import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelector.vue';
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
+import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
+import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
@@ -391,7 +430,7 @@ definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const id = computed(() => route.params.id as string);
-const { user } = useAuth();
+const { user, isLegalRole } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -399,17 +438,17 @@ const {
   detail,
   fetchDetail,
   fetchBodDirectors,
-  previewLembarPersetujuanDireksi,
   kirimLembarPersetujuanDireksi,
   parafLembarPersetujuanDireksi,
   tolakLembarPersetujuanDireksi,
+  removeDelegasiDireksi,
 } = useNaskahLainnya();
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('naskah_lainnya'), to: '/naskah-lainnya' },
   { label: detail.value?.perihal || 'Detail', to: `/naskah-lainnya/${id.value}` },
-  { label: 'Persetujuan Direksi', to: '#' },
+  { label: 'Blanko Verbal', to: '#' },
 ]);
 
 const maxPerihal = 200;
@@ -420,12 +459,43 @@ const busyMessage = ref('');
 const catatan = ref('');
 const bodDirectors = ref<DirectorApprovalItem[]>([]);
 
-const pdfModalOpen = ref(false);
-const pdfUrl = ref('');
+const showKirimModal = ref(false);
+const selectedTemplate = ref<'blanko_verbal' | 'lembar_persetujuan_direksi'>(
+  'lembar_persetujuan_direksi'
+);
 
 const parafModalOpen = ref(false);
 const tolakModalOpen = ref(false);
 const activeDirector = ref<DirectorApprovalItem | null>(null);
+
+const delegasiModalOpen = ref(false);
+const delegasiTarget = ref<DirectorApprovalItem | null>(null);
+const delegasiMode = ref<'add' | 'edit'>('add');
+const companyId = computed(() => detail.value?.companyId ?? '');
+
+function openAddDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'add';
+  delegasiModalOpen.value = true;
+}
+function openEditDelegate(d: DirectorApprovalItem) {
+  delegasiTarget.value = d;
+  delegasiMode.value = 'edit';
+  delegasiModalOpen.value = true;
+}
+async function removeDelegate(d: DirectorApprovalItem) {
+  if (!d.approvalId) return;
+  try {
+    await removeDelegasiDireksi(id.value, d.approvalId);
+    await fetchDetail(id.value);
+    toast.add({ title: 'Delegate dihapus', color: 'success' });
+  } catch {
+    toast.add({ title: 'Gagal menghapus delegate', color: 'error' });
+  }
+}
+async function onDelegasiSaved() {
+  await fetchDetail(id.value);
+}
 
 const sheet = ref<SheetFormModel>({
   lampiran: '1 (satu) berkas',
@@ -465,15 +535,51 @@ watch(catatan, (v) => {
 
 const isEvaluasi = computed(() => detail.value?.tahapan === 'evaluasi');
 const isPd = computed(() => detail.value?.tahapan === 'persetujuan_direksi');
+const isBlankoStage = computed(() => detail.value?.tahapan === 'blanko_verbal');
 const pdRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi')
 );
 const pdDitetapkanRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi_ditetapkan')
 );
+const hasActiveBlankoVerbal = computed(() =>
+  (detail.value?.approval ?? []).some(
+    (a) =>
+      (a.tahap === 'blanko_verbal' || a.tahap === 'blanko_verbal_ditetapkan') &&
+      (a.status === 'waiting' || a.status === 'pending')
+  )
+);
+const templateLocked = computed(
+  () =>
+    hasActiveBlankoVerbal.value ||
+    [...pdRows.value, ...pdDitetapkanRows.value].some(
+      (a) => a.status === 'waiting' || a.status === 'pending'
+    )
+);
+const hasActiveLembarPersetujuan = computed(() =>
+  [...pdRows.value, ...pdDitetapkanRows.value].some(
+    (a) => a.status === 'waiting' || a.status === 'pending'
+  )
+);
+
+async function changeTemplate(value: 'blanko_verbal' | 'lembar_persetujuan_direksi') {
+  if (templateLocked.value || value === selectedTemplate.value) return;
+  selectedTemplate.value = value;
+  if (value === 'blanko_verbal') {
+    await navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`);
+  }
+}
 // Editable saat evaluasi (alur normal: kirim = transisi ke PD) atau saat sudah di
 // persetujuan_direksi tapi baris BOD belum ada (recovery naskah yang masuk PD tanpa lembar).
-const canEditSheet = computed(() => isEvaluasi.value || (isPd.value && pdRows.value.length === 0));
+const canEditSheet = computed(
+  () =>
+    isEvaluasi.value ||
+    (isPd.value && pdDirectors.value.length === 0 && !hasActiveLembarPersetujuan.value) ||
+    (isBlankoStage.value &&
+      pdDirectors.value.length === 0 &&
+      !hasActiveLembarPersetujuan.value &&
+      Boolean(detail.value?.availableActions?.includes('kirim-approval-blanko')))
+);
 
 const mapApprovalDirector = (
   a: ApprovalRow,
@@ -488,6 +594,10 @@ const mapApprovalDirector = (
   persnum: a.persnum,
   catatan: a.catatan,
   roleLabel,
+  approvalId: a.id,
+  delegatePersnum: a.delegatePersnum,
+  delegateName: a.delegateName,
+  delegatePositionStatus: a.delegatePositionStatus,
 });
 
 const pdDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
@@ -500,10 +610,65 @@ const pdDirectors = computed<DirectorApprovalItem[]>(() => [
   ...pdDitetapkanDirectors.value,
   ...pdDiketahuiDirectors.value,
 ]);
+// Pejabat yang sudah memaraf → stamp visible digsig langsung muncul di live preview.
+const pdSignedDirectors = computed(() => pdDirectors.value.filter((d) => d.status === 'verified'));
 const selectableDirectors = computed(() => bodDirectors.value.filter((d) => d.nama || d.jabatan));
 
 const parafDone = computed(() => pdDirectors.value.filter((d) => d.status === 'verified').length);
 const nextDirector = computed(() => pdDirectors.value.find((d) => d.status === 'waiting') ?? null);
+const allPdVerified = computed(
+  () => pdDirectors.value.length > 0 && pdDirectors.value.every((d) => d.status === 'verified')
+);
+
+const pdBanner = computed(() => {
+  if (canEditSheet.value) {
+    return {
+      icon: 'i-lucide-file-pen-line',
+      card: 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30',
+      wrap: 'bg-primary-500',
+      title: 'Susun Lembar Persetujuan Direksi',
+      desc: 'Lengkapi data lembar, lalu kirim ke kelompok Diketahui Oleh untuk approval.',
+    };
+  }
+  if (allPdVerified.value) {
+    return {
+      icon: 'i-lucide-circle-check-big',
+      card: 'border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-950/30',
+      wrap: 'bg-green-500',
+      title: 'Persetujuan Direksi Selesai',
+      desc: 'Seluruh approval selesai. Lembar dan naskah final telah ditandatangani.',
+    };
+  }
+  return {
+    icon: 'i-lucide-stamp',
+    card: 'border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/30',
+    wrap: 'bg-violet-500',
+    title: 'Menunggu Paraf Direksi',
+    desc: `${parafDone.value}/${pdDirectors.value.length} direksi telah memaraf${nextDirector.value ? ' — giliran ' + nextDirector.value.nama + '.' : '.'}`,
+  };
+});
+
+const aksiLembar = computed(() => {
+  if (canEditSheet.value) {
+    return {
+      icon: 'i-lucide-send',
+      title: 'Kirim Lembar Persetujuan Direksi',
+      desc: 'Tinjau live preview lembar, lalu kirim ke kelompok Diketahui Oleh.',
+    };
+  }
+  if (allPdVerified.value) {
+    return {
+      icon: 'i-lucide-circle-check-big',
+      title: 'Persetujuan Direksi Selesai',
+      desc: 'Seluruh approval Lembar Persetujuan Direksi telah selesai.',
+    };
+  }
+  return {
+    icon: 'i-lucide-stamp',
+    title: 'Menunggu Persetujuan Direksi',
+    desc: 'Approval berjalan berurutan: Diketahui Oleh, lalu Ditetapkan/Disahkan Oleh.',
+  };
+});
 
 function isDirut(director: DirectorApprovalItem) {
   return /direktur\s*utama/i.test(director.jabatan || '');
@@ -515,6 +680,11 @@ function compactDirector(director: DirectorApprovalItem): DirectorApprovalItem {
     jabatan: director.jabatan,
     positionId: director.positionId,
     persnum: director.persnum,
+    delegator: director.delegator?.trim() || 'ybs',
+    // Routing delegasi — ikut round-trip agar restore form tidak hilang.
+    delegatePersnum: director.delegatePersnum,
+    delegateName: director.delegateName,
+    delegatePositionStatus: director.delegatePositionStatus,
   };
 }
 
@@ -524,6 +694,12 @@ function cleanSheetPayload(): SheetFormModel {
     jabatan: director.jabatan,
     positionId: director.positionId,
     persnum: director.persnum,
+    delegator: director.delegator?.trim() || 'ybs',
+    // Routing delegasi ke pengganti (persnum) — tanpa ini BE tidak bisa
+    // mengarahkan paraf ke pengganti saat seeding approval.
+    delegatePersnum: director.delegatePersnum,
+    delegateName: director.delegateName,
+    delegatePositionStatus: director.delegatePositionStatus,
   });
   return {
     ...sheet.value,
@@ -541,25 +717,23 @@ function latestPemrakarsaApproval() {
 
 function initDirectorSelection() {
   if (!canEditSheet.value && (pdDirectors.value.length || pdDitetapkanRows.value.length)) {
-    sheet.value.diketahuiOleh = pdRows.value.map((a, idx) =>
+    // Baris delegasi: nama approval row adalah ybs direksi — untuk preview
+    // template, kembalikan ke nama pengganti + status (prefix PT/PH/PS).
+    const fromRow = (a: ApprovalRow, idx: number) =>
       compactDirector({
         index: a.urutan ?? idx + 1,
-        nama: a.nama,
+        nama: a.delegateName?.trim() || a.nama,
         jabatan: a.jabatan,
         positionId: a.positionId,
         persnum: a.persnum,
-      })
-    );
+        delegator: a.delegateName?.trim() ? a.delegatePositionStatus || 'ybs' : 'ybs',
+        delegatePersnum: a.delegatePersnum,
+        delegateName: a.delegateName,
+        delegatePositionStatus: a.delegatePositionStatus,
+      });
+    sheet.value.diketahuiOleh = pdRows.value.map(fromRow);
     if (pdDitetapkanRows.value.length) {
-      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map((a, idx) =>
-        compactDirector({
-          index: a.urutan ?? idx + 1,
-          nama: a.nama,
-          jabatan: a.jabatan,
-          positionId: a.positionId,
-          persnum: a.persnum,
-        })
-      );
+      sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map(fromRow);
     }
     return;
   }
@@ -585,6 +759,7 @@ function isUserApprover(row: ApprovalRow) {
   const nama = (u.nama ?? '').trim().toLowerCase();
   return (
     (row.persnum && String(row.persnum) === uid) ||
+    (row.delegatePersnum && String(row.delegatePersnum) === uid) ||
     (row.positionId && String(row.positionId) === pos) ||
     (row.nama && row.nama.trim().toLowerCase() === nama)
   );
@@ -594,6 +769,8 @@ const isCurrentUserApprover = computed(() =>
   [...pdRows.value, ...pdDitetapkanRows.value].some(isUserApprover)
 );
 const canApprove = computed(() => isCurrentUserApprover.value);
+const canApproveDirector = (director: DirectorApprovalItem) =>
+  isUserApprover(director as ApprovalRow);
 
 function initSheet() {
   const d = detail.value;
@@ -620,6 +797,10 @@ async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
+    if (isBlankoStage.value && hasActiveBlankoVerbal.value) {
+      await navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`, { replace: true });
+      return;
+    }
     initSheet();
     initDirectorSelection();
   } catch {
@@ -643,7 +824,14 @@ function apiErrorMessage(e) {
   return Array.isArray(raw) ? raw[0] : raw || '';
 }
 
-async function previewPdf() {
+function openKirim() {
+  if (!sheet.value.ditetapkanOleh?.length) {
+    toast.add({
+      title: 'Pilih minimal satu pejabat pada Ditetapkan/Disahkan Oleh',
+      color: 'warning',
+    });
+    return;
+  }
   if (!sheet.value.diketahuiOleh?.length) {
     toast.add({
       title: 'Pilih minimal satu direksi pada Diketahui Oleh',
@@ -651,25 +839,7 @@ async function previewPdf() {
     });
     return;
   }
-  busy.value = true;
-  busyMessage.value = 'Memproses pratinjau…';
-  try {
-    pdfUrl.value = await previewLembarPersetujuanDireksi(
-      id.value,
-      cleanSheetPayload(),
-      catatan.value
-    );
-    pdfModalOpen.value = true;
-  } catch (e) {
-    toast.add({
-      title: 'Gagal membuat preview PDF',
-      description: apiErrorMessage(e),
-      color: 'error',
-    });
-  } finally {
-    busy.value = false;
-    busyMessage.value = '';
-  }
+  showKirimModal.value = true;
 }
 
 async function kirimSheet() {
@@ -685,7 +855,7 @@ async function kirimSheet() {
   try {
     await kirimLembarPersetujuanDireksi(id.value, cleanSheetPayload(), catatan.value);
     toast.add({ title: 'Lembar persetujuan direksi dikirim', color: 'success' });
-    pdfModalOpen.value = false;
+    showKirimModal.value = false;
     await navigateTo('/naskah-lainnya/legal-drafting?status=menunggu');
   } catch (e) {
     toast.add({
@@ -714,14 +884,16 @@ async function confirmParaf(note) {
   busy.value = true;
   busyMessage.value = 'Mencatat paraf…';
   try {
-    await parafLembarPersetujuanDireksi(id.value, cleanSheetPayload(), note ?? '');
-    toast.add({ title: 'Paraf tercatat', color: 'success' });
+    await parafLembarPersetujuanDireksi(
+      id.value,
+      cleanSheetPayload(),
+      note ?? '',
+      activeDirector.value.approvalId
+    );
+    toast.add({ title: 'Persetujuan tercatat', color: 'success' });
     parafModalOpen.value = false;
     activeDirector.value = null;
     await loadDetail();
-    if (detail.value?.tahapan === 'blanko_verbal') {
-      navigateTo(`/naskah-lainnya/${id.value}/blanko-verbal`);
-    }
   } catch (e) {
     toast.add({ title: 'Gagal mencatat paraf', description: apiErrorMessage(e), color: 'error' });
   } finally {
@@ -734,7 +906,11 @@ async function confirmTolak(note) {
   busy.value = true;
   busyMessage.value = 'Menolak lembar persetujuan…';
   try {
-    await tolakLembarPersetujuanDireksi(id.value, (note ?? '').trim());
+    await tolakLembarPersetujuanDireksi(
+      id.value,
+      (note ?? '').trim(),
+      activeDirector.value?.approvalId
+    );
     toast.add({ title: 'Lembar persetujuan ditolak', color: 'success' });
     tolakModalOpen.value = false;
     activeDirector.value = null;
