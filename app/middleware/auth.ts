@@ -61,8 +61,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (role === 'superadmin') return;
 
   if (role === 'admin') {
-    // Admin TIDAK boleh akses /master/*, /rbac, /konfigurasi-sistem
-    if (isSuperadminOnlyPath || path === '/master' || path.startsWith('/master/')) {
+    // Admin TIDAK boleh akses /master/*, /rbac, /konfigurasi-sistem.
+    // Kecuali /master/tertuju-eksternal (view-only untuk semua role).
+    if (
+      isSuperadminOnlyPath ||
+      ((path === '/master' || path.startsWith('/master/')) && path !== '/master/tertuju-eksternal')
+    ) {
       return navigateTo('/beranda', { replace: true });
     }
     return;
@@ -115,6 +119,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/penataan-arsip-inaktif',
     '/maintenance/penyusutan',
     '/maintenance/preview-berkas',
+    '/master/tertuju-eksternal',
   ];
 
   if (role === 'user') {
