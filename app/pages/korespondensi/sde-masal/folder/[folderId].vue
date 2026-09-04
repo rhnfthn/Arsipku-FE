@@ -20,6 +20,57 @@
     </div>
 
     <template v-else-if="folder">
+      <!-- Header pesan: menggunakan pola metadata halaman surat inbox. -->
+      <div class="border-b border-gray-100 bg-white px-6 py-5 dark:border-gray-800 dark:bg-gray-800">
+        <h1 class="truncate text-2xl font-bold text-gray-900 dark:text-white">{{ folder.judul || 'SDE Massal' }}</h1>
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
+          <span class="font-mono"># SDE-MASAL</span>
+          <span>·</span>
+          <span><UIcon name="i-lucide-calendar" class="mr-1 inline size-4" />{{ formatDate(folder.tanggal || folder.createdAt) }}</span>
+          <span>·</span>
+          <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">SDE</span>
+          <span class="rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">{{ folder.klasifikasi || '-' }}</span>
+          <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
+        </div>
+      </div>
+
+      <div class="bg-white px-6 py-7 dark:bg-gray-800">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div class="flex items-center gap-4">
+            <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-600 text-lg font-semibold text-white">S</div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pengirim Konsep</p>
+              <p class="truncate text-lg font-semibold text-gray-900 dark:text-white">Konseptor SDE Massal</p>
+              <p class="truncate text-sm text-gray-500 dark:text-gray-400">{{ folder.createdBy || 'Konseptor' }}</p>
+            </div>
+          </div>
+          <div class="border-l-0 pl-0 md:border-l md:border-gray-200 md:pl-6 dark:md:border-gray-700">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Penerima Naskah</p>
+            <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ folder.pengirimName || '-' }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ items.length }} surat dalam folder</p>
+          </div>
+        </div>
+
+        <div class="mt-7 rounded-xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/40">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Konsep Naskah</h2>
+            <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
+          </div>
+          <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Nomor:</span> SDE-MASAL</p>
+            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Tanggal:</span> {{ formatDate(folder.tanggal || folder.createdAt) }}</p>
+            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Pengirim:</span> {{ folder.pengirimName || '-' }}</p>
+            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Klasifikasi:</span> {{ folder.klasifikasi || '-' }}{{ folder.klasifikasiText ? ` · ${folder.klasifikasiText}` : '' }}</p>
+          </div>
+        </div>
+
+        <div class="mt-7 grid grid-cols-[auto_1fr] gap-x-8 border-b border-gray-100 pb-5 dark:border-gray-700">
+          <span class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pesan</span>
+          <p class="text-base text-gray-800 dark:text-gray-200">{{ items[0]?.perihal || folder.judul || 'SDE Massal' }}</p>
+        </div>
+        <div class="mt-5 rounded-xl bg-gray-50 p-5 text-sm leading-7 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300" v-html="messagePreviewHtml" />
+      </div>
+
       <!-- Informasi Folder (full width, di atas) -->
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Informasi Folder</h3>
@@ -55,6 +106,10 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">Tanggal</p>
             <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(folder.tanggal || folder.createdAt) }}</p>
           </div>
+        </div>
+        <div v-if="isSignerAwaiting" class="mt-4 flex justify-end gap-2">
+          <UButton label="Tolak" icon="i-lucide-x-circle" color="error" variant="soft" :loading="workflowLoading" @click="rejectCurrentFolder" />
+          <UButton label="Finalisasi" icon="i-lucide-check-circle" color="primary" :loading="workflowLoading" @click="finalizeCurrentFolder" />
         </div>
       </div>
 
@@ -288,11 +343,50 @@ import {
 definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
 const route = useRoute();
 const { api, apiGet } = useApi();
-const { findNaskahInFolder } = useSdeMasal();
+const { findNaskahInFolder, finalizeDirect, rejectFolder } = useSdeMasal();
 const { user } = useAuth();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
 const folder = ref<SdeMasalFolder | null>(null);
 const items = ref<SdeMasalFolderItem[]>([]);
+const workflowLoading = ref(false);
+const isSignerAwaiting = computed(
+  () => !!folder.value && folder.value.status === 'MENUNGGU_PENGIRIM' && String(user.value?.position || user.value?.positionId || '') === String(folder.value.pengirimId || ''),
+);
+
+const finalizeCurrentFolder = async () => {
+  if (!folder.value || !items.value.length || !window.confirm('Finalisasi seluruh surat dalam folder ini?')) return;
+  workflowLoading.value = true;
+  try {
+    const result = await finalizeDirect({
+      folderId: folder.value.id,
+      itemIds: items.value.map((item) => item.id),
+      penerimaList: items.value.map((item) => item.recipient || {} as SdeMasalPenerima),
+      signOption: folder.value.signOption || 'qr_only',
+    });
+    toast.add({ title: 'Finalisasi selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
+    await loadData();
+  } catch (error: any) {
+    toast.add({ title: 'Finalisasi gagal', description: error?.message || 'Coba lagi.', color: 'error' });
+  } finally {
+    workflowLoading.value = false;
+  }
+};
+
+const rejectCurrentFolder = async () => {
+  if (!folder.value) return;
+  const reason = window.prompt('Masukkan alasan penolakan:')?.trim();
+  if (!reason) return;
+  workflowLoading.value = true;
+  try {
+    await rejectFolder(folder.value.id, reason);
+    toast.add({ title: 'SDE Massal dikembalikan', description: 'Konseptor dapat memperbaiki konsep.', color: 'success' });
+    await loadData();
+  } catch (error: any) {
+    toast.add({ title: 'Gagal menolak', description: error?.message || 'Coba lagi.', color: 'error' });
+  } finally {
+    workflowLoading.value = false;
+  }
+};
 const loading = ref(true);
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -327,6 +421,13 @@ const previewTemplate = computed<SdeMasalTemplate | null>(() => {
   const f = folder.value;
   if (!f) return null;
   return { skema: 'DINAMIS', versi: 'v1', konten: f.kontenTemplate || '' };
+});
+
+const messagePreviewHtml = computed(() => {
+  const f = folder.value;
+  if (!f?.kontenTemplate) return '<span class="text-gray-400">Pesan konsep belum tersedia.</span>';
+  const recipient = (items.value[0]?.recipient || {}) as SdeMasalPenerima;
+  return renderSdeMasalKonten(f.kontenTemplate, recipient, previewKonsep.value);
 });
 
 const pengirimParts = computed(() =>
@@ -422,6 +523,10 @@ const generatePdfFor = async (idx: number) => {
     formData.append('tembusan_eksternal', recipient.tembusanEksternal || '');
     formData.append('tembusan_internal', recipient.tembusanInternal || '');
     formData.append('tembusan', JSON.stringify(recipient.tembusan ? [recipient.tembusan] : []));
+    const directRefs = Array.isArray(recipient.lampiran)
+      ? recipient.lampiran.filter((attachment: any) => attachment?.key && attachment?.fileName)
+      : [];
+    if (directRefs.length) formData.append('lampiran_direct_refs', JSON.stringify(directRefs));
     formData.append(
       'nama_tempat',
       user.value?.areaText?.replace('Kantor', '').trim() || 'Tangerang'
@@ -616,12 +721,18 @@ const timelineSteps = computed(() => {
 const statusLabel = (status: string) =>
   ({
     DRAFT: 'Draft',
+    MENUNGGU_PENGIRIM: 'Menunggu Pengirim',
+    DIKEMBALIKAN: 'Dikembalikan',
+    DIFINALISASI: 'Difinalisasi',
     MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
     TERKIRIM: 'Terkirim',
     DITOLAK: 'Ditolak',
   })[status] || status;
 const statusBadge = (status: string) => ({
   DRAFT: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap dark:bg-gray-700 dark:text-gray-300',
+  MENUNGGU_PENGIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
+  DIKEMBALIKAN: 'px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 font-medium whitespace-nowrap dark:bg-orange-900/40 dark:text-orange-300',
+  DIFINALISASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
   MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap dark:bg-indigo-900/40 dark:text-indigo-300',
   TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
   DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
