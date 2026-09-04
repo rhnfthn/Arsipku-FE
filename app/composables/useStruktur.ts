@@ -80,11 +80,13 @@ export const useStruktur = () => {
     });
   };
 
-  const getPersonsByPosition = (positionId: string | number) => {
+  const getPersonsByPosition = (positionId: string | number, companyId?: string | number) => {
     return apiGet<{
       success: boolean;
       data: any[];
-    }>(`/person/position/${positionId}`);
+    }>(`/person/position/${positionId}`, {
+      params: companyId ? { company: companyId } : undefined
+    });
   };
 
   const createOrganization = (payload: {
