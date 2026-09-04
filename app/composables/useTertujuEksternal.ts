@@ -84,6 +84,15 @@ export const useTertujuEksternal = () => {
     }
   };
 
+  const generateKode = async (): Promise<string> => {
+    const res = await apiGet<{ success: boolean; data: string }>(
+      '/persuratan/eksternal/generate-kode',
+      {},
+      { skipCache: true }
+    );
+    return res?.data ?? '';
+  };
+
   return {
     data,
     loading,
@@ -92,5 +101,6 @@ export const useTertujuEksternal = () => {
     createTertujuEksternal,
     deleteTertujuEksternal,
     updateTertujuEksternal,
+    generateKode,
   };
 };

@@ -216,7 +216,7 @@
             </td>
 
             <td
-              class="px-4 py-3 font-medium text-gray-900 dark:text-white capitalize"
+              class="px-4 py-3 font-medium text-gray-900 dark:text-white uppercase"
               v-html="highlight(item.nama, filters.search)"
             ></td>
 
@@ -576,7 +576,7 @@
           <Heading variant="heading11m" class="text-xs dark:text-gray-200">
             ID
           </Heading>
-          <div v-if="editId" class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <input
               :value="form.kode"
               type="text"
@@ -584,6 +584,7 @@
               class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
             />
             <button
+              v-if="form.kode"
               type="button"
               @click="copyKode(form.kode)"
               class="p-2 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
@@ -593,13 +594,6 @@
               <Copy v-else class="w-4 h-4" />
             </button>
           </div>
-          <input
-            v-else
-            value="ID akan digenerate otomatis"
-            type="text"
-            readonly
-            class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
-          />
         </div>
 
         <!-- FIELD NAMA -->
@@ -617,7 +611,7 @@
                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                 : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
             ]"
-            @input="formErrors.nama = false"
+            @input="formErrors.nama = false; form.nama = form.nama.toUpperCase()"
           />
           <p v-if="formErrors.nama" class="text-xs text-red-500 mt-1">
             {{ $t('te_nama') }}
@@ -814,7 +808,8 @@ const {
   fetchTertujuEksternal,
   createTertujuEksternal,
   deleteTertujuEksternal,
-  updateTertujuEksternal
+  updateTertujuEksternal,
+  generateKode
 } = useTertujuEksternal();
 
 // ===== Tab state =====
@@ -989,11 +984,12 @@ const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
 const openRowsDropdown = ref(false);
 
-// Sorting
-const sortColumn = ref<string>('nama');
-const sortDirection = ref<'asc' | 'desc'>('asc');
+// Default sort: data terbaru di atas (BE sudah urutkan created_at DESC,
+// tapi FE sort ulang by nama — ubah ke created_at DESC).
+const sortColumn = ref<string>('created_at');
+const sortDirection = ref<'asc' | 'desc'>('desc');
 const sortKey = ref('');
-const sortOrder = ref('asc');
+const sortOrder = ref('desc');
 
 const onPhoneKeydown = (e: KeyboardEvent) => {
   const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'];
@@ -1130,8 +1126,14 @@ const resetForm = () => {
   };
 };
 
-const openAddModal = () => {
+const openAddModal = async () => {
   resetForm();
+  // Generate kode ID langsung saat modal dibuka
+  try {
+    form.value.kode = await generateKode();
+  } catch {
+    form.value.kode = '';
+  }
   showModal.value = true;
 };
 
@@ -1204,6 +1206,15 @@ const filteredData = computed(() => {
 // Sorted data
 const sortedData = computed(() => {
   const sorted = [...filteredData.value];
+  // created_at: handle sebagai Date ISO string
+  if (sortColumn.value === 'created_at') {
+    sorted.sort((a, b) => {
+      const aT = new Date((a as any).created_at || 0).getTime();
+      const bT = new Date((b as any).created_at || 0).getTime();
+      return sortDirection.value === 'asc' ? aT - bT : bT - aT;
+    });
+    return sorted;
+  }
   sorted.sort((a, b) => {
     const aVal = String((a as any)[sortColumn.value] || '').toLowerCase();
     const bVal = String((b as any)[sortColumn.value] || '').toLowerCase();

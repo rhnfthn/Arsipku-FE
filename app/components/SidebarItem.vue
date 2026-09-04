@@ -169,10 +169,11 @@ const isActive = computed(() => {
   return false;
 });
 
-// Logic Auto open jika ada notifikasi atau active
+// Logic Auto open hanya saat route aktif (bukan karena badge notifikasi).
+// Dropdown default tertutup saat login / buka web, kecuali sedang di menu tsb.
 const shouldAutoOpen = computed(() => {
   if (!hasChildren.value) return false;
-  return isActive.value || hasChildrenWithBadges.value;
+  return isActive.value;
 });
 
 // Set initial state
@@ -187,12 +188,13 @@ watch(shouldAutoOpen, (newVal) => {
   }
 });
 
+// Saat route berubah, sinkronkan isOpen dengan shouldAutoOpen:
+// - buka jika sedang di menu tsb
+// - tutup jika sudah pindah ke menu lain (agar dropdown tidak "kebuka terus")
 watch(
   () => route.path,
   () => {
-    if (shouldAutoOpen.value) {
-      isOpen.value = true;
-    }
+    isOpen.value = shouldAutoOpen.value;
   }
 );
 
