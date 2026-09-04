@@ -1,5 +1,5 @@
 <template>
-  <SdeMasalWizard :parent-naskah-id="parentNaskahId" />
+  <SdeMasalWizard :parent-naskah-id="parentNaskahId" :folder-id="folderId" />
 </template>
 
 <script setup lang="ts">
@@ -11,4 +11,5 @@ definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
 
 const route = useRoute();
 const parentNaskahId = computed(() => (route.query.parentNaskahId as string) || '');
+const folderId = computed(() => (route.query.folderId as string) || '');
 </script>

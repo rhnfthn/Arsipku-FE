@@ -192,7 +192,13 @@
           >
             Nomor
             <UTooltip
-              text="Kosongkan untuk penomoran otomatis saat kirim. Jika diisi manual, harus sesuai format jenis naskah & unik."
+              :text="
+                isPhysicalSigning
+                  ? isPhysicalMetadataMode
+                    ? 'Nomor dapat dikoreksi sebelum dokumen final TTD fisik diunggah.'
+                    : 'Kosongkan agar nomor dibuat otomatis setelah seluruh penandatangan menyetujui Naskah Draft, atau isi nomor manual.'
+                  : 'Kosongkan untuk penomoran otomatis saat tanda tangan. Jika diisi manual, harus sesuai format jenis naskah & unik.'
+              "
             >
               <UIcon
                 name="i-lucide-info"
@@ -202,7 +208,9 @@
           </span>
           <UInput
             v-model="form.nomor"
-            :placeholder="nomorPlaceholder"
+            :placeholder="
+              isPhysicalSigning ? 'Terbit setelah approval penandatangan' : nomorPlaceholder
+            "
             class="w-full sm:flex-1"
             variant="none"
             :ui="{ base: 'text-sm text-gray-900 dark:text-white px-0' }"
@@ -240,7 +248,7 @@
 
         <!-- Penandatangan dinamis: satu single-select per slot -->
         <div
-          v-if="signerSlotCount > 0 || isPhysicalMetadataMode"
+          v-if="editableSignerSlots.length > 0"
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
         >
           <span
@@ -256,7 +264,9 @@
               {{
                 isPhysicalMetadataMode
                   ? 'Data ini hanya dicatat di sistem dan tidak mengaktifkan proses tanda tangan kembali.'
-                  : 'Urutan sesuai posisi placeholder tanda_tangan_N di template. Pilih penandatangan untuk setiap slot sesuai urutan penandatangan.'
+                  : isPhysicalSigning
+                    ? 'Penandatangan akan meninjau dan menyetujui Naskah Draft secara berjenjang. Nomor terbit setelah penandatangan terakhir menyetujui.'
+                    : 'Urutan sesuai posisi placeholder tanda_tangan_N di template. Pilih penandatangan untuk setiap slot sesuai urutan penandatangan.'
               }}
             </p>
             <div
@@ -301,22 +311,24 @@
                 </template>
               </USelectMenu>
               <button
-                v-if="isPhysicalMetadataMode && editableSignerSlots.length > 1"
+                v-if="
+                  (isPhysicalMetadataMode || isPhysicalSigning) && editableSignerSlots.length > 1
+                "
                 type="button"
                 class="shrink-0 text-gray-400 transition-colors hover:text-error"
                 :aria-label="`Hapus penandatangan ${slot.index}`"
-                @click="removeMetadataSigner(slot.index - 1)"
+                @click="removeSignerSlot(slot.index - 1)"
               >
                 <UIcon name="i-lucide-x" class="size-4" />
               </button>
             </div>
             <UButton
-              v-if="isPhysicalMetadataMode"
+              v-if="isPhysicalMetadataMode || isPhysicalSigning"
               color="primary"
               variant="soft"
               size="sm"
               icon="i-lucide-plus"
-              @click="addMetadataSigner"
+              @click="addSignerSlot"
               >Tambah Penandatangan</UButton
             >
           </div>
@@ -338,7 +350,7 @@
         <!-- Sifat (komponen Tulis, pola nota-dinas) -->
         <TulisInputSifat v-model="selectedSifat" />
 
-        <!-- Verifikator Berjenjang (verifikator ≠ penandatangan) -->
+        <!-- Verifikator Berjenjang (boleh merangkap sebagai penandatangan) -->
         <div
           class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-2 sm:gap-0"
         >
@@ -424,7 +436,6 @@
                 </template>
               </USelectMenu>
             </div>
-            <p v-if="approvalError" class="mt-1 text-xs text-red-500">{{ approvalError }}</p>
           </div>
         </div>
 
@@ -472,14 +483,32 @@
           <div class="flex flex-col gap-2 py-4">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-upload" class="w-4 h-4 text-gray-400" />
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Unggah Naskah</h4>
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                {{ isPhysicalSigning ? 'Naskah Draft' : 'Unggah Naskah' }}
+              </h4>
               <span class="text-xs text-gray-400">(.docx)</span>
             </div>
             <FileUpload
               :model-value="naskahFiles"
               :multiple="false"
               accept=".docx"
+              :label="isPhysicalSigning ? 'Unggah Naskah Draft' : 'Unggah Naskah'"
               @update:model-value="onNaskahFiles"
+            />
+            <FileUpload
+              v-if="isRevisi"
+              v-model="revisiPdfFiles"
+              :multiple="false"
+              accept=".pdf,application/pdf"
+              label="Unggah Versi PDF"
+              description="Wajib bersama DOCX revisi dan harus memiliki isi yang sama"
+            />
+            <UAlert
+              v-if="isRevisi && hasDirtyNaskah !== !!revisiPdfFiles.length"
+              icon="i-lucide-triangle-alert"
+              color="warning"
+              variant="soft"
+              description="Revisi wajib dilengkapi dengan pasangan DOCX dan PDF."
             />
           </div>
 
@@ -711,7 +740,7 @@
       :title="isPhysicalMetadataMode ? 'Simpan Data Penandatangan?' : 'Simpan Draft?'"
       :description="
         isPhysicalMetadataMode
-          ? 'Data penandatangan disimpan sebagai metadata sistem tanpa mengubah alur naskah.'
+          ? 'Nomor final dan data penandatangan akan disimpan tanpa mengubah alur naskah.'
           : 'Naskah akan disimpan sebagai draft dan dapat dilihat di halaman Draf.'
       "
       variant="primary"
@@ -753,6 +782,7 @@ const {
   update,
   kirim,
   uploadDokumen,
+  uploadRevisiDokumen,
   uploadDokumenTambahan,
   deleteDokumenTambahan,
   parseDokumen,
@@ -761,6 +791,7 @@ const {
   fetchDetail,
   detail,
   updateMetadataPenandatanganFisik,
+  ubahNomorFinalManual,
   uploadDokumenFinalManual,
 } = useNaskahLainnya();
 const { verifikatorList, fetchVerifikator } = useNaskahDinas();
@@ -869,22 +900,40 @@ const signerSlots = ref<{ index: number }[]>([]);
 const loadingSigners = ref(false);
 const isRestoringDraft = ref(false);
 const editableSignerSlots = computed(() => {
-  const count = isPhysicalMetadataMode.value
-    ? Math.max(1, signerSlotCount.value, form.value.penandatanganList?.length ?? 0)
-    : signerSlotCount.value;
+  const count =
+    isPhysicalMetadataMode.value || isPhysicalSigning.value
+      ? Math.max(1, signerSlotCount.value, form.value.penandatanganList?.length ?? 0)
+      : signerSlotCount.value;
   return Array.from({ length: count }, (_, index) => ({ index: index + 1 }));
 });
 
-function addMetadataSigner() {
-  if (!isPhysicalMetadataMode.value) return;
+function addSignerSlot() {
+  if (!isPhysicalMetadataMode.value && !isPhysicalSigning.value) return;
   slotSigners.value.push(null);
   form.value.penandatanganList.push({ nama: '', jabatan: '' });
 }
 
-function removeMetadataSigner(index: number) {
-  if (!isPhysicalMetadataMode.value) return;
+function removeSignerSlot(index: number) {
+  if (!isPhysicalMetadataMode.value && !isPhysicalSigning.value) return;
   slotSigners.value.splice(index, 1);
   form.value.penandatanganList.splice(index, 1);
+}
+
+async function persistPhysicalFinalNomor(): Promise<boolean> {
+  if (!isPhysicalMetadataMode.value || !createdId.value) return true;
+  const nomor = form.value.nomor?.trim();
+  if (!nomor) {
+    useToast().add({
+      title: 'Nomor naskah wajib diisi',
+      description: 'Isi atau koreksi nomor sebelum memfinalkan dokumen TTD fisik.',
+      color: 'warning',
+    });
+    return false;
+  }
+  if (nomor === detail.value?.nomor) return true;
+  await ubahNomorFinalManual(createdId.value, nomor);
+  form.value.nomor = nomor;
+  return true;
 }
 
 async function onManualFinalFiles(files: File[]) {
@@ -893,6 +942,10 @@ async function onManualFinalFiles(files: File[]) {
   if (!file || !createdId.value || manualFinalBusy.value) return;
   manualFinalBusy.value = true;
   try {
+    if (!(await persistPhysicalFinalNomor())) {
+      manualFinalFiles.value = [];
+      return;
+    }
     await uploadDokumenFinalManual(createdId.value, file);
     useToast().add({ title: 'Dokumen final berhasil diunggah', color: 'success' });
   } catch (e: any) {
@@ -920,14 +973,22 @@ async function fetchTemplateSigners(jenis: string) {
     signerSlotCount.value = count;
     signerSlots.value = slots;
     // Reset semua slot agar tidak ada penandatangan lawas yang tertinggal saat ganti jenis/count.
-    slotSigners.value = Array.from({ length: count }, () => null);
-    form.value.penandatanganList = Array.from({ length: count }, () => ({ nama: '', jabatan: '' }));
+    const editableCount = form.value.signOption === 'ttd_basah' ? Math.max(1, count) : count;
+    slotSigners.value = Array.from({ length: editableCount }, () => null);
+    form.value.penandatanganList = Array.from({ length: editableCount }, () => ({
+      nama: '',
+      jabatan: '',
+    }));
   } catch {
     // Template mungkin tidak punya placeholder tanda_tangan_N → N=0, fase signing dilewati.
     signerSlotCount.value = 0;
     signerSlots.value = [];
-    slotSigners.value = [];
-    form.value.penandatanganList = [];
+    const fallbackCount = form.value.signOption === 'ttd_basah' ? 1 : 0;
+    slotSigners.value = Array.from({ length: fallbackCount }, () => null);
+    form.value.penandatanganList = Array.from({ length: fallbackCount }, () => ({
+      nama: '',
+      jabatan: '',
+    }));
   } finally {
     loadingSigners.value = false;
   }
@@ -938,8 +999,34 @@ watch(
   ([jenis]) => {
     if (isRestoringDraft.value) return;
     fetchTemplateSigners(jenis as string);
+    applyJenisConfigDefault(jenis as string);
   }
 );
+
+// Default per jenis dari konfigurasi sistem (Naskah Lainnya): Legal Drafting
+// (Ya/Tidak) + klasifikasi langsung terisi saat jenis dipilih.
+async function applyJenisConfigDefault(jenis: string) {
+  if (!jenis) return;
+  try {
+    const res: any = await apiGet(`/config/naskah-lainnya/${jenis}`);
+    const cfg = res?.data ?? res;
+    if (!cfg) return;
+    if (typeof cfg.butuhLegal === 'boolean') form.value.butuhLegal = cfg.butuhLegal;
+    if (cfg.defaultKlasifikasi) {
+      const found = klasifikasiList.value.find(
+        (k: any) => k.klasifikasi === cfg.defaultKlasifikasi
+      );
+      // Default tidak ditemukan di master klasifikasi → kosongkan, jangan
+      // biarkan pilihan jenis sebelumnya nyangkut.
+      selectedKlasifikasiId.value = found ? found.id : null;
+    } else {
+      // Jenis tanpa default klasifikasi → form kosong.
+      selectedKlasifikasiId.value = null;
+    }
+  } catch {
+    // konfigurasi belum diset / gagal — biarkan form apa adanya
+  }
+}
 
 // Opsi per slot: tandai item yang sudah dipilih di slot lain sebagai disabled.
 function slotItems(slotIndex: number) {
@@ -1019,22 +1106,12 @@ const nomorPlaceholder = computed(() =>
 const approvalCandidates = ref<Verifikator[]>([]);
 const selectedApprovals = ref<Verifikator[]>([]);
 const approvalPicker = ref<number | null>(null);
-const approvalError = ref('');
 
-// Kandidat: belum dipilih, dan berbeda dari penandatangan.
-const selectedSignerPersnums = computed(
-  () =>
-    new Set(
-      (form.value.penandatanganList ?? [])
-        .map((s) => s?.persnum)
-        .filter((p): p is number => p != null)
-    )
-);
+// Satu pejabat boleh merangkap sebagai penandatangan dan verifikator.
+// Duplikat hanya dicegah di dalam rantai verifikator itu sendiri.
 const availableApprovals = computed(() => {
   const selectedSet = new Set(selectedApprovals.value.map((v) => v.persnum));
-  return approvalCandidates.value
-    .filter((v) => !selectedSet.has(v.persnum))
-    .filter((v) => !selectedSignerPersnums.value.has(v.persnum));
+  return approvalCandidates.value.filter((v) => !selectedSet.has(v.persnum));
 });
 
 const approvalOptions = computed(() =>
@@ -1047,13 +1124,8 @@ const approvalOptions = computed(() =>
 const onApprovalSelect = (persnum: number) => {
   const v = approvalCandidates.value.find((x) => x.persnum === persnum);
   if (!v) return;
-  if (selectedSignerPersnums.value.has(persnum)) {
-    approvalError.value = 'Approver tidak boleh sama dengan penandatangan';
-    return;
-  }
   if (!selectedApprovals.value.some((x) => x.persnum === persnum)) {
     selectedApprovals.value.push(v);
-    approvalError.value = '';
   }
 };
 
@@ -1079,6 +1151,7 @@ const manualFinalFiles = ref<File[]>([]);
 const dokumenOk = computed(() => uploadStatus.value === 'done' || previewFile.value !== null);
 
 const naskahFiles = ref<File[]>([]);
+const revisiPdfFiles = ref<File[]>([]);
 // Naskah yg sudah ada di BE (di-restore dari draft). File baru yg dipilih user
 // belum ada di sini → baru di-commit (upload versi) saat Draft/Kirim. Dipakai
 // commitNaskahIfDirty untuk skip re-upload bila naskah tidak berubah.
@@ -1092,6 +1165,9 @@ const pendukungOnServer = new Map<File, string>();
 
 // ── Pratinjau docx (render file yang diupload via docx-preview) ──
 const previewFile = computed(() => naskahFiles.value[naskahFiles.value.length - 1] ?? null);
+const hasDirtyNaskah = computed(
+  () => !!previewFile.value && previewFile.value !== naskahOnServer.value
+);
 const previewContainer = ref<HTMLElement | null>(null);
 const previewLoading = ref(false);
 const previewCollapsed = ref(false);
@@ -1237,9 +1313,10 @@ onMounted(async () => {
         }
         if (storedSigners.length) {
           // Simpan data asli sebagai fallback bila tidak cocok dengan daftar pejabat.
-          const restoredSignerCount = isPhysicalMetadataMode.value
-            ? Math.max(1, signerSlotCount.value, storedSigners.length)
-            : signerSlotCount.value;
+          const restoredSignerCount =
+            isPhysicalMetadataMode.value || isPhysicalSigning.value
+              ? Math.max(1, signerSlotCount.value, storedSigners.length)
+              : signerSlotCount.value;
           form.value.penandatanganList = Array.from({ length: restoredSignerCount }, (_, i) => {
             const sp = storedSigners[i];
             if (!sp) return { nama: '', jabatan: '' };
@@ -1307,6 +1384,7 @@ onMounted(async () => {
     }
   } else {
     await fetchTemplateSigners(form.value.jenis as string);
+    await applyJenisConfigDefault(form.value.jenis as string);
   }
 });
 
@@ -1486,14 +1564,35 @@ async function readNaskahParams(file: File) {
 // false bila upload gagal agar Kirim bisa diblokir.
 async function commitNaskahIfDirty(): Promise<boolean> {
   const file = previewFile.value;
+  const pdf = revisiPdfFiles.value.at(-1) ?? null;
+  if (isRevisi.value && !!pdf !== hasDirtyNaskah.value) {
+    useToast().add({
+      title: 'Lengkapi pasangan file revisi',
+      description: 'DOCX baru dan PDF dengan isi yang sama wajib diunggah bersamaan.',
+      color: 'warning',
+    });
+    return false;
+  }
   if (!file || !createdId.value) return true; // tidak ada naskah / belum create → skip
   if (file === naskahOnServer.value) return true; // sudah ada di BE, tidak berubah
   try {
     uploadStatus.value = 'reading';
-    const res = await uploadDokumen(createdId.value, file);
+    if (isRevisi.value && !pdf) {
+      useToast().add({
+        title: 'PDF revisi wajib diunggah',
+        description: 'Lengkapi pasangan PDF dengan isi yang sama seperti DOCX revisi.',
+        color: 'warning',
+      });
+      uploadStatus.value = 'idle';
+      return false;
+    }
+    const res = isRevisi.value
+      ? await uploadRevisiDokumen(createdId.value, { docx: file, pdf })
+      : await uploadDokumen(createdId.value, file);
     detected.value = res.data.parameter;
     if (res.data.parameter.perihal) form.value.perihal = res.data.parameter.perihal;
     naskahOnServer.value = file; // tandai sudah di-BE
+    if (isRevisi.value) revisiPdfFiles.value = [];
     uploadStatus.value = 'done';
     return true;
   } catch (e) {
@@ -1511,12 +1610,13 @@ async function commitNaskahIfDirty(): Promise<boolean> {
 
 // ── Validasi: bila template mendeteksi N slot, semua harus terisi sebelum kirim/draft ──
 function validateSigners(): boolean {
-  if (signerSlotCount.value <= 0) return true;
+  const requiredSignerCount = editableSignerSlots.value.length;
+  if (requiredSignerCount <= 0) return true;
   const chain = form.value.penandatanganList ?? [];
   const isValidEntry = (s?: Penandatangan | null) => !!s && !!(s.persnum || s.positionId || s.nama);
-  if (chain.length !== signerSlotCount.value || !chain.every(isValidEntry)) {
+  if (chain.length !== requiredSignerCount || !chain.every(isValidEntry)) {
     useToast().add({
-      title: `Isi semua ${signerSlotCount.value} penandatangan`,
+      title: `Isi semua ${requiredSignerCount} penandatangan`,
       description: 'Setiap slot penandatangan wajib diisi sesuai urutan.',
       color: 'warning',
     });
@@ -1559,8 +1659,9 @@ async function confirmSaveDraft() {
     }
     saving.value = true;
     try {
+      if (!(await persistPhysicalFinalNomor())) return;
       await updateMetadataPenandatanganFisik(createdId.value, signers);
-      useToast().add({ title: 'Data penandatangan disimpan', color: 'success' });
+      useToast().add({ title: 'Nomor dan data penandatangan disimpan', color: 'success' });
       await navigateTo(`/naskah-lainnya/${createdId.value}`);
     } finally {
       saving.value = false;
@@ -1606,6 +1707,7 @@ async function handleConfirmKirim() {
 
 function selectSignOption(option: 'qr_only' | 'ttd_basah') {
   form.value.signOption = option;
+  if (option === 'ttd_basah') form.value.nomor = '';
 }
 
 const doKirim = async () => {

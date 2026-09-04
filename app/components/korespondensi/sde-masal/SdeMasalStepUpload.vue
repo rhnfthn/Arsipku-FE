@@ -2,14 +2,38 @@
   <div class="flex-1 overflow-y-auto space-y-5">
     <!-- Template Excel dinamis dari variabel konten -->
     <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/60 dark:bg-blue-950/30 space-y-3">
-      <div>
-        <p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Kolom Template dari Konten Surat</p>
-        <p class="text-xs text-blue-700 dark:text-blue-300">Kolom <code>perihal</code>, <code>tertuju</code>, dan <code>tembusan</code> tersedia sejak awal.</p>
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Kolom Template dari Konten Surat</p>
+        </div>
+        <UButton label="Download Template Excel" color="primary" icon="i-lucide-download" size="sm" @click="handleDownloadDynamicTemplate" />
       </div>
-      <div class="flex flex-wrap gap-2">
-        <code v-for="column in templateColumns" :key="column" class="rounded bg-white px-2 py-1 text-xs text-blue-800 shadow-sm dark:bg-gray-800 dark:text-blue-200">{{ column }}</code>
+      <div class="overflow-x-auto rounded-lg border border-blue-200 dark:border-blue-900/60">
+        <table class="min-w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-blue-100 dark:bg-blue-950/50">
+              <th
+                v-for="column in templateColumns"
+                :key="column"
+                class="border border-blue-200 px-3 py-2 text-left font-semibold text-blue-900 whitespace-nowrap dark:border-blue-900/60 dark:text-blue-200"
+              >
+                {{ column }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="bg-white dark:bg-gray-800">
+              <td
+                v-for="column in templateColumns"
+                :key="column"
+                class="border border-blue-100 px-3 py-2 text-gray-400 dark:border-blue-900/40 dark:text-gray-500"
+              >
+                &nbsp;
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <UButton label="Download Template Excel" color="primary" icon="i-lucide-download" @click="handleDownloadDynamicTemplate" />
     </div>
 
     <!-- Card: Upload Excel -->
@@ -75,27 +99,14 @@
     </div>
 
     <!-- Preview Excel -->
-    <SdeMasalExcelPreview v-if="penerimaList.length > 0" :items="penerimaList" :columns="templateColumns" />
-
-    <!-- Validasi summary -->
-    <div v-if="penerimaList.length > 0" class="flex items-center gap-4 text-sm">
-      <span class="text-gray-500 dark:text-gray-400">
-        Total: <strong class="text-gray-900 dark:text-white">{{ penerimaList.length }}</strong>
-      </span>
-      <span class="text-green-600 dark:text-green-400">
-        Valid: <strong>{{ validCount }}</strong>
-      </span>
-      <span v-if="invalidCount > 0" class="text-red-600 dark:text-red-400">
-        Invalid: <strong>{{ invalidCount }}</strong>
-      </span>
-    </div>
+    <SdeMasalExcelPreview v-if="penerimaList.length > 0" :items="penerimaList" :columns="templateColumns" :konsep="konsep" :template="template" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useSdeMasal } from '~/composables/useSdeMasal';
-import type { SdeMasalPenerima, SdeMasalConcept } from '~/types/sde-masal';
+import type { SdeMasalPenerima, SdeMasalConcept, SdeMasalTemplate } from '~/types/sde-masal';
 import SdeMasalExcelPreview from './SdeMasalExcelPreview.vue';
 
 const props = defineProps<{
@@ -103,10 +114,7 @@ const props = defineProps<{
   dynamicVariables?: string[];
   defaultPerihal?: string;
   defaultTertuju?: string;
-}>();
-
-const emit = defineEmits<{
-  'update:skemaTemplate': [value: 'KEUANGAN' | 'UMUM' | null];
+  template?: SdeMasalTemplate | null;
 }>();
 
 const model = defineModel<SdeMasalPenerima[]>({ default: () => [] });
@@ -118,31 +126,30 @@ const selectedFile = ref<File | null>(null);
 const dragOver = ref(false);
 const parsing = ref(false);
 const parseError = ref<string | null>(null);
-const templateDropdownOpen = ref(false);
-const selectedTemplateSkema = ref<'KEUANGAN' | 'UMUM' | null>(null);
-
-const keuanganColumns = [
-  'No', 'Perihal', 'id_tertuju', 'jumlah_tagihan_idr', 'jumlah_tagihan_usd',
-  'nama_cro', 'email_cro', 'tembusan', 'is_revision',
-];
-
-const umumColumns = [
-  'No', 'Perihal', 'id_tertuju', 'nama_cro',
-  'email', 'tembusan', 'is_revision', 'email_tertuju', 'email_cc', 'email_bcc',
-];
 
 const templateColumns = computed(() => {
-  return ['perihal', 'tertuju', 'tembusan', ...(props.dynamicVariables || []).filter((value) => !['perihal', 'tertuju', 'tembusan'].includes(value))];
-});
-
-const selectTemplate = (skema: 'KEUANGAN' | 'UMUM') => {
-  selectedTemplateSkema.value = skema;
-  templateDropdownOpen.value = false;
-};
-
-// Emit skema ke parent wizard
-watch(selectedTemplateSkema, (val) => {
-  emit('update:skemaTemplate', val);
+  return [
+    'perihal',
+    'tertuju',
+    'tembusan_internal',
+    'tembusan_eksternal',
+    'email_tertuju',
+    'email_cc',
+    'email_bcc',
+    ...(props.dynamicVariables || []).filter(
+      (value) =>
+        ![
+          'perihal',
+          'tertuju',
+          'tembusan',
+          'tembusan_internal',
+          'tembusan_eksternal',
+          'email_tertuju',
+          'email_cc',
+          'email_bcc',
+        ].includes(value)
+    ),
+  ];
 });
 
 const penerimaList = computed(() => model.value || []);
@@ -217,8 +224,7 @@ const parseFile = async (file: File) => {
 };
 
 const handleDownloadTemplate = () => {
-  if (!selectedTemplateSkema.value) return;
-  downloadTemplate(selectedTemplateSkema.value);
+  downloadTemplate();
 };
 
 const handleDownloadDynamicTemplate = async () => {

@@ -4,6 +4,7 @@
 
 export interface SdeMasalConcept {
   id?: string;
+  judul?: string;
   tanggalKonsep: string;
   klasifikasiId: string;
   klasifikasiName: string;
@@ -13,9 +14,52 @@ export interface SdeMasalConcept {
   perihal?: string;
   defaultTertuju?: string;
   parentNaskahId?: string;
+  atasNama?: string | null;
+  atasNamaPositionId?: string | null;
+}
+
+export interface SdeMasalFolder {
+  id: string;
+  judul: string;
+  parentNaskahId: string | null;
+  tanggal: string | null;
+  klasifikasi: string | null;
+  klasifikasiText: string | null;
+  pengirimId: string | null;
+  pengirimName: string | null;
+  sifat: string | null;
+  atasNama: string | null;
+  atasNamaPositionId: string | null;
+  kontenTemplate: string | null;
+  dynamicVariables: string[];
+  originalFileUrl: string | null;
+  signOption: 'digsig' | 'qr_only' | 'ttd_basah' | null;
+  status: 'DRAFT' | 'MENUNGGU_VERIFIKASI' | 'TERKIRIM' | 'DITOLAK';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SdeMasalFolderItem {
+  id: string;
+  folderId: string;
+  naskahId: string | null;
+  nomor: string | null;
+  perihal: string;
+  penerima: string;
+  emailTertuju?: string | null;
+  emailCc?: string | null;
+  emailBcc?: string | null;
+  status: string;
+  statusVerifikasi?: string;
+  verifikators?: SdeMasalVerifikator[] | null;
+  submittedAt?: string | null;
+  recipient?: Record<string, any> | null;
+  finalPdf: string | null;
+  createdAt: string;
 }
 
 export interface SdeMasalPenerima {
+  id?: string;
   variables?: Record<string, string>;
   no?: number;
   persnum?: string;
@@ -25,13 +69,15 @@ export interface SdeMasalPenerima {
   alamat: string | null;
   kota: string | null;
   kodePos: string | null;
-  jabatanPenerima: string | null;
+  jabatanPenerima?: string | null;
   keterangan: string | null;
   // Field data ASE
   perihal?: string;
   idTertuju?: string;
   email?: string;
   tembusan?: string;
+  tembusanInternal?: string;
+  tembusanEksternal?: string;
   isRevision?: number | boolean;
   emailTertuju?: string;
   emailCc?: string;
@@ -45,13 +91,14 @@ export interface SdeMasalPenerima {
   namaSigner?: string;
   // Field skema umum / tagihan PJNP
   jumlahLampiran?: string;
-  jabatanPenerima?: string;
-  alamatPenerima?: string;
-  panggilanPenerima?: string;
-  nominalRupiah?: string;
-  nominalDolar?: string;
-  tembusan1?: string;
-  tembusan2?: string;
+  alamatPenerima?: string | null;
+  panggilanPenerima?: string | null;
+  nominalRupiah?: string | null;
+  nominalDolar?: string | null;
+  tembusan1?: string | null;
+  tembusan2?: string | null;
+  lampiran?: string | null;
+  lampiranKey?: string | null;
   isValid: boolean;
   validationMessage?: string;
 }
@@ -76,65 +123,38 @@ export interface SdeMasalVerifikator {
 
 export interface SdeMasalItem {
   id: string;
-  conceptId: string | null;
-  tanggalKonsep: string | null;
-  klasifikasiId: string | null;
-  klasifikasiName: string | null;
-  pengirimId: string | null;
-  pengirimName: string | null;
-  sifatSurat: string | null;
-  skemaTemplate: string | null;
-  versiTemplate: string | null;
-  perihal: string;
-  tertuju: string;
-  alamat: string | null;
-  kota: string | null;
-  kodePos: string | null;
-  jabatanPenerima: string | null;
-  isiRingkasan: string | null;
-  statusVerifikasi: 'MENUNGGU' | 'MENUNGGU_VERIFIKASI' | 'TERKIRIM' | 'TERVERIFIKASI' | 'DITOLAK' | 'GAGAL';
-  jenisTemplate: string | null;
-  lampiranUrl: string | null;
-  originalFileUrl: string | null;
-  parentNaskahId: string | null;
+  folderId: string | null;
+  recipientData: string | null;
+  statusVerifikasi:
+    | 'MENUNGGU'
+    | 'MENUNGGU_VERIFIKASI'
+    | 'TERKIRIM'
+    | 'TERVERIFIKASI'
+    | 'DITOLAK'
+    | 'GAGAL';
   naskahId: string | null;
-  nomorSurat: string | null;
   errorMessage: string | null;
   verifikators?: SdeMasalVerifikator[] | null;
   currentVerifikatorUrutan?: number | null;
   submittedAt?: string | null;
-  // Field data ASE
-  idTertuju: string | null;
-  email: string | null;
-  tembusan: string | null;
-  isRevision: number | boolean;
-  emailTertuju: string | null;
-  emailCc: string | null;
-  emailBcc: string | null;
-  // Field skema keuangan / tagihan PINP
-  jumlahTagihanIdr: string | null;
-  jumlahTagihanUsd: string | null;
-  namaCro: string | null;
-  emailCro: string | null;
-  jabatanSigner: string | null;
-  namaSigner: string | null;
-  // Field skema umum / tagihan PJNP
-  jumlahLampiran: string | null;
-  jabatanPenerima: string | null;
-  alamatPenerima: string | null;
-  panggilanPenerima: string | null;
-  nominalRupiah: string | null;
-  nominalDolar: string | null;
-  tembusan1: string | null;
-  tembusan2: string | null;
   createdAt: string;
   updatedAt: string;
+  // Field turunan (dari enrichment backend: folder + recipient)
+  folder?: SdeMasalFolder | null;
+  recipient?: Record<string, any> | null;
+  perihal?: string;
+  tertuju?: string;
+  klasifikasiName?: string | null;
+  klasifikasiId?: string | null;
+  pengirimName?: string | null;
+  tanggalKonsep?: string | null;
 }
 
 export interface SdeMasalFilter {
   search?: string;
   statusVerifikasi?: string;
   klasifikasiId?: string;
+  folderId?: string;
   tahun?: string;
   jenisTemplate?: string;
   page?: number;
@@ -148,13 +168,6 @@ export interface SdeMasalSummary {
   terverifikasi: number;
   ditolak: number;
   gagal: number;
-}
-
-export interface SdeMasalUploadResult {
-  total: number;
-  success: number;
-  failed: number;
-  items: SdeMasalItem[];
 }
 
 export interface SdeMasalWizardState {

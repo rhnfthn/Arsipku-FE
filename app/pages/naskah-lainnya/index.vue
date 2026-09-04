@@ -221,12 +221,15 @@
             {{ row.nomor }}
           </button>
         </template>
+        <template #cell-perihal="{ row }">
+          <span class="block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</span>
+        </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge :status="row.tahapan" />
         </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="goDetail(row.id)"
-            >Lihat</UButton
+            >Detail</UButton
           >
         </template>
       </DataTable>
@@ -292,9 +295,11 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   persetujuan: 'Persetujuan',
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
+  persetujuan_lanjutan: 'Persetujuan Lanjutan',
+  evaluasi_final: 'Evaluasi Final EVP',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
-  blanko_verbal: 'Blanko Verbal',
+  blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
   tanda_tangan_legal: 'TTD Legal',
   tanda_tangan_pejabat: 'TTD Pejabat',
   tanda_tangan: 'Menunggu Tanda Tangan',
@@ -327,9 +332,10 @@ const columns = [
   { key: 'jenis', label: 'Jenis', sortable: true },
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
+  { key: 'konseptor', label: 'Konseptor', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'terakhirDiubah', label: 'Diubah', sortable: true },
-  { key: 'aksi', label: '' },
+  { key: 'aksi', label: 'Aksi' },
 ];
 
 // ── Custom Dropdown Toolbar State (pola berkas-saya) ──────────────
@@ -401,7 +407,8 @@ const displayRows = computed(() =>
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
     perihal: r.perihal,
-    pemrakarsa: r.pemrakarsa.nama,
+    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
+    konseptor: r.pemrakarsa.nama,
     tahapan:
       r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
         ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
@@ -429,10 +436,12 @@ const tableRows = computed(() => {
   const start = (currentPage.value - 1) * perPage.value;
   return sortedRows.value.slice(start, start + perPage.value).map((r) => ({
     ...r,
-    terakhirDiubah: new Date(r.terakhirDiubah).toLocaleDateString('id-ID', {
+    terakhirDiubah: new Date(r.terakhirDiubah).toLocaleString('id-ID', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     }),
   }));
 });

@@ -2,27 +2,72 @@
   <div class="flex-1 overflow-y-auto">
     <!-- Section: Konsep Surat -->
     <div class="sde-masal-konsep-form space-y-1">
+      <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          Judul Folder<span class="text-red-500 ml-0.5">*</span>
+        </span>
+        <div class="relative flex-1 min-w-0 w-full">
+          <UInput
+            v-model="judulModel"
+            placeholder="Contoh: Tagihan PJNP Agustus 2026"
+            maxlength="255"
+            variant="none"
+            class="w-full"
+            :ui="{
+              root: 'w-full min-w-0',
+              base: '!bg-transparent !text-sm !px-0 !ring-0 !shadow-none w-full min-w-0',
+            }"
+          />
+        </div>
+      </div>
+
       <!-- Tanggal Konsep Surat -->
-      <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" />
+      <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" required />
 
       <!-- Klasifikasi -->
-      <TulisInputKlasifikasi v-model="klasifikasiModel" :items="klasifikasiList" :loading="klasifikasiStatus === 'loading'" />
+      <TulisInputKlasifikasi
+        v-model="klasifikasiModel"
+        :items="klasifikasiList"
+        :loading="klasifikasiStatus === 'loading'"
+        required
+      />
 
       <!-- Klasifikasi loading/error info -->
-      <div v-if="klasifikasiStatus === 'loading'" class="text-xs text-gray-400 -mt-1 pl-40">Memuat klasifikasi...</div>
-      <div v-else-if="klasifikasiStatus === 'error'" class="text-xs text-red-500 -mt-1 pl-40">Gagal memuat klasifikasi</div>
-      <div v-else-if="klasifikasiStatus === 'success' && klasifikasiList.length === 0" class="text-xs text-gray-400 -mt-1 pl-40">Belum ada data klasifikasi</div>
+      <div v-if="klasifikasiStatus === 'loading'" class="text-xs text-gray-400 -mt-1 pl-40">
+        Memuat klasifikasi...
+      </div>
+      <div v-else-if="klasifikasiStatus === 'error'" class="text-xs text-red-500 -mt-1 pl-40">
+        Gagal memuat klasifikasi
+      </div>
+      <div
+        v-else-if="klasifikasiStatus === 'success' && klasifikasiList.length === 0"
+        class="text-xs text-gray-400 -mt-1 pl-40"
+      >
+        Belum ada data klasifikasi
+      </div>
 
       <!-- Pengirim -->
-      <TulisInputPengirim v-model="senderModel" label="Pengirim" placeholder="Pilih Pengirim" :items="senderItems" />
+      <TulisInputPengirim
+        v-model="senderModel"
+        label="Pengirim"
+        placeholder="Pilih Pengirim"
+        :items="senderItems"
+        required
+      />
 
       <!-- Pengirim loading/error info -->
-      <div v-if="senderLoading" class="text-xs text-gray-400 -mt-1 pl-40">Memuat daftar pengirim...</div>
-      <div v-else-if="!senderLoading && senderItems.length === 0" class="text-xs text-gray-400 -mt-1 pl-40">Belum ada data pengirim</div>
+      <div v-if="senderLoading" class="text-xs text-gray-400 -mt-1 pl-40">
+        Memuat daftar pengirim...
+      </div>
+      <div
+        v-else-if="!senderLoading && senderItems.length === 0"
+        class="text-xs text-gray-400 -mt-1 pl-40"
+      >
+        Belum ada data pengirim
+      </div>
 
-      <!-- Sifat Surat (opsional) -->
-      <TulisInputSifat v-model="sifatModel" />
-
+      <!-- Sifat Surat -->
+      <TulisInputSifat v-model="sifatModel" required />
     </div>
   </div>
 </template>
@@ -78,6 +123,7 @@ const dateModel = ref<CalendarDate>(
 const klasifikasiModel = ref<string | null>(null);
 const senderModel = ref<any>(undefined);
 const sifatModel = ref<string | null>('biasa');
+const judulModel = ref('');
 const restoredFromDraft = ref(false);
 
 const restoreDraftForm = () => {
@@ -92,6 +138,7 @@ const restoreDraftForm = () => {
     ? { value: saved.pengirimId, label: saved.pengirimName }
     : undefined;
   sifatModel.value = saved.sifat || 'biasa';
+  judulModel.value = saved.judul || '';
   restoredFromDraft.value = true;
 };
 
@@ -101,13 +148,18 @@ const tanggalKonsepStr = computed(() => {
   return `${dateModel.value.year}-${String(dateModel.value.month).padStart(2, '0')}-${String(dateModel.value.day).padStart(2, '0')}`;
 });
 
-const klasifikasiObj = computed(() => klasifikasiList.value.find((k: Klasifikasi) => k.id === klasifikasiModel.value));
+const klasifikasiObj = computed(() =>
+  klasifikasiList.value.find((k: Klasifikasi) => k.id === klasifikasiModel.value)
+);
 
 // --- Sync ke model parent ---
+// klasifikasiList ikut di-watch: saat daftar klasifikasi selesai dimuat,
+// klasifikasiName harus di-update ulang (jangan sampai kosong/"-").
 watch(
-  [dateModel, klasifikasiModel, senderModel, sifatModel],
+  [dateModel, klasifikasiModel, senderModel, sifatModel, judulModel, klasifikasiList],
   () => {
     model.value = {
+      judul: judulModel.value.trim(),
       tanggalKonsep: tanggalKonsepStr.value,
       klasifikasiId: klasifikasiModel.value || '',
       klasifikasiName: klasifikasiObj.value

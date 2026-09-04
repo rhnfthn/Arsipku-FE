@@ -332,13 +332,11 @@ import {
 import { useRoute } from 'vue-router';
 
 import { useAuth } from '~/composables/useAuth';
-import { canAccessNaskahLainnya } from '~/composables/useFeatureAccess';
 import { useDelegationMode } from '~/composables/useDelegationMode';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
-import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
@@ -354,18 +352,9 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 
 // ── Usulan Akses Berkas counts (badge notifikasi) ──
 // Counts sudah exclude usulan yang viewed (filter di BE service getCounts).
-const {
-  counts: usulanCounts,
-  fetchCounts: fetchUsulanCounts,
-} = useUsulanAksesBerkasCounts();
-const {
-  counts: shareCounts,
-  fetchCounts: fetchShareCounts,
-} = useNaskahShareCounts();
+const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
+const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
-const { fetchPersetujuanCount, persetujuanCount, fetchLegalDraftingCount, legalDraftingCount } = useNaskahLainnya();
-// Badge jumlah naskah menunggu persetujuan (BE real).
-const naskahLainnyaPersetujuanCount = computed(() => persetujuanCount.value);
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
 const {
@@ -387,7 +376,8 @@ const {
   nomorCounts: rtNomorCounts,
   naskahDinasVerifikatorWaitingCount: rtVerifikatorCount,
   arsipPersetujuanWaitingCount: rtArsipPersetujuanCount,
-  isConnected: rtConnected,
+  naskahLainnyaPersetujuanWaitingCount: naskahLainnyaPersetujuanCount,
+  naskahLainnyaLegalDraftingWaitingCount: legalDraftingCount,
   init: rtInit,
   destroy: rtDestroy,
 } = useRealtimeSocket();
@@ -402,6 +392,12 @@ const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADM
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
+const canAccessSdeMasalPenyusunan = computed(() => {
+  const tag = String(user.value?.bodTag ?? '')
+    .trim()
+    .toUpperCase();
+  return ['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
+});
 
 // ─── Pindah Profile (Sekretaris / Unit Dokumen) ──────────────────────────────
 // User dengan delegasi di organization_tu (sekretaris_delegasi / unit_dokumen)
@@ -422,8 +418,10 @@ const hasDelegationProfile = computed(
 // Baca active_profile dari localStorage (sumber utama), default 'akun_asli'.
 const readStoredProfile = () => {
   if (process.client) {
-    const stored = localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
-    if (stored === 'akun_asli' || stored === 'sekretaris' || stored === 'unit_dokumen') return stored;
+    const stored =
+      localStorage.getItem('active_profile') || localStorage.getItem('arsipku_active_profile');
+    if (stored === 'akun_asli' || stored === 'sekretaris' || stored === 'unit_dokumen')
+      return stored;
   }
   return 'akun_asli';
 };
@@ -433,18 +431,26 @@ const syncProfileFromStorage = () => {
 };
 
 const activeProfile = computed(() => {
-  if (currentProfile.value === 'akun_asli' || currentProfile.value === 'sekretaris' || currentProfile.value === 'unit_dokumen') {
+  if (
+    currentProfile.value === 'akun_asli' ||
+    currentProfile.value === 'sekretaris' ||
+    currentProfile.value === 'unit_dokumen'
+  ) {
     return currentProfile.value;
   }
   const fromUser = user.value?.active_profile;
-  if (fromUser === 'akun_asli' || fromUser === 'sekretaris' || fromUser === 'unit_dokumen') return fromUser;
+  if (fromUser === 'akun_asli' || fromUser === 'sekretaris' || fromUser === 'unit_dokumen')
+    return fromUser;
   return 'akun_asli';
 });
 
 // Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
 // ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
 const showKelolaMenu = computed(
-  () => !hasDelegationProfile.value || activeProfile.value === 'sekretaris' || activeProfile.value === 'unit_dokumen'
+  () =>
+    !hasDelegationProfile.value ||
+    activeProfile.value === 'sekretaris' ||
+    activeProfile.value === 'unit_dokumen'
 );
 
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
@@ -453,9 +459,13 @@ const isAtasanManagerialUsulan = ref(false);
 const isAtasanManagerialTuUsulan = ref(false);
 const checkAtasanManagerialUsulan = async () => {
   try {
-    const res = await apiGet('/transfer-active-to-inactive/is-atasan', {
-      validateStatus: () => true,
-    }, { skipCache: true });
+    const res = await apiGet(
+      '/transfer-active-to-inactive/is-atasan',
+      {
+        validateStatus: () => true,
+      },
+      { skipCache: true }
+    );
     isAtasanManagerialUsulan.value = res?.data?.isAtasan ?? false;
   } catch {
     isAtasanManagerialUsulan.value = false;
@@ -466,9 +476,13 @@ const checkAtasanManagerialUsulan = async () => {
 // Jika ya, user berhak melihat menu "Verifikasi Persetujuan" (TU side).
 const checkAtasanManagerialTuUsulan = async () => {
   try {
-    const res = await apiGet('/tu/notifikasi-usulan/is-atasan-tu', {
-      validateStatus: () => true,
-    }, { skipCache: true });
+    const res = await apiGet(
+      '/tu/notifikasi-usulan/is-atasan-tu',
+      {
+        validateStatus: () => true,
+      },
+      { skipCache: true }
+    );
     isAtasanManagerialTuUsulan.value = res?.data?.isAtasanTu ?? res?.isAtasanTu ?? false;
   } catch {
     isAtasanManagerialTuUsulan.value = false;
@@ -572,17 +586,11 @@ onMounted(async () => {
     window.addEventListener('active_profile_changed', syncProfileFromStorage);
     // fetchLabels dan rtInit sudah dipanggil dari watch(user, immediate).
     // Fetch usulan akses berkas counts untuk badge sidebar
-    if (hasPermission('usulan-akses-berkas', 'read')) fetchUsulanCounts();
+    if (hasPermission('usulan-akses-berkas', 'read')) fetchUsulanCounts().catch(() => {});
     // Fetch share diterima counts untuk badge sidebar
-    if (hasPermission('naskah-share', 'read')) fetchShareCounts();
-    // Fetch jumlah naskah menunggu persetujuan untuk badge sidebar
-    if (canAccessNaskahLainnya(user.value?.position_status)) {
-      fetchPersetujuanCount().catch(() => { /* abaikan */ });
-    }
-    // Fetch jumlah naskah antrian legal drafting untuk badge sidebar (khusus legal role)
-    if (isLegalRole.value) {
-      fetchLegalDraftingCount().catch(() => { /* abaikan */ });
-    }
+    if (hasPermission('naskah-share', 'read')) fetchShareCounts().catch(() => {});
+    // Count Persetujuan dan Legal Drafting dikirim lewat initial WebSocket summary
+    // lalu diperbarui setiap workflow naskah berubah.
   } catch (error) {
     console.error('❌ Error in sidebar mount:', error);
   }
@@ -617,11 +625,31 @@ const hasInboxUnread = computed(() => unreadCount.value > 0);
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? '';
   const all = [
-    { label: t('nota_dinas'), to: '/korespondensi/tulis/nota-dinas', permission: { resource: 'utama.tulis.nota-dinas', action: 'read' } },
-    { label: t('disposisi'), to: '/korespondensi/tulis/disposisi', permission: { resource: 'utama.tulis.disposisi', action: 'read' } },
-    { label: t('surat_dinas_internal'), to: '/korespondensi/tulis/surat-dinas-internal', permission: { resource: 'utama.tulis.surat-dinas-internal', action: 'read' } },
-    { label: t('surat_dinas_eksternal'), to: '/korespondensi/tulis/surat-dinas-eksternal', permission: { resource: 'utama.tulis.surat-dinas-eksternal', action: 'read' } },
-    { label: t('kajian'), to: '/korespondensi/tulis/kajian', permission: { resource: 'utama.tulis.kajian', action: 'read' } },
+    {
+      label: t('nota_dinas'),
+      to: '/korespondensi/tulis/nota-dinas',
+      permission: { resource: 'utama.tulis.nota-dinas', action: 'read' },
+    },
+    {
+      label: t('disposisi'),
+      to: '/korespondensi/tulis/disposisi',
+      permission: { resource: 'utama.tulis.disposisi', action: 'read' },
+    },
+    {
+      label: t('surat_dinas_internal'),
+      to: '/korespondensi/tulis/surat-dinas-internal',
+      permission: { resource: 'utama.tulis.surat-dinas-internal', action: 'read' },
+    },
+    {
+      label: t('surat_dinas_eksternal'),
+      to: '/korespondensi/tulis/surat-dinas-eksternal',
+      permission: { resource: 'utama.tulis.surat-dinas-eksternal', action: 'read' },
+    },
+    {
+      label: t('kajian'),
+      to: '/korespondensi/tulis/kajian',
+      permission: { resource: 'utama.tulis.kajian', action: 'read' },
+    },
   ];
   if (tag === 'BOD' || tag === 'BOD-1') return all;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
@@ -648,6 +676,17 @@ const verifikatorMenu = computed(() => ({
   badge: rtVerifikatorCount.value > 0 ? rtVerifikatorCount.value : null,
 }));
 
+const sdeMasalMenu = computed(() => ({
+  label: 'SDE Massal',
+  icon: 'i-lucide-files',
+  children: [
+    ...(canAccessSdeMasalPenyusunan.value
+      ? [{ label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true }]
+      : []),
+    { label: 'Verifikasi', to: '/korespondensi/sde-masal/verifikasi', exact: true },
+  ],
+}));
+
 const userMenuUtama = computed(() => [
   {
     label: t('beranda'),
@@ -669,11 +708,15 @@ const userMenuUtama = computed(() => [
         to: '/naskah-lainnya/persetujuan',
         badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
       },
-      ...(isLegalRole.value ? [{
-        label: 'Legal Drafting',
-        to: '/naskah-lainnya/legal-drafting',
-        badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
-      }] : []),
+      ...(isLegalRole.value
+        ? [
+            {
+              label: 'Legal Drafting',
+              to: '/naskah-lainnya/legal-drafting',
+              badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
+            },
+          ]
+        : []),
     ],
   },
   {
@@ -696,12 +739,23 @@ const userMenuUtama = computed(() => [
     permission: { resource: 'utama.tertunda', action: 'read' },
   },
   {
+    ...sdeMasalMenu.value,
+  },
+  {
     label: t('draft'),
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
     children: [
-      { label: 'Draft Korespondensi', to: '/korespondensi/draf', permission: { resource: 'utama.draft', action: 'read' } },
-      { label: 'Naskah Lainnya', to: '/naskah-lainnya/draf', permission: { resource: 'utama.draft', action: 'read' } },
+      {
+        label: 'Korespondensi',
+        to: '/korespondensi/draf',
+        permission: { resource: 'utama.draft', action: 'read' },
+      },
+      {
+        label: 'Naskah Lainnya',
+        to: '/naskah-lainnya/draf',
+        permission: { resource: 'utama.draft', action: 'read' },
+      },
     ],
   },
   {
@@ -726,19 +780,45 @@ const userMenuUtilitas = computed(() => {
       icon: 'i-lucide-signature',
       permission: { resource: 'digsig', action: 'read-verifikasi-dokumen' },
       children: [
-        { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen', permission: { resource: 'digsig', action: 'read-verifikasi-dokumen' } },
-        { label: t('sign'), to: '/digsig/penandatanganan', permission: { resource: 'digsig', action: 'read-penandatanganan' } },
-        { label: t('check_dokumen'), to: '/digsig/cek-dokumen', permission: { resource: 'digsig', action: 'read-cek-dokumen' } },
+        {
+          label: t('verifikasi'),
+          to: '/digsig/verifikasi-dokumen',
+          permission: { resource: 'digsig', action: 'read-verifikasi-dokumen' },
+        },
+        {
+          label: t('sign'),
+          to: '/digsig/penandatanganan',
+          permission: { resource: 'digsig', action: 'read-penandatanganan' },
+        },
+        {
+          label: t('check_dokumen'),
+          to: '/digsig/cek-dokumen',
+          permission: { resource: 'digsig', action: 'read-cek-dokumen' },
+        },
       ],
     },
-    { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link', permission: { resource: 'penyingkat-tautan', action: 'read' } },
+    {
+      label: t('short_url'),
+      to: '/penyingkat-tautan',
+      icon: 'i-lucide-link',
+      permission: { resource: 'penyingkat-tautan', action: 'read' },
+    },
     {
       label: t('mail_service'),
       icon: 'i-lucide-mail',
       permission: { resource: 'layanan-email', action: 'read' },
       children: [
-        { label: 'Kirim Email', to: '/layanan-email', permission: { resource: 'layanan-email', action: 'read' } },
-        { label: 'Log Email', to: '/layanan-email/log', permission: { resource: 'layanan-email', action: 'read-log' } },
+        {
+          label: 'Kirim Email',
+          to: '/layanan-email',
+          exact: true,
+          permission: { resource: 'layanan-email', action: 'read' },
+        },
+        {
+          label: 'Log Email',
+          to: '/layanan-email/log',
+          permission: { resource: 'layanan-email', action: 'read-log' },
+        },
       ],
     },
     {
@@ -857,11 +937,15 @@ const adminMenuUtama = computed(() => [
         to: '/naskah-lainnya/persetujuan',
         badge: naskahLainnyaPersetujuanCount.value > 0 ? naskahLainnyaPersetujuanCount.value : null,
       },
-      ...(isLegalRole.value ? [{
-        label: 'Legal Drafting',
-        to: '/naskah-lainnya/legal-drafting',
-        badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
-      }] : []),
+      ...(isLegalRole.value
+        ? [
+            {
+              label: 'Legal Drafting',
+              to: '/naskah-lainnya/legal-drafting',
+              badge: legalDraftingCount.value > 0 ? legalDraftingCount.value : null,
+            },
+          ]
+        : []),
     ],
   },
   {
@@ -884,12 +968,23 @@ const adminMenuUtama = computed(() => [
     permission: { resource: 'utama.tertunda', action: 'read' },
   },
   {
+    ...sdeMasalMenu.value,
+  },
+  {
     label: t('draft'),
     icon: 'i-lucide-file-text',
     permission: { resource: 'utama.draft', action: 'read' },
     children: [
-      { label: 'Draft Korespondensi', to: '/korespondensi/draf', permission: { resource: 'utama.draft', action: 'read' } },
-      { label: 'Naskah Lainnya', to: '/naskah-lainnya/draf', permission: { resource: 'utama.draft', action: 'read' } },
+      {
+        label: 'Korespondensi',
+        to: '/korespondensi/draf',
+        permission: { resource: 'utama.draft', action: 'read' },
+      },
+      {
+        label: 'Naskah Lainnya',
+        to: '/naskah-lainnya/draf',
+        permission: { resource: 'utama.draft', action: 'read' },
+      },
     ],
   },
   {
@@ -913,20 +1008,50 @@ const adminMenuUtilitas = computed(() => {
       icon: 'i-lucide-signature',
       permission: { resource: 'digsig', action: 'read-verifikasi-dokumen' },
       children: [
-        { label: t('verifikasi'), to: '/digsig/verifikasi-dokumen', permission: { resource: 'digsig', action: 'read-verifikasi-dokumen' } },
-        { label: t('sign'), to: '/digsig/penandatanganan', permission: { resource: 'digsig', action: 'read-penandatanganan' } },
-        { label: t('check_dokumen'), to: '/digsig/cek-dokumen', permission: { resource: 'digsig', action: 'read-cek-dokumen' } },
-        { label: 'Log Digsig', to: '/digsig/log-digsig', permission: { resource: 'digsig', action: 'read-log-disdig' } },
+        {
+          label: t('verifikasi'),
+          to: '/digsig/verifikasi-dokumen',
+          permission: { resource: 'digsig', action: 'read-verifikasi-dokumen' },
+        },
+        {
+          label: t('sign'),
+          to: '/digsig/penandatanganan',
+          permission: { resource: 'digsig', action: 'read-penandatanganan' },
+        },
+        {
+          label: t('check_dokumen'),
+          to: '/digsig/cek-dokumen',
+          permission: { resource: 'digsig', action: 'read-cek-dokumen' },
+        },
+        {
+          label: 'Log Digsig',
+          to: '/digsig/log-digsig',
+          permission: { resource: 'digsig', action: 'read-log-disdig' },
+        },
       ],
     },
-    { label: t('short_url'), to: '/penyingkat-tautan', icon: 'i-lucide-link', permission: { resource: 'penyingkat-tautan', action: 'read' } },
+    {
+      label: t('short_url'),
+      to: '/penyingkat-tautan',
+      icon: 'i-lucide-link',
+      permission: { resource: 'penyingkat-tautan', action: 'read' },
+    },
     {
       label: t('mail_service'),
       icon: 'i-lucide-mail',
       permission: { resource: 'layanan-email', action: 'read' },
       children: [
-        { label: 'Kirim Email', to: '/layanan-email', permission: { resource: 'layanan-email', action: 'read' } },
-        { label: 'Log Email', to: '/layanan-email/log', permission: { resource: 'layanan-email', action: 'read-log' } },
+        {
+          label: 'Kirim Email',
+          to: '/layanan-email',
+          exact: true,
+          permission: { resource: 'layanan-email', action: 'read' },
+        },
+        {
+          label: 'Log Email',
+          to: '/layanan-email/log',
+          permission: { resource: 'layanan-email', action: 'read-log' },
+        },
       ],
     },
     {
@@ -984,7 +1109,11 @@ const adminMenuAdministrasi = computed(() => {
       badge:
         adminCounts.value.menunggu_verifikasi > 0 ? adminCounts.value.menunggu_verifikasi : null,
     },
-    { label: t('penomoran'), to: '/penomoran/nomor', permission: { resource: 'penomoran', action: 'read-penomoran' } }
+    {
+      label: t('penomoran'),
+      to: '/penomoran/nomor',
+      permission: { resource: 'penomoran', action: 'read-penomoran' },
+    }
   );
 
   const base = [
@@ -1020,10 +1149,27 @@ const adminMenuAdministrasi = computed(() => {
         label: t('master_data'),
         icon: 'i-lucide-database',
         children: [
-          { label: t('tertuju'), to: '/master/tertuju-eksternal', permission: { resource: 'master-data', action: 'read-tertuju' } },
-          { label: t('perusahaan'), to: '/master/perusahaan', icon: 'i-lucide-building-2', permission: { resource: 'master-data', action: 'read-perusahaan' } },
-          { label: t('klasifikasi'), to: '/master/klasifikasi', permission: { resource: 'master-data', action: 'read-klasifikasi' } },
-          { label: t('jenis'), to: '/master/jenis', permission: { resource: 'master-data', action: 'read-jenis' } },
+          {
+            label: t('tertuju'),
+            to: '/master/tertuju-eksternal',
+            permission: { resource: 'master-data', action: 'read-tertuju' },
+          },
+          {
+            label: t('perusahaan'),
+            to: '/master/perusahaan',
+            icon: 'i-lucide-building-2',
+            permission: { resource: 'master-data', action: 'read-perusahaan' },
+          },
+          {
+            label: t('klasifikasi'),
+            to: '/master/klasifikasi',
+            permission: { resource: 'master-data', action: 'read-klasifikasi' },
+          },
+          {
+            label: t('jenis'),
+            to: '/master/jenis',
+            permission: { resource: 'master-data', action: 'read-jenis' },
+          },
           {
             label: t('grup_penerima') || 'Grup Penerima',
             to: '/master/grup-penerima',
@@ -1037,10 +1183,30 @@ const adminMenuAdministrasi = computed(() => {
         icon: 'i-lucide-shield-check',
         permission: { resource: 'role', action: 'read' },
         children: [
-          { label: t('rbac_roles'), to: '/rbac/roles', icon: 'i-lucide-shield', permission: { resource: 'role', action: 'read' } },
-          { label: t('rbac_permissions'), to: '/rbac/permissions', icon: 'i-lucide-key-round', permission: { resource: 'role', action: 'read' } },
-          { label: t('rbac_resources'), to: '/rbac/resources', icon: 'i-lucide-box', permission: { resource: 'role', action: 'read' } },
-          { label: t('rbac_users'), to: '/rbac/users', icon: 'i-lucide-user-cog', permission: { resource: 'user', action: 'read' } },
+          {
+            label: t('rbac_roles'),
+            to: '/rbac/roles',
+            icon: 'i-lucide-shield',
+            permission: { resource: 'role', action: 'read' },
+          },
+          {
+            label: t('rbac_permissions'),
+            to: '/rbac/permissions',
+            icon: 'i-lucide-key-round',
+            permission: { resource: 'role', action: 'read' },
+          },
+          {
+            label: t('rbac_resources'),
+            to: '/rbac/resources',
+            icon: 'i-lucide-box',
+            permission: { resource: 'role', action: 'read' },
+          },
+          {
+            label: t('rbac_users'),
+            to: '/rbac/users',
+            icon: 'i-lucide-user-cog',
+            permission: { resource: 'user', action: 'read' },
+          },
         ],
       },
       {
@@ -1093,7 +1259,13 @@ const isManagerialPosition = computed(() => {
   const posText = (user.value?.positionText || '').toUpperCase();
   if (posText.includes('EVP')) return true;
   if (posText.includes('AVP')) return true;
-  if (posText.includes(' VP ') || posText.startsWith('VP ') || posText.endsWith(' VP') || posText === 'VP') return true;
+  if (
+    posText.includes(' VP ') ||
+    posText.startsWith('VP ') ||
+    posText.endsWith(' VP') ||
+    posText === 'VP'
+  )
+    return true;
   if (hasBodTag.value) return true; // BOD juga managerial
   return false;
 });
@@ -1101,7 +1273,10 @@ const isManagerialPosition = computed(() => {
 // Cek apakah user adalah SE/PS (Sekretaris yang didelegasikan via switch role)
 // ATAU punya role 'sekretaris' dari organization_tu (Unit TU)
 const isSekretarisActor = computed(
-  () => activePositionStatus.value === 'SE' || activePositionStatus.value === 'PS' || isSekretarisRole.value,
+  () =>
+    activePositionStatus.value === 'SE' ||
+    activePositionStatus.value === 'PS' ||
+    isSekretarisRole.value
 );
 
 const unitDokumenKelolaMenus = computed(() => [
@@ -1113,6 +1288,13 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Pemberkasan',
         to: '/kelola/pemeliharaan/pemberkasan/berkas-saya',
         icon: 'i-lucide-folder-plus',
+      },
+      {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
       {
         label: 'Penerimaan Usulan',
@@ -1131,22 +1313,13 @@ const unitDokumenKelolaMenus = computed(() => [
     icon: 'i-lucide-folder-open',
     children: [
       {
-        label: 'Usulan Akses',
-        to: '/kelola/penggunaan/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
-        label: 'Verifikasi Usulan Akses',
-        to: '/kelola/penggunaan/verifikasi-usulan',
-        icon: 'i-lucide-file-check',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+        badge:
+          usulanCounts.value.aksesDiterbitkanBaru > 0
+            ? usulanCounts.value.aksesDiterbitkanBaru
+            : null,
       },
     ],
   },
@@ -1201,16 +1374,13 @@ const sekretarisKelolaMenus = computed(() => [
         badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       },
       {
-        label: 'Verifikasi Usulan Akses',
-        to: '/kelola/penggunaan/verifikasi-usulan',
-        icon: 'i-lucide-file-check',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+        badge:
+          usulanCounts.value.aksesDiterbitkanBaru > 0
+            ? usulanCounts.value.aksesDiterbitkanBaru
+            : null,
       },
     ],
   },
@@ -1233,6 +1403,13 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
         label: 'Verifikasi Usulan',
         to: '/maintenance/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
@@ -1244,22 +1421,13 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
     icon: 'i-lucide-folder-open',
     children: [
       {
-        label: 'Usulan Akses',
-        to: '/kelola/penggunaan/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
-        label: 'Verifikasi Usulan Akses',
-        to: '/kelola/penggunaan/verifikasi-usulan',
-        icon: 'i-lucide-file-check',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+        badge:
+          usulanCounts.value.aksesDiterbitkanBaru > 0
+            ? usulanCounts.value.aksesDiterbitkanBaru
+            : null,
       },
     ],
   },
@@ -1293,6 +1461,13 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
+        label: 'Usulan Akses',
+        to: '/kelola/penggunaan/usulan-akses-berkas',
+        icon: 'i-lucide-folder-key',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
         label: 'Verifikasi Persetujuan',
         to: '/maintenance/verifikasi-persetujuan-tu',
         icon: 'i-lucide-file-check-2',
@@ -1309,22 +1484,13 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
     icon: 'i-lucide-folder-open',
     children: [
       {
-        label: 'Usulan Akses',
-        to: '/kelola/penggunaan/usulan-akses-berkas',
-        icon: 'i-lucide-folder-key',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
-        label: 'Verifikasi Usulan Akses',
-        to: '/kelola/penggunaan/verifikasi-usulan',
-        icon: 'i-lucide-file-check',
-        badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+        badge:
+          usulanCounts.value.aksesDiterbitkanBaru > 0
+            ? usulanCounts.value.aksesDiterbitkanBaru
+            : null,
       },
     ],
   },
@@ -1354,7 +1520,9 @@ const isSekretarisProfile = computed(
 const isAtasanManagerialSekretarisProfile = computed(
   () =>
     isSekretarisProfile.value &&
-    (isManagerialPosition.value || isAtasanManagerialUsulan.value || isAtasanManagerialPenyusutan.value)
+    (isManagerialPosition.value ||
+      isAtasanManagerialUsulan.value ||
+      isAtasanManagerialPenyusutan.value)
 );
 const isAtasanManagerialUnitDokumenProfile = computed(
   () =>
@@ -1368,7 +1536,8 @@ const isAtasanManagerialUnitDokumenProfile = computed(
 );
 
 const profileKelolaMenus = computed(() => {
-  if (isAtasanManagerialUnitDokumenProfile.value) return atasanManagerialUnitDokumenKelolaMenus.value;
+  if (isAtasanManagerialUnitDokumenProfile.value)
+    return atasanManagerialUnitDokumenKelolaMenus.value;
   if (isAtasanManagerialSekretarisProfile.value) return atasanManagerialSekretarisKelolaMenus.value;
   if (isUnitDokumenProfile.value && isTuRole.value) return unitDokumenKelolaMenus.value;
   if (isSekretarisProfile.value && isSekretarisActor.value) return sekretarisKelolaMenus.value;
@@ -1396,6 +1565,14 @@ const adminMenuKelola = computed(() => {
       permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
       showIfCanPersetujuan: true,
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+    },
+    {
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read' },
+      badge:
+        usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
     },
     {
       label: 'Pemindahan Arsip',
@@ -1432,8 +1609,7 @@ const adminMenuKelola = computed(() => {
   const pemeliharaanBadge = pemeliharaanChildren.reduce((sum, c) => sum + (c.badge || 0), 0);
   // Fallback: kalau child tidak ada badge tapi ada notifikasi global,
   // tetap tampilkan dot di parent (adminMenuKelola).
-  const pemeliharaanFallback =
-    pemeliharaanBadge === 0 && unreadCount.value > 0 ? 1 : null;
+  const pemeliharaanFallback = pemeliharaanBadge === 0 && unreadCount.value > 0 ? 1 : null;
 
   const menus = [
     {
@@ -1448,12 +1624,10 @@ const adminMenuKelola = computed(() => {
   // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
   // Tiap child tampil berdasarkan actor:
   //   - Usulan Saya: SE (buat usulan)
-  //   - Usulan Akses: user dengan permission read (list semua usulan)
-  //   - Verifikasi Usulan Akses: verifikator managerial & SE pemberi
   //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
+  //   Verifikasi Usulan hanya ada di menu Pemeliharaan (untuk Atasan Managerial).
   const penggunaanChildren = [];
 
-  // Usulan Akses (list) — untuk SE, manager, admin/superadmin yang punya permission
   if (isSekretarisActor.value) {
     penggunaanChildren.push({
       label: 'Usulan Saya',
@@ -1462,29 +1636,14 @@ const adminMenuKelola = computed(() => {
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
     });
-  } else {
-    // Non-SE: tampilkan "Usulan Akses" (list)
-    penggunaanChildren.push({
-      label: 'Usulan Akses',
-      to: '/kelola/penggunaan/usulan-akses-berkas',
-      icon: 'i-lucide-folder-key',
-      permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    });
   }
-
-  penggunaanChildren.push({
-    label: 'Verifikasi Usulan Akses',
-    to: '/kelola/penggunaan/verifikasi-usulan',
-    icon: 'i-lucide-file-check',
-    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-  });
 
   penggunaanChildren.push({
     label: 'Pemberian',
     to: '/kelola/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
-    badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+    badge:
+      usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
 
   if (penggunaanChildren.length > 0) {
@@ -1608,41 +1767,6 @@ const userMenuKelola = computed(() => {
       children: pemeliharaanChildren,
     },
   ];
-
-  // ── Menu Penggunaan (Usulan Akses Berkas) ──
-  // Urutan konsisten: Usulan Akses → Verifikasi → Pemberian
-  // Usulan Akses: list semua usulan (untuk non-SE lihat)
-  // Verifikasi Usulan Akses: verifikator managerial (EVP/AVP/VP/BOD) & SE pemberi.
-  // Pemberian: list akses yang sudah diterbitkan (semua user).
-  const penggunaanChildrenKelola = [
-    {
-      label: 'Usulan Akses',
-      to: '/kelola/penggunaan/usulan-akses-berkas',
-      icon: 'i-lucide-folder-key',
-      permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    },
-    {
-      label: 'Verifikasi Usulan Akses',
-      to: '/kelola/penggunaan/verifikasi-usulan',
-      icon: 'i-lucide-file-check',
-      permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-    },
-    {
-      label: 'Pemberian',
-      to: '/kelola/penggunaan/pemberian',
-      icon: 'i-lucide-folder-check',
-      permission: { resource: 'usulan-akses-berkas', action: 'read' },
-      badge: usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
-    },
-  ];
-
-  menus.push({
-    label: 'Penggunaan',
-    icon: 'i-lucide-folder-open',
-    children: penggunaanChildrenKelola,
-  });
 
   // ── Menu Penyusutan ──
   const penyusutanChildrenKelola = [
@@ -1801,9 +1925,7 @@ const filterMenuByPermission = (items) => {
     return cloned;
   };
 
-  return items
-    .map((item) => filterRecursive(item))
-    .filter((item) => item !== null);
+  return items.map((item) => filterRecursive(item)).filter((item) => item !== null);
 };
 
 // ─── Apps ─────────────────────────────────────────────────────────────────────
