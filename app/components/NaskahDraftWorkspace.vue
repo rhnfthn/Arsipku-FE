@@ -70,6 +70,17 @@
           </div>
         </div>
 
+        <!-- Sub-heading Dokumen Pendukung — jelas terpisah dari naskah utama -->
+        <div
+          v-if="dokumenPendukung.length"
+          class="flex items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-700"
+        >
+          <UIcon name="i-lucide-paperclip" class="h-4 w-4 text-gray-400" />
+          <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Dokumen Pendukung
+          </h4>
+          <span class="text-xs text-gray-400">({{ dokumenPendukung.length }} file)</span>
+        </div>
         <div
           v-for="doc in dokumenPendukung"
           :key="doc.id"
@@ -78,9 +89,7 @@
           <span class="text-2xl">📎</span>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ doc.nama }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              DOCX · PDF tersedia untuk pratinjau
-            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">PDF · Dokumen pendukung</p>
           </div>
           <UButton
             size="xs"

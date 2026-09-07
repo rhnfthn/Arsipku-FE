@@ -62,11 +62,67 @@
         @stage-revisi="onStageRevisi"
       />
 
+      <!-- Dokumen pelengkap: Blanko Verbal / Lembar Persetujuan Direksi (PDF sheet)
+           agar approver melihat dokumen pendukung keputusan sebelum menyetujui. -->
+      <div v-if="sheetDokumen.length" class="px-5 py-4">
+        <div class="mb-3 flex items-center gap-2">
+          <UIcon name="i-lucide-file-check-2" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Dokumen Sheet</h3>
+          <span class="text-xs text-gray-400">(Blanko Verbal / Lembar Persetujuan Direksi)</span>
+        </div>
+        <div class="space-y-2">
+          <div
+            v-for="doc in sheetDokumen"
+            :key="doc.id"
+            class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <span class="text-2xl">📑</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {{ sheetDokumenLabel(doc) }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                PDF · {{ sheetDokumenTipeLabel(doc.tipe) }}
+              </p>
+            </div>
+            <UButton
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-eye"
+              @click="previewPendukung(doc)"
+              >Preview</UButton
+            >
+          </div>
+        </div>
+      </div>
+
       <div class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
           <UIcon name="i-lucide-users" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Rantai Persetujuan</h3>
           <span class="text-xs text-gray-400">(berjenjang — sesuai urutan)</span>
+        </div>
+
+        <!-- Catatan dari approver tahap sebelumnya (tahap lain yang sudah memberi aksi) -->
+        <div
+          v-if="previousStageNotes.length"
+          class="mb-3 space-y-2 rounded-lg border border-gray-200 bg-gray-50/70 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40"
+        >
+          <p class="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+            <UIcon name="i-lucide-message-square-quote" class="size-3.5" />
+            Catatan dari Tahap Sebelumnya
+          </p>
+          <div
+            v-for="note in previousStageNotes"
+            :key="note.key"
+            class="flex flex-col gap-0.5 rounded-md bg-white px-3 py-2 text-xs leading-relaxed shadow-sm dark:bg-gray-800"
+          >
+            <span class="font-semibold text-gray-800 dark:text-gray-100">
+              {{ note.nama }}
+              <span class="font-normal text-gray-400">({{ note.tahapLabel }})</span>
+            </span>
+            <span class="text-gray-600 dark:text-gray-300">{{ note.catatan }}</span>
+          </div>
         </div>
 
         <div
@@ -114,6 +170,14 @@
             >
               {{ approvalStatusLabel(row.status, row.id === activeApprovalRow?.id) }}
             </span>
+            <!-- Catatan approver (tampil bila sudah memberi aksi: disetujui/ditolak) -->
+            <div
+              v-if="row.catatan && row.status !== 'waiting' && row.status !== 'pending'"
+              class="w-full rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600 dark:bg-gray-700/60 dark:text-gray-300 sm:w-auto sm:flex-[0_0_100%]"
+            >
+              <span class="font-semibold text-gray-700 dark:text-gray-200">Catatan:</span>
+              {{ row.catatan }}
+            </div>
           </div>
         </div>
       </div>
@@ -337,6 +401,39 @@ const verifiedApprovalCount = computed(
   () => approvalRows.value.filter((row) => row.status === 'verified').length
 );
 
+// Label ramah per tahap approval — untuk penanda catatan tahap sebelumnya.
+const TAHAP_LABELS: Record<string, string> = {
+  persetujuan: 'Persetujuan',
+  persetujuan_lanjutan: 'Persetujuan Lanjutan',
+  legal_drafting: 'Legal Drafting',
+  evaluasi: 'Evaluasi',
+  evaluasi_final: 'Evaluasi Final',
+  persetujuan_direksi: 'Persetujuan Direksi',
+  blanko_verbal: 'Blanko Verbal',
+  tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
+  tanda_tangan_legal: 'TTD Legal',
+  tanda_tangan_pejabat: 'TTD Pejabat',
+  tanda_tangan: 'Tanda Tangan',
+};
+
+// Catatan approver dari tahap lain (bukan tahap aktif) yang sudah memberi
+// aksi — supaya approver berikutnya melihat catatan tahap sebelumnya.
+const previousStageNotes = computed(() =>
+  (detail.value?.approval ?? [])
+    .filter(
+      (row) =>
+        row.tahap !== approvalStage.value &&
+        !!row.catatan?.trim() &&
+        (row.status === 'verified' || row.status === 'rejected')
+    )
+    .map((row) => ({
+      key: `${row.id}-${row.tahap}`,
+      nama: row.nama,
+      catatan: row.catatan!.trim(),
+      tahapLabel: TAHAP_LABELS[row.tahap] ?? row.tahap,
+    }))
+);
+
 function isCurrentUserApprover(row: ApprovalRow | null | undefined) {
   if (!row || !user.value) return false;
   const role = String(user.value.role ?? '').toUpperCase();
@@ -428,6 +525,26 @@ async function loadDetail() {
   } finally {
     loading.value = false;
   }
+}
+
+// Dokumen sheet (Blanko Verbal / Lembar Persetujuan Direksi) yang sudah
+// tersimpan — PDF hasil render BE, dipreview via endpoint dokumen download.
+// Tipe 'blanko_verbal' (docx dari blankoRepo) tidak termasuk: tidak punya
+// baris di dokumenRepo sehingga tidak bisa diunduh via endpoint dokumen.
+const sheetDokumen = computed(() =>
+  (detail.value?.dokumen || []).filter((doc: any) =>
+    ['blanko_verbal_pdf', 'lembar_persetujuan_direksi_pdf'].includes(doc.tipe)
+  )
+);
+
+function sheetDokumenTipeLabel(tipe: string) {
+  if (tipe === 'blanko_verbal_pdf') return 'Blanko Verbal';
+  if (tipe === 'lembar_persetujuan_direksi_pdf') return 'Lembar Persetujuan Direksi';
+  return tipe;
+}
+
+function sheetDokumenLabel(doc: any) {
+  return doc.nama || sheetDokumenTipeLabel(doc.tipe);
 }
 
 async function downloadNaskah(name?: string) {
