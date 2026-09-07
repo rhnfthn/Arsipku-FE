@@ -61,6 +61,40 @@
         @stage-revisi="stagedRevision = $event"
       />
 
+      <!-- Dokumen pelengkap: Blanko Verbal / Lembar Persetujuan Direksi (PDF sheet)
+           agar approver melihat dokumen pendukung keputusan sebelum menyetujui. -->
+      <div v-if="sheetDokumen.length" class="px-5 py-4">
+        <div class="mb-3 flex items-center gap-2">
+          <UIcon name="i-lucide-file-check-2" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Dokumen Sheet</h3>
+          <span class="text-xs text-gray-400">(Blanko Verbal / Lembar Persetujuan Direksi)</span>
+        </div>
+        <div class="space-y-2">
+          <div
+            v-for="doc in sheetDokumen"
+            :key="doc.id"
+            class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <span class="text-2xl">📑</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {{ sheetDokumenLabel(doc) }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                PDF · {{ sheetDokumenTipeLabel(doc.tipe) }}
+              </p>
+            </div>
+            <UButton
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-eye"
+              @click="previewSheetDokumen(doc)"
+              >Preview</UButton
+            >
+          </div>
+        </div>
+      </div>
+
       <div v-if="showRecipientSelector" class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
           <UIcon name="i-lucide-users" class="size-5 text-gray-500" />
@@ -372,6 +406,38 @@ const actions = computed(() => detail.value?.availableActions ?? []);
 const supportingDocuments = computed(() =>
   (detail.value?.dokumen ?? []).filter((document) => document.tipe === 'pendukung')
 );
+
+// Dokumen sheet (Blanko Verbal / Lembar Persetujuan Direksi) yang sudah
+// tersimpan — PDF hasil render BE, dipreview via endpoint dokumen download.
+const sheetDokumen = computed(() =>
+  (detail.value?.dokumen ?? []).filter((document) =>
+    ['blanko_verbal_pdf', 'lembar_persetujuan_direksi_pdf'].includes(document.tipe)
+  )
+);
+
+function sheetDokumenTipeLabel(tipe: string) {
+  if (tipe === 'blanko_verbal_pdf') return 'Blanko Verbal';
+  if (tipe === 'lembar_persetujuan_direksi_pdf') return 'Lembar Persetujuan Direksi';
+  return tipe;
+}
+
+function sheetDokumenLabel(doc: any) {
+  return doc.nama || sheetDokumenTipeLabel(doc.tipe);
+}
+
+async function previewSheetDokumen(doc: any) {
+  try {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
+      responseType: 'blob',
+    });
+    const pdf = new Blob([await blob.arrayBuffer()], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(pdf);
+    window.open(url, '_blank');
+    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+  } catch {
+    toast.add({ title: 'Gagal memuat preview', color: 'error' });
+  }
+}
 const errorMessage = computed(() => getErrorMessage(error.value, 'Gagal memuat detail naskah.'));
 
 const breadcrumbs = computed(() => [
