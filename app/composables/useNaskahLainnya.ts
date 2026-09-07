@@ -396,13 +396,10 @@ export function useNaskahLainnya() {
     );
   };
 
-  const uploadRevisiDokumen = async (id: string, pair: { docx: File | null; pdf: File | null }) => {
-    if (!pair.docx || !pair.pdf) {
-      throw new Error('Revisi wajib dilengkapi dengan file DOCX dan PDF.');
-    }
+  const uploadRevisiDokumen = async (id: string, revision: { docx: File | null }) => {
+    if (!revision.docx) throw new Error('File revisi DOCX wajib diunggah.');
     const fd = new FormData();
-    fd.append('docx', pair.docx);
-    fd.append('pdf', pair.pdf);
+    fd.append('docx', revision.docx);
     return apiPost<ApiResponse<{ parameter: { perihal: string; tanggal: string } }>>(
       `/naskah-lainnya/${id}/dokumen/revisi`,
       fd

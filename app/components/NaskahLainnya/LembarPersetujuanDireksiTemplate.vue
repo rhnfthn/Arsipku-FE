@@ -243,6 +243,7 @@
 import type { PropType } from 'vue';
 import type { SheetFormModel, DirectorApprovalItem } from '~/types/naskah-lainnya';
 import VisibleDigsig from '~/components/NaskahLainnya/VisibleDigsig.vue';
+import { formatNaskahDate } from '~/utils/naskah-lainnya-date';
 
 // Sebelumnya untyped (defineModel({ default: () => ({}) })) — mismatch dengan
 // v-model ref<SheetFormModel> di halaman. Selaraskan dengan BlankoVerbalTemplate.
@@ -304,14 +305,7 @@ function positionOf(director?: DirectorApprovalItem, fallback = 'DIREKTUR') {
 }
 
 function formatTanggal(value?: string) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  return formatNaskahDate(value, '');
 }
 </script>
 

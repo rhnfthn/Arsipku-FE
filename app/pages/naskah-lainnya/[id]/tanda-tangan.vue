@@ -176,7 +176,7 @@
                 <input
                   type="file"
                   class="hidden"
-                  accept=".docx,.pdf,image/*"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   @change="onUnggahTtdFisik"
                 />
               </label>
@@ -402,7 +402,9 @@ async function downloadNaskah(name) {
 
 async function previewNaskah() {
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, { responseType: 'blob' });
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+      responseType: 'blob',
+    });
     window.open(window.URL.createObjectURL(blob), '_blank');
   } catch {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
@@ -466,7 +468,7 @@ watch(previewOpen, (open) => {
 async function previewPendukung(doc) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
       responseType: 'blob',
     });
     await openPreviewFromBlob(blob, doc.nama);
@@ -478,9 +480,11 @@ async function previewPendukung(doc) {
 }
 
 async function afterSignNavigate() {
-  // Setelah menandatangani, naskah menjadi riwayat aksi penandatangan ini.
-  // Redirect ke filter Disetujui, baik masih ada penandatangan berikutnya maupun
-  // naskah sudah selesai seluruhnya.
+  await fetchDetail(id.value);
+  if (detail.value?.tahapan === 'selesai') {
+    await navigateTo(`/naskah-lainnya/${id.value}/selesai`);
+    return;
+  }
   await navigateTo('/naskah-lainnya/persetujuan?status=disetujui');
 }
 
