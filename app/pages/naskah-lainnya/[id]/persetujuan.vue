@@ -49,15 +49,13 @@
         :dokumen-pendukung="dokumenPendukung"
         :area-title="workspaceCopy.areaTitle"
         :area-description="workspaceCopy.areaDescription"
-        :catatan-title="workspaceCopy.catatanTitle"
-        :catatan-placeholder="workspaceCopy.catatanPlaceholder"
         :show-actions="false"
+        :show-catatan="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="canProcess"
         staged-success-description="Revisi siap diunggah bersama aksi persetujuan"
         divided
-        v-model="catatan"
         @preview="previewNaskah"
         @download="downloadNaskah"
         @preview-pendukung="previewPendukung"
@@ -137,8 +135,8 @@
               Aksi Persetujuan
             </h3>
             <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Revisi bersifat opsional. Jika mengunggah revisi, DOCX dan PDF wajib dilengkapi
-              bersamaan dengan isi yang sama.
+              Revisi bersifat opsional. Unggah DOCX dan sistem akan membuat PDF pratinjau secara
+              otomatis.
             </p>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row">
@@ -238,9 +236,8 @@ const { t } = useI18n();
 const loading = ref(true);
 const busy = ref(false);
 const activeAction = ref<'setuju' | 'tolak' | null>(null);
-const catatan = ref('');
 const dokumenPendukung = ref<any[]>([]);
-const stagedRevisi = ref<RevisionFilePair>({ docx: null, pdf: null });
+const stagedRevisi = ref<RevisionFilePair>({ docx: null });
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 
@@ -279,8 +276,6 @@ const workspaceCopy = computed(() => {
       areaTitle: 'Tinjauan Approval Legal',
       areaDescription:
         'Tinjau naskah legal drafting sebelum memberi approval. Bila ada perbaikan, unggah naskah hasil update secara opsional; bila tidak diunggah, sistem tetap memakai naskah sebelumnya.',
-      catatanTitle: 'Catatan Approval Legal',
-      catatanPlaceholder: 'Catatan approval legal (opsional)…',
       emptyApprover: 'Belum ada approver pada tahap approval legal.',
       waitingTitle: 'Approval Legal Menunggu Anda',
       waitingQueueTitle: 'Menunggu Giliran Approval Legal',
@@ -304,8 +299,6 @@ const workspaceCopy = computed(() => {
     areaTitle: 'Tinjauan Persetujuan',
     areaDescription:
       'Tinjau naskah sebelum memberi persetujuan. Bila ada perbaikan, unggah naskah hasil update secara opsional; bila tidak diunggah, sistem tetap memakai naskah sebelumnya.',
-    catatanTitle: 'Catatan Persetujuan',
-    catatanPlaceholder: 'Catatan persetujuan (opsional)…',
     emptyApprover: 'Belum ada approver pada tahap persetujuan.',
     waitingTitle: 'Persetujuan Menunggu Anda',
     waitingQueueTitle: 'Menunggu Giliran Persetujuan',
@@ -518,7 +511,7 @@ watch(previewOpen, (open) => {
 async function previewPendukung(doc: any) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
       responseType: 'blob',
     });
     await openPreviewFromBlob(blob, doc.nama);
@@ -534,18 +527,10 @@ function onStageRevisi(pair: RevisionFilePair) {
 }
 
 async function commitStagedRevisi() {
-  const { docx, pdf } = stagedRevisi.value;
-  if (!docx && !pdf) return;
-  if (!docx || !pdf) {
-    toast.add({
-      title: 'Lengkapi pasangan file revisi',
-      description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
-      color: 'warning',
-    });
-    throw new Error('Pasangan file revisi belum lengkap');
-  }
+  const { docx } = stagedRevisi.value;
+  if (!docx) return;
   await uploadRevisiDokumen(id.value, stagedRevisi.value);
-  stagedRevisi.value = { docx: null, pdf: null };
+  stagedRevisi.value = { docx: null };
 }
 
 async function runApprovalAction(action: 'setuju' | 'tolak', note?: string) {
@@ -557,7 +542,7 @@ async function runApprovalAction(action: 'setuju' | 'tolak', note?: string) {
   try {
     await commitStagedRevisi();
     if (action === 'setuju') {
-      await setuju(id.value, row.id, note || catatan.value || undefined);
+      await setuju(id.value, row.id, note || undefined);
       toast.add({ title: 'Naskah disetujui', color: 'success' });
       showApproveModal.value = false;
     } else if (action === 'tolak') {

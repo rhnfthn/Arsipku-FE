@@ -362,7 +362,7 @@ const activeAction = ref<
 const loadingCandidates = ref(false);
 const candidates = ref<ApprovalItem[]>([]);
 const selectedRecipientId = ref<string | null>(null);
-const stagedRevision = ref<RevisionFilePair>({ docx: null, pdf: null });
+const stagedRevision = ref<RevisionFilePair>({ docx: null });
 const showEvaluationRejectOptions = ref(false);
 const showContinueConfirmation = ref(false);
 const rejectionReason = ref('');
@@ -431,8 +431,8 @@ const workspaceAreaTitle = computed(() =>
 );
 const workspaceAreaDescription = computed(() =>
   canDecideEvaluation.value
-    ? 'Tinjau naskah sebagai EVP. Bila diperlukan, unggah revisi DOCX dan PDF dengan isi yang sama sebelum memberikan keputusan.'
-    : 'Tinjau naskah, unggah revisi DOCX dan PDF bila diperlukan, lalu teruskan atau selesaikan pekerjaan.'
+    ? 'Tinjau naskah sebagai EVP. Bila diperlukan, unggah revisi DOCX; PDF pratinjau dibuat otomatis sebelum memberikan keputusan.'
+    : 'Tinjau naskah, unggah revisi DOCX bila diperlukan, lalu teruskan atau selesaikan pekerjaan.'
 );
 const workspaceNoteTitle = computed(() =>
   canDecideEvaluation.value ? 'Catatan Evaluasi EVP' : 'Catatan Penerima'
@@ -590,20 +590,10 @@ const loadContinuationCandidates = async () => {
 
 const commitRevision = async (): Promise<boolean> => {
   const hasDocx = Boolean(stagedRevision.value.docx);
-  const hasPdf = Boolean(stagedRevision.value.pdf);
-  if (!hasDocx && !hasPdf) return true;
-
-  if (!hasDocx || !hasPdf) {
-    toast.add({
-      title: 'Pasangan file belum lengkap',
-      description: 'Unggah file DOCX dan PDF dengan isi yang sama.',
-      color: 'warning',
-    });
-    return false;
-  }
+  if (!hasDocx) return true;
 
   await uploadRevisiDokumen(id.value, stagedRevision.value);
-  stagedRevision.value = { docx: null, pdf: null };
+  stagedRevision.value = { docx: null };
   return true;
 };
 
@@ -658,7 +648,7 @@ const finishContinuation = async () => {
 
 const downloadDocument = async (filename?: string) => {
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, {
       responseType: 'blob',
     });
     const url = window.URL.createObjectURL(blob);

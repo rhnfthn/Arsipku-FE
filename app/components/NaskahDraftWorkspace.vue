@@ -78,7 +78,9 @@
           <span class="text-2xl">📎</span>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ doc.nama }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">PDF · Dokumen Pendukung</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              DOCX · PDF tersedia untuk pratinjau
+            </p>
           </div>
           <UButton
             size="xs"
@@ -123,33 +125,16 @@
           >
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-2">
+        <div>
           <FileUpload
             :model-value="revisiDocx ? [revisiDocx] : []"
             :multiple="false"
             accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             label="Unggah Versi DOCX"
-            description="File editable untuk diunduh dan direvisi kembali"
+            description="PDF pratinjau akan dibuat otomatis oleh sistem setelah DOCX diunggah"
             @update:model-value="onRevisiDocxFiles"
           />
-          <FileUpload
-            :model-value="revisiPdf ? [revisiPdf] : []"
-            :multiple="false"
-            accept=".pdf,application/pdf"
-            label="Unggah Versi PDF"
-            description="File dengan isi yang sama, khusus untuk pratinjau"
-            @update:model-value="onRevisiPdfFiles"
-          />
         </div>
-
-        <UAlert
-          v-if="hasPartialPair"
-          icon="i-lucide-triangle-alert"
-          color="warning"
-          variant="soft"
-          title="Pasangan file belum lengkap"
-          description="DOCX dan PDF wajib diunggah bersamaan sebelum aksi dapat diproses."
-        />
 
         <!-- Parsing state -->
         <div
@@ -158,7 +143,7 @@
         >
           <UIcon name="i-lucide-loader-2" class="mx-auto h-7 w-7 animate-spin text-primary-500" />
           <p class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Sistem membaca naskah…
+            Sistem mengunggah DOCX dan membuat PDF pratinjau…
           </p>
           <p class="text-xs text-gray-500 dark:text-gray-400">
             Mengekstrak isi dan parameter dari dokumen
@@ -166,47 +151,22 @@
         </div>
 
         <!-- Parse result -->
-        <div v-if="hasCompletePair && !parsing" class="space-y-4">
+        <div v-if="hasRevision && !parsing" class="space-y-4">
           <div
             class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/40"
           >
             <UIcon name="i-lucide-check-circle" class="h-5 w-5 text-green-600" />
             <div class="flex-1">
               <p class="text-sm font-medium text-green-800 dark:text-green-300">
-                {{ revisiDocx.name }} + {{ revisiPdf.name }}
+                {{ revisiDocx.name }}
               </p>
               <p class="text-xs text-green-600 dark:text-green-400">
                 {{
                   stageUpload
                     ? stagedSuccessDescription
-                    : 'Revisi berhasil diunggah — naskah diperbarui'
+                    : 'DOCX berhasil diunggah dan PDF pratinjau dibuat otomatis'
                 }}
               </p>
-            </div>
-          </div>
-
-          <!-- Pratinjau revisi selalu memakai pasangan PDF. -->
-          <div>
-            <button
-              type="button"
-              class="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-              @click="revisiPreviewOpen = !revisiPreviewOpen"
-            >
-              <UIcon
-                :name="revisiPreviewOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-                class="w-4 h-4"
-              />
-              {{ revisiPreviewOpen ? 'Sembunyikan Pratinjau' : 'Tampilkan Pratinjau' }}
-            </button>
-            <div
-              v-show="revisiPreviewOpen"
-              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 overflow-auto max-h-[500px] relative"
-            >
-              <iframe
-                v-if="revisiPreviewUrl"
-                :src="revisiPreviewUrl"
-                class="h-[500px] w-full border-0 bg-white"
-              />
             </div>
           </div>
         </div>
@@ -214,7 +174,7 @@
     </div>
 
     <!-- 3. Catatan -->
-    <div :class="cardClass">
+    <div v-if="showCatatan" :class="cardClass">
       <div :class="headClass">
         <h3 class="font-semibold text-gray-900 dark:text-white">{{ catatanTitle }}</h3>
       </div>
@@ -281,6 +241,7 @@ const props = defineProps({
   showDrafDownload: { type: Boolean, default: true },
   // item #4: pakai TinyMCE editor untuk catatan. Default false (tanda-tangan tetap textarea).
   catatanRich: { type: Boolean, default: false },
+  showCatatan: { type: Boolean, default: true },
   // staging: bila true, unggah revisi TIDAK langsung persist ke naskah (legal-drafting).
   // File di-stage di FE (preview lokal), baru di-commit saat user klik "Kirim Approval Legal".
   // Default false → tanda-tangan tetap persist langsung (perilaku lama).
@@ -323,10 +284,8 @@ const { apiGet } = useApi();
 const toast = useToast();
 
 const revisiDocx = ref(null);
-const revisiPdf = ref(null);
 const parsing = ref(false);
-const hasCompletePair = computed(() => !!revisiDocx.value && !!revisiPdf.value);
-const hasPartialPair = computed(() => !!revisiDocx.value !== !!revisiPdf.value);
+const hasRevision = computed(() => !!revisiDocx.value);
 
 // Nama file naskah kanonik (display + download) — rumus shared di utils/naskah-file-name,
 // identik dengan BE agar konsisten di semua halaman + object storage.
@@ -390,43 +349,24 @@ async function toggleAwalPreview() {
 }
 
 // ── Section 2: upload revisi via FileUpload (item #9) + collapsible preview (item #3) ──
-const revisiPreviewOpen = ref(false);
-const revisiPreviewUrl = ref('');
-
-function emitRevisionPair() {
+function emitRevision() {
   emit('stage-revisi', {
     docx: revisiDocx.value,
-    pdf: revisiPdf.value,
   });
-}
-
-function resetPreviewUrl() {
-  if (revisiPreviewUrl.value) URL.revokeObjectURL(revisiPreviewUrl.value);
-  revisiPreviewUrl.value = revisiPdf.value ? URL.createObjectURL(revisiPdf.value) : '';
 }
 
 async function onRevisiDocxFiles(files) {
   revisiDocx.value = files?.[files.length - 1] ?? null;
-  revisiPreviewOpen.value = false;
-  emitRevisionPair();
-  await persistPairIfReady();
+  emitRevision();
+  await persistRevisionIfReady();
 }
 
-async function onRevisiPdfFiles(files) {
-  revisiPdf.value = files?.[files.length - 1] ?? null;
-  revisiPreviewOpen.value = false;
-  resetPreviewUrl();
-  emitRevisionPair();
-  await persistPairIfReady();
-}
-
-async function persistPairIfReady() {
-  if (props.stageUpload || !hasCompletePair.value) return;
+async function persistRevisionIfReady() {
+  if (props.stageUpload || !hasRevision.value) return;
   parsing.value = true;
   try {
     await emit('upload-revisi', {
       docx: revisiDocx.value,
-      pdf: revisiPdf.value,
     });
   } catch {
     toast.add({ title: 'Gagal mengunggah revisi', color: 'error' });
@@ -434,10 +374,6 @@ async function persistPairIfReady() {
     parsing.value = false;
   }
 }
-
-watch(revisiPreviewOpen, (open) => {
-  if (open && revisiPdf.value && !revisiPreviewUrl.value) resetPreviewUrl();
-});
 
 watch(
   () => props.docxUrl,
@@ -449,7 +385,6 @@ watch(
 
 onBeforeUnmount(() => {
   resetAwalPreview();
-  if (revisiPreviewUrl.value) URL.revokeObjectURL(revisiPreviewUrl.value);
 });
 
 // ── Section 3: TinyMCE init (item #4) — disederhanakan dari layanan-email pattern ──

@@ -54,11 +54,11 @@ export const getCategoryStyle = (cat: string): string => {
   if (["INS"].includes(c)) return "bg-amber-50 text-amber-500 dark:bg-amber-900/30 dark:text-amber-300";
   if (["SPR"].includes(c)) return "bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400";
   if (["SOP"].includes(c)) return "bg-lime-50 text-lime-600 dark:bg-lime-900/30 dark:text-lime-400";
-  if (["SE"].includes(c)) return "bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400";
+  if (["SE", "EDR"].includes(c)) return "bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400";
   // URS poin 6 - Khusus (Surat Perjanjian & lainnya)
-  if (["NK", "PKS", "LOA", "LOCA", "KTR", "PLN", "ADN", "SPK", "ASP", "SK"].includes(c))
+  if (["NK", "MOU", "PKS", "LOA", "LOCA", "KTR", "PROC", "PLN", "PJJ", "ADN", "SPK", "ASP", "SK", "SKU"].includes(c))
     return "bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30 dark:text-indigo-300";
-  if (["BA", "UND", "KET", "PGN", "RIS", "PUM", "SRT", "PGA", "LAP", "BVB"].includes(c))
+  if (["BA", "BAC", "UND", "KET", "PGN", "SPE", "RIS", "RPT", "PUM", "PEN", "SRT", "PGA", "PGM", "LAP", "BVB"].includes(c))
     return "bg-fuchsia-50 text-fuchsia-500 dark:bg-fuchsia-900/30 dark:text-fuchsia-300";
   return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-300";
 };
