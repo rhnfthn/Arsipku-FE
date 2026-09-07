@@ -34,7 +34,18 @@ export interface SdeMasalFolder {
   dynamicVariables: string[];
   originalFileUrl: string | null;
   signOption: 'digsig' | 'qr_only' | 'ttd_basah' | null;
-  status: 'DRAFT' | 'MENUNGGU_VERIFIKASI' | 'TERKIRIM' | 'DITOLAK';
+  status:
+    | 'DRAFT'
+    | 'MENUNGGU_PENGIRIM'
+    | 'DIKEMBALIKAN'
+    | 'DIFINALISASI'
+    | 'MENUNGGU_VERIFIKASI'
+    | 'TERKIRIM'
+    | 'DITOLAK';
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdByPositionText?: string | null;
+  rejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +67,14 @@ export interface SdeMasalFolderItem {
   recipient?: Record<string, any> | null;
   finalPdf: string | null;
   createdAt: string;
+}
+
+export interface SdeMasalAttachmentRef {
+  fileName: string;
+  key: string;
+  sha256: string;
+  size?: number;
+  url?: string;
 }
 
 export interface SdeMasalPenerima {
@@ -97,7 +116,8 @@ export interface SdeMasalPenerima {
   nominalDolar?: string | null;
   tembusan1?: string | null;
   tembusan2?: string | null;
-  lampiran?: string | null;
+  // String tetap didukung untuk kompatibilitas upload lampiran per-item lama.
+  lampiran?: string | SdeMasalAttachmentRef[] | null;
   lampiranKey?: string | null;
   isValid: boolean;
   validationMessage?: string;

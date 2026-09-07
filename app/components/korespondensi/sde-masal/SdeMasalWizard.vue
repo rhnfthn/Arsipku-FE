@@ -158,6 +158,7 @@
           :konsep="wizardState.konsep"
           :dynamic-variables="wizardState.variables"
           :template="wizardState.template"
+          :folder-id="folderId"
         />
       </div>
 
@@ -170,6 +171,7 @@
         :folder-id="folderId"
         :generating="generating"
         @submit-verification="handleSubmitVerification"
+        @send-to-signer="handleSendToSigner"
         @finalize-direct="handleFinalizeDirect"
         @submit-all="handleSubmitAll"
         @clear-data="handleClearData"
@@ -300,7 +302,12 @@ import { useRouter } from 'vue-router';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useApi } from '~/composables/useApi';
 import { useToast } from '#imports';
-import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
+import type {
+  SdeMasalAttachmentRef,
+  SdeMasalConcept,
+  SdeMasalPenerima,
+  SdeMasalTemplate,
+} from '~/types/sde-masal';
 import SdeMasalStepKonsep from './SdeMasalStepKonsep.vue';
 import SdeMasalStepUpload from './SdeMasalStepUpload.vue';
 import SdeMasalStepTemplate from './SdeMasalStepTemplate.vue';
@@ -320,8 +327,10 @@ const {
   createFolder,
   updateFolder,
   finalizeDirect,
+  sendToSigner,
   submitVerification,
   findNaskahInFolder,
+  commitMassAttachments,
 } = useSdeMasal();
 
 const steps = [
@@ -465,6 +474,9 @@ const canProceed = computed(() => {
     );
   }
   if (currentStep.value === 2) {
+    const hasUnmappedAttachments = wizardState.penerimaList.some(
+      (item) => typeof item.lampiran === 'string' && item.lampiran.trim().length > 0
+    );
     return !!(
       wizardState.konsep?.tanggalKonsep &&
       wizardState.konsep?.judul?.trim() &&
@@ -472,7 +484,8 @@ const canProceed = computed(() => {
       wizardState.konsep?.pengirimId &&
       wizardState.template?.konten &&
       wizardState.penerimaList.length > 0 &&
-      wizardState.penerimaList.every((p) => p.isValid)
+      wizardState.penerimaList.every((p) => p.isValid) &&
+      !hasUnmappedAttachments
     );
   }
   return true;
@@ -512,6 +525,7 @@ const goNext = async () => {
   if (currentStep.value === 2) {
     try {
       await ensureItemsGenerated();
+      await ensureMassAttachmentsCommitted();
     } catch (error: any) {
       toast.add({
         title: 'Gagal menyiapkan data',
@@ -588,6 +602,22 @@ const ensureItemsGenerated = async () => {
   });
 };
 
+const getAttachmentRefs = (item: SdeMasalPenerima): SdeMasalAttachmentRef[] =>
+  Array.isArray(item.lampiran) ? item.lampiran : [];
+
+const ensureMassAttachmentsCommitted = async () => {
+  if (!folderId.value) return;
+  const items = wizardState.penerimaList
+    .filter((item) => item.id && Array.isArray(item.lampiran))
+    .map((item) => ({
+      itemId: item.id as string,
+      attachments: getAttachmentRefs(item),
+    }));
+  if (items.length > 0) {
+    await commitMassAttachments(folderId.value, items);
+  }
+};
+
 const resetWizard = () => {
   wizardState.konsep = null;
   wizardState.penerimaList = [];
@@ -608,6 +638,7 @@ const handleFinalizeDirect = async (payload: {
   try {
     const id = await persistCompleteFolder(payload.signOption);
     await ensureItemsGenerated();
+    await ensureMassAttachmentsCommitted();
     const itemIds = wizardState.penerimaList
       .filter((p) => p.id)
       .map((p) => p.id as string);
@@ -636,6 +667,28 @@ const handleFinalizeDirect = async (payload: {
   }
 };
 
+const handleSendToSigner = async () => {
+  if (!wizardState.konsep || !wizardState.template) {
+    toast.add({ title: 'Data belum lengkap', description: 'Lengkapi konsep, template, dan penerima terlebih dahulu.', color: 'error' });
+    return;
+  }
+  generating.value = true;
+  try {
+    const id = await persistCompleteFolder('qr_only');
+    await ensureItemsGenerated();
+    await ensureMassAttachmentsCommitted();
+    const ids = wizardState.penerimaList.filter((p) => p.id).map((p) => p.id as string);
+    await sendToSigner(id, ids);
+    toast.add({ title: 'Berhasil dikirim', description: 'SDE Massal telah dikirim ke kotak masuk pengirim.', color: 'success' });
+    resetWizard();
+    router.push('/korespondensi/terkirim');
+  } catch (error: any) {
+    toast.add({ title: 'Gagal mengirim SDE Massal', description: error?.message || 'Coba lagi.', color: 'error' });
+  } finally {
+    generating.value = false;
+  }
+};
+
 const handleSubmitVerification = async (
   verifikators: any[],
   signOption: 'qr_only' | 'ttd_basah' = 'qr_only'
@@ -657,6 +710,7 @@ const handleSubmitVerification = async (
   try {
     const id = await persistCompleteFolder(signOption);
     await ensureItemsGenerated();
+    await ensureMassAttachmentsCommitted();
 
     const ids = wizardState.penerimaList
       .filter((p) => p.id)
