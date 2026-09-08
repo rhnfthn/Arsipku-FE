@@ -11,6 +11,7 @@ import type {
   StepperStep,
 } from '~/types/naskah-lainnya';
 import { JENIS_LABELS } from '~/types/naskah-lainnya';
+import { formatNaskahDate, formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
@@ -96,6 +97,7 @@ const APPROVAL_TAHAP_LABEL: Record<string, string> = {
   tanda_tangan: 'Tanda Tangan',
 };
 const tahapLabel = (t: string) => APPROVAL_TAHAP_LABEL[t] ?? t;
+const LEGAL_EVALUATION_TAHAPS = new Set(['evaluasi', 'persetujuan_lanjutan', 'evaluasi_final']);
 
 const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRow[] }[]>(() => {
   const byTahap = detail.value?.approvalByTahap;
@@ -114,7 +116,11 @@ const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRo
     map = {};
     for (const a of detail.value?.approval ?? []) (map[a.tahap] ??= []).push(a);
   }
-  const present = Object.keys(map);
+  const isDigitalWithoutLegal =
+    ['qr_only', 'digsig'].includes(detail.value?.signOption ?? '') && !detail.value?.butuhLegal;
+  const present = Object.keys(map).filter(
+    (tahap) => !isDigitalWithoutLegal || !LEGAL_EVALUATION_TAHAPS.has(tahap)
+  );
   const ordered = APPROVAL_TAHAP_ORDER.filter((k) => present.includes(k));
   const rest = present.filter((k) => !APPROVAL_TAHAP_ORDER.includes(k));
   return [...ordered, ...rest].map((k) => ({ tahap: k, label: tahapLabel(k), rows: map[k] ?? [] }));
@@ -368,13 +374,13 @@ const actionDescription = computed(() => {
 });
 
 // ── Toggle expand timeline ──
-const timelineExpanded = ref(true);
-const workflowExpanded = ref(true);
-const verificationExpanded = ref(true);
-const approvalExpanded = ref(true);
-const informationExpanded = ref(true);
-const documentExpanded = ref(true);
-const signerExpanded = ref(true);
+const timelineExpanded = ref(false);
+const workflowExpanded = ref(false);
+const verificationExpanded = ref(false);
+const approvalExpanded = ref(false);
+const informationExpanded = ref(false);
+const documentExpanded = ref(false);
+const signerExpanded = ref(false);
 
 // ── Modal Setuju/Tolak (standarisasi VerifyActionModal) ──
 const showApproveModal = ref(false);
@@ -404,23 +410,11 @@ const errorMessage = computed(
 
 // ── Format helpers ──
 function fmtDate(iso: string | null | undefined) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  return formatNaskahDate(iso);
 }
 
 function fmtDateTime(iso: string | null | undefined) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatNaskahDateTime(iso);
 }
 
 // ── Persona meta (jabatan · pos · persnum), fallback '—' ──
@@ -461,8 +455,8 @@ const signedCount = computed(
 
 // ── Ikon & warna kartu dokumen berdasar tipe/ekstensi file ──
 function fileMeta(d: DokumenFile) {
-  const nama = String(d.nama ?? '');
-  if (d.tipe === 'naskah' || nama.toLowerCase().endsWith('.docx')) {
+  const nama = displayDocumentName(d);
+  if (nama.toLowerCase().endsWith('.docx')) {
     return {
       icon: 'i-lucide-file-text',
       iconClass: 'text-blue-600 dark:text-blue-400',
@@ -483,6 +477,10 @@ function fileMeta(d: DokumenFile) {
     iconClass: 'text-gray-400 dark:text-gray-500',
     ext: ext ? ext.toUpperCase() : 'FILE',
   };
+}
+
+function displayDocumentName(d: DokumenFile): string {
+  return d.hasPdfPreview && d.previewNama ? d.previewNama : d.nama;
 }
 
 // ── Dokumen tabs ──
@@ -594,12 +592,7 @@ async function preview(d: DokumenFile) {
   try {
     let blob: Blob;
     if (d.tipe === 'naskah') {
-      // Naskah final yang sudah signed (dittd/proses_ttd): preview pakai DOCX
-      // aslinya (tanda tangan sudah ter-inject di file) via docx-preview —
-      // bukan previewMinioKey yang masih PDF versi unsigned. Belum signed →
-      // tetap pratinjau PDF seperti biasa.
-      const signed = d.status === 'dittd' || d.status === 'proses_ttd';
-      const res = await fetchFileBlob(!signed);
+      const res = await fetchFileBlob(true);
       if (!res) {
         toast.add({ title: 'Gagal memuat pratinjau', color: 'error' });
         return;
@@ -608,7 +601,7 @@ async function preview(d: DokumenFile) {
     } else {
       // pendukung / naskah_fisik / blanko — download via BE proxy
       const id_ = detail.value?.id;
-      blob = await apiGet(`/naskah-lainnya/${id_}/dokumen/${d.id}/download`, {
+      blob = await apiGet(`/naskah-lainnya/${id_}/dokumen/${d.id}/download?inline=1`, {
         responseType: 'blob',
       });
     }
@@ -757,17 +750,17 @@ async function unduhVersi(dokumenId: string) {
   const id_ = detail.value?.id;
   try {
     const { apiGet } = useApi();
+    const d = detail.value?.dokumen.find((x) => x.id === dokumenId);
+    const isFinal = d?.status === 'final' || d?.status === 'dittd';
     const blob = await apiGet(`/naskah-lainnya/${id_}/dokumen/${dokumenId}/download`, {
+      params: isFinal ? { inline: '1' } : undefined,
       responseType: 'blob',
     });
     const url = window.URL.createObjectURL(blob as Blob);
     const a = document.createElement('a');
     a.href = url;
-    const d = detail.value?.dokumen.find((x) => x.id === dokumenId);
-    // 'dittd'/'proses_ttd' dikecualikan: BE kini menyajikan docx signed-nya langsung.
-    const useFinalPdf = !!d?.hasPdfPreview && d.status === 'final';
-    a.download = useFinalPdf
-      ? d.previewNama || d.nama.replace(/\.docx$/i, '.pdf')
+    a.download = isFinal
+      ? d?.previewNama || naskahFileName(detail.value, 'pdf')
       : d?.nama || 'naskah.docx';
     document.body.appendChild(a);
     a.click();
@@ -986,6 +979,9 @@ async function handleApprove(catatan: string) {
     toast.add({ title: 'Berhasil', description: `${actionLabel(a)} berhasil`, color: 'success' });
     showApproveModal.value = false;
     await fetchDetail(naskahId);
+    if (a === 'tanda-tangan' && detail.value?.tahapan === 'selesai') {
+      await navigateTo(`/naskah-lainnya/${naskahId}/selesai`);
+    }
   } catch (err: any) {
     toast.add({
       title: 'Gagal',
@@ -1811,9 +1807,9 @@ const signLabel = computed(() =>
                         <div class="min-w-0 flex-1">
                           <p
                             class="truncate text-sm font-medium text-gray-900 dark:text-white"
-                            :title="d.nama"
+                            :title="displayDocumentName(d)"
                           >
-                            {{ d.nama }}
+                            {{ displayDocumentName(d) }}
                           </p>
                           <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                             {{ fileMeta(d).ext
@@ -1883,7 +1879,7 @@ const signLabel = computed(() =>
               </button>
               <div v-show="approvalExpanded" class="px-4 py-3">
                 <div
-                  v-if="detail.approval.length === 0"
+                  v-if="approvalDisplayGroups.length === 0"
                   class="flex items-center gap-2 py-4 text-sm text-gray-400 dark:text-gray-500"
                 >
                   <UIcon name="i-lucide-inbox" class="size-4" />
@@ -2389,7 +2385,7 @@ const signLabel = computed(() =>
                 ref="manualFinalInput"
                 type="file"
                 class="hidden"
-                accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+                accept=".pdf,application/pdf"
                 @change="onManualFinalFileChange"
               />
             </div>
@@ -2539,7 +2535,10 @@ const signLabel = computed(() =>
 
               <!-- Penandatangan hanya memeriksa lalu tanda tangan/menolak; tanpa workspace upload. -->
               <UButton
-                v-if="detail.availableActions.includes('tolak-tanda-tangan')"
+                v-if="
+                  detail.availableActions.includes('tolak-tanda-tangan') &&
+                  (isPhysicalSigning || detail.butuhLegal)
+                "
                 color="error"
                 variant="outline"
                 icon="i-lucide-undo-2"

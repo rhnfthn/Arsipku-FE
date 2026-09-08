@@ -258,7 +258,12 @@
           >
         </template>
         <template #cell-perihal="{ row }">
-          <div class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</div>
+          <div
+            class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate"
+            :title="row.perihal"
+          >
+            {{ row.perihal }}
+          </div>
           <div v-if="row.tahapanRaw === 'perlu_perbaikan'" class="text-xs text-orange-500">
             Perlu revisi — lihat detail naskah.
           </div>
@@ -268,6 +273,11 @@
         </template>
         <template #cell-status="{ row }">
           <StatusBadge :status="approvalStatusKey(row.tahapanRaw)" />
+        </template>
+        <template #cell-waktu="{ row }">
+          <span class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+            {{ row.waktuLabel }}
+          </span>
         </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
@@ -352,18 +362,13 @@
       <div class="flex flex-col gap-3">
         <p class="text-sm text-gray-500">Alasan wajib diisi; sertakan dokumen revisi bila ada.</p>
         <UTextarea v-model="alasan" placeholder="Alasan…" />
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div>
           <FileUpload
             v-model="revisiDocxFiles"
             :multiple="false"
             accept=".docx"
             label="+ Revisi DOCX (opsional)"
-          />
-          <FileUpload
-            v-model="revisiPdfFiles"
-            :multiple="false"
-            accept=".pdf"
-            label="+ Preview PDF (wajib bersama DOCX)"
+            description="PDF pratinjau dibuat otomatis oleh sistem"
           />
         </div>
         <div class="flex justify-end gap-2">
@@ -422,7 +427,6 @@ const catatan = ref('');
 const alasan = ref('');
 const busy = ref(false);
 const revisiDocxFiles = ref<File[]>([]);
-const revisiPdfFiles = ref<File[]>([]);
 
 const search = ref('');
 const filterJenis = ref('');
@@ -507,6 +511,7 @@ const columns = [
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
+  { key: 'waktu', label: 'Waktu', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
 
@@ -629,12 +634,24 @@ const displayRows = computed(() =>
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
     status: APPROVAL_STATUS_LABEL[r.tahapan] ?? 'Menunggu',
+    // Timestamp untuk sort paling baru/lama (kolom Waktu).
+    waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
+    waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
   }))
 );
 
 const sortedRows = computed(() => {
   const dir = sortDir.value === 'asc' ? 1 : -1;
   return [...displayRows.value].sort((a, b) => {
+    // Kolom waktu di-sort numerik (timestamp) — localeCompare string akan
+    // salah urut untuk tanggal (DD/MM/YYYY tidak leksikografis).
+    if (sortKey.value === 'waktu') {
+      const av = (a as any).waktu;
+      const bv = (b as any).waktu;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    }
     const av = (a as any)[sortKey.value];
     const bv = (b as any)[sortKey.value];
     if (av == null) return 1;
@@ -765,19 +782,10 @@ async function doTolak() {
 async function doKembali() {
   if (!selected.value) return;
   const docx = revisiDocxFiles.value.at(-1) ?? null;
-  const pdf = revisiPdfFiles.value.at(-1) ?? null;
-  if (!!docx !== !!pdf) {
-    toast.add({
-      title: 'Lengkapi pasangan file revisi',
-      description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
-      color: 'warning',
-    });
-    return;
-  }
   busy.value = true;
   try {
-    if (docx && pdf) {
-      await uploadRevisiDokumen(selected.value.id, { docx, pdf });
+    if (docx) {
+      await uploadRevisiDokumen(selected.value.id, { docx });
     }
     const approvalId = await firstWaitingId();
     await kembalikan(selected.value.id, approvalId, alasan.value);
@@ -785,7 +793,6 @@ async function doKembali() {
     kembaliOpen.value = false;
     modalOpen.value = false;
     revisiDocxFiles.value = [];
-    revisiPdfFiles.value = [];
   } finally {
     busy.value = false;
   }

@@ -209,7 +209,9 @@
           <UInput
             v-model="form.nomor"
             :placeholder="
-              isPhysicalSigning ? 'Terbit setelah approval penandatangan' : nomorPlaceholder
+              isPhysicalSigning
+                ? 'Isi manual atau kosongkan untuk nomor otomatis'
+                : nomorPlaceholder
             "
             class="w-full sm:flex-1"
             variant="none"
@@ -217,7 +219,7 @@
           />
         </div>
 
-        <!-- Perihal (auto-fill dari upload, disabled) -->
+        <!-- Perihal: bisa diisi manual untuk TTD fisik, auto-fill untuk digital. -->
         <div
           class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
         >
@@ -226,12 +228,16 @@
           >
           <UInput
             v-model="form.perihal"
-            disabled
-            placeholder="Otomatis terisi setelah unggah naskah"
+            :disabled="!isPhysicalSigning"
+            :placeholder="
+              isPhysicalSigning ? 'Isi perihal naskah' : 'Otomatis terisi setelah unggah naskah'
+            "
             class="w-full sm:flex-1"
             variant="none"
             :ui="{
-              base: 'disabled:opacity-60 cursor-not-allowed text-sm text-gray-900 dark:text-white px-0',
+              base: isPhysicalSigning
+                ? 'text-sm text-gray-900 dark:text-white px-0'
+                : 'disabled:opacity-60 cursor-not-allowed text-sm text-gray-900 dark:text-white px-0',
             }"
           />
         </div>
@@ -244,7 +250,11 @@
         />
 
         <!-- Tanggal (komponen Tulis, pola nota-dinas) -->
-        <TulisInputTanggal v-model="tanggalDate" :label="$t('f_tanggal_surat')" />
+        <TulisInputTanggal
+          v-model="tanggalDate"
+          :label="$t('f_tanggal_surat')"
+          display-format="DD/MM/YYYY"
+        />
 
         <!-- Penandatangan dinamis: satu single-select per slot -->
         <div
@@ -279,37 +289,14 @@
               >
                 {{ slot.index }}
               </span>
-              <USelectMenu
+              <TulisInputPejabat
                 v-model="slotSigners[slot.index - 1]"
                 :items="slotItems(slot.index - 1)"
-                value-key="value"
-                :searchable="true"
-                variant="none"
+                :placeholder="`Pilih penandatangan ${slot.index}`"
+                search-placeholder="Cari nama atau jabatan…"
+                disabled-message="Sudah dipilih di slot lain"
                 class="flex-1 w-full"
-                :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any"
-                :ui="
-                  {
-                    base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
-                    input: 'w-full',
-                    value: 'w-full',
-                    viewport: 'max-h-[380px]',
-                  } as any
-                "
-              >
-                <template #default>
-                  <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
-                    <span
-                      v-if="selectedSlotLabel(slot.index - 1)"
-                      class="text-sm text-left truncate text-gray-900 dark:text-white"
-                    >
-                      {{ selectedSlotLabel(slot.index - 1) }}
-                    </span>
-                    <span v-else class="text-sm text-gray-400"
-                      >Pilih penandatangan {{ slot.index }}</span
-                    >
-                  </div>
-                </template>
-              </USelectMenu>
+              />
               <button
                 v-if="
                   (isPhysicalMetadataMode || isPhysicalSigning) && editableSignerSlots.length > 1
@@ -397,44 +384,15 @@
               >
                 {{ selectedApprovals.length + 1 }}
               </span>
-              <USelectMenu
-                v-model="approvalPicker"
+              <TulisInputPejabat
+                v-model="approvalPickerValue"
                 :items="approvalOptions"
-                value-key="value"
-                placeholder="Pilih verifikator…"
-                searchable
-                variant="none"
+                placeholder="Pilih verifikator"
+                search-placeholder="Cari nama atau jabatan…"
+                disabled-message="Sudah dipilih"
                 class="flex-1 w-full"
-                :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any"
-                :search-input="{ placeholder: 'Cari nama atau jabatan…' }"
-                :ui="
-                  {
-                    base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
-                    input: 'w-full',
-                    value: 'w-full',
-                    viewport: 'max-h-[380px]',
-                  } as any
-                "
-              >
-                <template #default>
-                  <div class="flex items-center gap-1.5 min-h-[28px] pr-10 w-full cursor-pointer">
-                    <span class="text-sm text-gray-400">Pilih verifikator</span>
-                  </div>
-                </template>
-
-                <template #item="{ item }">
-                  <div class="flex flex-col min-w-0 w-full overflow-hidden">
-                    <span
-                      class="text-sm font-medium text-gray-900 dark:text-white block w-full truncate"
-                    >
-                      {{ item.label }}
-                    </span>
-                    <span class="text-xs text-gray-500 block w-full truncate mt-0.5">
-                      {{ item.jabatan || '' }}
-                    </span>
-                  </div>
-                </template>
-              </USelectMenu>
+                @select="onApprovalSelectItem"
+              />
             </div>
           </div>
         </div>
@@ -493,22 +451,8 @@
               :multiple="false"
               accept=".docx"
               :label="isPhysicalSigning ? 'Unggah Naskah Draft' : 'Unggah Naskah'"
+              description="PDF pratinjau dibuat otomatis oleh sistem"
               @update:model-value="onNaskahFiles"
-            />
-            <FileUpload
-              v-if="isRevisi"
-              v-model="revisiPdfFiles"
-              :multiple="false"
-              accept=".pdf,application/pdf"
-              label="Unggah Versi PDF"
-              description="Wajib bersama DOCX revisi dan harus memiliki isi yang sama"
-            />
-            <UAlert
-              v-if="isRevisi && hasDirtyNaskah !== !!revisiPdfFiles.length"
-              icon="i-lucide-triangle-alert"
-              color="warning"
-              variant="soft"
-              description="Revisi wajib dilengkapi dengan pasangan DOCX dan PDF."
             />
           </div>
 
@@ -517,7 +461,7 @@
             class="flex items-center gap-2 text-sm text-primary-600 py-2"
           >
             <UIcon name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
-            Sistem membaca naskah…
+            Sistem membaca DOCX dan membuat PDF pratinjau…
           </div>
 
           <!-- Pratinjau docx inline (render langsung di bawah upload) -->
@@ -566,8 +510,8 @@
               :model-value="pendukungFiles"
               :multiple="true"
               accept=".pdf,application/pdf"
-              :previewable="true"
               label="+ Unggah Dokumen Pendukung"
+              description="Format PDF"
               @update:model-value="onPendukungFiles"
             />
           </div>
@@ -596,7 +540,7 @@
           <FileUpload
             :model-value="manualFinalFiles"
             :multiple="false"
-            accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".pdf,application/pdf"
             :disabled="manualFinalBusy"
             label="Unggah Dokumen Final"
             @update:model-value="onManualFinalFiles"
@@ -843,25 +787,11 @@ const getHierarchyRank = (jabatan: string): number => {
   }
   return 99;
 };
-const myPersnum = computed(() => String(user.value?.persnum ?? ''));
-const myPositionId = computed(() =>
-  String(user.value?.position?.id ?? user.value?.position_id ?? user.value?.position ?? '')
-);
-const isSelfSigner = (signer?: Partial<Penandatangan | Verifikator> | null): boolean => {
-  if (!signer) return false;
-  const signerPersnum = String(signer.persnum ?? '');
-  const signerPositionId = String(signer.positionId ?? '');
-  return (
-    (!!myPersnum.value && signerPersnum === myPersnum.value) ||
-    (!!myPositionId.value && signerPositionId === myPositionId.value)
-  );
-};
 const penandatanganItems = computed(() =>
   [...verifikatorList.value]
-    .filter((v) => !isSelfSigner(v))
     .sort((a, b) => getHierarchyRank(a.jabatan) - getHierarchyRank(b.jabatan))
     .map((v) => ({
-      label: `${v.nama} — ${v.jabatan}`,
+      label: v.nama,
       labelJob: v.jabatan,
       value: String(v.persnum),
       raw: v,
@@ -1036,15 +966,6 @@ function slotItems(slotIndex: number) {
   }));
 }
 
-function selectedSlotLabel(slotIndex: number) {
-  const value = slotSigners.value[slotIndex];
-  const item =
-    value != null
-      ? penandatanganItems.value.find((p) => String(p.value) === String(value))
-      : undefined;
-  return item?.label || form.value.penandatanganList[slotIndex]?.nama || '';
-}
-
 function resolveSlotSigner(value: string | null, fallbackIndex: number): Penandatangan {
   if (value == null) return { nama: '', jabatan: '' };
   const item = penandatanganItems.value.find((p) => String(p.value) === String(value));
@@ -1105,7 +1026,8 @@ const nomorPlaceholder = computed(() =>
 //    (sama dengan penutupan berkas) — GET /org-data/atasan-managerial/:positionId ──
 const approvalCandidates = ref<Verifikator[]>([]);
 const selectedApprovals = ref<Verifikator[]>([]);
-const approvalPicker = ref<number | null>(null);
+// Value picker verifikator (string | null) — komponen TulisInputPejabat.
+const approvalPickerValue = ref<string | null>(null);
 
 // Satu pejabat boleh merangkap sebagai penandatangan dan verifikator.
 // Duplikat hanya dicegah di dalam rantai verifikator itu sendiri.
@@ -1116,17 +1038,20 @@ const availableApprovals = computed(() => {
 
 const approvalOptions = computed(() =>
   availableApprovals.value.map((v) => ({
-    value: v.persnum,
+    value: String(v.persnum),
     label: v.nama,
-    jabatan: v.jabatan || '',
+    labelJob: v.jabatan || '',
   }))
 );
-const onApprovalSelect = (persnum: number) => {
-  const v = approvalCandidates.value.find((x) => x.persnum === persnum);
+const onApprovalSelectItem = (item: any) => {
+  const persnum = Number(item?.value);
+  const v = approvalCandidates.value.find((x) => Number(x.persnum) === persnum);
   if (!v) return;
-  if (!selectedApprovals.value.some((x) => x.persnum === persnum)) {
+  if (!selectedApprovals.value.some((x) => Number(x.persnum) === persnum)) {
     selectedApprovals.value.push(v);
   }
+  // Reset picker setelah pilih — slot berikutnya siap dipilih.
+  approvalPickerValue.value = null;
 };
 
 const removeApproval = (persnum: number) => {
@@ -1137,12 +1062,6 @@ function approvalLabel(approval: Verifikator) {
   return [approval.nama, approval.jabatan].filter(Boolean).join(' — ');
 }
 
-watch(approvalPicker, (persnum) => {
-  if (persnum == null) return;
-  onApprovalSelect(persnum);
-  approvalPicker.value = null;
-});
-
 const uploadStatus = ref<'idle' | 'reading' | 'done' | 'error'>('idle');
 const detected = ref<{ perihal: string; tanggal: string } | null>(null);
 const saving = ref(false);
@@ -1151,7 +1070,6 @@ const manualFinalFiles = ref<File[]>([]);
 const dokumenOk = computed(() => uploadStatus.value === 'done' || previewFile.value !== null);
 
 const naskahFiles = ref<File[]>([]);
-const revisiPdfFiles = ref<File[]>([]);
 // Naskah yg sudah ada di BE (di-restore dari draft). File baru yg dipilih user
 // belum ada di sini → baru di-commit (upload versi) saat Draft/Kirim. Dipakai
 // commitNaskahIfDirty untuk skip re-upload bila naskah tidak berubah.
@@ -1246,7 +1164,7 @@ onMounted(async () => {
     }
     const atasanRes: any = await apiGet(`/org-data/atasan-managerial/${positionId}`);
     const atasans: any[] = Array.isArray(atasanRes?.data) ? atasanRes.data : [];
-    approvalCandidates.value = atasans.map(
+    const candidates = atasans.map(
       (r: any) =>
         ({
           persnum: Number(r.persnum_person),
@@ -1255,6 +1173,27 @@ onMounted(async () => {
           jabatan: r.position_text || '',
         }) as Verifikator
     );
+
+    // Diri sendiri tetap boleh menjadi verifikator. Endpoint atasan-managerial
+    // hanya mengembalikan atasan, sehingga profil aktif ditambahkan dari daftar
+    // personel area bila belum ada. Penandatangan dan verifikator juga sengaja
+    // tidak saling mengecualikan.
+    const selfCandidate = verifikatorList.value.find(
+      (candidate) =>
+        Number(candidate.persnum) === Number(user.value?.persnum) ||
+        String(candidate.positionId ?? '') === String(positionId)
+    );
+    if (
+      selfCandidate &&
+      !candidates.some(
+        (candidate) =>
+          Number(candidate.persnum) === Number(selfCandidate.persnum) &&
+          String(candidate.positionId ?? '') === String(selfCandidate.positionId ?? '')
+      )
+    ) {
+      candidates.unshift(selfCandidate);
+    }
+    approvalCandidates.value = candidates;
   } catch {
     // abaikan — dropdown verifikator akan kosong, form tetap bisa dipakai (fallback default workflow)
   } finally {
@@ -1366,7 +1305,11 @@ onMounted(async () => {
                 const blob = await apiGet(`/naskah-lainnya/${d.id}/dokumen/${doc.id}/download`, {
                   responseType: 'blob',
                 });
-                const f = new File([blob], doc.nama, { type: blob.type || 'application/pdf' });
+                const f = new File([blob], doc.nama, {
+                  type:
+                    blob.type ||
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                });
                 pendukungOnServer.set(f, doc.id);
                 files.push(f);
               }
@@ -1450,13 +1393,11 @@ async function downloadTemplate() {
 }
 
 function onNaskahFiles(files: File[]) {
-  // Tolak pilih bila penandatangan belum lengkap: commitNaskahIfDirty() (saat
-  // Kirim) butuh penandatangan valid agar uploadDokumen ke BE tidak gagal.
-  // validateSigners() sudah memunculkan toast peringatan.
-  if (files.length && !validateSigners()) {
-    naskahFiles.value = [];
-    return;
-  }
+  // File naskah boleh dipilih kapan saja — user perlu melihat pratinjau dokumen
+  // dulu untuk tahu posisi placeholder {{tanda_tangan_N}} sebelum mengisi
+  // penandatangan. Validasi kelengkapan penandatangan tetap dijalankan saat
+  // Draft/Kirim (validateSigners sebelum commitNaskahIfDirty), jadi upload
+  // versi ke BE tidak pernah terjadi dengan penandatangan kosong.
   naskahFiles.value = files;
   if (files.length) {
     // Baca parameter (perihal/tanggal) TANPA upload — versi naskah hanya
@@ -1479,10 +1420,9 @@ function onNaskahFiles(files: File[]) {
 }
 
 function onPendukungFiles(files: File[]) {
-  // Validasi: hanya PDF
-  const invalid = files.filter(
-    (f) => f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')
-  );
+  // Dokumen pendukung: hanya PDF.
+  const isValidPendukung = (f: File) => f.name.toLowerCase().endsWith('.pdf');
+  const invalid = files.filter((f) => !isValidPendukung(f));
   if (invalid.length) {
     useToast().add({
       title: 'Format tidak didukung',
@@ -1493,9 +1433,7 @@ function onPendukungFiles(files: File[]) {
   // Simpan lokal saja — upload ditangguhkan sampai user klik Draft/Kirim
   // (lihat onSubmitPendukung). Menghapus/unggah ulang di sini TIDAK menyentuh
   // BE, jadi tidak ada orphan/duplikat sebelum naskah benar-benar dikirim.
-  pendukungFiles.value = files.filter(
-    (f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
-  );
+  pendukungFiles.value = files.filter(isValidPendukung);
 }
 
 // Upload pendukung baru + hapus pendukung lama (restored) yg dihapus user.
@@ -1537,7 +1475,9 @@ async function readNaskahParams(file: File) {
   try {
     const res = await parseDokumen(file);
     detected.value = res.data.parameter;
-    if (res.data.parameter.perihal) form.value.perihal = res.data.parameter.perihal;
+    if (res.data.parameter.perihal && (!isPhysicalSigning.value || !form.value.perihal?.trim())) {
+      form.value.perihal = res.data.parameter.perihal;
+    }
     // Isi tanggal dari dokumen HANYA jika user belum memilih manual.
     if (!tanggalDate.value && res.data.parameter.tanggal) {
       try {
@@ -1564,35 +1504,16 @@ async function readNaskahParams(file: File) {
 // false bila upload gagal agar Kirim bisa diblokir.
 async function commitNaskahIfDirty(): Promise<boolean> {
   const file = previewFile.value;
-  const pdf = revisiPdfFiles.value.at(-1) ?? null;
-  if (isRevisi.value && !!pdf !== hasDirtyNaskah.value) {
-    useToast().add({
-      title: 'Lengkapi pasangan file revisi',
-      description: 'DOCX baru dan PDF dengan isi yang sama wajib diunggah bersamaan.',
-      color: 'warning',
-    });
-    return false;
-  }
   if (!file || !createdId.value) return true; // tidak ada naskah / belum create → skip
   if (file === naskahOnServer.value) return true; // sudah ada di BE, tidak berubah
   try {
     uploadStatus.value = 'reading';
-    if (isRevisi.value && !pdf) {
-      useToast().add({
-        title: 'PDF revisi wajib diunggah',
-        description: 'Lengkapi pasangan PDF dengan isi yang sama seperti DOCX revisi.',
-        color: 'warning',
-      });
-      uploadStatus.value = 'idle';
-      return false;
-    }
     const res = isRevisi.value
-      ? await uploadRevisiDokumen(createdId.value, { docx: file, pdf })
+      ? await uploadRevisiDokumen(createdId.value, { docx: file })
       : await uploadDokumen(createdId.value, file);
     detected.value = res.data.parameter;
     if (res.data.parameter.perihal) form.value.perihal = res.data.parameter.perihal;
     naskahOnServer.value = file; // tandai sudah di-BE
-    if (isRevisi.value) revisiPdfFiles.value = [];
     uploadStatus.value = 'done';
     return true;
   } catch (e) {
@@ -1618,14 +1539,6 @@ function validateSigners(): boolean {
     useToast().add({
       title: `Isi semua ${requiredSignerCount} penandatangan`,
       description: 'Setiap slot penandatangan wajib diisi sesuai urutan.',
-      color: 'warning',
-    });
-    return false;
-  }
-  if (chain.some((s) => isSelfSigner(s))) {
-    useToast().add({
-      title: 'Penandatangan tidak boleh diri sendiri',
-      description: 'Pilih pejabat lain sebagai penandatangan sesuai urutan.',
       color: 'warning',
     });
     return false;

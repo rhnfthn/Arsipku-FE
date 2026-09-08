@@ -349,7 +349,7 @@ const previewLoading = ref(false);
 // Revisi hasil legal drafting di-stage di FE (preview lokal). Baru di-commit ke
 // naskah saat user klik "Kirim Approval Legal" — bukan saat unggah — agar naskah
 // tidak menumpuk versi sebelum legal drafting benar-benar dikirim.
-const stagedRevisi = ref({ docx: null, pdf: null });
+const stagedRevisi = ref({ docx: null });
 
 const selectedCertifierId = ref('');
 const selectedForwardId = ref('');
@@ -569,7 +569,8 @@ async function downloadNaskah(name) {
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = name || naskahFileName(detail.value);
+    // Artifact signed bisa berupa PDF — ekstensi mengikuti tipe blob aktual.
+    a.download = name || naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {
@@ -645,7 +646,7 @@ watch(previewOpen, (open) => {
 async function previewPendukung(doc) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
       responseType: 'blob',
     });
     await openPreviewFromBlob(blob, doc.nama);
@@ -660,20 +661,8 @@ function onStageRevisi(file) {
   stagedRevisi.value = file;
 }
 
-function hasIncompleteRevisionPair() {
-  const { docx, pdf } = stagedRevisi.value;
-  if (!!docx === !!pdf) return false;
-  toast.add({
-    title: 'Lengkapi pasangan file revisi',
-    description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
-    color: 'warning',
-  });
-  return true;
-}
-
 async function commitStagedRevision() {
-  if (hasIncompleteRevisionPair()) return;
-  if (stagedRevisi.value.docx && stagedRevisi.value.pdf) {
+  if (stagedRevisi.value.docx) {
     await uploadRevisiDokumen(id.value, stagedRevisi.value);
   }
   return true;
@@ -705,7 +694,7 @@ async function kirimApproval(note) {
       color: 'success',
     });
     showKirimModal.value = false;
-    stagedRevisi.value = { docx: null, pdf: null };
+    stagedRevisi.value = { docx: null };
     await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;
@@ -742,7 +731,7 @@ async function continueLegalDrafting(note) {
       color: 'success',
     });
     showTeruskanModal.value = false;
-    stagedRevisi.value = { docx: null, pdf: null };
+    stagedRevisi.value = { docx: null };
     await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;
