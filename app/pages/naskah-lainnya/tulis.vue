@@ -130,9 +130,11 @@
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
         >
-          <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
-            >Jenis Naskah *</span
+          <span
+            class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
           >
+            Jenis Naskah
+          </span>
           <div class="flex flex-wrap gap-1 w-full items-center">
             <USelectMenu
               v-model="form.jenis"
@@ -444,7 +446,9 @@
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {{ isPhysicalSigning ? 'Naskah Draft' : 'Unggah Naskah' }}
               </h4>
-              <span class="text-xs text-gray-400">(.docx)</span>
+              <span class="text-xs text-gray-400">
+                (.docx){{ isPhysicalSigning ? ' · opsional' : '' }}
+              </span>
             </div>
             <FileUpload
               :model-value="naskahFiles"
@@ -661,7 +665,7 @@
             size="lg"
             icon="i-heroicons-document-text"
             class="px-8"
-            :disabled="!dokumenOk || saving"
+            :disabled="!documentRequirementMet || saving"
             @click="handleSaveDraft"
           />
           <UButton
@@ -671,7 +675,7 @@
             size="lg"
             icon="i-heroicons-paper-airplane"
             class="px-8 font-bold"
-            :disabled="!dokumenOk || saving"
+            :disabled="!documentRequirementMet || saving"
             @click="handleConfirmKirim"
           />
         </div>
@@ -809,7 +813,10 @@ const sifatOptions = [
   { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
   { label: 'Terbuka', value: 'terbuka' },
 ];
-const selectedSifat = ref<{ label: string; value: string } | null>(null);
+const selectedSifat = ref<{ label: string; value: string } | string | null>(null);
+const selectedSifatValue = computed(() =>
+  typeof selectedSifat.value === 'string' ? selectedSifat.value : (selectedSifat.value?.value ?? '')
+);
 
 const form = ref<BuatNaskahPayload & { penandatanganList: Penandatangan[] }>({
   jenis: 'PER' as JenisNaskah,
@@ -830,10 +837,9 @@ const signerSlots = ref<{ index: number }[]>([]);
 const loadingSigners = ref(false);
 const isRestoringDraft = ref(false);
 const editableSignerSlots = computed(() => {
-  const count =
-    isPhysicalMetadataMode.value || isPhysicalSigning.value
-      ? Math.max(1, signerSlotCount.value, form.value.penandatanganList?.length ?? 0)
-      : signerSlotCount.value;
+  // Penandatangan selalu wajib, termasuk bila template tidak memiliki placeholder
+  // tanda_tangan_N. Dalam kondisi tersebut tetap sediakan minimal satu slot.
+  const count = Math.max(1, signerSlotCount.value, form.value.penandatanganList?.length ?? 0);
   return Array.from({ length: count }, (_, index) => ({ index: index + 1 }));
 });
 
@@ -903,7 +909,7 @@ async function fetchTemplateSigners(jenis: string) {
     signerSlotCount.value = count;
     signerSlots.value = slots;
     // Reset semua slot agar tidak ada penandatangan lawas yang tertinggal saat ganti jenis/count.
-    const editableCount = form.value.signOption === 'ttd_basah' ? Math.max(1, count) : count;
+    const editableCount = Math.max(1, count);
     slotSigners.value = Array.from({ length: editableCount }, () => null);
     form.value.penandatanganList = Array.from({ length: editableCount }, () => ({
       nama: '',
@@ -913,7 +919,7 @@ async function fetchTemplateSigners(jenis: string) {
     // Template mungkin tidak punya placeholder tanda_tangan_N → N=0, fase signing dilewati.
     signerSlotCount.value = 0;
     signerSlots.value = [];
-    const fallbackCount = form.value.signOption === 'ttd_basah' ? 1 : 0;
+    const fallbackCount = 1;
     slotSigners.value = Array.from({ length: fallbackCount }, () => null);
     form.value.penandatanganList = Array.from({ length: fallbackCount }, () => ({
       nama: '',
@@ -1068,6 +1074,8 @@ const saving = ref(false);
 const manualFinalBusy = ref(false);
 const manualFinalFiles = ref<File[]>([]);
 const dokumenOk = computed(() => uploadStatus.value === 'done' || previewFile.value !== null);
+// Dokumen DOCX wajib untuk Digital. Pada Fisik, Naskah Draft memang opsional.
+const documentRequirementMet = computed(() => isPhysicalSigning.value || dokumenOk.value);
 
 const naskahFiles = ref<File[]>([]);
 // Naskah yg sudah ada di BE (di-restore dari draft). File baru yg dipilih user
@@ -1252,10 +1260,7 @@ onMounted(async () => {
         }
         if (storedSigners.length) {
           // Simpan data asli sebagai fallback bila tidak cocok dengan daftar pejabat.
-          const restoredSignerCount =
-            isPhysicalMetadataMode.value || isPhysicalSigning.value
-              ? Math.max(1, signerSlotCount.value, storedSigners.length)
-              : signerSlotCount.value;
+          const restoredSignerCount = Math.max(1, signerSlotCount.value, storedSigners.length);
           form.value.penandatanganList = Array.from({ length: restoredSignerCount }, (_, i) => {
             const sp = storedSigners[i];
             if (!sp) return { nama: '', jabatan: '' };
@@ -1362,7 +1367,7 @@ const buildPayload = (): BuatNaskahPayload => {
     perihal: form.value.perihal || undefined,
     // sifat diambil dari object-ref selectedSifat (pola TulisInputSifat), bukan form.value.sifat
     // yang tidak pernah di-update oleh select (select meng-emmit object ke selectedSifat).
-    sifat: selectedSifat.value?.value || 'biasa',
+    sifat: selectedSifatValue.value || 'biasa',
     penandatangan,
     klasifikasi:
       klasifikasiList.value.find((k) => k.id === selectedKlasifikasiId.value)?.klasifikasi ?? '',
@@ -1546,6 +1551,36 @@ function validateSigners(): boolean {
   return true;
 }
 
+function validateRequiredFieldsForSend(): boolean {
+  const missing: string[] = [];
+  const selectedKlasifikasi = klasifikasiList.value.find(
+    (item) => item.id === selectedKlasifikasiId.value
+  );
+  const requiredSignerCount = editableSignerSlots.value.length;
+  const signerChain = form.value.penandatanganList ?? [];
+  const signerChainComplete =
+    requiredSignerCount > 0 &&
+    signerChain.length === requiredSignerCount &&
+    signerChain.every((signer) => !!(signer?.persnum || signer?.positionId || signer?.nama));
+
+  if (!String(form.value.jenis ?? '').trim()) missing.push('Jenis naskah');
+  if (!selectedKlasifikasi?.klasifikasi?.trim()) missing.push('Klasifikasi');
+  if (!signerChainComplete) missing.push('Urutan penandatangan');
+  if (!selectedSifatValue.value) missing.push('Sifat');
+  if (selectedApprovals.value.length === 0) missing.push('Verifikator');
+  if (!isPhysicalSigning.value && !dokumenOk.value) missing.push('Unggah naskah');
+
+  if (missing.length > 0) {
+    useToast().add({
+      title: 'Lengkapi field wajib',
+      description: missing.join(', '),
+      color: 'warning',
+    });
+    return false;
+  }
+  return true;
+}
+
 // ── Draft ──
 const showDraftConfirm = ref(false);
 
@@ -1605,6 +1640,7 @@ async function confirmSaveDraft() {
 
 // ── Kirim: metode tanda tangan sudah dipilih di toggle atas form ──
 async function handleConfirmKirim() {
+  if (!validateRequiredFieldsForSend()) return;
   const isPhysical = isPhysicalSigning.value;
   const ok = await Alert.confirm(
     isPhysical ? 'Submit Naskah Fisik?' : 'Kirim Naskah?',
@@ -1615,7 +1651,7 @@ async function handleConfirmKirim() {
     'Batal'
   );
   if (!ok) return;
-  doKirim();
+  await doKirim();
 }
 
 function selectSignOption(option: 'qr_only' | 'ttd_basah') {
@@ -1624,7 +1660,7 @@ function selectSignOption(option: 'qr_only' | 'ttd_basah') {
 }
 
 const doKirim = async () => {
-  if (!validateSigners()) return;
+  if (!validateRequiredFieldsForSend()) return;
   saving.value = true;
   try {
     if (!createdId.value) {
