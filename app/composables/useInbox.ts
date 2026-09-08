@@ -41,7 +41,7 @@ export interface InboxParams {
 }
 
 export function useInbox() {
-  const { apiGet, apiPut, apiPatch, clearApiCache } = useApi();
+  const { apiGet, apiPost, apiPut, apiPatch, clearApiCache } = useApi();
   const { markNaskahNotificationsAsRead } = useNotifications();
 
   // State dipindahkan ke dalam fungsi agar setiap consumer punya instance sendiri
@@ -245,6 +245,17 @@ export function useInbox() {
       if (dataArray.length === 0) return null;
 
       const userSirkulasi = res?.user_sirkulasi || null;
+      let sdeMasalFollowUp = false;
+      if (String(jenis || dataArray[0]?.jenis || '').toUpperCase() === 'DI') {
+        try {
+          const syncResponse: any = await apiPost(
+            `/sde-masal/parent/${encodeURIComponent(idNaskah)}/sync-follow-up`,
+          );
+          sdeMasalFollowUp = syncResponse?.data?.marked === true;
+        } catch {
+          // Detail disposisi tetap dapat dibuka jika endpoint sinkronisasi tidak tersedia.
+        }
+      }
 
       const mapped = dataArray.map((d: any) => {
         const rawPenerima = Array.isArray(d.penerima) ? d.penerima : d.kepada || [];
@@ -277,7 +288,7 @@ export function useInbox() {
           raw: d,
           user_sirkulasi: userSirkulasi,
           isStarred:      userSirkulasi?.is_favorit ?? false,
-          isTinjut:       userSirkulasi?.is_tindak_lanjut ?? false,
+          isTinjut:       sdeMasalFollowUp || (userSirkulasi?.is_tindak_lanjut ?? false),
           isLocked:       userSirkulasi?.is_locked ?? false,
           isNote:         userSirkulasi?.is_note ?? false,
           isArsip:        userSirkulasi?.is_arsip ?? false,
