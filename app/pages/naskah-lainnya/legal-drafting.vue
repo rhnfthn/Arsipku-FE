@@ -281,6 +281,16 @@
       />
     </div>
 
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems || legalDrafting.length"
+      title="Pilih Kolom Export Legal Drafting"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
+
     <div
       v-if="error"
       class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300"
@@ -295,11 +305,23 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import { useToast } from '#imports';
-import { downloadCsv } from '~/utils/csv-export';
 import type { NaskahListItem, Tahapan } from '~/types/naskah-lainnya';
 import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'nomor', label: 'Nomor Naskah', desc: 'Nomor naskah dinas' },
+  { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Nama pemrakarsa' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal / subjek naskah' },
+  { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan legal drafting' },
+  { key: 'status', label: 'Status', desc: 'Status naskah' }
+]);
 
 const { legalDrafting, pending, error, fetchLegalDrafting } = useNaskahLainnya();
 const toast = useToast();
@@ -582,8 +604,7 @@ function openAction(row: any) {
   navigateTo(`/naskah-lainnya/${n.id}`);
 }
 
-// ── Export CSV ──
-async function exportData() {
+function exportData() {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
@@ -592,23 +613,43 @@ async function exportData() {
     });
     return;
   }
+  showExportModal.value = true;
+}
+
+function handleExportConfirm(selectedKeys: string[]) {
+  const rows = displayRows.value;
+  if (!rows.length || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const rows = displayRows.value;
-    if (!rows.length) {
-      toast.add({
-        title: 'Tidak ada data',
-        description: 'Tidak ada data untuk diexport',
-        color: 'warning',
-      });
-      return;
-    }
-    const headers = ['Naskah', 'Pemrakarsa', 'Perihal', 'Tahapan', 'Status'];
-    const csvRows = rows.map((r) => [r.nomor, r.pemrakarsa, r.perihal, r.tahapan, r.status]);
-    downloadCsv(`legal-drafting_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    const data = rows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomor')) row['Nomor Naskah'] = r.nomor || '-';
+      if (selectedKeys.includes('pemrakarsa')) row['Pemrakarsa'] = r.pemrakarsa || '-';
+      if (selectedKeys.includes('perihal')) row['Perihal'] = r.perihal || '-';
+      if (selectedKeys.includes('tahapan')) row['Tahapan'] = r.tahapan || '-';
+      if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Legal Drafting');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `legal_drafting_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({
       title: 'Berhasil',
-      description: `${rows.length} data berhasil diexport`,
+      description: `${data.length} data berhasil diexport`,
       color: 'success',
     });
   } catch (e) {

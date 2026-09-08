@@ -179,6 +179,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="total || list.length"
+      title="Pilih Kolom Export Penerimaan Usulan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -328,29 +338,88 @@ const isDetailOnly = (status: string) => {
   )
 }
 
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nomorUsulan', label: 'Nomor Usulan', desc: 'Nomor berkas usulan' },
+  { key: 'arsip', label: 'Nama Berkas / Arsip', desc: 'Perihal arsip berkas' },
+  { key: 'sekretaris', label: 'Sekretaris / Pengusul', desc: 'Nama pengusul' },
+  { key: 'atasan', label: 'Atasan Managerial', desc: 'Nama atasan pemeriksa' },
+  { key: 'tglDikirim', label: 'Tanggal Dikirim', desc: 'Tanggal berkas dikirimkan' },
+  { key: 'status', label: 'Status', desc: 'Status verifikasi usulan' }
+]);
+
 const onExport = () => {
   if (list.value.length === 0) {
-    alert('Tidak ada data untuk diexport')
-    return
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
   }
-  const headers = ['Nomor Usulan', 'Sekretaris', 'Arsip', 'Atasan', 'Tgl Dikirim', 'Status']
-  const rows = list.value.map((r: any) => [
-    r.nomorUsulan ?? '',
-    r.sekretarisName ?? '',
-    r.arsipPerihal ?? '',
-    r.atasanName ?? '',
-    r.tanggalDikirim ?? '',
-    statusLabel(r.status) ?? '',
-  ])
-  const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `penerimaan-usulan-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-}
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (list.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    let allRows = list.value;
+    if (total.value > limit.value) {
+      const res = await apiGet('/usulan-pindah/notifikasi-tu', {
+        params: {
+          search: searchInput.value || undefined,
+          status: filterStatus.value || undefined,
+          klasifikasi: filterKlasifikasi.value || undefined,
+          page: 1,
+          limit: total.value
+        }
+      });
+      const payload = res?.data ?? res;
+      if (payload?.data && Array.isArray(payload.data)) {
+        allRows = payload.data;
+      }
+    }
+
+    const data = allRows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomorUsulan')) row['Nomor Usulan'] = r.nomorUsulan || '-';
+      if (selectedKeys.includes('arsip')) row['Nama Berkas / Arsip'] = r.arsipPerihal || '-';
+      if (selectedKeys.includes('sekretaris')) row['Sekretaris / Pengusul'] = r.sekretarisName || '-';
+      if (selectedKeys.includes('atasan')) row['Atasan Managerial'] = r.atasanName || '-';
+      if (selectedKeys.includes('tglDikirim')) row['Tanggal Dikirim'] = formatDate(r.tanggalDikirim);
+      if (selectedKeys.includes('status')) row['Status'] = statusLabel(r.status);
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Penerimaan Usulan');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `penerimaan_usulan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    useToast().add({ title: 'Berhasil', description: `${data.length} data usulan berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export penerimaan usulan error:', err);
+    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)

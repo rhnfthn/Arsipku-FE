@@ -623,6 +623,16 @@
         </template>
       </Modal>
     </Teleport>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems || berkasList.length"
+      title="Pilih Kolom Export Berkas Saya"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -636,6 +646,9 @@ import {
   Image as ImageIcon,
   ChevronDown,
 } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 const {
   getBerkasList,
@@ -645,6 +658,19 @@ const {
 } = useArsipDinamis();
 const { apiPost } = useApi();
 const toast = useToast();
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nama_berkas', label: 'Nama Berkas', desc: 'Perihal atau nama berkas arsip' },
+  { key: 'kode_berkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'kategori', label: 'Kategori', desc: 'Kategori berkas' },
+  { key: 'retensi', label: 'Retensi (A/I)', desc: 'Masa retensi aktif & inaktif' },
+  { key: 'lokasi', label: 'Lokasi Fisik', desc: 'Lokasi fisik penyimpanan berkas' },
+  { key: 'status', label: 'Status', desc: 'Status berkas' },
+  { key: 'updated', label: 'Updated', desc: 'Tanggal terakhir diperbarui' }
+]);
 
 // ── State ────────────────────────────────────────────────────────
 
@@ -1009,7 +1035,7 @@ const fetchData = async () => {
 
 const isExporting = ref(false);
 
-const exportData = async () => {
+const exportData = () => {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
@@ -1018,6 +1044,11 @@ const exportData = async () => {
     });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (totalItems.value === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
     const list = await getBerkasList({
@@ -1037,27 +1068,36 @@ const exportData = async () => {
       });
       return;
     }
-    const headers = [
-      'Nama Berkas',
-      'Kode Berkas',
-      'Klasifikasi',
-      'Kategori',
-      'Retensi (A/I)',
-      'Lokasi Fisik',
-      'Status',
-      'Updated',
-    ];
-    const csvRows = rows.map((b: any) => [
-      b.judulBerkas,
-      b.kodeBerkas,
-      b.klasifikasiTeks,
-      b.kategoriBerkas || '',
-      `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`,
-      b.lokasi,
-      b.status,
-      b.updatedAt,
-    ]);
-    downloadCsv(`berkas-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+
+    const data = rows.map((b: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nama_berkas')) row['Nama Berkas'] = b.judulBerkas || '-';
+      if (selectedKeys.includes('kode_berkas')) row['Kode Berkas'] = b.kodeBerkas || '-';
+      if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = b.klasifikasiTeks || '-';
+      if (selectedKeys.includes('kategori')) row['Kategori'] = b.kategoriBerkas || '-';
+      if (selectedKeys.includes('retensi')) row['Retensi (A/I)'] = `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`;
+      if (selectedKeys.includes('lokasi')) row['Lokasi Fisik'] = b.lokasi || '-';
+      if (selectedKeys.includes('status')) row['Status'] = b.status || '-';
+      if (selectedKeys.includes('updated')) row['Updated'] = b.updatedAt || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Berkas Saya');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `berkas_saya_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({
       title: 'Berhasil',
       description: `${rows.length} data berhasil diexport`,
