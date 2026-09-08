@@ -4,7 +4,7 @@
       Preview Data Penerima
     </h4>
     <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-      <table class="w-full text-sm">
+      <table class="w-full min-w-max text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th
@@ -46,7 +46,7 @@
             <td
               v-for="column in columns"
               :key="`${item.no}-${column}`"
-              class="max-w-64 border-b border-gray-100 px-3 py-2 text-gray-700 dark:border-gray-700 dark:text-gray-300"
+              class="max-w-64 break-all whitespace-normal align-top border-b border-gray-100 px-3 py-2 text-gray-700 dark:border-gray-700 dark:text-gray-300"
               :class="{ 'font-medium text-gray-900 dark:text-white': column === 'perihal' }"
             >
               {{ getValue(item, column) || '-' }}
@@ -396,7 +396,7 @@ const getValue = (item: SdeMasalPenerima, column: string) => {
   if (column === 'perihal') return item.perihal || '';
   if (column === 'tertuju') return item.tertuju || item.idTertuju || '';
   if (column === 'lampiran') {
-    if (Array.isArray(item.lampiran)) return item.lampiran.map((ref) => ref.fileName).join(', ');
+    if (Array.isArray(item.lampiran)) return item.lampiran.map((ref) => ref.fileName).join('; ');
     return item.lampiran || item.variables?.lampiran || '';
   }
   if (column === 'tembusan') return item.tembusan || item.variables?.tembusan || '';
