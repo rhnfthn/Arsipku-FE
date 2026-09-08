@@ -20,103 +20,111 @@
     </div>
 
     <template v-else-if="folder">
-      <!-- Header pesan: menggunakan pola metadata halaman surat inbox. -->
-      <div class="border-b border-gray-100 bg-white px-6 py-5 dark:border-gray-800 dark:bg-gray-800">
-        <h1 class="truncate text-2xl font-bold text-gray-900 dark:text-white">{{ folder.judul || 'SDE Massal' }}</h1>
-        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
-          <span class="font-mono"># SDE-MASAL</span>
-          <span>·</span>
-          <span><UIcon name="i-lucide-calendar" class="mr-1 inline size-4" />{{ formatDate(folder.tanggal || folder.createdAt) }}</span>
-          <span>·</span>
-          <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">SDE</span>
-          <span class="rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">{{ folder.klasifikasi || '-' }}</span>
-          <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
-        </div>
-      </div>
-
-      <div class="bg-white px-6 py-7 dark:bg-gray-800">
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div class="flex items-center gap-4">
-            <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-600 text-lg font-semibold text-white">S</div>
-            <div class="min-w-0">
-              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pengirim Konsep</p>
-              <p class="truncate text-lg font-semibold text-gray-900 dark:text-white">Konseptor SDE Massal</p>
-              <p class="truncate text-sm text-gray-500 dark:text-gray-400">{{ folder.createdBy || 'Konseptor' }}</p>
-            </div>
-          </div>
-          <div class="border-l-0 pl-0 md:border-l md:border-gray-200 md:pl-6 dark:md:border-gray-700">
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Penerima Naskah</p>
-            <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ folder.pengirimName || '-' }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ items.length }} surat dalam folder</p>
-          </div>
-        </div>
-
-        <div class="mt-7 rounded-xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/40">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Konsep Naskah</h2>
-            <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
-          </div>
-          <div class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Nomor:</span> SDE-MASAL</p>
-            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Tanggal:</span> {{ formatDate(folder.tanggal || folder.createdAt) }}</p>
-            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Pengirim:</span> {{ folder.pengirimName || '-' }}</p>
-            <p><span class="inline-block w-24 text-gray-500 dark:text-gray-400">Klasifikasi:</span> {{ folder.klasifikasi || '-' }}{{ folder.klasifikasiText ? ` · ${folder.klasifikasiText}` : '' }}</p>
-          </div>
-        </div>
-
-        <div class="mt-7 grid grid-cols-[auto_1fr] gap-x-8 border-b border-gray-100 pb-5 dark:border-gray-700">
-          <span class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pesan</span>
-          <p class="text-base text-gray-800 dark:text-gray-200">{{ items[0]?.perihal || folder.judul || 'SDE Massal' }}</p>
-        </div>
-        <div class="mt-5 rounded-xl bg-gray-50 p-5 text-sm leading-7 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300" v-html="messagePreviewHtml" />
-      </div>
-
-      <!-- Informasi Folder (full width, di atas) -->
-      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+      <div class="space-y-5">
+      <!-- Informasi Folder -->
+      <div class="min-w-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Informasi Folder</h3>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Judul Folder</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ folder.judul || '-' }}</p>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Judul Folder</span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ folder.judul || '-' }}</p>
           </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Status</p>
-            <span class="mt-1 inline-block" :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Tanggal</span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ formatDate(folder.tanggal || folder.createdAt) }}</p>
           </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Total naskah</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ items.length }}</p>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Pengirim</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white truncate">{{ folder.pengirimName || '-' }}</p>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Klasifikasi</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-              {{ folder.klasifikasi || '-' }}
-              <span v-if="folder.klasifikasiText" class="text-gray-900 dark:text-white"> · {{ folder.klasifikasiText }}</span>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Klasifikasi</span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+              {{ folder.klasifikasi || '-' }}<span v-if="folder.klasifikasiText"> · {{ folder.klasifikasiText }}</span>
             </p>
           </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Sifat</p>
-            <p class="mt-1 text-sm font-semibold capitalize text-gray-900 dark:text-white">{{ folder.sifat || 'biasa' }}</p>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Pengirim</span>
+            <p class="w-full truncate text-sm text-gray-900 dark:text-white sm:ml-6">{{ folder.pengirimName || '-' }}</p>
           </div>
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Tanggal</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(folder.tanggal || folder.createdAt) }}</p>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Sifat</span>
+            <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">{{ folder.sifat || 'biasa' }}</p>
           </div>
-        </div>
-        <div v-if="isSignerAwaiting" class="mt-4 flex justify-end gap-2">
-          <UButton label="Tolak" icon="i-lucide-x-circle" color="error" variant="soft" :loading="workflowLoading" @click="rejectCurrentFolder" />
-          <UButton label="Finalisasi" icon="i-lucide-check-circle" color="primary" :loading="workflowLoading" @click="finalizeCurrentFolder" />
         </div>
       </div>
 
-      <!-- Daftar Naskah (full width, di bawah) -->
-      <div class="mt-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+      <!-- Verifikator -->
+      <div class="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Verifikator</h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ verifikatorList.length }} orang</span>
+          </div>
+          <div v-if="verifikatorList.length" class="space-y-2">
+            <div
+              v-for="verifikator in verifikatorList"
+              :key="`${verifikator.urutan}-${verifikator.persnum}-${verifikator.position}`"
+              class="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-gray-900/40"
+            >
+              <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                {{ verifikator.urutan }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium text-gray-900 dark:text-white" :title="verifikator.nama">
+                  {{ verifikator.nama || '-' }}
+                </p>
+                <p class="truncate text-xs text-gray-500 dark:text-gray-400" :title="verifikator.jabatan">
+                  {{ verifikator.jabatan || verifikator.position || '-' }}
+                </p>
+              </div>
+              <span :class="verifikatorStatusBadge(verifikator.status)">
+                {{ verifikatorStatusLabel(verifikator.status) }}
+              </span>
+            </div>
+          </div>
+          <p v-else class="text-sm text-gray-400 dark:text-gray-500">Belum ada verifikator.</p>
+      </div>
+
+      <!-- Timeline Riwayat -->
+      <div class="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Timeline Riwayat</h3>
+        <div v-if="timelineSteps.length === 0" class="text-sm text-gray-400">
+          Belum ada riwayat.
+        </div>
+        <div v-else class="space-y-1">
+          <div
+            v-for="(step, idx) in timelineSteps"
+            :key="idx"
+            class="flex gap-3"
+            :class="idx < timelineSteps.length - 1 ? 'pb-4' : ''"
+          >
+            <div class="flex flex-col items-center">
+              <div
+                class="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+                :class="step.dotClass"
+              >
+                <UIcon v-if="step.icon === 'check'" name="i-lucide-check" class="size-4" />
+                <UIcon v-else-if="step.icon === 'x'" name="i-lucide-x" class="size-4" />
+                <span v-else>{{ step.number }}</span>
+              </div>
+              <div
+                v-if="idx < timelineSteps.length - 1"
+                class="mt-1 w-0.5 flex-1"
+                :class="step.done ? 'bg-green-300 dark:bg-green-700' : 'bg-gray-200 dark:bg-gray-700'"
+              />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium" :class="step.textClass">{{ step.label }}</p>
+              <p class="mt-0.5 text-xs" :class="step.descClass">{{ step.desc }}</p>
+              <p v-if="step.date" class="mt-0.5 text-xs" :class="step.dateClass">{{ step.date }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daftar Naskah -->
+      <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Naskah</h3>
+          <p v-if="isSignerAwaiting" class="text-xs text-gray-500 dark:text-gray-400">
+            Total {{ items.length }} · Siap dikirim {{ eligibleItems.length }} · Ditolak {{ rejectedItems.length }} · Terkirim {{ sentItems.length }}
+          </p>
         </div>
         <EmptyState
           v-if="items.length === 0"
@@ -128,6 +136,13 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-primary text-left text-white dark:bg-primary-700">
               <tr>
+                <th v-if="isSignerAwaiting" class="w-12 px-4 py-3 text-center font-semibold whitespace-nowrap">
+                  <UCheckbox
+                    color="primary"
+                    :model-value="allEligibleSelected"
+                    @update:model-value="toggleAllEligible"
+                  />
+                </th>
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Nomor</th>
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Perihal</th>
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Penerima</th>
@@ -142,6 +157,14 @@
                 :key="item.id"
                 class="border-b border-gray-50 hover:bg-gray-50 dark:border-gray-700/50 dark:hover:bg-gray-700/30 transition-colors"
               >
+                <td v-if="isSignerAwaiting" class="px-4 py-2.5 text-center">
+                  <UCheckbox
+                    color="primary"
+                    :model-value="selectedItemIds.includes(item.id)"
+                    :disabled="!isEligibleItem(item)"
+                    @update:model-value="toggleItem(item)"
+                  />
+                </td>
                 <td class="px-4 py-2.5 font-mono text-xs text-gray-600 dark:text-gray-300">{{ item.nomor || '-' }}</td>
                 <td class="max-w-xs px-4 py-2.5">
                   <p class="truncate text-xs font-medium text-gray-700 dark:text-gray-200" :title="item.perihal || ''">
@@ -186,7 +209,7 @@
                       <UIcon name="i-lucide-download" class="size-4" />
                     </button>
                     <button
-                      v-if="isGagal(item.status)"
+                      v-if="isGagal(item.status) && !isFolderCreator"
                       class="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                       :disabled="retryingId === item.id"
                       :title="retryingId === item.id ? 'Sedang mengirim ulang…' : 'Kirim ulang'"
@@ -206,51 +229,140 @@
         </div>
       </div>
 
-      <!-- Timeline Riwayat (full width, di bawah) -->
-      <div class="mt-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Timeline Riwayat</h3>
-        <div v-if="timelineSteps.length === 0" class="text-sm text-gray-400">
-          Belum ada riwayat.
-        </div>
-        <div v-else class="space-y-1">
-          <div
-            v-for="(step, idx) in timelineSteps"
-            :key="idx"
-            class="flex gap-3"
-            :class="idx < timelineSteps.length - 1 ? 'pb-4' : ''"
-          >
-            <!-- Dot + connector -->
-            <div class="flex flex-col items-center">
-              <div
-                class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold"
-                :class="step.dotClass"
-              >
-                <UIcon v-if="step.icon === 'check'" name="i-lucide-check" class="w-4 h-4" />
-                <UIcon v-else-if="step.icon === 'x'" name="i-lucide-x" class="w-4 h-4" />
-                <span v-else>{{ step.number }}</span>
-              </div>
-              <div
-                v-if="idx < timelineSteps.length - 1"
-                class="w-0.5 flex-1 mt-1"
-                :class="step.done ? 'bg-green-300 dark:bg-green-700' : 'bg-gray-200 dark:bg-gray-700'"
-              />
-            </div>
-            <!-- Info -->
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium" :class="step.textClass">{{ step.label }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ step.desc }}</p>
-              <p v-if="step.date" class="text-xs text-gray-400 mt-0.5">{{ step.date }}</p>
-            </div>
-          </div>
-        </div>
+      <!-- Aksi workflow selalu berada setelah Daftar Naskah. -->
+      <div v-if="isVerifierAwaiting || isSignerAwaiting" class="flex flex-wrap justify-start gap-2">
+        <UButton
+          label="Tolak Folder"
+          icon="i-lucide-x-circle"
+          color="error"
+          variant="solid"
+          :loading="workflowLoading"
+          @click="openRejectModal"
+        />
+        <UButton
+          v-if="isVerifierAwaiting"
+          label="Setujui Folder"
+          icon="i-lucide-check-circle"
+          color="primary"
+          :loading="workflowLoading"
+          @click="showApproveConfirm = true"
+        />
+        <UButton
+          v-else
+          :label="selectedItemIds.length ? `Kirim ${selectedItemIds.length} Surat` : 'Tidak ada surat yang siap dikirim'"
+          icon="i-lucide-send"
+          color="primary"
+          :disabled="selectedItemIds.length === 0"
+          :loading="workflowLoading"
+          @click="openSendPreview"
+        />
+      </div>
+
       </div>
     </template>
+
+    <UModal
+      v-model:open="showApproveConfirm"
+      title="Setujui Folder SDE Massal?"
+      :ui="{ overlay: 'bg-black/40 backdrop-blur-[2px]' }"
+    >
+      <template #body>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Seluruh item dalam folder akan diteruskan ke verifikator berikutnya atau ke Pengirim.
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton
+            label="Batal"
+            color="neutral"
+            variant="outline"
+            :disabled="workflowLoading"
+            @click="showApproveConfirm = false"
+          />
+          <UButton
+            label="Setujui Folder"
+            icon="i-lucide-check-circle"
+            color="primary"
+            :loading="workflowLoading"
+            @click="approveCurrentFolder"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="showSendConfirm"
+      title="Kirim Surat SDE Massal?"
+      :ui="{ overlay: 'bg-black/40 backdrop-blur-[2px]' }"
+    >
+      <template #body>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Sebanyak {{ selectedItemIds.length }} surat yang sudah disetujui akan diproses.
+          Surat yang sudah terkirim atau ditolak tidak diproses ulang.
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton
+            label="Batal"
+            color="neutral"
+            variant="outline"
+            :disabled="workflowLoading"
+            @click="showSendConfirm = false"
+          />
+          <UButton
+            label="Kirim Surat"
+            icon="i-lucide-send"
+            color="primary"
+            :loading="workflowLoading"
+            @click="openSendPreview"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Gunakan modal pilihan tanda tangan yang sama dengan SDE biasa. -->
+    <TulisDigsigPassphraseModal
+      v-model:open="isPassphraseModalOpen"
+      :signer-info="signerInfo"
+      :is-loading="workflowLoading"
+      :hide-bsre="bsreDisabled"
+      :hide-qr="qrDisabled"
+      :hide-basah="basahDisabled"
+      ref="signMethodModalRef"
+      @submit="handleSignMethodSubmit"
+    />
+
+    <UModal
+      v-model:open="showRejectModal"
+      title="Tolak Folder SDE Massal"
+      :ui="{ overlay: 'bg-black/40 backdrop-blur-[2px]' }"
+    >
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600 dark:text-gray-300">Berikan alasan penolakan agar konseptor dapat memperbaiki folder.</p>
+          <textarea
+            v-model="rejectReason"
+            rows="4"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            placeholder="Tulis alasan penolakan..."
+          />
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Batal" color="neutral" variant="outline" :disabled="workflowLoading" @click="showRejectModal = false" />
+          <UButton label="Tolak Folder" color="error" :loading="workflowLoading" :disabled="!rejectReason.trim()" @click="submitVerificationReject" />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Preview Full-screen PDF (native PDF viewer browser, seragam dengan wizard) -->
     <Teleport to="body">
       <div
         v-if="showPreview"
-        class="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-gray-950"
+        class="fixed inset-0 z-[10] flex flex-col bg-white dark:bg-gray-950"
       >
         <!-- Top Bar -->
         <div
@@ -259,7 +371,7 @@
           <div class="flex items-center gap-2 min-w-0">
             <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500 shrink-0" />
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-              Preview Surat — Penerima {{ previewIndex + 1 }}
+              Preview Surat — Penerima {{ previewPosition + 1 }}
             </p>
           </div>
           <div class="flex items-center gap-1 shrink-0">
@@ -268,19 +380,19 @@
               color="neutral"
               variant="ghost"
               size="xs"
-              :disabled="previewIndex <= 0 || isLoadingPdf"
-              @click="gotoPreview(previewIndex - 1)"
+              :disabled="previewPreviousDisabled || isLoadingPdf"
+              @click="gotoPreviewPrevious"
             />
             <span class="min-w-14 text-center text-xs text-gray-500 dark:text-gray-400"
-              >{{ previewIndex + 1 }} / {{ items.length }}</span
+              >{{ previewPosition + 1 }} / {{ previewTotal }}</span
             >
             <UButton
               icon="i-lucide-chevron-right"
               color="neutral"
               variant="ghost"
               size="xs"
-              :disabled="previewIndex >= items.length - 1 || isLoadingPdf"
-              @click="gotoPreview(previewIndex + 1)"
+              :disabled="previewNextDisabled || isLoadingPdf"
+              @click="gotoPreviewNext"
             />
             <div class="mx-2 h-5 w-px bg-gray-200 dark:bg-gray-700" />
             <button
@@ -325,6 +437,25 @@
             <span class="text-sm">PDF tidak tersedia.</span>
           </div>
         </div>
+        <div v-if="sendPreviewFlow" class="flex shrink-0 items-center gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+          <UButton
+            label="Draft"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-heroicons-document-text"
+            @click="closePreview"
+          />
+          <UButton
+            label="Kirim"
+            color="primary"
+            size="lg"
+            icon="i-heroicons-paper-airplane"
+            class="font-bold"
+            type="button"
+            @click.stop="continueToSignature"
+          />
+        </div>
       </div>
     </Teleport>
   </div>
@@ -339,53 +470,199 @@ import {
   setTertujuEksternalLookup,
   setInternalPositionLookup,
 } from '~/utils/sde-masal-render';
+import TulisDigsigPassphraseModal from '@/components/Tulis/DigsigPassphraseModal.vue';
 
-definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
+// Akses detail ditentukan backend berdasarkan creator, verifikator aktif,
+// atau pengirim akhir; staff perlu dapat membuka folder disposisinya.
+definePageMeta({ middleware: ['auth'] });
 const route = useRoute();
 const { api, apiGet } = useApi();
-const { findNaskahInFolder, finalizeDirect, rejectFolder } = useSdeMasal();
+const {
+  findNaskahInFolder,
+  finalizeDirect,
+  rejectFolder,
+  approveFolderVerification,
+  rejectFolderVerification,
+} = useSdeMasal();
+const { getConfigDigsig } = useDigsig();
 const { user } = useAuth();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
 const folder = ref<SdeMasalFolder | null>(null);
 const items = ref<SdeMasalFolderItem[]>([]);
 const workflowLoading = ref(false);
+const selectedItemIds = ref<string[]>([]);
+const showApproveConfirm = ref(false);
+const showSendConfirm = ref(false);
+const showRejectModal = ref(false);
+const rejectReason = ref('');
+const isPassphraseModalOpen = ref(false);
+const signMethodModalRef = ref<any>(null);
+const bsreDisabled = ref(true);
+const qrDisabled = ref(true);
+const basahDisabled = ref(true);
+const selectedSendType = ref<'digsig' | 'qr_only' | 'ttd_basah'>('qr_only');
 const isSignerAwaiting = computed(
-  () => !!folder.value && folder.value.status === 'MENUNGGU_PENGIRIM' && String(user.value?.position || user.value?.positionId || '') === String(folder.value.pengirimId || ''),
+  () =>
+    !!folder.value &&
+    ['MENUNGGU_PENGIRIM', 'SEBAGIAN_TERKIRIM'].includes(folder.value.status) &&
+    String(user.value?.position || user.value?.position_id || '') === String(folder.value.pengirimId || ''),
+);
+const currentPersnum = computed(() => String(user.value?.persnum || '').trim());
+const currentPosition = computed(() => String(user.value?.position || user.value?.position_id || '').trim());
+const isFolderCreator = computed(
+  () =>
+    !!folder.value &&
+    !!currentPosition.value &&
+    String(folder.value.createdBy || '') === currentPosition.value,
+);
+const isVerifierAwaiting = computed(() => {
+  if (!folder.value || folder.value.status !== 'MENUNGGU_VERIFIKASI') return false;
+  return items.value.some((item) =>
+    (item.verifikators || []).some(
+      (verifikator) =>
+        verifikator.status === 'waiting' &&
+        ((currentPersnum.value && String(verifikator.persnum) === currentPersnum.value) ||
+          (currentPosition.value && String(verifikator.position) === currentPosition.value)),
+    ),
+  );
+});
+const isEligibleItem = (item: SdeMasalFolderItem) =>
+  ['TERVERIFIKASI', 'GAGAL'].includes(item.statusVerifikasi || '') && !item.naskahId;
+const eligibleItems = computed(() => items.value.filter(isEligibleItem));
+const rejectedItems = computed(() => items.value.filter((item) => item.statusVerifikasi === 'DITOLAK'));
+const sentItems = computed(() => items.value.filter((item) => item.statusVerifikasi === 'TERKIRIM'));
+const allEligibleSelected = computed(
+  () => eligibleItems.value.length > 0 && eligibleItems.value.every((item) => selectedItemIds.value.includes(item.id)),
 );
 
-const finalizeCurrentFolder = async () => {
-  if (!folder.value || !items.value.length || !window.confirm('Finalisasi seluruh surat dalam folder ini?')) return;
+const toggleItem = (item: SdeMasalFolderItem) => {
+  if (!isEligibleItem(item)) return;
+  const index = selectedItemIds.value.indexOf(item.id);
+  if (index >= 0) selectedItemIds.value.splice(index, 1);
+  else selectedItemIds.value.push(item.id);
+};
+const toggleAllEligible = (checked: boolean | 'indeterminate') => {
+  selectedItemIds.value = checked === true ? eligibleItems.value.map((item) => item.id) : [];
+};
+
+const approveCurrentFolder = async () => {
+  if (!folder.value) return;
   workflowLoading.value = true;
   try {
-    const result = await finalizeDirect({
-      folderId: folder.value.id,
-      itemIds: items.value.map((item) => item.id),
-      penerimaList: items.value.map((item) => item.recipient || {} as SdeMasalPenerima),
-      signOption: folder.value.signOption || 'qr_only',
-    });
-    toast.add({ title: 'Finalisasi selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
-    await loadData();
+    await approveFolderVerification(folder.value.id);
+    showApproveConfirm.value = false;
+    toast.add({ title: 'Folder disetujui', description: 'Folder diteruskan sesuai alur verifikasi.', color: 'success' });
+    // Setelah approval, akses folder dapat berpindah ke verifikator berikutnya
+    // atau ke pengirim akhir. Jangan memuat ulang detail sebagai verifikator
+    // sebelumnya karena backend memang akan mengembalikan 403.
+    await navigateTo('/korespondensi/sde-masal/verifikasi');
   } catch (error: any) {
-    toast.add({ title: 'Finalisasi gagal', description: error?.message || 'Coba lagi.', color: 'error' });
+    toast.add({ title: 'Gagal menyetujui folder', description: error?.message || 'Coba lagi.', color: 'error' });
   } finally {
     workflowLoading.value = false;
   }
 };
 
-const rejectCurrentFolder = async () => {
-  if (!folder.value) return;
-  const reason = window.prompt('Masukkan alasan penolakan:')?.trim();
-  if (!reason) return;
+const openRejectModal = () => {
+  rejectReason.value = '';
+  showRejectModal.value = true;
+};
+
+const submitVerificationReject = async () => {
+  if (!folder.value || !rejectReason.value.trim()) return;
   workflowLoading.value = true;
   try {
-    await rejectFolder(folder.value.id, reason);
-    toast.add({ title: 'SDE Massal dikembalikan', description: 'Konseptor dapat memperbaiki konsep.', color: 'success' });
-    await loadData();
+    if (isVerifierAwaiting.value) {
+      await rejectFolderVerification(folder.value.id, rejectReason.value.trim());
+    } else {
+      await rejectFolder(folder.value.id, rejectReason.value.trim());
+    }
+    showRejectModal.value = false;
+    toast.add({ title: 'Folder dikembalikan', description: 'Konseptor dapat memperbaiki folder.', color: 'success' });
+    // Setelah ditolak, folder berpindah ke konseptor sehingga verifikator
+    // sebelumnya tidak lagi memiliki akses ke detail folder.
+    await navigateTo('/korespondensi/sde-masal/verifikasi');
   } catch (error: any) {
-    toast.add({ title: 'Gagal menolak', description: error?.message || 'Coba lagi.', color: 'error' });
+    toast.add({ title: 'Gagal menolak folder', description: error?.message || 'Coba lagi.', color: 'error' });
   } finally {
     workflowLoading.value = false;
   }
+};
+
+const signerInfo = computed(() => {
+  const parts = (folder.value?.finalSenderName || folder.value?.pengirimName || '')
+    .split(' - ')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return {
+    label: 'Penandatangan SDE Massal',
+    role: parts.slice(1).join(' - ') || 'Pengirim',
+    name: parts[0] || '-',
+  };
+});
+
+const openSignatureModal = async () => {
+  if (!selectedItemIds.value.length) return;
+
+  // Buka popup terlebih dahulu supaya klik Kirim langsung memberi respons.
+  showSendConfirm.value = false;
+  isPassphraseModalOpen.value = true;
+
+  try {
+    const config: any = await getConfigDigsig('SDE');
+    bsreDisabled.value = !config?.data?.digsig;
+    qrDisabled.value = !config?.data?.ttdQr;
+    basahDisabled.value = !config?.data?.ttdBasah;
+  } catch {
+    // Jika konfigurasi gagal dimuat, modal tetap dapat memilih opsi fisik.
+    bsreDisabled.value = true;
+    qrDisabled.value = true;
+    basahDisabled.value = true;
+  }
+
+};
+
+const sendSelectedItems = async (signData: { method: string; passphrase?: string }) => {
+  if (!folder.value || !selectedItemIds.value.length) return;
+
+  const method = signData.method === 'tanpa_ttd' ? 'ttd_basah' : signData.method;
+  if (method === 'digsig' && !signData.passphrase?.trim()) {
+    signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
+    return;
+  }
+
+  selectedSendType.value = method as typeof selectedSendType.value;
+  workflowLoading.value = true;
+  try {
+    const result = await finalizeDirect({
+      folderId: folder.value.id,
+      itemIds: [...selectedItemIds.value],
+      penerimaList: items.value
+        .filter((item) => selectedItemIds.value.includes(item.id))
+        .map((item) => (item.recipient || {}) as SdeMasalPenerima),
+      signOption: selectedSendType.value,
+      passphrase: signData.passphrase,
+    });
+    isPassphraseModalOpen.value = false;
+    closePreview();
+    showSendConfirm.value = false;
+    toast.add({ title: 'Pengiriman selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
+    await loadData();
+  } catch (error: any) {
+    const message = error?.response?.data?.message || error?.message || 'Coba lagi.';
+    if (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah')) {
+      signMethodModalRef.value?.setPassphraseError(message);
+    } else {
+      isPassphraseModalOpen.value = false;
+      toast.add({ title: 'Pengiriman gagal', description: message, color: 'error' });
+    }
+  } finally {
+    workflowLoading.value = false;
+  }
+};
+
+const handleSignMethodSubmit = async (data: { method: string; passphrase?: string }) => {
+  await sendSelectedItems(data);
 };
 const loading = ref(true);
 const breadcrumbs = computed(() => [
@@ -396,6 +673,7 @@ const breadcrumbs = computed(() => [
 
 // Preview PDF (native PDF viewer via iframe, seragam dengan wizard)
 const showPreview = ref(false);
+const sendPreviewFlow = ref(false);
 const previewIndex = ref(0);
 const isLoadingPdf = ref(false);
 const pdfUrl = ref<string | null>(null);
@@ -421,13 +699,6 @@ const previewTemplate = computed<SdeMasalTemplate | null>(() => {
   const f = folder.value;
   if (!f) return null;
   return { skema: 'DINAMIS', versi: 'v1', konten: f.kontenTemplate || '' };
-});
-
-const messagePreviewHtml = computed(() => {
-  const f = folder.value;
-  if (!f?.kontenTemplate) return '<span class="text-gray-400">Pesan konsep belum tersedia.</span>';
-  const recipient = (items.value[0]?.recipient || {}) as SdeMasalPenerima;
-  return renderSdeMasalKonten(f.kontenTemplate, recipient, previewKonsep.value);
 });
 
 const pengirimParts = computed(() =>
@@ -472,6 +743,7 @@ const revokePdf = () => {
 
 const closePreview = () => {
   showPreview.value = false;
+  sendPreviewFlow.value = false;
   revokePdf();
 };
 
@@ -479,8 +751,60 @@ const openPreview = async (item: SdeMasalFolderItem) => {
   const idx = items.value.findIndex((i) => i.id === item.id);
   if (idx < 0) return;
   previewIndex.value = idx;
+  sendPreviewFlow.value = false;
   showPreview.value = true;
   await generatePdfFor(idx);
+};
+
+const sendPreviewItems = computed(() =>
+  items.value.filter((item) => selectedItemIds.value.includes(item.id)),
+);
+const previewPosition = computed(() => {
+  if (!sendPreviewFlow.value) return previewIndex.value;
+  const position = sendPreviewItems.value.findIndex((item) => item.id === items.value[previewIndex.value]?.id);
+  return position >= 0 ? position : 0;
+});
+const previewTotal = computed(() => sendPreviewFlow.value ? sendPreviewItems.value.length : items.value.length);
+const previewPreviousDisabled = computed(() =>
+  sendPreviewFlow.value ? previewPosition.value <= 0 : previewIndex.value <= 0,
+);
+const previewNextDisabled = computed(() =>
+  sendPreviewFlow.value
+    ? previewPosition.value >= sendPreviewItems.value.length - 1
+    : previewIndex.value >= items.value.length - 1,
+);
+
+const openSendPreview = async () => {
+  if (!selectedItemIds.value.length) return;
+  const firstItem = sendPreviewItems.value[0];
+  if (!firstItem) return;
+  sendPreviewFlow.value = true;
+  showSendConfirm.value = false;
+  previewIndex.value = items.value.findIndex((item) => item.id === firstItem.id);
+  showPreview.value = true;
+  await generatePdfFor(previewIndex.value);
+};
+
+const gotoPreviewPrevious = async () => {
+  if (sendPreviewFlow.value) {
+    const item = sendPreviewItems.value[previewPosition.value - 1];
+    if (item) await gotoPreview(items.value.findIndex((candidate) => candidate.id === item.id));
+    return;
+  }
+  await gotoPreview(previewIndex.value - 1);
+};
+
+const gotoPreviewNext = async () => {
+  if (sendPreviewFlow.value) {
+    const item = sendPreviewItems.value[previewPosition.value + 1];
+    if (item) await gotoPreview(items.value.findIndex((candidate) => candidate.id === item.id));
+    return;
+  }
+  await gotoPreview(previewIndex.value + 1);
+};
+
+const continueToSignature = async () => {
+  await openSignatureModal();
 };
 
 const gotoPreview = async (idx: number) => {
@@ -578,6 +902,9 @@ const loadData = async () => {
     const data = await findNaskahInFolder(String(route.params.folderId));
     folder.value = data?.folder || null;
     items.value = data?.items || [];
+    // Pilihan naskah harus dimulai kosong agar checkbox header tetap bolong.
+    // Pengguna dapat memilih semua naskah melalui checkbox header secara manual.
+    selectedItemIds.value = [];
   } finally {
     loading.value = false;
   }
@@ -623,120 +950,109 @@ const downloadPdf = (item: SdeMasalFolderItem) => {
 const formatDate = (value: string | Date) =>
   new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-// Timeline Riwayat: verifikator sama untuk semua naskah dalam satu folder,
-// jadi tampilkan sekali saja (dedupe). Urutan terbaru di atas.
+const verifikatorList = computed(() => {
+  const source = items.value.find((item) => Array.isArray(item.verifikators) && item.verifikators.length > 0);
+  return [...(source?.verifikators || [])].sort((a, b) => Number(a.urutan) - Number(b.urutan));
+});
+const verifikatorStatusLabel = (status: string) => ({
+  pending: 'Menunggu',
+  waiting: 'Aktif',
+  verified: 'Disetujui',
+  rejected: 'Ditolak',
+}[status] || status);
+const verifikatorStatusBadge = (status: string) => ({
+  pending: 'shrink-0 rounded-full bg-gray-100 px-2 py-1 text-[10px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-300',
+  waiting: 'shrink-0 rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  verified: 'shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  rejected: 'shrink-0 rounded-full bg-red-100 px-2 py-1 text-[10px] font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300',
+}[status] || 'shrink-0 rounded-full bg-gray-100 px-2 py-1 text-[10px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-300');
+
+// Timeline Riwayat: seluruh tahapan selalu ditampilkan agar pengguna dapat
+// melihat posisi folder saat ini dan tahapan yang masih akan dilalui.
 const timelineSteps = computed(() => {
-  const steps: { number?: number; label: string; desc: string; date?: string; dotClass: string; textClass: string; icon?: string; done: boolean }[] = [];
+  type TimelineStep = {
+    number?: number;
+    label: string;
+    desc: string;
+    date?: string;
+    dotClass: string;
+    textClass: string;
+    descClass: string;
+    dateClass: string;
+    icon?: string;
+    done: boolean;
+  };
 
-  // Ambil item pertama yang punya verifikators (semua item share verifikator sama).
-  const firstItem = items.value.find((i) => (i.verifikators || []).length > 0) || items.value[0];
-  if (!firstItem) return steps;
+  const steps: TimelineStep[] = [];
+  const firstItem = items.value[0];
+  const folderStatus = folder.value?.status;
+  const submitted = Boolean(firstItem?.submittedAt || (folderStatus && folderStatus !== 'DRAFT'));
 
-  const statusVerifikasi = firstItem.statusVerifikasi;
-  const verifikators = [...(firstItem.verifikators || [])].reverse();
+  const pushStep = (step: Omit<TimelineStep, 'number'>) => {
+    steps.push({ ...step, number: steps.length + 1 });
+  };
 
-  // Step: Dikirim
-  if (statusVerifikasi === 'TERKIRIM') {
-    steps.push({
-      label: 'Dikirim',
-      desc: 'Naskah SDE Massal telah dikirim ke penerima',
-      dotClass: 'bg-green-500 text-white',
-      textClass: 'text-green-600 dark:text-green-400 font-semibold',
-      icon: 'check',
-      done: true,
-    });
-  }
-
-  // Step: Ditolak
-  if (statusVerifikasi === 'DITOLAK') {
-    steps.push({
-      label: 'Ditolak',
-      desc: 'SDE Massal ditolak verifikator',
-      dotClass: 'bg-red-500 text-white',
-      textClass: 'text-red-600 dark:text-red-400 font-semibold',
-      icon: 'x',
-      done: true,
-    });
-  }
-
-  // Step per verifikator (urutan terbalik: terbaru di atas)
-  for (const v of verifikators) {
-    const urutan = Number(v.urutan);
-    if (v.status === 'verified') {
-      steps.push({
-        number: urutan,
-        label: `Disetujui oleh Verifikator ${urutan}`,
-        desc: `${v.nama} — ${v.jabatan}`,
-        date: v.verifiedAt ? formatDate(v.verifiedAt) : undefined,
-        dotClass: 'bg-green-500 text-white',
-        textClass: 'text-gray-900 dark:text-white',
-        icon: 'check',
-        done: true,
-      });
-    } else if (v.status === 'rejected') {
-      steps.push({
-        number: urutan,
-        label: `Ditolak oleh Verifikator ${urutan}`,
-        desc: `${v.nama} — ${v.jabatan}`,
-        date: v.rejectedAt ? formatDate(v.rejectedAt) : undefined,
-        dotClass: 'bg-red-500 text-white',
-        textClass: 'text-red-600 dark:text-red-400 font-semibold',
-        icon: 'x',
-        done: true,
-      });
-    } else if (v.status === 'waiting') {
-      steps.push({
-        number: urutan,
-        label: `Menunggu Verifikasi ${urutan}`,
-        desc: `${v.nama} — ${v.jabatan}`,
-        dotClass: 'bg-[#457fb6] text-white ring-4 ring-[#457fb6]/20',
-        textClass: 'text-[#457fb6] dark:text-[#5a9ad6] font-semibold',
-        done: false,
-      });
-    } else {
-      steps.push({
-        number: urutan,
-        label: `Menunggu Giliran Verifikator ${urutan}`,
-        desc: `${v.nama} — ${v.jabatan}`,
-        dotClass: 'bg-gray-200 dark:bg-gray-600 text-gray-400',
-        textClass: 'text-gray-500 dark:text-gray-400',
-        done: false,
-      });
-    }
-  }
-
-  // Step: Pengajuan (selalu di bawah)
-  steps.push({
-    label: 'Pengajuan',
-    desc: `${folder.value?.pengirimName || 'Pengirim'} mengajukan SDE Massal`,
-    date: formatDate(firstItem.submittedAt || firstItem.createdAt),
-    dotClass: 'bg-green-500 text-white',
-    textClass: 'text-gray-900 dark:text-white',
-    icon: 'check',
+  const completedStep = (label: string, desc: string, date?: string, icon = 'check'): Omit<TimelineStep, 'number'> => ({
+    label,
+    desc,
+    date,
+    dotClass: icon === 'x' ? 'bg-red-500 text-white' : 'bg-green-500 text-white',
+    textClass: icon === 'x' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-gray-900 dark:text-white',
+    descClass: 'text-gray-500 dark:text-gray-400',
+    dateClass: 'text-gray-400 dark:text-gray-500',
+    icon,
     done: true,
   });
 
+  const pendingStep = (label: string, desc: string, active = false): Omit<TimelineStep, 'number'> => ({
+    label,
+    desc,
+    dotClass: active
+      ? 'bg-[#457fb6] text-white ring-4 ring-[#457fb6]/20'
+      : 'bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-400',
+    textClass: active ? 'font-semibold text-[#457fb6] dark:text-[#5a9ad6]' : 'text-gray-400 dark:text-gray-500',
+    descClass: active ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600',
+    dateClass: 'text-gray-400 dark:text-gray-600',
+    done: false,
+  });
+
+  const creatorName = String(folder.value?.createdByName || '').trim();
+  const creatorPosition = String(folder.value?.createdByPositionText || '').trim();
+  const creatorDisplay = [creatorName, creatorPosition].filter(Boolean).join(' — ') || 'Konseptor';
+
+  pushStep(submitted
+    ? completedStep('Pengajuan', `${creatorDisplay} mengajukan SDE Massal`, firstItem?.submittedAt ? formatDate(firstItem.submittedAt) : undefined)
+    : pendingStep('Pengajuan', 'Menunggu folder diajukan oleh konseptor'));
+
+  for (const verifikator of verifikatorList.value) {
+    const urutan = Number(verifikator.urutan);
+    const desc = `${verifikator.nama || '-'} — ${verifikator.jabatan || verifikator.position || '-'}`;
+    if (verifikator.status === 'verified') {
+      pushStep(completedStep(`Disetujui oleh Verifikator ${urutan}`, desc, verifikator.verifiedAt ? formatDate(verifikator.verifiedAt) : undefined));
+    } else if (verifikator.status === 'rejected') {
+      pushStep(completedStep(`Ditolak oleh Verifikator ${urutan}`, desc, verifikator.rejectedAt ? formatDate(verifikator.rejectedAt) : undefined, 'x'));
+    } else if (verifikator.status === 'waiting') {
+      pushStep(pendingStep(`Menunggu Verifikasi ${urutan}`, desc, true));
+    } else {
+      pushStep(pendingStep(`Menunggu Giliran Verifikator ${urutan}`, desc));
+    }
+  }
+
+  const allVerified = verifikatorList.value.length > 0 && verifikatorList.value.every((v) => v.status === 'verified');
+  const senderDone = ['DIFINALISASI', 'SEBAGIAN_TERKIRIM', 'TERKIRIM'].includes(folderStatus || '');
+  const senderActive = folderStatus === 'MENUNGGU_PENGIRIM';
+  pushStep(senderDone
+    ? completedStep('Finalisasi Pengirim', 'Pengirim telah memeriksa dan memfinalisasi surat')
+    : pendingStep('Finalisasi Pengirim', 'Menunggu pengirim memeriksa dan memfinalisasi surat', senderActive || allVerified));
+
+  const sent = folderStatus === 'TERKIRIM';
+  const partiallySent = folderStatus === 'SEBAGIAN_TERKIRIM';
+  pushStep(sent
+    ? completedStep('Dikirim ke Penerima', 'Naskah SDE Massal telah dikirim ke penerima')
+    : pendingStep('Dikirim ke Penerima', 'Menunggu surat dikirim kepada penerima', partiallySent));
+
   return steps;
 });
-const statusLabel = (status: string) =>
-  ({
-    DRAFT: 'Draft',
-    MENUNGGU_PENGIRIM: 'Menunggu Pengirim',
-    DIKEMBALIKAN: 'Dikembalikan',
-    DIFINALISASI: 'Difinalisasi',
-    MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
-    TERKIRIM: 'Terkirim',
-    DITOLAK: 'Ditolak',
-  })[status] || status;
-const statusBadge = (status: string) => ({
-  DRAFT: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap dark:bg-gray-700 dark:text-gray-300',
-  MENUNGGU_PENGIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
-  DIKEMBALIKAN: 'px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 font-medium whitespace-nowrap dark:bg-orange-900/40 dark:text-orange-300',
-  DIFINALISASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
-  MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap dark:bg-indigo-900/40 dark:text-indigo-300',
-  TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
-  DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
-}[status] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap');
 const naskahStatusLabel = (status: string) =>
   ({
     draf: 'Draft',

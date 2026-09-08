@@ -55,17 +55,6 @@
         required
       />
 
-      <!-- Pengirim loading/error info -->
-      <div v-if="senderLoading" class="text-xs text-gray-400 -mt-1 pl-40">
-        Memuat daftar pengirim...
-      </div>
-      <div
-        v-else-if="!senderLoading && senderItems.length === 0"
-        class="text-xs text-gray-400 -mt-1 pl-40"
-      >
-        Belum ada data pengirim
-      </div>
-
       <!-- Sifat Surat -->
       <TulisInputSifat v-model="sifatModel" required />
     </div>
@@ -104,15 +93,7 @@ const setSenderItems = (rows: any[]) => {
     raw: r,
   }));
 
-  if (senderModel.value || senderItems.value.length === 0) return;
-
-  // User EVP memakai posisinya sendiri. Untuk AVP/bawahan, pilih EVP
-  // sebagai atasan langsung, meskipun API mengembalikan urutan berbeda.
-  const ownPosition = String(user.value?.position || '');
-  senderModel.value =
-    senderItems.value.find((item) => item.value === ownPosition) ||
-    senderItems.value.find((item) => /\bEVP\b/i.test(item.labelJob || '')) ||
-    senderItems.value[0];
+  // Pengirim sengaja tetap kosong saat form dibuka agar user memilih manual.
 };
 
 // --- Internal state ---
@@ -250,6 +231,10 @@ onMounted(async () => {
 
 <style scoped>
 @media (min-width: 640px) {
+  :deep(.sde-masal-konsep-form > div > span) {
+    white-space: nowrap;
+  }
+
   :deep(.sde-masal-konsep-form > div > div:last-child) {
     margin-left: 1.5rem;
   }
