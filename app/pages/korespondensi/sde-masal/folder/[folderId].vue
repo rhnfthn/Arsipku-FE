@@ -1057,13 +1057,13 @@ const timelineSteps = computed(() => {
   }
 
   const allVerified = verifikatorList.value.length > 0 && verifikatorList.value.every((v) => v.status === 'verified');
-  const senderDone = ['DIFINALISASI', 'SEBAGIAN_TERKIRIM', 'TERKIRIM'].includes(folderStatus || '');
-  const senderActive = folderStatus === 'MENUNGGU_PENGIRIM';
+  const senderDone = isFolderCompleted.value || ['DIFINALISASI', 'SEBAGIAN_TERKIRIM', 'TERKIRIM'].includes(folderStatus || '');
+  const senderActive = !isFolderCompleted.value && folderStatus === 'MENUNGGU_PENGIRIM';
   pushStep(senderDone
     ? completedStep('Finalisasi Pengirim', 'Pengirim telah memeriksa dan memfinalisasi surat')
     : pendingStep('Finalisasi Pengirim', 'Menunggu pengirim memeriksa dan memfinalisasi surat', senderActive || allVerified));
 
-  const sent = folderStatus === 'TERKIRIM';
+  const sent = isFolderCompleted.value;
   const partiallySent = folderStatus === 'SEBAGIAN_TERKIRIM';
   pushStep(sent
     ? completedStep('Selesai', 'Naskah SDE Massal telah difinalisasi dan masuk ke Terkirim', firstItem?.updatedAt ? formatDate(firstItem.updatedAt) : undefined)
