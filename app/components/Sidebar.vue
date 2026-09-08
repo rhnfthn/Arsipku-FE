@@ -834,6 +834,11 @@ const userMenuUtilitas = computed(() => {
       icon: 'i-lucide-languages',
       permission: { resource: 'titelatur', action: 'read' },
     },
+    {
+      label: t('tertuju'),
+      to: '/utilitas/tertuju',
+      icon: 'i-lucide-list',
+    },
   ];
 
   if (hasBodTag.value) {
@@ -1143,6 +1148,14 @@ const adminMenuAdministrasi = computed(() => {
     },
   ];
 
+  if (!isSuperadmin.value) {
+    base.push({
+      label: t('tertuju'),
+      to: '/administrasi/tertuju',
+      icon: 'i-lucide-list',
+    });
+  }
+
   if (isSuperadmin.value) {
     base.push(
       {
@@ -1151,7 +1164,7 @@ const adminMenuAdministrasi = computed(() => {
         children: [
           {
             label: t('tertuju'),
-            to: '/master/tertuju-eksternal',
+            to: '/administrasi/datamaster/tertuju',
             permission: { resource: 'master-data', action: 'read-tertuju' },
           },
           {
