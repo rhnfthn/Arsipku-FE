@@ -70,6 +70,16 @@ export const useSdeMasal = () => {
     return res?.data ?? null;
   };
 
+  const approveFolderVerification = async (folderId: string, catatan?: string) => {
+    const res: any = await apiPatch(`/sde-masal/folder/${folderId}/approve-verification`, { catatan });
+    return res?.data ?? null;
+  };
+
+  const rejectFolderVerification = async (folderId: string, catatan: string) => {
+    const res: any = await apiPatch(`/sde-masal/folder/${folderId}/reject-verification`, { catatan });
+    return res?.data ?? null;
+  };
+
   const findNaskahInFolder = async (
     folderId: string
   ): Promise<{ folder: SdeMasalFolder; items: SdeMasalFolderItem[] } | null> => {
@@ -492,6 +502,8 @@ export const useSdeMasal = () => {
     finalizeDirect,
     sendToSigner,
     rejectFolder,
+    approveFolderVerification,
+    rejectFolderVerification,
     findNaskahInFolder,
     downloadTemplate,
     generateMassal,
