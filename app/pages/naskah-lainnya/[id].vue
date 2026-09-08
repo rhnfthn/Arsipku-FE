@@ -13,6 +13,7 @@ import type {
 import { JENIS_LABELS } from '~/types/naskah-lainnya';
 import { formatNaskahDate, formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import TulisDigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModalAsync.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 useHead({ title: 'Detail Naskah Lainnya' });
@@ -297,6 +298,14 @@ const canTandaTangan = computed(() =>
   (detail.value?.availableActions ?? []).includes('tanda-tangan')
 );
 const isPhysicalSigning = computed(() => detail.value?.signOption === 'ttd_basah');
+// Penandatangan TERAKHIR? signingIndex 1-based >= total penandatangan.
+const isLastSigner = computed(() => {
+  const d = detail.value;
+  if (!d) return false;
+  const total = d.signerCount ?? penandatanganList.value.length;
+  const idx = d.signingIndex ?? 1;
+  return total > 0 && idx >= total;
+});
 const canBuatBlanko = computed(
   () =>
     tahapan.value === 'blanko_verbal' &&
@@ -388,6 +397,23 @@ const showRejectModal = ref(false);
 const showReturnModal = ref(false);
 const savingAction = ref(false);
 const pendingAction = ref<JenisAksi | null>(null);
+// ── Pilihan metode TTD signer TERAKHIR (QR internal vs TTE BSrE) —
+//    komponen sama dengan naskah umum: Tulis/DigsigPassphraseModal ──
+const showSignMethodModal = ref(false);
+const signingBusy = ref(false);
+const signMethodModalRef = ref<{ setPassphraseError: (msg: string) => void } | null>(null);
+// Info penandatangan aktif untuk modal (pola nota-dinas: signerInfo)
+const signerInfo = computed(() => {
+  const d = detail.value;
+  const idx = d?.signingIndex ?? 1;
+  const chain = d?.penandatangan ?? [];
+  const current = chain[idx - 1] ?? ({} as any);
+  return {
+    name: current?.nama ?? d?.pemrakarsa?.nama ?? 'Penandatangan',
+    role: current?.jabatan ?? d?.pemrakarsa?.jabatan ?? '',
+    label: 'Ditandatangani secara digital',
+  };
+});
 // Nomor bersih untuk tampilan: sembunyikan placeholder mentah {{...}} (legacy scrape
 // pra-Task-8 menangkap {{nomor}} dari template docx dan menyimpannya sebagai nomor).
 // Konsumen beri fallback masing-masing ('—' untuk info row, 'Detail' untuk breadcrumb).
@@ -789,7 +815,12 @@ const ACTION_META: Record<
     color: 'neutral',
     to: '/naskah-lainnya/tulis',
   },
-  setuju: { label: 'Setujui', icon: 'i-lucide-check', color: 'success', variant: 'approve' },
+  setuju: {
+    label: 'Setujui',
+    icon: 'i-lucide-check',
+    color: 'success',
+    to: (id: string) => `/naskah-lainnya/${id}/persetujuan`,
+  },
   tolak: { label: 'Tolak', icon: 'i-lucide-x', color: 'error', variant: 'reject' },
   kembalikan: { label: 'Kembalikan', icon: 'i-lucide-undo-2', color: 'warning', variant: 'return' },
   'mulai-legal': {
@@ -906,6 +937,12 @@ function openActionModal(a: JenisAksi) {
     navigateTo(actionTo(a) as string);
     return;
   }
+  // Signer TERAKHIR dengan opsi digital → langsung modal pilihan metode
+  // (komponen sama dengan naskah umum: Tulis/DigsigPassphraseModal).
+  if (a === 'tanda-tangan' && isLastSigner.value && !isPhysicalSigning.value) {
+    showSignMethodModal.value = true;
+    return;
+  }
   pendingAction.value = a;
   if (a === 'setuju' || a === 'paraf' || a === 'tanda-tangan') {
     showApproveModal.value = true;
@@ -974,7 +1011,9 @@ async function handleApprove(catatan: string) {
     } else if (a === 'evaluasi') {
       await nl.evaluasi(naskahId, { sesuai: true, checklist: [], catatan: catatan || undefined });
     } else if (a === 'tanda-tangan') {
-      await nl.tandaTangan(naskahId);
+      // Signer terakhir ditangani openActionModal (langsung modal pilihan metode).
+      // Cabang ini hanya untuk signer 1..N-1 (alur visualisasi internal lama).
+      await nl.tandaTangan(naskahId, { catatan: catatan || undefined });
     }
     toast.add({ title: 'Berhasil', description: `${actionLabel(a)} berhasil`, color: 'success' });
     showApproveModal.value = false;
@@ -990,6 +1029,46 @@ async function handleApprove(catatan: string) {
     });
   } finally {
     savingAction.value = false;
+    pendingAction.value = null;
+  }
+}
+
+// ── Submit dari TulisDigsigPassphraseModal (pola nota-dinas handleSignMethodSubmit) ──
+async function handleSignMethodSubmit(data: { method: string; passphrase?: string }) {
+  const naskahId = id.value;
+  signingBusy.value = true;
+  try {
+    const nl = useNaskahLainnya();
+    if (data.method === 'digsig') {
+      await nl.tandaTangan(naskahId, {
+        signMethod: 'digsig',
+        passphrase: data.passphrase || '',
+      });
+      toast.add({ title: 'Berhasil', description: 'Naskah ditandatangani dengan TTE BSrE', color: 'success' });
+    } else {
+      // qr_only — visualisasi internal (alur lama)
+      await nl.tandaTangan(naskahId);
+      toast.add({ title: 'Berhasil', description: 'Tanda tangani berhasil', color: 'success' });
+    }
+    showSignMethodModal.value = false;
+    await fetchDetail(naskahId);
+    if (detail.value?.tahapan === 'selesai') {
+      await navigateTo(`/naskah-lainnya/${naskahId}/selesai`);
+    }
+  } catch (err: any) {
+    const rawMsg = err?.response?.data?.message ?? err?.message ?? '';
+    const msg = Array.isArray(rawMsg) ? String(rawMsg[0]) : String(rawMsg);
+    // Passphrase salah → tetap buka modal, tampilkan error inline (pola nota-dinas)
+    if (
+      data.method === 'digsig' &&
+      (msg.toLowerCase().includes('passphrase') || msg.toLowerCase().includes('salah'))
+    ) {
+      signMethodModalRef.value?.setPassphraseError(msg);
+    } else {
+      toast.add({ title: 'Gagal', description: msg || 'Terjadi kesalahan', color: 'error' });
+    }
+  } finally {
+    signingBusy.value = false;
     pendingAction.value = null;
   }
 }
@@ -2486,7 +2565,7 @@ const signLabel = computed(() =>
                 size="lg"
                 icon="i-lucide-arrow-right"
                 :loading="savingAction"
-                @click="navigateTo(`/naskah-lainnya/${id}/persetujuan`)"
+                @click="openActionModal('setuju')"
                 >Setujui</UButton
               >
               <UButton
@@ -2716,6 +2795,17 @@ const signLabel = computed(() =>
         :saving="savingAction"
         :require-note="false"
         @confirm="handleApprove"
+      />
+
+      <!-- Pilihan Metode TTD signer TERAKHIR — komponen sama dengan naskah umum (Tulis/DigsigPassphraseModal).
+           Opsi basah disembunyikan: naskah sudah commit ke digital (signOption qr_only/digsig). -->
+      <TulisDigsigPassphraseModal
+        v-model:open="showSignMethodModal"
+        :signer-info="signerInfo"
+        :is-loading="signingBusy"
+        :hide-basah="true"
+        ref="signMethodModalRef"
+        @submit="handleSignMethodSubmit"
       />
 
       <!-- Modal Tolak (standarisasi VerifyActionModal) -->

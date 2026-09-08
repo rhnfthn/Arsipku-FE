@@ -325,6 +325,10 @@ export interface DirectorApprovalItem {
 
 export interface TandaTanganPayload {
   passphrase?: string;
+  /** Catatan opsional penandatangan — tersimpan ke riwayat workflow. */
+  catatan?: string;
+  /** Metode signing signer terakhir: 'qr_only' (default, visualisasi internal) | 'digsig' (TTE BSrE) */
+  signMethod?: 'qr_only' | 'digsig';
 }
 
 // Pemberi persetujuan legal drafting — person di unit legal (GET /konfigurasi/unit-legal).
