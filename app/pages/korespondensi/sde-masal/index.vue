@@ -14,6 +14,9 @@
           <option value="">Semua Status</option>
           <option value="DRAFT">Draft</option>
           <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
+          <option value="MENUNGGU_PENGIRIM">Menunggu Pengirim</option>
+          <option value="SEBAGIAN_TERKIRIM">Sebagian Terkirim</option>
+          <option value="DIKEMBALIKAN">Dikembalikan</option>
           <option value="TERKIRIM">Terkirim</option>
           <option value="DITOLAK">Ditolak</option>
         </select>
@@ -66,7 +69,7 @@
               <td class="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formatDate(folder.tanggal || folder.createdAt) }}</td>
               <td class="px-4 py-2.5 text-center">
                 <NuxtLink
-                  v-if="folder.status === 'DRAFT'"
+                  v-if="folder.status === 'DRAFT' || folder.status === 'DIKEMBALIKAN'"
                   :to="`/korespondensi/tulis/sde-masal?folderId=${folder.id}`"
                   class="inline-flex items-center justify-center rounded-lg p-2 text-primary-600 transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20"
                   title="Lanjutkan pembuatan SDE Masal"
@@ -126,7 +129,9 @@
 import type { SdeMasalFolder } from '~/types/sde-masal';
 import type { Klasifikasi } from '~/types/klasifikasi';
 
-definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
+// Daftar tetap dibatasi oleh scope creator dari API; staff dapat melihat
+// folder yang memang dibuatnya dari disposisi.
+definePageMeta({ middleware: ['auth'] });
 
 const { fetchFolders } = useSdeMasal();
 const { getKlasifikasiList } = useKlasifikasi();
@@ -165,7 +170,7 @@ const klasifikasiOptions = computed(() => [
 const loadFolders = async () => {
   loading.value = true;
   try {
-    const response: any = await fetchFolders(filter);
+    const response: any = await fetchFolders({ ...filter, scope: 'creator' });
     folders.value = response?.data || [];
     Object.assign(
       meta,
@@ -202,12 +207,18 @@ const statusLabel = (status: string) =>
   ({
     DRAFT: 'Draft',
     MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
+    MENUNGGU_PENGIRIM: 'Menunggu Pengirim',
+    SEBAGIAN_TERKIRIM: 'Sebagian Terkirim',
+    DIKEMBALIKAN: 'Dikembalikan',
     TERKIRIM: 'Terkirim',
     DITOLAK: 'Ditolak',
   })[status] || status;
 const statusBadge = (status: string) => ({
   DRAFT: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap dark:bg-gray-700 dark:text-gray-300',
   MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap dark:bg-indigo-900/40 dark:text-indigo-300',
+  MENUNGGU_PENGIRIM: 'px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium whitespace-nowrap dark:bg-amber-900/40 dark:text-amber-300',
+  SEBAGIAN_TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
+  DIKEMBALIKAN: 'px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 font-medium whitespace-nowrap dark:bg-orange-900/40 dark:text-orange-300',
   TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
   DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
 }[status] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap');
