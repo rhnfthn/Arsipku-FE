@@ -549,13 +549,17 @@ function sheetDokumenLabel(doc: any) {
 
 async function downloadNaskah(name?: string) {
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+    // Tanpa ?preview=1 → BE mengembalikan file asli (DOCX) agar approver
+    // dapat mengunduh & memodifikasi naskah. PDF pratinjau hanya untuk
+    // tampilan inline (docxUrl), bukan unduhan.
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, {
       responseType: 'blob',
     });
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = name || naskahFileName(detail.value);
+    // Artifact signed bisa berupa PDF — ekstensi mengikuti tipe blob aktual.
+    a.download = name || naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {

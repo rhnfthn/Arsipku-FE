@@ -720,7 +720,8 @@ const downloadDocument = async (filename?: string) => {
     const url = window.URL.createObjectURL(blob);
     const anchor = window.document.createElement('a');
     anchor.href = url;
-    anchor.download = filename || 'naskah.docx';
+    // Artifact signed bisa berupa PDF — ekstensi mengikuti tipe blob aktual.
+    anchor.download = filename || naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     anchor.click();
     window.URL.revokeObjectURL(url);
   } catch (err) {

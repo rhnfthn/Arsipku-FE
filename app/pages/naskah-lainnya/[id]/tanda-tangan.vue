@@ -392,7 +392,8 @@ async function downloadNaskah(name) {
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = name || naskahFileName(detail.value);
+    // Artifact signed bisa berupa PDF — ekstensi mengikuti tipe blob aktual.
+    a.download = name || naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {

@@ -118,9 +118,9 @@
                 </span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {{ naskahFileName(detail) }}
+                    {{ naskahFileName(detail, 'pdf') }}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Naskah final</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Naskah final (PDF)</p>
                 </div>
               </div>
               <div class="flex shrink-0 gap-2">
@@ -548,7 +548,8 @@ async function downloadNaskah() {
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = naskahFileName(detail.value);
+    // Artifact signed (QR/fisik) berupa PDF — ekstensi mengikuti tipe blob aktual.
+    a.download = naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {

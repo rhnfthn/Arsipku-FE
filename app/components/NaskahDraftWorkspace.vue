@@ -30,7 +30,7 @@
             size="xs"
             variant="outline"
             icon="i-lucide-download"
-            @click="$emit('download', naskahFilename)"
+            @click="$emit('download')"
             >Unduh</UButton
           >
         </div>

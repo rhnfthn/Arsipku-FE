@@ -43,7 +43,7 @@ export type Tahapan =
   | 'dibatalkan';
 
 export type StatusApprover = 'pending' | 'waiting' | 'verified' | 'rejected';
-export type SignOption = 'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd';
+export type SignOption = 'digsig' | 'qr_only' | 'ttd_basah';
 export type DocumentStatus = 'draf' | 'pending' | 'final' | 'final_tte';
 export type MockRole = 'pemrakarsa' | 'legal' | 'pejabat';
 
