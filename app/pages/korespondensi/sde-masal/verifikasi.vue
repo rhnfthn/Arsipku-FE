@@ -35,7 +35,7 @@
               <th class="px-4 py-3 font-semibold whitespace-nowrap">Pengirim</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap">Klasifikasi</th>
               <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Menunggu</th>
-              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status</th>
+              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status Saya</th>
               <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
@@ -61,7 +61,7 @@
                 <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{{ folder.waitingCount ?? 0 }}</span>
               </td>
               <td class="px-4 py-2.5 text-center">
-                <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
+                <span :class="statusBadge(folder.myVerificationStatus || folder.status)">{{ statusLabel(folder.myVerificationStatus || folder.status) }}</span>
               </td>
               <td class="px-4 py-2.5">
                 <div class="flex items-center justify-center">
