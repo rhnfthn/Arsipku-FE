@@ -174,7 +174,7 @@
                 <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[200px] truncate" :title="item.penerima || ''">
                   {{ item.penerima || '-' }}
                 </td>
-                <td v-if="!isFolderCompleted" class="px-4 py-2.5">
+                <td class="px-4 py-2.5">
                   <div class="flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-300">
                     <span v-if="item.emailTertuju" class="truncate" :title="item.emailTertuju">
                       <span class="text-gray-400 dark:text-gray-500">To:</span> {{ item.emailTertuju }}
@@ -191,7 +191,7 @@
                 <td class="px-4 py-2.5 text-center">
                   <span :class="naskahStatusBadge(item.status)">{{ naskahStatusLabel(item.status) }}</span>
                 </td>
-                <td class="px-4 py-2.5">
+                <td v-if="!isFolderCompleted" class="px-4 py-2.5">
                   <div class="flex items-center justify-center gap-1">
                     <button
                       class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
@@ -501,13 +501,18 @@ const bsreDisabled = ref(true);
 const qrDisabled = ref(true);
 const basahDisabled = ref(true);
 const selectedSendType = ref<'digsig' | 'qr_only' | 'ttd_basah'>('qr_only');
+const isFolderCompleted = computed(
+  () =>
+    folder.value?.status === 'TERKIRIM' ||
+    (items.value.length > 0 && items.value.every((item) => item.statusVerifikasi === 'TERKIRIM')),
+);
 const isSignerAwaiting = computed(
   () =>
     !!folder.value &&
     ['MENUNGGU_PENGIRIM', 'SEBAGIAN_TERKIRIM'].includes(folder.value.status) &&
+    !isFolderCompleted.value &&
     String(user.value?.position || user.value?.position_id || '') === String(folder.value.pengirimId || ''),
 );
-const isFolderCompleted = computed(() => folder.value?.status === 'TERKIRIM');
 const currentPersnum = computed(() => String(user.value?.persnum || '').trim());
 const currentPosition = computed(() => String(user.value?.position || user.value?.position_id || '').trim());
 const isFolderCreator = computed(
