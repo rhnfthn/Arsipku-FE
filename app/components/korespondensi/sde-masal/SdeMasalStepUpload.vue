@@ -106,7 +106,7 @@
       </div>
       <div class="space-y-3 p-4">
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Isi kolom <span class="font-medium">lampiran</span> pada Excel dengan nama file PDF, pisahkan dengan koma, lalu unggah satu ZIP berisi PDF tersebut.
+          Isi kolom <span class="font-medium">lampiran</span> pada Excel dengan nama file PDF, pisahkan dengan titik koma (;), lalu unggah satu ZIP berisi PDF tersebut.
         </p>
         <div
           v-if="!selectedAttachmentZip"
@@ -154,7 +154,7 @@
               <tbody>
                 <tr v-for="row in attachmentMappingRows" :key="row.no">
                   <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">{{ row.no }}</td>
-                  <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">{{ row.names.join(', ') || '—' }}</td>
+                  <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">{{ row.names.join('; ') || '—' }}</td>
                   <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">
                     <span :class="row.found ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">{{ row.found ? 'Valid' : 'Invalid' }}</span>
                   </td>
@@ -374,7 +374,7 @@ const attachmentNamesFor = (item: SdeMasalPenerima): string[] => {
   if (Array.isArray(item.lampiran)) return item.lampiran.map((ref) => ref.fileName);
   if (typeof item.lampiran !== 'string') return [];
   return item.lampiran
-    .split(',')
+    .split(';')
     .map((name) => name.trim())
     .filter(Boolean);
 };

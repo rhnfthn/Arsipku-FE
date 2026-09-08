@@ -226,7 +226,7 @@ const currentPersnum = computed(() => String(user.value?.persnum ?? '').trim());
 const currentPosition = computed(() => String(user.value?.position ?? '').trim());
 
 const getWaitingVerifier = (data: any) =>
-  (data.verifikators || []).find((v) => v.status === 'waiting');
+  (data.verifikators || []).find((v: SdeMasalVerifikator) => v.status === 'waiting');
 
 const isMe = (verifikator?: SdeMasalVerifikator) => {
   if (!verifikator) return false;
