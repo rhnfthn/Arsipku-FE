@@ -2,45 +2,43 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <PageHeader title="SDE Masal" :items="breadcrumbs" />
 
-    <!-- Stepper -->
-    <div class="mb-6">
-      <div class="flex items-center justify-between max-w-3xl mx-auto">
-        <template v-for="(step, idx) in steps" :key="step.id">
-          <!-- Step circle + label -->
-          <div class="flex flex-col items-center flex-1 relative">
-            <!-- Connector line (left) -->
-            <div
-              v-if="idx > 0"
-              class="absolute top-5 left-0 w-full h-0.5 -translate-x-1/2"
-              :class="currentStep >= step.id ? 'bg-[#457fb6]' : 'bg-gray-200 dark:bg-gray-700'"
-            />
-            <!-- Circle -->
-            <div
-              class="relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200"
-              :class="[
-                currentStep === step.id
-                  ? 'bg-[#457fb6] text-white ring-4 ring-[#457fb6]/20'
-                  : currentStep > step.id
-                    ? 'bg-[#457fb6] text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-              ]"
-            >
-              <UIcon v-if="currentStep > step.id" name="i-lucide-check" class="w-5 h-5" />
-              <span v-else>{{ step.id }}</span>
-            </div>
-            <!-- Label -->
-            <span
-              class="mt-2 text-xs font-medium text-center transition-colors"
-              :class="
-                currentStep >= step.id
-                  ? 'text-[#457fb6] dark:text-[#5a9fd0]'
-                  : 'text-gray-400 dark:text-gray-500'
-              "
-            >
-              {{ step.label }}
-            </span>
+    <!-- Informasi Folder saat melanjutkan folder yang sudah tersimpan -->
+    <div
+      v-if="currentStep === 3 && folderId && wizardState.konsep"
+      class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+    >
+      <h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Informasi Folder</h2>
+      <div class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Judul Folder</span>
+            <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.judul || '-' }}</p>
           </div>
-        </template>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Tanggal</span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.tanggalKonsep || '-' }}</p>
+          </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Klasifikasi</span>
+            <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.klasifikasiName || '-' }}</p>
+          </div>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Sifat</span>
+            <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">
+              {{ wizardState.konsep.sifat === 'biasa' ? 'Biasa' : wizardState.konsep.sifat || '-' }}
+            </p>
+          </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Total Surat</span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.penerimaList.length }}</p>
+          </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Pengirim</span>
+            <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.pengirimName || '-' }}</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -60,91 +58,50 @@
 
       <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->
       <div v-else-if="currentStep === 2" class="space-y-6">
-        <div
-          class="overflow-hidden rounded-xl border border-primary-100 bg-white shadow-sm dark:border-primary-900/50 dark:bg-gray-800"
-        >
-          <div
-            class="flex items-center gap-3 border-b border-primary-100 bg-primary-50/70 px-5 py-3 dark:border-primary-900/50 dark:bg-primary-950/30"
-          >
-            <div
-              class="flex size-9 items-center justify-center rounded-lg bg-primary-500 text-white shadow-sm"
-            >
-              <UIcon name="i-lucide-file-text" class="size-5" />
-            </div>
-            <div>
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Konsep Surat</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                Informasi surat yang akan dibuat massal
-              </p>
-            </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+              Judul Folder
+            </span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+              {{ wizardState.konsep?.judul || '-' }}
+            </p>
           </div>
-          <div
-            class="grid grid-cols-1 gap-3 bg-slate-50/70 p-4 sm:grid-cols-2 lg:grid-cols-4 dark:bg-gray-900/20"
-          >
-            <div
-              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-            >
-              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div
-                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                <UIcon name="i-lucide-calendar-days" class="size-3.5 text-primary-500" />Tanggal
-              </div>
-              <p
-                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold text-gray-900 dark:border-gray-700 dark:text-white"
-              >
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+              Tanggal
+            </span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
                 {{ wizardState.konsep?.tanggalKonsep || '-' }}
-              </p>
-            </div>
-            <div
-              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-            >
-              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div
-                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                <UIcon name="i-lucide-tags" class="size-3.5 text-primary-500" />Klasifikasi
-              </div>
-              <p
-                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white"
-              >
+            </p>
+          </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+              Klasifikasi
+            </span>
+            <p class="w-full text-sm leading-relaxed text-gray-900 dark:text-white sm:ml-6">
                 {{ wizardState.konsep?.klasifikasiName || '-' }}
-              </p>
-            </div>
-            <div
-              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-            >
-              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div
-                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                <UIcon name="i-lucide-user-round" class="size-3.5 text-primary-500" />Pengirim
-              </div>
-              <p
-                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold leading-relaxed text-gray-900 dark:border-gray-700 dark:text-white"
-              >
+            </p>
+          </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+              Pengirim
+            </span>
+            <p class="w-full text-sm leading-relaxed text-gray-900 dark:text-white sm:ml-6">
                 {{ wizardState.konsep?.pengirimName || '-' }}
-              </p>
-            </div>
-            <div
-              class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-            >
-              <div class="absolute inset-x-0 top-0 h-1 bg-primary-400" />
-              <div
-                class="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                <UIcon name="i-lucide-shield-check" class="size-3.5 text-primary-500" />Sifat
-              </div>
-              <p
-                class="mt-3 flex min-h-[48px] items-center justify-center border-t border-slate-100 pt-3 text-center text-sm font-semibold capitalize text-gray-900 dark:border-gray-700 dark:text-white"
-              >
+            </p>
+          </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+              Sifat
+            </span>
+            <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">
                 {{
                   wizardState.konsep?.sifat === 'biasa'
                     ? 'Biasa / Terbuka'
                     : wizardState.konsep?.sifat || '-'
                 }}
-              </p>
-            </div>
+            </p>
           </div>
         </div>
         <SdeMasalStepTemplate
@@ -333,12 +290,6 @@ const {
   commitMassAttachments,
 } = useSdeMasal();
 
-const steps = [
-  { id: 1, label: 'Konsep Surat' },
-  { id: 2, label: 'Template & Penerima' },
-  { id: 3, label: 'Preview & Kirim' },
-];
-
 const currentStep = ref(1);
 const generating = ref(false);
 const folderId = ref<string | null>(null);
@@ -402,12 +353,18 @@ onMounted(async () => {
     const saved = localStorage.getItem(draftStorageKey);
     if (saved) {
       const draft = JSON.parse(saved);
-      wizardState.konsep = draft.konsep || null;
+      const savedStep = [1, 2, 3].includes(draft.currentStep) ? draft.currentStep : 1;
+      const savedKonsep = draft.konsep || null;
+      // Draft lama bisa berisi pengirim hasil auto-select sebelumnya. Pada
+      // langkah awal, pengirim harus tetap kosong dan dipilih manual oleh user.
+      wizardState.konsep = savedKonsep && savedStep === 1
+        ? { ...savedKonsep, pengirimId: '', pengirimName: '' }
+        : savedKonsep;
       wizardState.penerimaList = Array.isArray(draft.penerimaList) ? draft.penerimaList : [];
       wizardState.template = draft.template || null;
       wizardState.variables = Array.isArray(draft.variables) ? draft.variables : [];
       folderId.value = draft.folderId || null;
-      currentStep.value = [1, 2, 3].includes(draft.currentStep) ? draft.currentStep : 1;
+      currentStep.value = savedStep;
     }
   } catch (error) {
     console.warn('Gagal memulihkan draft SDE Masal:', error);
@@ -587,12 +544,17 @@ const ensureItemsGenerated = async () => {
     folderId.value = saved?.id ?? null;
   }
   if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
+  if (!wizardState.konsep || !wizardState.template) {
+    throw new Error('Konsep dan template SDE Massal belum lengkap');
+  }
 
+  const konsep = wizardState.konsep;
+  const template = wizardState.template;
   const result = await generateMassal({
-    konsep: wizardState.konsep,
+    konsep,
     folderId: folderId.value,
     penerimaList: missing,
-    template: wizardState.template,
+    template,
   });
 
   // generateMassal mengembalikan items 1:1 dengan baris valid yang dikirim.

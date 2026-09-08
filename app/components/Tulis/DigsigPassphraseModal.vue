@@ -1,8 +1,8 @@
 <template>
-  <UModal v-model:open="isOpen" :dismissible="false"
-    :ui="{ overlay: 'bg-black/50 backdrop-blur-sm', content: 'max-w-lg' }">
+  <UModal v-model:open="isOpen" title="Pilih Metode Tanda Tangan" description="Pilih metode tanda tangan untuk mengirim dokumen." :dismissible="false"
+    :ui="{ overlay: 'z-[70] bg-black/50 backdrop-blur-sm', content: 'z-[80] max-w-lg' }">
 
-    <template #header>
+    <template #title>
       <div v-if="showLupaPassphrase" class="flex items-center justify-between w-full">
         <div class="flex items-center gap-2">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lupa Passphrase BSrE</h3>
@@ -14,6 +14,10 @@
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Metode Tanda Tangan</h3>
         <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm" @click="handleCancel" />
       </div>
+    </template>
+
+    <template #description>
+      <span class="sr-only">Pilih metode tanda tangan untuk mengirim dokumen.</span>
     </template>
 
     <template #body>
