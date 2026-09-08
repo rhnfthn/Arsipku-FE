@@ -3,17 +3,9 @@
     :ui="{ overlay: 'z-[70] bg-black/50 backdrop-blur-sm', content: 'z-[80] max-w-lg' }">
 
     <template #title>
-      <div v-if="showLupaPassphrase" class="flex items-center justify-between w-full">
-        <div class="flex items-center gap-2">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lupa Passphrase BSrE</h3>
-        </div>
-        <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm"
-          @click="showLupaPassphrase = false" />
-      </div>
-      <div v-else class="flex items-center justify-between w-full">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Metode Tanda Tangan</h3>
-        <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm" @click="handleCancel" />
-      </div>
+      <!-- Tombol close: pakai default UModal (hindari double X) -->
+      <span v-if="showLupaPassphrase" class="text-lg font-semibold text-gray-900 dark:text-white">Lupa Passphrase BSrE</span>
+      <span v-else class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Metode Tanda Tangan</span>
     </template>
 
     <template #description>
@@ -230,7 +222,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:open': [value: boolean]
   'submit': [payload: { method: string; passphrase?: string }]
-  'cancel': []
 }>()
 
 const isOpen = computed({
@@ -262,11 +253,6 @@ watch(() => props.open, (val) => {
 const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah') => {
   selectedMethod.value = method
   passphraseError.value = ''
-}
-
-const handleCancel = () => {
-  emit('update:open', false)
-  emit('cancel')
 }
 
 const handleSubmit = async () => {
