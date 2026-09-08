@@ -392,12 +392,6 @@ const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADM
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
-const canAccessSdeMasalPenyusunan = computed(() => {
-  const tag = String(user.value?.bodTag ?? '')
-    .trim()
-    .toUpperCase();
-  return ['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(tag);
-});
 
 // ─── Pindah Profile (Sekretaris / Unit Dokumen) ──────────────────────────────
 // User dengan delegasi di organization_tu (sekretaris_delegasi / unit_dokumen)
@@ -680,9 +674,7 @@ const sdeMasalMenu = computed(() => ({
   label: 'SDE Massal',
   icon: 'i-lucide-files',
   children: [
-    ...(canAccessSdeMasalPenyusunan.value
-      ? [{ label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true }]
-      : []),
+    { label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true },
     { label: 'Verifikasi', to: '/korespondensi/sde-masal/verifikasi', exact: true },
   ],
 }));

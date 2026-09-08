@@ -148,7 +148,7 @@
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Penerima</th>
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Email</th>
                 <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status</th>
-                <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                <th v-if="!isFolderCompleted" class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -174,7 +174,7 @@
                 <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[200px] truncate" :title="item.penerima || ''">
                   {{ item.penerima || '-' }}
                 </td>
-                <td class="px-4 py-2.5">
+                <td v-if="!isFolderCompleted" class="px-4 py-2.5">
                   <div class="flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-300">
                     <span v-if="item.emailTertuju" class="truncate" :title="item.emailTertuju">
                       <span class="text-gray-400 dark:text-gray-500">To:</span> {{ item.emailTertuju }}
@@ -248,13 +248,13 @@
           @click="showApproveConfirm = true"
         />
         <UButton
-          v-else
-          :label="selectedItemIds.length ? `Kirim ${selectedItemIds.length} Surat` : 'Tidak ada surat yang siap dikirim'"
+          v-else-if="isSignerAwaiting"
+          label="Finalisasi"
           icon="i-lucide-send"
           color="primary"
-          :disabled="selectedItemIds.length === 0"
+          :disabled="eligibleItems.length === 0"
           :loading="workflowLoading"
-          @click="openSendPreview"
+          @click="openFinalizeAll"
         />
       </div>
 
@@ -507,6 +507,7 @@ const isSignerAwaiting = computed(
     ['MENUNGGU_PENGIRIM', 'SEBAGIAN_TERKIRIM'].includes(folder.value.status) &&
     String(user.value?.position || user.value?.position_id || '') === String(folder.value.pengirimId || ''),
 );
+const isFolderCompleted = computed(() => folder.value?.status === 'TERKIRIM');
 const currentPersnum = computed(() => String(user.value?.persnum || '').trim());
 const currentPosition = computed(() => String(user.value?.position || user.value?.position_id || '').trim());
 const isFolderCreator = computed(
@@ -622,6 +623,14 @@ const openSignatureModal = async () => {
 
 };
 
+const openFinalizeAll = async () => {
+  // Pengirim akhir memfinalisasi seluruh naskah yang sudah disetujui.
+  selectedItemIds.value = eligibleItems.value.map((item) => item.id);
+  // Tampilkan pratinjau semua naskah terlebih dahulu. Popup passphrase
+  // dibuka setelah tombol "Kirim" pada pratinjau ditekan.
+  await openSendPreview();
+};
+
 const sendSelectedItems = async (signData: { method: string; passphrase?: string }) => {
   if (!folder.value || !selectedItemIds.value.length) return;
 
@@ -647,7 +656,11 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
     closePreview();
     showSendConfirm.value = false;
     toast.add({ title: 'Pengiriman selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
-    await loadData();
+    if ((result?.success || 0) > 0) {
+      await navigateTo('/korespondensi/terkirim');
+    } else {
+      await loadData();
+    }
   } catch (error: any) {
     const message = error?.response?.data?.message || error?.message || 'Coba lagi.';
     if (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah')) {
@@ -1048,7 +1061,7 @@ const timelineSteps = computed(() => {
   const sent = folderStatus === 'TERKIRIM';
   const partiallySent = folderStatus === 'SEBAGIAN_TERKIRIM';
   pushStep(sent
-    ? completedStep('Dikirim ke Penerima', 'Naskah SDE Massal telah dikirim ke penerima')
+    ? completedStep('Selesai', 'Naskah SDE Massal telah difinalisasi dan masuk ke Terkirim', firstItem?.updatedAt ? formatDate(firstItem.updatedAt) : undefined)
     : pendingStep('Dikirim ke Penerima', 'Menunggu surat dikirim kepada penerima', partiallySent));
 
   return steps;
@@ -1062,7 +1075,7 @@ const naskahStatusLabel = (status: string) =>
     MENUNGGU: 'Menunggu',
     MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
     TERVERIFIKASI: 'Disetujui',
-    TERKIRIM: 'Terkirim',
+    TERKIRIM: 'Selesai',
     DITOLAK: 'Ditolak',
     GAGAL: 'Gagal',
   })[status] || status;
