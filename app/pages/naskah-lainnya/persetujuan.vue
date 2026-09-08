@@ -274,6 +274,11 @@
         <template #cell-status="{ row }">
           <StatusBadge :status="approvalStatusKey(row.tahapanRaw)" />
         </template>
+        <template #cell-waktu="{ row }">
+          <span class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+            {{ row.waktuLabel }}
+          </span>
+        </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
             >Detail</UButton
@@ -506,6 +511,7 @@ const columns = [
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
+  { key: 'waktu', label: 'Waktu', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
 
@@ -628,12 +634,24 @@ const displayRows = computed(() =>
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
     status: APPROVAL_STATUS_LABEL[r.tahapan] ?? 'Menunggu',
+    // Timestamp untuk sort paling baru/lama (kolom Waktu).
+    waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
+    waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
   }))
 );
 
 const sortedRows = computed(() => {
   const dir = sortDir.value === 'asc' ? 1 : -1;
   return [...displayRows.value].sort((a, b) => {
+    // Kolom waktu di-sort numerik (timestamp) — localeCompare string akan
+    // salah urut untuk tanggal (DD/MM/YYYY tidak leksikografis).
+    if (sortKey.value === 'waktu') {
+      const av = (a as any).waktu;
+      const bv = (b as any).waktu;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    }
     const av = (a as any)[sortKey.value];
     const bv = (b as any)[sortKey.value];
     if (av == null) return 1;

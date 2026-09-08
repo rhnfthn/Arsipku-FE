@@ -279,14 +279,6 @@
                     : 'Urutan sesuai posisi placeholder tanda_tangan_N di template. Pilih penandatangan untuk setiap slot sesuai urutan penandatangan.'
               }}
             </p>
-            <p
-              v-if="!isPhysicalMetadataMode && !isPhysicalSigning && !previewFile"
-              class="text-xs text-amber-600 dark:text-amber-400"
-            >
-              <UIcon name="i-lucide-info" class="w-3.5 h-3.5 inline-block mr-0.5 -mt-0.5" />
-              Unggah naskah terlebih dahulu — pratinjau dokumen menunjukkan posisi
-              tanda tangan (placeholder) untuk setiap slot di atas.
-            </p>
             <div
               v-for="slot in editableSignerSlots"
               :key="slot.index"

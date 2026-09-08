@@ -552,7 +552,7 @@ onMounted(async () => {
     klasifikasiStatus.value = "loading";
     const [klasRes, recRes, groupsRes] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(),
+      getRecipients(user.value?.position),
       getRecipientGroups("SDI").catch(() => [])
     ]);
 
@@ -562,7 +562,7 @@ onMounted(async () => {
 
     const rawData = recRes.recipients || (recRes as any).data || [];
     tertujuItems.value = rawData.map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}${r.routing_mandatory ? " · Tembusan wajib" : r.routing_source === "configured" ? " · Routing konfigurasi" : ""}`,
       labelJob: r.position_text || r.positionText,
       organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),

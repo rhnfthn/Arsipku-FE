@@ -293,7 +293,7 @@ onMounted(async () => {
     klasifikasiStatus.value = "loading";
     const [klasRes, recRes, groupsRes]: [any, any, any] = await Promise.all([
       getKlasifikasi(),
-      getRecipients(),
+      getRecipients(user.value?.position),
       getRecipientGroups("SDI").catch(() => []),
     ]);
 
@@ -325,7 +325,7 @@ onMounted(async () => {
     const allMapped = rawRec
       .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
       .map((r: any) => ({
-        label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+        label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}${r.routing_mandatory ? " · Tembusan wajib" : r.routing_source === "configured" ? " · Routing konfigurasi" : ""}`,
         labelJob: r.position_text || r.positionText,
         organization: r.organization_text,
         value: String(r.position || r.position_id || r.id),
