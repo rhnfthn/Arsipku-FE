@@ -7,7 +7,7 @@
       <ClientOnly>
         <UPopover v-model:open="open" :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
           <div class="flex items-center gap-2 cursor-pointer w-full pr-2" @click="open = true">
-            <UInputDate locale="id-ID" v-model="model" variant="none" size="sm" format="DD MMMM YYYY" class="flex-1"
+            <UInputDate locale="id-ID" v-model="model" variant="none" size="sm" :format="displayFormat" class="flex-1"
               :ui="{ base: '!bg-transparent !text-sm !px-0 !ring-0 pointer-events-none inline-flex items-center h-8' }" />
             <UIcon name="i-lucide-calendar" class="size-4 text-gray-400 shrink-0 mr-0.5" />
           </div>
@@ -32,6 +32,10 @@ defineProps({
   required: {
     type: Boolean,
     default: false
+  },
+  displayFormat: {
+    type: String,
+    default: 'DD MMMM YYYY'
   }
 })
 

@@ -278,7 +278,7 @@ onMounted(async () => {
     klasifikasiList.value = await getKlasifikasi();
     klasifikasiStatus.value = "success";
 
-    const resRec = await getRecipients();
+    const resRec = await getRecipients(user.value?.position);
     const rawRecipients = resRec.recipients || (resRec as any).data || [];
 
     // Sort by org hierarchy: Direktur > GM > VP > Manager > lainnya
@@ -302,7 +302,7 @@ onMounted(async () => {
     tertujuItems.value = rawRecipients
       .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
       .map((r: any) => ({
-        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
+        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}${r.routing_mandatory ? " · Tembusan wajib" : r.routing_source === "configured" ? " · Routing konfigurasi" : ""}`,
         labelJob: r.position_text || r.positionText,
         organization: r.organization_text,
         value: String(r.position || r.position_id || r.id),

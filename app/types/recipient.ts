@@ -64,6 +64,10 @@ export interface RecipientItem {
 
   /** tambahan untuk hasil normalize */
   group?: string
+  routing_source?: 'structural' | 'configured'
+  routing_rule_ids?: string[]
+  routing_effect?: 'ALLOW_SELECT' | 'AUTO_INCLUDE'
+  routing_mandatory?: boolean
 }
 
 /** ---------------------------------

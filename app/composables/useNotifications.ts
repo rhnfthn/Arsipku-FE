@@ -100,6 +100,15 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     };
   }
 
+  // Seluruh notifikasi workflow Naskah Lainnya dibuka dari satu pintu detail.
+  // Halaman detail akan menampilkan tahap dan aksi aktif sesuai penerima.
+  if (
+    naskahId &&
+    (action?.startsWith('OPEN_NASKAH_LAINNYA_') || type.startsWith('NASKAH_LAINNYA'))
+  ) {
+    return { path: `/naskah-lainnya/${encodeURIComponent(naskahId)}` };
+  }
+
   const baseRoutes: Record<string, string> = {
     OPEN_INBOX_DETAIL: '/korespondensi/kotak-masuk',
     OPEN_DISPOSISI_DETAIL: '/korespondensi/kotak-masuk',

@@ -263,6 +263,7 @@ import {
   Search, X, AlertTriangle, Loader2,
 } from "lucide-vue-next";
 import { useNaskahLainnya } from "~/composables/useNaskahLainnya";
+import { formatNaskahDate } from "~/utils/naskah-lainnya-date";
 
 definePageMeta({ layout: "default", middleware: ["auth"] });
 
@@ -296,7 +297,7 @@ const tabs = [
   { label: "Keputusan", value: "KEP", icon: FileText },
   { label: "Instruksi", value: "INS", icon: FileText },
   { label: "PKS", value: "PKS", icon: FileText },
-  { label: "Berita Acara", value: "BA", icon: FileText },
+  { label: "Berita Acara", value: "BAC", icon: FileText },
 ];
 
 // ── Computed ───────────────────────────────────────────────────────
@@ -344,17 +345,7 @@ const getTabCount = (tabValue) => {
 
 // ── Helpers ────────────────────────────────────────────────────────
 const formatShortDate = (dateString) => {
-  if (!dateString) return "-";
-  const datePart = dateString.substring(0, 10);
-  const [year, month, day] = datePart.split("-").map(Number);
-  const now = new Date();
-  const isToday = year === now.getFullYear() && month === now.getMonth() + 1 && day === now.getDate();
-  const isThisYear = year === now.getFullYear();
-  const dateForMonth = new Date(year, month - 1, day);
-  const monthName = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(dateForMonth);
-  if (isToday) return `${day} ${monthName}`;
-  if (isThisYear) return `${day} ${monthName}`;
-  return `${day} ${monthName} ${year}`;
+  return formatNaskahDate(dateString, "-");
 };
 
 // ── Actions ────────────────────────────────────────────────────────
