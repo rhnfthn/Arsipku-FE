@@ -7,7 +7,8 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import SdeMasalWizard from '~/components/korespondensi/sde-masal/SdeMasalWizard.vue';
 
-definePageMeta({ middleware: ['auth', 'sde-masal-bod'] });
+// Staff dapat membuka form dari disposisi; otorisasi pembuatan divalidasi BE.
+definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const parentNaskahId = computed(() => (route.query.parentNaskahId as string) || '');

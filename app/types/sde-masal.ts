@@ -40,11 +40,14 @@ export interface SdeMasalFolder {
     | 'DIKEMBALIKAN'
     | 'DIFINALISASI'
     | 'MENUNGGU_VERIFIKASI'
+    | 'SEBAGIAN_TERKIRIM'
     | 'TERKIRIM'
     | 'DITOLAK';
   createdBy?: string | null;
   createdByName?: string | null;
   createdByPositionText?: string | null;
+  /** Penandatangan akhir saat folder sudah masuk tahap pengiriman. */
+  finalSenderName?: string | null;
   rejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -66,13 +69,14 @@ export interface SdeMasalFolderItem {
   submittedAt?: string | null;
   recipient?: Record<string, any> | null;
   finalPdf: string | null;
+  errorMessage?: string | null;
   createdAt: string;
 }
 
 export interface SdeMasalAttachmentRef {
   fileName: string;
   key: string;
-  sha256: string;
+  sha256?: string;
   size?: number;
   url?: string;
 }
@@ -116,6 +120,7 @@ export interface SdeMasalPenerima {
   nominalDolar?: string | null;
   tembusan1?: string | null;
   tembusan2?: string | null;
+  statusVerifikasi?: string;
   // String tetap didukung untuk kompatibilitas upload lampiran per-item lama.
   lampiran?: string | SdeMasalAttachmentRef[] | null;
   lampiranKey?: string | null;
