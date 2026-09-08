@@ -644,7 +644,7 @@ onMounted(async () => {
               </div>
             </div>
 
-            <TulisInputTanggal v-model="formDate" label="Tanggal" />
+            <TulisInputTanggal v-model="formDate" label="Tanggal" display-format="DD/MM/YYYY" />
 
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
@@ -751,7 +751,11 @@ onMounted(async () => {
               </div>
             </div>
 
-            <TulisInputTanggal v-model="refDate" label="Referensi Tanggal" />
+            <TulisInputTanggal
+              v-model="refDate"
+              label="Referensi Tanggal"
+              display-format="DD/MM/YYYY"
+            />
 
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"

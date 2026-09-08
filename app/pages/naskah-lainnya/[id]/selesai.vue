@@ -118,9 +118,9 @@
                 </span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {{ naskahFileName(detail) }}
+                    {{ naskahFileName(detail, 'pdf') }}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Naskah final</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Naskah final (PDF)</p>
                 </div>
               </div>
               <div class="flex shrink-0 gap-2">
@@ -405,6 +405,7 @@
 <script setup>
 import { renderAsync } from 'docx-preview';
 import { JENIS_LABELS } from '~/types/naskah-lainnya';
+import { formatNaskahDate } from '~/utils/naskah-lainnya-date';
 
 const route = useRoute();
 const id = computed(() => route.params.id);
@@ -502,12 +503,7 @@ function initials(nama) {
 }
 
 function fmtDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatNaskahDate(iso);
 }
 
 async function loadDetail() {
@@ -552,7 +548,8 @@ async function downloadNaskah() {
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = naskahFileName(detail.value);
+    // Artifact signed (QR/fisik) berupa PDF — ekstensi mengikuti tipe blob aktual.
+    a.download = naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {
@@ -626,7 +623,9 @@ watch(previewOpen, (open) => {
 async function previewNaskah() {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, { responseType: 'blob' });
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+      responseType: 'blob',
+    });
     await openPreviewFromBlob(blob, naskahFileName(detail.value));
   } catch {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
@@ -638,7 +637,7 @@ async function previewNaskah() {
 async function previewDokumen(doc) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
       responseType: 'blob',
     });
     await openPreviewFromBlob(blob, doc.nama);

@@ -1,86 +1,88 @@
 <template>
-  <div
-    v-if="modelValue"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/10 p-4"
-  >
-    <!-- Hanya modal yang dianimasikan -->
-    <Transition name="modal">
-      <div
-        v-if="modelValue"
-        class="relative bg-white dark:bg-gray-800 rounded-2xl p-1 flex flex-col"
-        :class="modalSizeClass"
-      >
-        <!-- HEADER -->
+  <Teleport to="body">
+    <div
+      v-if="modelValue"
+      class="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/10 p-4"
+    >
+      <!-- Hanya modal yang dianimasikan -->
+      <Transition name="modal">
         <div
-          class="flex justify-between items-start border-b border-gray-300 dark:border-gray-400 flex-shrink-0 mb-3"
+          v-if="modelValue"
+          class="relative flex flex-col rounded-2xl bg-white p-1 dark:bg-gray-800"
+          :class="modalSizeClass"
         >
-          <slot name="title">
-            <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
-              Judul Modal
-            </Heading>
-          </slot>
-
-          <button
-            @click="handleCancel"
-            :disabled="props.saving"
-            class="mt-5 mr-5 text-gray-500 hover:text-gray-800 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          <!-- HEADER -->
+          <div
+            class="flex justify-between items-start border-b border-gray-300 dark:border-gray-400 flex-shrink-0 mb-3"
           >
-            <X class="w-4 h-4" />
-          </button>
-        </div>
+            <slot name="title">
+              <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5">
+                Judul Modal
+              </Heading>
+            </slot>
 
-        <!-- BODY -->
-        <div class="flex flex-col gap-5 ml-5 mr-5 overflow-y-auto flex-1 min-h-0">
-          <slot />
-        </div>
+            <button
+              @click="handleCancel"
+              :disabled="props.saving"
+              class="mt-5 mr-5 text-gray-500 hover:text-gray-800 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
 
-        <!-- DEFAULT FOOTER -->
-        <div
-          v-if="!hideDefaultFooter"
-          class="flex justify-between border-t border-gray-300 flex-shrink-0 gap-3 px-5 py-2 mt-5"
-        >
-          <button
-            @click="handleCancel"
-            :disabled="props.saving"
-            class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          <!-- BODY -->
+          <div class="flex flex-col gap-5 ml-5 mr-5 overflow-y-auto flex-1 min-h-0">
+            <slot />
+          </div>
+
+          <!-- DEFAULT FOOTER -->
+          <div
+            v-if="!hideDefaultFooter"
+            class="flex justify-between border-t border-gray-300 flex-shrink-0 gap-3 px-5 py-2 mt-5"
           >
-            Batal
-          </button>
+            <button
+              @click="handleCancel"
+              :disabled="props.saving"
+              class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Batal
+            </button>
 
-          <button
-            @click="handleSave"
-            :disabled="props.saving"
-            class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-80 disabled:cursor-not-allowed"
-          >
-            <span v-if="props.saving" class="inline-flex items-center gap-2">
-              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="3"
-                  class="opacity-25"
-                />
-                <path
-                  d="M22 12a10 10 0 0 1-10 10"
-                  stroke="currentColor"
-                  stroke-width="3"
-                  stroke-linecap="round"
-                  class="opacity-90"
-                />
-              </svg>
-              Menyimpan...
-            </span>
-            <span v-else>Simpan</span>
-          </button>
+            <button
+              @click="handleSave"
+              :disabled="props.saving"
+              class="flex-1 px-5 py-2 mt-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-80 disabled:cursor-not-allowed"
+            >
+              <span v-if="props.saving" class="inline-flex items-center gap-2">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    class="opacity-25"
+                  />
+                  <path
+                    d="M22 12a10 10 0 0 1-10 10"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    class="opacity-90"
+                  />
+                </svg>
+                Menyimpan...
+              </span>
+              <span v-else>Simpan</span>
+            </button>
+          </div>
+
+          <!-- CUSTOM FOOTER SLOT -->
+          <slot name="footer" />
         </div>
-
-        <!-- CUSTOM FOOTER SLOT -->
-        <slot name="footer" />
-      </div>
-    </Transition>
-  </div>
+      </Transition>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -91,17 +93,17 @@ import Heading from '~/components/Heading.vue';
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    required: true
+    required: true,
   },
 
   hideDefaultFooter: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   saving: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   /**
@@ -111,8 +113,8 @@ const props = defineProps({
    */
   size: {
     type: String,
-    default: 'md'
-  }
+    default: 'md',
+  },
 });
 
 const emit = defineEmits(['update:modelValue', 'save']);
