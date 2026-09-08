@@ -1,35 +1,5 @@
 <template>
   <div class="flex-1 overflow-y-auto space-y-4">
-    <!-- Informasi Folder (sama dengan halaman folder detail) -->
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Informasi Folder</h3>
-      <div class="grid grid-cols-1 gap-y-5 gap-x-8 sm:grid-cols-2">
-        <div class="flex flex-col gap-1">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Judul Folder</p>
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ konsep?.judul || '-' }}</p>
-        </div>
-        <div class="flex flex-col gap-1">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Total Surat</p>
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ penerimaList.length }}</p>
-        </div>
-        <div class="flex flex-col gap-1">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Sifat</p>
-          <p class="text-sm font-semibold capitalize text-gray-900 dark:text-white">{{ konsep?.sifat || 'biasa' }}</p>
-        </div>
-        <div class="flex flex-col gap-1">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Pengirim</p>
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">
-            {{ pengirimNama }}
-            <span class="font-normal text-gray-500 dark:text-gray-400">— {{ pengirimJabatan }}</span>
-          </p>
-        </div>
-        <div class="flex flex-col gap-1">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Klasifikasi</p>
-          <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ konsep?.klasifikasiName || '-' }}</p>
-        </div>
-      </div>
-    </div>
-
     <!-- Daftar SDE Masal -->
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
       <div class="flex items-center justify-between gap-3 p-4 border-b border-gray-100 dark:border-gray-700">
@@ -308,63 +278,16 @@
                       Atasan Managerial Berjenjang <span class="text-red-500">*</span>
                     </h2>
                     <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                      Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi.
+                      Atasan diambil otomatis dari chain disposisi. Urutan mengikuti jenjang jabatan yang tersedia.
                     </p>
                   </div>
                 </div>
-                <UButton
-                  v-if="selectedVerifiers.length < 3"
-                  label="Tambah"
-                  icon="i-lucide-user-round-plus"
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  @click="showVerifierInput = true"
-                />
               </div>
               <div class="space-y-5 px-5 py-5">
-                <div v-if="selectedVerifiers.length < 3 && showVerifierInput">
-                  <input
-                    v-model="verifierSearch"
-                    type="text"
-                    placeholder="Ketik nama atau persnum atasan..."
-                    class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    @focus="showVerifierInput = true"
-                  />
-                  <div v-if="verifierLoading" class="py-5 text-center text-sm text-gray-400">
-                    Memuat data atasan...
-                  </div>
-                  <div
-                    v-else-if="verifierSearch.trim()"
-                    class="mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700"
-                  >
-                    <button
-                      v-for="person in filteredVerifiers"
-                      :key="person.position"
-                      type="button"
-                      class="flex w-full items-center justify-between border-b border-gray-100 px-4 py-3 text-left last:border-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                      @click="toggleVerifier(person)"
-                    >
-                      <span
-                        ><span class="block text-sm font-medium text-gray-900 dark:text-white">{{
-                          person.nama
-                        }}</span
-                        ><span class="block text-xs text-gray-500">{{ person.jabatan }}</span></span
-                      ><UIcon
-                        v-if="isVerifierSelected(person)"
-                        name="i-lucide-check-circle"
-                        class="size-5 text-green-500"
-                      />
-                    </button>
-                    <p
-                      v-if="!filteredVerifiers.length"
-                      class="p-4 text-center text-sm text-gray-400"
-                    >
-                      Verifikator tidak ditemukan.
-                    </p>
-                  </div>
+                <div v-if="verifierLoading" class="py-5 text-center text-sm text-gray-400">
+                  Memuat atasan dari struktur organisasi...
                 </div>
-                <div v-if="selectedVerifiers.length" class="space-y-4">
+                <div v-else-if="selectedVerifiers.length" class="space-y-4">
                   <div
                     v-for="(person, index) in selectedVerifiers"
                     :key="person.position"
@@ -384,17 +307,13 @@
                         {{ person.jabatan }}
                       </p>
                     </div>
-                    <UButton
-                      color="error"
-                      variant="ghost"
-                      icon="i-lucide-trash-2"
-                      size="sm"
-                      @click="toggleVerifier(person)"
-                    />
                   </div>
                 </div>
-                <p v-if="selectedVerifiers.length" class="text-sm text-gray-500">
-                  {{ selectedVerifiers.length }} atasan dipilih. Verifikasi:
+                <p v-else class="text-sm text-gray-500 dark:text-gray-400">
+                  Atasan managerial tidak ditemukan pada struktur organisasi.
+                </p>
+                <p v-if="selectedVerifiers.length" class="text-sm text-gray-500 dark:text-gray-400">
+                  Verifikasi berjenjang:
                   {{ selectedVerifiers.map((person) => person.nama).join(' → ') }}
                 </p>
               </div>
@@ -412,7 +331,7 @@
               label="Ajukan Verifikasi"
               color="primary"
               :loading="generating"
-              :disabled="!selectedVerifiers.length || generating"
+              :disabled="verifierLoading || !selectedVerifiers.length || generating"
               @click="submitVerifiers"
             />
           </div>
@@ -505,24 +424,14 @@
     <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-end gap-3">
         <UButton
-          v-if="!isPembuatPenandatangan"
-          label="Kirim"
+          label="Ajukan Verifikasi"
           color="primary"
           size="lg"
           icon="i-lucide-send"
-          class="font-bold"
-          :loading="generating"
-          @click="emit('send-to-signer')"
-        />
-        <UButton
-          v-if="isPembuatPenandatangan"
-          label="Pratinjau"
-          color="primary"
-          size="lg"
-          icon="i-lucide-eye"
           class="px-8 font-bold"
           :loading="generating"
-          @click="previewPenerimaIdx = 0; isPreviewOpen = true; handlePratinjau()"
+          :disabled="generating || !penerimaList.length"
+          @click="openVerificationSelection"
         />
       </div>
     </div>
@@ -548,9 +457,7 @@
               by="value"
               :search-input="false"
               class="w-64"
-              :ui="{
-                trigger: 'h-9 text-sm font-medium w-full justify-between',
-              }"
+              :ui="{ base: 'h-9 text-sm font-medium w-full justify-between' }"
               @update:model-value="onPenerimaChange"
             >
               <template #item="{ item }">
@@ -589,27 +496,17 @@
             @click="handleSaveDraft"
           />
           <UButton
-            label="Kirim"
+            label="Ajukan Verifikasi"
             color="primary"
             size="lg"
             icon="i-heroicons-paper-airplane"
             class="px-8 font-bold"
-            @click="handleKirim"
+            @click="isPreviewOpen = false; openVerificationSelection()"
           />
         </div>
       </template>
     </USlideover>
 
-    <!-- Modal Pilih Metode Tanda Tangan — Teleport ke body agar di atas pratinjau (z-50) -->
-    <Teleport to="body">
-      <TulisDigsigPassphraseModal
-        v-model:open="isSignModalOpen"
-        :signer-info="signerInfo"
-        :is-loading="generating"
-        :hide-basah="true"
-        @submit="handleSignSubmit"
-      />
-    </Teleport>
   </div>
 </template>
 
@@ -623,7 +520,6 @@ import {
   setTertujuEksternalLookup,
   setInternalPositionLookup,
 } from '~/utils/sde-masal-render';
-import TulisDigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModalAsync.vue';
 import DataTable from '~/components/DataTable.vue';
 import DataPagination from '~/components/DataPagination.vue';
 import ConfirmModal from '~/components/ConfirmModal.vue';
@@ -637,7 +533,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'send-to-signer'): void;
   (e: 'submit-verification', verifikators: any[], signOption: 'qr_only' | 'ttd_basah'): void;
   (
     e: 'finalize-direct',
@@ -663,7 +558,6 @@ let currentBlobUrl: string | null = null;
 const isPreviewOpen = ref(false);
 const previewPdfUrl = ref<string | null>(null);
 let previewBlobUrl: string | null = null;
-const isSignModalOpen = ref(false);
 const previewPenerimaIdx = ref(0);
 
 // Opsi dropdown penerima untuk USelectMenu
@@ -680,11 +574,6 @@ const onPenerimaChange = (selected: any) => {
     handlePratinjau();
   }
 };
-
-const signerInfo = computed(() => ({
-  label: pengirimJabatan.value || 'Penandatangan',
-  role: pengirimNama.value || '-',
-}));
 
 const revokePreviewPdf = () => {
   if (previewBlobUrl) {
@@ -771,20 +660,10 @@ const handlePratinjau = async () => {
 
 const handleSaveDraft = () => {
   isPreviewOpen.value = false;
-  // Emit finalize dengan status draft (simpan folder saja, tidak kirim)
-  emit('finalize-direct', { signOption: 'qr_only' });
-};
-
-const handleKirim = () => {
-  // Jangan close pratinjau — modal tanda tangan muncul di atas slideover
-  isSignModalOpen.value = true;
-};
-
-const handleSignSubmit = (payload: { signOption: string; passphrase?: string }) => {
-  isSignModalOpen.value = false;
-  emit('finalize-direct', {
-    signOption: payload.signOption as 'digsig' | 'qr_only' | 'ttd_basah',
-    passphrase: payload.passphrase,
+  toast.add({
+    title: 'Draft tersimpan',
+    description: 'Perubahan draft tetap tersimpan di halaman SDE Masal.',
+    color: 'success',
   });
 };
 
@@ -883,17 +762,12 @@ const generatePdfFor = async (idx: number) => {
   }
 };
 const showVerifierModal = ref(false);
-const showVerifierInput = ref(false);
 const verifierLoading = ref(false);
-const verifierSearch = ref('');
 const selectedVerifiers = ref<any[]>([]);
 const verifierList = ref<any[]>([]);
 const { api, apiGet } = useApi();
 const toast = useToast();
-const { user } = useAuth();
-const isPembuatPenandatangan = computed(
-  () => String(user.value?.position || '') === String(props.konsep?.pengirimId || '')
-);
+const { user, getProfile } = useAuth();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
 
 /**
@@ -960,7 +834,7 @@ function handleDocumentClick(e: MouseEvent) {
   openFilterStatus.value = false;
 }
 
-const getTertujuEksternal = (penerima: SdeMasalPenerima) => {
+const getTertujuEksternal = (penerima: SdeMasalPenerima | Record<string, any>) => {
   const raw = String(penerima.idTertuju || penerima.tertuju || '').trim();
   const kode = raw.split(/\s*(?:—|-)\s*/)[0].padStart(3, '0');
   return tertujuEksternal.value.find(
@@ -971,7 +845,7 @@ const getTertujuEksternal = (penerima: SdeMasalPenerima) => {
   );
 };
 
-const getPenerimaName = (penerima: SdeMasalPenerima) =>
+const getPenerimaName = (penerima: SdeMasalPenerima | Record<string, any>) =>
   getTertujuEksternal(penerima)?.nama || penerima.tertuju || penerima.idTertuju || '-';
 
 // Status verifikasi label + badge
@@ -1106,10 +980,10 @@ const openEditEmail = (idx: number) => emit('edit-email', idx);
 const openUploadLampiran = (idx: number) => emit('upload-lampiran', idx);
 const removeItem = (idx: number) => emit('remove-item', idx);
 
-const attachmentManagerRow = ref<SdeMasalPenerima | null>(null);
+const attachmentManagerRow = ref<SdeMasalPenerima | Record<string, any> | null>(null);
 const managedAttachments = computed(() => attachmentManagerRow.value ? attachmentRefs(attachmentManagerRow.value) : []);
 
-const openAttachmentManager = (row: SdeMasalPenerima) => {
+const openAttachmentManager = (row: SdeMasalPenerima | Record<string, any>) => {
   attachmentManagerRow.value = row;
 };
 
@@ -1127,7 +1001,10 @@ const removeManagedAttachment = (index: number) => {
 const replaceManagedAttachment = () => {
   const row = attachmentManagerRow.value;
   if (!row) return;
-  const index = props.penerimaList.indexOf(row);
+  const rowId = 'id' in row ? row.id : undefined;
+  const index = props.penerimaList.findIndex((item) =>
+    item === row || (!!rowId && item.id === rowId)
+  );
   closeAttachmentManager();
   if (index >= 0) openUploadLampiran(index);
 };
@@ -1192,39 +1069,141 @@ const doClearAll = () => {
   emit('clear-data');
 };
 
-const filteredVerifiers = computed(() => {
-  const query = verifierSearch.value.toLowerCase().trim();
-  return !query
-    ? verifierList.value
-    : verifierList.value.filter((person) =>
-        `${person.nama} ${person.jabatan}`.toLowerCase().includes(query)
-      );
-});
-const isVerifierSelected = (person: any) =>
-  selectedVerifiers.value.some((item) => item.position === person.position);
-const toggleVerifier = (person: any) => {
-  const index = selectedVerifiers.value.findIndex((item) => item.position === person.position);
-  if (index >= 0) return selectedVerifiers.value.splice(index, 1);
-  if (selectedVerifiers.value.length >= 3)
-    return toast.add({ title: 'Maksimal 3 verifikator', color: 'error' });
-  selectedVerifiers.value.push(person);
-  verifierSearch.value = '';
-  showVerifierInput.value = false;
+const verifierRoleRank = (value: unknown): number | null => {
+  const text = String(value ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  if (/\bAVP\b/.test(text)) return 1;
+  if (/\bEVP\b/.test(text)) return 3;
+  if (/\bVP\b/.test(text)) return 2;
+  return null;
+};
+const sortSelectedVerifiers = () => {
+  selectedVerifiers.value.sort(
+    (a, b) => (verifierRoleRank(a.jabatan) ?? 99) - (verifierRoleRank(b.jabatan) ?? 99),
+  );
 };
 const openVerificationSelection = async () => {
   showVerifierModal.value = true;
-  const storageKey = `sde-masal-wizard:${props.konsep?.parentNaskahId || 'new'}`;
-  const draft = JSON.parse(localStorage.getItem(storageKey) || '{}');
-  selectedVerifiers.value = Array.isArray(draft.verifikators) ? draft.verifikators : [];
-  showVerifierInput.value = selectedVerifiers.value.length === 0;
-  if (verifierList.value.length) return;
+  selectedVerifiers.value = [];
   verifierLoading.value = true;
   try {
+    // Selalu refresh profil agar posisi aktif/delegasi lama tidak dipakai.
+    const profile = (await getProfile(true)) || user.value;
+    let positionId = profile?.position ?? profile?.position_id;
+    let verifiersFromDisposition: any[] = [];
+
+    // Resolusi berdasarkan persnum memastikan struktur dihitung dari posisi
+    // asli pengguna yang login (misalnya Raihan Fathan), bukan dari pengirim
+    // surat atau posisi delegasi yang sedang tersimpan di state.
+    if (profile?.persnum) {
+      try {
+        const myPosition: any = await apiGet(
+          `/org-data/my-position?persnum=${encodeURIComponent(String(profile.persnum))}`,
+          {},
+          { skipCache: true },
+        );
+        const row = myPosition?.data ?? myPosition;
+        positionId = row?.position ?? positionId;
+      } catch {
+        // Gunakan posisi profil terbaru sebagai fallback.
+      }
+    }
+
+    // Jika SDE Massal dibuat dari disposisi, sumber utama posisi pengaju
+    // adalah rantai disposisi awal. Ini mencegah posisi pengirim SDE atau
+    // posisi aktif lama mengubah daftar atasan Raihan.
+    if (props.konsep?.parentNaskahId) {
+      try {
+        const disposisiRes: any = await apiGet(
+          `/DI/${encodeURIComponent(props.konsep.parentNaskahId)}`,
+          {},
+          { skipCache: true },
+        );
+        const flow = disposisiRes?.data?.flow || disposisiRes?.flow || [];
+        const profilePersnum = String(profile?.persnum ?? '').trim();
+        const profileName = String(profile?.nama ?? '').trim().toLowerCase();
+        const currentDisposisi = Array.isArray(flow) ? flow[0] : null;
+        const penerimaDisposisiTerbaru = currentDisposisi?.penerima || [];
+        const penerimaDisposisi = Array.isArray(flow)
+          ? flow.flatMap((node: any) => node?.penerima || [])
+          : [];
+        const matchPenerimaLogin = penerimaDisposisi.find((recipient: any) => {
+          const samePersnum =
+            profilePersnum &&
+            String(recipient?.persnum ?? recipient?.id_sirkuler ?? '').trim() === profilePersnum;
+          const sameName =
+            profileName && String(recipient?.nama ?? '').trim().toLowerCase() === profileName;
+          return samePersnum || sameName;
+        });
+        const matchPenerimaTerbaru = penerimaDisposisiTerbaru.find(
+          (recipient: any) => {
+            const samePersnum =
+              profilePersnum &&
+              String(recipient?.persnum ?? recipient?.id_sirkuler ?? '').trim() === profilePersnum;
+            const sameName =
+              profileName && String(recipient?.nama ?? '').trim().toLowerCase() === profileName;
+            return samePersnum || sameName;
+          },
+        );
+        // Flow /DI dikembalikan terbaru → awal. Untuk halaman yang dibuka
+        // Raihan, penerima pada node terbaru adalah posisi pelaksana disposisi.
+        // Gunakan itu sebagai sumber utama; pencocokan profil menjadi fallback
+        // bila node terbaru memiliki beberapa penerima atau data lama.
+        const penerimaUtama =
+          matchPenerimaTerbaru || matchPenerimaLogin || penerimaDisposisiTerbaru[0];
+        const posisiDisposisi =
+          penerimaUtama?.position_id ||
+          penerimaUtama?.position ||
+          matchPenerimaLogin?.position_id ||
+          matchPenerimaLogin?.position;
+        if (posisiDisposisi) positionId = posisiDisposisi;
+
+        // Setiap pengirim pada node chain adalah pejabat yang meneruskan
+        // disposisi ke bawah. Inilah rantai atasan yang sebenarnya untuk
+        // SDE Massal, bukan seluruh AVP/VP dalam divisi yang sama.
+        const byRank = new Map<number, any>();
+        (Array.isArray(flow) ? flow : [])
+          .map((node: any) => node?.pengirim)
+          .filter(Boolean)
+          .map((sender: any) => ({
+            persnum: String(sender?.persnum ?? sender?.id_sirkuler ?? '').trim(),
+            position: String(sender?.position_id ?? sender?.position ?? '').trim(),
+            nama: sender?.nama || '-',
+            jabatan: sender?.position_text || sender?.jabatan || '-',
+          }))
+          .filter((sender: any) => sender.position)
+          .forEach((sender: any) => {
+            const rank = verifierRoleRank(sender.jabatan);
+            if (rank !== null && !byRank.has(rank)) byRank.set(rank, sender);
+          });
+        verifiersFromDisposition = [...byRank.entries()]
+          .sort(([rankA], [rankB]) => rankA - rankB)
+          .map(([, sender]) => sender);
+      } catch {
+        // Tetap gunakan posisi profil terbaru bila flow disposisi tidak dapat
+        // dibaca, tanpa mengubah alur SDE Massal yang sudah ada.
+      }
+    }
+
+    if (verifiersFromDisposition.length) {
+      // Untuk folder berbasis disposisi, jangan jatuh ke daftar seluruh
+      // pejabat satu divisi karena dapat mencampur cabang Communication dan
+      // Enterprise. Chain disposisi menjadi sumber tunggal verifikator.
+      verifierList.value = verifiersFromDisposition;
+      selectedVerifiers.value = verifiersFromDisposition.slice(0, 3);
+      sortSelectedVerifiers();
+      return;
+    }
+
+    if (positionId == null || String(positionId).trim() === '') {
+      throw new Error('Posisi pengguna belum tersedia');
+    }
+
     const result: any = await apiGet(
-      `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`
+      `/org-data/atasan-managerial/${encodeURIComponent(String(positionId))}?tgl=${new Date().toISOString().slice(0, 10)}`
     );
-    const rows = result?.data?.barisData || result?.barisData || [];
-    verifierList.value = rows
+    const rows = Array.isArray(result?.data) ? result.data : [];
+    const byRank = new Map<number, any>();
+    rows
       .filter((row: any) => row.persnum_person || row.persnum)
       .map((row: any) => ({
         persnum: String(row.persnum_person || row.persnum),
@@ -1232,9 +1211,23 @@ const openVerificationSelection = async () => {
         nama: row.persnum_person_text || row.nama || '-',
         jabatan: row.position_text || '-',
       }))
-      .filter((person: any) => person.persnum && person.nama !== '-');
+      .filter((person: any) => person.persnum && person.nama !== '-' && verifierRoleRank(person.jabatan) !== null)
+      .sort((a: any, b: any) => (verifierRoleRank(a.jabatan) ?? 99) - (verifierRoleRank(b.jabatan) ?? 99))
+      .forEach((person: any) => {
+        const rank = verifierRoleRank(person.jabatan);
+        if (rank !== null && !byRank.has(rank)) byRank.set(rank, person);
+      });
+
+    verifierList.value = [...byRank.values()];
+    selectedVerifiers.value = verifierList.value.slice(0, 3);
+    sortSelectedVerifiers();
+    if (!selectedVerifiers.value.length) {
+      throw new Error('Atasan managerial tidak ditemukan');
+    }
   } catch {
-    toast.add({ title: 'Gagal memuat verifikator', color: 'error' });
+    verifierList.value = [];
+    selectedVerifiers.value = [];
+    toast.add({ title: 'Gagal memuat atasan managerial', color: 'error' });
   } finally {
     verifierLoading.value = false;
   }
@@ -1248,12 +1241,24 @@ const saveVerifiers = () => {
   );
   showVerifierModal.value = false;
   toast.add({
-    title: 'Verifikator tersimpan',
-    description: `${selectedVerifiers.value.length} verifikator dipilih.`,
+    title: 'Atasan managerial siap diverifikasi',
+    description: `${selectedVerifiers.value.length} atasan ditetapkan otomatis.`,
     color: 'success',
   });
 };
 const submitVerifiers = () => {
+  const ranks = selectedVerifiers.value
+    .map((person) => verifierRoleRank(person.jabatan))
+    .filter((rank): rank is number => rank !== null);
+  if (ranks.length === 0 || new Set(ranks).size !== ranks.length) {
+    toast.add({
+      title: 'Chain disposisi tidak valid',
+      description: 'Pastikan setiap jenjang atasan hanya muncul satu kali.',
+      color: 'error',
+    });
+    return;
+  }
+  sortSelectedVerifiers();
   saveVerifiers();
   emit('submit-verification', selectedVerifiers.value, 'qr_only');
 };
