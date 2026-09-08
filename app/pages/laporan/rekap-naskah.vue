@@ -16,12 +16,23 @@
     <!-- EXPORT BUTTON -->
     <button
       v-if="hasPermission('laporan', 'export-rekap-naskah')"
-      @click="exportExcel"
-      class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm"
+      @click="openExportModal"
+      :disabled="isExporting"
+      class="flex items-center gap-2 bg-primary text-white h-9 px-6 rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
     >
-      {{ $t('export') }}
+      <FileDown class="w-4 h-4" />
+      {{ isExporting ? $t('ver_btn_mengekspor') || 'Mengekspor...' : $t('export') }}
     </button>
   </div>
+
+  <!-- Modal Export Kolom -->
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="totalItems"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
 
   <div
     class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800"
@@ -370,6 +381,19 @@
             </div>
           </Transition>
         </div>
+
+        <!-- SEARCH INPUT -->
+        <div class="relative flex-1 min-w-[180px] max-w-xs ml-auto">
+          <Search
+            class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          />
+          <input
+            v-model="searchKeyword"
+            @input="handleSearchInput"
+            :placeholder="$t('cari') + '...'"
+            class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:border-primary"
+          />
+        </div>
       </div>
     </div>
 
@@ -577,7 +601,7 @@ definePageMeta({
 
 //IMPORT
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { FileDown, RotateCcw, ChevronDown } from 'lucide-vue-next';
+import { FileDown, RotateCcw, ChevronDown, Search } from 'lucide-vue-next';
 import { useToast } from '#imports';
 import { useLaporan } from '~/composables/useLaporan';
 import { useAuth } from '~/composables/useAuth';
@@ -619,7 +643,12 @@ const selectedStatus = ref('');
 const openDropdown = ref<null | string>(null);
 const jenisSearch = ref('');
 const areaSearch = ref('');
+const searchKeyword = ref('');
 const showLangDropdown = ref(false);
+
+const handleSearchInput = () => {
+  currentPage.value = 1;
+};
 
 const currentPage = ref(1);
 const rowsPerPage = ref(10);
@@ -699,6 +728,12 @@ const filteredTableData = computed(() => {
   if (selectedType.value) {
     const jenisText = jenisOptions.value.find((j) => j.jenis === selectedType.value)?.jenis_text;
     data = data.filter((row) => row.naskah === jenisText);
+  }
+
+  if (searchKeyword.value) {
+    data = data.filter((row) =>
+      row.naskah?.toLowerCase().includes(searchKeyword.value.toLowerCase())
+    );
   }
 
   return data;
@@ -840,8 +875,30 @@ const selectYear = (val: number) => {
   openDropdown.value = null;
 };
 
-//EXPORT
-const exportExcel = () => {
+// ─── Export Modal State ──────────────────────────────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+const exportColumns = computed(() => {
+  const cols = [
+    { key: 'naskah', label: t('naskah_tbl') || 'Jenis Naskah', desc: 'Nama jenis naskah surat' }
+  ];
+  if (selectedMonth.value) {
+    cols.push({
+      key: selectedMonth.value,
+      label: selectedMonthLabel.value,
+      desc: `Jumlah naskah bulan ${selectedMonthLabel.value}`
+    });
+  } else {
+    monthOptions.value.forEach((b) => {
+      cols.push({ key: b.value, label: b.label, desc: `Jumlah naskah bulan ${b.label}` });
+    });
+  }
+  cols.push({ key: 'jumlah', label: t('jumlah') || 'Total', desc: 'Total keseluruhan naskah' });
+  cols.push({ key: 'status', label: t('sign_status') || 'Status', desc: 'Status naskah' });
+  return cols;
+});
+
+const openExportModal = () => {
   if (!hasPermission('laporan', 'export-rekap-naskah')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
@@ -851,30 +908,41 @@ const exportExcel = () => {
     });
     return;
   }
-  if (!filteredTableData.value.length) {
-    toast.add({
-      title: t('export_dibatalkan'),
-      description: t('export_data_kosong'),
-      color: 'warning',
-      icon: 'i-lucide-alert-circle'
-    });
-    return;
-  }
+  showExportModal.value = true;
+};
 
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (isExporting.value || selectedKeys.length === 0) return;
+  isExporting.value = true;
   try {
+    if (!filteredTableData.value.length) {
+      toast.add({
+        title: t('export_dibatalkan'),
+        description: t('export_data_kosong'),
+        color: 'warning',
+        icon: 'i-lucide-alert-circle'
+      });
+      return;
+    }
+
     const rows: any[] = [];
     filteredTableData.value.forEach((row) => {
-      const baseRow: any = { [t('naskah_tbl')]: row.naskah };
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('naskah')) r[t('naskah_tbl') || 'Jenis Naskah'] = row.naskah;
       if (selectedMonth.value) {
-        baseRow[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
+        if (selectedKeys.includes(selectedMonth.value)) {
+          r[selectedMonthLabel.value] = row[selectedMonth.value] ?? 0;
+        }
       } else {
         monthOptions.value.forEach((b) => {
-          baseRow[b.label] = row[b.value] ?? 0;
+          if (selectedKeys.includes(b.value)) {
+            r[b.label] = row[b.value] ?? 0;
+          }
         });
       }
-      baseRow[t('jumlah')] = row.jumlah;
-      baseRow[t('sign_status')] = formatStatusLabel(row.status);
-      rows.push(baseRow);
+      if (selectedKeys.includes('jumlah')) r[t('jumlah') || 'Total'] = row.jumlah;
+      if (selectedKeys.includes('status')) r[t('sign_status') || 'Status'] = formatStatusLabel(row.status);
+      rows.push(r);
     });
 
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -897,6 +965,8 @@ const exportExcel = () => {
       color: 'error',
       icon: 'i-lucide-x-circle'
     });
+  } finally {
+    isExporting.value = false;
   }
 };
 

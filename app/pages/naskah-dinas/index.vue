@@ -539,12 +539,12 @@
                 v-model="newDelegasi.tanggal_surat"
                 type="date"
                 :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
                   modalErrors.tanggal_surat
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
                 ]"
-                @change="modalErrors.tanggal_surat = false"
+                @input="modalErrors.tanggal_surat = false"
               />
               <p v-if="modalErrors.tanggal_surat" class="text-xs text-red-500 mt-1">
                 {{ $t('nm_tanggalsurat') }}
@@ -621,7 +621,7 @@
                         : 'text-gray-400 dark:text-gray-500'
                     "
                   >
-                    {{ sifatnaskahList.find(s => s.value === newDelegasi.sifat_naskah)?.label || newDelegasi.sifat_naskah || $t('nm_pilih_sifat_naskah') }}
+                    {{ sifatnaskahList.find(s => s.value === newDelegasi.sifat_naskah)?.label || newDelegasi.sifat_naskah || 'Biasa / Terbuka' }}
                   </span>
                 </button>
 
@@ -668,7 +668,7 @@
           </div>
 
           <!-- 5. TERTUJU -->
-          <div class="flex flex-col relative z-10">
+          <div :class="['flex flex-col relative', openNewTertuju ? 'z-40' : 'z-20']">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               {{ $t('tertuju') }} <span class="text-red-500">*</span>
             </Heading>
@@ -676,35 +676,37 @@
             <div class="relative mt-1 dropdown-input" data-custom-dropdown>
               <div
                 :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2',
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2 cursor-text',
                   modalErrors.tertuju ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 ]"
                 @click.stop="openNewTertuju = true"
               >
-                <!-- CHIP CONTAINER -->
-                <div v-if="newDelegasi.tertuju.length > 0" class="flex flex-wrap gap-2">
-                  <span
+                <!-- CONTAINER - DISPLAY PER-BARIS (1 BARIS PER ITEM) -->
+                <div v-if="newDelegasi.tertuju.length > 0" class="flex flex-col gap-1.5 w-full">
+                  <div
                     v-for="t in newDelegasi.tertuju"
                     :key="t.position"
-                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
+                    class="flex items-center justify-between bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs w-full"
                   >
-                    <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                      {{ t.position_text }}
-                    </span>
-                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
-                      {{ t.persnum_person_text }}
-                    </span>
-                    <span class="text-[9px] text-gray-400 dark:text-gray-500">
-                      {{ t.organization_parent_text }}
-                    </span>
+                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                      <span class="font-semibold text-xs text-primary-600 dark:text-primary-300 truncate">
+                        {{ t.position_text }}
+                      </span>
+                      <span class="text-[11px] text-gray-800 dark:text-gray-200 font-medium truncate">
+                        {{ t.persnum_person_text }}
+                      </span>
+                      <span v-if="t.organization_parent_text" class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        {{ t.organization_parent_text }}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      class="text-red-500 text-[10px] self-end"
+                      class="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50 p-1 rounded transition-colors text-xs font-bold shrink-0 ml-2"
                       @click.stop="removeTertuju(t.position)"
                     >
                       ✕
                     </button>
-                  </span>
+                  </div>
                 </div>
 
                 <!-- INPUT SEARCH - SELALU DI BAWAH -->
@@ -712,7 +714,7 @@
                   v-model="searchTertuju"
                   @focus="openNewTertuju = true"
                   :placeholder="$t('nm_cari_tertuju')"
-                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 bg-transparent"
                 />
               </div>
 
@@ -737,13 +739,13 @@
                 <button
                   v-for="item in filteredTertujuList"
                   :key="item.position"
-                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs border-b border-gray-50 dark:border-gray-750 last:border-0"
                   @click.prevent="selectNewTertuju(item)"
                 >
-                  <div class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
+                  <div class="font-medium text-[13px] text-primary-600 dark:text-primary-300">
                     {{ item.position_text }}
                   </div>
-                  <div class="text-[10px] text-gray-800 dark:text-gray-300">
+                  <div class="text-[10px] text-gray-800 dark:text-gray-300 font-medium">
                     {{ item.persnum_person_text }}
                   </div>
                   <div class="text-[9px] text-gray-400 dark:text-gray-500">
@@ -758,45 +760,53 @@
           </div>
 
           <!-- 6. VERIFIKATOR -->
-          <div class="flex flex-col relative z-10">
+          <div :class="['flex flex-col relative', openNewVerifikator ? 'z-30' : 'z-10']">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               Verifikator <span class="text-xs font-normal text-gray-400 dark:text-gray-400">(Opsional)</span>
             </Heading>
 
             <div class="relative mt-1 dropdown-input" data-custom-dropdown>
               <div
-                class="mt-1 w-full text-left border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2 cursor-pointer"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2 cursor-text',
+                  modalErrors.verifikator ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                ]"
                 @click.stop="handleFocusVerifikator"
               >
-                <!-- CHIP CONTAINER -->
-                <div v-if="newDelegasi.verifikator.length > 0" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="verifikator in newDelegasi.verifikator"
-                    :key="verifikator.persnum"
-                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
+                <!-- CONTAINER - DISPLAY PER-BARIS (1 BARIS PER ITEM) -->
+                <div v-if="newDelegasi.verifikator.length > 0" class="flex flex-col gap-1.5 w-full">
+                  <div
+                    v-for="v in newDelegasi.verifikator"
+                    :key="v.persnum"
+                    class="flex items-center justify-between bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs w-full"
                   >
-                    <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                      {{ verifikator.nama || '-' }}
-                    </span>
-                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
-                      {{ verifikator.jabatan || '-' }}
-                    </span>
+                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                      <span class="font-semibold text-xs text-primary-600 dark:text-primary-300 truncate">
+                        {{ v.jabatan || 'Verifikator' }}
+                      </span>
+                      <span class="text-[11px] text-gray-800 dark:text-gray-200 font-medium truncate">
+                        {{ v.nama }}
+                      </span>
+                      <span v-if="v.lokasi || v.areaText" class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        {{ v.lokasi || v.areaText }}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      class="text-red-500 text-[10px] self-end"
-                      @click.stop="removeVerifikator(verifikator.persnum)"
+                      class="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50 p-1 rounded transition-colors text-xs font-bold shrink-0 ml-2"
+                      @click.stop="removeVerifikator(v.persnum)"
                     >
                       ✕
                     </button>
-                  </span>
+                  </div>
                 </div>
 
-                <!-- INPUT SEARCH -->
+                <!-- INPUT SEARCH - SELALU DI BAWAH -->
                 <input
                   v-model="searchVerifikator"
                   @focus="handleFocusVerifikator"
-                  placeholder="Cari verifikator"
-                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                  placeholder="Pilih verifikator..."
+                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 bg-transparent"
                 />
               </div>
 
@@ -819,19 +829,19 @@
                 </div>
 
                 <button
-                  v-for="verifikator in filteredVerifikatorList"
-                  :key="verifikator.persnum"
-                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
-                  @click.prevent="selectVerifikator(verifikator)"
+                  v-for="item in filteredVerifikatorList"
+                  :key="item.persnum"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs border-b border-gray-50 dark:border-gray-750 last:border-0"
+                  @click.prevent="selectVerifikator(item)"
                 >
-                  <div class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                    {{ verifikator.nama || '-' }}
+                  <div class="font-medium text-[13px] text-primary-600 dark:text-primary-300">
+                    {{ item.jabatan || item.nama }}
                   </div>
-                  <div class="text-[10px] text-gray-800 dark:text-gray-300">
-                    {{ verifikator.jabatan || '-' }}
+                  <div class="text-[10px] text-gray-800 dark:text-gray-300 font-medium">
+                    {{ item.nama }}
                   </div>
-                  <div class="text-[9px] text-gray-400 dark:text-gray-500">
-                    {{ verifikator.lokasi || verifikator.areaText || '-' }}
+                  <div v-if="item.lokasi || item.areaText" class="text-[9px] text-gray-400 dark:text-gray-500">
+                    {{ item.lokasi || item.areaText }}
                   </div>
                 </button>
               </div>
@@ -862,6 +872,9 @@
               <p class="text-xs text-gray-600 dark:text-gray-400">
                 {{ $t('nm_text1') }}
                 <span class="text-primary-500 font-medium">{{ $t('nm_text2') }}</span>
+              </p>
+              <p class="text-[10px] text-gray-400 dark:text-gray-500">
+                PDF (Maks. 10MB)
               </p>
 
               <input
@@ -923,6 +936,14 @@
               {{ $t('nm_lampiran') }} wajib diisi
             </p>
           </div>
+
+          <!-- TANGGAL DIBUAT (hanya saat edit, seragam dengan master data) -->
+          <p
+            v-if="isEditMode && (selectedNaskah?.created_at || selectedNaskah?.tanggal)"
+            class="px-1 text-xs text-gray-500 dark:text-gray-400"
+          >
+            {{ formatFullDate(selectedNaskah.created_at || selectedNaskah.tanggal) }}
+          </p>
         </div>
       </div>
     </Modal>
@@ -1265,17 +1286,26 @@ const filteredAsalNaskahList = computed(() => {
 });
 
 const filteredVerifikatorList = computed(() => {
-  const selectedPersnums = new Set(newDelegasi.value.verifikator.map((item: any) => item.persnum));
   const keyword = searchVerifikator.value.toLowerCase();
-  const available = verifikatorList.value.filter((item: any) => !selectedPersnums.has(item.persnum));
-
-  if (!keyword) return available;
-
-  return available.filter((item: any) =>
-    `${item.nama || ''} ${item.jabatan || ''} ${item.lokasi || ''}`
-      .toLowerCase()
-      .includes(keyword)
+  if (!keyword) return verifikatorList.value;
+  return verifikatorList.value.filter(
+    (item: any) =>
+      item.nama?.toLowerCase().includes(keyword) ||
+      item.jabatan?.toLowerCase().includes(keyword) ||
+      item.lokasi?.toLowerCase().includes(keyword) ||
+      item.areaText?.toLowerCase().includes(keyword) ||
+      String(item.persnum).includes(keyword)
   );
+});
+
+const verifikatorOptions = computed(() => {
+  return verifikatorList.value.map((item: any) => ({
+    ...item,
+    label: item.nama ? `${item.nama} - ${item.jabatan || ''}`.trim() : `Persnum ${item.persnum}`,
+    nama: item.nama || `Persnum ${item.persnum}`,
+    jabatan: item.jabatan || '-',
+    lokasi: item.lokasi || item.areaText || ''
+  }));
 });
 
 // ==============================
@@ -1446,19 +1476,28 @@ const lampiranText = computed(() => {
   return `${total} lampiran`;
 });
 
-const getTodayDateString = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+const getTodayDateString = () => new Date().toISOString().slice(0, 10);
+
+const formatFullDate = (value?: string | null) => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = d.toLocaleString('id-ID', { month: 'long' });
+  const year = d.getFullYear();
+  if (value.includes('T') || value.includes(':')) {
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+    return `Dibuat pada: ${day} ${month} ${year} pukul ${hour}.${minute}`;
+  }
+  return `Dibuat pada: ${day} ${month} ${year}`;
 };
 
 const newDelegasi = ref({
   jenisnaskah: '',
   tanggal_surat: getTodayDateString(),
   nomor_asal: '',
-  sifat_naskah: 'Biasa',
+  sifat_naskah: 'Biasa / Terbuka',
   perihal: '',
   asal_naskah: null as string | null,
   asal_naskah_label: '',
@@ -1557,7 +1596,7 @@ const jenisnaskahList = [
 ];
 
 const sifatnaskahList = [
-  { id: 1, label: 'Biasa/Terbuka', value: 'Biasa' },
+  { id: 1, label: 'Biasa / Terbuka', value: 'Biasa / Terbuka' },
   { id: 2, label: 'Terbatas', value: 'Terbatas' },
   { id: 3, label: 'Rahasia', value: 'Rahasia' },
   { id: 4, label: 'Sangat Rahasia', value: 'Sangat Rahasia' }
@@ -1679,11 +1718,23 @@ function handleFileChange(e: Event) {
   if (!input.files || input.files.length === 0) return;
 
   const file = input.files[0];
+  const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 
-  if (file.type !== 'application/pdf') {
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
     toast.add({
       title: t('nm_file_tidak_valid'),
-      description: t('nm_file_hanya_pdf'),
+      description: t('nm_file_hanya_pdf') || 'Format file harus PDF',
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
+    });
+    input.value = '';
+    return;
+  }
+
+  if (file.size > maxSizeBytes) {
+    toast.add({
+      title: t('nm_file_tidak_valid'),
+      description: 'Ukuran file maksimal 10MB',
       color: 'warning',
       icon: 'i-lucide-alert-circle'
     });
@@ -1719,7 +1770,7 @@ function resetNewDelegasi() {
     jenisnaskah: '',
     tanggal_surat: getTodayDateString(),
     nomor_asal: '',
-    sifat_naskah: 'Biasa',
+    sifat_naskah: 'Biasa / Terbuka',
     perihal: '',
     asal_naskah: null,
     asal_naskah_label: '',
@@ -1764,11 +1815,23 @@ function openAddModal() {
 
 function populateFormFromNaskah(data: any) {
   selectedNaskah.value = data;
+  const rawSifat = (data.sifat || data.sifat_naskah || '').toLowerCase();
+  const matchedSifat =
+    rawSifat === 'biasa' || rawSifat === 'terbuka' || rawSifat === 'biasa / terbuka'
+      ? 'Biasa / Terbuka'
+      : rawSifat === 'terbatas'
+      ? 'Terbatas'
+      : rawSifat === 'rahasia'
+      ? 'Rahasia'
+      : rawSifat === 'sangat rahasia' || rawSifat === 'sangat_rahasia'
+      ? 'Sangat Rahasia'
+      : data.sifat || data.sifat_naskah || 'Biasa / Terbuka';
+
   newDelegasi.value = {
     jenisnaskah: data.jenis === 'SDE' ? 'Surat Dinas Eksternal' : data.jenis || '',
     tanggal_surat: data.tanggal || getTodayDateString(),
     nomor_asal: data.nomor || '',
-    sifat_naskah: data.sifat || data.sifat_naskah || 'Biasa',
+    sifat_naskah: matchedSifat,
     perihal: data.perihal || '',
     asal_naskah: data.pengirim?.id ? String(data.pengirim.id) : null,
     asal_naskah_label: data.pengirim?.nama || '',

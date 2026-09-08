@@ -11,8 +11,22 @@ import { useAuth } from '~/composables/useAuth';
 import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import { extractErrorMessage } from '~/utils/error-helper';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({ middleware: 'auth' });
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'nomor_usulan', label: 'Nomor Usulan', desc: 'Nomor usulan akses berkas' },
+  { key: 'jenis_berkas', label: 'Jenis Berkas', desc: 'Arsip aktif atau inaktif' },
+  { key: 'durasi', label: 'Durasi', desc: 'Durasi peminjaman berkas' },
+  { key: 'status', label: 'Status', desc: 'Status usulan akses' },
+  { key: 'created_at', label: 'Dibuat', desc: 'Tanggal usulan dibuat' }
+]);
 
 // ── Route & query param (deklarasi awal agar bisa dipakai di useHead/breadcrumb) ──
 const route = useRoute();
@@ -473,16 +487,18 @@ const handleSort = (key: string) => {
 };
 
 // ── Export ──────────────────────────────────────────────────────
-const isExporting = ref(false);
-
-const exportData = async () => {
-  if (pagination.total === 0) {
+const exportData = () => {
+  if (pagination.total === 0 && usulanList.value.length === 0) {
     toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if ((pagination.total === 0 && usulanList.value.length === 0) || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-
     const scopeMap: Record<string, string> = {
       mine: 'mine',
       'verify-pemberi': 'verify-pemberi',
@@ -502,15 +518,33 @@ const exportData = async () => {
       toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
       return;
     }
-    const headers = ['Nomor Usulan', 'Jenis Berkas', 'Durasi', 'Status', 'Dibuat'];
-    const csvRows = rows.map((r: any) => [
-      r.nomor_usulan,
-      r.jenis_berkas,
-      formatDurasiLabel(r.durasi_akses, r.custom_tanggal_selesai),
-      r.status,
-      formatDate(r.created_at),
-    ]);
-    downloadCsv(`usulan-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+
+    const data = rows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomor_usulan')) row['Nomor Usulan'] = r.nomor_usulan || '-';
+      if (selectedKeys.includes('jenis_berkas')) row['Jenis Berkas'] = r.jenis_berkas || '-';
+      if (selectedKeys.includes('durasi')) row['Durasi'] = formatDurasiLabel(r.durasi_akses, r.custom_tanggal_selesai);
+      if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
+      if (selectedKeys.includes('created_at')) row['Dibuat'] = formatDate(r.created_at);
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usulan Akses Berkas');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `usulan_akses_berkas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({ title: 'Berhasil', description: `${rows.length} data berhasil diexport`, color: 'success' });
     // Reload current page
     await loadData();
@@ -777,6 +811,16 @@ onBeforeUnmount(() => {
       :require-note="true"
       :min-note-length="5"
       @confirm="handleReject"
+    />
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="pagination.total || usulanList.length"
+      title="Pilih Kolom Export Usulan Akses Berkas"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
     />
   </div>
 </template>

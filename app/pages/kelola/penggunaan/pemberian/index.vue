@@ -9,8 +9,10 @@ import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
-import { downloadCsv } from '~/utils/csv-export';
 import { extractErrorMessage } from '~/utils/error-helper';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Pemberian Akses Berkas' });
@@ -19,6 +21,18 @@ const { t } = useI18n();
 const { fetchMyEntitlements, markBerkasRead } = useUsulanAksesBerkas();
 const { fetchCounts } = useUsulanAksesBerkasCounts();
 const toast = useToast();
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal mulai akses berkas' },
+  { key: 'nomor_usulan', label: 'Nomor Usulan', desc: 'Nomor berkas usulan' },
+  { key: 'divisi', label: 'Divisi Pemberi', desc: 'Nama divisi yang memberikan izin' },
+  { key: 'jenis_berkas', label: 'Jenis Berkas', desc: 'Arsip aktif atau inaktif' },
+  { key: 'judul_usulan', label: 'Judul Usulan', desc: 'Perihal / judul usulan' },
+  { key: 'progress', label: 'Progress', desc: 'Persentase / durasi masa berlaku' },
+  { key: 'status', label: 'Status', desc: 'Status aktif atau habis' }
+]);
 
 const searchQuery = ref('');
 const currentPage = ref(1);
@@ -134,25 +148,47 @@ const handleSort = (key: string) => {
   currentPage.value = 1;
 };
 
-const exportData = async () => {
+const exportData = () => {
   if (filteredEntitlements.value.length === 0) {
     toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredEntitlements.value.length === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const headers = ['Tanggal', 'Nomor Usulan', 'Divisi Pemberi', 'Jenis Berkas', 'Judul Usulan', 'Progress', 'Status'];
-    const csvRows = filteredEntitlements.value.map((r: any) => [
-      formatDate(r.tanggal_mulai),
-      r.nomor_usulan_terbaru || '-',
-      r.divisi_pemberi_nama || r.divisi_pemberi_id || '-',
-      r.jenis_berkas === 'AKTIF' ? 'Aktif' : 'Inaktif',
-      r.judul_usulan || '-',
-      getProgressPercent(r) >= 100 ? 'Habis' : `${getProgressPercent(r)}%`,
-      getProgressPercent(r) >= 100 ? 'Habis' : 'Aktif',
-    ]);
-    downloadCsv(`pemberian-akses-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+    const data = filteredEntitlements.value.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('tanggal')) row['Tanggal'] = formatDate(r.tanggal_mulai);
+      if (selectedKeys.includes('nomor_usulan')) row['Nomor Usulan'] = r.nomor_usulan_terbaru || '-';
+      if (selectedKeys.includes('divisi')) row['Divisi Pemberi'] = r.divisi_pemberi_nama || r.divisi_pemberi_id || '-';
+      if (selectedKeys.includes('jenis_berkas')) row['Jenis Berkas'] = r.jenis_berkas === 'AKTIF' ? 'Aktif' : 'Inaktif';
+      if (selectedKeys.includes('judul_usulan')) row['Judul Usulan'] = r.judul_usulan || '-';
+      if (selectedKeys.includes('progress')) row['Progress'] = getProgressPercent(r) >= 100 ? 'Habis' : `${getProgressPercent(r)}%`;
+      if (selectedKeys.includes('status')) row['Status'] = getProgressPercent(r) >= 100 ? 'Habis' : 'Aktif';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pemberian Akses Berkas');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `pemberian_akses_berkas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    toast.add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
   } catch (e) {
     console.error('Gagal export:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
@@ -485,5 +521,15 @@ onBeforeUnmount(() => {
         :per-page="itemsPerPage"
       />
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredEntitlements.length"
+      title="Pilih Kolom Export Pemberian Akses Berkas"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
