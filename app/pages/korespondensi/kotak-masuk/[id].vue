@@ -206,13 +206,7 @@ const allowedActions = computed(() => {
   if (isTerkirim.value) return [];
   // Disable all lanjut actions if the user already did a tindak lanjut from this
   // naskah (prevents double-send / creating a second follow-up naskah).
-  const firstFlow = details.value[0];
-  const sudahLanjut =
-    firstFlow?.is_tindak_lanjut ??
-    firstFlow?.user_sirkulasi?.is_tindak_lanjut ??
-    firstFlow?.raw?.user_sirkulasi?.is_tindak_lanjut ??
-    false;
-  if (sudahLanjut) return [];
+  if (hasTindakLanjut.value) return [];
   const tag = user.value?.bodTag;
   const surat = selected.value?.jenis;
   if (!isKonsepData.value) {
@@ -762,7 +756,23 @@ const initFlagState = () => {
   };
 };
 
-const canCreateFollowUpAction = computed(() => !flagState.value.isTinjut);
+const isTruthyFollowUpFlag = (value: any) =>
+  value === true || value === 1 || value === '1' || String(value || '').toLowerCase() === 'true';
+
+const hasTindakLanjutFlag = (entry: any) =>
+  isTruthyFollowUpFlag(entry?.isTinjut) ||
+  isTruthyFollowUpFlag(entry?.is_tindak_lanjut) ||
+  isTruthyFollowUpFlag(entry?.tindak_lanjut) ||
+  isTruthyFollowUpFlag(entry?.user_sirkulasi?.is_tindak_lanjut) ||
+  isTruthyFollowUpFlag(entry?.user_sirkulasi?.tindak_lanjut) ||
+  isTruthyFollowUpFlag(entry?.raw?.user_sirkulasi?.is_tindak_lanjut) ||
+  isTruthyFollowUpFlag(entry?.raw?.user_sirkulasi?.tindak_lanjut);
+
+const hasTindakLanjut = computed(() =>
+  [selected.value, ...details.value].some((entry) => hasTindakLanjutFlag(entry)),
+);
+
+const canCreateFollowUpAction = computed(() => !hasTindakLanjut.value);
 
 const ensureCanCreateFollowUpAction = () => {
   if (isKonsepData.value || canCreateFollowUpAction.value) return true;

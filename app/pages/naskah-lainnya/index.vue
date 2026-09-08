@@ -259,6 +259,7 @@ import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import type { Tahapan } from '~/types/naskah-lainnya';
 import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
 import { downloadCsv } from '~/utils/csv-export';
+import { formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 
@@ -436,13 +437,7 @@ const tableRows = computed(() => {
   const start = (currentPage.value - 1) * perPage.value;
   return sortedRows.value.slice(start, start + perPage.value).map((r) => ({
     ...r,
-    terakhirDiubah: new Date(r.terakhirDiubah).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
+    terakhirDiubah: formatNaskahDateTime(r.terakhirDiubah),
   }));
 });
 

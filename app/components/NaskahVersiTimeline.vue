@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DokumenFile } from '~/types/naskah-lainnya';
 import { FASE_LABEL } from '~/types/naskah-lainnya';
+import { formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 
 const props = defineProps<{ items: DokumenFile[] }>();
 const emit = defineEmits<{ lihat: [id: string]; unduh: [id: string] }>();
@@ -14,11 +15,7 @@ function isLatest(index: number): boolean {
   // Konsep/draf & dokumen 'proses_ttd' (signer 1..N-1, belum final) bukan dokumen
   // akhir sehingga tidak diberi penanda hijau hanya karena merupakan unggahan
   // paling baru. Hanya node 'dittd'/'final' (signer terakhir) yang terhighlight.
-  return (
-    index === 0 &&
-    item?.status !== 'draf' &&
-    item?.status !== 'proses_ttd'
-  );
+  return index === 0 && item?.status !== 'draf' && item?.status !== 'proses_ttd';
 }
 
 function isHighlighted(d: DokumenFile, index: number): boolean {
@@ -40,10 +37,15 @@ function highlightLabel(d: DokumenFile, index: number): string {
 }
 
 function formatTanggal(s?: string): string {
-  if (!s) return '';
-  const t = new Date(s);
-  if (isNaN(t.getTime())) return s;
-  return t.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+  return formatNaskahDateTime(s, '');
+}
+
+function displayName(d: DokumenFile): string {
+  return d.hasPdfPreview && d.previewNama ? d.previewNama : d.nama;
+}
+
+function downloadLabel(d: DokumenFile): string {
+  return isFinalOrSigned(d) && d.hasPdfPreview ? 'Unduh PDF' : 'Unduh DOCX';
 }
 </script>
 
@@ -104,8 +106,8 @@ function formatTanggal(s?: string): string {
           </div>
         </div>
 
-        <p class="mt-1 break-all text-xs text-gray-600 dark:text-gray-300" :title="d.nama">
-          {{ d.nama }}
+        <p class="mt-1 break-all text-xs text-gray-600 dark:text-gray-300" :title="displayName(d)">
+          {{ displayName(d) }}
         </p>
         <p
           class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400"
@@ -136,7 +138,7 @@ function formatTanggal(s?: string): string {
             size="sm"
             variant="ghost"
             icon="i-lucide-download"
-            label="Unduh"
+            :label="downloadLabel(d)"
             @click="emit('unduh', d.id)"
           />
         </div>

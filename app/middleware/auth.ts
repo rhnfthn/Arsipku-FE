@@ -6,6 +6,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
     ? localStorage.getItem('token') || tokenCookie.value
     : tokenCookie.value;
   const path = to.path;
+  const tertujuPaths = [
+    '/master/tertuju-eksternal',
+    '/administrasi/datamaster/tertuju',
+    '/administrasi/tertuju',
+    '/utilitas/tertuju',
+  ];
+  const isTertujuPath = tertujuPaths.includes(path);
 
   const superadminOnlyPrefixes = ['/rbac', '/konfigurasi-sistem', '/admin/audit'];
 
@@ -65,7 +72,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     // Kecuali /master/tertuju-eksternal (view-only untuk semua role).
     if (
       isSuperadminOnlyPath ||
-      ((path === '/master' || path.startsWith('/master/')) && path !== '/master/tertuju-eksternal')
+      ((path === '/master' || path.startsWith('/master/')) && !isTertujuPath)
     ) {
       return navigateTo('/beranda', { replace: true });
     }
@@ -120,6 +127,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/penyusutan',
     '/maintenance/preview-berkas',
     '/master/tertuju-eksternal',
+    '/administrasi/datamaster/tertuju',
+    '/administrasi/tertuju',
+    '/utilitas/tertuju',
   ];
 
   if (role === 'user') {
