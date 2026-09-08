@@ -49,26 +49,80 @@
         :dokumen-pendukung="dokumenPendukung"
         :area-title="workspaceCopy.areaTitle"
         :area-description="workspaceCopy.areaDescription"
-        :catatan-title="workspaceCopy.catatanTitle"
-        :catatan-placeholder="workspaceCopy.catatanPlaceholder"
         :show-actions="false"
+        :show-catatan="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="canProcess"
         staged-success-description="Revisi siap diunggah bersama aksi persetujuan"
         divided
-        v-model="catatan"
         @preview="previewNaskah"
         @download="downloadNaskah"
         @preview-pendukung="previewPendukung"
         @stage-revisi="onStageRevisi"
       />
 
+      <!-- Dokumen pelengkap: Blanko Verbal / Lembar Persetujuan Direksi (PDF sheet)
+           agar approver melihat dokumen pendukung keputusan sebelum menyetujui. -->
+      <div v-if="sheetDokumen.length" class="px-5 py-4">
+        <div class="mb-3 flex items-center gap-2">
+          <UIcon name="i-lucide-file-check-2" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Dokumen Sheet</h3>
+          <span class="text-xs text-gray-400">(Blanko Verbal / Lembar Persetujuan Direksi)</span>
+        </div>
+        <div class="space-y-2">
+          <div
+            v-for="doc in sheetDokumen"
+            :key="doc.id"
+            class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <span class="text-2xl">📑</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {{ sheetDokumenLabel(doc) }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                PDF · {{ sheetDokumenTipeLabel(doc.tipe) }}
+              </p>
+            </div>
+            <UButton
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-eye"
+              @click="previewPendukung(doc)"
+              >Preview</UButton
+            >
+          </div>
+        </div>
+      </div>
+
       <div class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
           <UIcon name="i-lucide-users" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Rantai Persetujuan</h3>
           <span class="text-xs text-gray-400">(berjenjang — sesuai urutan)</span>
+        </div>
+
+        <!-- Catatan dari approver tahap sebelumnya (tahap lain yang sudah memberi aksi) -->
+        <div
+          v-if="previousStageNotes.length"
+          class="mb-3 space-y-2 rounded-lg border border-gray-200 bg-gray-50/70 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40"
+        >
+          <p class="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+            <UIcon name="i-lucide-message-square-quote" class="size-3.5" />
+            Catatan dari Tahap Sebelumnya
+          </p>
+          <div
+            v-for="note in previousStageNotes"
+            :key="note.key"
+            class="flex flex-col gap-0.5 rounded-md bg-white px-3 py-2 text-xs leading-relaxed shadow-sm dark:bg-gray-800"
+          >
+            <span class="font-semibold text-gray-800 dark:text-gray-100">
+              {{ note.nama }}
+              <span class="font-normal text-gray-400">({{ note.tahapLabel }})</span>
+            </span>
+            <span class="text-gray-600 dark:text-gray-300">{{ note.catatan }}</span>
+          </div>
         </div>
 
         <div
@@ -116,6 +170,14 @@
             >
               {{ approvalStatusLabel(row.status, row.id === activeApprovalRow?.id) }}
             </span>
+            <!-- Catatan approver (tampil bila sudah memberi aksi: disetujui/ditolak) -->
+            <div
+              v-if="row.catatan && row.status !== 'waiting' && row.status !== 'pending'"
+              class="w-full rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600 dark:bg-gray-700/60 dark:text-gray-300 sm:w-auto sm:flex-[0_0_100%]"
+            >
+              <span class="font-semibold text-gray-700 dark:text-gray-200">Catatan:</span>
+              {{ row.catatan }}
+            </div>
           </div>
         </div>
       </div>
@@ -137,8 +199,8 @@
               Aksi Persetujuan
             </h3>
             <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Revisi bersifat opsional. Jika mengunggah revisi, DOCX dan PDF wajib dilengkapi
-              bersamaan dengan isi yang sama.
+              Revisi bersifat opsional. Unggah DOCX dan sistem akan membuat PDF pratinjau secara
+              otomatis.
             </p>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row">
@@ -238,9 +300,8 @@ const { t } = useI18n();
 const loading = ref(true);
 const busy = ref(false);
 const activeAction = ref<'setuju' | 'tolak' | null>(null);
-const catatan = ref('');
 const dokumenPendukung = ref<any[]>([]);
-const stagedRevisi = ref<RevisionFilePair>({ docx: null, pdf: null });
+const stagedRevisi = ref<RevisionFilePair>({ docx: null });
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 
@@ -279,8 +340,6 @@ const workspaceCopy = computed(() => {
       areaTitle: 'Tinjauan Approval Legal',
       areaDescription:
         'Tinjau naskah legal drafting sebelum memberi approval. Bila ada perbaikan, unggah naskah hasil update secara opsional; bila tidak diunggah, sistem tetap memakai naskah sebelumnya.',
-      catatanTitle: 'Catatan Approval Legal',
-      catatanPlaceholder: 'Catatan approval legal (opsional)…',
       emptyApprover: 'Belum ada approver pada tahap approval legal.',
       waitingTitle: 'Approval Legal Menunggu Anda',
       waitingQueueTitle: 'Menunggu Giliran Approval Legal',
@@ -304,8 +363,6 @@ const workspaceCopy = computed(() => {
     areaTitle: 'Tinjauan Persetujuan',
     areaDescription:
       'Tinjau naskah sebelum memberi persetujuan. Bila ada perbaikan, unggah naskah hasil update secara opsional; bila tidak diunggah, sistem tetap memakai naskah sebelumnya.',
-    catatanTitle: 'Catatan Persetujuan',
-    catatanPlaceholder: 'Catatan persetujuan (opsional)…',
     emptyApprover: 'Belum ada approver pada tahap persetujuan.',
     waitingTitle: 'Persetujuan Menunggu Anda',
     waitingQueueTitle: 'Menunggu Giliran Persetujuan',
@@ -342,6 +399,39 @@ const activeApprovalRow = computed(
 
 const verifiedApprovalCount = computed(
   () => approvalRows.value.filter((row) => row.status === 'verified').length
+);
+
+// Label ramah per tahap approval — untuk penanda catatan tahap sebelumnya.
+const TAHAP_LABELS: Record<string, string> = {
+  persetujuan: 'Persetujuan',
+  persetujuan_lanjutan: 'Persetujuan Lanjutan',
+  legal_drafting: 'Legal Drafting',
+  evaluasi: 'Evaluasi',
+  evaluasi_final: 'Evaluasi Final',
+  persetujuan_direksi: 'Persetujuan Direksi',
+  blanko_verbal: 'Blanko Verbal',
+  tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
+  tanda_tangan_legal: 'TTD Legal',
+  tanda_tangan_pejabat: 'TTD Pejabat',
+  tanda_tangan: 'Tanda Tangan',
+};
+
+// Catatan approver dari tahap lain (bukan tahap aktif) yang sudah memberi
+// aksi — supaya approver berikutnya melihat catatan tahap sebelumnya.
+const previousStageNotes = computed(() =>
+  (detail.value?.approval ?? [])
+    .filter(
+      (row) =>
+        row.tahap !== approvalStage.value &&
+        !!row.catatan?.trim() &&
+        (row.status === 'verified' || row.status === 'rejected')
+    )
+    .map((row) => ({
+      key: `${row.id}-${row.tahap}`,
+      nama: row.nama,
+      catatan: row.catatan!.trim(),
+      tahapLabel: TAHAP_LABELS[row.tahap] ?? row.tahap,
+    }))
 );
 
 function isCurrentUserApprover(row: ApprovalRow | null | undefined) {
@@ -437,15 +527,39 @@ async function loadDetail() {
   }
 }
 
+// Dokumen sheet (Blanko Verbal / Lembar Persetujuan Direksi) yang sudah
+// tersimpan — PDF hasil render BE, dipreview via endpoint dokumen download.
+// Tipe 'blanko_verbal' (docx dari blankoRepo) tidak termasuk: tidak punya
+// baris di dokumenRepo sehingga tidak bisa diunduh via endpoint dokumen.
+const sheetDokumen = computed(() =>
+  (detail.value?.dokumen || []).filter((doc: any) =>
+    ['blanko_verbal_pdf', 'lembar_persetujuan_direksi_pdf'].includes(doc.tipe)
+  )
+);
+
+function sheetDokumenTipeLabel(tipe: string) {
+  if (tipe === 'blanko_verbal_pdf') return 'Blanko Verbal';
+  if (tipe === 'lembar_persetujuan_direksi_pdf') return 'Lembar Persetujuan Direksi';
+  return tipe;
+}
+
+function sheetDokumenLabel(doc: any) {
+  return doc.nama || sheetDokumenTipeLabel(doc.tipe);
+}
+
 async function downloadNaskah(name?: string) {
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/file?preview=1`, {
+    // Tanpa ?preview=1 → BE mengembalikan file asli (DOCX) agar approver
+    // dapat mengunduh & memodifikasi naskah. PDF pratinjau hanya untuk
+    // tampilan inline (docxUrl), bukan unduhan.
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/file`, {
       responseType: 'blob',
     });
     const url = window.URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
-    a.download = name || naskahFileName(detail.value);
+    // Artifact signed bisa berupa PDF — ekstensi mengikuti tipe blob aktual.
+    a.download = name || naskahFileName(detail.value, naskahFileExtFromBlob(blob));
     a.click();
     window.URL.revokeObjectURL(url);
   } catch {
@@ -518,7 +632,7 @@ watch(previewOpen, (open) => {
 async function previewPendukung(doc: any) {
   previewLoading.value = true;
   try {
-    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download`, {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
       responseType: 'blob',
     });
     await openPreviewFromBlob(blob, doc.nama);
@@ -534,18 +648,10 @@ function onStageRevisi(pair: RevisionFilePair) {
 }
 
 async function commitStagedRevisi() {
-  const { docx, pdf } = stagedRevisi.value;
-  if (!docx && !pdf) return;
-  if (!docx || !pdf) {
-    toast.add({
-      title: 'Lengkapi pasangan file revisi',
-      description: 'DOCX dan PDF wajib diunggah bersamaan dengan isi yang sama.',
-      color: 'warning',
-    });
-    throw new Error('Pasangan file revisi belum lengkap');
-  }
+  const { docx } = stagedRevisi.value;
+  if (!docx) return;
   await uploadRevisiDokumen(id.value, stagedRevisi.value);
-  stagedRevisi.value = { docx: null, pdf: null };
+  stagedRevisi.value = { docx: null };
 }
 
 async function runApprovalAction(action: 'setuju' | 'tolak', note?: string) {
@@ -557,7 +663,7 @@ async function runApprovalAction(action: 'setuju' | 'tolak', note?: string) {
   try {
     await commitStagedRevisi();
     if (action === 'setuju') {
-      await setuju(id.value, row.id, note || catatan.value || undefined);
+      await setuju(id.value, row.id, note || undefined);
       toast.add({ title: 'Naskah disetujui', color: 'success' });
       showApproveModal.value = false;
     } else if (action === 'tolak') {
