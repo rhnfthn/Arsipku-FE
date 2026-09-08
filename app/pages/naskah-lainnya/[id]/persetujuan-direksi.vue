@@ -53,7 +53,11 @@
         <div class="flex-1 overflow-y-auto space-y-1">
           <!-- ── Form fields (editable mode only) ── -->
           <div v-if="canEditSheet" class="pd-form">
-            <TulisInputTanggal v-model="formDate" label="Tanggal Lembar" />
+            <TulisInputTanggal
+              v-model="formDate"
+              label="Tanggal Lembar"
+              display-format="DD/MM/YYYY"
+            />
 
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
@@ -161,7 +165,11 @@
               </div>
             </div>
 
-            <TulisInputTanggal v-model="refDate" label="Referensi Tanggal" />
+            <TulisInputTanggal
+              v-model="refDate"
+              label="Referensi Tanggal"
+              display-format="DD/MM/YYYY"
+            />
 
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
