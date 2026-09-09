@@ -13,6 +13,8 @@ const MAX_CACHE_SIZE = 100;
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 menit
 
 let lastAuthCacheScope = "anonymous";
+let refreshTokenRequest: Promise<string | null> | null = null;
+let handledExpiredToken: string | null = null;
 
 interface ApiGetOptions {
   ttlMs?: number;
@@ -140,9 +142,68 @@ const invalidateCache = (urlPrefix: string): void => {
 
 export const useApi = () => {
   const config = useRuntimeConfig();
+  const toast = useToast();
+  const tokenCookie = useCookie<string | null>("token", { sameSite: "lax", path: "/" });
+  const sessionCookie = useCookie<string | null>("sessionId", { sameSite: "lax", path: "/" });
+  const roleCookie = useCookie<string | null>("auth_role", { sameSite: "lax", path: "/" });
+  const user = useState<any>("user", () => null);
   const api = axios.create({
     baseURL: config.public.apiBaseUrl,
   });
+
+  const clearExpiredSession = async (expiredToken: string): Promise<void> => {
+    if (!process.client || handledExpiredToken === expiredToken) return;
+    handledExpiredToken = expiredToken;
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionId");
+    localStorage.removeItem("arsipku_active_profile");
+    tokenCookie.value = null;
+    sessionCookie.value = null;
+    roleCookie.value = null;
+    user.value = null;
+    cache.clear();
+    lastAuthCacheScope = "anonymous";
+
+    toast.add({
+      title: "Sesi Anda telah berakhir",
+      description: "Silakan login kembali untuk melanjutkan.",
+      color: "warning",
+      icon: "i-lucide-log-in",
+      duration: 6000,
+    });
+    await navigateTo("/", { replace: true });
+  };
+
+  const refreshAccessToken = (): Promise<string | null> => {
+    if (!process.client) return Promise.resolve(null);
+    if (refreshTokenRequest) return refreshTokenRequest;
+
+    const sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) return Promise.resolve(null);
+
+    refreshTokenRequest = axios
+      .post(
+        "/auth/refresh-token",
+        { sessionId },
+        { baseURL: String(config.public.apiBaseUrl || "") }
+      )
+      .then((response) => {
+        const newToken = response.data?.data?.accessToken;
+        if (!newToken) return null;
+        localStorage.setItem("token", newToken);
+        tokenCookie.value = newToken;
+        handledExpiredToken = null;
+        cache.clear();
+        return String(newToken);
+      })
+      .catch(() => null)
+      .finally(() => {
+        refreshTokenRequest = null;
+      });
+
+    return refreshTokenRequest;
+  };
 
   api.interceptors.request.use((config) => {
     const token = process.client ? localStorage.getItem("token") : null;
@@ -161,7 +222,40 @@ export const useApi = () => {
 
   api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+      const status = error?.response?.status;
+      const originalConfig = error?.config as
+        | (AxiosRequestConfig & { _authRetry?: boolean })
+        | undefined;
+      const requestUrl = String(originalConfig?.url ?? "");
+      const currentToken = process.client ? localStorage.getItem("token") : null;
+      const isRefreshRequest = requestUrl.includes("/auth/refresh-token");
+      const requestAuthHeader = getHeaderValue(originalConfig?.headers, "Authorization");
+      const requestToken = requestAuthHeader?.startsWith("Bearer ")
+        ? requestAuthHeader.slice(7)
+        : requestAuthHeader;
+
+      if (process.client && status === 401 && currentToken) {
+        if (!isRefreshRequest && originalConfig && !originalConfig._authRetry) {
+          originalConfig._authRetry = true;
+          // Respons lama bisa tiba setelah request lain selesai memperbarui token.
+          // Ulangi dengan token terbaru tanpa memulai refresh kedua.
+          if (requestToken && requestToken !== currentToken) {
+            originalConfig.headers = originalConfig.headers || {};
+            (originalConfig.headers as any).Authorization = `Bearer ${currentToken}`;
+            return api.request(originalConfig);
+          }
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            originalConfig.headers = originalConfig.headers || {};
+            (originalConfig.headers as any).Authorization = `Bearer ${newToken}`;
+            return api.request(originalConfig);
+          }
+        }
+
+        await clearExpiredSession(currentToken);
+      }
+
       // Silent: tidak ada toast untuk 403 (AccessDenied component handle di page)
       // dan tidak ada toast untuk 404 (endpoint tidak ditemukan)
       return Promise.reject(error);
