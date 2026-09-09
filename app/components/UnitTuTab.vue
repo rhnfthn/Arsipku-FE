@@ -65,81 +65,69 @@
 
     <!-- Table -->
     <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
-          <tr>
-            <th class="px-3 py-3 text-left font-medium">No</th>
-            <th class="px-3 py-3 text-left font-medium">Nama User</th>
-            <th class="px-3 py-3 text-left font-medium">Role</th>
-            <th class="px-3 py-3 text-left font-medium">Area</th>
-            <th class="px-3 py-3 text-left font-medium">Organization</th>
-            <th class="px-3 py-3 text-left font-medium">Sub Area</th>
-            <th class="px-3 py-3 text-left font-medium">Valid From</th>
-            <th class="px-3 py-3 text-left font-medium">Valid To</th>
-            <th class="px-3 py-3 text-left font-medium">Status</th>
-            <th class="px-3 py-3 text-left font-medium">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-          <tr v-if="isLoading">
-            <td colspan="10" class="px-3 py-10 text-center">
-              <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
-            </td>
-          </tr>
-          <tr v-else-if="list.length === 0">
-            <td colspan="10" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
-              Belum ada data Unit TU.
-            </td>
-          </tr>
-          <tr
-            v-for="(item, index) in list"
-            :key="item.id"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
+      <DataTable
+        :columns="columns"
+        :rows="list"
+        :loading="isLoading"
+        :skeleton-rows="5"
+        empty-message="Belum ada data Unit TU."
+      >
+        <template #cell-no="{ index }">
+          {{ (page - 1) * limit + index + 1 }}
+        </template>
+        <template #cell-user_name="{ row }">
+          <span class="font-medium text-gray-800 dark:text-white">
+            {{ row.user_name || row.persnum }}
+          </span>
+        </template>
+        <template #cell-role="{ row }">
+          <UBadge :color="row.role === 'unit_dokumen' ? 'primary' : 'secondary'">
+            {{ roleLabel(row.role) }}
+          </UBadge>
+        </template>
+        <template #cell-area_text="{ row }">
+          {{ row.area_text || row.area_id || '-' }}
+        </template>
+        <template #cell-organization_text="{ row }">
+          {{ row.organization_text || row.organization_id || '-' }}
+        </template>
+        <template #cell-sub_area_text="{ row }">
+          {{ row.sub_area_text || row.sub_area_id || '-' }}
+        </template>
+        <template #cell-valid_from="{ row }">
+          {{ formatDate(row.valid_from) }}
+        </template>
+        <template #cell-valid_to="{ row }">
+          {{ row.valid_to ? formatDate(row.valid_to) : '-' }}
+        </template>
+        <template #cell-status="{ row }">
+          <UBadge
+            :color="row.is_currently_valid && row.is_active ? 'success' : 'neutral'"
+            :variant="row.is_currently_valid && row.is_active ? 'soft' : 'outline'"
           >
-            <td class="px-3 py-3">{{ (page - 1) * limit + index + 1 }}</td>
-            <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">
-              {{ item.user_name || item.persnum }}
-            </td>
-            <td class="px-3 py-3">
-              <UBadge :color="item.role === 'unit_dokumen' ? 'primary' : 'secondary'">
-                {{ roleLabel(item.role) }}
-              </UBadge>
-            </td>
-            <td class="px-3 py-3">{{ item.area_text || item.area_id || '-' }}</td>
-            <td class="px-3 py-3">{{ item.organization_text || item.organization_id || '-' }}</td>
-            <td class="px-3 py-3">{{ item.sub_area_text || item.sub_area_id || '-' }}</td>
-            <td class="px-3 py-3">{{ formatDate(item.valid_from) }}</td>
-            <td class="px-3 py-3">{{ item.valid_to ? formatDate(item.valid_to) : '-' }}</td>
-            <td class="px-3 py-3">
-              <UBadge
-                :color="item.is_currently_valid && item.is_active ? 'success' : 'neutral'"
-                :variant="item.is_currently_valid && item.is_active ? 'soft' : 'outline'"
-              >
-                {{ item.is_currently_valid && item.is_active ? 'Aktif' : 'Nonaktif' }}
-              </UBadge>
-            </td>
-            <td class="px-3 py-3">
-              <div v-if="canManage" class="flex items-center gap-1">
-                <button
-                  @click="openEditModal(item)"
-                  class="p-1.5 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950 rounded-md transition-colors"
-                  title="Edit"
-                >
-                  <UIcon name="i-lucide-pencil" class="w-4 h-4" />
-                </button>
-                <button
-                  @click="confirmDelete(item)"
-                  class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors"
-                  title="Hapus"
-                >
-                  <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-              <span v-else class="text-gray-400">-</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            {{ row.is_currently_valid && row.is_active ? 'Aktif' : 'Nonaktif' }}
+          </UBadge>
+        </template>
+        <template #cell-aksi="{ row }">
+          <div v-if="canManage" class="flex items-center gap-1">
+            <button
+              @click="openEditModal(row)"
+              class="p-1.5 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950 rounded-md transition-colors"
+              title="Edit"
+            >
+              <UIcon name="i-lucide-pencil" class="w-4 h-4" />
+            </button>
+            <button
+              @click="confirmDelete(row)"
+              class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-md transition-colors"
+              title="Hapus"
+            >
+              <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
+            </button>
+          </div>
+          <span v-else class="text-gray-400">-</span>
+        </template>
+      </DataTable>
     </div>
 
     <!-- Pagination -->
@@ -311,6 +299,20 @@ const page = ref(1)
 const limit = ref(10)
 const total = ref(0)
 const totalPages = ref(1)
+
+// Kolom DataTable Unit TU — konsisten dengan tabel lain (header primary).
+const columns = [
+  { key: 'no', label: 'No' },
+  { key: 'user_name', label: 'Nama User' },
+  { key: 'role', label: 'Role' },
+  { key: 'area_text', label: 'Area' },
+  { key: 'organization_text', label: 'Organization' },
+  { key: 'sub_area_text', label: 'Sub Area' },
+  { key: 'valid_from', label: 'Valid From' },
+  { key: 'valid_to', label: 'Valid To' },
+  { key: 'status', label: 'Status' },
+  { key: 'aksi', label: 'Aksi' },
+]
 
 const searchInput = ref('')
 const filterRole = ref<OrganizationTuRole | ''>('')
