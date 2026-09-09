@@ -531,37 +531,52 @@ const persistCompleteFolder = async (signOption?: 'digsig' | 'qr_only' | 'ttd_ba
  * upload lampiran per item bisa bekerja. Dipanggil saat masuk step 3 dan
  * dipakai ulang oleh submit/finalize agar tidak generate duplikat.
  */
+let itemsGenerationPromise: Promise<void> | null = null;
+
 const ensureItemsGenerated = async () => {
-  // Hanya generate item yang belum punya id (hindari duplikat saat user
-  // kembali ke step 2 lalu mengedit daftar penerima).
-  const missing = wizardState.penerimaList.filter(
-    (p) => p.isValid !== false && !p.id
-  );
-  if (missing.length === 0) return;
+  // Fungsi ini dipanggil oleh watcher/autosave dan juga oleh tombol aksi.
+  // Jika keduanya berjalan bersamaan, tanpa lock masing-masing request akan
+  // melihat item yang sama-sama belum memiliki id lalu membuat baris baru.
+  if (itemsGenerationPromise) return itemsGenerationPromise;
 
-  if (!folderId.value) {
-    const saved = await createFolder(buildFolderPayload());
-    folderId.value = saved?.id ?? null;
-  }
-  if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
-  if (!wizardState.konsep || !wizardState.template) {
-    throw new Error('Konsep dan template SDE Massal belum lengkap');
-  }
+  itemsGenerationPromise = (async () => {
+    try {
+      // Hanya generate item yang belum punya id (hindari duplikat saat user
+      // kembali ke step 2 lalu mengedit daftar penerima).
+      const missing = wizardState.penerimaList.filter(
+        (p) => p.isValid !== false && !p.id
+      );
+      if (missing.length === 0) return;
 
-  const konsep = wizardState.konsep;
-  const template = wizardState.template;
-  const result = await generateMassal({
-    konsep,
-    folderId: folderId.value,
-    penerimaList: missing,
-    template,
-  });
+      if (!folderId.value) {
+        const saved = await createFolder(buildFolderPayload());
+        folderId.value = saved?.id ?? null;
+      }
+      if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
+      if (!wizardState.konsep || !wizardState.template) {
+        throw new Error('Konsep dan template SDE Massal belum lengkap');
+      }
 
-  // generateMassal mengembalikan items 1:1 dengan baris valid yang dikirim.
-  const items = result?.items || [];
-  missing.forEach((p, idx) => {
-    if (items[idx]) p.id = items[idx].id;
-  });
+      const konsep = wizardState.konsep;
+      const template = wizardState.template;
+      const result = await generateMassal({
+        konsep,
+        folderId: folderId.value,
+        penerimaList: missing,
+        template,
+      });
+
+      // generateMassal mengembalikan items 1:1 dengan baris valid yang dikirim.
+      const items = result?.items || [];
+      missing.forEach((p, idx) => {
+        if (items[idx]) p.id = items[idx].id;
+      });
+    } finally {
+      itemsGenerationPromise = null;
+    }
+  })();
+
+  return itemsGenerationPromise;
 };
 
 const getAttachmentRefs = (item: SdeMasalPenerima): SdeMasalAttachmentRef[] =>
