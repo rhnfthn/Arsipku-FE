@@ -13,6 +13,7 @@ import type {
 // Singleton state global (Nuxt auto-import composable, tapi state harus shared)
 const notifications = ref<NotificationItem[]>([]);
 const unreadCount = ref<number>(0);
+const sdeMasalUnreadCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const error = ref<any>(null);
@@ -125,10 +126,19 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_NASKAH_LAINNYA_LEGAL_DRAFTING: '/naskah-lainnya/legal-drafting',
     OPEN_DELEGASI: '/delegasi',
     OPEN_SYSTEM_ANNOUNCEMENT: '/pengumuman',
+    OPEN_SDE_MASAL_FOLDER: '/korespondensi/sde-masal/folder',
+    OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
   };
 
   const base = action ? baseRoutes[action] : null;
   if (!base) return null;
+
+  if (action === 'OPEN_SDE_MASAL_FOLDER') {
+    const folderId = getString('folderId', 'folder_id');
+    return folderId
+      ? { path: `${base}/${encodeURIComponent(folderId)}` }
+      : { path: '/korespondensi/sde-masal' };
+  }
 
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
   const query: Record<string, string> = { ...detailQuery };
@@ -227,6 +237,7 @@ export const useNotifications = () => {
         )) as UnreadCountResponse;
         const count = res?.data?.count ?? 0;
         unreadCount.value = count;
+        sdeMasalUnreadCount.value = res?.data?.sdeMasalCount ?? 0;
         lastUnreadCountFetchAt = Date.now();
         return count;
       } catch (err) {
@@ -249,6 +260,9 @@ export const useNotifications = () => {
         item.isRead = true;
         item.readAt = new Date().toISOString();
         unreadCount.value = Math.max(0, unreadCount.value - 1);
+        if (item.data?.category === 'SDE_MASAL') {
+          sdeMasalUnreadCount.value = Math.max(0, sdeMasalUnreadCount.value - 1);
+        }
       }
     } catch (err) {
       console.error('[useNotifications] markAsRead error:', err);
@@ -290,6 +304,7 @@ export const useNotifications = () => {
         }
       });
       unreadCount.value = 0;
+      sdeMasalUnreadCount.value = 0;
     } catch (err) {
       console.error('[useNotifications] markAllAsRead error:', err);
     }
@@ -304,6 +319,9 @@ export const useNotifications = () => {
         notifications.value.splice(idx, 1);
         if (!removed.isRead) {
           unreadCount.value = Math.max(0, unreadCount.value - 1);
+          if (removed.data?.category === 'SDE_MASAL') {
+            sdeMasalUnreadCount.value = Math.max(0, sdeMasalUnreadCount.value - 1);
+          }
         }
       }
     } catch (err) {
@@ -399,14 +417,23 @@ export const useNotifications = () => {
             icon: 'i-lucide-bell',
           });
           unreadCount.value += 1;
+          if (payload.data?.category === 'SDE_MASAL') {
+            sdeMasalUnreadCount.value += 1;
+          }
         }
       });
 
-      socket.on('notification:count', (payload: { positionId: string; count: number }) => {
-        if (typeof payload?.count === 'number') {
-          unreadCount.value = payload.count;
+      socket.on(
+        'notification:count',
+        (payload: { positionId: string; count: number; sdeMasalCount?: number }) => {
+          if (typeof payload?.count === 'number') {
+            unreadCount.value = payload.count;
+          }
+          if (typeof payload?.sdeMasalCount === 'number') {
+            sdeMasalUnreadCount.value = payload.sdeMasalCount;
+          }
         }
-      });
+      );
 
       socket.on('notification:read', (payload: { notificationId: string }) => {
         const item = notifications.value.find((n) => n.id === payload?.notificationId);
@@ -422,6 +449,7 @@ export const useNotifications = () => {
           if (!n.readAt) n.readAt = new Date().toISOString();
         });
         unreadCount.value = 0;
+        sdeMasalUnreadCount.value = 0;
       });
 
       socket.on('notification:deleted', (payload: { notificationId: string }) => {
@@ -505,6 +533,7 @@ export const useNotifications = () => {
     resetFetchGuards();
     notifications.value = [];
     unreadCount.value = 0;
+    sdeMasalUnreadCount.value = 0;
     notificationMeta.value = {
       page: 1,
       limit: 20,
@@ -518,6 +547,7 @@ export const useNotifications = () => {
     // state (readonly)
     notifications: readonly(notifications),
     unreadCount: readonly(unreadCount),
+    sdeMasalUnreadCount: readonly(sdeMasalUnreadCount),
     notificationMeta: readonly(notificationMeta),
     isConnected: readonly(isConnected),
     isLoading: readonly(isLoading),
