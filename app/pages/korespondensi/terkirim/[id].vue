@@ -12,6 +12,7 @@ import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 // Import Component Baru
 // Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
 import DetailNaskah from '@/components/DetailNaskah.vue';
+import { compareNaskahFlowNewestFirst } from '~/utils/naskah-flow-order';
 
 definePageMeta({ middleware: "auth" });
 
@@ -54,32 +55,6 @@ const isKonsepData = ref(false);
 
 const isCurrentDetail = (detail: any) =>
   String(detail?.id || '') === String(route.params.id || '');
-
-const getKonsepSequence = (detail: any): number | null => {
-  if (!['K', 'KN'].includes(String(detail?.jenis || '').toUpperCase())) {
-    return null;
-  }
-  const match = String(detail?.nomor || '').match(/^KONSEP-(\d+)$/i);
-  return match ? Number(match[1]) : null;
-};
-
-// Riwayat pada UI ditampilkan terbaru ke terlama: naskah yang sedang dibuka,
-// lalu KONSEP-003, KONSEP-002, KONSEP-001. Backend tetap boleh mengirim urutan
-// kronologis karena urutan presentasi ditentukan secara eksplisit di sini.
-const compareFlowNewestFirst = (a: any, b: any): number => {
-  if (isCurrentDetail(a) !== isCurrentDetail(b)) {
-    return isCurrentDetail(a) ? -1 : 1;
-  }
-
-  const aSequence = getKonsepSequence(a);
-  const bSequence = getKonsepSequence(b);
-  if (aSequence !== null && bSequence !== null) return bSequence - aSequence;
-  if (aSequence !== null) return 1;
-  if (bSequence !== null) return -1;
-
-  return new Date(b.created_at || b.tanggal || 0).getTime()
-    - new Date(a.created_at || a.tanggal || 0).getTime();
-};
 
 // --- NAVIGATION (previous/next dari terkirim) ---
 const navPrev = ref<any>(null);
@@ -464,10 +439,9 @@ const loadData = async () => {
 
       if (rawFlows.length === 0) return;
 
-      const sortedFlows = [...rawFlows].sort(compareFlowNewestFirst);
+      const sortedFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
 
-      const lastFlow = sortedFlows[0];
-      selected.value = lastFlow;
+      selected.value = sortedFlows.find((flow: any) => isCurrentDetail(flow)) || sortedFlows[0];
       initFlagState();
 
       // showFinalize & showEdit tidak relevan di terkirim, tapi tetap set
@@ -503,6 +477,7 @@ const loadData = async () => {
           jenis: flow.jenis || 'K',
           jenis_label: flow.jenis_label || 'Konsep',
           nomor: flow.nomor || '-',
+          perihal: flow.perihal || rawData?.perihal || '-',
           tanggal: flow.tanggal || flow.created_at || flow.createdAt || flow.detail?.created_at,
           created_at: flow.created_at || flow.createdAt || flow.detail?.created_at || flow.detail?.createdAt,
           pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
@@ -550,7 +525,7 @@ const loadData = async () => {
         rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
       }
 
-      rawFlows = [...rawFlows].sort(compareFlowNewestFirst);
+      rawFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
 
       if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
