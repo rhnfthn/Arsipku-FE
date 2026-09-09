@@ -878,7 +878,12 @@ import ConfirmPopup from '@/components/ConfirmPopup.vue';
 import { useToast } from '#imports';
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  alias: [
+    '/administrasi/datamaster/tertuju',
+    '/administrasi/tertuju',
+    '/utilitas/tertuju',
+  ],
 });
 
 const { t } = useI18n();
@@ -903,9 +908,21 @@ const showToast = (
   });
 };
 
+const route = useRoute();
+const currentTertujuPath = computed(() => {
+  const allowedPaths = [
+    '/administrasi/datamaster/tertuju',
+    '/administrasi/tertuju',
+    '/utilitas/tertuju',
+    '/master/tertuju-eksternal',
+  ];
+
+  return allowedPaths.includes(route.path) ? route.path : '/master/tertuju-eksternal';
+});
+
 const items = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('tertuju'), to: '/master/tertuju-eksternal' }
+  { label: t('tertuju'), to: currentTertujuPath.value }
 ]);
 
 const auth = useAuth();
