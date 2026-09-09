@@ -12,6 +12,7 @@ import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 // Import Component Baru
 // Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
 import DetailNaskah from '@/components/DetailNaskah.vue';
+import { compareNaskahFlowNewestFirst } from '~/utils/naskah-flow-order';
 
 definePageMeta({ middleware: "auth" });
 
@@ -51,6 +52,9 @@ const details = ref<any[]>([]);
 const selected = ref<any>(null);
 const isLoading = ref(true);
 const isKonsepData = ref(false);
+
+const isCurrentDetail = (detail: any) =>
+  String(detail?.id || '') === String(route.params.id || '');
 
 // --- NAVIGATION (previous/next dari terkirim) ---
 const navPrev = ref<any>(null);
@@ -435,16 +439,9 @@ const loadData = async () => {
 
       if (rawFlows.length === 0) return;
 
-      const sortedFlows = [...rawFlows].sort((a: any, b: any) => {
-        const aJenis = String(a?.jenis || '').toUpperCase();
-        const bJenis = String(b?.jenis || '').toUpperCase();
-        if (aJenis === 'KN' && bJenis !== 'KN') return -1;
-        if (bJenis === 'KN' && aJenis !== 'KN') return 1;
-        return new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime();
-      });
+      const sortedFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
 
-      const lastFlow = sortedFlows[0];
-      selected.value = lastFlow;
+      selected.value = sortedFlows.find((flow: any) => isCurrentDetail(flow)) || sortedFlows[0];
       initFlagState();
 
       // showFinalize & showEdit tidak relevan di terkirim, tapi tetap set
@@ -480,6 +477,7 @@ const loadData = async () => {
           jenis: flow.jenis || 'K',
           jenis_label: flow.jenis_label || 'Konsep',
           nomor: flow.nomor || '-',
+          perihal: flow.perihal || rawData?.perihal || '-',
           tanggal: flow.tanggal || flow.created_at || flow.createdAt || flow.detail?.created_at,
           created_at: flow.created_at || flow.createdAt || flow.detail?.created_at || flow.detail?.createdAt,
           pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
@@ -493,8 +491,8 @@ const loadData = async () => {
           attachments: flow.lampiran_files || [],
           pdf_snapshot: flow.final_pdf_url || flow.final_pdf || '',
           _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
-          _hasNewer: index === 0 ? hasNewer : false,
-          _hasOlder: index === 0 ? hasOlder : false,
+          _hasNewer: isCurrentDetail(flow) ? hasNewer : false,
+          _hasOlder: isCurrentDetail(flow) ? hasOlder : false,
         };
       });
 
@@ -526,6 +524,8 @@ const loadData = async () => {
         inboxData = rawData;
         rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
       }
+
+      rawFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
 
       if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
@@ -582,8 +582,8 @@ const loadData = async () => {
             lampiran_files: item.lampiran_files || item.attachments || [],
             final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
-            _hasNewer: index === 0 ? hasNewer : false,
-            _hasOlder: index === 0 ? hasOlder : false,
+            _hasNewer: isCurrentDetail(item) ? hasNewer : false,
+            _hasOlder: isCurrentDetail(item) ? hasOlder : false,
           };
         });
       }
@@ -748,7 +748,7 @@ const goToLatestSurat = () => {
   collapsedIndices.value = new Set();
   viewMode.value = 'all';
   nextTick(() => {
-    const latest = details.value[0];
+    const latest = details.value.find(isCurrentDetail) || details.value[0];
     const element = document.getElementById(`card-${latest.id || latest.urutan}`);
     if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -934,12 +934,12 @@ const konsepOptions = [
         :class="{ 'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail) }">
 
         <div>
-          <DetailNaskah context="sent" :data="detail" :is-head="index === 0"
+          <DetailNaskah context="sent" :data="detail" :is-head="isCurrentDetail(detail)"
             :is-starred="flagState.isStarred" :is-tinjut="flagState.isTinjut" :is-locked="flagState.isLocked" :is-note="flagState.isNote"
             :collapsed="isCardCollapsed(index)"
-            :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-            :show-edit="isKonsepData && index === 0 && showEditAction"
-            :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
+            :show-finalize="isKonsepData && isCurrentDetail(detail) && showFinalizeActions"
+            :show-edit="isKonsepData && isCurrentDetail(detail) && showEditAction"
+            :show-footer-actions="!isKonsepData && isCurrentDetail(detail) && !isTerkirim" :allowed-actions="allowedActions"
             :user-position-id="positionId" :is-jenis-d-i="isJenisDI" @back="goBack"
             @preview="(url) => openDocumentPreview(url, detail.perihal)" @preview-file="openPreviewFile"
             @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
@@ -1165,7 +1165,7 @@ const konsepOptions = [
                 : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                  :class="index === 0 ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'">
+                  :class="isCurrentDetail(detail) ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'">
                   {{ details.length - index }}
                 </span>
                 <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 truncate">

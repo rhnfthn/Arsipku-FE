@@ -378,6 +378,7 @@ const {
   arsipPersetujuanWaitingCount: rtArsipPersetujuanCount,
   naskahLainnyaPersetujuanWaitingCount: naskahLainnyaPersetujuanCount,
   naskahLainnyaLegalDraftingWaitingCount: legalDraftingCount,
+  correspondenceRoutingUpdate,
   init: rtInit,
   destroy: rtDestroy,
 } = useRealtimeSocket();
@@ -390,6 +391,11 @@ const { t } = useI18n();
 
 const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
+const {
+  canCreateSdi,
+  fetchCapabilities: fetchRoutingCapabilities,
+  invalidateCapabilities: invalidateRoutingCapabilities,
+} = useCorrespondenceRoutingAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
@@ -536,6 +542,12 @@ watch(
   { deep: true, immediate: true }
 );
 
+watch(correspondenceRoutingUpdate, () => {
+  invalidateRoutingCapabilities();
+  if (!['BOD-2', 'BOD-3'].includes(String(user.value?.bodTag ?? ''))) return;
+  fetchRoutingCapabilities(true).catch(() => {});
+});
+
 // Verifikator count event sudah membawa payload lengkap (waiting number),
 // UI langsung baca dari rtVerifikatorCount — tidak perlu REST fallback.
 
@@ -554,6 +566,8 @@ watch(
       checkAtasanManagerialTuUsulan();
       // Cek apakah user adalah atasan managerial di penyusutan
       checkAtasanManagerialPenyusutan();
+      if (['BOD-2', 'BOD-3'].includes(String(newUser.bodTag ?? '')))
+        fetchRoutingCapabilities().catch(() => {});
     }
   },
   { immediate: true }
@@ -648,7 +662,9 @@ const tulisChildrenByBod = computed(() => {
   if (tag === 'BOD' || tag === 'BOD-1') return all;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
     return all.filter(
-      (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
+      (i) =>
+        ![t('surat_dinas_eksternal'), t('kajian')].includes(i.label) &&
+        (i.label !== t('surat_dinas_internal') || canCreateSdi.value)
     );
   }
   return all.filter((i) => i.label === t('kajian'));

@@ -58,6 +58,7 @@ export const routingMessages = {
     deactivate: 'Nonaktifkan',
     activate: 'Aktifkan',
     preview: 'Simulator',
+    previewHintShort: 'Uji konfigurasi routing tanpa mengirim surat',
     previewHint:
       'Simulasi konfigurasi untuk satu pengirim, tanpa mengirim surat. Hasil ini tidak memuat baseline penerima struktural; validasi alur lengkap tetap dilakukan di form surat. Flag runtime harus aktif untuk mengevaluasi aturan, termasuk aturan nonaktif yang dipilih.',
     position: 'ID posisi pengirim',
@@ -103,6 +104,15 @@ export const routingMessages = {
     confirm: 'Lanjutkan',
     configured: 'Penerima tambahan sesuai konfigurasi',
     mandatoryHint: 'Tembusan wajib ditentukan otomatis dan tidak dapat dihapus.',
+    managerSdiAccess: 'Akses SDI Manager Operasi',
+    managerSdiAccessHint:
+      'Buka atau tutup menu SDI hanya untuk position ID yang terdaftar aktif pada role Manager Operasi. BOD-2 lainnya tidak terpengaruh.',
+    managerSdiRuntimeOff:
+      'Runtime routing sedang nonaktif. Aturan dapat disiapkan, tetapi akses tambahan belum diterapkan.',
+    managerSdiRuleMissing:
+      'Rule SDI_MANAGER_TO_VP_INMC tidak ditemukan. Buat atau pulihkan rule utama tersebut sebelum mengatur akses.',
+    enableManagerSdi: 'Aktifkan akses',
+    disableManagerSdi: 'Nonaktifkan akses',
   },
   en: {
     title: 'Correspondence Routing',
@@ -161,6 +171,7 @@ export const routingMessages = {
     deactivate: 'Deactivate',
     activate: 'Activate',
     preview: 'Simulator',
+    previewHintShort: 'Test routing configuration without sending a letter',
     previewHint:
       'Simulate configuration for one sender without sending a letter. Results exclude the structural recipient baseline; verify the complete flow in the letter form. The runtime flag must be enabled to evaluate rules, including a selected inactive rule.',
     position: 'Sender position ID',
@@ -206,5 +217,14 @@ export const routingMessages = {
     confirm: 'Continue',
     configured: 'Additional configured recipient',
     mandatoryHint: 'Required copies are set automatically and cannot be removed.',
+    managerSdiAccess: 'Manager Operations SDI access',
+    managerSdiAccessHint:
+      'Show or hide the SDI menu only for active position IDs in the Manager Operations functional role. Other BOD-2 users are unaffected.',
+    managerSdiRuntimeOff:
+      'Routing runtime is disabled. The rule can be prepared, but additional access is not applied yet.',
+    managerSdiRuleMissing:
+      'The SDI_MANAGER_TO_VP_INMC rule was not found. Create or restore the primary rule before managing access.',
+    enableManagerSdi: 'Enable access',
+    disableManagerSdi: 'Disable access',
   },
 };
