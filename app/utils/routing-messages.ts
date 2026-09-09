@@ -58,6 +58,7 @@ export const routingMessages = {
     deactivate: 'Nonaktifkan',
     activate: 'Aktifkan',
     preview: 'Simulator',
+    previewHintShort: 'Uji konfigurasi routing tanpa mengirim surat',
     previewHint:
       'Simulasi konfigurasi untuk satu pengirim, tanpa mengirim surat. Hasil ini tidak memuat baseline penerima struktural; validasi alur lengkap tetap dilakukan di form surat. Flag runtime harus aktif untuk mengevaluasi aturan, termasuk aturan nonaktif yang dipilih.',
     position: 'ID posisi pengirim',
@@ -170,6 +171,7 @@ export const routingMessages = {
     deactivate: 'Deactivate',
     activate: 'Activate',
     preview: 'Simulator',
+    previewHintShort: 'Test routing configuration without sending a letter',
     previewHint:
       'Simulate configuration for one sender without sending a letter. Results exclude the structural recipient baseline; verify the complete flow in the letter form. The runtime flag must be enabled to evaluate rules, including a selected inactive rule.',
     position: 'Sender position ID',
