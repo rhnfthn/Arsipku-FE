@@ -51,6 +51,7 @@
         :area-description="workspaceAreaDescription"
         :catatan-title="workspaceNoteTitle"
         :catatan-placeholder="workspaceNotePlaceholder"
+        :show-catatan="!canDecideEvaluation"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
@@ -345,21 +346,22 @@
       </Modal>
     </Teleport>
 
-    <ConfirmModal
+    <VerifyActionModal
       v-model="showContinueConfirmation"
-      title="Lanjut Persetujuan?"
+      variant="approve"
+      title="Lanjut Persetujuan"
       :description="continueConfirmationDescription"
-      confirm-text="Lanjut Persetujuan"
-      loading-text="Memproses..."
-      variant="primary"
-      :loading="activeAction === 'decision'"
-      @confirm="submitEvaluationDecision('lanjut_persetujuan')"
+      note-placeholder="Catatan persetujuan (opsional)"
+      confirm-label="Lanjut Persetujuan"
+      :saving="activeAction === 'decision'"
+      @confirm="submitContinueDecision"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import type { ApprovalItem, RevisionFilePair } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: 'auth' });
@@ -399,6 +401,7 @@ const selectedRecipientId = ref<string | null>(null);
 const stagedRevision = ref<RevisionFilePair>({ docx: null });
 const showEvaluationRejectOptions = ref(false);
 const showContinueConfirmation = ref(false);
+const continueNote = ref('');
 const rejectionReason = ref('');
 const pendingDecision = ref<'legal_drafting_ulang' | 'batalkan' | null>(null);
 
@@ -582,6 +585,11 @@ const openContinueConfirmation = () => {
   showContinueConfirmation.value = true;
 };
 
+const submitContinueDecision = (note: string) => {
+  continueNote.value = note;
+  submitEvaluationDecision('lanjut_persetujuan');
+};
+
 const openRejection = (decision: 'legal_drafting_ulang' | 'batalkan') => {
   if (isBusy.value) return;
   pendingDecision.value = decision;
@@ -619,7 +627,7 @@ const submitEvaluationDecision = async (
       keputusan: decision,
       catatan:
         decision === 'lanjut_persetujuan'
-          ? catatan.value.trim() || undefined
+          ? continueNote.value.trim() || undefined
           : rejectionReason.value.trim(),
     });
     toast.add({ title: 'Keputusan evaluasi berhasil disimpan', color: 'success' });
