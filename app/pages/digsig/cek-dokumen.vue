@@ -346,7 +346,7 @@ function handleFile(e: any) {
 
 /* Submit Document */
 async function submitDocument() {
-  if (!selectedFile.value) return
+  if (!selectedFile.value || loadingCheck.value) return
 
   try {
     await checkDocument(selectedFile.value)
