@@ -42,15 +42,14 @@ export const useSdi = () => {
     return list;
   };
 
-  const getRecipients = async (): Promise<{
+  const getRecipients = async (positionId?: string | number): Promise<{
     sender: RecipientApiData["sender"] | null;
     recipients: RecipientItem[];
   }> => {
 
     // tipe otomatis jadi RecipientApiResponse
-    const res = await apiGet<RecipientApiResponse>(
-      `/SDI/get-recipient/`,
-    );
+    const query = positionId !== undefined ? `?pengirim=${positionId}` : "";
+    const res = await apiGet<RecipientApiResponse>(`/SDI/get-recipient/${query}`);
 
     return {
       sender: res?.data?.sender ?? null,
