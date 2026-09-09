@@ -76,6 +76,13 @@
               <UIcon name="i-lucide-search" class="w-4 h-4" />
               {{ $t("konfig_tab_search") }}
             </button>
+            <button v-if="isSuperadmin || hasPermission('correspondence-routing', 'read')" @click="activeTab = 'routing'" :class="[
+              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+              activeTab === 'routing' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
+            ]">
+              <UIcon name="i-lucide-route" class="w-4 h-4" />
+              Routing Persuratan
+            </button>
           </div>
         </div>
 
@@ -457,6 +464,7 @@
             </div>
           </div>
         </div>
+        <div v-if="activeTab === 'routing'"><CorrespondenceRoutingTab /></div>
       </div>
     </div>
 
