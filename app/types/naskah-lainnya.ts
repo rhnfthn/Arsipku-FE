@@ -7,21 +7,21 @@ export type JenisNaskah =
   | 'PER'
   | 'KEP'
   | 'INS'
-  | 'SPD'
-  | 'SED'
+  | 'SPR'
+  | 'EDR'
   | 'SOP'
-  | 'KSB'
+  | 'MOU'
   | 'PKS'
-  | 'KTP'
-  | 'PJL'
+  | 'PROC'
+  | 'PJJ'
   | 'LOA'
   | 'SKU'
-  | 'BA'
-  | 'SKE'
-  | 'SPR'
-  | 'RRA'
-  | 'PUM'
-  | 'PIA'
+  | 'BAC'
+  | 'KET'
+  | 'SPE'
+  | 'RPT'
+  | 'PEN'
+  | 'PGM'
   | 'LAP';
 
 export type Tahapan =
@@ -43,7 +43,7 @@ export type Tahapan =
   | 'dibatalkan';
 
 export type StatusApprover = 'pending' | 'waiting' | 'verified' | 'rejected';
-export type SignOption = 'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd';
+export type SignOption = 'digsig' | 'qr_only' | 'ttd_basah';
 export type DocumentStatus = 'draf' | 'pending' | 'final' | 'final_tte';
 export type MockRole = 'pemrakarsa' | 'legal' | 'pejabat';
 
@@ -133,7 +133,6 @@ export interface DokumenFile {
 
 export interface RevisionFilePair {
   docx: File | null;
-  pdf: File | null;
 }
 
 export type TahapApproval =
@@ -246,7 +245,8 @@ export interface BuatNaskahPayload {
   butuhLegal: boolean;
   perihal?: string;
   tanggal?: string;
-  // Rantai approval berjenjang (approver ≠ penandatangan). Urutan array = urutan persetujuan.
+  // Rantai approval berjenjang; pejabat boleh sekaligus menjadi penandatangan.
+  // Urutan array = urutan persetujuan.
   approval?: ApprovalItem[];
 }
 
@@ -325,6 +325,10 @@ export interface DirectorApprovalItem {
 
 export interface TandaTanganPayload {
   passphrase?: string;
+  /** Catatan opsional penandatangan — tersimpan ke riwayat workflow. */
+  catatan?: string;
+  /** Metode signing signer terakhir: 'qr_only' (default, visualisasi internal) | 'digsig' (TTE BSrE) */
+  signMethod?: 'qr_only' | 'digsig';
 }
 
 // Pemberi persetujuan legal drafting — person di unit legal (GET /konfigurasi/unit-legal).
@@ -372,25 +376,26 @@ export const TAHAPAN_STEP: Record<Tahapan, number> = {
 };
 
 // Sumber kebenaran label jenis naskah — dipakai form (tulis) & detail, jangan duplikat.
+// Selaras dengan docs/template_naskah_mapping.md (nama file template .docx di MinIO).
 export const JENIS_LABELS: Record<JenisNaskah, string> = {
   PER: 'Peraturan Direksi',
   KEP: 'Keputusan Direksi',
-  INS: 'Instruksi Direksi',
-  SPD: 'Surat Perintah Direksi',
-  SED: 'Surat Edaran',
-  SOP: 'SOP',
-  KSB: 'Kesepakatan Bersama (NOTAM)',
+  INS: 'Instruksi',
+  SPR: 'Surat Perintah',
+  EDR: 'Surat Edaran',
+  SOP: 'Standar Operasional Prosedur (SOP)',
+  MOU: 'Kesepakatan Bersama / Nota Kesepahaman',
   PKS: 'Perjanjian Kerja Sama',
-  KTP: 'Kontrak Pengadaan',
-  PJL: 'Perjanjian Lainnya',
+  PROC: 'Kontrak Pengadaan',
+  PJJ: 'Perjanjian Lainnya',
   LOA: 'Letter of Agreement (LOA)',
   SKU: 'Surat Kuasa',
-  BA: 'Berita Acara',
-  SKE: 'Surat Keterangan',
-  SPR: 'Surat Pengantar',
-  RRA: 'Risalah Rapat',
-  PUM: 'Pengumuman',
-  PIA: 'Piagam (STI)',
+  BAC: 'Berita Acara',
+  KET: 'Surat Keterangan',
+  SPE: 'Surat Pengantar',
+  RPT: 'Risalah Rapat',
+  PEN: 'Pengumuman',
+  PGM: 'Sertifikat atau Piagam',
   LAP: 'Laporan',
 };
 
@@ -403,21 +408,21 @@ export const JENIS_FORMAT_PENOMORAN: Record<JenisNaskah, string> = {
   PER: '{TIPE}.{NO_URUT}/{INSTANSI}/{BULAN}/{TAHUN}',
   KEP: '{TIPE}.{NO_URUT}/{JABATAN}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   INS: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  SPD: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  SED: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  SPR: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  EDR: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   SOP: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  KSB: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  MOU: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   PKS: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  KTP: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  PJL: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  PROC: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  PJJ: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   LOA: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   SKU: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  BA: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  SKE: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  SPR: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  RRA: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  PUM: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
-  PIA: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  BAC: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  KET: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  SPE: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  RPT: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  PEN: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
+  PGM: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
   LAP: '{TIPE}.{NO_URUT}/{JABATAN}/{LOKASI}/{INSTANSI}/{KLASIFIKASI}/{BULAN}/{TAHUN}',
 };
 
