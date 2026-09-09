@@ -55,6 +55,7 @@
         :key="folderId || 'new-sde-masal'"
         v-model="wizardState.konsep"
         :parent-naskah-id="parentNaskahId"
+        :readonly="Boolean(folderId)"
       />
 
       <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->

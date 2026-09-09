@@ -1,7 +1,10 @@
 <template>
   <div class="flex-1 overflow-y-auto">
     <!-- Section: Konsep Surat -->
-    <div class="sde-masal-konsep-form space-y-1">
+    <div
+      class="sde-masal-konsep-form space-y-1"
+      :class="{ 'pointer-events-none select-none': props.readonly }"
+    >
       <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
         <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
           Judul Folder<span class="text-red-500 ml-0.5">*</span>
@@ -72,6 +75,7 @@ import type { SdeMasalConcept } from '~/types/sde-masal';
 
 const props = defineProps<{
   parentNaskahId?: string;
+  readonly?: boolean;
 }>();
 
 const model = defineModel<SdeMasalConcept | null>({ default: null });
