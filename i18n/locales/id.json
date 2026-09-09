@@ -609,6 +609,8 @@
   "konfig_tab_digsig": "Konfigurasi DigSig",
   "konfig_tab_pengumuman": "Pengumuman Pemeliharaan",
   "konfig_tab_search": "Mesin Pencarian",
+  "konfig_tab_scroll_prev": "Geser menu ke kiri",
+  "konfig_tab_scroll_next": "Geser menu ke kanan",
   "konfig_search_title": "Mesin Pencarian",
   "konfig_search_desc": "Pilih mesin pencarian yang digunakan untuk pencarian global naskah",
   "konfig_search_v3_title": "Search V3 (SQL)",
