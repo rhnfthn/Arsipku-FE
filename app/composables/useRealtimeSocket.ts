@@ -46,6 +46,13 @@ const naskahLainnyaPersetujuanWaitingCount = ref<number>(0);
 const naskahLainnyaLegalDraftingWaitingCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
+const correspondenceRoutingUpdate = ref<{
+  mutationId: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  occurredAt: string;
+} | null>(null);
 
 // Flag update (note/lock/favorit/arsip) — payload { id_sirkulasi, flag_type, new_value }
 const flagUpdate = ref<{
@@ -247,6 +254,10 @@ const connectSocket = async (): Promise<void> => {
       }
     });
 
+    socket.on('correspondence-routing:updated', (payload: any) => {
+      if (payload?.mutationId) correspondenceRoutingUpdate.value = payload;
+    });
+
     socket.on('realtime:connected', () => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
@@ -321,6 +332,7 @@ export function useRealtimeSocket() {
     naskahLainnyaPersetujuanWaitingCount,
     naskahLainnyaLegalDraftingWaitingCount,
     flagUpdate,
+    correspondenceRoutingUpdate,
     isConnected,
     hasBsreAlert,
     // Socket reference (for custom event listeners)
