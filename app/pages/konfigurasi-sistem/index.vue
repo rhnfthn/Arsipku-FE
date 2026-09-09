@@ -18,70 +18,49 @@
       <!-- Single Card -->
       <div
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <!-- Tab Bar -->
+        <!-- Tab Bar: pill tabs yang bisa digeser saat menu banyak -->
         <div
-          class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
-          <div class="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1.5 gap-2 w-fit">
-            <button @click="activeTab = 'digsig'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'digsig'
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-shield-check" class="w-4 h-4" />
-              {{ $t("konfig_tab_digsig") }}
-            </button>
-            <button @click="activeTab = 'pengumuman'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'pengumuman'
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-megaphone" class="w-4 h-4" />
-              {{ $t("konfig_tab_pengumuman") }}
-            </button>
-            <button @click="activeTab = 'unit-tu'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'unit-tu'
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-archive" class="w-4 h-4" />
-              Unit TU
-            </button>
-            <button @click="activeTab = 'unit-legal'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'unit-legal'
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-scale" class="w-4 h-4" />
-              Unit Legal
-            </button>
-            <button @click="activeTab = 'naskah-lainnya'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'naskah-lainnya'
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-files" class="w-4 h-4" />
-              Naskah Lainnya
-            </button>
-            <button @click="activeTab = 'search'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'search'
-                ? 'bg-primary text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-search" class="w-4 h-4" />
-              {{ $t("konfig_tab_search") }}
-            </button>
-            <button v-if="isSuperadmin || hasPermission('correspondence-routing', 'read')" @click="activeTab = 'routing'" :class="[
-              'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
-              activeTab === 'routing' ? 'bg-primary text-white shadow-lg' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white',
-            ]">
-              <UIcon name="i-lucide-route" class="w-4 h-4" />
-              Routing Persuratan
+          class="relative border-b border-gray-100 dark:border-gray-700 bg-linear-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
+          <!-- Fade tepi kiri/kanan: indikasi daftar menu bisa digeser -->
+          <div
+            class="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-linear-to-r from-gray-50 to-transparent dark:from-gray-800 transition-opacity duration-300"
+            :class="canScrollLeft ? 'opacity-100' : 'opacity-0'" />
+          <div
+            class="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-linear-to-l from-white to-transparent dark:from-gray-800 transition-opacity duration-300"
+            :class="canScrollRight ? 'opacity-100' : 'opacity-0'" />
+
+          <!-- Tombol geser (hanya layar sm ke atas; mobile cukup swipe) -->
+          <button v-show="canScrollLeft" type="button" @click="scrollTabsBy(-1)"
+            class="absolute left-2 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center size-7 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-sm text-gray-500 dark:text-gray-300 hover:text-primary hover:border-primary-300 dark:hover:border-primary-700 transition-all"
+            :aria-label="t('konfig_tab_scroll_prev')">
+            <UIcon name="i-lucide-chevron-left" class="size-4" />
+          </button>
+          <button v-show="canScrollRight" type="button" @click="scrollTabsBy(1)"
+            class="absolute right-2 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center size-7 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-sm text-gray-500 dark:text-gray-300 hover:text-primary hover:border-primary-300 dark:hover:border-primary-700 transition-all"
+            :aria-label="t('konfig_tab_scroll_next')">
+            <UIcon name="i-lucide-chevron-right" class="size-4" />
+          </button>
+
+          <!-- Daftar tab: scroll horizontal tanpa scrollbar -->
+          <div ref="tabScrollRef" role="tablist" @scroll.passive="updateScrollState" @keydown="handleTabKeydown"
+            class="flex items-center gap-2 overflow-x-auto scrollbar-hide px-5 py-4">
+            <button v-for="tab in tabs" :key="tab.value" type="button" role="tab" :data-tab="tab.value"
+              :aria-selected="activeTab === tab.value" :tabindex="activeTab === tab.value ? 0 : -1"
+              @click="activeTab = tab.value" :class="[
+                'group flex items-center gap-2.5 pl-2 pr-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shrink-0 border transition-all duration-200',
+                activeTab === tab.value
+                  ? 'bg-primary text-white border-primary shadow-md shadow-primary-500/25'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:text-primary dark:hover:text-primary-300 hover:bg-primary-50/60 dark:hover:bg-primary-900/20',
+              ]">
+              <span :class="[
+                'flex items-center justify-center size-6 rounded-full transition-colors duration-200',
+                activeTab === tab.value
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary dark:group-hover:text-primary-300',
+              ]">
+                <UIcon :name="tab.icon" class="size-3.5" />
+              </span>
+              {{ tab.label }}
             </button>
           </div>
         </div>
@@ -532,7 +511,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from "vue";
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
@@ -576,6 +555,14 @@ onMounted(() => {
   fetchMessages(true);
   fetchSearchConfig();
   detectUnitDokumenDelegation();
+
+  // Inisialisasi indikator scroll tab bar.
+  nextTick(updateScrollState);
+  window.addEventListener("resize", updateScrollState);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateScrollState);
 });
 
 // Re-detect saat user value berubah (mis. setelah getProfile selesai).
@@ -602,6 +589,88 @@ const deleteMessageSuffix = computed(() =>
 );
 
 const activeTab = ref("digsig");
+
+// ================================
+// TAB MENU
+// ================================
+interface KonfigTab {
+  value: string;
+  label: string;
+  icon: string;
+}
+
+// Daftar tab data-driven: mudah ditambah dan otomatis menghormati izin akses.
+const tabs = computed<KonfigTab[]>(() => {
+  const list: KonfigTab[] = [
+    { value: "digsig", label: t("konfig_tab_digsig"), icon: "i-lucide-shield-check" },
+    { value: "pengumuman", label: t("konfig_tab_pengumuman"), icon: "i-lucide-megaphone" },
+    { value: "unit-tu", label: "Unit TU", icon: "i-lucide-archive" },
+    { value: "unit-legal", label: "Unit Legal", icon: "i-lucide-scale" },
+    { value: "naskah-lainnya", label: "Naskah Lainnya", icon: "i-lucide-files" },
+    { value: "search", label: t("konfig_tab_search"), icon: "i-lucide-search" },
+  ];
+
+  if (isSuperadmin.value || hasPermission("correspondence-routing", "read")) {
+    list.push({ value: "routing", label: "Routing Persuratan", icon: "i-lucide-route" });
+  }
+
+  return list;
+});
+
+// ─── Scroll state untuk tab bar ─────────────────────────────────────────────
+const tabScrollRef = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+
+const updateScrollState = () => {
+  const el = tabScrollRef.value;
+  if (!el) return;
+  canScrollLeft.value = el.scrollLeft > 8;
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 8;
+};
+
+const scrollTabsBy = (direction: 1 | -1) => {
+  const el = tabScrollRef.value;
+  if (!el) return;
+  el.scrollBy({
+    left: direction * Math.max(Math.round(el.clientWidth * 0.7), 240),
+    behavior: "smooth",
+  });
+};
+
+// Navigasi keyboard: panah kiri/kanan berpindah tab (roving tabindex).
+const handleTabKeydown = (e: KeyboardEvent) => {
+  const values = tabs.value.map((tab) => tab.value);
+  const currentIndex = values.indexOf(activeTab.value);
+  if (currentIndex === -1) return;
+
+  let nextIndex: number;
+  if (e.key === "ArrowRight") nextIndex = (currentIndex + 1) % values.length;
+  else if (e.key === "ArrowLeft") nextIndex = (currentIndex - 1 + values.length) % values.length;
+  else return;
+
+  e.preventDefault();
+  const target = values[nextIndex];
+  activeTab.value = target;
+  nextTick(() => {
+    tabScrollRef.value
+      ?.querySelector<HTMLButtonElement>(`[data-tab="${target}"]`)
+      ?.focus();
+  });
+};
+
+// Tab aktif otomatis digeser agar tetap terlihat saat berganti.
+watch(activeTab, async () => {
+  await nextTick();
+  tabScrollRef.value
+    ?.querySelector(`[data-tab="${activeTab.value}"]`)
+    ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+});
+
+// Lebar label bisa berubah (locale/izin akses) → segarkan indikator scroll.
+watch(tabs, () => {
+  nextTick(updateScrollState);
+});
 
 // ================================
 // COMPOSABLE
@@ -842,3 +911,14 @@ const handleDeleteMessage = async () => {
   }
 };
 </script>
+
+<style scoped>
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
