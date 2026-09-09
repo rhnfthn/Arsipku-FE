@@ -736,6 +736,8 @@
   "konfig_tab_digsig": "DigSig Configuration",
   "konfig_tab_pengumuman": "Maintenance Announcement",
   "konfig_tab_search": "Search Engine",
+  "konfig_tab_scroll_prev": "Scroll tabs left",
+  "konfig_tab_scroll_next": "Scroll tabs right",
   "konfig_search_title": "Search Engine",
   "konfig_search_desc": "Choose the search engine used for global naskah search",
   "konfig_search_v3_title": "Search V3 (SQL)",
