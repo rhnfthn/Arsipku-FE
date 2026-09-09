@@ -277,6 +277,8 @@ export interface BlankoPayload {
 
 /** Model data untuk lembar persetujuan direksi / blanko verbal. */
 export interface SheetFormModel {
+  signMethod?: 'qr_only' | 'digsig';
+  passphrase?: string;
   tanggal?: string;
   nomor?: string;
   diusulkanOleh?: string;
