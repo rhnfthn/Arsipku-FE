@@ -3,17 +3,9 @@
     :ui="{ overlay: 'z-[70] bg-black/50 backdrop-blur-sm', content: 'z-[80] max-w-lg' }">
 
     <template #title>
-      <div v-if="showLupaPassphrase" class="flex items-center justify-between w-full">
-        <div class="flex items-center gap-2">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lupa Passphrase BSrE</h3>
-        </div>
-        <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm"
-          @click="showLupaPassphrase = false" />
-      </div>
-      <div v-else class="flex items-center justify-between w-full">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Metode Tanda Tangan</h3>
-        <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm" @click="handleCancel" />
-      </div>
+      <!-- Tombol close: pakai default UModal (hindari double X) -->
+      <span v-if="showLupaPassphrase" class="text-lg font-semibold text-gray-900 dark:text-white">Lupa Passphrase BSrE</span>
+      <span v-else class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Metode Tanda Tangan</span>
     </template>
 
     <template #description>
@@ -193,39 +185,6 @@
           </div>
         </div>
 
-        <!-- ── Option 4: Tanpa TTD Digital ─────────────────────────────── -->
-        <div
-          class="rounded-xl border-2 transition-all duration-200 cursor-pointer overflow-hidden" :class="selectedMethod === 'tanpa_ttd'
-            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
-          @click="selectMethod('tanpa_ttd')">
-          <div class="flex items-start gap-3 p-4">
-            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0"
-              :class="selectedMethod === 'tanpa_ttd' ? 'border-primary-500' : 'border-gray-300'">
-              <div v-if="selectedMethod === 'tanpa_ttd'" class="w-2 h-2 rounded-full bg-primary-500" />
-            </div>
-            <div class="flex-1">
-              <div class="font-semibold text-sm text-gray-900 dark:text-white">
-                Tanpa Tanda Tangan Digital
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Dokumen akan dicetak dan ditandatangani secara fisik oleh para pihak (pihak internal &amp; eksternal)
-              </div>
-            </div>
-          </div>
-          <div v-if="selectedMethod === 'tanpa_ttd'" class="mx-4 mb-4">
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
-              <div class="flex items-start gap-2.5">
-                <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                <p class="text-xs text-gray-600 dark:text-gray-400">
-                  Dokumen langsung dikirim untuk approval tanpa tanda tangan digital.
-                  Setelah disetujui, dokumen dicetak dan ditandatangani secara fisik oleh semua pihak yang bersangkutan.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </template>
 
@@ -263,7 +222,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:open': [value: boolean]
   'submit': [payload: { method: string; passphrase?: string }]
-  'cancel': []
 }>()
 
 const isOpen = computed({
@@ -272,7 +230,7 @@ const isOpen = computed({
 })
 
 const showAllOptions = ref(false)
-const selectedMethod = ref<'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd'>('digsig')
+const selectedMethod = ref<'digsig' | 'qr_only' | 'ttd_basah'>('digsig')
 const localPassphrase = ref('')
 const passphraseError = ref('')
 const showPassword = ref(false)
@@ -292,14 +250,9 @@ watch(() => props.open, (val) => {
   }
 })
 
-const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah' | 'tanpa_ttd') => {
+const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah') => {
   selectedMethod.value = method
   passphraseError.value = ''
-}
-
-const handleCancel = () => {
-  emit('update:open', false)
-  emit('cancel')
 }
 
 const handleSubmit = async () => {
@@ -314,8 +267,6 @@ const handleSubmit = async () => {
   } else if (selectedMethod.value === 'ttd_basah') {
     // Langsung emit tanpa validasi file — dokumen masuk tertunda, upload dilakukan di halaman tertunda
     emit('submit', { method: 'ttd_basah' })
-  } else if (selectedMethod.value === 'tanpa_ttd') {
-    emit('submit', { method: 'tanpa_ttd' })
   }
 }
 

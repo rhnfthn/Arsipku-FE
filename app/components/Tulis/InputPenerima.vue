@@ -50,6 +50,11 @@
               <span class="block text-sm text-left truncate w-full">
                 {{ item.label }}
               </span>
+              <UBadge v-if="item.routing_mandatory === true || item.routing_source === 'configured'"
+                :color="item.routing_mandatory === true ? 'warning' : 'primary'" variant="soft" size="xs" class="mt-1">
+                <UIcon :name="item.routing_mandatory === true ? 'i-lucide-lock-keyhole' : 'i-lucide-git-branch'" class="h-3 w-3" />
+                {{ routingT(item.routing_mandatory === true ? 'cc' : 'configured') }}
+              </UBadge>
               <span v-if="item.disabled" class="text-xs text-red-500 italic block">
                 {{ disabledMessage }}
               </span>
@@ -66,8 +71,16 @@
               <span class="text-xs font-medium text-left truncate">
                 {{ item.label }}
               </span>
-              <UButton icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :padded="false"
+              <UTooltip v-if="item.routing_mandatory === true" :text="routingT('mandatoryHint')">
+                <span tabindex="0" :aria-label="routingT('cc')" class="inline-flex items-center gap-1 px-1">
+                  <UIcon name="i-lucide-lock-keyhole" class="h-3.5 w-3.5 shrink-0" />
+                  <span class="text-xs">{{ routingT('cc') }}</span>
+                </span>
+              </UTooltip>
+              <UButton v-else icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :padded="false"
                 class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
+                :disabled="item.routing_mandatory === true"
+                :title="routingT('remove')"
                 @click.stop="removePerson(item)" />
             </UBadge>
             <span v-if="!model.length" class="text-sm text-gray-400 dark:text-gray-500">
@@ -76,12 +89,18 @@
           </div>
         </template>
       </USelectMenu>
+      <Paragraph v-if="model.some(item => item.routing_mandatory === true)" variant="caption1" class="w-full mt-1 text-muted">
+        {{ routingT('mandatoryHint') }}
+      </Paragraph>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { routingMessages } from '~/utils/routing-messages';
+
+const { t: routingT } = useI18n({ useScope: 'local', messages: routingMessages });
 
 const props = defineProps<{
   label: string;
@@ -211,6 +230,7 @@ const handlePersonClick = (person: any) => {
 };
 
 const removePerson = (item: any) => {
+  if (item.routing_mandatory === true) return;
   const index = model.value.findIndex((s) => s.value === item.value);
   if (index > -1) {
     const newModel = [...model.value];
