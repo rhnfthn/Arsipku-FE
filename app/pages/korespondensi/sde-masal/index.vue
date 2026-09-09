@@ -17,7 +17,7 @@
           <option value="MENUNGGU_PENGIRIM">Menunggu Pengirim</option>
           <option value="SEBAGIAN_TERKIRIM">Sebagian Terkirim</option>
           <option value="DIKEMBALIKAN">Dikembalikan</option>
-          <option value="TERKIRIM">Terkirim</option>
+          <option value="TERKIRIM">Selesai</option>
           <option value="DITOLAK">Ditolak</option>
         </select>
         <select v-model="filter.klasifikasi" @change="reload" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
@@ -128,6 +128,7 @@
 <script setup lang="ts">
 import type { SdeMasalFolder } from '~/types/sde-masal';
 import type { Klasifikasi } from '~/types/klasifikasi';
+import { sdeMasalStatusBadge, sdeMasalStatusLabel } from '~/utils/sde-masal-status';
 
 // Daftar tetap dibatasi oleh scope creator dari API; staff dapat melihat
 // folder yang memang dibuatnya dari disposisi.
@@ -156,7 +157,7 @@ const statusOptions = [
   { label: 'Semua Status', value: '' },
   { label: 'Draft', value: 'DRAFT' },
   { label: 'Menunggu Verifikasi', value: 'MENUNGGU_VERIFIKASI' },
-  { label: 'Terkirim', value: 'TERKIRIM' },
+  { label: 'Selesai', value: 'TERKIRIM' },
   { label: 'Ditolak', value: 'DITOLAK' },
 ];
 const klasifikasiOptions = computed(() => [
@@ -203,25 +204,8 @@ const changePage = (page: number) => {
 };
 const formatDate = (value: string | Date) =>
   new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-const statusLabel = (status: string) =>
-  ({
-    DRAFT: 'Draft',
-    MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
-    MENUNGGU_PENGIRIM: 'Menunggu Pengirim',
-    SEBAGIAN_TERKIRIM: 'Sebagian Terkirim',
-    DIKEMBALIKAN: 'Dikembalikan',
-    TERKIRIM: 'Terkirim',
-    DITOLAK: 'Ditolak',
-  })[status] || status;
-const statusBadge = (status: string) => ({
-  DRAFT: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap dark:bg-gray-700 dark:text-gray-300',
-  MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap dark:bg-indigo-900/40 dark:text-indigo-300',
-  MENUNGGU_PENGIRIM: 'px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium whitespace-nowrap dark:bg-amber-900/40 dark:text-amber-300',
-  SEBAGIAN_TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
-  DIKEMBALIKAN: 'px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 font-medium whitespace-nowrap dark:bg-orange-900/40 dark:text-orange-300',
-  TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
-  DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
-}[status] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap');
+const statusLabel = sdeMasalStatusLabel;
+const statusBadge = sdeMasalStatusBadge;
 
 const exportData = async () => {
   exporting.value = true;
