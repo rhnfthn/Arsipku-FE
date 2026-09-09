@@ -53,15 +53,13 @@
         :dokumen-pendukung="dokumenPendukung"
         area-title="Legal Drafting"
         area-description="Revisi naskah di luar aplikasi: download draf, lengkapi di Microsoft Word, lalu upload kembali. Noted: Jangan menghapus parameter dikarenakan sistem membaca isi dan parameter di dalamnya."
-        catatan-title="Catatan Legal"
-        catatan-placeholder="Catatan hasil pemeriksaan legal…"
+        :show-catatan="false"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="canActLegalDrafting"
         staged-success-description="Revisi siap dikirim bersama approval legal"
         divided
-        v-model="catatanLegal"
         @preview="previewNaskah"
         @download="downloadNaskah"
         @preview-pendukung="previewPendukung"
@@ -336,7 +334,6 @@ const breadcrumbs = computed(() => [
 
 const loading = ref(true);
 const dokumenPendukung = ref([]);
-const catatanLegal = ref('');
 const sendingApproval = ref(false);
 const showKirimModal = ref(false);
 const showTeruskanModal = ref(false);
@@ -450,7 +447,7 @@ const ldBanner = computed(() => {
     cardBg: 'bg-primary-50 dark:bg-primary-950/30',
     wrap: 'bg-primary-500',
     title: 'Legal Drafting',
-    desc: 'Revisi naskah, isi catatan legal, lalu kirim ke pemberi persetujuan legal.',
+    desc: 'Revisi naskah, lalu gunakan aksi Teruskan atau Kirim untuk menambahkan catatan.',
     catatan: null,
   };
 });
@@ -554,8 +551,6 @@ async function loadDetail() {
   try {
     await fetchDetail(id.value);
     dokumenPendukung.value = (detail.value?.dokumen || []).filter((d) => d.tipe === 'pendukung');
-    // item #4: load catatan legal tersimpan (diisi saat kirim-approval-legal sebelumnya, bila ada).
-    catatanLegal.value = detail.value?.catatanLegal ?? '';
   } catch {
     toast.add({ title: 'Gagal memuat detail naskah', color: 'error' });
   } finally {
@@ -686,7 +681,7 @@ async function kirimApproval(note) {
   try {
     if (!(await commitStagedRevision())) return;
     const certifier = approvalPayload(selectedCertifierRecipient.value);
-    await kirimApprovalLegal(id.value, certifier ? [certifier] : [], note, catatanLegal.value);
+    await kirimApprovalLegal(id.value, certifier ? [certifier] : [], note, note);
     toast.add({
       title: currentIsCertifier.value
         ? 'Legal Drafting selesai dan dilanjutkan ke Evaluasi'
@@ -724,7 +719,7 @@ async function continueLegalDrafting(note) {
       recipient,
       selectedCertifierFromChain.value ? undefined : certifier,
       note,
-      catatanLegal.value
+      note
     );
     toast.add({
       title: `Legal Drafting diteruskan kepada ${selectedForwardRecipient.value.nama}`,
