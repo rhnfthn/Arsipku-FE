@@ -237,6 +237,13 @@ const isKonsepJenis = computed(() => {
   return jenis === 'K' || jenisLabel.includes('konsep');
 });
 
+const hasPrimaryConceptMessage = computed(
+  () =>
+    Boolean(props.isHead) &&
+    isKonsepJenis.value &&
+    ['reject', 'create', 'forward'].includes(String(props.data?.aksi || '').toLowerCase())
+);
+
 
 
 const isKonsepNaskahJenis = computed(() => String(props.data?.jenis || '').toUpperCase() === 'KN');
@@ -954,7 +961,7 @@ const removeNote = () => {
         </div>
 
         <div
-          v-if="isHead && (data.aksi === 'reject' || data.aksi === 'create' || data.aksi === 'forward')"
+          v-if="hasPrimaryConceptMessage"
           class="mb-4 flex flex-col md:flex-row gap-2"
         >
           <div
@@ -971,6 +978,7 @@ const removeNote = () => {
 
         <!-- Ganti seluruh div bg-gray-50 yang berisi template iframe -->
         <div
+          v-if="!hasPrimaryConceptMessage"
           class="bg-gray-50 dark:bg-gray-900 rounded-lg mt-5 p-5 border border-gray-100 dark:border-gray-700 relative"
         >
           <!-- Riwayat konsep (non-head): catatan inline + hint pratinjau, konten full di preview ikon -->

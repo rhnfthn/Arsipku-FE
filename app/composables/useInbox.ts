@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
+import { compareNaskahFlowNewestFirst, getKonsepSequence } from "~/utils/naskah-flow-order";
 
 const parseWibDate = (value: string | null | undefined): Date | null => {
   if (!value) return null;
@@ -314,13 +315,15 @@ export function useInbox() {
       const res = await apiGet(`/konsep/${idKonsep}`, {}, { skipCache: true });
       if (!res?.data) return null;
 
+      // Backend mengirim chain kronologis. FE membentuk urutan presentasi
+      // secara eksplisit agar final/KONSEP/disposisi tidak tertukar oleh tanggal.
       const flows = Array.isArray(res.data) ? res.data : [res.data];
-      const sortedFlows = [...flows].sort(
-        (a, b) => new Date(b.created_at || b.tanggal).getTime() - new Date(a.created_at || a.tanggal).getTime(),
-      );
-
-      const lastFlow  = sortedFlows[0] ?? null;
-      const firstFlow = sortedFlows[sortedFlows.length - 1];
+      const sortedFlows = [...flows].sort(compareNaskahFlowNewestFirst);
+      const konsepFlows = flows.filter((flow: any) => getKonsepSequence(flow) !== null);
+      const lastFlow = [...konsepFlows].sort(
+        (a: any, b: any) => (getKonsepSequence(b) ?? 0) - (getKonsepSequence(a) ?? 0),
+      )[0] ?? flows[flows.length - 1] ?? null;
+      const firstFlow = flows[0] ?? null;
       const catatanReject   = lastFlow?.detail?.aksi === "reject" ? lastFlow.detail.catatan : null;
       const lastFlowWithPdf = sortedFlows.find((f) => f.final_pdf_url);
 
