@@ -337,6 +337,7 @@ import { usePenomoran } from '~/composables/usePenomoran';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
+import { useNotifications } from '~/composables/useNotifications';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
@@ -355,6 +356,7 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+const { sdeMasalUnreadCount } = useNotifications();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
 const {
@@ -673,6 +675,7 @@ const verifikatorMenu = computed(() => ({
 const sdeMasalMenu = computed(() => ({
   label: 'SDE Massal',
   icon: 'i-lucide-files',
+  badge: sdeMasalUnreadCount.value > 0 ? sdeMasalUnreadCount.value : null,
   children: [
     { label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true },
     { label: 'Verifikasi', to: '/korespondensi/sde-masal/verifikasi', exact: true },
