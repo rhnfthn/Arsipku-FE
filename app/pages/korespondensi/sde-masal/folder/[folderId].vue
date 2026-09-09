@@ -486,6 +486,7 @@ const {
 } = useSdeMasal();
 const { getConfigDigsig } = useDigsig();
 const { user } = useAuth();
+const { markSdeMasalFolderNotificationsAsRead } = useNotifications();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
 const folder = ref<SdeMasalFolder | null>(null);
 const items = ref<SdeMasalFolderItem[]>([]);
@@ -917,12 +918,14 @@ const generatePdfFor = async (idx: number) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await findNaskahInFolder(String(route.params.folderId));
+    const currentFolderId = String(route.params.folderId);
+    const data = await findNaskahInFolder(currentFolderId);
     folder.value = data?.folder || null;
     items.value = data?.items || [];
     // Pilihan naskah harus dimulai kosong agar checkbox header tetap bolong.
     // Pengguna dapat memilih semua naskah melalui checkbox header secara manual.
     selectedItemIds.value = [];
+    await markSdeMasalFolderNotificationsAsRead(currentFolderId);
   } finally {
     loading.value = false;
   }

@@ -294,6 +294,36 @@ export const useNotifications = () => {
     }
   };
 
+  const markSdeMasalFolderNotificationsAsRead = async (folderId: string): Promise<void> => {
+    if (!folderId) return;
+
+    try {
+      await apiPatch(`/notifications/sde-masal/folder/${encodeURIComponent(folderId)}/read`);
+      const normalizedFolderId = String(folderId);
+      let changed = 0;
+      notifications.value.forEach((notification) => {
+        const data = notification.data || {};
+        const relatedFolderId = data.folderId || data.folder_id;
+        if (
+          String(relatedFolderId || '') === normalizedFolderId &&
+          !notification.isRead
+        ) {
+          notification.isRead = true;
+          notification.readAt = new Date().toISOString();
+          changed += 1;
+        }
+      });
+
+      if (changed > 0) {
+        unreadCount.value = Math.max(0, unreadCount.value - changed);
+        sdeMasalUnreadCount.value = Math.max(0, sdeMasalUnreadCount.value - changed);
+      }
+      await fetchUnreadCount(true);
+    } catch (err) {
+      console.error('[useNotifications] markSdeMasalFolderNotificationsAsRead error:', err);
+    }
+  };
+
   const markAllAsRead = async (): Promise<void> => {
     try {
       await apiPatch('/notifications/read-all');
@@ -561,6 +591,7 @@ export const useNotifications = () => {
     fetchUnreadCount,
     markAsRead,
     markNaskahNotificationsAsRead,
+    markSdeMasalFolderNotificationsAsRead,
     markAllAsRead,
     deleteNotification,
     connectSocket,
