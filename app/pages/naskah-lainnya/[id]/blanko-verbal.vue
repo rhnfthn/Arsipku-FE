@@ -51,6 +51,9 @@ const tolakModalOpen = ref(false);
 const parafCatatan = ref('');
 const tolakCatatan = ref('');
 const activeDirector = ref<DirectorApprovalItem | null>(null);
+const signMethodModalOpen = ref(false);
+const pendingParafNote = ref('');
+const signMethodModalRef = ref<{ setPassphraseError: (message: string) => void } | null>(null);
 
 const delegasiModalOpen = ref(false);
 const delegasiTarget = ref<DirectorApprovalItem | null>(null);
@@ -276,6 +279,42 @@ const canApprove = computed(() => isCurrentUserApprover.value);
 const canApproveDirector = (director: DirectorApprovalItem) =>
   isUserApprover(director as ApprovalRow);
 
+const activeApprovalActorInfo = computed(() => {
+  const signer = activeDirector.value;
+  const status = signer?.delegatePositionStatus?.replace(/\.+$/, '');
+  return {
+    name: signer?.delegateName || signer?.nama || user.value?.nama || 'Penandatangan',
+    role: status ? `${status}. ${signer?.jabatan || ''}` : signer?.jabatan || '',
+  };
+});
+
+const finalSignerInfo = computed(() => {
+  return {
+    ...activeApprovalActorInfo.value,
+    label: 'Ditandatangani secara digital',
+  };
+});
+
+function requiresFinalSignatureChoice(director: DirectorApprovalItem): boolean {
+  const row = (detail.value?.approval ?? []).find(
+    (approval) => approval.id === director.approvalId
+  );
+  if (
+    !detail.value?.butuhLegal ||
+    !['digsig', 'qr_only'].includes(detail.value?.signOption ?? '') ||
+    row?.tahap !== 'blanko_verbal_ditetapkan'
+  ) {
+    return false;
+  }
+  const sheetRows = (detail.value?.approval ?? []).filter((approval) =>
+    ['blanko_verbal', 'blanko_verbal_ditetapkan'].includes(approval.tahap)
+  );
+  return (
+    sheetRows.length > 0 &&
+    sheetRows.every((approval) => approval.id === row.id || approval.status === 'verified')
+  );
+}
+
 function isDirut(director: DirectorApprovalItem) {
   return /direktur\s*utama/i.test(director.jabatan || '');
 }
@@ -491,12 +530,34 @@ function tolak(item: DirectorApprovalItem) {
 }
 
 async function confirmParaf(note: string) {
+  if (!activeDirector.value) return;
+  if (requiresFinalSignatureChoice(activeDirector.value)) {
+    pendingParafNote.value = note || '';
+    parafModalOpen.value = false;
+    signMethodModalOpen.value = true;
+    return;
+  }
+  await persistParaf(note || '');
+}
+
+async function submitFinalSignature(data: { method: string; passphrase?: string }) {
+  await persistParaf(pendingParafNote.value, {
+    signMethod: data.method as 'qr_only' | 'digsig',
+    passphrase: data.passphrase,
+  });
+}
+
+async function persistParaf(
+  note: string,
+  signing?: { signMethod: 'qr_only' | 'digsig'; passphrase?: string }
+) {
+  if (!activeDirector.value) return;
   busy.value = true;
   loadingMessage.value = 'Menyimpan paraf…';
   try {
     await parafBlankoVerbal(
       id.value,
-      cleanFormPayload(),
+      { ...cleanFormPayload(), ...signing },
       note || undefined,
       activeDirector.value?.approvalId
     );
@@ -508,11 +569,23 @@ async function confirmParaf(note: string) {
       color: 'success',
     });
     parafModalOpen.value = false;
+    signMethodModalOpen.value = false;
+    pendingParafNote.value = '';
     parafCatatan.value = '';
     activeDirector.value = null;
     await loadDetail();
+    if (detail.value?.tahapan === 'selesai') {
+      await navigateTo(`/naskah-lainnya/${id.value}/selesai`, {
+        replace: true,
+      });
+    }
   } catch (e) {
-    toast.add({ title: 'Gagal mencatat paraf', description: apiErrorMessage(e), color: 'error' });
+    const message = apiErrorMessage(e);
+    if (signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
+      signMethodModalRef.value?.setPassphraseError(message);
+    } else {
+      toast.add({ title: 'Gagal mencatat paraf', description: message, color: 'error' });
+    }
   } finally {
     busy.value = false;
     loadingMessage.value = '';
@@ -1009,15 +1082,24 @@ onMounted(async () => {
                 {{ activeDirector?.roleLabel || 'Penandatangan' }}
               </p>
               <p class="truncate text-base font-bold text-gray-950 dark:text-white">
-                {{ activeDirector?.nama || '-' }}
+                {{ activeApprovalActorInfo.name }}
               </p>
               <p class="truncate text-sm font-medium text-gray-600 dark:text-gray-300">
-                {{ activeDirector?.jabatan || '-' }}
+                {{ activeApprovalActorInfo.role || '-' }}
               </p>
             </div>
           </div>
         </template>
       </VerifyActionModal>
+
+      <TulisDigsigPassphraseModalAsync
+        ref="signMethodModalRef"
+        v-model:open="signMethodModalOpen"
+        :signer-info="finalSignerInfo"
+        :is-loading="busy"
+        :hide-basah="true"
+        @submit="submitFinalSignature"
+      />
 
       <!-- Tolak Modal -->
       <VerifyActionModal

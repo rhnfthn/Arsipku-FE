@@ -266,6 +266,11 @@
         <template #cell-status="{ row }">
           <StatusBadge :status="row.statusLegal" />
         </template>
+        <template #cell-waktu="{ row }">
+          <span class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+            {{ row.waktuLabel }}
+          </span>
+        </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
             >Detail</UButton
@@ -296,6 +301,7 @@ import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import { useToast } from '#imports';
 import { downloadCsv } from '~/utils/csv-export';
+import { formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 import type { NaskahListItem, Tahapan } from '~/types/naskah-lainnya';
 import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
 
@@ -431,6 +437,7 @@ const columns = [
   { key: 'perihal', label: 'Perihal', sortable: true },
   { key: 'tahapan', label: 'Tahapan', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
+  { key: 'waktu', label: 'Waktu', sortable: true },
   { key: 'aksi', label: 'Aksi' },
 ];
 
@@ -533,12 +540,21 @@ const displayRows = computed(() =>
     tahapan: r.tahapan.replace(/_/g, ' '),
     statusLegal: r.statusLegal ?? '',
     status: STATUS_LEGAL_LABEL[r.statusLegal ?? ''] ?? r.statusLegal ?? '',
+    waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
+    waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
   }))
 );
 
 const sortedRows = computed(() => {
   const dir = sortDir.value === 'asc' ? 1 : -1;
   return [...displayRows.value].sort((a, b) => {
+    if (sortKey.value === 'waktu') {
+      const av = (a as any).waktu;
+      const bv = (b as any).waktu;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    }
     const av = (a as any)[sortKey.value];
     const bv = (b as any)[sortKey.value];
     if (av == null) return 1;
@@ -603,8 +619,15 @@ async function exportData() {
       });
       return;
     }
-    const headers = ['Naskah', 'Pemrakarsa', 'Perihal', 'Tahapan', 'Status'];
-    const csvRows = rows.map((r) => [r.nomor, r.pemrakarsa, r.perihal, r.tahapan, r.status]);
+    const headers = ['Naskah', 'Pemrakarsa', 'Perihal', 'Tahapan', 'Status', 'Waktu'];
+    const csvRows = rows.map((r) => [
+      r.nomor,
+      r.pemrakarsa,
+      r.perihal,
+      r.tahapan,
+      r.status,
+      r.waktuLabel,
+    ]);
     downloadCsv(`legal-drafting_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
     toast.add({
       title: 'Berhasil',
