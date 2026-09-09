@@ -339,7 +339,9 @@ onMounted(async () => {
           id: item.id,
           isValid: true,
         }));
-        currentStep.value = 3;
+        // Folder yang dikembalikan diedit mulai dari halaman awal pembuatan
+        // naskah, bukan langsung dibawa ke halaman preview/konfirmasi.
+        currentStep.value = 1;
       }
     } catch (error) {
       console.warn('Gagal memulihkan draft folder SDE Masal:', error);
