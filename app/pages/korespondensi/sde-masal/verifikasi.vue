@@ -12,8 +12,12 @@
         </select>
         <select v-model="f.status" class="h-10 w-40 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
           <option value="">Semua Status</option>
+          <option value="DRAFT">Draft</option>
           <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
-          <option value="TERVERIFIKASI">Terverifikasi</option>
+          <option value="MENUNGGU_PENGIRIM">Menunggu Pengirim</option>
+          <option value="SEBAGIAN_TERKIRIM">Sebagian Terkirim</option>
+          <option value="DIKEMBALIKAN">Dikembalikan</option>
+          <option value="TERKIRIM">Selesai</option>
           <option value="DITOLAK">Ditolak</option>
         </select>
         <select v-model="f.klasifikasiId" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
@@ -34,8 +38,8 @@
               <th class="px-4 py-3 font-semibold whitespace-nowrap">Judul Folder</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap">Pengirim</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap">Klasifikasi</th>
-              <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Menunggu</th>
               <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap">Tanggal</th>
               <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
@@ -58,10 +62,10 @@
                 <span v-if="folder.klasifikasiText" class="text-gray-400"> · {{ folder.klasifikasiText }}</span>
               </td>
               <td class="px-4 py-2.5 text-center">
-                <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{{ folder.waitingCount ?? 0 }}</span>
+                <span :class="statusBadge(displayStatus(folder))">{{ statusLabel(displayStatus(folder)) }}</span>
               </td>
-              <td class="px-4 py-2.5 text-center">
-                <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
+              <td class="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                {{ formatDate(folder.tanggal || folder.createdAt) }}
               </td>
               <td class="px-4 py-2.5">
                 <div class="flex items-center justify-center">
@@ -121,6 +125,7 @@ import type { Klasifikasi } from '~/types/klasifikasi';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useAuth } from '~/composables/useAuth';
+import { sdeMasalStatusBadge, sdeMasalStatusLabel } from '~/utils/sde-masal-status';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -202,8 +207,8 @@ const exportData = async () => {
       'Judul Folder': folder.judul || '-',
       Pengirim: folder.pengirimName || '-',
       Klasifikasi: folder.klasifikasi || '-',
-      'Menunggu Verifikasi': folder.waitingCount ?? 0,
-      Status: statusLabel(folder.status),
+      Status: statusLabel(displayStatus(folder)),
+      Tanggal: formatDate(folder.tanggal || folder.createdAt),
     })));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi SDE Massal');
@@ -226,33 +231,15 @@ const loadData = async () => {
   }
 };
 
-const statusLabel = (status: string) => ({
-  MENUNGGU: 'Menunggu',
-  DRAFT: 'Draft',
-  MENUNGGU_PENGIRIM: 'Menunggu Pengirim',
-  MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
-  DIKEMBALIKAN: 'Dikembalikan',
-  DIFINALISASI: 'Difinalisasi',
-  SEBAGIAN_TERKIRIM: 'Sebagian Terkirim',
-  TERKIRIM: 'Dikirim',
-  TERVERIFIKASI: 'Disetujui',
-  DITOLAK: 'Ditolak',
-  GAGAL: 'Gagal',
-}[status] || status);
+const formatDate = (value: string | Date) =>
+  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-const statusBadge = (status: string) => ({
-  DRAFT: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap dark:bg-gray-700 dark:text-gray-300',
-  MENUNGGU_PENGIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
-  MENUNGGU: 'px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 font-medium whitespace-nowrap dark:bg-yellow-900/40 dark:text-yellow-300',
-  MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap dark:bg-indigo-900/40 dark:text-indigo-300',
-  DIKEMBALIKAN: 'px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 font-medium whitespace-nowrap dark:bg-orange-900/40 dark:text-orange-300',
-  DIFINALISASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
-  SEBAGIAN_TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium whitespace-nowrap dark:bg-amber-900/40 dark:text-amber-300',
-  TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
-  TERVERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
-  DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
-  GAGAL: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
-}[status] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap');
+const statusLabel = sdeMasalStatusLabel;
+
+const displayStatus = (folder: any) =>
+  folder?.status || folder?.myVerificationStatus || '';
+
+const statusBadge = sdeMasalStatusBadge;
 
 onMounted(async () => {
   if (!user.value) await getProfile();
