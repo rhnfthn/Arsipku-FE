@@ -68,14 +68,15 @@
               </td>
               <td class="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formatDate(folder.tanggal || folder.createdAt) }}</td>
               <td class="px-4 py-2.5 text-center">
-                <NuxtLink
+                <button
                   v-if="folder.status === 'DRAFT' || folder.status === 'DIKEMBALIKAN'"
-                  :to="{ path: '/korespondensi/tulis/sde-masal', query: { folderId: folder.id } }"
+                  type="button"
                   class="inline-flex items-center justify-center rounded-lg p-2 text-primary-600 transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20"
                   title="Edit naskah di kanvas SDE Masal"
+                  @click.stop="openFolderEditor(folder.id)"
                 >
                   <UIcon name="i-lucide-pencil" class="size-4" />
-                </NuxtLink>
+                </button>
                 <NuxtLink
                   v-else
                   :to="`/korespondensi/sde-masal/folder/${folder.id}`"
@@ -201,6 +202,13 @@ const resetFilter = () => {
 const changePage = (page: number) => {
   filter.page = page;
   loadFolders();
+};
+const openFolderEditor = (folderId: string) => {
+  if (!folderId) return;
+  return navigateTo({
+    path: '/korespondensi/tulis/sde-masal',
+    query: { folderId: String(folderId) },
+  });
 };
 const formatDate = (value: string | Date) =>
   new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
