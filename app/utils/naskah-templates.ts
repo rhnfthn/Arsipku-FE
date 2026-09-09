@@ -32,67 +32,58 @@ export const GDOCS_URLS: Record<string, string> = {
   INS: '', // Instruksi
   SPR: '', // Surat Perintah
   SOP: '', // SOP
-  SE: '',  // Surat Edaran
+  EDR: '', // Surat Edaran
 
   // ── Naskah Khusus - Surat Perjanjian ──
-  NK: '',   // Nota Kesepahaman
+  MOU: '',  // Kesepakatan Bersama / Nota Kesepahaman
   PKS: '',  // Perjanjian Kerja Sama
   LOA: '',  // Letter of Agreement
-  LOCA: '', // Letter of Coordination Agreement
-  KTR: '',  // Kontrak Pengadaan
-  PLN: '',  // Perjanjian Lainnya
-  ADN: '',  // Adendum Perjanjian
-  SPK: '',  // Surat Perintah Kerja
-  ASP: '',  // Adendum SPK
-  SK: '',   // Surat Kuasa
+  PROC: '', // Kontrak Pengadaan
+  PJJ: '',  // Perjanjian Lainnya
+  SKU: '',  // Surat Kuasa
 
   // ── Naskah Khusus - Lainnya ──
-  BA: '',   // Berita Acara
+  BAC: '',  // Berita Acara
   UND: '',  // Surat Undangan
   KET: '',  // Surat Keterangan
-  PGN: '',  // Surat Pengantar
-  RIS: '',  // Risalah Rapat
-  PUM: '',  // Pengumuman
-  SRT: '',  // Sertifikat
-  PGA: '',  // Piagam
+  SPE: '',  // Surat Pengantar
+  RPT: '',  // Risalah Rapat
+  PEN: '',  // Pengumuman
+  PGM: '',  // Sertifikat atau Piagam
   LAP: '',  // Laporan
   BVB: '',  // Blanko Verbal
 };
 
 /**
  * Template file mapping (file .docx di public/templates/naskah/)
+ * Kode selaras docs/template_naskah_mapping.md (nama file template di MinIO).
  */
 export const TEMPLATE_FILES: Record<string, string> = {
   // Pengaturan dan Penetapan
-  PER: 'PERATURAN DIREKSI.docx',
-  KEP: 'KEPUTUSAN DIREKSI.docx',
-  INS: 'INSTRUKSI DIREKSI.docx',
-  SPR: 'SURAT PERINTAH DIREKSI.docx',
+  PER: 'PER.docx',
+  KEP: 'KEP.docx',
+  INS: 'INS.docx',
+  SPR: 'SPR.docx',
   SOP: 'SOP.docx',
-  SE: 'SURAT EDARAN.docx',
+  EDR: 'EDR.docx',
 
   // Naskah Khusus - Surat Perjanjian
-  NK: 'NOTA KESEPAHAMAN.docx',
-  PKS: 'PERJANJIAN KERJA SAMA.docx',
-  LOA: 'LETTER OF AGREEMENT.docx',
-  LOCA: 'LETTER OF COORDINATION AGREEMENT.docx',
-  KTR: 'KONTRAK PENGADAAN.docx',
-  PLN: 'PERJANJIAN LAINNYA.docx',
-  ADN: 'ADENDUM PERJANJIAN.docx',
-  SPK: 'SURAT PERINTAH KERJA.docx',
-  ASP: 'ADENDUM SPK.docx',
-  SK: 'SURAT KUASA.docx',
+  MOU: 'MOU.docx',
+  PKS: 'PKS.docx',
+  LOA: 'LOA.docx',
+  PROC: 'PROC.docx',
+  PJJ: 'PJJ.docx',
+  SKU: 'SKU.docx',
 
   // Naskah Khusus - Lainnya
-  BA: 'BERITA ACARA.docx',
-  UND: 'SURAT UNDANGAN.docx',
-  KET: 'SURAT KETERANGAN.docx',
-  PGN: 'SURAT PENGANTAR.docx',
-  RIS: 'RISALAH RAPAT.docx',
-  PUM: 'PENGUMUMAN.docx',
-  SRT: 'SERTIFIKAT.docx',
-  PGA: 'PIAGAM.docx',
-  LAP: 'LAPORAN.docx',
+  BAC: 'BAC.docx',
+  UND: 'UND.docx',
+  KET: 'KET.docx',
+  SPE: 'SPE.docx',
+  RPT: 'RPT.docx',
+  PEN: 'PEN.docx',
+  PGM: 'PGM.docx',
+  LAP: 'LAP.docx',
   BVB: 'BLANKO VERBAL.docx',
 };
 
