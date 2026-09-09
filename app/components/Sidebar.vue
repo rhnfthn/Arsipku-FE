@@ -338,6 +338,7 @@ import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCo
 import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
 import { useNotifications } from '~/composables/useNotifications';
+import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
@@ -357,6 +358,7 @@ const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesB
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
 const { sdeMasalUnreadCount } = useNotifications();
+const { fetchVerificationFolders } = useSdeMasal();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
 const {
@@ -585,6 +587,8 @@ onMounted(async () => {
     if (hasPermission('usulan-akses-berkas', 'read')) fetchUsulanCounts().catch(() => {});
     // Fetch share diterima counts untuk badge sidebar
     if (hasPermission('naskah-share', 'read')) fetchShareCounts().catch(() => {});
+    // Sinkronkan badge SDE Massal dengan folder yang benar-benar menunggu aksi.
+    await refreshSdeMasalVerificationCount();
     // Count Persetujuan dan Legal Drafting dikirim lewat initial WebSocket summary
     // lalu diperbarui setiap workflow naskah berubah.
   } catch (error) {
@@ -615,6 +619,34 @@ const activeApp = ref('');
 const hoveredApp = ref(null);
 
 const hasInboxUnread = computed(() => unreadCount.value > 0);
+const sdeMasalVerificationCount = ref(0);
+
+const refreshSdeMasalVerificationCount = async () => {
+  try {
+    const folders = await fetchVerificationFolders();
+    // Hanya hitung folder yang masih membutuhkan aksi user saat ini.
+    // Riwayat verifikasi dan notifikasi lama tidak menjadi badge aktif.
+    sdeMasalVerificationCount.value = folders.filter(
+      (folder) => Number(folder?.waitingCount || 0) > 0,
+    ).length;
+  } catch {
+    // Jangan menampilkan badge palsu ketika daftar folder gagal dimuat.
+    sdeMasalVerificationCount.value = 0;
+  }
+};
+
+watch(sdeMasalUnreadCount, () => {
+  refreshSdeMasalVerificationCount();
+});
+
+watch(
+  () => route.path,
+  (path) => {
+    if (path === '/korespondensi/sde-masal/verifikasi') {
+      refreshSdeMasalVerificationCount();
+    }
+  },
+);
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
 
@@ -675,14 +707,14 @@ const verifikatorMenu = computed(() => ({
 const sdeMasalMenu = computed(() => ({
   label: 'SDE Massal',
   icon: 'i-lucide-files',
-  badge: sdeMasalUnreadCount.value > 0 ? sdeMasalUnreadCount.value : null,
+  badge: sdeMasalVerificationCount.value > 0 ? sdeMasalVerificationCount.value : null,
   children: [
     { label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true },
     {
       label: 'Verifikasi',
       to: '/korespondensi/sde-masal/verifikasi',
       exact: true,
-      badge: sdeMasalUnreadCount.value > 0 ? sdeMasalUnreadCount.value : null,
+      badge: sdeMasalVerificationCount.value > 0 ? sdeMasalVerificationCount.value : null,
     },
   ],
 }));
