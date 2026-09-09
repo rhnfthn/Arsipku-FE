@@ -296,7 +296,7 @@
         />
       </div>
       <div v-if="loading" class="space-y-3">
-        <USkeleton v-for="i in 3" :key="i" class="h-28 w-full" />
+        <USkeleton v-for="i in 3" :key="i" class="h-16 w-full" />
       </div>
       <EmptyState
         v-else-if="!filteredRules.length"
@@ -304,74 +304,79 @@
         :title="t('empty')"
         :description="t('emptyHint')"
       />
-      <div v-else class="space-y-3">
-        <article
-          v-for="rule in visibleRules"
-          :key="rule.id"
-          class="group rounded-xl border border-default p-4 transition-colors hover:border-primary-300 dark:hover:border-primary-700"
+      <div v-else class="overflow-x-auto rounded-xl border border-default">
+        <DataTable
+          :columns="ruleColumns"
+          :rows="visibleRules"
+          :skeleton-rows="5"
+          :empty-message="t('empty')"
         >
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0 space-y-2.5">
-              <div class="flex flex-wrap items-center gap-2">
-                <Paragraph variant="body2sb" class="break-words">{{ rule.name }}</Paragraph>
-                <UBadge :color="rule.is_active ? 'success' : 'neutral'" variant="soft">{{
-                  t(rule.is_active ? 'active' : 'inactive')
-                }}</UBadge>
-              </div>
-              <!-- Visual alur routing: source → target -->
-              <div class="flex flex-wrap items-center gap-2">
-                <span
-                  class="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-                >
-                  <UIcon name="i-lucide-corner-down-right" class="size-3.5 shrink-0" />
-                  <span class="truncate">{{ roleName(rule.source_role_id) }}</span>
-                </span>
+          <template #cell-name="{ row }">
+            <Paragraph variant="body2sb" class="break-words">{{ row.name }}</Paragraph>
+          </template>
+          <template #cell-flow="{ row }">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span
+                class="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              >
+                <UIcon name="i-lucide-corner-down-right" class="size-3.5 shrink-0" />
+                <span class="truncate">{{ roleName(row.source_role_id) }}</span>
+              </span>
+              <UIcon name="i-lucide-move-right" class="size-4 shrink-0 text-primary-500" />
+              <span
+                class="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg bg-primary-50 px-2 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+              >
                 <UIcon
-                  name="i-lucide-move-right"
-                  class="size-4 shrink-0 text-primary-500"
+                  :name="
+                    row.delivery_type === 'TEMBUSAN'
+                      ? 'i-lucide-copy-plus'
+                      : 'i-lucide-user-round'
+                  "
+                  class="size-3.5 shrink-0"
                 />
-                <span
-                  class="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-                >
-                  <UIcon
-                    :name="
-                      rule.delivery_type === 'TEMBUSAN'
-                        ? 'i-lucide-copy-plus'
-                        : 'i-lucide-user-round'
-                    "
-                    class="size-3.5 shrink-0"
-                  />
-                  <span class="truncate">{{ roleName(rule.target_role_id) }}</span>
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <UBadge color="neutral" variant="subtle">{{ rule.document_type }}</UBadge>
-                <UBadge
-                  :color="rule.delivery_type === 'TEMBUSAN' ? 'warning' : 'primary'"
-                  variant="soft"
-                  >{{ t(rule.delivery_type === 'TEMBUSAN' ? 'cc' : 'recipient') }}</UBadge
-                >
-                <UBadge color="neutral" variant="subtle">{{ scopeName(rule.scope_type) }}</UBadge>
-              </div>
-              <div class="flex flex-wrap items-center gap-1 text-xs text-muted">
-                <UIcon name="i-lucide-calendar" class="size-3.5" />
-                <span
-                  >{{ t('validFrom') }}: {{ rule.valid_from }} · {{ t('validTo') }}:
-                  {{ rule.valid_to || t('noEnd') }}</span
-                >
-              </div>
+                <span class="truncate">{{ roleName(row.target_role_id) }}</span>
+              </span>
             </div>
+          </template>
+          <template #cell-document_type="{ row }">
+            <UBadge color="neutral" variant="subtle">{{ row.document_type }}</UBadge>
+          </template>
+          <template #cell-delivery="{ row }">
+            <UBadge
+              :color="row.delivery_type === 'TEMBUSAN' ? 'warning' : 'primary'"
+              variant="soft"
+              >{{ t(row.delivery_type === 'TEMBUSAN' ? 'cc' : 'recipient') }}</UBadge
+            >
+          </template>
+          <template #cell-scope="{ row }">
+            <Paragraph variant="caption1" class="text-muted">{{
+              scopeName(row.scope_type)
+            }}</Paragraph>
+          </template>
+          <template #cell-period="{ row }">
+            <Paragraph variant="caption1">{{ row.valid_from }}</Paragraph>
+            <Paragraph variant="caption1" class="text-muted">{{
+              row.valid_to || t('noEnd')
+            }}</Paragraph>
+          </template>
+          <template #cell-status="{ row }">
+            <UBadge :color="row.is_active ? 'success' : 'neutral'" variant="soft">{{
+              t(row.is_active ? 'active' : 'inactive')
+            }}</UBadge>
+          </template>
+          <template #cell-aksi="{ row }">
             <UButton
               v-if="can('activate-rule')"
               variant="outline"
-              :color="rule.is_active ? 'neutral' : 'primary'"
-              :loading="busy === rule.id"
+              size="xs"
+              :color="row.is_active ? 'neutral' : 'primary'"
+              :loading="busy === row.id"
               :disabled="!!busy"
-              @click="toggleRule(rule)"
-              >{{ t(rule.is_active ? 'deactivate' : 'activate') }}</UButton
+              @click="toggleRule(row)"
+              >{{ t(row.is_active ? 'deactivate' : 'activate') }}</UButton
             >
-          </div>
-        </article>
+          </template>
+        </DataTable>
       </div>
       <Pagination
         v-if="filteredRules.length"
@@ -502,7 +507,7 @@
       @update:model-value="closeMemberDetail"
     >
       <template #title>
-        <div class="flex items-center gap-3">
+        <div class="ml-5 mt-5 mb-3 flex items-center gap-3">
           <span
             class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/40"
           >
@@ -1008,6 +1013,17 @@ const memberColumns = computed(() => [
   { key: 'officer_area', label: t('officerArea') },
   { key: 'period', label: t('period'), class: 'whitespace-nowrap' },
   { key: 'status', label: t('status') },
+]);
+// Kolom tabel aturan routing — pakai DataTable shared agar konsisten.
+const ruleColumns = computed(() => [
+  { key: 'name', label: t('name') },
+  { key: 'flow', label: t('source') + ' → ' + t('target') },
+  { key: 'document_type', label: t('document') },
+  { key: 'delivery', label: t('delivery') },
+  { key: 'scope', label: t('scope') },
+  { key: 'period', label: t('period'), class: 'whitespace-nowrap' },
+  { key: 'status', label: t('status') },
+  { key: 'aksi', label: t('activate') },
 ]);
 const roleOptions = computed(() => roles.value.map((r) => ({ value: r.id, label: r.name })));
 const roleName = (id: string) => roles.value.find((r) => r.id === id)?.name || id;
