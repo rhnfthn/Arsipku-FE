@@ -64,6 +64,43 @@
       />
     </template>
 
+    <UCard v-if="managerSdiAccessRule">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="min-w-0 space-y-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <Heading variant="heading10sb">{{ t('managerSdiAccess') }}</Heading>
+            <UBadge :color="managerSdiAccessEnabled ? 'success' : 'neutral'" variant="soft">{{
+              t(managerSdiAccessEnabled ? 'enabled' : 'disabled')
+            }}</UBadge>
+          </div>
+          <Paragraph variant="body3" class="text-muted">{{ t('managerSdiAccessHint') }}</Paragraph>
+          <Paragraph v-if="!health?.feature_flag_enabled" variant="caption1" class="text-warning">
+            {{ t('managerSdiRuntimeOff') }}
+          </Paragraph>
+        </div>
+        <UButton
+          v-if="can('activate-rule')"
+          :icon="isActive(managerSdiAccessRule.is_active) ? 'i-lucide-power-off' : 'i-lucide-power'"
+          :color="isActive(managerSdiAccessRule.is_active) ? 'warning' : 'success'"
+          variant="outline"
+          :loading="busy === managerSdiAccessRule.id"
+          :disabled="!!busy"
+          @click="toggleRule(managerSdiAccessRule)"
+          >{{
+            t(isActive(managerSdiAccessRule.is_active) ? 'disableManagerSdi' : 'enableManagerSdi')
+          }}</UButton
+        >
+      </div>
+    </UCard>
+    <UAlert
+      v-else-if="!loading"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      :title="t('managerSdiAccess')"
+      :description="t('managerSdiRuleMissing')"
+    />
+
     <UTabs v-model="tab" :items="tabs" :content="false" class="w-full" />
 
     <UCard v-if="tab === 'roles'">
@@ -618,6 +655,7 @@ import { routingMessages } from '~/utils/routing-messages';
 
 const { t } = useI18n({ useScope: 'local', messages: routingMessages });
 const api = useCorrespondenceRouting();
+const { correspondenceRoutingUpdate } = useRealtimeSocket();
 const { hasPermission, isSuperadmin } = useAuth();
 const can = (action: string) =>
   isSuperadmin.value || hasPermission('correspondence-routing', action);
@@ -668,9 +706,6 @@ const previewResult = ref<RoutingPreview | null>(null);
 const tabs = computed(() => [
   { label: t('rules'), value: 'rules', icon: 'i-lucide-git-branch' },
   { label: t('roles'), value: 'roles', icon: 'i-lucide-users' },
-  ...(can('preview')
-    ? [{ label: t('preview'), value: 'preview', icon: 'i-lucide-flask-conical' }]
-    : []),
 ]);
 const statusOptions = computed(() =>
   ['all', 'active', 'inactive'].map((value) => ({ value, label: t(value) }))
@@ -783,8 +818,20 @@ watch([() => JSON.stringify(previewForm), previewRuleId], () => {
 watch(dialog, () => {
   formError.value = '';
 });
+watch(correspondenceRoutingUpdate, () => {
+  if (!loading.value && !busy.value) load();
+});
 const isActive = (value: number | boolean | string) =>
   value === true || value === 1 || value === '1';
+const managerSdiAccessRule = computed(() =>
+  rules.value.find((rule) => rule.code === 'SDI_MANAGER_TO_VP_INMC')
+);
+const managerSdiAccessEnabled = computed(
+  () =>
+    health.value?.feature_flag_enabled === true &&
+    !!managerSdiAccessRule.value &&
+    isActive(managerSdiAccessRule.value.is_active)
+);
 const message = (e: unknown) => {
   const responseMessage = (e as { response?: { data?: { message?: unknown } } })?.response?.data
     ?.message;
@@ -898,7 +945,7 @@ async function toggleRule(rule: RoutingRule) {
       t('cancel')
     );
     if (!accepted) return;
-    await api.toggleRule(rule.id, !rule.is_active);
+    await api.toggleRule(rule.id, !isActive(rule.is_active));
     toast.add({ title: t('saved'), color: 'success' });
     await load();
   } catch (e) {

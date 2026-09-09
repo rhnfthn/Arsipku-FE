@@ -23,6 +23,18 @@ const alertState = useAlertState();
 const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
+const { canCreateSdi: hasConfiguredSdiAccess, fetchCapabilities } =
+  useCorrespondenceRoutingAccess();
+const canCreateSdi = computed(
+  () =>
+    hasPermission('utama.tulis.surat-dinas-internal', 'create') ||
+    hasConfiguredSdiAccess.value
+);
+watch(hasConfiguredSdiAccess, (allowed, previous) => {
+  const bodTag = String(user.value?.bodTag ?? '');
+  if (previous === true && !allowed && ['BOD-2', 'BOD-3'].includes(bodTag))
+    navigateTo('/beranda');
+});
 const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
@@ -265,6 +277,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  if (!hasPermission('utama.tulis.surat-dinas-internal', 'create')) await fetchCapabilities();
   if (!canAccessPage()) return;
   loadingMessage.value = t('sdi_memuat');
   isLoadingData.value = true;
@@ -622,7 +635,7 @@ watch(
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.surat-dinas-internal', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="canCreateSdi" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
