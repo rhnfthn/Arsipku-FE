@@ -77,9 +77,9 @@ export function useNaskahLainnya() {
       }
     );
 
-  // BE legal-drafting endpoint sudah mencakup legal_drafting + persetujuan_direksi
-  // + blanko_verbal dengan statusLegal akurat per naskah. Sub-filter statusLegal
-  // dilakukan client-side di halaman legal-drafting (tab filter).
+  // BE legal-drafting endpoint mencakup legal_drafting + persetujuan_direksi
+  // + blanko_verbal dan memfilter berdasarkan statusLegal. Halaman juga menjaga
+  // filter yang sama sebagai validasi tampilan agar setiap tab konsisten.
   const fetchLegalDrafting = (
     status: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya' = 'belum-dikirim'
   ) =>
