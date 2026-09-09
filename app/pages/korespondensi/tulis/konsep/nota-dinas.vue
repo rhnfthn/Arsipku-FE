@@ -240,6 +240,43 @@
                     <div v-else class="text-gray-400 italic">...</div>
                   </div>
                 </div>
+
+                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
+                  <div class="flex justify-end mb-10 text-[14px]">
+                    <div class="text-left min-w-[300px]">
+                      <table class="w-full">
+                        <tbody>
+                          <tr>
+                            <td class="align-top pr-2">Lampiran Surat</td>
+                          </tr>
+                          <tr>
+                            <td class="align-top pr-2">Nomor Surat :</td>
+                            <td>.....................................</td>
+                          </tr>
+                          <tr>
+                            <td class="align-top pr-2">Tanggal Surat :</td>
+                            <td>{{ formattedDate }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedTertuju.length > 5" class="mb-8">
+                    <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}</li>
+                    </ol>
+                  </div>
+
+                  <div v-if="selectedTembusan.length > 5">
+                    <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
+                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}</li>
+                    </ol>
+                  </div>
+                </div>
               </div>
             </div>
           </ClientOnly>
