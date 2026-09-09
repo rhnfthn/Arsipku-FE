@@ -322,6 +322,11 @@ const canBukaBlanko = computed(
 const canBuatLembarPersetujuanDireksi = computed(() =>
   (detail.value?.availableActions ?? []).includes('kirim-lembar-persetujuan-direksi')
 );
+const canProcessSheetApproval = computed(
+  () =>
+    ['blanko_verbal', 'persetujuan_direksi'].includes(tahapan.value) &&
+    (detail.value?.availableActions ?? []).includes('paraf')
+);
 
 // Approver legal dengan giliran aktif (baris waiting urutan terendah = milik user).
 // availableActions=[] saat ada waiting legal rows → toolbar aksi hide, jadi butuh
@@ -889,7 +894,12 @@ const ACTION_META: Record<
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
   },
-  paraf: { label: 'Setujui', icon: 'i-lucide-check', color: 'success', variant: 'approve' },
+  paraf: {
+    label: 'Buka Persetujuan Direksi',
+    icon: 'i-lucide-file-check-2',
+    color: 'primary',
+    to: (id: string) => `/naskah-lainnya/${id}/persetujuan-direksi`,
+  },
   'tanda-tangan': {
     label: 'Tanda Tangani',
     icon: 'i-lucide-pen-tool',
@@ -2571,7 +2581,8 @@ const signLabel = computed(() =>
               <UButton
                 v-if="
                   detail.availableActions.includes('tolak') &&
-                  (tahapan === 'persetujuan_direksi' || tahapan === 'blanko_verbal')
+                  (tahapan === 'persetujuan_direksi' || tahapan === 'blanko_verbal') &&
+                  !canProcessSheetApproval
                 "
                 class="w-full sm:w-auto"
                 color="error"
@@ -2587,7 +2598,7 @@ const signLabel = computed(() =>
                 >Tolak</UButton
               >
               <UButton
-                v-if="detail.availableActions.includes('paraf')"
+                v-if="detail.availableActions.includes('paraf') && !canProcessSheetApproval"
                 class="font-semibold w-full sm:w-auto"
                 color="primary"
                 size="lg"
@@ -2599,6 +2610,18 @@ const signLabel = computed(() =>
                     : openActionModal('paraf')
                 "
                 >Setujui</UButton
+              >
+
+              <!-- Approval Blanko/LPD wajib membuka workspace dokumen terlebih dahulu.
+                   Aksi Setujui dan Tolak hanya tersedia pada halaman tersebut. -->
+              <UButton
+                v-if="canProcessSheetApproval"
+                color="primary"
+                size="lg"
+                icon="i-lucide-file-check-2"
+                class="w-full font-semibold sm:w-auto"
+                :to="`/naskah-lainnya/${id}/persetujuan-direksi`"
+                >Buka Persetujuan Direksi</UButton
               >
 
               <!-- Mulai Legal Drafting: aktif di legal_drafting, hide di tahap lain -->
