@@ -678,7 +678,12 @@ const sdeMasalMenu = computed(() => ({
   badge: sdeMasalUnreadCount.value > 0 ? sdeMasalUnreadCount.value : null,
   children: [
     { label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true },
-    { label: 'Verifikasi', to: '/korespondensi/sde-masal/verifikasi', exact: true },
+    {
+      label: 'Verifikasi',
+      to: '/korespondensi/sde-masal/verifikasi',
+      exact: true,
+      badge: sdeMasalUnreadCount.value > 0 ? sdeMasalUnreadCount.value : null,
+    },
   ],
 }));
 
