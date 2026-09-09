@@ -853,9 +853,9 @@ const statusVerifikasiLabel = (status?: string) =>
   ({
     MENUNGGU: 'Menunggu',
     MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
-    TERVERIFIKASI: 'Terverifikasi',
+    TERVERIFIKASI: 'Disetujui',
     DITOLAK: 'Ditolak',
-    TERKIRIM: 'Terkirim',
+    TERKIRIM: 'Selesai',
     GAGAL: 'Gagal',
   })[status || 'MENUNGGU'] || status || 'Menunggu';
 
