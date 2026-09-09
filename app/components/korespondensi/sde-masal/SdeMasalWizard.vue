@@ -52,6 +52,7 @@
       <!-- Step 1: Konsep Surat -->
       <SdeMasalStepKonsep
         v-if="currentStep === 1"
+        :key="folderId || 'new-sde-masal'"
         v-model="wizardState.konsep"
         :parent-naskah-id="parentNaskahId"
       />
