@@ -87,6 +87,9 @@
           <div class="flex gap-2">
             <button @click="reloadUnitKerja" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">Tampilkan</button>
             <button @click="resetUnitKerjaFilter" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Reset</button>
+            <button @click="openExportModal" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center justify-center gap-1.5">
+              <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
+            </button>
           </div>
         </div>
       </div>
@@ -184,6 +187,9 @@
           <div class="flex gap-2">
             <button @click="reloadUnitTataNaskah" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">Tampilkan</button>
             <button @click="resetUnitTataNaskahFilter" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Reset</button>
+            <button @click="openExportModal" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center justify-center gap-1.5">
+              <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
+            </button>
           </div>
         </div>
       </div>
@@ -231,6 +237,15 @@
         </div>
       </div>
     </div>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="activeTab === 'unit-kerja' ? unitKerjaList.length : unitTataNaskahList.length"
+      title="Pilih Kolom Export Persetujuan Pemindahan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -239,6 +254,9 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useAuth } from '~/composables/useAuth';
 import type { TransferFilter, TransferActiveToInactiveStatus } from '~/types/transfer-active-to-inactive';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -364,4 +382,53 @@ onMounted(() => {
   if (showUnitKerjaTab.value) loadUnitKerja();
   if (showUnitTataNaskahTab.value) loadUnitTataNaskah();
 });
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nomor', label: 'Nomor Usulan', desc: 'Nomor usulan pemindahan' },
+  { key: 'perihal', label: 'Perihal Arsip', desc: 'Perihal arsip' },
+  { key: 'pengusul', label: 'Pengusul', desc: 'Nama pengusul' },
+  { key: 'status', label: 'Status', desc: 'Status usulan' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal usulan' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  const source = activeTab.value === 'unit-kerja' ? unitKerjaList.value : unitTataNaskahList.value;
+  if (source.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = source.map((row: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('nomor')) r['Nomor Usulan'] = row.nomorUsulan || '-';
+      if (selectedKeys.includes('perihal')) r['Perihal Arsip'] = row.arsipPerihal || '-';
+      if (selectedKeys.includes('pengusul')) r['Pengusul'] = row.sekretarisName || '-';
+      if (selectedKeys.includes('status')) r['Status'] = statusLabel(row.status);
+      if (selectedKeys.includes('tanggal')) r['Tanggal'] = formatDate(row.tanggalUsulan);
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Persetujuan Pemindahan');
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `persetujuan-pemindahan-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>
