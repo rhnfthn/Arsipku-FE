@@ -120,6 +120,15 @@
             <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
             Refresh
           </button>
+
+          <!-- EXPORT BUTTON -->
+          <button
+            @click="openExportModal"
+            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all"
+          >
+            <FileDown class="w-4 h-4" />
+            Export
+          </button>
         </div>
 
         <!-- TABLE -->
@@ -418,12 +427,24 @@
       </div>
     </div>
   </div>
+
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="sortedLogs.length"
+    title="Pilih Kolom Export Log Email"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
 </template>
 
 <script setup lang="ts">
-import { RotateCcw, Search, ArrowUpDown, ChevronDown, X } from 'lucide-vue-next'
+import { RotateCcw, Search, ArrowUpDown, ChevronDown, X, FileDown } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
 import { useApi } from '~/composables/useApi'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
@@ -643,6 +664,62 @@ const statusClass = (status: string) =>
   status === 'success'
     ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
     : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false)
+const isExporting = ref(false)
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'waktu', label: 'Waktu', desc: 'Tanggal dan jam pengiriman email' },
+  { key: 'pengirim', label: 'Pengirim', desc: 'Nama dan persnum pengirim' },
+  { key: 'subjek', label: 'Subjek', desc: 'Subjek email' },
+  { key: 'to', label: 'Penerima (To)', desc: 'Alamat penerima email' },
+  { key: 'surat', label: 'Surat', desc: 'Nomor surat dan perihal' },
+  { key: 'lampiran', label: 'Lampiran', desc: 'Jumlah lampiran' },
+  { key: 'status', label: 'Status', desc: 'Status pengiriman (Terkirim/Gagal)' }
+])
+
+const openExportModal = () => {
+  showExportModal.value = true
+}
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (sortedLogs.value.length === 0 || selectedKeys.length === 0) return
+  isExporting.value = true
+  try {
+    const excelData = sortedLogs.value.map((log: any, idx: number) => {
+      const r: Record<string, any> = {}
+      if (selectedKeys.includes('No')) r['No'] = idx + 1
+      if (selectedKeys.includes('waktu'))
+        r['Waktu'] = `${formatDate(log.created_at)} ${formatTime(log.created_at)}`
+      if (selectedKeys.includes('pengirim'))
+        r['Pengirim'] = log.sender_nama || log.sender_persnum || '-'
+      if (selectedKeys.includes('subjek')) r['Subjek'] = log.subjek || '-'
+      if (selectedKeys.includes('to')) r['Penerima (To)'] = log.to || '-'
+      if (selectedKeys.includes('surat'))
+        r['Surat'] = `${log.nomor_surat || '-'}${log.perihal ? ' - ' + log.perihal : ''}`
+      if (selectedKeys.includes('lampiran')) r['Lampiran'] = log.lampiran_count || 0
+      if (selectedKeys.includes('status'))
+        r['Status'] = log.status === 'success' ? 'Terkirim' : 'Gagal'
+      return r
+    })
+
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Log Email')
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    saveAs(blob, `log_email_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    showExportModal.value = false
+  } catch (error) {
+    console.error('Gagal export log email:', error)
+  } finally {
+    isExporting.value = false
+  }
+}
 
 // ─── Lifecycle ─────────────────────────────────
 onMounted(() => {

@@ -134,6 +134,15 @@
                   : $t('log_btn_activate')
             }}
           </button>
+
+          <!-- EXPORT BUTTON -->
+          <button
+            @click="openExportModal"
+            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all"
+          >
+            <FileDown class="w-4 h-4" />
+            Export
+          </button>
         </div>
 
         <!-- TABLE -->
@@ -543,12 +552,24 @@
         </template>
       </Modal>
     </Teleport>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="sortedLogs.length"
+      :title="$t('log_export_title')"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import Modal from '~/components/Modal.vue';
-import { Search, AlertTriangle, ArrowUpDown, ChevronDown } from 'lucide-vue-next';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import { Search, AlertTriangle, ArrowUpDown, ChevronDown, FileDown } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { useI18n } from 'vue-i18n';
 import type { DigsigLog } from '~/types/digsig';
 import { formatDate2Digit as formatDate, formatTimeShort as formatTime } from '~/utils/mail-helpers';
@@ -822,6 +843,57 @@ const statusClass = (status: string) =>
   status === 'sukses'
     ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
     : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800';
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'tanggal', label: t('log_col_tanggal'), desc: 'Tanggal dan jam aktivitas' },
+  { key: 'ip', label: t('log_col_ip'), desc: 'Alamat IP pengguna' },
+  { key: 'user', label: t('log_col_user'), desc: 'Nama pengguna' },
+  { key: 'api', label: t('log_col_api'), desc: 'Endpoint API yang diakses' },
+  { key: 'naskah', label: t('log_col_naskah'), desc: 'Jenis naskah' },
+  { key: 'status', label: t('log_col_status'), desc: 'Status aktivitas' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (sortedLogs.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = sortedLogs.value.map((row: DigsigLog, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('tanggal'))
+        r[t('log_col_tanggal')] = `${formatDate(row.tanggal)} ${formatTime(row.tanggal)}`;
+      if (selectedKeys.includes('ip')) r[t('log_col_ip')] = row.ipAddress || '-';
+      if (selectedKeys.includes('user')) r[t('log_col_user')] = row.userName || '-';
+      if (selectedKeys.includes('api')) r[t('log_col_api')] = row.apiEndpoint || '-';
+      if (selectedKeys.includes('naskah')) r[t('log_col_naskah')] = row.jenisNaskah || '-';
+      if (selectedKeys.includes('status')) r[t('log_col_status')] = row.note || row.status || '-';
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t('log_title'));
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `log_digsig_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export log digsig:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 // ─── Lifecycle ─────────────────────────────────
 onMounted(() => {

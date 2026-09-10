@@ -109,6 +109,15 @@
               class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
+
+          <!-- EXPORT BUTTON -->
+          <button
+            @click="openExportModal"
+            class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
+          >
+            <FileDown class="w-4 h-4" />
+            Export
+          </button>
         </div>
 
         <!-- TABLE -->
@@ -778,6 +787,15 @@
           </div>
         </template>
       </USlideover>
+
+      <ExportColumnModal
+        v-model="showExportModal"
+        :columns="exportColumns"
+        :total-rows="filteredRows.length"
+        :title="$t('sign_export_title')"
+        :is-exporting="isExporting"
+        @confirm="handleExportConfirm"
+      />
     </div>
   </div>
 </template>
@@ -794,12 +812,16 @@ import {
   FileCheck,
   AlertTriangle,
   ArrowUpDown,
-  ChevronRight
+  ChevronRight,
+  FileDown
 } from 'lucide-vue-next';
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { PenandatangananDocument } from '~/types/digsig';
 import Modal from '~/components/Modal.vue';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { useDigsig } from '~/composables/useDigsig';
 import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
 
@@ -1158,6 +1180,57 @@ onBeforeUnmount(() => {
 watch([search, filterStatus, rowsPerPage], () => {
   currentPage.value = 1;
 });
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'tanggal', label: t('sign_tanggal_dibuat'), desc: 'Tanggal pembuatan dokumen' },
+  { key: 'nomor', label: t('nodokumen'), desc: 'Nomor dokumen' },
+  { key: 'perihal', label: t('perihal'), desc: 'Perihal dokumen' },
+  { key: 'penandatangan', label: t('sign_penanda_tangan'), desc: 'Jumlah penandatangan' },
+  { key: 'status', label: t('sign_status'), desc: 'Status penandatanganan' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredRows.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = filteredRows.value.map((row: PenandatangananDocument, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('tanggal'))
+        r[t('sign_tanggal_dibuat')] = formatDate(row.tanggalDibuat);
+      if (selectedKeys.includes('nomor')) r[t('nodokumen')] = row.nomorDokumen || '-';
+      if (selectedKeys.includes('perihal')) r[t('perihal')] = row.perihal || '-';
+      if (selectedKeys.includes('penandatangan'))
+        r[t('sign_penanda_tangan')] = row.totalPenandatangan ?? '-';
+      if (selectedKeys.includes('status'))
+        r[t('sign_status')] = getSignerStatusLabel(row.mySignerStatus);
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t('sign_title'));
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `penandatanganan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export penandatanganan:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>
 
 <style scoped>
