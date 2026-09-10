@@ -926,10 +926,25 @@ const openSdeMasalPreview = async (naskahId: string, title = "Dokumen") => {
 
 const openDetailPreview = async (detail: any, url: string, title = "Dokumen") => {
   const jenis = String(detail?.jenis || '').toUpperCase().replace(/[- ]/g, '_');
-  const isSde = jenis === 'SDE' || jenis === 'SDE_MASAL' || Boolean(detail?.sdeMasal);
-  if (isSde && detail?.id) {
-    const opened = await openSdeMasalPreview(String(detail.id), title);
-    if (opened) return;
+  const routeJenis = String(jenisQuery || '').toUpperCase().replace(/[- ]/g, '_');
+  const isSde =
+    jenis === 'SDE' ||
+    jenis === 'SDE_MASAL' ||
+    routeJenis === 'SDE' ||
+    routeJenis === 'SDE_MASAL' ||
+    Boolean(detail?.sdeMasal);
+  if (isSde) {
+    // Pada beberapa response Terkirim, detail.id dapat berisi ID flow,
+    // sedangkan route.params.id tetap merupakan ID naskah. Coba keduanya
+    // supaya SDE Massal tidak jatuh kembali ke final_pdf historis.
+    const candidateIds = [detail?.id, id]
+      .filter(Boolean)
+      .map(String)
+      .filter((value, index, values) => values.indexOf(value) === index);
+    for (const naskahId of candidateIds) {
+      const opened = await openSdeMasalPreview(naskahId, title);
+      if (opened) return;
+    }
   }
   await openDocumentPreview(url, title);
 };
