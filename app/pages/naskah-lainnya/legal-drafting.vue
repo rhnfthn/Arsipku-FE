@@ -255,7 +255,7 @@
               <button
                 class="min-w-0 truncate font-mono text-xs text-primary-600 hover:underline"
                 :title="row.nomor"
-                @click="openAction(row)"
+                @click="goDetail(row)"
               >
                 {{ row.nomor }}
               </button>
@@ -296,7 +296,7 @@
           </span>
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)"
             >Detail</UButton
           >
         </template>
@@ -351,7 +351,7 @@ const exportColumns = ref([
   { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Nama pemrakarsa' },
   { key: 'perihal', label: 'Perihal', desc: 'Perihal / subjek naskah' },
   { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan legal drafting' },
-  { key: 'status', label: 'Status', desc: 'Status naskah' }
+  { key: 'status', label: 'Status', desc: 'Status naskah' },
 ]);
 
 const { legalDrafting, pending, error, fetchLegalDrafting } = useNaskahLainnya();
@@ -655,18 +655,9 @@ function handleSort(key: string) {
 }
 
 // ── Aksi ──
-function openAction(row: any) {
+function goDetail(row: any) {
   const n = legalDrafting.value.find((i) => i.id === row.id);
   if (!n) return;
-  if (n.tahapan === 'blanko_verbal') {
-    navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);
-    return;
-  }
-  if (n.tahapan === 'legal_drafting' && n.statusLegal === 'menunggu_persetujuan') {
-    navigateTo(`/naskah-lainnya/${n.id}/persetujuan?tahap=legal_drafting`);
-    return;
-  }
-  // Ke halaman detail — aksi "Mulai Legal Drafting" ada di sana (availableActions).
   navigateTo(`/naskah-lainnya/${n.id}`);
 }
 
@@ -700,7 +691,7 @@ function handleExportConfirm(selectedKeys: string[]) {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
     }));
     worksheet['!cols'] = colWidths;
 
@@ -708,7 +699,7 @@ function handleExportConfirm(selectedKeys: string[]) {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Legal Drafting');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     saveAs(blob, `legal_drafting_${new Date().toISOString().slice(0, 10)}.xlsx`);
 

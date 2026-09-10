@@ -1237,7 +1237,8 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
         r.aksi === 'tolak' ||
         r.aksi === 'kembalikan' ||
         r.aksi === 'kembalikan-legal' ||
-        r.aksi === 'kembalikan-evaluasi';
+        r.aksi === 'kembalikan-evaluasi' ||
+        r.aksi === 'legal_drafting_ulang';
       return {
         id: r.id,
         icon: isPositive ? 'i-lucide-check' : isNegative ? 'i-lucide-x' : 'i-lucide-circle',
@@ -2388,15 +2389,6 @@ const signLabel = computed(() =>
               </div>
             </div>
             <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              <UButton
-                color="error"
-                variant="outline"
-                icon="i-lucide-circle-x"
-                size="lg"
-                class="w-full sm:w-auto"
-                @click="goToLegalApprovalWorkspace"
-                >Tolak</UButton
-              >
               <UButton
                 color="primary"
                 icon="i-lucide-check"
