@@ -66,7 +66,10 @@
            agar approver melihat dokumen pendukung keputusan sebelum menyetujui. -->
       <div v-if="sheetDokumen.length" class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
-          <UIcon name="i-lucide-file-check-2" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <UIcon
+            name="i-lucide-file-check-2"
+            class="h-4 w-4 text-primary-600 dark:text-primary-400"
+          />
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Dokumen Sheet</h3>
           <span class="text-xs text-gray-400">(Blanko Verbal / Lembar Persetujuan Direksi)</span>
         </div>
@@ -85,11 +88,7 @@
                 PDF · {{ sheetDokumenTipeLabel(doc.tipe) }}
               </p>
             </div>
-            <UButton
-              size="xs"
-              variant="ghost"
-              icon="i-lucide-eye"
-              @click="previewSheetDokumen(doc)"
+            <UButton size="xs" variant="ghost" icon="i-lucide-eye" @click="previewSheetDokumen(doc)"
               >Preview</UButton
             >
           </div>
@@ -571,7 +570,7 @@ const rejectionModalTitle = computed(() =>
 const rejectionModalDescription = computed(() =>
   pendingDecision.value === 'batalkan'
     ? 'Naskah akan dibatalkan dan tidak dilanjutkan. Tuliskan alasan pembatalan.'
-    : 'Naskah dikembalikan ke konseptor pemrakarsa untuk menyunting ulang form awal. Tuliskan alasan pengembalian.'
+    : 'Naskah akan dikembalikan langsung ke tahap Legal Drafting untuk diperbaiki oleh Unit Legal. Tuliskan alasan pengembalian.'
 );
 
 const continueConfirmationDescription = computed(() =>
@@ -622,7 +621,9 @@ const submitEvaluationDecision = async (
         ? 'reject-legal'
         : 'reject-cancel';
   try {
-    if (!(await commitRevision())) return;
+    // Pembatalan bersifat terminal. Revisi yang baru di-stage tidak perlu
+    // diunggah karena naskah tidak akan dapat diperbaiki atau dilanjutkan lagi.
+    if (decision !== 'batalkan' && !(await commitRevision())) return;
     await keputusanEvaluasi(id.value, {
       keputusan: decision,
       catatan:

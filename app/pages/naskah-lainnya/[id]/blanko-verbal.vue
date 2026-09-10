@@ -605,7 +605,7 @@ async function confirmTolak(note: string) {
     tolakModalOpen.value = false;
     tolakCatatan.value = '';
     activeDirector.value = null;
-    navigateTo(`/naskah-lainnya/${id.value}/legal-drafting`);
+    await navigateTo('/naskah-lainnya/persetujuan?status=ditolak');
   } catch (e) {
     toast.add({
       title: 'Gagal menolak blanko verbal',
