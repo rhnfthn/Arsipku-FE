@@ -209,7 +209,7 @@
                       <UIcon name="i-lucide-download" class="size-4" />
                     </button>
                     <button
-                      v-if="isGagal(item.status) && !isFolderCreator"
+                      v-if="isGagal(item.status) && isSignerAwaiting"
                       class="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                       :disabled="retryingId === item.id"
                       :title="retryingId === item.id ? 'Sedang mengirim ulang…' : 'Kirim ulang'"
@@ -559,10 +559,9 @@ const approveCurrentFolder = async () => {
     await approveFolderVerification(folder.value.id);
     showApproveConfirm.value = false;
     toast.add({ title: 'Folder disetujui', description: 'Folder diteruskan sesuai alur verifikasi.', color: 'success' });
-    // Setelah approval, akses folder dapat berpindah ke verifikator berikutnya
-    // atau ke pengirim akhir. Jangan memuat ulang detail sebagai verifikator
-    // sebelumnya karena backend memang akan mengembalikan 403.
-    await navigateTo('/korespondensi/sde-masal/verifikasi');
+    // Tetap di halaman detail folder agar pengguna dapat melihat status dan
+    // verifikator berikutnya tanpa kembali ke daftar Verifikasi.
+    await loadData();
   } catch (error: any) {
     toast.add({ title: 'Gagal menyetujui folder', description: error?.message || 'Coba lagi.', color: 'error' });
   } finally {
@@ -638,7 +637,7 @@ const openFinalizeAll = async () => {
 };
 
 const sendSelectedItems = async (signData: { method: string; passphrase?: string }) => {
-  if (!folder.value || !selectedItemIds.value.length) return;
+  if (!folder.value || !selectedItemIds.value.length || workflowLoading.value) return;
 
   const method = signData.method === 'tanpa_ttd' ? 'ttd_basah' : signData.method;
   if (method === 'digsig' && !signData.passphrase?.trim()) {
@@ -648,8 +647,12 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
 
   selectedSendType.value = method as typeof selectedSendType.value;
   workflowLoading.value = true;
+  const sourcePath = route.fullPath;
+  const selectedCount = selectedItemIds.value.length;
   try {
-    const result = await finalizeDirect({
+    // Mulai request terlebih dahulu, lalu tutup modal agar pengguna tidak
+    // tertahan oleh spinner selama PDF dan BSrE diproses serentak di backend.
+    const finalizeRequest = finalizeDirect({
       folderId: folder.value.id,
       itemIds: [...selectedItemIds.value],
       penerimaList: items.value
@@ -661,15 +664,29 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
     isPassphraseModalOpen.value = false;
     closePreview();
     showSendConfirm.value = false;
+    toast.add({
+      title: 'Pengiriman sedang diproses',
+      description: `${selectedCount} naskah sedang ditandatangani dan dikirim serentak.`,
+      color: 'info',
+    });
+
+    const result = await finalizeRequest;
     toast.add({ title: 'Pengiriman selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
-    if ((result?.success || 0) > 0) {
+    // Jangan memindahkan halaman secara tiba-tiba bila pengguna sudah memilih
+    // halaman lain saat proses berjalan. Data tetap selesai di backend.
+    if ((result?.success || 0) > 0 && route.fullPath === sourcePath) {
       await navigateTo('/korespondensi/terkirim');
-    } else {
+    } else if (route.fullPath === sourcePath) {
       await loadData();
     }
   } catch (error: any) {
     const message = error?.response?.data?.message || error?.message || 'Coba lagi.';
-    if (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah')) {
+    if (
+      route.fullPath === sourcePath &&
+      (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah'))
+    ) {
+      isPassphraseModalOpen.value = true;
+      await nextTick();
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
       isPassphraseModalOpen.value = false;
