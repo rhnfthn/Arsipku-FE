@@ -56,6 +56,12 @@ const isPemrakarsa = computed(() => {
   return detail.value.pemrakarsa?.nama === user.value.nama;
 });
 
+// Nama Pemrakarsa pada detail adalah pejabat terakhir pada approval awal.
+// Identitas konseptor tetap tersedia di `pemrakarsa` untuk pengecekan akses.
+const pemrakarsaDisplay = computed(
+  () => detail.value?.pemrakarsaPejabat ?? detail.value?.pemrakarsa
+);
+
 // Dokumen final fisik baru dapat dikelola setelah seluruh penandatangan
 // menyetujui Naskah Draft dan nomor sudah diterbitkan.
 const showManualFinalPanel = computed(
@@ -1761,10 +1767,10 @@ const signLabel = computed(() =>
                     <dd
                       class="mt-0.5 wrap-break-word text-sm font-semibold text-gray-900 dark:text-white"
                     >
-                      {{ detail.pemrakarsa.nama }}
+                      {{ pemrakarsaDisplay?.nama || '—' }}
                     </dd>
                     <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                      {{ personaMeta(detail.pemrakarsa) }}
+                      {{ pemrakarsaDisplay ? personaMeta(pemrakarsaDisplay) : '—' }}
                     </p>
                   </div>
                 </div>

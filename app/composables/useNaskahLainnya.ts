@@ -88,7 +88,7 @@ export function useNaskahLainnya() {
   // + blanko_verbal dan memfilter berdasarkan statusLegal. Halaman juga menjaga
   // filter yang sama sebagai validasi tampilan agar setiap tab konsisten.
   const fetchLegalDrafting = (
-    status: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya' = 'belum-dikirim'
+    status: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'sudah-dikerjakan' = 'belum-dikirim'
   ) =>
     run(
       () => apiGet('/naskah-lainnya/legal-drafting', { params: { status } }, { skipCache: true }),
