@@ -1,5 +1,9 @@
 <template>
   <div class="flex-1 overflow-y-auto">
+    <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+      Konsep SDE Massal
+    </h2>
+
     <!-- Section: Konsep Surat -->
     <div v-if="props.readonly" class="sde-masal-konsep-form space-y-1">
       <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
@@ -16,7 +20,7 @@
           Tanggal Konsep Surat<span class="text-red-500 ml-0.5">*</span>
         </span>
         <p class="relative flex-1 min-w-0 w-full text-sm text-gray-900 dark:text-white sm:ml-6">
-          {{ tanggalKonsepStr || '-' }}
+          {{ tanggalKonsepDisplay || '-' }}
         </p>
       </div>
 
@@ -69,7 +73,12 @@
       </div>
 
       <!-- Tanggal Konsep Surat -->
-      <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" required />
+      <TulisInputTanggal
+        v-model="dateModel"
+        label="Tanggal Konsep Surat"
+        display-format="DD/MM/YYYY"
+        required
+      />
 
       <!-- Klasifikasi -->
       <TulisInputKlasifikasi
@@ -175,6 +184,11 @@ const restoreDraftForm = () => {
 const tanggalKonsepStr = computed(() => {
   if (!dateModel.value) return '';
   return `${dateModel.value.year}-${String(dateModel.value.month).padStart(2, '0')}-${String(dateModel.value.day).padStart(2, '0')}`;
+});
+
+const tanggalKonsepDisplay = computed(() => {
+  if (!dateModel.value) return '';
+  return `${String(dateModel.value.day).padStart(2, '0')}/${String(dateModel.value.month).padStart(2, '0')}/${dateModel.value.year}`;
 });
 
 const klasifikasiObj = computed(() =>

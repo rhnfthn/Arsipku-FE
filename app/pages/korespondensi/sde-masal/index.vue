@@ -1,32 +1,46 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900">
-    <PageHeader title="SDE Masal" :items="breadcrumbs" />
+    <PageHeader title="SDE Massal" :items="breadcrumbs" />
 
     <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <!-- Filter Bar -->
       <div class="flex flex-row items-center gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
-        <select v-model="filter.limit" class="h-10 w-20 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @change="reload">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-        </select>
-        <select v-model="filter.status" @change="reload" class="h-10 w-40 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option value="">Semua Status</option>
-          <option value="DRAFT">Draft</option>
-          <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
-          <option value="MENUNGGU_PENGIRIM">Menunggu Pengirim</option>
-          <option value="SEBAGIAN_TERKIRIM">Sebagian Terkirim</option>
-          <option value="DIKEMBALIKAN">Dikembalikan</option>
-          <option value="TERKIRIM">Selesai</option>
-          <option value="DITOLAK">Ditolak</option>
-        </select>
-        <select v-model="filter.klasifikasi" @change="reload" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option value="">Semua Klasifikasi</option>
-          <option v-for="k in klasifikasiList" :key="k.id" :value="k.klasifikasi">{{ k.klasifikasi }} - {{ k.klasifikasi_text }}</option>
-        </select>
+        <USelectMenu
+          v-model="filter.limit"
+          :items="pageSizeOptions"
+          :search-input="false"
+          class="w-20 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Jumlah data per halaman"
+          @update:model-value="reload"
+        />
+        <USelectMenu
+          v-model="selectedStatusFilter"
+          :items="statusOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Semua Status"
+          :search-input="false"
+          class="w-40 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Filter Status"
+        />
+        <USelectMenu
+          v-model="selectedKlasifikasiFilter"
+          :items="klasifikasiOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Semua Klasifikasi"
+          searchable
+          :search-input="{ placeholder: 'Cari klasifikasi...' }"
+          :content="({ class: 'max-h-[380px]' } as any)"
+          class="w-48 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Filter Klasifikasi"
+        />
         <div class="relative min-w-0 flex-1">
           <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-          <input v-model="filter.search" type="text" placeholder="Cari judul folder atau pengirim..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @keyup.enter="reload" />
+          <input v-model="filter.search" type="text" placeholder="Cari judul folder atau pengirim..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @input="scheduleSearch" @keyup.enter="reload" />
         </div>
         <button @click="exportData" :disabled="exporting" class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-400 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-50"><UIcon :name="exporting ? 'i-lucide-loader-2' : 'i-lucide-download'" :class="['size-4', exporting && 'animate-spin']" />Export</button>
       </div>
@@ -80,7 +94,7 @@
                   v-if="folder.status === 'DRAFT' || folder.status === 'DIKEMBALIKAN'"
                   type="button"
                   class="inline-flex items-center justify-center rounded-lg p-2 text-primary-600 transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20"
-                  title="Edit naskah di kanvas SDE Masal"
+                  title="Edit naskah di kanvas SDE Massal"
                   @click.stop="openFolderEditor(folder.id)"
                 >
                   <UIcon name="i-lucide-pencil" class="size-4" />
@@ -99,42 +113,21 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div
+      <!-- Pagination menggunakan komponen bersama -->
+      <Pagination
         v-if="meta.total > 0"
-        class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
-      >
-        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-          <span>
-            Menampilkan {{ (meta.page - 1) * filter.limit + 1 }}–{{ Math.min(meta.page * filter.limit, meta.total) }}
-            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ meta.total }}</span> folder
-          </span>
-        </div>
-        <div class="flex items-center gap-1">
-          <button
-            :disabled="meta.page <= 1"
-            @click="changePage(meta.page - 1)"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-heroicons-chevron-left" class="w-4 h-4" /> Sebelumnya
-          </button>
-          <span class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ meta.page }}
-          </span>
-          <button
-            :disabled="meta.page >= meta.totalPages"
-            @click="changePage(meta.page + 1)"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Selanjutnya <UIcon name="i-heroicons-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        :current-page="meta.page"
+        :total-pages="meta.totalPages"
+        :total-items="meta.total"
+        :rows-per-page="filter.limit"
+        @update:page="changePage"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount } from 'vue';
 import type { SdeMasalFolder } from '~/types/sde-masal';
 import type { Klasifikasi } from '~/types/klasifikasi';
 import { sdeMasalStatusBadge, sdeMasalStatusLabel } from '~/utils/sde-masal-status';
@@ -154,6 +147,7 @@ const folders = ref<SdeMasalFolder[]>([]);
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const loading = ref(true);
 const exporting = ref(false);
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 const meta = reactive({ page: 1, limit: 10, total: 0, totalPages: 0 });
 const filter = reactive({
   search: '',
@@ -165,22 +159,37 @@ const filter = reactive({
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },
   { label: 'Korespondensi', to: '/korespondensi/kotak-masuk' },
-  { label: 'SDE Masal', to: '/korespondensi/sde-masal' },
+  { label: 'SDE Massal', to: '/korespondensi/sde-masal' },
 ];
 const statusOptions = [
-  { label: 'Semua Status', value: '' },
+  { label: 'Semua Status', value: '__ALL__' },
   { label: 'Draft', value: 'DRAFT' },
   { label: 'Menunggu Verifikasi', value: 'MENUNGGU_VERIFIKASI' },
   { label: 'Selesai', value: 'TERKIRIM' },
   { label: 'Ditolak', value: 'DITOLAK' },
 ];
+const pageSizeOptions = [10, 25, 50];
 const klasifikasiOptions = computed(() => [
-  { label: 'Semua Klasifikasi', value: '' },
+  { label: 'Semua Klasifikasi', value: '__ALL__' },
   ...klasifikasiList.value.map((k) => ({
     label: `${k.klasifikasi} - ${k.klasifikasi_text}`,
     value: k.klasifikasi,
   })),
 ]);
+const selectedStatusFilter = computed({
+  get: () => filter.status || '__ALL__',
+  set: (value: string) => {
+    filter.status = value === '__ALL__' ? '' : value;
+    reload();
+  },
+});
+const selectedKlasifikasiFilter = computed({
+  get: () => filter.klasifikasi || '__ALL__',
+  set: (value: string) => {
+    filter.klasifikasi = value === '__ALL__' ? '' : value;
+    reload();
+  },
+});
 
 const loadFolders = async () => {
   loading.value = true;
@@ -199,9 +208,23 @@ const loadFolders = async () => {
   }
 };
 const reload = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
   filter.page = 1;
   loadFolders();
 };
+const scheduleSearch = () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchTimeout = null;
+    reload();
+  }, 400);
+};
+onBeforeUnmount(() => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+});
 const resetFilter = () => {
   Object.assign(filter, {
     search: '',
