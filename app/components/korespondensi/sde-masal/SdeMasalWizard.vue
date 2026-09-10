@@ -7,12 +7,6 @@
         ? 'rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800'
         : ''"
     >
-      <h2
-        v-if="currentStep === 3"
-        class="mb-4 px-1 text-xl font-semibold text-gray-900 dark:text-white"
-      >
-        Konsep SDE Massal
-      </h2>
 
       <!-- Informasi Folder saat melanjutkan folder yang sudah tersimpan -->
       <div
@@ -29,7 +23,9 @@
             </div>
             <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
               <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Tanggal</span>
-              <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.tanggalKonsep || '-' }}</p>
+              <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+                {{ formatSdeMasalDate(wizardState.konsep.tanggalKonsep) }}
+              </p>
             </div>
             <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
               <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Klasifikasi</span>
@@ -94,7 +90,7 @@
               Tanggal
             </span>
             <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
-                {{ wizardState.konsep?.tanggalKonsep || '-' }}
+                {{ formatSdeMasalDate(wizardState.konsep?.tanggalKonsep) }}
             </p>
           </div>
           <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
@@ -446,6 +442,13 @@ const breadcrumbs = computed(() => [
   { label: 'Korespondensi', to: '/korespondensi/kotak-masuk' },
   { label: 'SDE Massal', to: '#' },
 ]);
+
+const formatSdeMasalDate = (value?: string | null) => {
+  if (!value) return '-';
+  const [year, month, day] = String(value).slice(0, 10).split('-');
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+};
 
 // Validasi per step
 const canProceed = computed(() => {

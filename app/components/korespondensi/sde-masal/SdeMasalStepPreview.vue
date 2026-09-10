@@ -1247,11 +1247,6 @@ const saveVerifiers = () => {
     JSON.stringify({ ...draft, verifikators: selectedVerifiers.value })
   );
   showVerifierModal.value = false;
-  toast.add({
-    title: 'Atasan managerial siap diverifikasi',
-    description: `${selectedVerifiers.value.length} atasan ditetapkan otomatis.`,
-    color: 'success',
-  });
 };
 const submitVerifiers = () => {
   const ranks = selectedVerifiers.value
