@@ -22,6 +22,14 @@
         <Plus class="w-4 h-4" />
         {{ isLoadingCreate ? $t('tmpl_btn_menyimpan') : $t('tmpl_btn_tambah') }}
       </button>
+
+      <button
+        @click="openExportModal"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition"
+      >
+        <FileDown class="w-4 h-4" />
+        Export
+      </button>
     </div>
 
     <!-- CARD -->
@@ -525,6 +533,15 @@
       cancelColor="primary"
       @confirm="deleteNow"
     />
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredTemplates.length"
+      :title="$t('tmpl_export_title')"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -543,14 +560,18 @@ import {
   Pencil,
   Trash2,
   Plus,
-  ChevronDown
+  ChevronDown,
+  FileDown
 } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import Modal from '~/components/Modal.vue'
 import PageHeader from '~/components/PageHeader.vue'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
 import { useTemplate } from '~/composables/useTemplate'
 import type { Template } from '~/types/template'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -688,6 +709,48 @@ const paginationPages = computed(() => {
 watch([search, rowsPerPage], () => {
   currentPage.value = 1
 })
+
+// ─── Export Excel ─────────────────────────────────────────────────────────────
+const showExportModal = ref(false)
+const isExporting = ref(false)
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nama', label: t('tmpl_col_nama'), desc: 'Nama template' },
+  { key: 'file', label: t('tmpl_col_file'), desc: 'Nama file template' }
+])
+
+const openExportModal = () => {
+  showExportModal.value = true
+}
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredTemplates.value.length === 0 || selectedKeys.length === 0) return
+  isExporting.value = true
+  try {
+    const excelData = filteredTemplates.value.map((template: Template, idx: number) => {
+      const r: Record<string, any> = {}
+      if (selectedKeys.includes('No')) r['No'] = idx + 1
+      if (selectedKeys.includes('nama')) r[t('tmpl_col_nama')] = template.nama_template || '-'
+      if (selectedKeys.includes('file')) r[t('tmpl_col_file')] = getFileName(template.file) || '-'
+      return r
+    })
+
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, t('tmpl_title'))
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    saveAs(blob, `template_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    showExportModal.value = false
+  } catch (error) {
+    console.error('Gagal export template:', error)
+  } finally {
+    isExporting.value = false
+  }
+}
 
 // ─── Click outside ────────────────────────────────────────────────────────────
 function handleDocumentClick(e: MouseEvent) {
