@@ -232,6 +232,7 @@
 
       <!-- Table -->
       <DataTable
+        compact
         :columns="columns"
         :rows="tableRows"
         :loading="pending"
@@ -244,27 +245,55 @@
         @sort="handleSort"
       >
         <template #cell-nomor="{ row }">
-          <button
-            class="font-mono text-xs text-primary-600 hover:underline"
-            @click="openAction(row)"
-          >
-            {{ row.nomor }}
-          </button>
+          <div class="min-w-0">
+            <div class="flex min-w-0 items-center gap-1.5">
+              <span
+                class="shrink-0 rounded bg-primary-50 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+              >
+                {{ row.jenis }}
+              </span>
+              <button
+                class="min-w-0 truncate font-mono text-xs text-primary-600 hover:underline"
+                :title="row.nomor"
+                @click="openAction(row)"
+              >
+                {{ row.nomor }}
+              </button>
+            </div>
+            <div
+              class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400"
+              :title="row.perihal"
+            >
+              {{ row.perihal }}
+            </div>
+          </div>
         </template>
-        <template #cell-jenis="{ row }">
-          <span
-            class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-            >{{ row.jenis }}</span
-          >
+        <template #cell-pemrakarsa="{ row }">
+          <span class="block truncate text-xs" :title="row.pemrakarsa">{{ row.pemrakarsa }}</span>
         </template>
-        <template #cell-perihal="{ row }">
-          <div class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</div>
+        <template #cell-konseptor="{ row }">
+          <span class="block truncate text-xs" :title="row.konseptor">{{ row.konseptor }}</span>
         </template>
         <template #cell-tahapan="{ row }">
-          <StatusBadge :status="row.tahapan" />
+          <StatusBadge
+            :status="row.tahapan"
+            :title="row.tahapan"
+            class="max-w-full overflow-hidden whitespace-nowrap !px-1.5 !text-[11px]"
+          />
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :status="row.statusLegal" />
+          <StatusBadge
+            :status="row.statusLegal"
+            class="max-w-full overflow-hidden whitespace-nowrap !px-1.5 !text-[11px]"
+          />
+        </template>
+        <template #cell-waktu="{ row }">
+          <span
+            class="block truncate text-xs text-gray-500 dark:text-gray-400"
+            :title="row.waktuLabel"
+          >
+            {{ row.waktuLabel }}
+          </span>
         </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
@@ -305,6 +334,8 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import { useToast } from '#imports';
+import { downloadCsv } from '~/utils/csv-export';
+import { formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 import type { NaskahListItem, Tahapan } from '~/types/naskah-lainnya';
 import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
 import * as XLSX from 'xlsx';
@@ -328,7 +359,7 @@ const toast = useToast();
 const { t } = useI18n();
 const route = useRoute();
 
-type LegalDraftingFilter = 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya';
+type LegalDraftingFilter = 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'sudah-dikerjakan';
 
 function normalizeFilterStatus(value: unknown): LegalDraftingFilter {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -337,11 +368,11 @@ function normalizeFilterStatus(value: unknown): LegalDraftingFilter {
     raw === 'belum-dikirim' ||
     raw === 'menunggu' ||
     raw === 'revisi' ||
-    raw === 'aksi-saya'
+    raw === 'sudah-dikerjakan'
   ) {
     return raw;
   }
-  if (raw === 'sudah-dikerjakan' || raw === 'sudah_dikerjakan') return 'aksi-saya';
+  if (raw === 'aksi-saya' || raw === 'sudah_dikerjakan') return 'sudah-dikerjakan';
   return 'belum-dikirim';
 }
 
@@ -369,7 +400,7 @@ const filterTabs: { value: LegalDraftingFilter; label: string }[] = [
   { value: 'belum-dikirim', label: 'Belum Dikirim' },
   { value: 'menunggu', label: 'Menunggu Persetujuan' },
   { value: 'revisi', label: 'Revisi' },
-  { value: 'aksi-saya', label: 'Sudah Dikerjakan' },
+  { value: 'sudah-dikerjakan', label: 'Sudah Dikerjakan' },
 ];
 const currentFilterLabel = computed(
   () => filterTabs.find((t) => t.value === filterStatus.value)?.label ?? 'Filter'
@@ -397,13 +428,18 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   ditolak: 'Ditolak',
   dibatalkan: 'Dibatalkan',
 };
-const tahapanOptions = [
-  { label: 'Semua Tahapan', value: '' },
-  ...Object.keys(TAHAPAN_STEP).map((value) => ({
-    label: tahapanFilterLabels[value as Tahapan] ?? value.replace(/_/g, ' '),
-    value,
-  })),
-];
+const legalTahapanOrder: Tahapan[] = ['legal_drafting', 'persetujuan_direksi', 'blanko_verbal'];
+// Endpoint Legal Drafting hanya memiliki tiga tahap kerja ini. Opsi dipersempit
+// lagi berdasarkan data yang benar-benar tersedia pada status aktif.
+const tahapanOptions = computed(() => {
+  const available = new Set(legalDrafting.value.map((row) => row.tahapan));
+  return [
+    { label: 'Semua Tahapan', value: '' },
+    ...legalTahapanOrder
+      .filter((value) => available.has(value))
+      .map((value) => ({ label: tahapanFilterLabels[value], value })),
+  ];
+});
 const filterOptionBySearch = (query: string, opt: { label: string; value: string }) => {
   const q = query.trim().toLowerCase();
   if (!q) return true;
@@ -413,13 +449,13 @@ const filteredJenisOptions = computed(() =>
   jenisOptions.filter((opt) => filterOptionBySearch(jenisFilterSearch.value, opt))
 );
 const filteredTahapanOptions = computed(() =>
-  tahapanOptions.filter((opt) => filterOptionBySearch(tahapanFilterSearch.value, opt))
+  tahapanOptions.value.filter((opt) => filterOptionBySearch(tahapanFilterSearch.value, opt))
 );
 const jenisLabel = computed(
   () => jenisOptions.find((o) => o.value === filterJenis.value)?.label ?? 'Semua Naskah'
 );
 const tahapanLabel = computed(
-  () => tahapanOptions.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
+  () => tahapanOptions.value.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
 );
 // Label badge per-row statusLegal (BE mengirim statusLegal per naskah). Dipakai
 // untuk kolom Status & export — terutama filter 'semua' yang mencampur sub-status.
@@ -436,24 +472,41 @@ const STATUS_LEGAL_LABEL: Record<string, string> = {
 // difilter). Filter client-side ini memastikan baris PD (dari merge general list,
 // statusLegal belum_dikirim) tidak bocor ke tab menunggu/revisi/sudah-dikerjakan,
 // dan tab "Sudah Dikerjakan" benar-benar memfilter statusLegal=sudah_dikerjakan
-// (bukan sekadar "aksi-saya" berdasarkan aktor).
+// (bukan berdasarkan nama aktor yang sedang login).
 const STATUS_FILTER_MAP: Record<string, string | null> = {
   semua: null,
   'belum-dikirim': 'belum_dikirim',
   menunggu: 'menunggu_persetujuan',
   revisi: 'revisi',
-  'aksi-saya': 'sudah_dikerjakan',
+  'sudah-dikerjakan': 'sudah_dikerjakan',
 };
 
 const columns = [
-  { key: 'nomor', label: 'Nomor', sortable: true },
-  { key: 'jenis', label: 'Jenis', sortable: true },
-  { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
-  { key: 'konseptor', label: 'Konseptor', sortable: true },
-  { key: 'perihal', label: 'Perihal', sortable: true },
-  { key: 'tahapan', label: 'Tahapan', sortable: true },
-  { key: 'status', label: 'Status', sortable: true },
-  { key: 'aksi', label: 'Aksi' },
+  { key: 'nomor', label: 'Naskah', sortable: true, class: 'w-[27%]', headerClass: 'w-[27%]' },
+  {
+    key: 'pemrakarsa',
+    label: 'Pemrakarsa',
+    sortable: true,
+    class: 'w-[15%]',
+    headerClass: 'w-[15%]',
+  },
+  {
+    key: 'konseptor',
+    label: 'Konseptor',
+    sortable: true,
+    class: 'hidden xl:table-cell w-[13%]',
+    headerClass: 'hidden xl:table-cell w-[13%]',
+  },
+  { key: 'tahapan', label: 'Tahapan', sortable: true, class: 'w-[14%]', headerClass: 'w-[14%]' },
+  { key: 'status', label: 'Status', sortable: true, class: 'w-[12%]', headerClass: 'w-[12%]' },
+  {
+    key: 'waktu',
+    label: 'Waktu',
+    sortable: true,
+    class: 'hidden lg:table-cell w-[12%]',
+    headerClass: 'hidden lg:table-cell w-[12%]',
+  },
+  { key: 'aksi', label: 'Aksi', class: 'w-[7%]', headerClass: 'w-[7%]' },
 ];
 
 // ── Custom Dropdown Toolbar State ──
@@ -477,7 +530,11 @@ function toggleFilterStatus() {
   openFilterJenis.value = false;
   openFilterTahapan.value = false;
 }
-function selectFilterStatus(v: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya') {
+function selectFilterStatus(
+  v: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'sudah-dikerjakan'
+) {
+  filterTahapan.value = '';
+  tahapanFilterSearch.value = '';
   filterStatus.value = v;
   openFilterStatus.value = false;
 }
@@ -555,12 +612,21 @@ const displayRows = computed(() =>
     tahapan: r.tahapan.replace(/_/g, ' '),
     statusLegal: r.statusLegal ?? '',
     status: STATUS_LEGAL_LABEL[r.statusLegal ?? ''] ?? r.statusLegal ?? '',
+    waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
+    waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
   }))
 );
 
 const sortedRows = computed(() => {
   const dir = sortDir.value === 'asc' ? 1 : -1;
   return [...displayRows.value].sort((a, b) => {
+    if (sortKey.value === 'waktu') {
+      const av = (a as any).waktu;
+      const bv = (b as any).waktu;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    }
     const av = (a as any)[sortKey.value];
     const bv = (b as any)[sortKey.value];
     if (av == null) return 1;

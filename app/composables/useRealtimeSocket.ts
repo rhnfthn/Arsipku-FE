@@ -53,6 +53,10 @@ const correspondenceRoutingUpdate = ref<{
   action: string;
   occurredAt: string;
 } | null>(null);
+const naskahLainnyaUpdate = ref<{
+  naskahId: string;
+  occurredAt: string;
+} | null>(null);
 
 // Flag update (note/lock/favorit/arsip) — payload { id_sirkulasi, flag_type, new_value }
 const flagUpdate = ref<{
@@ -64,6 +68,7 @@ const flagUpdate = ref<{
 
 let socket: Socket | null = null;
 let connectPromise: Promise<void> | null = null;
+const naskahLainnyaSubscriptions = new Map<string, number>();
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -122,6 +127,9 @@ const connectSocket = async (): Promise<void> => {
       console.log('[useRealtimeSocket] Socket connected');
       // Request initial summary dari server
       socket?.emit('realtime:subscribe');
+      for (const naskahId of naskahLainnyaSubscriptions.keys()) {
+        socket?.emit('naskah-lainnya:subscribe', { naskahId });
+      }
       done();
     });
 
@@ -248,6 +256,15 @@ const connectSocket = async (): Promise<void> => {
       }
     });
 
+    socket.on('naskah-lainnya:updated', (payload: any) => {
+      if (payload?.naskahId) {
+        naskahLainnyaUpdate.value = {
+          naskahId: String(payload.naskahId),
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
     socket.on('flag:update', (payload: any) => {
       if (payload && payload.id_sirkulasi && payload.flag_type) {
         flagUpdate.value = payload;
@@ -297,6 +314,31 @@ const disconnectSocket = () => {
   }
   isConnected.value = false;
   connectPromise = null;
+  naskahLainnyaSubscriptions.clear();
+};
+
+const subscribeNaskahLainnya = (naskahId: string) => {
+  const id = String(naskahId ?? '').trim();
+  if (!id) return;
+  const count = naskahLainnyaSubscriptions.get(id) ?? 0;
+  naskahLainnyaSubscriptions.set(id, count + 1);
+  if (count === 0 && socket?.connected) {
+    socket.emit('naskah-lainnya:subscribe', { naskahId: id });
+  }
+};
+
+const unsubscribeNaskahLainnya = (naskahId: string) => {
+  const id = String(naskahId ?? '').trim();
+  if (!id) return;
+  const count = naskahLainnyaSubscriptions.get(id) ?? 0;
+  if (count > 1) {
+    naskahLainnyaSubscriptions.set(id, count - 1);
+    return;
+  }
+  naskahLainnyaSubscriptions.delete(id);
+  if (socket?.connected) {
+    socket.emit('naskah-lainnya:unsubscribe', { naskahId: id });
+  }
 };
 
 // ──────────────────────────────────────────────
@@ -333,6 +375,7 @@ export function useRealtimeSocket() {
     naskahLainnyaLegalDraftingWaitingCount,
     flagUpdate,
     correspondenceRoutingUpdate,
+    naskahLainnyaUpdate,
     isConnected,
     hasBsreAlert,
     // Socket reference (for custom event listeners)
@@ -342,5 +385,7 @@ export function useRealtimeSocket() {
     destroy,
     connectSocket,
     disconnectSocket,
+    subscribeNaskahLainnya,
+    unsubscribeNaskahLainnya,
   };
 }

@@ -1,15 +1,17 @@
 <template>
-  <div class="overflow-x-auto">
-    <table class="min-w-full border-collapse text-sm">
+  <div :class="compact ? 'w-full overflow-x-hidden' : 'overflow-x-auto'">
+    <table :class="['border-collapse text-sm', compact ? 'w-full table-fixed' : 'min-w-full']">
       <thead :class="headerClass">
         <tr>
           <th
             v-for="col in columns"
             :key="col.key"
             :class="[
-              'px-4 py-3 font-semibold',
-              col.sortable ? 'cursor-pointer select-none hover:bg-primary-500 dark:hover:bg-primary-600' : '',
-              col.headerClass || ''
+              compact ? 'px-2.5 py-2.5 text-xs font-semibold' : 'px-4 py-3 font-semibold',
+              col.sortable
+                ? 'cursor-pointer select-none hover:bg-primary-500 dark:hover:bg-primary-600'
+                : '',
+              col.headerClass || '',
             ]"
             @click="col.sortable && $emit('sort', col.key)"
           >
@@ -38,7 +40,10 @@
           </td>
         </tr>
         <tr v-else-if="rows.length === 0">
-          <td :colspan="columns.length" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+          <td
+            :colspan="columns.length"
+            class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500"
+          >
             {{ emptyMessage }}
           </td>
         </tr>
@@ -48,13 +53,20 @@
           :key="row.id ?? row.persnum ?? idx"
           :class="[rowClass, 'group relative']"
         >
-          <td v-for="col in columns" :key="col.key" :class="['px-4 py-3', col.class || '']">
+          <td
+            v-for="col in columns"
+            :key="col.key"
+            :class="[compact ? 'px-2.5 py-2.5' : 'px-4 py-3', col.class || '']"
+          >
             <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]" :index="idx">
               {{ row[col.key] }}
             </slot>
           </td>
           <!-- Floating actions slot (rendered inside the <tr>, positioned absolute) -->
-          <td v-if="$slots['row-extra']" class="absolute right-0 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200">
+          <td
+            v-if="$slots['row-extra']"
+            class="absolute right-0 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 rounded-md px-2 py-1.5 z-10 animate-in fade-in duration-200"
+          >
             <slot name="row-extra" :row="row" :index="idx" />
           </td>
         </tr>
@@ -84,9 +96,12 @@ withDefaults(
     headerClass?: string;
     bodyClass?: string;
     rowClass?: string;
+    /** Layout fixed dengan padding rapat; konten panjang wajib dibatasi oleh cell slot. */
+    compact?: boolean;
   }>(),
   {
     loading: false,
+    compact: false,
     skeletonRows: 5,
     emptyMessage: 'Tidak ada data yang cocok dengan pencarian.',
     sortDir: 'asc',
