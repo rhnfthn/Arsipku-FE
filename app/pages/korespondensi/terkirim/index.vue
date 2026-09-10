@@ -123,6 +123,63 @@ const berkasListForModal = ref<any[]>([]);
 const selectedBerkasId = ref('');
 const isAddingToBerkas = ref(false);
 const berkasStatusMap = ref<Record<string, any>>({});
+const openBerkasDropdown = ref(false);
+const berkasSearch = ref('');
+const berkasTriggerRef = ref<HTMLElement | null>(null);
+const berkasPanelStyle = ref<Record<string, string>>({});
+// Info berkas tertutup tempat naskah berada (naskah terkunci, tidak bisa dipindah)
+const berkasLockedInfo = ref<any>(null);
+
+// Posisi panel mengikuti tombol trigger (panel di-teleport ke body).
+const updateBerkasPanelPosition = () => {
+  const el = berkasTriggerRef.value;
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  berkasPanelStyle.value = {
+    left: `${rect.left}px`,
+    top: `${rect.bottom + 6}px`,
+    width: `${rect.width}px`,
+  };
+};
+
+const toggleBerkasDropdown = () => {
+  openBerkasDropdown.value = !openBerkasDropdown.value;
+  if (openBerkasDropdown.value) {
+    updateBerkasPanelPosition();
+    berkasSearch.value = '';
+  }
+};
+
+const selectedBerkasLabel = computed(() => {
+  const b = berkasListForModal.value.find((x) => x.id === selectedBerkasId.value);
+  if (!b) return '';
+  return `${b.kodeBerkas ?? b.kode_berkas ?? '-'} — ${b.judulBerkas ?? b.judul_berkas ?? '-'}`;
+});
+
+const filteredBerkasList = computed(() => {
+  const q = berkasSearch.value.trim().toLowerCase();
+  if (!q) return berkasListForModal.value;
+  return berkasListForModal.value.filter((b) =>
+    `${b.kodeBerkas ?? b.kode_berkas ?? ''} ${b.judulBerkas ?? b.judul_berkas ?? ''}`
+      .toLowerCase()
+      .includes(q),
+  );
+});
+
+const selectBerkas = (b: any) => {
+  selectedBerkasId.value = b.id;
+  openBerkasDropdown.value = false;
+  berkasSearch.value = '';
+};
+
+// Tutup dropdown berkas saat klik di luar (pola data-custom-dropdown existing).
+// Panel di-teleport ke body, jadi cek juga apakah klik terjadi di dalam panel.
+function handleBerkasDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (target.closest('[data-custom-dropdown]')) return;
+  openBerkasDropdown.value = false;
+  berkasSearch.value = '';
+}
 
 const fetchBerkasStatus = async (rows: any[]) => {
   if (!canReadBerkasStatus.value || rows.length === 0) return;
@@ -142,6 +199,8 @@ const fetchBerkasStatus = async (rows: any[]) => {
 const openAddToBerkasModal = async (mail: any) => {
   selectedNaskahForBerkas.value = mail;
   selectedBerkasId.value = '';
+  openBerkasDropdown.value = false;
+  berkasSearch.value = '';
   showAddToBerkasModal.value = true;
   try {
     const data: any = await getBerkasList({ status: 'aktif', limit: 100 });
@@ -158,10 +217,22 @@ const openAddToBerkasModal = async (mail: any) => {
   } catch (e) {
     console.error('Gagal memuat daftar berkas:', e);
   }
+  // Naskah yang sudah masuk berkas TERTUTUP tidak bisa dipindah lagi.
+  // Naskah di berkas AKTIF: pre-select berkasnya sebagai default (masih bisa diganti).
+  const current = berkasStatusMap.value[mail.naskahId];
+  if (current?.berkas_status && current.berkas_status !== 'aktif') {
+    berkasLockedInfo.value = current;
+  } else {
+    berkasLockedInfo.value = null;
+    if (current?.berkas_id) {
+      selectedBerkasId.value = current.berkas_id;
+    }
+  }
 };
 
 const handleAddToBerkas = async () => {
   if (!selectedBerkasId.value || !selectedNaskahForBerkas.value) return;
+  if (berkasLockedInfo.value) return; // naskah terkunci di berkas tertutup
   isAddingToBerkas.value = true;
   try {
     await addNaskahToBerkas(selectedBerkasId.value, {
@@ -922,6 +993,8 @@ onMounted(async () => {
   startDateCal.value = parseDate(today);
   endDateCal.value = parseDate(today);
 
+  document.addEventListener('click', handleBerkasDocumentClick);
+
   if (!user.value) await getProfile();
 
   // Connect realtime socket for tracking updates
@@ -1011,6 +1084,7 @@ onMounted(async () => {
 onUnmounted(() => {
   isUnmounted.value = true;
   clearTimeout(searchTimeout);
+  document.removeEventListener('click', handleBerkasDocumentClick);
   // Cleanup tracking:update listener
   const rtSocket = useRealtimeSocket();
   if (rtSocket.socket.value) {
@@ -1765,65 +1839,144 @@ onUnmounted(() => {
     />
 
     <!-- Modal Masukkan ke Berkas -->
-    <!-- Modal Masukkan ke Berkas -->
     <Teleport to="body">
-      <div
-        v-if="showAddToBerkasModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      <Modal
+        v-model="showAddToBerkasModal"
+        size="md"
+        :saving="isAddingToBerkas"
+        @save="handleAddToBerkas"
       >
-        <div
-          class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[500px]"
-        >
-          <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <h3 class="font-bold text-gray-900 dark:text-gray-100">Masukkan ke Berkas</h3>
-            <button
-              @click="showAddToBerkasModal = false"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+        <template #title>
+          <div class="ml-5 mt-5 mb-2 flex items-center gap-2.5">
+            <span
+              class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/40"
             >
-              <UIcon name="i-lucide-x" class="w-4 h-4" />
-            </button>
+              <UIcon name="i-lucide-folder-plus" class="size-4.5 text-primary-600 dark:text-primary-400" />
+            </span>
+            <Heading variant="heading9b" class="text-sm font-bold dark:text-white">
+              Masukkan ke Berkas
+            </Heading>
           </div>
+        </template>
 
-          <div class="p-4 flex-1 overflow-y-auto space-y-4">
-            <p v-if="selectedNaskahForBerkas" class="text-sm text-gray-500 dark:text-gray-400">
-              Naskah:
-              <span class="font-medium text-gray-900 dark:text-white">{{ selectedNaskahForBerkas.subject || '-' }}</span>
-            </p>
-            <div>
-              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Pilih Berkas Aktif</label>
-              <select
-                v-model="selectedBerkasId"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-              >
-                <option value="" disabled>Pilih berkas tujuan</option>
-                <option v-for="b in berkasListForModal" :key="b.id" :value="b.id">
-                  {{ b.kodeBerkas ?? b.kode_berkas ?? '-' }} — {{ b.judulBerkas ?? b.judul_berkas ?? '-' }}
-                </option>
-              </select>
-              <p v-if="berkasListForModal.length === 0" class="text-xs text-gray-400 mt-2">
-                Tidak ada berkas aktif. Buat berkas baru di halaman Pemberkasan.
+        <div class="space-y-4 p-1">
+          <!-- Info naskah terpilih -->
+          <div
+            v-if="selectedNaskahForBerkas"
+            class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-700/40"
+          >
+            <span
+              class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-800"
+            >
+              <UIcon name="i-lucide-file-text" class="size-4 text-primary-600 dark:text-primary-400" />
+            </span>
+            <div class="min-w-0">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Naskah</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ selectedNaskahForBerkas.subject || '-' }}
               </p>
             </div>
           </div>
 
-          <div class="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
-            <button
-              @click="showAddToBerkasModal = false"
-              class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              @click="handleAddToBerkas"
-              :disabled="!selectedBerkasId || isAddingToBerkas"
-              class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <UIcon v-if="isAddingToBerkas" name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
-              {{ isAddingToBerkas ? 'Menambahkan...' : 'Tambahkan' }}
-            </button>
+          <!-- Dropdown berkas (pola data-custom-dropdown existing) -->
+          <div v-if="!berkasLockedInfo">
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              Pilih Berkas Aktif <span class="text-red-500">*</span>
+            </Heading>
+            <div class="relative mt-1" data-custom-dropdown>
+              <button
+                ref="berkasTriggerRef"
+                type="button"
+                :disabled="berkasListForModal.length === 0"
+                @click.stop="toggleBerkasDropdown"
+                :class="[
+                  'flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60',
+                  !selectedBerkasId
+                    ? 'border-gray-300 text-gray-400 dark:border-gray-600 dark:text-gray-500'
+                    : 'border-gray-300 text-gray-700 dark:border-gray-600',
+                ]"
+              >
+                <span class="truncate">{{ selectedBerkasLabel || 'Pilih berkas tujuan' }}</span>
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="size-4 shrink-0 text-gray-400 transition-transform duration-200"
+                  :class="{ 'rotate-180': openBerkasDropdown }"
+                />
+              </button>
+            </div>
+
+            <!-- Panel dropdown di-teleport ke body agar tidak ter-clip overflow modal -->
+            <Teleport to="body">
+              <div
+                v-if="openBerkasDropdown && berkasListForModal.length > 0"
+                data-custom-dropdown
+                class="fixed z-[10000] max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                :style="berkasPanelStyle"
+              >
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon
+                      name="i-lucide-search"
+                      class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="berkasSearch"
+                      type="text"
+                      placeholder="Cari berkas…"
+                      class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:bg-white dark:border-gray-700 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-800"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+                <div class="max-h-44 overflow-y-auto">
+                  <button
+                    v-for="b in filteredBerkasList"
+                    :key="b.id"
+                    type="button"
+                    @click.stop="selectBerkas(b)"
+                    :class="[
+                      'w-full border-b border-gray-50 px-4 py-2.5 text-left text-sm transition-colors last:border-0 dark:border-gray-700',
+                      selectedBerkasId === b.id
+                        ? 'bg-primary/5 font-medium text-primary dark:text-primary-400'
+                        : 'text-gray-700 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    <span class="font-mono text-xs">{{ b.kodeBerkas ?? b.kode_berkas ?? '-' }}</span>
+                    <span class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">
+                      {{ b.judulBerkas ?? b.judul_berkas ?? '-' }}
+                    </span>
+                  </button>
+                  <div
+                    v-if="filteredBerkasList.length === 0"
+                    class="px-4 py-3 text-sm text-gray-400"
+                  >
+                    Berkas tidak ditemukan.
+                  </div>
+                </div>
+              </div>
+            </Teleport>
+            <p v-if="berkasListForModal.length === 0" class="mt-2 text-xs text-gray-400">
+              Tidak ada berkas aktif. Buat berkas baru di halaman Pemberkasan.
+            </p>
+          </div>
+
+          <!-- Naskah terkunci di berkas tertutup -->
+          <div v-else class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <UIcon name="i-lucide-lock" class="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Naskah tidak bisa dipindahkan
+              </p>
+              <p class="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
+                Naskah sudah berada di berkas
+                <span class="font-semibold">{{ berkasLockedInfo.kode_berkas }}</span>
+                yang berstatus {{ berkasLockedInfo.berkas_status === 'closed_retensi_aktif' ? 'Tertutup' : 'Retensi Inaktif' }}.
+                Arsip yang sudah ditutup tidak dapat dipindah ke berkas lain.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </Modal>
     </Teleport>
 
     <!-- Modal Status Pembaca -->
