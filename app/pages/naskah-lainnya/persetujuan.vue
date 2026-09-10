@@ -255,7 +255,7 @@
               <button
                 class="min-w-0 truncate font-mono text-xs text-primary-600 hover:underline"
                 :title="row.nomor"
-                @click="openAction(row)"
+                @click="goDetail(row)"
               >
                 {{ row.nomor }}
               </button>
@@ -302,7 +302,7 @@
           </span>
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)"
             >Detail</UButton
           >
         </template>
@@ -765,74 +765,10 @@ function handleSort(key: string) {
 
 // ── Aksi ──────────────────────────────────────────────────────────
 
-async function openAction(row: any) {
+function goDetail(row: any) {
   const n = persetujuan.value.find((i) => i.id === row.id);
   if (!n) return;
-  // Naskah pada tab Disetujui adalah riwayat aksi user. Jangan buka kembali
-  // workspace approval agar approver tidak tampak bisa memproses ulang.
-  if (filterStatus.value === 'disetujui') {
-    await navigateTo(`/naskah-lainnya/${n.id}`);
-    return;
-  }
-  // Defensive check untuk daftar yang status filter-nya stale: backend adalah
-  // sumber kebenaran giliran. Jika user tak punya aksi aktif, buka detail biasa.
-  try {
-    await fetchDetail(n.id);
-    const activeActions = detail.value?.availableActions ?? [];
-    if (
-      ![
-        'setuju',
-        'tolak',
-        'kembalikan',
-        'paraf',
-        'tanda-tangan',
-        'tolak-tanda-tangan',
-        'lanjut-persetujuan',
-        'teruskan-persetujuan',
-        'selesai-persetujuan',
-        'kirim-approval-legal',
-      ].some((a) => activeActions.includes(a as any))
-    ) {
-      await navigateTo(`/naskah-lainnya/${n.id}`);
-      return;
-    }
-  } catch {
-    // Bila detail gagal dimuat, navigasi tahap di bawah tetap menjadi fallback.
-  }
-  if (n.tahapan === 'legal_drafting') {
-    navigateTo(`/naskah-lainnya/${n.id}/legal-drafting`);
-    return;
-  }
-  if (n.tahapan === 'blanko_verbal') {
-    navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);
-    return;
-  }
-  if (n.tahapan === 'persetujuan_direksi') {
-    navigateTo(`/naskah-lainnya/${n.id}/persetujuan-direksi`);
-    return;
-  }
-  if (
-    n.tahapan === 'evaluasi' ||
-    n.tahapan === 'persetujuan_lanjutan' ||
-    n.tahapan === 'evaluasi_final'
-  ) {
-    navigateTo(`/naskah-lainnya/${n.id}/evaluasi`);
-    return;
-  }
-  // Penandatangan cukup meninjau lalu menyetujui/menolak dari halaman detail;
-  // tidak masuk workspace upload/revisi.
-  if (
-    n.tahapan === 'tanda_tangan' ||
-    n.tahapan === 'tanda_tangan_pemrakarsa' ||
-    n.tahapan === 'tanda_tangan_legal' ||
-    n.tahapan === 'tanda_tangan_pejabat'
-  ) {
-    navigateTo(`/naskah-lainnya/${n.id}`);
-    return;
-  }
-  // POV approval pemrakarsa punya halaman kerja sendiri agar approver bisa
-  // meninjau dokumen dan stage revisi opsional sebelum setuju/tolak/kembalikan.
-  navigateTo(`/naskah-lainnya/${n.id}/persetujuan`);
+  navigateTo(`/naskah-lainnya/${n.id}`);
 }
 
 async function doSetuju() {
