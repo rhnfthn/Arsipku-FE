@@ -53,13 +53,20 @@ export function useNaskahLainnya() {
       }
     );
 
-  const fetchDetail = (id: string) =>
-    run(
-      () => apiGet(`/naskah-lainnya/${id}`, {}, { skipCache: true }),
-      (d) => {
+  const fetchDetail = async (id: string, options: { silent?: boolean } = {}) => {
+    const request = () => apiGet(`/naskah-lainnya/${id}`, {}, { skipCache: true });
+    if (!options.silent) {
+      return run(request, (d) => {
         detail.value = d;
-      }
-    );
+      });
+    }
+
+    // Refresh realtime tidak menyalakan loading halaman agar section detail
+    // berubah tanpa flicker. Error sementara juga tidak membuang data terakhir.
+    const response = await request();
+    detail.value = response.data;
+    error.value = null;
+  };
 
   const fetchPersetujuan = (status: 'semua' | 'menunggu' | 'disetujui' | 'ditolak' = 'menunggu') =>
     run(
@@ -77,11 +84,11 @@ export function useNaskahLainnya() {
       }
     );
 
-  // BE legal-drafting endpoint sudah mencakup legal_drafting + persetujuan_direksi
-  // + blanko_verbal dengan statusLegal akurat per naskah. Sub-filter statusLegal
-  // dilakukan client-side di halaman legal-drafting (tab filter).
+  // BE legal-drafting endpoint mencakup legal_drafting + persetujuan_direksi
+  // + blanko_verbal dan memfilter berdasarkan statusLegal. Halaman juga menjaga
+  // filter yang sama sebagai validasi tampilan agar setiap tab konsisten.
   const fetchLegalDrafting = (
-    status: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'aksi-saya' = 'belum-dikirim'
+    status: 'semua' | 'belum-dikirim' | 'menunggu' | 'revisi' | 'sudah-dikerjakan' = 'belum-dikirim'
   ) =>
     run(
       () => apiGet('/naskah-lainnya/legal-drafting', { params: { status } }, { skipCache: true }),

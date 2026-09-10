@@ -202,6 +202,7 @@
 
       <!-- Table -->
       <DataTable
+        compact
         :columns="columns"
         :rows="tableRows"
         :loading="pending"
@@ -214,18 +215,43 @@
         @sort="handleSort"
       >
         <template #cell-nomor="{ row }">
-          <button
-            class="font-mono text-xs text-primary-600 hover:underline"
-            @click="goDetail(row.id)"
-          >
-            {{ row.nomor }}
-          </button>
+          <div class="min-w-0">
+            <div class="flex min-w-0 items-center gap-1.5">
+              <span
+                class="shrink-0 rounded bg-primary-50 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+              >
+                {{ row.jenis }}
+              </span>
+              <button
+                class="min-w-0 truncate font-mono text-xs text-primary-600 hover:underline"
+                :title="row.nomor"
+                @click="goDetail(row.id)"
+              >
+                {{ row.nomor }}
+              </button>
+            </div>
+            <p class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400" :title="row.perihal">
+              {{ row.perihal }}
+            </p>
+          </div>
         </template>
-        <template #cell-perihal="{ row }">
-          <span class="block max-w-xs truncate" :title="row.perihal">{{ row.perihal }}</span>
+        <template #cell-pemrakarsa="{ row }">
+          <span class="block truncate text-xs" :title="row.pemrakarsa">{{ row.pemrakarsa }}</span>
+        </template>
+        <template #cell-konseptor="{ row }">
+          <span class="block truncate text-xs" :title="row.konseptor">{{ row.konseptor }}</span>
         </template>
         <template #cell-tahapan="{ row }">
-          <StatusBadge :status="row.tahapan" />
+          <StatusBadge
+            :status="row.tahapan"
+            :title="row.tahapan"
+            class="max-w-full overflow-hidden whitespace-nowrap !px-1.5 !text-[11px]"
+          />
+        </template>
+        <template #cell-terakhirDiubah="{ row }">
+          <span class="block truncate text-xs text-gray-500" :title="row.terakhirDiubah">
+            {{ row.terakhirDiubah }}
+          </span>
         </template>
         <template #cell-aksi="{ row }">
           <UButton size="xs" color="primary" variant="soft" @click="goDetail(row.id)"
@@ -333,13 +359,43 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   ditolak: 'Ditolak',
   dibatalkan: 'Dibatalkan',
 };
-const tahapanOptions = [
-  { label: 'Semua Tahapan', value: '' },
-  ...Object.keys(TAHAPAN_STEP).map((value) => ({
-    label: tahapanFilterLabels[value as Tahapan] ?? value.replace(/_/g, ' '),
-    value,
-  })),
+// Prioritas urutan tahap aktif. Opsi akhir tetap dibentuk dari data yang pernah
+// diterima pada pemuatan daftar tanpa filter, jadi tahap kosong tidak ditawarkan.
+const daftarTahapanOrder: Tahapan[] = [
+  'persetujuan',
+  'legal_drafting',
+  'evaluasi',
+  'persetujuan_direksi',
+  'blanko_verbal',
+  'tanda_tangan',
+  'selesai',
+  'perlu_perbaikan',
+  'ditolak',
+  'dibatalkan',
 ];
+const observedTahapan = ref(new Set<Tahapan>());
+watch(
+  items,
+  (rows) => {
+    const next = new Set(observedTahapan.value);
+    rows.forEach((row) => {
+      if (row.tahapan !== 'konsep') next.add(row.tahapan);
+    });
+    observedTahapan.value = next;
+  },
+  { immediate: true }
+);
+const tahapanOptions = computed(() => {
+  const ordered = daftarTahapanOrder.filter((value) => observedTahapan.value.has(value));
+  const additional = [...observedTahapan.value].filter((value) => !ordered.includes(value));
+  return [
+    { label: 'Semua Tahapan', value: '' },
+    ...[...ordered, ...additional].map((value) => ({
+      label: tahapanFilterLabels[value] ?? value.replace(/_/g, ' '),
+      value,
+    })),
+  ];
+});
 const filterOptionBySearch = (query: string, opt: { label: string; value: string }) => {
   const q = query.trim().toLowerCase();
   if (!q) return true;
@@ -349,18 +405,34 @@ const filteredJenisOptions = computed(() =>
   jenisOptions.filter((opt) => filterOptionBySearch(jenisFilterSearch.value, opt))
 );
 const filteredTahapanOptions = computed(() =>
-  tahapanOptions.filter((opt) => filterOptionBySearch(tahapanFilterSearch.value, opt))
+  tahapanOptions.value.filter((opt) => filterOptionBySearch(tahapanFilterSearch.value, opt))
 );
 
 const columns = [
-  { key: 'nomor', label: 'Nomor', sortable: true },
-  { key: 'jenis', label: 'Jenis', sortable: true },
-  { key: 'perihal', label: 'Perihal', sortable: true },
-  { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
-  { key: 'konseptor', label: 'Konseptor', sortable: true },
-  { key: 'tahapan', label: 'Tahapan', sortable: true },
-  { key: 'terakhirDiubah', label: 'Diubah', sortable: true },
-  { key: 'aksi', label: 'Aksi' },
+  { key: 'nomor', label: 'Naskah', sortable: true, class: 'w-[31%]', headerClass: 'w-[31%]' },
+  {
+    key: 'pemrakarsa',
+    label: 'Pemrakarsa',
+    sortable: true,
+    class: 'w-[17%]',
+    headerClass: 'w-[17%]',
+  },
+  {
+    key: 'konseptor',
+    label: 'Konseptor',
+    sortable: true,
+    class: 'hidden xl:table-cell w-[15%]',
+    headerClass: 'hidden xl:table-cell w-[15%]',
+  },
+  { key: 'tahapan', label: 'Tahapan', sortable: true, class: 'w-[17%]', headerClass: 'w-[17%]' },
+  {
+    key: 'terakhirDiubah',
+    label: 'Waktu',
+    sortable: true,
+    class: 'hidden lg:table-cell w-[13%]',
+    headerClass: 'hidden lg:table-cell w-[13%]',
+  },
+  { key: 'aksi', label: 'Aksi', class: 'w-[7%]', headerClass: 'w-[7%]' },
 ];
 
 // ── Custom Dropdown Toolbar State (pola berkas-saya) ──────────────
@@ -373,7 +445,7 @@ const jenisLabel = computed(
   () => jenisOptions.find((o) => o.value === filterJenis.value)?.label ?? 'Semua Naskah'
 );
 const tahapanLabel = computed(
-  () => tahapanOptions.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
+  () => tahapanOptions.value.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
 );
 
 function toggleRowsPerPage() {
@@ -519,7 +591,6 @@ async function handleExportConfirm(selectedKeys: string[]) {
       });
       return;
     }
-
     const data = rows.map((r: any, idx: number) => {
       const row: Record<string, any> = {};
       if (selectedKeys.includes('No')) row['No'] = idx + 1;
