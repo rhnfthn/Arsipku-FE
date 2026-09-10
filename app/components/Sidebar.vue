@@ -337,6 +337,8 @@ import { usePenomoran } from '~/composables/usePenomoran';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
+import { useNotifications } from '~/composables/useNotifications';
+import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
@@ -355,6 +357,12 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+const {
+  sdeMasalUnreadCount,
+  notifications,
+  fetchNotifications,
+} = useNotifications();
+const { fetchFolders, fetchVerificationFolders } = useSdeMasal();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
 const {
@@ -597,6 +605,9 @@ onMounted(async () => {
     if (hasPermission('usulan-akses-berkas', 'read')) fetchUsulanCounts().catch(() => {});
     // Fetch share diterima counts untuk badge sidebar
     if (hasPermission('naskah-share', 'read')) fetchShareCounts().catch(() => {});
+    // Sinkronkan badge SDE Massal dengan folder yang benar-benar menunggu aksi.
+    await fetchNotifications(1, 100, true);
+    await refreshSdeMasalCounts();
     // Count Persetujuan dan Legal Drafting dikirim lewat initial WebSocket summary
     // lalu diperbarui setiap workflow naskah berubah.
   } catch (error) {
@@ -627,6 +638,71 @@ const activeApp = ref('');
 const hoveredApp = ref(null);
 
 const hasInboxUnread = computed(() => unreadCount.value > 0);
+const sdeMasalPengajuanCount = ref(0);
+const sdeMasalVerificationCount = ref(0);
+
+const getUnreadSdeMasalNotifications = () =>
+  notifications.value.filter((notification) => {
+    const folderId = notification.data?.folderId || notification.data?.folder_id;
+    return Boolean(
+      !notification.isRead &&
+      notification.data?.category === 'SDE_MASAL' &&
+      folderId,
+    );
+  });
+
+const refreshSdeMasalCounts = async () => {
+  try {
+    const [creatorResponse, verificationFolders] = await Promise.all([
+      fetchFolders({ scope: 'creator', page: 1, limit: 100 }),
+      fetchVerificationFolders(),
+    ]);
+    const creatorFolderIds = new Set(
+      (creatorResponse?.data || []).map((folder) => String(folder.id)),
+    );
+    const verificationFolderIds = new Set(
+      verificationFolders
+        .filter((folder) =>
+          folder?.workflowRole === 'VERIFIKATOR' &&
+          Number(folder?.waitingCount || 0) > 0,
+        )
+        .map((folder) => String(folder.id)),
+    );
+
+    const countUnreadFolders = (folderIds) =>
+      new Set(
+        getUnreadSdeMasalNotifications()
+          .map((notification) =>
+            String(notification.data?.folderId || notification.data?.folder_id),
+          )
+          .filter((folderId) => folderIds.has(folderId)),
+      ).size;
+
+    // Pengajuan: perubahan yang kembali ke konseptor, termasuk status
+    // DIKEMBALIKAN. Verifikasi: folder baru yang sedang menunggu giliran.
+    sdeMasalPengajuanCount.value = countUnreadFolders(creatorFolderIds);
+    sdeMasalVerificationCount.value = countUnreadFolders(verificationFolderIds);
+  } catch {
+    // Jangan menampilkan badge palsu ketika daftar folder gagal dimuat.
+    sdeMasalPengajuanCount.value = 0;
+    sdeMasalVerificationCount.value = 0;
+  }
+};
+
+watch(sdeMasalUnreadCount, async () => {
+  await fetchNotifications(1, 100, true);
+  await refreshSdeMasalCounts();
+});
+
+watch(
+  () => route.path,
+  async (path) => {
+    if (path === '/korespondensi/sde-masal/verifikasi') {
+      await fetchNotifications(1, 100, true);
+    }
+    await refreshSdeMasalCounts();
+  },
+);
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
 
@@ -689,9 +765,23 @@ const verifikatorMenu = computed(() => ({
 const sdeMasalMenu = computed(() => ({
   label: 'SDE Massal',
   icon: 'i-lucide-files',
+  badge:
+    sdeMasalPengajuanCount.value + sdeMasalVerificationCount.value > 0
+      ? sdeMasalPengajuanCount.value + sdeMasalVerificationCount.value
+      : null,
   children: [
-    { label: 'Pengajuan', to: '/korespondensi/sde-masal', exact: true },
-    { label: 'Verifikasi', to: '/korespondensi/sde-masal/verifikasi', exact: true },
+    {
+      label: 'Pengajuan',
+      to: '/korespondensi/sde-masal',
+      exact: true,
+      badge: sdeMasalPengajuanCount.value > 0 ? sdeMasalPengajuanCount.value : null,
+    },
+    {
+      label: 'Verifikasi',
+      to: '/korespondensi/sde-masal/verifikasi',
+      exact: true,
+      badge: sdeMasalVerificationCount.value > 0 ? sdeMasalVerificationCount.value : null,
+    },
   ],
 }));
 

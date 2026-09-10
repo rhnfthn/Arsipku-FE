@@ -26,7 +26,7 @@ const positionId = computed(() => user.value?.position?.id || user.value?.positi
 const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
 const { rejectKonsep } = useKonsep();
 const { fetchSentNavigation } = useSirkulasi();
-const { apiPost, apiGet } = useApi();
+const { apiPost, apiGet, api } = useApi();
 
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
@@ -896,6 +896,58 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
     const response = await fetch(url); const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' }); activePdfUrl.value = URL.createObjectURL(blob);
   } catch (error) { activePdfUrl.value = url; } finally { isLocalPdfLoading.value = false; }
 };
+
+/**
+ * Backend memilih sumber PDF yang aman untuk SDE Massal: file final asli untuk
+ * BSrE agar signature tetap valid, atau hasil render data Excel untuk naskah
+ * non-BSrE/historis yang placeholder penerimanya belum ternormalisasi.
+ */
+const openSdeMasalPreview = async (naskahId: string, title = "Dokumen") => {
+  try {
+    const response = await api.get(`/sde-masal/naskah/${naskahId}/preview-pdf`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    if (!blob.size) return false;
+    previewTitle.value = title;
+    isPreviewOpen.value = true;
+    isLocalPdfLoading.value = false;
+    if (activePdfUrl.value) URL.revokeObjectURL(activePdfUrl.value);
+    activePdfUrl.value = URL.createObjectURL(blob);
+    return true;
+  } catch (error: any) {
+    // Naskah SDE biasa tidak memiliki row sde_masal. Biarkan jalur preview
+    // lama menangani kasus tersebut.
+    if (error?.response?.status === 404) return false;
+    console.warn('Preview ulang SDE Massal gagal, gunakan PDF tersimpan:', error);
+    return false;
+  }
+};
+
+const openDetailPreview = async (detail: any, url: string, title = "Dokumen") => {
+  const jenis = String(detail?.jenis || '').toUpperCase().replace(/[- ]/g, '_');
+  const routeJenis = String(jenisQuery || '').toUpperCase().replace(/[- ]/g, '_');
+  const isSde =
+    jenis === 'SDE' ||
+    jenis === 'SDE_MASAL' ||
+    routeJenis === 'SDE' ||
+    routeJenis === 'SDE_MASAL' ||
+    Boolean(detail?.sdeMasal);
+  if (isSde) {
+    // Pada beberapa response Terkirim, detail.id dapat berisi ID flow,
+    // sedangkan route.params.id tetap merupakan ID naskah. Coba keduanya
+    // supaya SDE Massal tidak jatuh kembali ke final_pdf historis.
+    const candidateIds = [detail?.id, id]
+      .filter(Boolean)
+      .map(String)
+      .filter((value, index, values) => values.indexOf(value) === index);
+    for (const naskahId of candidateIds) {
+      const opened = await openSdeMasalPreview(naskahId, title);
+      if (opened) return;
+    }
+  }
+  await openDocumentPreview(url, title);
+};
 const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -941,7 +993,7 @@ const konsepOptions = [
             :show-edit="isKonsepData && isCurrentDetail(detail) && showEditAction"
             :show-footer-actions="!isKonsepData && isCurrentDetail(detail) && !isTerkirim" :allowed-actions="allowedActions"
             :user-position-id="positionId" :is-jenis-d-i="isJenisDI" @back="goBack"
-            @preview="(url) => openDocumentPreview(url, detail.perihal)" @preview-file="openPreviewFile"
+            @preview="(url) => openDetailPreview(detail, url, detail.perihal)" @preview-file="openPreviewFile"
             @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
             @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"
             @lanjut-konsep="isOpenKonsepModal = true"
