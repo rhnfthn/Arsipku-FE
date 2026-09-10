@@ -483,6 +483,10 @@ async function previewPendukung(doc) {
 async function afterSignNavigate() {
   await fetchDetail(id.value);
   if (detail.value?.tahapan === 'selesai') {
+    if (detail.value?.signOption === 'ttd_basah' && detail.value?.manualFinalStatus !== 'final') {
+      await navigateTo(`/naskah-lainnya/${id.value}`);
+      return;
+    }
     await navigateTo(`/naskah-lainnya/${id.value}/selesai`);
     return;
   }
