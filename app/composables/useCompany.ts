@@ -19,11 +19,19 @@ export const useCompany = () => {
 
   const deleteCompany = (id: string) => apiDelete(`/company/${id}`);
 
+  const checkCompanyUsage = (id: string) =>
+    apiGet<{ canDelete: boolean; reason?: string; details?: any }>(
+      `/company/${id}/check-usage`,
+      {},
+      { skipCache: true },
+    );
+
   return {
     getCompanies,
     getCompanyByCode,
     createCompany,
     updateCompany,
     deleteCompany,
+    checkCompanyUsage,
   };
 };

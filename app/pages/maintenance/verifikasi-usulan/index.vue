@@ -47,6 +47,16 @@
         />
       </div>
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="meta?.total || list.length"
+      title="Pilih Kolom Export Verifikasi Usulan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -55,6 +65,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import VerifikasiFilterBar from '~/components/verifikasi-usulan/VerifikasiFilterBar.vue';
 import VerifikasiTable from '~/components/verifikasi-usulan/VerifikasiTable.vue';
 import type {
@@ -63,6 +76,18 @@ import type {
 } from '~/types/verifikasi-usulan';
 
 definePageMeta({ middleware: ['auth'] });
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'arsipPerihal', label: 'Nama Berkas', desc: 'Perihal atau nama berkas arsip' },
+  { key: 'arsipKode', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'nomorUsulan', label: 'No. Usulan', desc: 'Nomor usulan pemindahan/pemusnahan' },
+  { key: 'arsipKlasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'status', label: 'Status', desc: 'Status verifikasi usulan' }
+]);
 
 const route = useRoute();
 const { user } = useAuth();
@@ -122,25 +147,49 @@ const reload = () => {
 
 const onExport = () => {
   if (!list.value || list.value.length === 0) {
-    alert('Tidak ada data untuk diexport');
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
-  const headers = ['Nama Berkas', 'Kode Berkas', 'No. Usulan', 'Klasifikasi', 'Status'];
-  const rows = list.value.map((r: any) => [
-    r.arsipPerihal ?? '',
-    r.arsipKode ?? '',
-    r.nomorUsulan ?? '',
-    r.arsipKlasifikasi ?? '',
-    r.status ?? '',
-  ]);
-  const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `verifikasi-usulan-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (!list.value || list.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const data = list.value.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('arsipPerihal')) row['Nama Berkas'] = r.arsipPerihal || '-';
+      if (selectedKeys.includes('arsipKode')) row['Kode Berkas'] = r.arsipKode || '-';
+      if (selectedKeys.includes('nomorUsulan')) row['No. Usulan'] = r.nomorUsulan || '-';
+      if (selectedKeys.includes('arsipKlasifikasi')) row['Klasifikasi'] = r.arsipKlasifikasi || '-';
+      if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi Usulan');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `verifikasi_usulan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    useToast().add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export verifikasi usulan error:', err);
+    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 const openDetail = (row: VerifikasiUsulanItem) => {

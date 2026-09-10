@@ -123,7 +123,7 @@
         <!-- EXPORT BUTTON -->
         <button
           type="button"
-          @click="handleExport"
+          @click="openExportModal"
           :disabled="isExporting || rows.length === 0"
           class="flex items-center gap-2 h-9 px-4 text-sm font-medium bg-primary hover:bg-primary-700 disabled:bg-primary-300 dark:disabled:bg-primary-900 text-white rounded-lg transition whitespace-nowrap"
         >
@@ -985,6 +985,16 @@
     </template>
   </USlideover>
 
+  <!-- EXPORT COLUMN MODAL -->
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="isLocalFilter ? localFilteredRows.length : (pagination?.total || rows.length)"
+    title="Pilih Kolom Export Usulan Penomoran"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
+
   <!-- TOOLTIP -->
   <Teleport to="body">
     <div
@@ -1005,6 +1015,7 @@ import AddUsulan from '~/components/AddUsulan.vue';
 import Heading from '~/components/Heading.vue';
 import PageHeader from '~/components/PageHeader.vue';
 import { Modal } from '#components';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
 import * as XLSX from 'xlsx';
@@ -1610,10 +1621,28 @@ const handleCopy = (value: string) => {
   });
 };
 
-// ─── EXPORT ────────────────────────────────────────────────────────────────────
+// ─── EXPORT DENGAN PEMILIHAN KOLOM ─────────────────────────────────────────────
+const showExportModal = ref(false);
 const isExporting = ref(false);
-const handleExport = async () => {
-  if (isExporting.value || rows.value.length === 0) return;
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'jenis', label: 'Jenis Naskah', desc: 'Jenis naskah surat dinas' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal surat dibuat' },
+  { key: 'perihal', label: 'Perihal', desc: 'Isi perihal naskah' },
+  { key: 'penandatangan', label: 'Penandatangan', desc: 'Pejabat penandatangan surat' },
+  { key: 'jumlah', label: 'Jumlah Nomor', desc: 'Jumlah nomor yang diajukan' },
+  { key: 'pengusul', label: 'Pengusul', desc: 'Nama pegawai pengusul' },
+  { key: 'tglUsulan', label: 'Tanggal Usulan', desc: 'Waktu usulan diajukan' },
+  { key: 'status', label: 'Status', desc: 'Status usulan penomoran' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (isExporting.value || rows.value.length === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
     let exportRows = allMappedRows.value;
@@ -1639,17 +1668,19 @@ const handleExport = async () => {
       }
     }
 
-    const sheetData = exportRows.map((row: any, idx: number) => ({
-      No: Number(idx) + 1,
-      'Jenis Naskah': row.jenis || '-',
-      Tanggal: row.tanggal || '-',
-      Perihal: row.perihal || '-',
-      Penandatangan: row.penandatangan || '-',
-      'Jumlah Nomor': row.jumlah || 0,
-      Pengusul: row.pengusul || '-',
-      'Tgl Usulan': row.tglUsulan || '-',
-      Status: row.status || '-'
-    }));
+    const sheetData = exportRows.map((row: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = Number(idx) + 1;
+      if (selectedKeys.includes('jenis')) r['Jenis Naskah'] = row.jenis || '-';
+      if (selectedKeys.includes('tanggal')) r['Tanggal'] = row.tanggal || '-';
+      if (selectedKeys.includes('perihal')) r['Perihal'] = row.perihal || '-';
+      if (selectedKeys.includes('penandatangan')) r['Penandatangan'] = row.penandatangan || '-';
+      if (selectedKeys.includes('jumlah')) r['Jumlah Nomor'] = row.jumlah || 0;
+      if (selectedKeys.includes('pengusul')) r['Pengusul'] = row.pengusul || '-';
+      if (selectedKeys.includes('tglUsulan')) r['Tgl Usulan'] = row.tglUsulan || '-';
+      if (selectedKeys.includes('status')) r['Status'] = row.status || '-';
+      return r;
+    });
 
     if (!sheetData.length) return;
 
@@ -1671,6 +1702,7 @@ const handleExport = async () => {
       description: `${sheetData.length} data berhasil diexport`,
       color: 'success'
     });
+    showExportModal.value = false;
   } catch (e) {
     console.error('❌ Error export:', e);
     toast.add({

@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       v-if="modelValue"
-      class="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/10 p-4"
+      class="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 transition-opacity"
     >
       <!-- Hanya modal yang dianimasikan -->
       <Transition name="modal">

@@ -263,12 +263,27 @@
             </div>
           </div>
 
+          <!-- SEARCH FILTER TABLE 1 -->
+          <div class="relative flex-1 min-w-[180px] max-w-xs ml-auto">
+            <Search
+              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="table1Search"
+              @input="handleTable1SearchInput"
+              :placeholder="$t('cari') + ' ' + $t('naskah_tbl') + '...'"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:border-primary"
+            />
+          </div>
+
           <button
             v-if="hasPermission('laporan', 'export-naskah-masuk')"
-            class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
-            @click="exportTable1"
+            class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
+            :disabled="isExportingTable1"
+            @click="openExportModalTable1"
           >
-            {{ $t('export') }}
+            <FileDown class="w-4 h-4" />
+            {{ isExportingTable1 ? $t('ver_btn_mengekspor') || 'Mengekspor...' : $t('export') }}
           </button>
         </div>
 
@@ -718,12 +733,27 @@
               </div>
             </div>
 
+            <!-- SEARCH FILTER TABLE 2 -->
+            <div class="relative flex-1 min-w-[180px] max-w-xs ml-auto">
+              <Search
+                class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+              />
+              <input
+                v-model="filters.search"
+                @input="handleTable2SearchInput"
+                :placeholder="$t('cari') + '...'"
+                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:border-primary"
+              />
+            </div>
+
             <button
               v-if="hasPermission('laporan', 'export-naskah-masuk')"
-              class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
-              @click="exportTable2"
+              class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
+              :disabled="isExportingTable2"
+              @click="openExportModalTable2"
             >
-              {{ $t('export') }}
+              <FileDown class="w-4 h-4" />
+              {{ isExportingTable2 ? $t('ver_btn_mengekspor') || 'Mengekspor...' : $t('export') }}
             </button>
           </div>
         </div>
@@ -901,6 +931,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Export Kolom Table 1 -->
+    <ExportColumnModal
+      v-model="showExportModalTable1"
+      :columns="exportColumnsTable1"
+      :total-rows="totalItemsTable1"
+      :is-exporting="isExportingTable1"
+      @confirm="handleExportTable1Confirm"
+    />
+
+    <!-- Modal Export Kolom Table 2 -->
+    <ExportColumnModal
+      v-model="showExportModalTable2"
+      :columns="exportColumnsTable2"
+      :total-rows="totalItems"
+      :is-exporting="isExportingTable2"
+      @confirm="handleExportTable2Confirm"
+    />
   </div>
 </template>
 
@@ -910,7 +958,7 @@ definePageMeta({
 });
 
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { RotateCcw, ChevronDown, ArrowUpDown, FileDown } from 'lucide-vue-next';
+import { RotateCcw, ChevronDown, ArrowUpDown, FileDown, Search } from 'lucide-vue-next';
 import { useLaporan } from '~/composables/useLaporan';
 import { useAuth } from '~/composables/useAuth';
 import { useToast } from '#imports';
@@ -953,6 +1001,11 @@ const selectedJenis = ref('');
 const selectedLokasi = ref('');
 const lokasiSearch = ref('');
 const t1Open = ref<string | null>(null);
+const table1Search = ref('');
+
+const handleTable1SearchInput = () => {
+  currentPageTable1.value = 1;
+};
 
 const selectJenis = (jenis: string) => {
   selectedJenis.value = jenis;
@@ -1077,6 +1130,7 @@ const fetchTable2 = async () => {
       );
       if (lokasiObj) params.area = lokasiObj.kode || lokasiObj.value;
     }
+    if (filters.value.search) params.search = filters.value.search;
 
     const res = await getRekapNaskahMasukDetail(params);
     table2Data.value = (res.data ?? []).map((item: any) => ({
@@ -1129,6 +1183,11 @@ const filteredTableData = computed(() => {
       if (
         jenisSearch.value &&
         !row.jenis_text?.toLowerCase().includes(jenisSearch.value.toLowerCase())
+      )
+        return false;
+      if (
+        table1Search.value &&
+        !row.jenis_text?.toLowerCase().includes(table1Search.value.toLowerCase())
       )
         return false;
       if (selectedLokasi.value && row.lokasi !== selectedLokasi.value) return false;
@@ -1361,7 +1420,39 @@ const refreshData = () => {
   fetchTable2();
 };
 
-const exportTable1 = () => {
+// TABLE 2 SEARCH DEBOUNCE
+let searchTable2Timeout: ReturnType<typeof setTimeout> | null = null;
+const handleTable2SearchInput = () => {
+  if (searchTable2Timeout) clearTimeout(searchTable2Timeout);
+  searchTable2Timeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchTable2();
+  }, 400);
+};
+
+// ─── Export Modal State Table 1 ──────────────────────────────────────────────
+const showExportModalTable1 = ref(false);
+const isExportingTable1 = ref(false);
+const exportColumnsTable1 = computed(() => {
+  const cols = [
+    { key: 'naskah', label: t('naskah_tbl') || 'Jenis Naskah', desc: 'Nama / jenis naskah surat' }
+  ];
+  if (!selectedMonth.value) {
+    monthOptions.value.forEach((m) => {
+      cols.push({ key: m.value, label: m.label, desc: `Jumlah naskah bulan ${m.label}` });
+    });
+  } else {
+    cols.push({
+      key: selectedMonth.value,
+      label: selectedMonthLabel.value,
+      desc: `Jumlah naskah bulan ${selectedMonthLabel.value}`
+    });
+  }
+  cols.push({ key: 'jumlah', label: t('jumlah') || 'Total', desc: 'Total keseluruhan naskah' });
+  return cols;
+});
+
+const openExportModalTable1 = () => {
   if (!hasPermission('laporan', 'export-naskah-masuk')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
@@ -1371,36 +1462,41 @@ const exportTable1 = () => {
     });
     return;
   }
-  if (!filteredTableData.value.length) {
-    toast.add({
-      title: t('export_gagal'),
-      description: t('export_tidak_ada'),
-      color: 'warning'
-    });
-    return;
-  }
+  showExportModalTable1.value = true;
+};
+
+const handleExportTable1Confirm = (selectedKeys: string[]) => {
+  if (isExportingTable1.value || selectedKeys.length === 0) return;
+  isExportingTable1.value = true;
   try {
-    const headers: string[] = [t('naskah_tbl')];
-    if (!selectedMonth.value) {
-      headers.push(...monthOptions.value.map((m) => m.label));
-    } else {
-      headers.push(selectedMonthLabel.value);
+    if (!filteredTableData.value.length) {
+      toast.add({
+        title: t('export_gagal'),
+        description: t('export_tidak_ada'),
+        color: 'warning'
+      });
+      return;
     }
-    headers.push(t('jumlah'));
+
     const rows = filteredTableData.value.map((row) => {
-      const data: (string | number)[] = [row.naskah];
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('naskah')) r[t('naskah_tbl') || 'Jenis Naskah'] = row.naskah;
       if (!selectedMonth.value) {
         monthOptions.value.forEach((m) => {
-          data.push(Number(row[m.value] ?? 0));
+          if (selectedKeys.includes(m.value)) {
+            r[m.label] = Number(row[m.value] ?? 0);
+          }
         });
       } else {
-        data.push(Number(row[selectedMonth.value] ?? 0));
+        if (selectedKeys.includes(selectedMonth.value)) {
+          r[selectedMonthLabel.value] = Number(row[selectedMonth.value] ?? 0);
+        }
       }
-      data.push(Number(row.jumlah ?? 0));
-      return data;
+      if (selectedKeys.includes('jumlah')) r[t('jumlah') || 'Total'] = Number(row.jumlah ?? 0);
+      return r;
     });
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    worksheet['!cols'] = headers.map(() => ({ wch: 20 }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Naskah Masuk');
     XLSX.writeFile(workbook, `naskah-masuk-summary-${selectedYear.value}.xlsx`);
@@ -1416,10 +1512,25 @@ const exportTable1 = () => {
       description: t('export_error'),
       color: 'error'
     });
+  } finally {
+    isExportingTable1.value = false;
   }
 };
 
-const exportTable2 = () => {
+// ─── Export Modal State Table 2 ──────────────────────────────────────────────
+const showExportModalTable2 = ref(false);
+const isExportingTable2 = ref(false);
+const exportColumnsTable2 = ref([
+  { key: 'jenis', label: 'Jenis Naskah', desc: 'Nama jenis naskah surat' },
+  { key: 'nomor', label: 'Nomor Dokumen', desc: 'Nomor register dokumen naskah' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pembuatan naskah' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal surat naskah' },
+  { key: 'jabatan', label: 'Jabatan', desc: 'Jabatan pembuat / penandatangan' },
+  { key: 'lokasi', label: 'Lokasi', desc: 'Lokasi unit / kantor' },
+  { key: 'status', label: 'Status', desc: 'Status naskah masuk' }
+]);
+
+const openExportModalTable2 = () => {
   if (!hasPermission('laporan', 'export-naskah-masuk')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
@@ -1429,34 +1540,70 @@ const exportTable2 = () => {
     });
     return;
   }
-  if (!sortedData.value.length) {
-    toast.add({
-      title: t('export_gagal'),
-      description: t('export_tidak_ada'),
-      color: 'warning'
-    });
-    return;
-  }
+  showExportModalTable2.value = true;
+};
+
+const handleExportTable2Confirm = async (selectedKeys: string[]) => {
+  if (isExportingTable2.value || selectedKeys.length === 0) return;
+  isExportingTable2.value = true;
   try {
-    const rows = sortedData.value.map((item) => ({
-      [t('naskah_tbl')]: item.jenis,
-      [t('nodokumen')]: item.nomor,
-      [t('tanggal')]: item.tanggal,
-      [t('perihal')]: item.perihal,
-      [t('jabatan')]: item.jabatan,
-      [t('lokasi')]: item.lokasi,
-      [t('sign_status')]: item.status
-    }));
+    let exportData = sortedData.value;
+
+    // Jika total items di server lebih besar dari limit tampilan, fetch semua data untuk diexport
+    if (totalItems.value > itemsPerPage.value) {
+      const params: any = {
+        page: 1,
+        limit: totalItems.value
+      };
+      if (filters.value.tahun) params.tahun = Number(filters.value.tahun);
+      if (filters.value.jenis) params.jenis = filters.value.jenis;
+      if (filters.value.status) params.status = filters.value.status.toLowerCase();
+      if (filters.value.lokasi) {
+        const lokasiObj = lokasiOptionsApi.value.find(
+          (item: any) => (item.nama || item.longText) === filters.value.lokasi
+        );
+        if (lokasiObj) params.area = lokasiObj.kode || lokasiObj.value;
+      }
+      if (filters.value.search) params.search = filters.value.search;
+
+      const res = await getRekapNaskahMasukDetail(params);
+      if (res?.data && Array.isArray(res.data)) {
+        exportData = res.data.map((item: any) => ({
+          id: item.id,
+          jenis: item.naskah,
+          jenis_text: item.naskah_text,
+          nomor: item.nomor,
+          tanggal: formatTanggal(item.tanggal),
+          perihal: item.perihal ?? '-',
+          jabatan: item.jabatan,
+          lokasi: item.lokasi,
+          status: item.status === 'terpakai_final' ? 'Final' : capitalize(item.status)
+        }));
+      }
+    }
+
+    if (!exportData.length) {
+      toast.add({
+        title: t('export_gagal'),
+        description: t('export_tidak_ada'),
+        color: 'warning'
+      });
+      return;
+    }
+
+    const rows = exportData.map((item) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('jenis')) r[t('naskah_tbl') || 'Jenis Naskah'] = item.jenis || '-';
+      if (selectedKeys.includes('nomor')) r[t('nodokumen') || 'Nomor Dokumen'] = item.nomor || '-';
+      if (selectedKeys.includes('tanggal')) r[t('tanggal') || 'Tanggal'] = item.tanggal || '-';
+      if (selectedKeys.includes('perihal')) r[t('perihal') || 'Perihal'] = item.perihal || '-';
+      if (selectedKeys.includes('jabatan')) r[t('jabatan') || 'Jabatan'] = item.jabatan || '-';
+      if (selectedKeys.includes('lokasi')) r[t('lokasi') || 'Lokasi'] = item.lokasi || '-';
+      if (selectedKeys.includes('status')) r[t('sign_status') || 'Status'] = item.status || '-';
+      return r;
+    });
+
     const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet['!cols'] = [
-      { wch: 15 },
-      { wch: 25 },
-      { wch: 15 },
-      { wch: 35 },
-      { wch: 30 },
-      { wch: 20 },
-      { wch: 15 }
-    ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Detail Naskah');
     XLSX.writeFile(workbook, `naskah-masuk-detail-${new Date().getTime()}.xlsx`);
@@ -1472,6 +1619,8 @@ const exportTable2 = () => {
       description: t('export_error'),
       color: 'error'
     });
+  } finally {
+    isExportingTable2.value = false;
   }
 };
 </script>

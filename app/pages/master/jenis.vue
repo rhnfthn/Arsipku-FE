@@ -230,133 +230,158 @@
 
         <!-- MODAL DETAIL JENIS -->
         <Teleport to="body">
-          <div
-            v-if="showDetailModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          <Modal
+            v-model="showDetailModal"
+            size="lg"
+            :hide-default-footer="true"
           >
-            <div
-              class="relative bg-white dark:bg-gray-800 rounded-2xl p-1 w-[630px] max-w-[90vw] max-h-[690px] transition-colors"
-            >
-              <!-- HEADER -->
-              <div
-                class="flex justify-between items-start mb-4 border-b border-gray-300 dark:border-gray-700"
-              >
-                <div class="p-4">
-                  <Heading variant="heading9sb" class="dark:text-white">
-                    {{ t('je_modal_detail') }}
-                  </Heading>
-                </div>
+            <template #title>
+              <Heading variant="heading9sb" class="dark:text-white mb-3 mt-5 ml-5">
+                {{ t('je_modal_detail') }}
+              </Heading>
+            </template>
 
-                <button
-                  @click="showDetailModal = false"
-                  class="mt-5 mr-5 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                  aria-label="Close"
-                >
-                  <X class="w-4 h-4" />
-                </button>
+            <div class="space-y-6 pb-2">
+              <div
+                v-if="detailLoading"
+                class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
+              >
+                {{ t('je_detail_loading') }}
               </div>
 
-              <!-- BODY -->
-              <div class="flex flex-col gap-5 ml-5 mr-5 max-h-[67vh] overflow-y-auto">
-                <div
-                  v-if="detailLoading"
-                  class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
-                >
-                  {{ t('je_detail_loading') }}
+              <div
+                v-else-if="!detailJenis"
+                class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
+              >
+                {{ t('je_detail_empty') }}
+              </div>
+
+              <div v-else class="space-y-6">
+                <!-- KODE JENIS -->
+                <div class="flex gap-3 items-start">
+                  <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ t('je_kode') }}
+                    </p>
+                    <div class="mt-2">
+                      <span
+                        class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-sm"
+                      >
+                        {{ detailJenis.jenis }}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div
-                  v-else-if="!detailJenis"
-                  class="py-10 text-center text-gray-500 dark:text-gray-400 text-sm"
-                >
-                  {{ t('je_detail_empty') }}
+                <!-- NAMA JENIS -->
+                <div class="flex gap-3 items-start">
+                  <FileText class="w-5 h-5 text-green-600 dark:text-green-400 mt-1" />
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ t('je_nama') }}
+                    </p>
+                    <p class="mt-2 text-sm font-medium text-black dark:text-white">
+                      {{ detailJenis.jenis_text }}
+                    </p>
+                  </div>
                 </div>
 
-                <div v-else class="space-y-6 pb-2">
-                  <!-- KODE JENIS -->
-                  <div class="flex gap-3 items-start">
-                    <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t('je_kode') }}
-                      </p>
-                      <div class="mt-2">
-                        <span
-                          class="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-sm"
-                        >
-                          {{ detailJenis.jenis }}
+                <!-- PERIHAL -->
+                <div class="flex gap-3 items-start">
+                  <ChartNoAxesGantt class="w-5 h-5 text-orange-500 dark:text-orange-400 mt-1" />
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ t('je_perihal') }}
+                    </p>
+                    <p
+                      class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200 uppercase"
+                    >
+                      {{ detailJenis.file_text || detailJenis.jenis_text }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- FORMAT PENOMORAN -->
+                <div class="flex gap-3 items-start">
+                  <Hash class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-1" />
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ t('je_format') }}
+                    </p>
+                    <p
+                      class="mt-2 text-sm font-mono text-gray-900 dark:text-gray-200 whitespace-pre-line"
+                    >
+                      {{ detailJenis.format_penomoran }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- FILE TEMPLATE (ORIGINAL & REGEX) -->
+                <div class="flex gap-3 items-start">
+                  <FileText class="w-5 h-5 text-pink-500 dark:text-pink-400 mt-1" />
+                  <div class="flex-1 space-y-3">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('je_file_template') }}
+                    </p>
+
+                    <!-- Template Original -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                          Template Original (Tanda Tangan Fisik / Basah)
                         </span>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- NAMA JENIS -->
-                  <div class="flex gap-3 items-start">
-                    <FileText class="w-5 h-5 text-green-600 dark:text-green-400 mt-1" />
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t('je_nama') }}
-                      </p>
-                      <p class="mt-2 text-sm font-medium text-black dark:text-white">
-                        {{ detailJenis.jenis_text }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- PERIHAL -->
-                  <div class="flex gap-3 items-start">
-                    <ChartNoAxesGantt class="w-5 h-5 text-orange-500 dark:text-orange-400 mt-1" />
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t('je_perihal') }}
-                      </p>
-                      <p
-                        class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200 uppercase"
-                      >
-                        {{ detailJenis.file_text || detailJenis.jenis_text }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- FORMAT PENOMORAN -->
-                  <div class="flex gap-3 items-start">
-                    <Hash class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-1" />
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t('je_format') }}
-                      </p>
-                      <p
-                        class="mt-2 text-sm font-mono text-gray-900 dark:text-gray-200 whitespace-pre-line"
-                      >
-                        {{ detailJenis.format_penomoran }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- FILE TEMPLATE -->
-                  <div class="flex gap-3 items-start">
-                    <FileText class="w-5 h-5 text-pink-500 dark:text-pink-400 mt-1" />
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t('je_file_template') }}
-                      </p>
-
                       <div
-                        class="mt-3 flex items-center justify-between gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 bg-gray-50 dark:bg-gray-700"
+                        class="flex items-center justify-between gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 bg-gray-50 dark:bg-gray-700"
                       >
                         <div class="flex items-center gap-3 min-w-0">
                           <FileText
-                            class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
+                            class="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0"
                           />
-                          <p class="text-sm text-gray-800 dark:text-gray-200 truncate">
-                            {{ getTemplateName(detailJenis) }}
+                          <p class="text-xs text-gray-800 dark:text-gray-200 truncate font-mono">
+                            {{ detailJenis.file_original ? getFileName(detailJenis.file_original) : '-' }}
                           </p>
                         </div>
 
                         <button
-                          v-if="detailJenis.file_url"
-                          @click="openPreview(detailJenis.file_url)"
-                          class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                          v-if="detailJenis.file_original_url"
+                          @click="openPreview(detailJenis.file_original_url)"
+                          class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        >
+                          <Download class="w-3 h-3" />
+                          {{ t('je_unduh') }}
+                        </button>
+
+                        <span v-else class="text-xs text-gray-400 dark:text-gray-500">
+                          {{ t('je_tidak_ada_file') }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Template Regex -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                          Template Regex (Tanda Tangan Digital / QR Slot)
+                        </span>
+                      </div>
+                      <div
+                        class="flex items-center justify-between gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 bg-gray-50 dark:bg-gray-700"
+                      >
+                        <div class="flex items-center gap-3 min-w-0">
+                          <FileText
+                            class="w-5 h-5 text-emerald-500 dark:text-emerald-400 flex-shrink-0"
+                          />
+                          <p class="text-xs text-gray-800 dark:text-gray-200 truncate font-mono">
+                            {{ detailJenis.file_regex ? getFileName(detailJenis.file_regex) : (detailJenis.file_name ? getFileName(detailJenis.file_name) : '-') }}
+                          </p>
+                        </div>
+
+                        <button
+                          v-if="detailJenis.file_regex_url || detailJenis.file_url"
+                          @click="openPreview(detailJenis.file_regex_url || detailJenis.file_url)"
+                          class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                         >
                           <Download class="w-3 h-3" />
                           {{ t('je_unduh') }}
@@ -368,33 +393,24 @@
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <!-- TANGGAL DIBUAT -->
-                  <div class="flex gap-3 items-start">
-                    <Calendar class="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-1" />
-                    <div class="flex-1">
-                      <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ t('je_tgl_dibuat') }}
-                      </p>
-                      <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">
-                        {{ detailJenis.created_at ? detailJenis.created_at : '-' }}
-                      </p>
-                    </div>
+                <!-- TANGGAL DIBUAT -->
+                <div class="flex gap-3 items-start">
+                  <Calendar class="w-5 h-5 text-cyan-600 dark:text-cyan-400 mt-1" />
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ t('je_tgl_dibuat') }}
+                    </p>
+                    <p class="mt-2 text-sm text-gray-900 dark:text-gray-200">
+                      {{ detailJenis.created_at ? detailJenis.created_at : '-' }}
+                    </p>
                   </div>
                 </div>
               </div>
-
-              <!-- FOOTER -->
-              <div class="border-t border-gray-300 dark:border-gray-700 mt-7 mb-1 gap-3 px-5 py-2">
-                <button
-                  @click="showDetailModal = false"
-                  class="w-full px-3 py-2 rounded-lg bg-primary hover:bg-primary-700 text-white font-medium transition-colors"
-                >
-                  {{ t('je_tutup') }}
-                </button>
-              </div>
             </div>
-          </div>
+
+          </Modal>
         </Teleport>
 
         <!-- MODAL TAMBAH JENIS -->
@@ -431,7 +447,7 @@
                       ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                       : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
                   ]"
-                  @input="addFormErrors.jenis = false"
+                  @input="addFormErrors.jenis = false; addForm.jenis = addForm.jenis.toUpperCase()"
                 />
                 <p v-if="addFormErrors.jenis" class="text-xs text-red-500 mt-1">
                   {{ t('je_kode') }}
@@ -504,33 +520,63 @@
                 </p>
               </div>
 
-              <!-- Upload File Template -->
+              <!-- Upload File Template Original -->
               <div class="flex flex-col gap-1">
                 <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-                  {{ t('je_upload_template') }}
+                  Upload Template Original (Fisik / Basah)
                 </Heading>
 
                 <label
-                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer flex items-center justify-between"
                 >
-                  <span class="text-gray-600 dark:text-gray-300 truncate">
-                    {{ addForm.file ? addForm.file.name : t('je_file_placeholder') }}
+                  <span class="text-gray-600 dark:text-gray-300 truncate font-mono text-xs">
+                    {{ addForm.file_original ? addForm.file_original.name : t('je_file_placeholder') }}
+                  </span>
+
+                  <span class="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded ml-2">
+                    Original
                   </span>
 
                   <input
                     type="file"
                     class="hidden"
                     accept=".doc,.docx,.pdf"
-                    @change="onPickFileAdd"
+                    @change="onPickFileOriginalAdd"
                   />
                 </label>
 
-                <p v-if="addErrors.file" class="text-xs text-red-500">
-                  {{ addErrors.file }}
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Format .docx / .doc. Disimpan ke templates/naskah-lainnya-original/
                 </p>
+              </div>
+
+              <!-- Upload File Template Regex -->
+              <div class="flex flex-col gap-1">
+                <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                  Upload Template Regex (Digital / QR Slot)
+                </Heading>
+
+                <label
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer flex items-center justify-between"
+                >
+                  <span class="text-gray-600 dark:text-gray-300 truncate font-mono text-xs">
+                    {{ addForm.file_regex ? addForm.file_regex.name : t('je_file_placeholder') }}
+                  </span>
+
+                  <span class="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 rounded ml-2">
+                    Regex
+                  </span>
+
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept=".doc,.docx,.pdf"
+                    @change="onPickFileRegexAdd"
+                  />
+                </label>
 
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ t('je_file_hint') }}
+                  Format .docx / .doc. Disimpan ke templates/naskah-lainnya/
                 </p>
               </div>
             </div>
@@ -565,7 +611,7 @@
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 dark:border-gray-600 focus:ring-primary/30'
                   ]"
-                  @input="editFormErrors.jenis = false"
+                  @input="editFormErrors.jenis = false; editForm.jenis = editForm.jenis.toUpperCase()"
                 />
                 <p v-if="editFormErrors.jenis" class="text-xs text-red-500 mt-1">
                   {{ t('je_kode') }}
@@ -638,35 +684,81 @@
                 </p>
               </div>
 
-              <!-- Upload File Template -->
-              <label class="text-sm text-gray-700 dark:text-gray-300">
-                {{ t('je_upload_template') }}
-              </label>
+              <!-- Upload File Template Original (Edit) -->
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-gray-700 dark:text-gray-300">
+                    Template Original (Fisik / Basah)
+                  </label>
+                  <span v-if="editForm.file_original_key" class="text-xs text-blue-600 dark:text-blue-400">
+                    Tersedia di storage
+                  </span>
+                </div>
 
-              <label
-                class="flex items-center gap-3 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:bg-gray-700"
-              >
-                <span class="text-gray-600 dark:text-gray-300 truncate">
-                  {{
-                    editForm.file
-                      ? editForm.file.name
-                      : editForm.file_name
-                        ? editForm.file_name
-                        : t('je_file_placeholder')
-                  }}
-                </span>
+                <label
+                  class="flex items-center justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:bg-gray-700"
+                >
+                  <span class="text-gray-600 dark:text-gray-300 truncate font-mono text-xs">
+                    {{
+                      editForm.file_original
+                        ? editForm.file_original.name
+                        : editForm.file_original_key
+                          ? getFileName(editForm.file_original_key)
+                          : t('je_file_placeholder')
+                    }}
+                  </span>
 
-                <input
-                  type="file"
-                  class="hidden"
-                  accept=".doc,.docx,.pdf"
-                  @change="onPickFileEdit"
-                />
-              </label>
+                  <span class="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded ml-2">
+                    Ganti Original
+                  </span>
 
-              <p v-if="editErrors.file" class="text-xs text-red-500">
-                {{ editErrors.file }}
-              </p>
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept=".doc,.docx,.pdf"
+                    @change="onPickFileOriginalEdit"
+                  />
+                </label>
+              </div>
+
+              <!-- Upload File Template Regex (Edit) -->
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-gray-700 dark:text-gray-300">
+                    Template Regex (Digital / QR Slot)
+                  </label>
+                  <span v-if="editForm.file_regex_key || editForm.file_name" class="text-xs text-emerald-600 dark:text-emerald-400">
+                    Tersedia di storage
+                  </span>
+                </div>
+
+                <label
+                  class="flex items-center justify-between border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:bg-gray-700"
+                >
+                  <span class="text-gray-600 dark:text-gray-300 truncate font-mono text-xs">
+                    {{
+                      editForm.file_regex
+                        ? editForm.file_regex.name
+                        : editForm.file_regex_key
+                          ? getFileName(editForm.file_regex_key)
+                          : editForm.file_name
+                            ? editForm.file_name
+                            : t('je_file_placeholder')
+                    }}
+                  </span>
+
+                  <span class="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 rounded ml-2">
+                    Ganti Regex
+                  </span>
+
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept=".doc,.docx,.pdf"
+                    @change="onPickFileRegexEdit"
+                  />
+                </label>
+              </div>
             </div>
           </Modal>
         </Teleport>
@@ -796,8 +888,21 @@
       :confirm-text="t('popup_hapus')"
       :cancel-text="t('popup_batal')"
       :is-loading="deleteLoading"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="confirmDelete"
       @cancel="showDeleteModal = false"
+    />
+
+    <!-- POPUP PERINGATAN / TIDAK BISA DIHAPUS -->
+    <ConfirmDialog
+      v-model="showBlockedDeletePopup"
+      type="warning"
+      title="Data Tidak Dapat Dihapus"
+      :message="blockedDeleteMessage"
+      confirm-text="Mengerti"
+      :is-alert="true"
+      @confirm="showBlockedDeletePopup = false"
     />
 
   <!-- FILE PREVIEW SLIDEOVER -->
@@ -813,6 +918,112 @@
       <iframe v-if="previewFileUrl" :src="previewFileUrl" class="w-full h-full"></iframe>
     </template>
   </USlideover>
+
+  <!-- Export Column Modal -->
+  <Teleport to="body">
+    <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+      <template #title>
+        <div class="ml-5 my-3.5">
+          <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+            {{ t('pilih_kolom_export') }}
+          </Heading>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+          </p>
+        </div>
+      </template>
+
+      <div class="space-y-3.5 py-1">
+        <!-- Selection Status Bar & Toggle All -->
+        <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+              :class="selectedExportColumns.length > 0
+                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+            >
+              {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+            </span>
+            <span class="text-gray-600 dark:text-gray-300 font-medium">
+              Kolom Terpilih
+            </span>
+          </div>
+
+          <button
+            type="button"
+            @click="toggleAllExport"
+            class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+            :class="allExportSelected
+              ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+          >
+            {{ allExportSelected ? 'Batal Pilih Semua' : t('pilih_semua') }}
+          </button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+          <div
+            v-for="col in exportColumns"
+            :key="col.key"
+            @click="toggleColumn(col.key)"
+            class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+            :class="selectedExportColumns.includes(col.key)
+              ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+          >
+            <div class="flex items-center gap-3 min-w-0 w-full">
+              <!-- Checkmark Box -->
+              <div
+                class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                :class="selectedExportColumns.includes(col.key)
+                  ? 'border-primary bg-primary text-white shadow-sm'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+              >
+                <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold truncate leading-tight">
+                  {{ col.label }}
+                </p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                  {{ col.desc }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Notice -->
+        <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+          <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+          <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ sortedJenis.length }} baris</span></span>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+          <button
+            type="button"
+            @click="showExportModal = false"
+            class="px-4 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+          >
+            {{ t('batal') }}
+          </button>
+          <button
+            type="button"
+            @click="handleExportConfirm"
+            :disabled="selectedExportColumns.length === 0"
+            class="px-5 py-2 text-xs font-semibold bg-primary hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg shadow-sm shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+          </button>
+        </div>
+      </template>
+    </Modal>
+  </Teleport>
   </div>
 </template>
 
@@ -836,7 +1047,8 @@ import {
   Search,
   ArrowUpDown,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Check
 } from 'lucide-vue-next';
 
 import type { BreadcrumbItem } from '@nuxt/ui';
@@ -888,7 +1100,7 @@ const showToast = (opt: {
 // ─────────────────────────────────────────────
 // COMPOSABLE
 // ─────────────────────────────────────────────
-const { getJenisList, getJenisDetail, deleteJenis, createJenis, updateJenis } = useJenis();
+const { getJenisList, getJenisDetail, deleteJenis, createJenis, updateJenis, checkJenisUsage } = useJenis();
 
 const loading = ref(false);
 const deletingId = ref<string | null>(null);
@@ -1038,18 +1250,56 @@ const normalizeUrl = (url: string | null) => {
   return `${base}/${url}`;
 };
 
-const openPreview = (url: string | null) => {
+const downloadFileDirectly = async (url: string | null, suggestedName?: string) => {
   if (!url) return;
-  previewFileUrl.value = normalizeUrl(url);
-  isOpenPreviewFile.value = true;
+  const targetUrl = normalizeUrl(url);
+  if (!targetUrl) return;
+
+  try {
+    const res = await fetch(targetUrl);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    if (suggestedName) {
+      link.download = suggestedName;
+    } else {
+      const fileName = targetUrl.split('?')[0].split('/').pop() || 'template.docx';
+      link.download = fileName;
+    }
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error('Gagal mengunduh file:', error);
+    // Fallback direct link trigger without redirecting current page
+    const link = document.createElement('a');
+    link.href = targetUrl;
+    if (suggestedName) link.download = suggestedName;
+    link.target = '_self';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
+
+const openPreview = (url: string | null) => {
+  downloadFileDirectly(url);
 };
 
 // ─────────────────────────────────────────────
 // DELETE
 // ─────────────────────────────────────────────
 const showDeleteModal = ref(false);
+const showBlockedDeletePopup = ref(false);
+const blockedDeleteMessage = ref('');
 const deleteTarget = ref<JenisItem | null>(null);
 const deleteLoading = ref(false);
+const checkingDelete = ref(false);
 
 const onDelete = (row: JenisItem) => {
   deleteTarget.value = row;
@@ -1095,7 +1345,8 @@ const addForm = ref({
   jenis_text: '',
   file_text: '',
   format_penomoran: '',
-  file: null as File | null
+  file_original: null as File | null,
+  file_regex: null as File | null
 });
 
 const addFormErrors = ref({
@@ -1117,7 +1368,8 @@ const resetAddForm = () => {
     jenis_text: '',
     file_text: '',
     format_penomoran: '',
-    file: null
+    file_original: null,
+    file_regex: null
   };
   addFormErrors.value = {
     jenis: false,
@@ -1157,11 +1409,12 @@ const submitAddJenis = async () => {
   try {
     savingAdd.value = true;
     await createJenis({
-      jenis: addForm.value.jenis,
+      jenis: addForm.value.jenis.trim().toUpperCase(),
       jenis_text: addForm.value.jenis_text,
       file_text: addForm.value.file_text,
       format_penomoran: addForm.value.format_penomoran,
-      file: addForm.value.file
+      file_original: addForm.value.file_original,
+      file_regex: addForm.value.file_regex
     });
     showAddModal.value = false;
     await fetchJenis();
@@ -1171,11 +1424,15 @@ const submitAddJenis = async () => {
       color: 'success',
       icon: 'i-lucide-check-circle'
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error('Gagal tambah jenis:', e);
+    const backendMsg = e?.response?.data?.message || e?.data?.message || e?.message;
+    const displayMsg = Array.isArray(backendMsg)
+      ? backendMsg.join(', ')
+      : (backendMsg || t('je_err_add'));
     showToast({
       title: t('gagal'),
-      message: t('je_err_add'),
+      message: displayMsg,
       color: 'error',
       icon: 'i-lucide-alert-circle'
     });
@@ -1184,10 +1441,16 @@ const submitAddJenis = async () => {
   }
 };
 
-const onPickFileAdd = (e: Event) => {
+const onPickFileOriginalAdd = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0] ?? null;
-  addForm.value.file = file;
+  addForm.value.file_original = file;
+};
+
+const onPickFileRegexAdd = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0] ?? null;
+  addForm.value.file_regex = file;
 };
 
 // ─────────────────────────────────────────────
@@ -1203,9 +1466,13 @@ const editForm = ref({
   jenis_text: '',
   file_text: '',
   format_penomoran: '',
-  file: null as File | null,
-  file_name: '' as string,
-  file_url: '' as string
+  file_original: null as File | null,
+  file_original_key: '' as string,
+  file_original_url: '' as string,
+  file_regex: null as File | null,
+  file_regex_key: '' as string,
+  file_regex_url: '' as string,
+  file_name: '' as string
 });
 
 const editFormErrors = ref({
@@ -1233,9 +1500,13 @@ const onEdit = async (row: JenisItem) => {
     editForm.value.jenis_text = data.jenis_text;
     editForm.value.file_text = data.file_text || '';
     editForm.value.format_penomoran = data.format_penomoran;
-    editForm.value.file = null;
+    editForm.value.file_original = null;
+    editForm.value.file_original_key = data.file_original || '';
+    editForm.value.file_original_url = data.file_original_url || '';
+    editForm.value.file_regex = null;
+    editForm.value.file_regex_key = data.file_regex || '';
+    editForm.value.file_regex_url = data.file_regex_url || '';
     editForm.value.file_name = data.file_name || '';
-    editForm.value.file_url = data.file_url || '';
   } catch (e) {
     console.error('Gagal ambil data edit:', e);
     alert('Gagal memuat data');
@@ -1254,12 +1525,6 @@ const validateEdit = () => {
   if (editFormErrors.value.jenis_text) emptyFields.push(t('je_nama'));
   if (editFormErrors.value.file_text) emptyFields.push(t('je_perihal'));
   if (editFormErrors.value.format_penomoran) emptyFields.push(t('je_format'));
-
-  const hasExistingFile = !!editForm.value.file_url;
-  const hasNewFile = !!editForm.value.file;
-  if (!hasExistingFile && !hasNewFile) {
-    emptyFields.push(t('je_upload_template'));
-  }
 
   if (emptyFields.length > 0) {
     showToast({
@@ -1280,11 +1545,12 @@ const submitEditJenis = async () => {
   try {
     savingEdit.value = true;
     await updateJenis(editId.value, {
-      jenis: editForm.value.jenis,
+      jenis: editForm.value.jenis.trim().toUpperCase(),
       jenis_text: editForm.value.jenis_text,
       file_text: editForm.value.file_text,
       format_penomoran: editForm.value.format_penomoran,
-      file: editForm.value.file
+      file_original: editForm.value.file_original,
+      file_regex: editForm.value.file_regex
     });
     showEditModal.value = false;
     await fetchJenis();
@@ -1294,11 +1560,15 @@ const submitEditJenis = async () => {
       color: 'success',
       icon: 'i-lucide-check-circle'
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error('Gagal update jenis:', e);
+    const backendMsg = e?.response?.data?.message || e?.data?.message || e?.message;
+    const displayMsg = Array.isArray(backendMsg)
+      ? backendMsg.join(', ')
+      : (backendMsg || t('je_err_edit'));
     showToast({
       title: t('gagal'),
-      message: t('je_err_edit'),
+      message: displayMsg,
       color: 'error',
       icon: 'i-lucide-alert-circle'
     });
@@ -1307,10 +1577,16 @@ const submitEditJenis = async () => {
   }
 };
 
-const onPickFileEdit = (e: Event) => {
+const onPickFileOriginalEdit = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0] ?? null;
-  editForm.value.file = file;
+  editForm.value.file_original = file;
+};
+
+const onPickFileRegexEdit = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0] ?? null;
+  editForm.value.file_regex = file;
 };
 
 // ─────────────────────────────────────────────
@@ -1320,16 +1596,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
 const onExport = () => {
-  const data = sortedJenis.value.map((row, index) => ({
-    No: index + 1,
-    [t('je_kode')]: row.jenis,
-    [t('je_nama')]: row.jenis_text,
-    [t('je_perihal')]: row.file_text || row.jenis_text,
-    [t('je_format')]: row.format_penomoran,
-    [t('je_tgl_dibuat')]: row.created_at || '-'
-  }));
-
-  if (data.length === 0) {
+  if (sortedJenis.value.length === 0) {
     showToast({
       title: locale.value === 'id' ? 'Tidak ada data' : 'No Data',
       message: t('je_export_empty'),
@@ -1338,17 +1605,68 @@ const onExport = () => {
     });
     return;
   }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
+
+const formatDateDot = (value: string | Date | null | undefined): string => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+const exportColumns = computed(() => [
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'kode', label: t('je_kode'), desc: 'Kode jenis naskah' },
+  { key: 'nama', label: t('je_nama'), desc: 'Nama jenis naskah dinas' },
+  { key: 'perihal', label: t('je_perihal'), desc: 'Keterangan perihal / template' },
+  { key: 'format', label: t('je_format'), desc: 'Format penomoran surat' },
+  { key: 'tgl_dibuat', label: t('je_tgl_dibuat'), desc: 'Tanggal pembuatan jenis' }
+]);
+
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const allExportSelected = computed(
+  () => selectedExportColumns.value.length === exportColumns.value.length && exportColumns.value.length > 0
+);
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
+  const data = sortedJenis.value.map((row, index) => {
+    const r: Record<string, any> = {};
+    if (selectedKeys.includes('No')) r['No'] = index + 1;
+    if (selectedKeys.includes('kode')) r[t('je_kode')] = row.jenis;
+    if (selectedKeys.includes('nama')) r[t('je_nama')] = row.jenis_text;
+    if (selectedKeys.includes('perihal')) r[t('je_perihal')] = row.file_text || row.jenis_text;
+    if (selectedKeys.includes('format')) r[t('je_format')] = row.format_penomoran;
+    if (selectedKeys.includes('tgl_dibuat')) r[t('je_tgl_dibuat')] = formatDateDot(row.created_at);
+    return r;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet['!cols'] = [
-    { wch: 5 },
-    { wch: 15 },
-    { wch: 30 },
-    { wch: 30 },
-    { wch: 40 },
-    { wch: 20 }
-  ];
-
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('je_title'));
 
@@ -1366,6 +1684,7 @@ const onExport = () => {
     color: 'success',
     icon: 'i-lucide-file-down'
   });
+  showExportModal.value = false;
 };
 
 // Highlight function for search results
