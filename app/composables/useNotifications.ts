@@ -1,5 +1,5 @@
 // fe/app/composables/useNotifications.ts
-import { ref, readonly, computed, watch } from 'vue';
+import { ref, readonly, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '~/composables/useAuth';
 import type {
@@ -151,47 +151,6 @@ export const useNotifications = () => {
   const { apiGet, apiPatch, apiDelete } = useApi();
   const toast = useToast();
 
-  // Satu browser hanya boleh memiliki satu kartu toast untuk isi notifikasi
-  // SDE Massal yang sama. Watcher ini menjadi lapisan terakhir untuk kasus
-  // beberapa listener/socket aktif bersamaan.
-  if (process.client) {
-    const browser = window as typeof window & {
-      __arsipkuSdeMasalToastDedupWatcher?: boolean;
-    };
-    if (!browser.__arsipkuSdeMasalToastDedupWatcher) {
-      browser.__arsipkuSdeMasalToastDedupWatcher = true;
-      watch(
-        toast.toasts,
-        (items) => {
-          const seen = new Set<string>();
-          let changed = false;
-          const deduplicated = items.filter((item) => {
-            const title = String(item.title || '').trim();
-            if (!title.startsWith('SDE Massal ')) return true;
-
-            const description = String(item.description || '')
-              .trim()
-              .replace(/\s+/g, ' ');
-            const key = `${title}|${description}`;
-            if (seen.has(key)) {
-              changed = true;
-              return false;
-            }
-            seen.add(key);
-            return true;
-          });
-
-          if (changed) {
-            // Hapus langsung dari state toast agar tidak meninggalkan kartu
-            // kosong selama animasi close.
-            toast.toasts.value = deduplicated;
-          }
-        },
-        { deep: true, immediate: true },
-      );
-    }
-  }
-
   const recentToastKeys = useState<Record<string, number>>(
     'notifications:sde-masal-toast-keys',
     () => ({}),
@@ -200,15 +159,16 @@ export const useNotifications = () => {
 
   const getNotificationToastKey = (payload: NotificationItem): string => {
     const data = payload.data || {};
-    const isSdeMasal = data.category === 'SDE_MASAL';
+    const title = String(payload.title || '').trim().replace(/\s+/g, ' ');
+    const description = String(payload.body || '').trim().replace(/\s+/g, ' ');
+    const isSdeMasal =
+      data.category === 'SDE_MASAL' || title.toLowerCase().startsWith('sde massal ');
     if (isSdeMasal) {
-      const folderId = String(data.folderId || data.folder_id || '').trim();
-      const status = String(data.status || '').trim();
-      // Untuk SDE Massal, satu folder pada status workflow yang sama hanya
-      // boleh menghasilkan satu toast meskipun event memiliki ID berbeda.
-      return `SDE_MASAL|${folderId || payload.body || payload.title || ''}|${status}`;
+      // Payload versi lama dapat tidak membawa category/folderId. Judul dan
+      // isi tetap sama, sehingga keduanya harus memakai kunci yang sama.
+      return `SDE_MASAL|${title.toLowerCase()}|${description.toLowerCase()}`;
     }
-    return `${payload.title || ''}|${payload.body || ''}`;
+    return `${title}|${description}`;
   };
 
   const shouldShowNotificationToast = (payload: NotificationItem): boolean => {
@@ -221,7 +181,10 @@ export const useNotifications = () => {
 
     // Bersihkan toast SDE Massal yang sama bila event lama sudah lebih dulu
     // masuk ke UI sebelum guard ini berjalan. Sisakan satu saja.
-    if (payload.data?.category === 'SDE_MASAL') {
+    if (
+      payload.data?.category === 'SDE_MASAL' ||
+      String(payload.title || '').trim().toLowerCase().startsWith('sde massal ')
+    ) {
       const title = payload.title || 'Notifikasi baru';
       const description = payload.body || undefined;
       const sameToasts = toast.toasts.value.filter(
@@ -531,7 +494,9 @@ export const useNotifications = () => {
         const exists = notifications.value.some((n) => n.id === payload.id);
         if (!exists) {
           notifications.value.unshift(payload);
-          const isSdeMasal = payload.data?.category === 'SDE_MASAL';
+          const isSdeMasal =
+            payload.data?.category === 'SDE_MASAL' ||
+            String(payload.title || '').trim().toLowerCase().startsWith('sde massal ');
           const isReturned = payload.data?.status === 'DIKEMBALIKAN';
           const isVerification = payload.data?.action === 'OPEN_SDE_MASAL_VERIFIKASI';
           if (shouldShowNotificationToast(payload)) {

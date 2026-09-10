@@ -25,7 +25,7 @@ const positionId = computed(() => user.value?.position?.id || user.value?.positi
 const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
 const { rejectKonsep } = useKonsep();
 const { fetchSentNavigation } = useSirkulasi();
-const { apiPost, apiGet } = useApi();
+const { apiPost, apiGet, api } = useApi();
 
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
@@ -896,6 +896,43 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
     const response = await fetch(url); const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' }); activePdfUrl.value = URL.createObjectURL(blob);
   } catch (error) { activePdfUrl.value = url; } finally { isLocalPdfLoading.value = false; }
 };
+
+/**
+ * Preview SDE Massal dirender ulang dari data Excel yang tersimpan di backend.
+ * PDF final lama tidak dipakai di jalur ini karena bisa dibuat sebelum field
+ * nama/alamat dinormalisasi dan akibatnya menampilkan placeholder kosong.
+ */
+const openSdeMasalPreview = async (naskahId: string, title = "Dokumen") => {
+  try {
+    const response = await api.get(`/sde-masal/naskah/${naskahId}/preview-pdf`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    if (!blob.size) return false;
+    previewTitle.value = title;
+    isPreviewOpen.value = true;
+    isLocalPdfLoading.value = false;
+    if (activePdfUrl.value) URL.revokeObjectURL(activePdfUrl.value);
+    activePdfUrl.value = URL.createObjectURL(blob);
+    return true;
+  } catch (error: any) {
+    // Naskah SDE biasa tidak memiliki row sde_masal. Biarkan jalur preview
+    // lama menangani kasus tersebut.
+    if (error?.response?.status === 404) return false;
+    console.warn('Preview ulang SDE Massal gagal, gunakan PDF tersimpan:', error);
+    return false;
+  }
+};
+
+const openDetailPreview = async (detail: any, url: string, title = "Dokumen") => {
+  const jenis = String(detail?.jenis || '').toUpperCase().replace(/[- ]/g, '_');
+  const isSde = jenis === 'SDE' || jenis === 'SDE_MASAL' || Boolean(detail?.sdeMasal);
+  if (isSde && detail?.id) {
+    const opened = await openSdeMasalPreview(String(detail.id), title);
+    if (opened) return;
+  }
+  await openDocumentPreview(url, title);
+};
 const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -941,7 +978,7 @@ const konsepOptions = [
             :show-edit="isKonsepData && index === 0 && showEditAction"
             :show-footer-actions="!isKonsepData && index === 0 && !isTerkirim" :allowed-actions="allowedActions"
             :user-position-id="positionId" :is-jenis-d-i="isJenisDI" @back="goBack"
-            @preview="(url) => openDocumentPreview(url, detail.perihal)" @preview-file="openPreviewFile"
+            @preview="(url) => openDetailPreview(detail, url, detail.perihal)" @preview-file="openPreviewFile"
             @finalize="handleFinalize" @reject="handleReject" @edit="handleEditKonsep"
             @lanjut-nota="handleLanjutNotaDinas" @lanjut-disposisi="handleLanjutDisposisi"
             @lanjut-konsep="isOpenKonsepModal = true"
