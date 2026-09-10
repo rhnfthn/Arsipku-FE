@@ -60,7 +60,7 @@
       <div
         class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-4"
       >
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Informasi SDE Masal</h3>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Informasi SDE Massal</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Nomor Surat -->
           <div>
@@ -248,7 +248,7 @@ const showPreviewModal = ref(false);
 const breadcrumbs = [
   { label: 'Beranda', to: '/beranda' },
   { label: 'Korespondensi', to: '/korespondensi/kotak-masuk' },
-  { label: 'SDE Masal', to: '/korespondensi/sde-masal' },
+  { label: 'SDE Massal', to: '/korespondensi/sde-masal' },
   { label: 'Detail Naskah', to: '#' },
 ];
 

@@ -5,25 +5,38 @@
     <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <!-- Filter Bar -->
       <div class="flex flex-row items-center gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
-        <select v-model="f.limit" class="h-10 w-20 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-        </select>
-        <select v-model="f.status" class="h-10 w-40 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option value="">Semua Status</option>
-          <option value="DRAFT">Draft</option>
-          <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
-          <option value="MENUNGGU_PENGIRIM">Menunggu Pengirim</option>
-          <option value="SEBAGIAN_TERKIRIM">Sebagian Terkirim</option>
-          <option value="DIKEMBALIKAN">Dikembalikan</option>
-          <option value="TERKIRIM">Selesai</option>
-          <option value="DITOLAK">Ditolak</option>
-        </select>
-        <select v-model="f.klasifikasiId" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option value="">Semua Klasifikasi</option>
-          <option v-for="klasifikasi in klasifikasiOptions" :key="klasifikasi.id" :value="klasifikasi.id">{{ klasifikasi.klasifikasi }} - {{ klasifikasi.klasifikasi_text }}</option>
-        </select>
+        <USelectMenu
+          v-model="f.limit"
+          :items="pageSizeOptions"
+          :search-input="false"
+          class="w-20 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Jumlah data per halaman"
+        />
+        <USelectMenu
+          v-model="selectedStatusFilter"
+          :items="statusOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Semua Status"
+          :search-input="false"
+          class="w-40 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Filter Status"
+        />
+        <USelectMenu
+          v-model="selectedKlasifikasiFilter"
+          :items="klasifikasiFilterOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Semua Klasifikasi"
+          searchable
+          :search-input="{ placeholder: 'Cari klasifikasi...' }"
+          :content="({ class: 'max-h-[380px]' } as any)"
+          class="w-48 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Filter Klasifikasi"
+        />
         <div class="relative min-w-0 flex-1">
           <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <input v-model="f.search" type="text" placeholder="Cari Perihal..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
@@ -91,37 +104,15 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div
+      <!-- Pagination menggunakan komponen bersama -->
+      <Pagination
         v-if="filteredRows.length > 0"
-        class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
-      >
-        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-          <span>
-            Menampilkan {{ (page - 1) * f.limit + 1 }}–{{ Math.min(page * f.limit, filteredRows.length) }}
-            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ filteredRows.length }}</span> folder
-          </span>
-        </div>
-        <div v-if="totalPages > 1" class="flex items-center gap-1">
-          <button
-            :disabled="page <= 1"
-            @click="page--"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-heroicons-chevron-left" class="w-4 h-4" /> Prev
-          </button>
-          <span class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ page }} / {{ totalPages }}
-          </span>
-          <button
-            :disabled="page >= totalPages"
-            @click="page++"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Next <UIcon name="i-heroicons-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="filteredRows.length"
+        :rows-per-page="f.limit"
+        @update:page="page = $event"
+      />
     </div>
   </div>
 </template>
@@ -149,12 +140,45 @@ const loading = ref(false);
 const klasifikasiOptions = ref<Klasifikasi[]>([]);
 const exporting = ref(false);
 const page = ref(1);
+const pageSizeOptions = [10, 25, 50];
+const statusOptions = [
+  { label: 'Semua Status', value: '__ALL__' },
+  { label: 'Draft', value: 'DRAFT' },
+  { label: 'Menunggu Verifikasi', value: 'MENUNGGU_VERIFIKASI' },
+  { label: 'Menunggu Pengirim', value: 'MENUNGGU_PENGIRIM' },
+  { label: 'Sebagian Terkirim', value: 'SEBAGIAN_TERKIRIM' },
+  { label: 'Dikembalikan', value: 'DIKEMBALIKAN' },
+  { label: 'Selesai', value: 'TERKIRIM' },
+  { label: 'Ditolak', value: 'DITOLAK' },
+];
 
 const f = reactive({
   search: '',
   status: '',
   klasifikasiId: '',
   limit: 10,
+});
+
+const klasifikasiFilterOptions = computed(() => [
+  { label: 'Semua Klasifikasi', value: '__ALL__' },
+  ...klasifikasiOptions.value.map((klasifikasi) => ({
+    label: `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`,
+    value: klasifikasi.id,
+  })),
+]);
+
+const selectedStatusFilter = computed({
+  get: () => f.status || '__ALL__',
+  set: (value: string) => {
+    f.status = value === '__ALL__' ? '' : value;
+  },
+});
+
+const selectedKlasifikasiFilter = computed({
+  get: () => f.klasifikasiId || '__ALL__',
+  set: (value: string) => {
+    f.klasifikasiId = value === '__ALL__' ? '' : value;
+  },
 });
 
 const breadcrumbs = [

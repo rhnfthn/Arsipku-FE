@@ -58,13 +58,16 @@ const displayedCount = computed(() => {
     <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
       <!-- ROWS PER PAGE dropdown -->
       <div v-if="rowsOptions.length > 0" class="relative">
-        <select
+        <USelectMenu
           v-model="selectedRows"
-          class="h-8 w-16 appearance-none rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-        >
-          <option v-for="opt in rowsOptions" :key="opt" :value="opt">{{ opt }}</option>
-        </select>
-        <ChevronRight class="pointer-events-none absolute right-1 top-1/2 w-3 h-3 -rotate-90 -translate-y-1/2 text-gray-400" />
+          :items="rowsOptions"
+          :search-input="false"
+          class="w-16"
+          :ui="{
+            base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200',
+          }"
+          aria-label="Jumlah data per halaman"
+        />
       </div>
       <span>
         Menampilkan {{ displayedCount.start }}–{{ displayedCount.end }} dari
