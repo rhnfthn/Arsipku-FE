@@ -71,9 +71,26 @@
           <h3 class="text-sm font-bold text-gray-800 dark:text-white">
             {{ t('rbac_current_roles') }}
           </h3>
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            {{ userRoles.length }} {{ t('rbac_role_count_suffix') }}
-          </span>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <UIcon name="i-lucide-search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="t('rbac_search_placeholder')"
+                class="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary w-48"
+              />
+            </div>
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+              {{ filteredUserRoles.length }} {{ t('rbac_role_count_suffix') }}
+            </span>
+            <button
+              @click="openExportModal"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary hover:bg-primary-800 text-white transition-colors"
+            >
+              <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Export
+            </button>
+          </div>
         </div>
 
         <div v-if="userRoles.length === 0" class="p-10 text-center text-sm text-gray-400">
@@ -91,7 +108,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="ur in userRoles"
+              v-for="ur in filteredUserRoles"
               :key="ur.id"
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -123,6 +140,15 @@
     <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
       {{ t('rbac_user_not_found') }}
     </div>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredUserRoles.length"
+      title="Pilih Kolom Export Role User"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -131,6 +157,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRbac, type RbacUserRoleRow } from '~/composables/useRbac';
 import { useToast } from '#imports';
 import { Alert, useAlertState } from '~/composables/useAlert';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 definePageMeta({ middleware: ['auth', 'rbac-admin'] });
 
@@ -146,6 +175,17 @@ const userRoles = ref<RbacUserRoleRow[]>([]);
 const selectedRoleId = ref('');
 const unitKerja = ref('');
 const assigning = ref(false);
+const searchQuery = ref('');
+
+const filteredUserRoles = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return userRoles.value;
+  return userRoles.value.filter(
+    (ur) =>
+      (ur.roleName || '').toLowerCase().includes(q) ||
+      (ur.unitKerja || '').toLowerCase().includes(q)
+  );
+});
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
@@ -298,4 +338,48 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'role', label: t('rbac_roles'), desc: 'Nama role' },
+  { key: 'unitKerja', label: t('rbac_unit_kerja'), desc: 'Unit kerja' },
+  { key: 'status', label: t('rbac_status'), desc: 'Status aktif' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredUserRoles.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = filteredUserRoles.value.map((ur: RbacUserRoleRow, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('role')) r[t('rbac_roles')] = ur.roleName || '-';
+      if (selectedKeys.includes('unitKerja')) r[t('rbac_unit_kerja')] = ur.unitKerja || '-';
+      if (selectedKeys.includes('status')) r[t('rbac_status')] = ur.active ? 'Aktif' : 'Nonaktif';
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t('rbac_current_roles'));
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `role-user-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export role user:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>
