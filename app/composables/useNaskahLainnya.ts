@@ -53,13 +53,20 @@ export function useNaskahLainnya() {
       }
     );
 
-  const fetchDetail = (id: string) =>
-    run(
-      () => apiGet(`/naskah-lainnya/${id}`, {}, { skipCache: true }),
-      (d) => {
+  const fetchDetail = async (id: string, options: { silent?: boolean } = {}) => {
+    const request = () => apiGet(`/naskah-lainnya/${id}`, {}, { skipCache: true });
+    if (!options.silent) {
+      return run(request, (d) => {
         detail.value = d;
-      }
-    );
+      });
+    }
+
+    // Refresh realtime tidak menyalakan loading halaman agar section detail
+    // berubah tanpa flicker. Error sementara juga tidak membuang data terakhir.
+    const response = await request();
+    detail.value = response.data;
+    error.value = null;
+  };
 
   const fetchPersetujuan = (status: 'semua' | 'menunggu' | 'disetujui' | 'ditolak' = 'menunggu') =>
     run(
