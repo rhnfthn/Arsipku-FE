@@ -67,10 +67,16 @@ const pemrakarsaDisplay = computed(
 const showManualFinalPanel = computed(
   () => detail.value?.signOption === 'ttd_basah' && detail.value?.tahapan === 'selesai'
 );
-const canManageManualFinal = computed(() =>
-  Boolean(detail.value?.canManageManualFinal && isPemrakarsa.value)
+const isPhysicalAwaitingFinal = computed(
+  () => showManualFinalPanel.value && detail.value?.manualFinalStatus !== 'final'
 );
+const canManageManualFinal = computed(() => Boolean(detail.value?.canManageManualFinal));
 const isManualFinal = computed(() => detail.value?.manualFinalStatus === 'final');
+const detailDisplayStatus = computed(() => {
+  if (isPhysicalAwaitingFinal.value) return 'selesai_belum_final';
+  if (showManualFinalPanel.value && isManualFinal.value) return 'selesai_final';
+  return detail.value?.tahapan ?? '';
+});
 const manualFinalBusy = ref(false);
 const manualFinalInput = ref<HTMLInputElement | null>(null);
 const manualFinalNomor = ref('');
@@ -314,6 +320,9 @@ const canTandaTangan = computed(() =>
   (detail.value?.availableActions ?? []).includes('tanda-tangan')
 );
 const isPhysicalSigning = computed(() => detail.value?.signOption === 'ttd_basah');
+const isDigitalWithoutLegal = computed(
+  () => !isPhysicalSigning.value && detail.value?.butuhLegal === false
+);
 // Penandatangan TERAKHIR? signingIndex 1-based >= total penandatangan.
 const isLastSigner = computed(() => {
   const d = detail.value;
@@ -397,7 +406,9 @@ const actionDescription = computed(() => {
   if (t === 'tanda_tangan')
     return detail.value?.signOption === 'ttd_basah'
       ? 'Tinjau dan setujui Naskah Draft sebagai penandatangan aktif.'
-      : 'Tanda tangani naskah sebagai penandatangan aktif.';
+      : isDigitalWithoutLegal.value
+        ? 'Tanda tangani naskah, atau tolak untuk membatalkan dan mengembalikannya kepada pemrakarsa.'
+        : 'Tanda tangani naskah sebagai penandatangan aktif.';
   if (t === 'konsep') return 'Kirim naskah untuk persetujuan.';
   if (t === 'perlu_perbaikan') return 'Revisi naskah, lalu kirim ulang untuk persetujuan.';
   return 'Pilih aksi yang tersedia.';
@@ -1088,7 +1099,11 @@ async function handleApprove(catatan: string) {
     toast.add({ title: 'Berhasil', description: `${actionLabel(a)} berhasil`, color: 'success' });
     showApproveModal.value = false;
     await fetchDetail(naskahId);
-    if (a === 'tanda-tangan' && detail.value?.tahapan === 'selesai') {
+    if (
+      a === 'tanda-tangan' &&
+      detail.value?.tahapan === 'selesai' &&
+      !isPhysicalAwaitingFinal.value
+    ) {
       await navigateTo(`/naskah-lainnya/${naskahId}/selesai`);
     }
   } catch (err: any) {
@@ -1469,7 +1484,7 @@ const signLabel = computed(() =>
             >
               {{ detail?.perihal ?? 'Draf Naskah' }}
             </h1>
-            <StatusBadge v-if="detail" :status="detail.tahapan" />
+            <StatusBadge v-if="detail" :status="detailDisplayStatus" />
           </div>
         </template>
         <template #subtitle>
@@ -2548,26 +2563,45 @@ const signLabel = computed(() =>
            availableActions kosong → pengganti action toolbar). -->
         <section
           v-if="detail.tahapan === 'selesai'"
-          class="overflow-hidden rounded-xl border border-green-200 bg-linear-to-br from-green-50 to-white p-5 shadow-sm dark:border-green-900/40 dark:from-green-900/20 dark:to-gray-800"
+          class="overflow-hidden rounded-xl border bg-linear-to-br to-white p-5 shadow-sm dark:to-gray-800"
+          :class="
+            isPhysicalAwaitingFinal
+              ? 'border-amber-200 from-amber-50 dark:border-amber-900/40 dark:from-amber-900/20'
+              : 'border-green-200 from-green-50 dark:border-green-900/40 dark:from-green-900/20'
+          "
         >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-start gap-3">
               <span
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                :class="
+                  isPhysicalAwaitingFinal
+                    ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400'
+                    : 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400'
+                "
               >
-                <UIcon name="i-lucide-circle-check-big" class="size-5" />
+                <UIcon
+                  :name="isPhysicalAwaitingFinal ? 'i-lucide-file-up' : 'i-lucide-circle-check-big'"
+                  class="size-5"
+                />
               </span>
               <div>
-                <h3 class="font-semibold text-gray-900 dark:text-white">Naskah Selesai</h3>
+                <h3 class="font-semibold text-gray-900 dark:text-white">
+                  {{ isPhysicalAwaitingFinal ? 'Selesai - Belum Final' : 'Naskah Selesai' }}
+                </h3>
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Naskah telah diselesaikan. Lihat dokumen final &amp; ringkasan penandatangan.
+                  {{
+                    isPhysicalAwaitingFinal
+                      ? 'Persetujuan draft selesai. Lengkapi data dan unggah dokumen final TTD fisik.'
+                      : 'Naskah telah diselesaikan. Lihat dokumen final & ringkasan penandatangan.'
+                  }}
                 </p>
               </div>
             </div>
             <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
               <UButton
-                v-if="detail.signOption === 'ttd_basah' && isPemrakarsa"
-                color="primary"
+                v-if="detail.signOption === 'ttd_basah' && canManageManualFinal"
+                :color="isPhysicalAwaitingFinal ? 'warning' : 'primary'"
                 variant="soft"
                 size="lg"
                 icon="i-lucide-file-pen-line"
@@ -2576,6 +2610,7 @@ const signLabel = computed(() =>
                 >Lengkapi Data & Dokumen Final</UButton
               >
               <UButton
+                v-if="!isPhysicalAwaitingFinal"
                 color="primary"
                 size="lg"
                 icon="i-lucide-eye"
@@ -2693,18 +2728,21 @@ const signLabel = computed(() =>
 
               <!-- Penandatangan hanya memeriksa lalu tanda tangan/menolak; tanpa workspace upload. -->
               <UButton
-                v-if="
-                  detail.availableActions.includes('tolak-tanda-tangan') &&
-                  (isPhysicalSigning || detail.butuhLegal)
-                "
+                v-if="detail.availableActions.includes('tolak-tanda-tangan')"
                 color="error"
                 variant="outline"
-                icon="i-lucide-undo-2"
+                :icon="isDigitalWithoutLegal ? 'i-lucide-ban' : 'i-lucide-undo-2'"
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :loading="pendingAction === 'tolak-tanda-tangan' && savingAction"
                 @click="openActionModal('tolak-tanda-tangan')"
-                >{{ isPhysicalSigning ? 'Tolak Naskah Draft' : 'Tolak ke Unit Legal' }}</UButton
+                >{{
+                  isPhysicalSigning
+                    ? 'Tolak Naskah Draft'
+                    : isDigitalWithoutLegal
+                      ? 'Tolak dan Batalkan'
+                      : 'Tolak ke Unit Legal'
+                }}</UButton
               >
               <UButton
                 v-if="canTandaTangan"
@@ -2879,6 +2917,7 @@ const signLabel = computed(() =>
       <!-- Pilihan Metode TTD signer TERAKHIR — komponen sama dengan naskah umum (Tulis/DigsigPassphraseModal).
            Opsi basah disembunyikan: naskah sudah commit ke digital (signOption qr_only/digsig). -->
       <TulisDigsigPassphraseModal
+        v-if="!isPhysicalSigning"
         v-model:open="showSignMethodModal"
         :signer-info="signerInfo"
         :is-loading="signingBusy"
@@ -2895,21 +2934,27 @@ const signLabel = computed(() =>
           pendingAction === 'tolak-tanda-tangan'
             ? isPhysicalSigning
               ? 'Tolak Naskah Draft'
-              : 'Tolak ke Unit Legal'
+              : isDigitalWithoutLegal
+                ? 'Tolak dan Batalkan Naskah'
+                : 'Tolak ke Unit Legal'
             : 'Tolak Naskah'
         "
         :description="
           pendingAction === 'tolak-tanda-tangan'
             ? isPhysicalSigning
               ? 'Penolakan mengembalikan Naskah Draft kepada pemrakarsa untuk direvisi.'
-              : 'Penolakan mengembalikan naskah ke Unit Legal untuk diperbaiki.'
+              : isDigitalWithoutLegal
+                ? 'Penolakan membatalkan naskah dan mengembalikannya kepada pemrakarsa sebagai naskah yang dibatalkan.'
+                : 'Penolakan mengembalikan naskah ke Unit Legal untuk diperbaiki.'
             : 'Penolakan akan mengembalikan naskah ke pemrakarsa untuk diperbaiki.'
         "
         :warning="
           pendingAction === 'tolak-tanda-tangan'
             ? isPhysicalSigning
               ? 'Approval penandatangan dihentikan dan dimulai ulang setelah pemrakarsa mengirim revisi.'
-              : 'Proses tanda tangan dihentikan dan dimulai ulang setelah revisi legal selesai.'
+              : isDigitalWithoutLegal
+                ? 'Naskah yang dibatalkan tidak dapat diperbaiki atau dilanjutkan kembali.'
+                : 'Proses tanda tangan dihentikan dan dimulai ulang setelah revisi legal selesai.'
             : 'Naskah dikembalikan ke pemrakarsa dan dapat direvisi kemudian.'
         "
         note-placeholder="Tuliskan alasan penolakan (minimal 5 karakter)…"
@@ -2917,7 +2962,9 @@ const signLabel = computed(() =>
           pendingAction === 'tolak-tanda-tangan'
             ? isPhysicalSigning
               ? 'Tolak dan Kembalikan'
-              : 'Tolak ke Unit Legal'
+              : isDigitalWithoutLegal
+                ? 'Tolak dan Batalkan'
+                : 'Tolak ke Unit Legal'
             : 'Tolak Naskah'
         "
         :saving="savingAction"
