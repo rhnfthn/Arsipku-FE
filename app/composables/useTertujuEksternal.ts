@@ -74,6 +74,14 @@ export const useTertujuEksternal = () => {
     }
   };
 
+  const checkTertujuEksternalUsage = async (id: string) => {
+    return await apiGet<{ canDelete: boolean; reason?: string; details?: any }>(
+      `/persuratan/eksternal/${id}/check-usage`,
+      {},
+      { skipCache: true },
+    );
+  };
+
   const updateTertujuEksternal = async (id: string, payload: any) => {
     loading.value = true;
     try {
@@ -100,6 +108,7 @@ export const useTertujuEksternal = () => {
     fetchTertujuEksternal,
     createTertujuEksternal,
     deleteTertujuEksternal,
+    checkTertujuEksternalUsage,
     updateTertujuEksternal,
     generateKode,
   };

@@ -9,12 +9,25 @@ import { useAuth } from '~/composables/useAuth';
 import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasViewed';
 import { StatusUsulan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
-import { downloadCsv } from '~/utils/csv-export';
 import { extractErrorMessage } from '~/utils/error-helper';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({ middleware: 'auth' });
 
 useHead({ title: 'Verifikasi Usulan' });
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal usulan dibuat' },
+  { key: 'nomor_usulan', label: 'Nomor Usulan', desc: 'Nomor usulan akses' },
+  { key: 'divisi_pengusul', label: 'Divisi Pengusul', desc: 'Divisi pemohon usulan' },
+  { key: 'jenis_berkas', label: 'Jenis Berkas', desc: 'Arsip aktif atau inaktif' },
+  { key: 'judul_usulan', label: 'Judul Usulan', desc: 'Perihal / judul usulan' },
+  { key: 'status', label: 'Status', desc: 'Status verifikasi usulan' }
+]);
 
 const { t } = useI18n();
 const { usulanList, pending, pagination, fetchList, verifikasiPemberi } = useUsulanAksesBerkas();
@@ -108,19 +121,42 @@ const exportData = () => {
     toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  const rows = usulanList.value;
+  if (rows.length === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const headers = ['Tanggal', 'Nomor Usulan', 'Divisi Pengusul', 'Jenis Berkas', 'Judul Usulan', 'Status'];
-    const csvRows = rows.map((r: any) => [
-      formatDate(r.created_at),
-      r.nomor_usulan || '-',
-      r.divisi_pengusul_nama || '-',
-      r.jenis_berkas || '-',
-      r.judul_usulan || '-',
-      r.status || '-',
-    ]);
-    downloadCsv(`verifikasi-usulan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+    const data = rows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('tanggal')) row['Tanggal'] = formatDate(r.created_at);
+      if (selectedKeys.includes('nomor_usulan')) row['Nomor Usulan'] = r.nomor_usulan || '-';
+      if (selectedKeys.includes('divisi_pengusul')) row['Divisi Pengusul'] = r.divisi_pengusul_nama || '-';
+      if (selectedKeys.includes('jenis_berkas')) row['Jenis Berkas'] = r.jenis_berkas || '-';
+      if (selectedKeys.includes('judul_usulan')) row['Judul Usulan'] = r.judul_usulan || '-';
+      if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi Usulan');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `verifikasi_usulan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    toast.add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
   } catch (e) {
     console.error('Gagal export:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
@@ -464,5 +500,15 @@ const getProgressLabel = (row: any): string => {
     <VerifyActionModal v-model="showRejectModal" variant="reject" title="Tolak Usulan Akses Berkas"
       description="Penolakan akan menghentikan alur verifikasi usulan ini." note-placeholder="Masukkan alasan penolakan" confirm-label="Tolak"
       :saving="savingAction" :require-note="true" :min-note-length="5" @confirm="handleReject" />
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="pagination.total || usulanList.length"
+      title="Pilih Kolom Export Verifikasi Usulan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>

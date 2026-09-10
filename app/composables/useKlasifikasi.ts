@@ -78,6 +78,14 @@ export const useKlasifikasi = () => {
     return apiDelete(`/persuratan/klasifikasi/${id}`);
   };
 
+  const checkKlasifikasiUsage = (id: string) => {
+    return apiGet<{ canDelete: boolean; reason?: string; details?: any }>(
+      `/persuratan/klasifikasi/${id}/check-usage`,
+      {},
+      { skipCache: true },
+    );
+  };
+
   const refreshKlasifikasi = async () => {
     isLoadingKlasifikasi.value = true;
     try {
@@ -97,6 +105,7 @@ export const useKlasifikasi = () => {
     createKlasifikasi,
     updateKlasifikasi,
     deleteKlasifikasi,
+    checkKlasifikasiUsage,
     refreshKlasifikasi,
   };
 };

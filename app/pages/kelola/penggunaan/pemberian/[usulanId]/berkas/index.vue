@@ -7,8 +7,10 @@ import { useI18n } from 'vue-i18n';
 import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User, Key, RotateCw } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
-import { downloadCsv } from '~/utils/csv-export';
 import { extractErrorMessage } from '~/utils/error-helper';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Berkas yang Diberikan' });
@@ -35,6 +37,16 @@ const activeBerkasId = ref<string | null>(null);
 const openRowsPerPage = ref(false);
 const isRefreshing = ref(false);
 const isExporting = ref(false);
+const showExportModal = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal naskah' },
+  { key: 'naskah_tipe', label: 'Tipe', desc: 'Tipe naskah dinas' },
+  { key: 'nomor_surat', label: 'Nomor Surat', desc: 'Nomor surat naskah' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal naskah dibuat / dikirim' }
+]);
+
 function toggleRowsPerPage() { openRowsPerPage.value = !openRowsPerPage.value; }
 function selectRowsPerPage(n: number) { perPage.value = n; openRowsPerPage.value = false; currentPage.value = 1; }
 function handleDocumentClick(e: MouseEvent) {
@@ -58,17 +70,39 @@ const exportData = () => {
     toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredNaskah.value.length === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const headers = ['Perihal', 'Tipe', 'Nomor Surat', 'Tanggal'];
-    const csvRows = filteredNaskah.value.map((n: any) => [
-      n.perihal || '(Tanpa perihal)',
-      n.naskah_tipe || '-',
-      n.nomor_surat || '-',
-      formatDate(n.tanggal_naskah),
-    ]);
-    downloadCsv(`naskah-berkas_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: 'Berhasil', description: `${csvRows.length} data berhasil diexport`, color: 'success' });
+    const data = filteredNaskah.value.map((n: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('perihal')) row['Perihal'] = n.perihal || '(Tanpa perihal)';
+      if (selectedKeys.includes('naskah_tipe')) row['Tipe'] = n.naskah_tipe || '-';
+      if (selectedKeys.includes('nomor_surat')) row['Nomor Surat'] = n.nomor_surat || '-';
+      if (selectedKeys.includes('tanggal')) row['Tanggal'] = formatDate(n.tanggal_naskah);
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Naskah Berkas');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `naskah_berkas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    toast.add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
   } catch (e) {
     console.error('Gagal export:', e);
     toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
@@ -413,6 +447,16 @@ onBeforeUnmount(() => {
         />
       </div>
     </template>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredNaskah.length"
+      title="Pilih Kolom Export Naskah Berkas"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
 
     <!-- PDF Viewer Full Page -->
     <Teleport to="body">

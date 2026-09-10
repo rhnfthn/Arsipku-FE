@@ -252,6 +252,16 @@
       @created="onTransferCreated"
       @updated="onTransferUpdated"
     />
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="gabunganList.length"
+      title="Pilih Kolom Export Pemindahan Arsip Aktif"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -261,13 +271,27 @@ import { Plus, ChevronDown } from 'lucide-vue-next';
 import { useApi } from '~/composables/useApi';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useAuth } from '~/composables/useAuth';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
 import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
-import { downloadCsv } from '~/utils/csv-export';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
 definePageMeta({ middleware: ['auth'] });
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'kodeBerkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'perihal', label: 'Nama Berkas', desc: 'Perihal atau nama berkas' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', desc: 'Tanggal batas retensi aktif habis' },
+  { key: 'atasanName', label: 'Atasan', desc: 'Nama atasan penilai' },
+  { key: 'status', label: 'Status', desc: 'Status usulan pemindahan' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' }
+]);
 
 const { apiGet } = useApi();
 const { send, fetchDetail } = useTransferActiveToInactive();
@@ -501,22 +525,48 @@ const isExporting = ref(false);
 
 const onExport = () => {
   if (gabunganList.value.length === 0) {
-    alert('Tidak ada data untuk diexport');
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (gabunganList.value.length === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const headers = ['Kode Berkas', 'Nama Berkas', 'Klasifikasi', 'Retensi Habis', 'Atasan', 'Status', 'Tanggal'];
-    const rows = gabunganList.value.map((r) => [
-      r.kodeBerkas ?? '',
-      r.perihal ?? '',
-      r.klasifikasi ?? '',
-      r.tanggalRetensiAktifHabis ?? '',
-      r.atasanName ?? '',
-      r.status ?? '',
-      r.tanggal ?? '',
-    ]);
-    downloadCsv(`pemindahan-arsip-aktif_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    const data = gabunganList.value.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('kodeBerkas')) row['Kode Berkas'] = r.kodeBerkas || '-';
+      if (selectedKeys.includes('perihal')) row['Nama Berkas'] = r.perihal || '-';
+      if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = r.klasifikasi || '-';
+      if (selectedKeys.includes('tanggalRetensiAktifHabis')) row['Retensi Habis'] = r.tanggalRetensiAktifHabis || '-';
+      if (selectedKeys.includes('atasanName')) row['Atasan'] = r.atasanName || '-';
+      if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
+      if (selectedKeys.includes('tanggal')) row['Tanggal'] = r.tanggal || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pemindahan Arsip');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `pemindahan_arsip_aktif_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    useToast().add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export pemindahan arsip aktif error:', err);
+    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
   } finally {
     isExporting.value = false;
   }

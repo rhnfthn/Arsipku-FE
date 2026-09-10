@@ -24,6 +24,7 @@ export const useLaporan = () => {
     area?: string;
     status?: string;
     jenis?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }) => {
@@ -36,9 +37,14 @@ export const useLaporan = () => {
 
   const getRekapNaskahMasukDetail = (params?: {
     tahun?: number;
+    bulan?: string;
     area?: string;
     status?: string;
     jenis?: string;
+    klasifikasi?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
   }) => {
     return apiGet("/rekap-naskah/naskah-masuk/detail", { params });
   };
