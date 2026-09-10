@@ -4,7 +4,7 @@
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
       <div class="flex items-center justify-between gap-3 p-4 border-b border-gray-100 dark:border-gray-700">
         <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          Daftar SDE Masal
+          Daftar SDE Massal
         </h4>
       </div>
 
@@ -95,10 +95,11 @@
         </div>
         <button
           @click="confirmClearAll"
-          class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary bg-primary text-white transition-colors hover:bg-primary-700 hover:text-white dark:border-primary-500 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700"
           title="Hapus semua"
+          aria-label="Reset data"
         >
-          <UIcon name="i-lucide-trash-2" class="size-5" />
+          <RotateCcw class="size-4" />
         </button>
         <button
           @click="exportData"
@@ -199,7 +200,7 @@
     <ConfirmModal
       v-model="showClearConfirm"
       title="Hapus Semua Data?"
-      description="Semua data SDE Masal akan dihapus. Tindakan ini tidak dapat dibatalkan."
+      description="Semua data SDE Massal akan dihapus. Tindakan ini tidak dapat dibatalkan."
       confirm-text="Hapus Semua"
       cancel-text="Batal"
       variant="danger"
@@ -210,7 +211,7 @@
     <ConfirmModal
       v-model="showRemoveItemConfirm"
       title="Hapus Naskah?"
-      description="Naskah ini akan dihapus dari daftar SDE Masal."
+      description="Naskah ini akan dihapus dari daftar SDE Massal."
       confirm-text="Hapus"
       cancel-text="Batal"
       variant="danger"
@@ -421,8 +422,7 @@
       </div>
     </Teleport>
 
-    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-      <div class="flex items-center justify-end gap-3">
+    <Teleport to="#sde-masal-navigation-actions">
         <UButton
           label="Ajukan Verifikasi"
           color="primary"
@@ -433,8 +433,7 @@
           :disabled="generating || !penerimaList.length"
           @click="openVerificationSelection"
         />
-      </div>
-    </div>
+    </Teleport>
 
     <!-- Slideover Pratinjau dengan dropdown penerima -->
     <USlideover v-model:open="isPreviewOpen" title="Pratinjau" description="Pratinjau dokumen" side="bottom" :ui="{
@@ -512,6 +511,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { RotateCcw } from 'lucide-vue-next';
 import type { SdeMasalConcept, SdeMasalPenerima, SdeMasalTemplate } from '~/types/sde-masal';
 import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
 import { useApi } from '~/composables/useApi';
@@ -662,7 +662,7 @@ const handleSaveDraft = () => {
   isPreviewOpen.value = false;
   toast.add({
     title: 'Draft tersimpan',
-    description: 'Perubahan draft tetap tersimpan di halaman SDE Masal.',
+    description: 'Perubahan draft tetap tersimpan di halaman SDE Massal.',
     color: 'success',
   });
 };
@@ -742,7 +742,7 @@ const generatePdfFor = async (idx: number) => {
     currentBlobUrl = URL.createObjectURL(blob);
     pdfUrl.value = currentBlobUrl;
   } catch (e: any) {
-    console.error('Gagal generate preview PDF SDE Masal:', e);
+    console.error('Gagal generate preview PDF SDE Massal:', e);
     // Coba baca error dari blob response (backend mengembalikan JSON error)
     let detail = e?.message || 'Gagal generate PDF';
     if (e?.response?.data instanceof Blob) {
@@ -815,7 +815,7 @@ const pengirimJabatan = computed(() => pengirimParts.value.slice(1).join(' - ') 
 
 onMounted(() => {
   fetchTertujuEksternal().catch((error) => {
-    console.warn('Gagal memuat master tertuju eksternal untuk daftar penerima SDE Masal', error);
+    console.warn('Gagal memuat master tertuju eksternal untuk daftar penerima SDE Massal', error);
   });
   document.addEventListener('click', handleDocumentClick);
 });
@@ -853,9 +853,9 @@ const statusVerifikasiLabel = (status?: string) =>
   ({
     MENUNGGU: 'Menunggu',
     MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
-    TERVERIFIKASI: 'Terverifikasi',
+    TERVERIFIKASI: 'Disetujui',
     DITOLAK: 'Ditolak',
-    TERKIRIM: 'Terkirim',
+    TERKIRIM: 'Selesai',
     GAGAL: 'Gagal',
   })[status || 'MENUNGGU'] || status || 'Menunggu';
 
@@ -1037,7 +1037,7 @@ const viewLampiran = async (row: any, attachment: { key: string; url?: string },
     window.open(url, '_blank');
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch (error) {
-    console.error('Gagal membuka lampiran SDE Masal', error);
+    console.error('Gagal membuka lampiran SDE Massal', error);
   }
 };
 
@@ -1113,12 +1113,17 @@ const openVerificationSelection = async () => {
     // posisi aktif lama mengubah daftar atasan Raihan.
     if (props.konsep?.parentNaskahId) {
       try {
+        // Gunakan endpoint chain yang sama dengan halaman Kotak Masuk agar
+        // daftar verifikator mengikuti rangkaian disposisi yang ditampilkan
+        // user pada naskah parent.
         const disposisiRes: any = await apiGet(
-          `/DI/${encodeURIComponent(props.konsep.parentNaskahId)}`,
+          `/persuratan/naskah/${encodeURIComponent(props.konsep.parentNaskahId)}`,
           {},
           { skipCache: true },
         );
-        const flow = disposisiRes?.data?.flow || disposisiRes?.flow || [];
+        const flow = Array.isArray(disposisiRes?.data)
+          ? disposisiRes.data
+          : disposisiRes?.data?.flow || disposisiRes?.flow || [];
         const profilePersnum = String(profile?.persnum ?? '').trim();
         const profileName = String(profile?.nama ?? '').trim().toLowerCase();
         const currentDisposisi = Array.isArray(flow) ? flow[0] : null;
@@ -1160,6 +1165,8 @@ const openVerificationSelection = async () => {
         // Setiap pengirim pada node chain adalah pejabat yang meneruskan
         // disposisi ke bawah. Inilah rantai atasan yang sebenarnya untuk
         // SDE Massal, bukan seluruh AVP/VP dalam divisi yang sama.
+        // Gunakan seluruh pengirim pada flow disposisi awal sebagai sumber
+        // chain verifikator.
         const byRank = new Map<number, any>();
         (Array.isArray(flow) ? flow : [])
           .map((node: any) => node?.pengirim)
@@ -1240,11 +1247,6 @@ const saveVerifiers = () => {
     JSON.stringify({ ...draft, verifikators: selectedVerifiers.value })
   );
   showVerifierModal.value = false;
-  toast.add({
-    title: 'Atasan managerial siap diverifikasi',
-    description: `${selectedVerifiers.value.length} atasan ditetapkan otomatis.`,
-    color: 'success',
-  });
 };
 const submitVerifiers = () => {
   const ranks = selectedVerifiers.value

@@ -91,7 +91,7 @@ onMounted(async () => {
     await fetchTertujuEksternal();
     setTertujuEksternalLookup(tertujuEksternal.value);
   } catch (error) {
-    console.warn('Gagal memuat master tertuju eksternal untuk preview surat SDE Masal', error);
+    console.warn('Gagal memuat master tertuju eksternal untuk preview surat SDE Massal', error);
   }
   // Muat posisi internal untuk resolve tembusan internal (position ID → jabatan)
   try {
