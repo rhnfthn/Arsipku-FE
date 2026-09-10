@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { renderAsync } from 'docx-preview';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import type {
@@ -32,6 +32,12 @@ const {
 const { apiGet } = useApi();
 const { user } = useAuth();
 const toast = useToast();
+const {
+  init: initRealtimeSocket,
+  naskahLainnyaUpdate,
+  subscribeNaskahLainnya,
+  unsubscribeNaskahLainnya,
+} = useRealtimeSocket();
 
 const id = computed(() => route.params.id as string);
 
@@ -49,6 +55,12 @@ const isPemrakarsa = computed(() => {
   if (!detail.value || !user.value) return false;
   return detail.value.pemrakarsa?.nama === user.value.nama;
 });
+
+// Nama Pemrakarsa pada detail adalah pejabat terakhir pada approval awal.
+// Identitas konseptor tetap tersedia di `pemrakarsa` untuk pengecekan akses.
+const pemrakarsaDisplay = computed(
+  () => detail.value?.pemrakarsaPejabat ?? detail.value?.pemrakarsa
+);
 
 // Dokumen final fisik baru dapat dikelola setelah seluruh penandatangan
 // menyetujui Naskah Draft dan nomor sudah diterbitkan.
@@ -99,6 +111,7 @@ const APPROVAL_TAHAP_LABEL: Record<string, string> = {
 };
 const tahapLabel = (t: string) => APPROVAL_TAHAP_LABEL[t] ?? t;
 const LEGAL_EVALUATION_TAHAPS = new Set(['evaluasi', 'persetujuan_lanjutan', 'evaluasi_final']);
+const LEGACY_DIGITAL_LEGAL_TAHAPS = new Set(['persetujuan_lanjutan', 'evaluasi_final']);
 
 const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRow[] }[]>(() => {
   const byTahap = detail.value?.approvalByTahap;
@@ -117,10 +130,13 @@ const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRo
     map = {};
     for (const a of detail.value?.approval ?? []) (map[a.tahap] ??= []).push(a);
   }
-  const isDigitalWithoutLegal =
-    ['qr_only', 'digsig'].includes(detail.value?.signOption ?? '') && !detail.value?.butuhLegal;
+  const isDigital = ['qr_only', 'digsig'].includes(detail.value?.signOption ?? '');
+  const isDigitalWithoutLegal = isDigital && !detail.value?.butuhLegal;
+  const isDigitalWithLegal = isDigital && detail.value?.butuhLegal;
   const present = Object.keys(map).filter(
-    (tahap) => !isDigitalWithoutLegal || !LEGAL_EVALUATION_TAHAPS.has(tahap)
+    (tahap) =>
+      (!isDigitalWithoutLegal || !LEGAL_EVALUATION_TAHAPS.has(tahap)) &&
+      (!isDigitalWithLegal || !LEGACY_DIGITAL_LEGAL_TAHAPS.has(tahap))
   );
   const ordered = APPROVAL_TAHAP_ORDER.filter((k) => present.includes(k));
   const rest = present.filter((k) => !APPROVAL_TAHAP_ORDER.includes(k));
@@ -433,7 +449,51 @@ const breadcrumbs = computed(() => [
   { label: detail.value?.perihal || 'Detail', to: '#' },
 ]);
 
-onMounted(() => fetchDetail(id.value));
+let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+let realtimeRefreshRunning = false;
+let realtimeRefreshQueued = false;
+
+async function refreshDetailFromRealtime() {
+  if (realtimeRefreshRunning) {
+    realtimeRefreshQueued = true;
+    return;
+  }
+  realtimeRefreshRunning = true;
+  try {
+    await fetchDetail(id.value, { silent: true });
+  } catch (err) {
+    console.warn('[NaskahLainnyaDetail] Realtime refresh gagal:', err);
+  } finally {
+    realtimeRefreshRunning = false;
+    if (realtimeRefreshQueued) {
+      realtimeRefreshQueued = false;
+      scheduleRealtimeRefresh();
+    }
+  }
+}
+
+function scheduleRealtimeRefresh() {
+  if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+  realtimeRefreshTimer = setTimeout(() => {
+    realtimeRefreshTimer = null;
+    void refreshDetailFromRealtime();
+  }, 200);
+}
+
+watch(naskahLainnyaUpdate, (update) => {
+  if (update?.naskahId === id.value) scheduleRealtimeRefresh();
+});
+
+onMounted(async () => {
+  subscribeNaskahLainnya(id.value);
+  await initRealtimeSocket();
+  await fetchDetail(id.value);
+});
+
+onBeforeUnmount(() => {
+  if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+  unsubscribeNaskahLainnya(id.value);
+});
 
 const errorMessage = computed(
   () => (error.value as any)?.response?.data?.message ?? 'Gagal memuat naskah.'
@@ -1054,7 +1114,11 @@ async function handleSignMethodSubmit(data: { method: string; passphrase?: strin
         signMethod: 'digsig',
         passphrase: data.passphrase || '',
       });
-      toast.add({ title: 'Berhasil', description: 'Naskah ditandatangani dengan TTE BSrE', color: 'success' });
+      toast.add({
+        title: 'Berhasil',
+        description: 'Naskah ditandatangani dengan TTE BSrE',
+        color: 'success',
+      });
     } else {
       // qr_only — visualisasi internal (alur lama)
       await nl.tandaTangan(naskahId);
@@ -1703,10 +1767,10 @@ const signLabel = computed(() =>
                     <dd
                       class="mt-0.5 wrap-break-word text-sm font-semibold text-gray-900 dark:text-white"
                     >
-                      {{ detail.pemrakarsa.nama }}
+                      {{ pemrakarsaDisplay?.nama || '—' }}
                     </dd>
                     <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                      {{ personaMeta(detail.pemrakarsa) }}
+                      {{ pemrakarsaDisplay ? personaMeta(pemrakarsaDisplay) : '—' }}
                     </p>
                   </div>
                 </div>
