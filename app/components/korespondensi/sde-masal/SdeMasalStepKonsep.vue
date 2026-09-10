@@ -1,7 +1,58 @@
 <template>
   <div class="flex-1 overflow-y-auto">
+    <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+      Konsep SDE Massal
+    </h2>
+
     <!-- Section: Konsep Surat -->
-    <div class="sde-masal-konsep-form space-y-1">
+    <div v-if="props.readonly" class="sde-masal-konsep-form space-y-1">
+      <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          Judul Folder<span class="text-red-500 ml-0.5">*</span>
+        </span>
+        <p class="relative flex-1 min-w-0 w-full text-sm text-gray-900 dark:text-white sm:ml-6 break-words">
+          {{ judulModel || '-' }}
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 relative gap-1 sm:gap-0">
+        <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          Tanggal Konsep Surat<span class="text-red-500 ml-0.5">*</span>
+        </span>
+        <p class="relative flex-1 min-w-0 w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+          {{ tanggalKonsepDisplay || '-' }}
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          Klasifikasi<span class="text-red-500 ml-0.5">*</span>
+        </span>
+        <p class="flex-1 min-w-0 w-full text-sm text-gray-900 dark:text-white sm:ml-6 break-words">
+          {{ klasifikasiDisplay || '-' }}
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          Pengirim<span class="text-red-500 ml-0.5">*</span>
+        </span>
+        <p class="flex-1 min-w-0 w-full text-sm text-gray-900 dark:text-white sm:ml-6 break-words">
+          {{ senderDisplay || '-' }}
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+        <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
+          Sifat<span class="text-red-500 ml-0.5">*</span>
+        </span>
+        <p class="flex-1 min-w-0 w-full text-sm text-gray-900 dark:text-white sm:ml-6 capitalize">
+          {{ sifatDisplay || '-' }}
+        </p>
+      </div>
+    </div>
+
+    <div v-else class="sde-masal-konsep-form space-y-1">
       <div class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
         <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
           Judul Folder<span class="text-red-500 ml-0.5">*</span>
@@ -22,7 +73,12 @@
       </div>
 
       <!-- Tanggal Konsep Surat -->
-      <TulisInputTanggal v-model="dateModel" label="Tanggal Konsep Surat" required />
+      <TulisInputTanggal
+        v-model="dateModel"
+        label="Tanggal Konsep Surat"
+        display-format="DD/MM/YYYY"
+        required
+      />
 
       <!-- Klasifikasi -->
       <TulisInputKlasifikasi
@@ -72,6 +128,7 @@ import type { SdeMasalConcept } from '~/types/sde-masal';
 
 const props = defineProps<{
   parentNaskahId?: string;
+  readonly?: boolean;
 }>();
 
 const model = defineModel<SdeMasalConcept | null>({ default: null });
@@ -129,9 +186,31 @@ const tanggalKonsepStr = computed(() => {
   return `${dateModel.value.year}-${String(dateModel.value.month).padStart(2, '0')}-${String(dateModel.value.day).padStart(2, '0')}`;
 });
 
+const tanggalKonsepDisplay = computed(() => {
+  if (!dateModel.value) return '';
+  return `${String(dateModel.value.day).padStart(2, '0')}/${String(dateModel.value.month).padStart(2, '0')}/${dateModel.value.year}`;
+});
+
 const klasifikasiObj = computed(() =>
-  klasifikasiList.value.find((k: Klasifikasi) => k.id === klasifikasiModel.value)
+  klasifikasiList.value.find(
+    (k: Klasifikasi) =>
+      k.id === klasifikasiModel.value || k.klasifikasi === klasifikasiModel.value
+  )
 );
+
+const klasifikasiDisplay = computed(() =>
+  klasifikasiObj.value
+    ? `${klasifikasiObj.value.klasifikasi} - ${klasifikasiObj.value.klasifikasi_text}`
+    : model.value?.klasifikasiName || klasifikasiModel.value || ''
+);
+
+const senderDisplay = computed(() => senderModel.value?.label || model.value?.pengirimName || '');
+
+const sifatDisplay = computed(() => {
+  const value = sifatModel.value || model.value?.sifat || '';
+  if (value === 'biasa') return 'Biasa / Terbuka';
+  return value.replaceAll('_', ' ');
+});
 
 // --- Sync ke model parent ---
 // klasifikasiList ikut di-watch: saat daftar klasifikasi selesai dimuat,
@@ -139,6 +218,7 @@ const klasifikasiObj = computed(() =>
 watch(
   [dateModel, klasifikasiModel, senderModel, sifatModel, judulModel, klasifikasiList],
   () => {
+    const parentNaskahId = props.parentNaskahId || model.value?.parentNaskahId;
     model.value = {
       judul: judulModel.value.trim(),
       tanggalKonsep: tanggalKonsepStr.value,
@@ -149,7 +229,7 @@ watch(
       pengirimId: String(senderModel.value?.value || ''),
       pengirimName: senderModel.value?.label || '',
       sifat: sifatModel.value || 'biasa',
-      parentNaskahId: props.parentNaskahId || undefined,
+      parentNaskahId: parentNaskahId || undefined,
     };
   },
   { deep: true }

@@ -1,42 +1,52 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <PageHeader title="SDE Masal" :items="breadcrumbs" />
+    <PageHeader title="SDE Massal" :items="breadcrumbs" />
 
-    <!-- Informasi Folder saat melanjutkan folder yang sudah tersimpan -->
     <div
-      v-if="currentStep === 3 && folderId && wizardState.konsep"
-      class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      :class="currentStep === 3
+        ? 'rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800'
+        : ''"
     >
-      <h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Informasi Folder</h2>
-      <div class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
-        <div class="divide-y divide-gray-200 dark:divide-gray-700">
-          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Judul Folder</span>
-            <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.judul || '-' }}</p>
+
+      <!-- Informasi Folder saat melanjutkan folder yang sudah tersimpan -->
+      <div
+        v-if="currentStep === 3 && folderId && wizardState.konsep"
+        class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+      <div>
+        <h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Informasi Folder</h2>
+        <div class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+              <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Judul Folder</span>
+              <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.judul || '-' }}</p>
+            </div>
+            <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+              <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Tanggal</span>
+              <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+                {{ formatSdeMasalDate(wizardState.konsep.tanggalKonsep) }}
+              </p>
+            </div>
+            <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+              <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Klasifikasi</span>
+              <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.klasifikasiName || '-' }}</p>
+            </div>
           </div>
-          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Tanggal</span>
-            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.tanggalKonsep || '-' }}</p>
-          </div>
-          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Klasifikasi</span>
-            <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.klasifikasiName || '-' }}</p>
-          </div>
-        </div>
-        <div class="divide-y divide-gray-200 dark:divide-gray-700">
-          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Sifat</span>
-            <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">
-              {{ wizardState.konsep.sifat === 'biasa' ? 'Biasa' : wizardState.konsep.sifat || '-' }}
-            </p>
-          </div>
-          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Total Surat</span>
-            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.penerimaList.length }}</p>
-          </div>
-          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Pengirim</span>
-            <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.pengirimName || '-' }}</p>
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+              <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Sifat</span>
+              <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">
+                {{ wizardState.konsep.sifat === 'biasa' ? 'Biasa' : wizardState.konsep.sifat || '-' }}
+              </p>
+            </div>
+            <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+              <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Total Surat</span>
+              <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.penerimaList.length }}</p>
+            </div>
+            <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+              <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Pengirim</span>
+              <p class="w-full break-words text-sm text-gray-900 dark:text-white sm:ml-6">{{ wizardState.konsep.pengirimName || '-' }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -46,18 +56,26 @@
     <UCard
       variant="soft"
       :ui="{
-        root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
+        root: currentStep === 3
+          ? 'border-0 bg-transparent p-0 shadow-none print:hidden transition-colors'
+          : 'rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 print:hidden transition-colors',
+        body: currentStep === 3 ? '!p-0 sm:!p-0' : undefined,
       }"
     >
       <!-- Step 1: Konsep Surat -->
       <SdeMasalStepKonsep
         v-if="currentStep === 1"
+        :key="folderId || 'new-sde-masal'"
         v-model="wizardState.konsep"
-        :parent-naskah-id="parentNaskahId"
+        :parent-naskah-id="props.parentNaskahId || wizardState.konsep?.parentNaskahId"
+        :readonly="Boolean(props.folderId)"
       />
 
       <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->
       <div v-else-if="currentStep === 2" class="space-y-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          Konsep SDE Massal
+        </h2>
         <div class="divide-y divide-gray-200 dark:divide-gray-700">
           <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
             <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
@@ -72,7 +90,7 @@
               Tanggal
             </span>
             <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
-                {{ wizardState.konsep?.tanggalKonsep || '-' }}
+                {{ formatSdeMasalDate(wizardState.konsep?.tanggalKonsep) }}
             </p>
           </div>
           <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
@@ -114,9 +132,10 @@
           v-model="wizardState.penerimaList"
           :konsep="wizardState.konsep"
           :dynamic-variables="wizardState.variables"
-          :template="wizardState.template"
-          :folder-id="folderId"
-        />
+        :template="wizardState.template"
+        :folder-id="folderId"
+        @attachments-state="handleAttachmentsState"
+      />
       </div>
 
       <!-- Step 3: Preview dan Konfirmasi -->
@@ -137,22 +156,21 @@
         @upload-lampiran="handleUploadLampiran"
       />
     </UCard>
+    </div>
 
     <!-- Navigation Buttons -->
     <div class="flex items-center justify-between mt-4 px-1">
       <!-- Kembali -->
       <UButton
-        v-if="currentStep > 1"
         label="Kembali"
         color="neutral"
         variant="outline"
         icon="i-lucide-arrow-left"
         @click="goBack"
       />
-      <div v-else />
 
       <!-- Selanjutnya / Generate -->
-      <div class="flex items-center gap-2">
+      <div id="sde-masal-navigation-actions" class="flex items-center gap-2">
         <UButton
           v-if="currentStep < 3"
           label="Selanjutnya"
@@ -293,6 +311,9 @@ const {
 const currentStep = ref(1);
 const generating = ref(false);
 const folderId = ref<string | null>(null);
+// ZIP lampiran bersifat opsional. Nilai awal true agar ketiadaan ZIP tidak
+// mengunci tombol lanjut; komponen upload akan mengubahnya saat ZIP dipilih.
+const attachmentsReady = ref(true);
 
 const wizardState = reactive<{
   konsep: SdeMasalConcept | null;
@@ -339,10 +360,12 @@ onMounted(async () => {
           id: item.id,
           isValid: true,
         }));
-        currentStep.value = 3;
+        // Folder yang dikembalikan diedit mulai dari halaman awal pembuatan
+        // naskah, bukan langsung dibawa ke halaman preview/konfirmasi.
+        currentStep.value = 1;
       }
     } catch (error) {
-      console.warn('Gagal memulihkan draft folder SDE Masal:', error);
+      console.warn('Gagal memulihkan draft folder SDE Massal:', error);
     } finally {
       persistenceReady.value = true;
     }
@@ -367,7 +390,7 @@ onMounted(async () => {
       currentStep.value = savedStep;
     }
   } catch (error) {
-    console.warn('Gagal memulihkan draft SDE Masal:', error);
+    console.warn('Gagal memulihkan draft SDE Massal:', error);
   } finally {
     persistenceReady.value = true;
   }
@@ -376,7 +399,7 @@ onMounted(async () => {
   // pastikan item sudah punya id agar upload lampiran bisa bekerja.
   if (currentStep.value === 3 && wizardState.penerimaList.length) {
     ensureItemsGenerated().catch((error) => {
-      console.warn('Gagal menyiapkan id item SDE Masal:', error);
+      console.warn('Gagal menyiapkan id item SDE Massal:', error);
     });
   }
 });
@@ -409,7 +432,7 @@ const scheduleAutoSave = () => {
       await persistCompleteFolder();
       await ensureItemsGenerated();
     } catch (error) {
-      console.warn('Gagal auto-save draft SDE Masal:', error);
+      console.warn('Gagal auto-save draft SDE Massal:', error);
     }
   }, 1200);
 };
@@ -417,8 +440,15 @@ const scheduleAutoSave = () => {
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
   { label: 'Korespondensi', to: '/korespondensi/kotak-masuk' },
-  { label: 'SDE Masal', to: '#' },
+  { label: 'SDE Massal', to: '#' },
 ]);
+
+const formatSdeMasalDate = (value?: string | null) => {
+  if (!value) return '-';
+  const [year, month, day] = String(value).slice(0, 10).split('-');
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+};
 
 // Validasi per step
 const canProceed = computed(() => {
@@ -442,14 +472,23 @@ const canProceed = computed(() => {
       wizardState.template?.konten &&
       wizardState.penerimaList.length > 0 &&
       wizardState.penerimaList.every((p) => p.isValid) &&
-      !hasUnmappedAttachments
+      (!hasUnmappedAttachments || attachmentsReady.value)
     );
   }
   return true;
 });
 
+const handleAttachmentsState = (ready: boolean) => {
+  attachmentsReady.value = ready;
+};
+
 const goBack = () => {
-  if (currentStep.value > 1) currentStep.value--;
+  if (currentStep.value > 1) {
+    currentStep.value--;
+    return;
+  }
+
+  navigateTo('/korespondensi/sde-masal');
 };
 
 const goNext = async () => {
@@ -531,37 +570,52 @@ const persistCompleteFolder = async (signOption?: 'digsig' | 'qr_only' | 'ttd_ba
  * upload lampiran per item bisa bekerja. Dipanggil saat masuk step 3 dan
  * dipakai ulang oleh submit/finalize agar tidak generate duplikat.
  */
+let itemsGenerationPromise: Promise<void> | null = null;
+
 const ensureItemsGenerated = async () => {
-  // Hanya generate item yang belum punya id (hindari duplikat saat user
-  // kembali ke step 2 lalu mengedit daftar penerima).
-  const missing = wizardState.penerimaList.filter(
-    (p) => p.isValid !== false && !p.id
-  );
-  if (missing.length === 0) return;
+  // Fungsi ini dipanggil oleh watcher/autosave dan juga oleh tombol aksi.
+  // Jika keduanya berjalan bersamaan, tanpa lock masing-masing request akan
+  // melihat item yang sama-sama belum memiliki id lalu membuat baris baru.
+  if (itemsGenerationPromise) return itemsGenerationPromise;
 
-  if (!folderId.value) {
-    const saved = await createFolder(buildFolderPayload());
-    folderId.value = saved?.id ?? null;
-  }
-  if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
-  if (!wizardState.konsep || !wizardState.template) {
-    throw new Error('Konsep dan template SDE Massal belum lengkap');
-  }
+  itemsGenerationPromise = (async () => {
+    try {
+      // Hanya generate item yang belum punya id (hindari duplikat saat user
+      // kembali ke step 2 lalu mengedit daftar penerima).
+      const missing = wizardState.penerimaList.filter(
+        (p) => p.isValid !== false && !p.id
+      );
+      if (missing.length === 0) return;
 
-  const konsep = wizardState.konsep;
-  const template = wizardState.template;
-  const result = await generateMassal({
-    konsep,
-    folderId: folderId.value,
-    penerimaList: missing,
-    template,
-  });
+      if (!folderId.value) {
+        const saved = await createFolder(buildFolderPayload());
+        folderId.value = saved?.id ?? null;
+      }
+      if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
+      if (!wizardState.konsep || !wizardState.template) {
+        throw new Error('Konsep dan template SDE Massal belum lengkap');
+      }
 
-  // generateMassal mengembalikan items 1:1 dengan baris valid yang dikirim.
-  const items = result?.items || [];
-  missing.forEach((p, idx) => {
-    if (items[idx]) p.id = items[idx].id;
-  });
+      const konsep = wizardState.konsep;
+      const template = wizardState.template;
+      const result = await generateMassal({
+        konsep,
+        folderId: folderId.value,
+        penerimaList: missing,
+        template,
+      });
+
+      // generateMassal mengembalikan items 1:1 dengan baris valid yang dikirim.
+      const items = result?.items || [];
+      missing.forEach((p, idx) => {
+        if (items[idx]) p.id = items[idx].id;
+      });
+    } finally {
+      itemsGenerationPromise = null;
+    }
+  })();
+
+  return itemsGenerationPromise;
 };
 
 const getAttachmentRefs = (item: SdeMasalPenerima): SdeMasalAttachmentRef[] =>
@@ -711,7 +765,7 @@ const handleSubmitVerification = async (
 // Submit All → finalize semua item langsung (qr_only)
 const handleSubmitAll = () => {
   if (!wizardState.penerimaList.length) {
-    toast.add({ title: 'Tidak ada data', description: 'Daftar SDE Masal kosong.', color: 'error' });
+    toast.add({ title: 'Tidak ada data', description: 'Daftar SDE Massal kosong.', color: 'error' });
     return;
   }
   handleFinalizeDirect({ signOption: 'qr_only' });
@@ -720,7 +774,7 @@ const handleSubmitAll = () => {
 // Kosongkan Data → hapus semua penerima
 const handleClearData = () => {
   wizardState.penerimaList = [];
-  toast.add({ title: 'Data dikosongkan', description: 'Daftar SDE Masal telah dikosongkan.', color: 'success' });
+  toast.add({ title: 'Data dikosongkan', description: 'Daftar SDE Massal telah dikosongkan.', color: 'success' });
 };
 
 // Hapus satu item
