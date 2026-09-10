@@ -209,7 +209,7 @@
                       <UIcon name="i-lucide-download" class="size-4" />
                     </button>
                     <button
-                      v-if="isGagal(item.status) && !isFolderCreator"
+                      v-if="isGagal(item.status) && isSignerAwaiting"
                       class="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                       :disabled="retryingId === item.id"
                       :title="retryingId === item.id ? 'Sedang mengirim ulang…' : 'Kirim ulang'"
@@ -486,6 +486,7 @@ const {
 } = useSdeMasal();
 const { getConfigDigsig } = useDigsig();
 const { user } = useAuth();
+const { markSdeMasalFolderNotificationsAsRead } = useNotifications();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
 const folder = ref<SdeMasalFolder | null>(null);
 const items = ref<SdeMasalFolderItem[]>([]);
@@ -558,10 +559,9 @@ const approveCurrentFolder = async () => {
     await approveFolderVerification(folder.value.id);
     showApproveConfirm.value = false;
     toast.add({ title: 'Folder disetujui', description: 'Folder diteruskan sesuai alur verifikasi.', color: 'success' });
-    // Setelah approval, akses folder dapat berpindah ke verifikator berikutnya
-    // atau ke pengirim akhir. Jangan memuat ulang detail sebagai verifikator
-    // sebelumnya karena backend memang akan mengembalikan 403.
-    await navigateTo('/korespondensi/sde-masal/verifikasi');
+    // Tetap di halaman detail folder agar pengguna dapat melihat status dan
+    // verifikator berikutnya tanpa kembali ke daftar Verifikasi.
+    await loadData();
   } catch (error: any) {
     toast.add({ title: 'Gagal menyetujui folder', description: error?.message || 'Coba lagi.', color: 'error' });
   } finally {
@@ -637,7 +637,7 @@ const openFinalizeAll = async () => {
 };
 
 const sendSelectedItems = async (signData: { method: string; passphrase?: string }) => {
-  if (!folder.value || !selectedItemIds.value.length) return;
+  if (!folder.value || !selectedItemIds.value.length || workflowLoading.value) return;
 
   const method = signData.method === 'tanpa_ttd' ? 'ttd_basah' : signData.method;
   if (method === 'digsig' && !signData.passphrase?.trim()) {
@@ -647,7 +647,10 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
 
   selectedSendType.value = method as typeof selectedSendType.value;
   workflowLoading.value = true;
+  const selectedCount = selectedItemIds.value.length;
   try {
+    // Seragam dengan finalisasi SDE biasa: modal tetap terbuka dan tombol
+    // menampilkan loading sampai seluruh naskah benar-benar selesai diproses.
     const result = await finalizeDirect({
       folderId: folder.value.id,
       itemIds: [...selectedItemIds.value],
@@ -657,21 +660,37 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
       signOption: selectedSendType.value,
       passphrase: signData.passphrase,
     });
-    isPassphraseModalOpen.value = false;
-    closePreview();
-    showSendConfirm.value = false;
-    toast.add({ title: 'Pengiriman selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
-    if ((result?.success || 0) > 0) {
+
+    const success = Number(result?.success || 0);
+    const failed = Number(result?.failed || 0);
+    if (success === selectedCount && failed === 0) {
+      toast.add({
+        title: 'Pengiriman selesai',
+        description: `${success} naskah berhasil ditandatangani dan dikirim.`,
+        color: 'success',
+      });
+      isPassphraseModalOpen.value = false;
+      closePreview();
+      showSendConfirm.value = false;
       await navigateTo('/korespondensi/terkirim');
     } else {
+      // Jangan keluar dari modal bila masih ada naskah gagal. Pengguna dapat
+      // langsung mencoba lagi; backend otomatis melewati naskah yang sukses.
+      toast.add({
+        title: 'Pengiriman belum selesai',
+        description: `${success} berhasil, ${failed} gagal. Silakan kirim ulang naskah yang gagal.`,
+        color: 'warning',
+      });
       await loadData();
     }
   } catch (error: any) {
     const message = error?.response?.data?.message || error?.message || 'Coba lagi.';
-    if (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah')) {
+    if (
+      (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah'))
+    ) {
+      await nextTick();
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
-      isPassphraseModalOpen.value = false;
       toast.add({ title: 'Pengiriman gagal', description: message, color: 'error' });
     }
   } finally {
@@ -917,12 +936,14 @@ const generatePdfFor = async (idx: number) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await findNaskahInFolder(String(route.params.folderId));
+    const currentFolderId = String(route.params.folderId);
+    const data = await findNaskahInFolder(currentFolderId);
     folder.value = data?.folder || null;
     items.value = data?.items || [];
     // Pilihan naskah harus dimulai kosong agar checkbox header tetap bolong.
     // Pengguna dapat memilih semua naskah melalui checkbox header secara manual.
     selectedItemIds.value = [];
+    await markSdeMasalFolderNotificationsAsRead(currentFolderId);
   } finally {
     loading.value = false;
   }

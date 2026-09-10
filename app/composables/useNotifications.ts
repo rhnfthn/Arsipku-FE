@@ -13,6 +13,7 @@ import type {
 // Singleton state global (Nuxt auto-import composable, tapi state harus shared)
 const notifications = ref<NotificationItem[]>([]);
 const unreadCount = ref<number>(0);
+const sdeMasalUnreadCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const error = ref<any>(null);
@@ -125,10 +126,19 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_NASKAH_LAINNYA_LEGAL_DRAFTING: '/naskah-lainnya/legal-drafting',
     OPEN_DELEGASI: '/delegasi',
     OPEN_SYSTEM_ANNOUNCEMENT: '/pengumuman',
+    OPEN_SDE_MASAL_FOLDER: '/korespondensi/sde-masal/folder',
+    OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
   };
 
   const base = action ? baseRoutes[action] : null;
   if (!base) return null;
+
+  if (action === 'OPEN_SDE_MASAL_FOLDER') {
+    const folderId = getString('folderId', 'folder_id');
+    return folderId
+      ? { path: `${base}/${encodeURIComponent(folderId)}` }
+      : { path: '/korespondensi/sde-masal' };
+  }
 
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
   const query: Record<string, string> = { ...detailQuery };
@@ -140,6 +150,60 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
 export const useNotifications = () => {
   const { apiGet, apiPatch, apiDelete } = useApi();
   const toast = useToast();
+
+  const recentToastKeys = useState<Record<string, number>>(
+    'notifications:sde-masal-toast-keys',
+    () => ({}),
+  );
+  const toastDedupMs = 5 * 60_000;
+
+  const getNotificationToastKey = (payload: NotificationItem): string => {
+    const data = payload.data || {};
+    const title = String(payload.title || '').trim().replace(/\s+/g, ' ');
+    const description = String(payload.body || '').trim().replace(/\s+/g, ' ');
+    const isSdeMasal =
+      data.category === 'SDE_MASAL' || title.toLowerCase().startsWith('sde massal ');
+    if (isSdeMasal) {
+      // Payload versi lama dapat tidak membawa category/folderId. Judul dan
+      // isi tetap sama, sehingga keduanya harus memakai kunci yang sama.
+      return `SDE_MASAL|${title.toLowerCase()}|${description.toLowerCase()}`;
+    }
+    return `${title}|${description}`;
+  };
+
+  const shouldShowNotificationToast = (payload: NotificationItem): boolean => {
+    const key = getNotificationToastKey(payload);
+    const now = Date.now();
+
+    Object.entries(recentToastKeys.value).forEach(([cachedKey, timestamp]) => {
+      if (now - timestamp > toastDedupMs) delete recentToastKeys.value[cachedKey];
+    });
+
+    // Bersihkan toast SDE Massal yang sama bila event lama sudah lebih dulu
+    // masuk ke UI sebelum guard ini berjalan. Sisakan satu saja.
+    if (
+      payload.data?.category === 'SDE_MASAL' ||
+      String(payload.title || '').trim().toLowerCase().startsWith('sde massal ')
+    ) {
+      const title = payload.title || 'Notifikasi baru';
+      const description = payload.body || undefined;
+      const sameToasts = toast.toasts.value.filter(
+        (item) => item.title === title && item.description === description,
+      );
+      if (sameToasts.length > 0) {
+        const duplicateIds = new Set(sameToasts.slice(1).map((item) => item.id));
+        toast.toasts.value = toast.toasts.value.filter(
+          (item) => !duplicateIds.has(item.id),
+        );
+        recentToastKeys.value[key] = now;
+        return false;
+      }
+    }
+
+    if (recentToastKeys.value[key]) return false;
+    recentToastKeys.value[key] = now;
+    return true;
+  };
 
   // ============================================================
   // REST
@@ -227,6 +291,7 @@ export const useNotifications = () => {
         )) as UnreadCountResponse;
         const count = res?.data?.count ?? 0;
         unreadCount.value = count;
+        sdeMasalUnreadCount.value = res?.data?.sdeMasalCount ?? 0;
         lastUnreadCountFetchAt = Date.now();
         return count;
       } catch (err) {
@@ -249,6 +314,9 @@ export const useNotifications = () => {
         item.isRead = true;
         item.readAt = new Date().toISOString();
         unreadCount.value = Math.max(0, unreadCount.value - 1);
+        if (item.data?.category === 'SDE_MASAL') {
+          sdeMasalUnreadCount.value = Math.max(0, sdeMasalUnreadCount.value - 1);
+        }
       }
     } catch (err) {
       console.error('[useNotifications] markAsRead error:', err);
@@ -280,6 +348,36 @@ export const useNotifications = () => {
     }
   };
 
+  const markSdeMasalFolderNotificationsAsRead = async (folderId: string): Promise<void> => {
+    if (!folderId) return;
+
+    try {
+      await apiPatch(`/notifications/sde-masal/folder/${encodeURIComponent(folderId)}/read`);
+      const normalizedFolderId = String(folderId);
+      let changed = 0;
+      notifications.value.forEach((notification) => {
+        const data = notification.data || {};
+        const relatedFolderId = data.folderId || data.folder_id;
+        if (
+          String(relatedFolderId || '') === normalizedFolderId &&
+          !notification.isRead
+        ) {
+          notification.isRead = true;
+          notification.readAt = new Date().toISOString();
+          changed += 1;
+        }
+      });
+
+      if (changed > 0) {
+        unreadCount.value = Math.max(0, unreadCount.value - changed);
+        sdeMasalUnreadCount.value = Math.max(0, sdeMasalUnreadCount.value - changed);
+      }
+      await fetchUnreadCount(true);
+    } catch (err) {
+      console.error('[useNotifications] markSdeMasalFolderNotificationsAsRead error:', err);
+    }
+  };
+
   const markAllAsRead = async (): Promise<void> => {
     try {
       await apiPatch('/notifications/read-all');
@@ -290,6 +388,7 @@ export const useNotifications = () => {
         }
       });
       unreadCount.value = 0;
+      sdeMasalUnreadCount.value = 0;
     } catch (err) {
       console.error('[useNotifications] markAllAsRead error:', err);
     }
@@ -304,6 +403,9 @@ export const useNotifications = () => {
         notifications.value.splice(idx, 1);
         if (!removed.isRead) {
           unreadCount.value = Math.max(0, unreadCount.value - 1);
+          if (removed.data?.category === 'SDE_MASAL') {
+            sdeMasalUnreadCount.value = Math.max(0, sdeMasalUnreadCount.value - 1);
+          }
         }
       }
     } catch (err) {
@@ -392,21 +494,44 @@ export const useNotifications = () => {
         const exists = notifications.value.some((n) => n.id === payload.id);
         if (!exists) {
           notifications.value.unshift(payload);
-          toast.add({
-            title: payload.title || 'Notifikasi baru',
-            description: payload.body || undefined,
-            color: 'neutral',
-            icon: 'i-lucide-bell',
-          });
+          const isSdeMasal =
+            payload.data?.category === 'SDE_MASAL' ||
+            String(payload.title || '').trim().toLowerCase().startsWith('sde massal ');
+          const isReturned = payload.data?.status === 'DIKEMBALIKAN';
+          const isVerification = payload.data?.action === 'OPEN_SDE_MASAL_VERIFIKASI';
+          if (shouldShowNotificationToast(payload)) {
+            toast.add({
+              id: `notification:${getNotificationToastKey(payload)}`,
+              title: payload.title || 'Notifikasi baru',
+              description: payload.body || undefined,
+              color: isReturned ? 'warning' : isSdeMasal ? 'info' : 'neutral',
+              icon: isReturned
+                ? 'i-lucide-rotate-ccw'
+                : isVerification
+                  ? 'i-lucide-folder-check'
+                  : isSdeMasal
+                    ? 'i-lucide-folder'
+                    : 'i-lucide-bell',
+            });
+          }
           unreadCount.value += 1;
+          if (payload.data?.category === 'SDE_MASAL') {
+            sdeMasalUnreadCount.value += 1;
+          }
         }
       });
 
-      socket.on('notification:count', (payload: { positionId: string; count: number }) => {
-        if (typeof payload?.count === 'number') {
-          unreadCount.value = payload.count;
+      socket.on(
+        'notification:count',
+        (payload: { positionId: string; count: number; sdeMasalCount?: number }) => {
+          if (typeof payload?.count === 'number') {
+            unreadCount.value = payload.count;
+          }
+          if (typeof payload?.sdeMasalCount === 'number') {
+            sdeMasalUnreadCount.value = payload.sdeMasalCount;
+          }
         }
-      });
+      );
 
       socket.on('notification:read', (payload: { notificationId: string }) => {
         const item = notifications.value.find((n) => n.id === payload?.notificationId);
@@ -422,6 +547,7 @@ export const useNotifications = () => {
           if (!n.readAt) n.readAt = new Date().toISOString();
         });
         unreadCount.value = 0;
+        sdeMasalUnreadCount.value = 0;
       });
 
       socket.on('notification:deleted', (payload: { notificationId: string }) => {
@@ -502,9 +628,11 @@ export const useNotifications = () => {
   const destroy = () => {
     disconnectSocket();
     activeToken = null;
+    recentToastKeys.value = {};
     resetFetchGuards();
     notifications.value = [];
     unreadCount.value = 0;
+    sdeMasalUnreadCount.value = 0;
     notificationMeta.value = {
       page: 1,
       limit: 20,
@@ -518,6 +646,7 @@ export const useNotifications = () => {
     // state (readonly)
     notifications: readonly(notifications),
     unreadCount: readonly(unreadCount),
+    sdeMasalUnreadCount: readonly(sdeMasalUnreadCount),
     notificationMeta: readonly(notificationMeta),
     isConnected: readonly(isConnected),
     isLoading: readonly(isLoading),
@@ -531,6 +660,7 @@ export const useNotifications = () => {
     fetchUnreadCount,
     markAsRead,
     markNaskahNotificationsAsRead,
+    markSdeMasalFolderNotificationsAsRead,
     markAllAsRead,
     deleteNotification,
     connectSocket,
