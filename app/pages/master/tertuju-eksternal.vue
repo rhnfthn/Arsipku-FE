@@ -566,153 +566,158 @@
         @close="resetForm"
       >
         <template #title>
-          <Heading variant="heading9b" class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white">
+          <Heading
+            variant="heading9b"
+            class="font-semibold text-sm mb-3 mt-5 ml-5 dark:text-white"
+          >
             {{ editId ? $t('te_modal_edit') : $t('te_modal_add') }}
           </Heading>
         </template>
 
-        <!-- FIELD KODE (readonly) -->
-        <div class="flex flex-col gap-2 p-1">
-          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            ID
-          </Heading>
-          <div class="flex items-center gap-2">
-            <input
-              :value="form.kode"
-              type="text"
-              readonly
-              class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
-            />
-            <button
-              v-if="form.kode"
-              type="button"
-              @click="copyKode(form.kode)"
-              class="p-2 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
-              :title="$t('te_copy_id') || 'Salin ID'"
-            >
-              <Check v-if="copiedKode === form.kode" class="w-4 h-4 text-green-500" />
-              <Copy v-else class="w-4 h-4" />
-            </button>
+        <div class="space-y-5 p-1">
+          <!-- FIELD KODE (readonly) -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              ID
+            </Heading>
+            <div class="flex items-center gap-2 mt-1">
+              <input
+                :value="form.kode"
+                type="text"
+                readonly
+                class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 cursor-default"
+              />
+              <button
+                v-if="form.kode"
+                type="button"
+                @click="copyKode(form.kode)"
+                class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-400 transition-colors shrink-0 flex items-center justify-center"
+                :title="$t('te_copy_id') || 'Salin ID'"
+              >
+                <Check v-if="copiedKode === form.kode" class="w-4 h-4 text-green-500" />
+                <Copy v-else class="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- FIELD NAMA -->
-        <div class="flex flex-col gap-2 p-1">
-          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t('te_nama') }} <span class="text-red-500">*</span>
-          </Heading>
-          <input
-            v-model="form.nama"
-            type="text"
-            :placeholder="$t('te_nama_placeholder')"
-            :class="[
-              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-              formErrors.nama
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-            ]"
-            @input="formErrors.nama = false; form.nama = form.nama.toUpperCase()"
-          />
-          <p v-if="formErrors.nama" class="text-xs text-red-500 mt-1">
-            {{ $t('te_nama') }}
+          <!-- FIELD NAMA -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ $t('te_nama') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="form.nama"
+              type="text"
+              :placeholder="$t('te_nama_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.nama
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.nama = false; form.nama = form.nama.toUpperCase()"
+            />
+            <p v-if="formErrors.nama" class="text-xs text-red-500 mt-1">
+              {{ $t('te_nama') }}
+            </p>
+          </div>
+
+          <!-- FIELD ALAMAT -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ $t('te_alamat') }} <span class="text-red-500">*</span>
+            </Heading>
+            <textarea
+              v-model="form.alamat"
+              rows="3"
+              :placeholder="$t('te_alamat_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.alamat
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.alamat = false"
+            />
+            <p v-if="formErrors.alamat" class="text-xs text-red-500 mt-1">
+              {{ $t('te_alamat') }}
+            </p>
+          </div>
+
+          <!-- FIELD TELEPON -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              {{ $t('te_telepon') }} <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="form.telephone"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="15"
+              @keydown="onPhoneKeydown"
+              @input="onPhoneInput"
+              @paste="onPhonePaste"
+              :placeholder="$t('te_telepon_placeholder')"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.telephone
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            />
+            <p v-if="formErrors.telephone" class="text-xs text-red-500 mt-1">
+              {{ $t('te_telepon') }}
+            </p>
+          </div>
+
+          <!-- FIELD EMAIL -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              Email <span class="text-red-500">*</span>
+            </Heading>
+            <input
+              v-model="form.email"
+              type="email"
+              placeholder="email@example.com"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
+                formErrors.email
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @input="formErrors.email = false"
+            />
+            <p v-if="formErrors.email" class="text-xs text-red-500 mt-1">Email</p>
+          </div>
+
+          <!-- FIELD STATUS -->
+          <div class="flex flex-col gap-1">
+            <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+              Status <span class="text-red-500">*</span>
+            </Heading>
+            <select
+              v-model="form.aktif"
+              :class="[
+                'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-gray-200',
+                formErrors.aktif
+                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+              @change="formErrors.aktif = false"
+            >
+              <option value="" disabled>{{ $t('te_status_placeholder') }}</option>
+              <option :value="true">{{ $t('te_aktif') }}</option>
+              <option :value="false">{{ $t('te_tidak_aktif') }}</option>
+            </select>
+            <p v-if="formErrors.aktif" class="text-xs text-red-500 mt-1">Status</p>
+          </div>
+
+          <!-- TANGGAL DIBUAT (hanya saat edit) -->
+          <p v-if="editId && form.created_at" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ formatDate(form.created_at) }}
           </p>
         </div>
-
-        <!-- FIELD ALAMAT -->
-        <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t('te_alamat') }} <span class="text-red-500">*</span>
-          </Heading>
-          <textarea
-            v-model="form.alamat"
-            type="text"
-            :placeholder="$t('te_alamat_placeholder')"
-            :class="[
-              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-              formErrors.alamat
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-            ]"
-            @input="formErrors.alamat = false"
-          />
-          <p v-if="formErrors.alamat" class="text-xs text-red-500 mt-1">
-            {{ $t('te_alamat') }}
-          </p>
-        </div>
-
-        <!-- FIELD TELEPON -->
-        <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            {{ $t('te_telepon') }} <span class="text-red-500">*</span>
-          </Heading>
-          <input
-            v-model="form.telephone"
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            maxlength="15"
-            @keydown="onPhoneKeydown"
-            @input="onPhoneInput"
-            @paste="onPhonePaste"
-            :placeholder="$t('te_telepon_placeholder')"
-            :class="[
-              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-              formErrors.telephone
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-            ]"
-          />
-          <p v-if="formErrors.telephone" class="text-xs text-red-500 mt-1">
-            {{ $t('te_telepon') }}
-          </p>
-        </div>
-
-        <!-- FIELD EMAIL -->
-        <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            Email <span class="text-red-500">*</span>
-          </Heading>
-          <input
-            v-model="form.email"
-            type="email"
-            placeholder="email@example.com"
-            :class="[
-              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400',
-              formErrors.email
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
-            ]"
-            @input="formErrors.email = false"
-          />
-          <p v-if="formErrors.email" class="text-xs text-red-500 mt-1">Email</p>
-        </div>
-
-        <!-- FIELD STATUS -->
-        <div class="flex flex-col gap-2">
-          <Heading variant="heading11m" class="text-xs dark:text-gray-200">
-            Status <span class="text-red-500">*</span>
-          </Heading>
-          <select
-            v-model="form.aktif"
-            :class="[
-              'w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-200',
-              formErrors.aktif
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500'
-            ]"
-            @change="formErrors.aktif = false"
-          >
-            <option value="" disabled>{{ $t('te_status_placeholder') }}</option>
-            <option :value="true">{{ $t('te_aktif') }}</option>
-            <option :value="false">{{ $t('te_tidak_aktif') }}</option>
-          </select>
-          <p v-if="formErrors.aktif" class="text-xs text-red-500 mt-1">Status</p>
-        </div>
-
-        <!-- TANGGAL DIBUAT (teks kecil, paling bawah, hanya saat edit) -->
-        <p v-if="editId && form.created_at" class="px-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {{ formatDate(form.created_at) }}
-        </p>
       </Modal>
     </Teleport>
 
@@ -724,9 +729,127 @@
       :confirm-text="$t('popup_hapus')"
       :cancel-text="$t('popup_batal')"
       :is-loading="isDeleting"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="confirmDelete"
       @cancel="showConfirmDelete = false"
     />
+    <!-- POPUP PERINGATAN / TIDAK BISA DIHAPUS -->
+    <ConfirmPopup
+      v-model="showBlockedDeletePopup"
+      type="warning"
+      title="Data Tidak Dapat Dihapus"
+      :message="blockedDeleteMessage"
+      confirm-text="Mengerti"
+      :is-alert="true"
+      @confirm="showBlockedDeletePopup = false"
+    />
+
+    <!-- Export Column Modal -->
+    <Teleport to="body">
+      <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+        <template #title>
+          <div class="ml-5 my-3.5">
+            <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+              {{ $t('pilih_kolom_export') }}
+            </Heading>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+            </p>
+          </div>
+        </template>
+
+        <div class="space-y-3.5 py-1">
+          <!-- Selection Status Bar & Toggle All -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+                :class="selectedExportColumns.length > 0
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+              >
+                {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+              </span>
+              <span class="text-gray-600 dark:text-gray-300 font-medium">
+                Kolom Terpilih
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click="toggleAllExport"
+              class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+              :class="allExportSelected
+                ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+            >
+              {{ allExportSelected ? 'Batal Pilih Semua' : $t('pilih_semua') }}
+            </button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+            <div
+              v-for="col in exportColumns"
+              :key="col.key"
+              @click="toggleColumn(col.key)"
+              class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+              :class="selectedExportColumns.includes(col.key)
+                ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+            >
+              <div class="flex items-center gap-3 min-w-0 w-full">
+                <!-- Checkmark Box -->
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                  :class="selectedExportColumns.includes(col.key)
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+                >
+                  <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold truncate leading-tight">
+                    {{ col.label }}
+                  </p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                    {{ col.desc }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+            <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+            <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ sortedData.length }} baris</span></span>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              type="button"
+              @click="showExportModal = false"
+              class="px-4 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+            >
+              {{ $t('batal') }}
+            </button>
+            <button
+              type="button"
+              @click="handleExportConfirm"
+              :disabled="selectedExportColumns.length === 0"
+              class="px-5 py-2 text-xs font-semibold bg-primary hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg shadow-sm shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
 </template>
 
@@ -825,6 +948,7 @@ const {
   fetchTertujuEksternal,
   createTertujuEksternal,
   deleteTertujuEksternal,
+  checkTertujuEksternalUsage,
   updateTertujuEksternal,
   generateKode
 } = useTertujuEksternal();
@@ -1119,8 +1243,11 @@ const handleSave = async () => {
 };
 
 const showConfirmDelete = ref(false);
+const showBlockedDeletePopup = ref(false);
+const blockedDeleteMessage = ref('');
 const deleteTargetId = ref<string | null>(null);
 const isDeleting = ref(false);
+const isCheckingDelete = ref(false);
 
 const resetForm = () => {
   editId.value = null;
@@ -1293,33 +1420,79 @@ const refreshData = async () => {
 };
 
 const onExport = () => {
-  const exportData = sortedData.value.map((item, idx) => ({
-    No: idx + 1,
-    ID: item.kode || '-',
-    [t('te_nama')]: item.nama,
-    [t('te_alamat')]: item.alamat,
-    [t('te_telepon')]: item.telepon || '-',
-    Email: item.email || '-',
-    Status: item.aktif ? t('te_aktif') : t('te_tidak_aktif'),
-    [t('te_pengusul')]: item.nama_pembuat || '-'
-  }));
-
-  if (exportData.length === 0) {
+  if (sortedData.value.length === 0) {
     showToast(t('te_gagal') || 'Info', 'Tidak ada data untuk diekspor.', 'warning');
     return;
   }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
+
+const formatDateDot = (value: string | Date | null | undefined): string => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+// Kolom yang bisa dipilih untuk export
+const exportColumns = computed(() => [
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'ID', label: 'ID', desc: 'Kode identifikasi unik' },
+  { key: 'nama', label: t('te_nama'), desc: 'Nama instansi / entitas' },
+  { key: 'alamat', label: t('te_alamat'), desc: 'Lokasi alamat lengkap' },
+  { key: 'telepon', label: t('te_telepon'), desc: 'Nomor kontak telepon' },
+  { key: 'email', label: 'Email', desc: 'Alamat surat elektronik' },
+  { key: 'status', label: 'Status', desc: 'Status keaktifan tertuju' },
+  { key: 'pengusul', label: t('te_pengusul'), desc: 'Pejabat pembuat data' },
+  { key: 'tgl_dibuat', label: 'Tanggal Dibuat', desc: 'Tanggal pembuatan data' }
+]);
+
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const allExportSelected = computed(
+  () => selectedExportColumns.value.length === exportColumns.value.length && exportColumns.value.length > 0
+);
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
+  const exportData = sortedData.value.map((item, idx) => {
+    const row: Record<string, any> = {};
+    if (selectedKeys.includes('No')) row['No'] = idx + 1;
+    if (selectedKeys.includes('ID')) row['ID'] = item.kode || '-';
+    if (selectedKeys.includes('nama')) row[t('te_nama')] = item.nama;
+    if (selectedKeys.includes('alamat')) row[t('te_alamat')] = item.alamat;
+    if (selectedKeys.includes('telepon')) row[t('te_telepon')] = item.telepon || '-';
+    if (selectedKeys.includes('email')) row['Email'] = item.email || '-';
+    if (selectedKeys.includes('status')) row['Status'] = item.aktif ? t('te_aktif') : t('te_tidak_aktif');
+    if (selectedKeys.includes('pengusul')) row[t('te_pengusul')] = item.nama_pembuat || '-';
+    if (selectedKeys.includes('tgl_dibuat')) row['Tanggal Dibuat'] = formatDateDot(item.created_at);
+    return row;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(exportData);
-  worksheet['!cols'] = [
-    { wch: 5 },
-    { wch: 12 },
-    { wch: 30 },
-    { wch: 40 },
-    { wch: 18 },
-    { wch: 30 },
-    { wch: 12 },
-    { wch: 25 }
-  ];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('tertuju'));
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -1328,6 +1501,7 @@ const onExport = () => {
   });
   saveAs(blob, `tertuju_eksternal_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast(t('te_berhasil') || 'Berhasil', 'Export berhasil.', 'success');
+  showExportModal.value = false;
 };
 
 // Highlight function for search results

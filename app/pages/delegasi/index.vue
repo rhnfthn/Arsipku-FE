@@ -579,10 +579,26 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);
 });
 
-// ─── EXPORT: fetch ALL data, not just current page ───────────────────────────
+// ─── EXPORT: Excel dengan Pemilihan Kolom ───────────────────────────
+import * as XLSX from 'xlsx';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
+const showExportModal = ref(false);
 const isExporting = ref(false);
 
-const exportData = async () => {
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'delegator', label: 'Delegator', desc: 'Nama delegator' },
+  { key: 'delegator_jabatan', label: 'Jabatan Delegator', desc: 'Jabatan delegator' },
+  { key: 'penerima', label: 'Penerima Delegasi', desc: 'Nama penerima delegasi' },
+  { key: 'lokasi', label: 'Lokasi', desc: 'Lokasi kerja' },
+  { key: 'status_peran', label: 'Status Peran', desc: 'Status peran / sebagai' },
+  { key: 'sebagai_jabatan', label: 'Sebagai Jabatan', desc: 'Nama jabatan yang didelegasikan' },
+  { key: 'periode', label: 'Periode', desc: 'Periode tanggal aktif delegasi' },
+  { key: 'status', label: 'Status', desc: 'Status keaktifan delegasi' }
+]);
+
+const exportData = () => {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
@@ -591,10 +607,13 @@ const exportData = async () => {
     });
     return;
   }
+  showExportModal.value = true;
+};
 
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (isExporting.value || totalItems.value === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    // Fetch all data in one request using totalItems as limit
     const res = await getDelegasiList({
       page: 1,
       limit: totalItems.value || 9999,
@@ -612,10 +631,7 @@ const exportData = async () => {
       return;
     }
 
-    // Map to full objects
     const allData = dataArray.map(mapDelegasiItem);
-
-    // Apply client-side filters (lokasi, jabatan) same as filteredData
     let exportRows = [...allData];
     if (filterLokasi.value !== 'Semua')
       exportRows = exportRows.filter((item) => item.lokasi === filterLokasi.value);
@@ -624,55 +640,40 @@ const exportData = async () => {
     if (sortDirection.value === 'asc') exportRows.sort((a, b) => a.nama.localeCompare(b.nama));
     if (sortDirection.value === 'desc') exportRows.sort((a, b) => b.nama.localeCompare(a.nama));
 
-    // All table columns including Delegator
-    const headers = [
-      'Delegator',
-      'Jabatan Delegator',
-      'Penerima Delegasi',
-      'Lokasi',
-      'Status Peran',
-      'Sebagai Jabatan',
-      'Periode',
-      'Status',
-    ];
-    const rows = exportRows.map((i) => [
-      i.delegator_nama,
-      i.delegator_jabatan,
-      i.nama,
-      i.lokasi,
-      i.sebagai,
-      i.jabatan,
-      i.tanggal,
-      i.status === 'Tidak Aktif' || i.status === 'tidak_aktif' ? 'Akan Datang' : i.status,
-    ]);
-
-    // Escape CSV values (handle commas and quotes)
-    const escapeCSV = (val: string) => {
-      const str = String(val ?? '');
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
+    const sheetData = exportRows.map((item: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('delegator')) r['Delegator'] = item.delegator_nama || '-';
+      if (selectedKeys.includes('delegator_jabatan')) r['Jabatan Delegator'] = item.delegator_jabatan || '-';
+      if (selectedKeys.includes('penerima')) r['Penerima Delegasi'] = item.nama || '-';
+      if (selectedKeys.includes('lokasi')) r['Lokasi'] = item.lokasi || '-';
+      if (selectedKeys.includes('status_peran')) r['Status Peran'] = item.sebagai || '-';
+      if (selectedKeys.includes('sebagai_jabatan')) r['Sebagai Jabatan'] = item.jabatan || '-';
+      if (selectedKeys.includes('periode')) r['Periode'] = item.tanggal || '-';
+      if (selectedKeys.includes('status')) {
+        r['Status'] = item.status === 'Tidak Aktif' || item.status === 'tidak_aktif' ? 'Akan Datang' : (item.status || '-');
       }
-      return str;
-    };
+      return r;
+    });
 
-    const csvContent = [headers, ...rows].map((row) => row.map(escapeCSV).join(',')).join('\n');
+    if (sheetData.length === 0) return;
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute(
-      'download',
-      `delegasi_${filterStatus.value}_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const colWidths = Object.keys(sheetData[0]).map((key) => ({
+      wch: Math.max(key.length, ...sheetData.map((r: any) => String(r[key] ?? '').length)) + 2
+    }));
+    ws['!cols'] = colWidths;
 
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Delegasi');
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `delegasi_${dateStr}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({
       title: 'Berhasil',
-      description: `${exportRows.length} data berhasil diexport`,
+      description: `${sheetData.length} data berhasil diexport`,
       color: 'success',
     });
   } catch (error) {
@@ -1704,6 +1705,15 @@ const exportData = async () => {
       cancelColor="primary"
       @confirm="deleteNow"
       :loading="isSubmitting"
+    />
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems"
+      title="Pilih Kolom Export Delegasi"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
     />
   </div>
 </template>

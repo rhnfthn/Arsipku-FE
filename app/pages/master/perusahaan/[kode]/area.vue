@@ -73,56 +73,64 @@
         <div
           class="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800"
         >
-          <div class="flex items-center justify-between gap-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <!-- Tabs -->
-            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1.5 gap-2">
+            <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-xl p-1.5 gap-2 shrink-0">
               <button
                 @click="activeTab = 'area'"
                 :class="[
-                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
                   activeTab === 'area'
                     ? 'bg-primary text-white shadow-lg'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                 ]"
               >
-                <MapPin class="w-4 h-4" />
-                {{ t('ar_tab_area') }}
+                <MapPin class="w-4 h-4 shrink-0" />
+                <span>{{ t('ar_tab_area') }}</span>
               </button>
               <button
                 @click="activeTab = 'subArea'"
                 :class="[
-                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all',
+                  'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
                   activeTab === 'subArea'
                     ? 'bg-primary text-white shadow-lg'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                 ]"
               >
-                <Map class="w-4 h-4" />
-                {{ t('ar_tab_subarea') }}
+                <Map class="w-4 h-4 shrink-0" />
+                <span>{{ t('ar_tab_subarea') }}</span>
               </button>
             </div>
 
-            <!-- Rows per page & Search -->
-            <div class="flex justify-between items-center gap-3">
+            <!-- Rows per page, Search & Export -->
+            <div class="flex items-center gap-2 flex-1 max-w-xl">
               <select
                 v-model="rowsPerPage"
-                class="border text-sm border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2"
+                class="h-8 border text-xs border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-2.5 shrink-0"
               >
                 <option v-for="n in rowsChoices" :key="n" :value="n">
                   {{ n }}
                 </option>
               </select>
 
-              <div class="relative flex-1 w-full md:w-160">
+              <div class="relative flex-1 min-w-40">
                 <Search
-                  class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                  class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
                 />
                 <input
                   v-model="searchQuery"
                   :placeholder="t('ar_cari_placeholder')"
-                  class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  class="w-full pl-9 pr-4 py-1.5 border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
               </div>
+
+              <!-- Export -->
+              <button
+                @click="onExport"
+                class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap shrink-0"
+              >
+                Export
+              </button>
             </div>
           </div>
         </div>
@@ -205,11 +213,11 @@
                   </td>
                   <!-- Tgl Mulai -->
                   <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    <span v-html="highlightArea(area.mulai)" />
+                    <span v-html="highlightArea(formatDateSlash(area.mulai))" />
                   </td>
                   <!-- Tgl Berakhir -->
                   <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                    <span v-html="highlightArea(area.berakhir)" />
+                    <span v-html="highlightArea(formatDateSlash(area.berakhir))" />
                   </td>
                   <!-- Sub Count -->
                   <td class="px-6 py-4">
@@ -291,7 +299,7 @@
                                 {{ t('ar_col_tgl_mulai') }}
                               </span>
                               <span class="text-sm text-gray-700 dark:text-gray-300">{{
-                                sub.mulai
+                                formatDateSlash(sub.mulai)
                               }}</span>
                             </div>
                             <div>
@@ -299,7 +307,7 @@
                                 {{ t('ar_col_tgl_berakhir') }}
                               </span>
                               <span class="text-sm text-gray-700 dark:text-gray-300">{{
-                                sub.berakhir
+                                formatDateSlash(sub.berakhir)
                               }}</span>
                             </div>
                           </div>
@@ -477,11 +485,11 @@
                 </td>
                 <!-- Tgl Mulai -->
                 <td class="text-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <span v-html="highlightSub(sub.mulai)" />
+                  <span v-html="highlightSub(formatDateSlash(sub.mulai))" />
                 </td>
                 <!-- Tgl Berakhir -->
                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  <span v-html="highlightSub(sub.berakhir)" />
+                  <span v-html="highlightSub(formatDateSlash(sub.berakhir))" />
                 </td>
                 <!-- Aksi -->
                 <td class="px-6 py-4">
@@ -653,7 +661,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
               ]"
-              @input="formErrors.nama = false"
+              @input="formErrors.nama = false; formArea.nama = formArea.nama.toUpperCase()"
             />
           </div>
 
@@ -801,9 +809,121 @@
       :confirm-text="t('ar_pop_confirm')"
       :cancel-text="t('ar_pop_cancel')"
       :is-loading="isDeleting"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="handleDelete"
       @cancel="showDeleteConfirm = false"
     />
+
+    <!-- Export Column Modal -->
+    <Teleport to="body">
+      <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+        <template #title>
+          <div class="ml-5 my-3.5">
+            <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+              {{ t('pilih_kolom_export') }}
+            </Heading>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+            </p>
+          </div>
+        </template>
+
+        <div class="space-y-3.5 py-1">
+          <!-- Selection Status Bar & Toggle All -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+                :class="selectedExportColumns.length > 0
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+              >
+                {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+              </span>
+              <span class="text-gray-600 dark:text-gray-300 font-medium">
+                Kolom Terpilih
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click="toggleAllExport"
+              class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+              :class="allExportSelected
+                ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+            >
+              {{ allExportSelected ? 'Batal Pilih Semua' : t('pilih_semua') }}
+            </button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+            <div
+              v-for="col in exportColumns"
+              :key="col.key"
+              @click="toggleColumn(col.key)"
+              class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+              :class="selectedExportColumns.includes(col.key)
+                ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+            >
+              <div class="flex items-center gap-3 min-w-0 w-full">
+                <!-- Checkmark Box -->
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                  :class="selectedExportColumns.includes(col.key)
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+                >
+                  <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold truncate leading-tight">
+                    {{ col.label }}
+                  </p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                    {{ col.desc }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+            <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+            <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ activeTab === 'area' ? filteredAreas.length : filteredSubAreas.length }} baris</span></span>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              type="button"
+              @click="showExportModal = false"
+              class="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              {{ t('batal') }}
+            </button>
+
+            <button
+              type="button"
+              @click="handleExportConfirm"
+              :disabled="selectedExportColumns.length === 0"
+              class="flex items-center gap-2 px-5 py-2 text-xs font-medium rounded-lg text-white transition-all shadow-sm"
+              :class="selectedExportColumns.length > 0
+                ? 'bg-primary hover:bg-primary-700 active:scale-[0.98]'
+                : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500'"
+            >
+              Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
 </template>
 
@@ -818,14 +938,18 @@ import {
   Map,
   Search,
   Pencil,
-  Trash2
+  Trash2,
+  Check
 } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'auth' });
 
 import { useArea } from '~/composables/useArea';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { useCompany } from '~/composables/useCompany';
 import { useToast } from '#imports';
+import { formatDateSlash } from '~/utils/mail-helpers';
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -1422,7 +1546,7 @@ const submitArea = async () => {
     if (activeTab.value === 'area') {
       const payload = {
         area: formArea.value.kode,
-        shortText: formArea.value.nama,
+        shortText: formArea.value.nama.trim().toUpperCase(),
         longText: formArea.value.alamat,
         startDate: formArea.value.mulai,
         endDate: formArea.value.berakhir
@@ -1441,7 +1565,7 @@ const submitArea = async () => {
       const payload = {
         area: formArea.value.area,
         sub_area: Number(formArea.value.kode),
-        shortText: formArea.value.nama,
+        shortText: formArea.value.nama.trim().toUpperCase(),
         longText: formArea.value.alamat,
         startDate: formArea.value.mulai,
         endDate: formArea.value.berakhir
@@ -1520,6 +1644,130 @@ const showToast = (
           ? 'i-lucide-x-circle'
           : 'i-lucide-info'
   });
+};
+
+// ─── EXPORT ───────────────────────────────────
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const formatDateDot = (value: string | Date | null | undefined): string => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+const exportColumns = computed(() => {
+  if (activeTab.value === 'area') {
+    return [
+      { key: 'No', label: 'No', desc: 'Nomor urut data' },
+      { key: 'kode', label: t('ar_col_kode'), desc: 'Kode area' },
+      { key: 'nama', label: t('ar_col_nama'), desc: 'Nama area' },
+      { key: 'alamat', label: t('ar_col_alamat'), desc: 'Alamat area' },
+      { key: 'mulai', label: t('ar_col_tgl_mulai'), desc: 'Tanggal mulai berlaku' },
+      { key: 'berakhir', label: t('ar_col_tgl_berakhir'), desc: 'Tanggal berakhir berlaku' },
+      { key: 'sub_count', label: t('ar_col_sub_areas'), desc: 'Jumlah sub area' }
+    ];
+  }
+  return [
+    { key: 'No', label: 'No', desc: 'Nomor urut data' },
+    { key: 'kode', label: t('ar_col_kode'), desc: 'Kode sub area' },
+    { key: 'nama', label: t('ar_col_nama'), desc: 'Nama sub area' },
+    { key: 'area', label: t('ar_col_area'), desc: 'Nama area induk' },
+    { key: 'alamat', label: t('ar_col_alamat'), desc: 'Alamat sub area' },
+    { key: 'mulai', label: t('ar_col_tgl_mulai'), desc: 'Tanggal mulai berlaku' },
+    { key: 'berakhir', label: t('ar_col_tgl_berakhir'), desc: 'Tanggal berakhir berlaku' }
+  ];
+});
+
+const allExportSelected = computed(
+  () =>
+    selectedExportColumns.value.length === exportColumns.value.length &&
+    exportColumns.value.length > 0
+);
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const onExport = () => {
+  const dataLength = activeTab.value === 'area' ? filteredAreas.value.length : filteredSubAreas.value.length;
+  if (dataLength === 0) {
+    showToast(t('gagal') || 'Info', 'Tidak ada data untuk diekspor.', 'warning');
+    return;
+  }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
+
+  let data: Record<string, any>[] = [];
+  const sheetName = activeTab.value === 'area' ? t('ar_tab_area') : t('ar_tab_subarea');
+  const fileName = activeTab.value === 'area'
+    ? `area_${companyId.value}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    : `sub_area_${companyId.value}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+  if (activeTab.value === 'area') {
+    data = filteredAreas.value.map((row, idx) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('kode')) r[t('ar_col_kode')] = row.kode;
+      if (selectedKeys.includes('nama')) r[t('ar_col_nama')] = row.nama;
+      if (selectedKeys.includes('alamat')) r[t('ar_col_alamat')] = row.alamat;
+      if (selectedKeys.includes('mulai')) r[t('ar_col_tgl_mulai')] = formatDateDot(row.mulai);
+      if (selectedKeys.includes('berakhir')) r[t('ar_col_tgl_berakhir')] = formatDateDot(row.berakhir);
+      if (selectedKeys.includes('sub_count')) r[t('ar_col_sub_areas')] = row.subCount;
+      return r;
+    });
+  } else {
+    data = filteredSubAreas.value.map((row, idx) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('kode')) r[t('ar_col_kode')] = row.kode;
+      if (selectedKeys.includes('nama')) r[t('ar_col_nama')] = row.nama;
+      if (selectedKeys.includes('area')) r[t('ar_col_area')] = row.areaName;
+      if (selectedKeys.includes('alamat')) r[t('ar_col_alamat')] = row.alamat;
+      if (selectedKeys.includes('mulai')) r[t('ar_col_tgl_mulai')] = formatDateDot(row.mulai);
+      if (selectedKeys.includes('berakhir')) r[t('ar_col_tgl_berakhir')] = formatDateDot(row.berakhir);
+      return r;
+    });
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  saveAs(blob, fileName);
+
+  toast.add({
+    title: t('berhasil'),
+    description: 'Export berhasil.',
+    color: 'success',
+    icon: 'i-lucide-file-down'
+  });
+  showExportModal.value = false;
 };
 </script>
 

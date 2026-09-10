@@ -566,7 +566,7 @@
                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                   : 'border-gray-300'
               ]"
-              @input="positionErrors.namaPos = false"
+              @input="positionErrors.namaPos = false; formPosition.namaPos = formPosition.namaPos.toUpperCase()"
             />
             <p v-if="positionErrors.namaPos" class="text-xs text-red-500 mt-1">
               {{ $t('stu_form_nama_posisi') }}
@@ -825,6 +825,7 @@
             <input
               v-model="formUnit.namaUnit"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-100"
+              @input="formUnit.namaUnit = formUnit.namaUnit.toUpperCase()"
             />
           </div>
 
@@ -875,6 +876,7 @@
             <input
               v-model="formPosition.namaPos"
               class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              @input="formPosition.namaPos = formPosition.namaPos.toUpperCase()"
             />
           </div>
 
@@ -967,6 +969,8 @@
       :confirmText="$t('stu_pop_confirm')"
       :cancelText="$t('stu_pop_cancel')"
       cancelColor="primary"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="deleteNow"
       @cancel="confirmDeleteOpen = false"
     />
@@ -1001,7 +1005,7 @@ import { useCompany } from '~/composables/useCompany'
 import { useArea } from '~/composables/useArea'
 import { useToast } from '#imports'
 import { usePerson } from '~/composables/usePerson'
-import { formatDate2Digit as formatDate } from '~/utils/mail-helpers'
+import { formatDateSlash as formatDate } from '~/utils/mail-helpers'
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const { t } = useI18n()
@@ -2168,7 +2172,7 @@ const loadPersons = async (node: any) => {
   if (node._personsLoaded) return
   if (!node.positionCode) return
   try {
-    const res = await getPersonsByPosition(node.positionCode)
+    const res = await getPersonsByPosition(node.positionCode, company.value?.kode)
     const validPersons: any[] = []
     for (const p of res.data) {
       validPersons.push(mapPersonToNode(p, node.positionCode))
@@ -2555,9 +2559,9 @@ const handleSavePosition = async () => {
     const payload = {
       company: Number(company.value.kode),
       position: Number(formPosition.value.idPos),
-      shortText: formPosition.value.titelatur,
-      longText: formPosition.value.namaPos,
-      abbreviation: formPosition.value.namaPos,
+      shortText: formPosition.value.titelatur ? formPosition.value.titelatur.trim().toUpperCase() : formPosition.value.titelatur,
+      longText: formPosition.value.namaPos.trim().toUpperCase(),
+      abbreviation: formPosition.value.namaPos.trim().toUpperCase(),
       organization: Number(selectedParentNode.value.organizationCode),
       bodTag: formPosition.value.chief ? formPosition.value.chiefLevel : null,
       startDate: formPosition.value.mulai,
@@ -2620,9 +2624,9 @@ const handleSaveEdit = async () => {
   try {
     if (editType.value === 'Unit') {
       const payload = {
-        shortText: formUnit.value.titelatur,
-        longText: formUnit.value.namaUnit,
-        abbreviation: formUnit.value.namaUnit,
+        shortText: formUnit.value.titelatur ? formUnit.value.titelatur.trim().toUpperCase() : formUnit.value.titelatur,
+        longText: formUnit.value.namaUnit.trim().toUpperCase(),
+        abbreviation: formUnit.value.namaUnit.trim().toUpperCase(),
         subArea: Number(formUnit.value.idsubArea),
         subAreaText: formUnit.value.subarea,
         startDate: formUnit.value.mulai,
@@ -2634,8 +2638,8 @@ const handleSaveEdit = async () => {
 
     if (editType.value === 'Posisi') {
       const payload = {
-        longText: formPosition.value.namaPos,
-        abbreviation: formPosition.value.namaPos,
+        longText: formPosition.value.namaPos.trim().toUpperCase(),
+        abbreviation: formPosition.value.namaPos.trim().toUpperCase(),
         bodTag: formPosition.value.chief ? formPosition.value.chiefLevel : null,
         startDate: toDateOnly(formPosition.value.mulai),
         endDate: toDateOnly(formPosition.value.berakhir)

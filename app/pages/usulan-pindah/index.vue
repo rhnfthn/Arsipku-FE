@@ -61,6 +61,10 @@
       <div class="flex justify-end gap-2 mt-3">
         <button @click="resetFilter" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Reset</button>
         <button @click="reload" class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">Tampilkan</button>
+        <button @click="onExport" class="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-700 text-white transition-colors flex items-center gap-1.5">
+          <UIcon name="i-lucide-download" class="w-4 h-4" />
+          Export
+        </button>
       </div>
     </div>
 
@@ -132,6 +136,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="meta?.total || usulanList.length"
+      title="Pilih Kolom Export Usulan Pindah"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -235,6 +249,80 @@ const resetFilter = () => {
 const goPage = (page: number) => {
   filter.page = page;
   loadData();
+};
+
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nomorUsulan', label: 'Nomor Usulan', desc: 'Nomor berkas usulan' },
+  { key: 'perihal', label: 'Perihal Arsip', desc: 'Perihal / judul arsip' },
+  { key: 'pengusul', label: 'Pengusul', desc: 'Nama sekretaris / pengusul' },
+  { key: 'status', label: 'Status', desc: 'Status usulan pindah' },
+  { key: 'tanggal', label: 'Tanggal Usulan', desc: 'Tanggal pembuatan usulan' }
+]);
+
+const onExport = () => {
+  if (usulanList.value.length === 0) {
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (usulanList.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    let allRows = usulanList.value;
+    if (meta.value && meta.value.total > (filter.limit ?? 10)) {
+      const res = await (useApi() as any).apiGet('/usulan-pindah', {
+        params: { ...filter, page: 1, limit: meta.value.total }
+      });
+      if (res?.data?.data && Array.isArray(res.data.data)) {
+        allRows = res.data.data;
+      }
+    }
+
+    const data = allRows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomorUsulan')) row['Nomor Usulan'] = r.nomorUsulan || '-';
+      if (selectedKeys.includes('perihal')) row['Perihal Arsip'] = r.arsipPerihal || '-';
+      if (selectedKeys.includes('pengusul')) row['Pengusul'] = r.sekretarisName || '-';
+      if (selectedKeys.includes('status')) row['Status'] = statusLabel(r.status);
+      if (selectedKeys.includes('tanggal')) row['Tanggal Usulan'] = formatDate(r.tanggalUsulan);
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usulan Pindah');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `usulan_pindah_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    useToast().add({ title: 'Berhasil', description: `${data.length} data usulan berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export usulan pindah error:', err);
+    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 onMounted(() => {

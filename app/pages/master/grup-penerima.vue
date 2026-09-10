@@ -608,8 +608,127 @@
       type="danger"
       :confirm-text="t('gp_btn_delete')"
       :cancel-text="t('gp_btn_cancel')"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="doDelete"
     />
+
+    <!-- POPUP PERINGATAN / TIDAK BISA DIHAPUS -->
+    <ConfirmPopup
+      v-model="showBlockedDeletePopup"
+      type="warning"
+      title="Data Tidak Dapat Dihapus"
+      :message="blockedDeleteMessage"
+      confirm-text="Mengerti"
+      :is-alert="true"
+      @confirm="showBlockedDeletePopup = false"
+    />
+
+    <!-- Export Column Modal -->
+    <Teleport to="body">
+      <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+        <template #title>
+          <div class="ml-5 my-3.5">
+            <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+              {{ t('pilih_kolom_export') }}
+            </Heading>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+            </p>
+          </div>
+        </template>
+
+        <div class="space-y-3.5 py-1">
+          <!-- Selection Status Bar & Toggle All -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+                :class="selectedExportColumns.length > 0
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+              >
+                {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+              </span>
+              <span class="text-gray-600 dark:text-gray-300 font-medium">
+                Kolom Terpilih
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click="toggleAllExport"
+              class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+              :class="allExportSelected
+                ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+            >
+              {{ allExportSelected ? 'Batal Pilih Semua' : t('pilih_semua') }}
+            </button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+            <div
+              v-for="col in exportColumns"
+              :key="col.key"
+              @click="toggleColumn(col.key)"
+              class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+              :class="selectedExportColumns.includes(col.key)
+                ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+            >
+              <div class="flex items-center gap-3 min-w-0 w-full">
+                <!-- Checkmark Box -->
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                  :class="selectedExportColumns.includes(col.key)
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+                >
+                  <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold truncate leading-tight">
+                    {{ col.label }}
+                  </p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                    {{ col.desc }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+            <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+            <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ filteredData.length }} baris</span></span>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              type="button"
+              @click="showExportModal = false"
+              class="px-4 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+            >
+              {{ t('batal') }}
+            </button>
+            <button
+              type="button"
+              @click="handleExportConfirm"
+              :disabled="selectedExportColumns.length === 0"
+              class="px-5 py-2 text-xs font-semibold bg-primary hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg shadow-sm shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
 </template>
 
@@ -624,6 +743,7 @@ import {
   Trash2,
   Users,
   Power,
+  Check,
   Check as CheckIcon,
 } from 'lucide-vue-next';
 import * as XLSX from 'xlsx';
@@ -639,6 +759,7 @@ const {
   updateGrupPenerima,
   toggleAktifGrupPenerima,
   deleteGrupPenerima,
+  checkGrupPenerimaUsage,
   getGrupPenerimaMembers,
   addGrupPenerimaMember,
   deleteGrupPenerimaMember,
@@ -687,7 +808,10 @@ const editForm = ref({
 
 // Delete
 const showDeletePopup = ref(false);
+const showBlockedDeletePopup = ref(false);
+const blockedDeleteMessage = ref('');
 const deleteTarget = ref<any>(null);
+const checkingDelete = ref(false);
 
 // Members modal
 const showMembersModal = ref(false);
@@ -803,16 +927,7 @@ const sortBy = (col: string) => {
 
 // Export
 const onExport = () => {
-  const data = filteredData.value.map((item, idx) => ({
-    No: idx + 1,
-    [t('gp_col_name')]: item.nama,
-    [t('gp_col_company')]: item.company || '-',
-    [t('gp_col_desc')]: item.deskripsi || '-',
-    [t('gp_col_members')]: item.details?.length ?? 0,
-    [t('gp_col_status')]: item.aktif ? t('gp_active') : t('gp_inactive')
-  }));
-
-  if (data.length === 0) {
+  if (filteredData.value.length === 0) {
     toast.add({
       title: t('gagal'),
       description: 'Tidak ada data untuk diekspor.',
@@ -821,16 +936,58 @@ const onExport = () => {
     });
     return;
   }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
+
+const exportColumns = computed(() => [
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nama', label: t('gp_col_name'), desc: 'Nama grup penerima surat' },
+  { key: 'company', label: t('gp_col_company'), desc: 'Perusahaan naungan grup' },
+  { key: 'deskripsi', label: t('gp_col_desc'), desc: 'Keterangan tujuan grup' },
+  { key: 'members', label: t('gp_col_members'), desc: 'Jumlah anggota posisi di dalam grup' },
+  { key: 'status', label: t('gp_col_status'), desc: 'Status keaktifan grup penerima' }
+]);
+
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const allExportSelected = computed(
+  () => selectedExportColumns.value.length === exportColumns.value.length && exportColumns.value.length > 0
+);
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
+  const data = filteredData.value.map((item, idx) => {
+    const r: Record<string, any> = {};
+    if (selectedKeys.includes('No')) r['No'] = idx + 1;
+    if (selectedKeys.includes('nama')) r[t('gp_col_name')] = item.nama;
+    if (selectedKeys.includes('company')) r[t('gp_col_company')] = item.company || '-';
+    if (selectedKeys.includes('deskripsi')) r[t('gp_col_desc')] = item.deskripsi || '-';
+    if (selectedKeys.includes('members')) r[t('gp_col_members')] = item.details?.length ?? 0;
+    if (selectedKeys.includes('status')) r[t('gp_col_status')] = item.aktif ? t('gp_active') : t('gp_inactive');
+    return r;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet['!cols'] = [
-    { wch: 5 },
-    { wch: 30 },
-    { wch: 20 },
-    { wch: 40 },
-    { wch: 10 },
-    { wch: 12 }
-  ];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('gp_title'));
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -844,6 +1001,7 @@ const onExport = () => {
     color: 'success',
     icon: 'i-lucide-file-down'
   });
+  showExportModal.value = false;
 };
 
 // Add

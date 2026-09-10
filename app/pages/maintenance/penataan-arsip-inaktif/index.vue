@@ -155,6 +155,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="total || list.length"
+      title="Pilih Kolom Export Penataan Arsip Inaktif"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -254,29 +264,86 @@ const statusBadgeClass = (s: string) => {
   return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
 }
 
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'namaBerkas', label: 'Nama Berkas', desc: 'Perihal arsip berkas' },
+  { key: 'kodeBerkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'nomorUsulan', label: 'No. Usulan', desc: 'Nomor usulan pemindahan' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'lokasi', label: 'Lokasi', desc: 'Lokasi penataan arsip' },
+  { key: 'status', label: 'Status', desc: 'Status penataan arsip' }
+]);
+
 const onExport = () => {
   if (list.value.length === 0) {
-    alert('Tidak ada data untuk diexport')
-    return
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
   }
-  const headers = ['Nama Berkas', 'Kode Berkas', 'No. Usulan', 'Klasifikasi', 'Lokasi', 'Status']
-  const rows = list.value.map((r: any) => [
-    `"${(r.arsipPerihal ?? '').replace(/"/g, '""')}"`,
-    `"${(r.arsipKode ?? '').replace(/"/g, '""')}"`,
-    `"${(r.nomorUsulan ?? '').replace(/"/g, '""')}"`,
-    `"${(r.arsipKlasifikasi ?? '').replace(/"/g, '""')}"`,
-    `"${(r.lokasiPenataan ?? '').replace(/"/g, '""')}"`,
-    `"${statusLabel(r.status)}"`,
-  ].join(','))
-  const csv = [headers.join(','), ...rows].join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `penataan-arsip-inaktif-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-}
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (list.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    let allRows = list.value;
+    if (total.value > limit.value) {
+      const res = await fetchPenataanList({
+        search: searchInput.value || undefined,
+        status: filterStatus.value || undefined,
+        klasifikasi: filterKlasifikasi.value || undefined,
+        page: 1,
+        limit: total.value
+      });
+      const payload = res?.data ?? res;
+      if (payload?.data && Array.isArray(payload.data)) {
+        allRows = payload.data;
+      }
+    }
+
+    const data = allRows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('namaBerkas')) row['Nama Berkas'] = r.arsipPerihal || '-';
+      if (selectedKeys.includes('kodeBerkas')) row['Kode Berkas'] = r.arsipKode || '-';
+      if (selectedKeys.includes('nomorUsulan')) row['No. Usulan'] = r.nomorUsulan || '-';
+      if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = r.arsipKlasifikasi || '-';
+      if (selectedKeys.includes('lokasi')) row['Lokasi'] = r.lokasiPenataan || '-';
+      if (selectedKeys.includes('status')) row['Status'] = statusLabel(r.status);
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Penataan Arsip Inaktif');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `penataan_arsip_inaktif_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    useToast().add({ title: 'Berhasil', description: `${data.length} data penataan berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export penataan error:', err);
+    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 onMounted(async () => {
   fetchData()

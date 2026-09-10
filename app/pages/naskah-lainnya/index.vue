@@ -268,6 +268,16 @@
       />
     </div>
 
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems || items.length"
+      title="Pilih Kolom Export Naskah Lainnya"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
+
     <div
       v-if="error"
       class="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
@@ -283,7 +293,10 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { RotateCcw, ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
 import type { Tahapan } from '~/types/naskah-lainnya';
-import { JENIS_LABELS } from '~/types/naskah-lainnya';
+import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import { downloadCsv } from '~/utils/csv-export';
 import { formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 
@@ -291,6 +304,17 @@ definePageMeta({ layout: 'default', middleware: ['auth'] });
 
 const { items, pending, error, fetchList } = useNaskahLainnya();
 const toast = useToast();
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'nomor', label: 'Nomor Naskah', desc: 'Nomor surat / naskah' },
+  { key: 'jenis', label: 'Jenis', desc: 'Jenis naskah' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal / judul naskah' },
+  { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Pembuat / pemrakarsa naskah' },
+  { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan proses naskah' },
+  { key: 'terakhirDiubah', label: 'Diubah', desc: 'Waktu terakhir diubah' }
+]);
 
 const search = ref('');
 const filterJenis = ref('');
@@ -541,7 +565,7 @@ function goDetail(id: string) {
 
 // ── Export CSV ───────────────────────────────────────────────────
 
-async function exportData() {
+function exportData() {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
@@ -550,6 +574,11 @@ async function exportData() {
     });
     return;
   }
+  showExportModal.value = true;
+}
+
+async function handleExportConfirm(selectedKeys: string[]) {
+  if (totalItems.value === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
     await load();
@@ -562,19 +591,36 @@ async function exportData() {
       });
       return;
     }
-    const headers = ['Nomor', 'Jenis', 'Perihal', 'Pemrakarsa', 'Tahapan', 'Waktu'];
-    const csvRows = rows.map((r) => [
-      r.nomor,
-      r.jenis,
-      r.perihal,
-      r.pemrakarsa,
-      r.tahapan,
-      r.terakhirDiubah,
-    ]);
-    downloadCsv(`naskah-lainnya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    const data = rows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomor')) row['Nomor Naskah'] = r.nomor || '-';
+      if (selectedKeys.includes('jenis')) row['Jenis'] = r.jenis || '-';
+      if (selectedKeys.includes('perihal')) row['Perihal'] = r.perihal || '-';
+      if (selectedKeys.includes('pemrakarsa')) row['Pemrakarsa'] = r.pemrakarsa || '-';
+      if (selectedKeys.includes('tahapan')) row['Tahapan'] = r.tahapan || '-';
+      if (selectedKeys.includes('terakhirDiubah')) row['Diubah'] = r.terakhirDiubah || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Naskah Lainnya');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `naskah_lainnya_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({
       title: 'Berhasil',
-      description: `${rows.length} data berhasil diexport`,
+      description: `${data.length} data berhasil diexport`,
       color: 'success',
     });
   } catch (e) {

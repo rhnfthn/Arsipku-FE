@@ -28,3 +28,4 @@ app.composables.useAuth.js
 # Personal / sensitive notes (jangan di-commit)
 install tinymce.txt
 install*.txt
+session.txt
