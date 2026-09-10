@@ -898,9 +898,9 @@ const openDocumentPreview = async (url: string, title = "Dokumen") => {
 };
 
 /**
- * Preview SDE Massal dirender ulang dari data Excel yang tersimpan di backend.
- * PDF final lama tidak dipakai di jalur ini karena bisa dibuat sebelum field
- * nama/alamat dinormalisasi dan akibatnya menampilkan placeholder kosong.
+ * Backend memilih sumber PDF yang aman untuk SDE Massal: file final asli untuk
+ * BSrE agar signature tetap valid, atau hasil render data Excel untuk naskah
+ * non-BSrE/historis yang placeholder penerimanya belum ternormalisasi.
  */
 const openSdeMasalPreview = async (naskahId: string, title = "Dokumen") => {
   try {

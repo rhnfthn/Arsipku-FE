@@ -185,7 +185,7 @@
                   {{ $t('cek_penanda_tangan') }} {{ index + 1 }}
                 </p>
                 <p class="text-sm text-gray-600 mt-0.5 dark:text-white">
-                  {{ signer.name || $t('cek_tidak_diketahui') }}
+                  {{ signer.nama || signer.name || $t('cek_tidak_diketahui') }}
                 </p>
               </div>
             </div>
@@ -212,7 +212,7 @@
                     {{ formatKey(key) }}
                   </p>
                   <p class="text-sm text-gray-900 dark:text-white break-all">
-                    {{ value || '-' }}
+                    {{ value === null || value === undefined || value === '' ? '-' : value }}
                   </p>
                 </div>
               </div>
