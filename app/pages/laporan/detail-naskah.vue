@@ -17,12 +17,23 @@
 
       <button
         v-if="hasPermission('laporan', 'export-detail-naskah')"
-        @click="exportExcel"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm"
+        @click="openExportModal"
+        :disabled="isExporting"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-9 px-6 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
       >
-        {{ $t('export') }}
+        <FileDown class="w-4 h-4" />
+        {{ isExporting ? $t('ver_btn_mengekspor') || 'Mengekspor...' : $t('export') }}
       </button>
     </div>
+
+    <!-- Modal Export Kolom -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
 
     <!-- Table -->
     <div
@@ -334,6 +345,19 @@
               </div>
             </Transition>
           </div>
+
+          <!-- SEARCH INPUT -->
+          <div class="relative flex-1 min-w-[200px] max-w-xs ml-auto">
+            <Search
+              class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="filters.search"
+              @input="handleSearchInput"
+              :placeholder="$t('cari') + '...'"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm pl-9 pr-3 py-1.5 rounded-lg dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:border-primary"
+            />
+          </div>
         </div>
       </div>
 
@@ -550,7 +574,7 @@ definePageMeta({
 
 //IMPORT
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
-import { FileDown, RotateCcw, ChevronDown, ArrowUpDown } from 'lucide-vue-next';
+import { FileDown, RotateCcw, ChevronDown, ArrowUpDown, Search } from 'lucide-vue-next';
 import { useToast } from '#imports';
 import { useLaporan } from '~/composables/useLaporan';
 import { useAuth } from '~/composables/useAuth';
@@ -718,6 +742,7 @@ const fetchDetailNaskah = async () => {
     };
     if (filters.value.lokasi) params.area = filters.value.lokasi;
     if (filters.value.jenis) params.jenis = filters.value.jenis;
+    if (filters.value.search) params.search = filters.value.search;
 
     const res = await getRekapNaskahDetail(params);
     currentPage.value = res.pagination?.page ?? 1;
@@ -782,8 +807,30 @@ const formatStatusLabel = (status: string) => {
   return status;
 };
 
-//EXCEL
-const exportExcel = () => {
+//SEARCH DEBOUNCE
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+const handleSearchInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchDetailNaskah();
+  }, 400);
+};
+
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut baris data' },
+  { key: 'nomor', label: 'Nomor Dokumen', desc: 'Nomor register dokumen naskah' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal naskah' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal naskah surat' },
+  { key: 'jabatan', label: 'Jabatan', desc: 'Jabatan penandatangan / pengirim' },
+  { key: 'lokasi', label: 'Lokasi / Area', desc: 'Lokasi unit / kantor asal naskah' },
+  { key: 'status', label: 'Status', desc: 'Status naskah' }
+]);
+
+const openExportModal = () => {
   if (!hasPermission('laporan', 'export-detail-naskah')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
@@ -793,54 +840,98 @@ const exportExcel = () => {
     });
     return;
   }
-  if (!filteredData.value.length) {
-    toast.add({
-      title: t('export_dibatalkan'),
-      description: t('export_tidak_ada'),
-      color: 'warning',
-      icon: 'i-lucide-alert-circle'
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (isExporting.value || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    let exportData = filteredData.value;
+
+    // Jika total items lebih banyak dari limit saat ini, fetch semua data untuk diexport
+    if (totalItems.value > rowsPerPage.value) {
+      const params: any = {
+        tahun: Number(filters.value.tahun),
+        page: 1,
+        limit: totalItems.value
+      };
+      if (filters.value.lokasi) params.area = filters.value.lokasi;
+      if (filters.value.jenis) params.jenis = filters.value.jenis;
+      if (filters.value.search) params.search = filters.value.search;
+
+      const res = await getRekapNaskahDetail(params);
+      if (res?.data && Array.isArray(res.data)) {
+        exportData = res.data.map((item: any) => ({
+          id: item.id,
+          nomor: item.nomor,
+          tanggalRaw: item.tanggal,
+          tanggal: formatTanggal(item.tanggal),
+          perihal: item.perihal ?? '-',
+          jabatan: item.jabatan,
+          lokasi: item.lokasi,
+          status: formatStatusLabel(item.status),
+          statusRaw: item.status,
+          jenis: item.jenis,
+          jenis_text: item.jenis_text
+        }));
+        if (selectedStatus.value) {
+          exportData = exportData.filter((item: any) => item.statusRaw === selectedStatus.value);
+        }
+      }
+    }
+
+    if (!exportData.length) {
+      toast.add({
+        title: t('export_dibatalkan'),
+        description: t('export_tidak_ada'),
+        color: 'warning',
+        icon: 'i-lucide-alert-circle'
+      });
+      return;
+    }
+
+    const excelData = exportData.map((item, index) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = index + 1;
+      if (selectedKeys.includes('nomor')) r['Nomor Dokumen'] = item.nomor || '-';
+      if (selectedKeys.includes('tanggal')) r['Tanggal'] = item.tanggal || '-';
+      if (selectedKeys.includes('perihal')) r['Perihal'] = item.perihal || '-';
+      if (selectedKeys.includes('jabatan')) r['Jabatan'] = item.jabatan || '-';
+      if (selectedKeys.includes('lokasi')) r['Lokasi / Area'] = item.lokasi || '-';
+      if (selectedKeys.includes('status')) r['Status'] = formatStatusLabel(item.statusRaw ?? item.status);
+      return r;
     });
-    return;
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Detail Naskah');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    saveAs(blob, `detail-naskah-${today}.xlsx`);
+
+    toast.add({
+      title: t('export_berhasil'),
+      description: t('export_file_berhasil'),
+      color: 'success',
+      icon: 'i-lucide-file-check'
+    });
+  } catch (error) {
+    console.error(error);
+    toast.add({
+      title: t('export_gagal'),
+      description: t('export_error'),
+      color: 'error',
+      icon: 'i-lucide-x-circle'
+    });
+  } finally {
+    isExporting.value = false;
   }
-
-  const excelData = filteredData.value.map((item, index) => ({
-    No: index + 1,
-    Nomor: item.nomor,
-    Tanggal: item.tanggal,
-    Perihal: item.perihal,
-    Jabatan: item.jabatan,
-    Lokasi: item.lokasi,
-    Status: formatStatusLabel(item.statusRaw ?? item.status)
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(excelData);
-  worksheet['!cols'] = [
-    { wch: 5 },
-    { wch: 20 },
-    { wch: 12 },
-    { wch: 40 },
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 15 }
-  ];
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Detail Naskah');
-
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
-
-  const today = new Date().toISOString().split('T')[0];
-  saveAs(blob, `detail-naskah-${today}.xlsx`);
-
-  toast.add({
-    title: t('export_berhasil'),
-    description: t('export_file_berhasil'),
-    color: 'success',
-    icon: 'i-lucide-file-check'
-  });
 };
 
 //REFRESH

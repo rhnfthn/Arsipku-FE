@@ -111,7 +111,7 @@
         <button
           v-if="hasPermission('penomoran', 'export-verifikasi')"
           type="button"
-          @click="handleExport"
+          @click="openExportModal"
           :disabled="isExporting || sortedRows.length === 0"
           class="flex items-center gap-2 h-9 px-4 text-sm font-medium bg-primary hover:bg-primary-700 disabled:bg-primary-300 dark:disabled:bg-primary-900 text-white rounded-lg transition whitespace-nowrap"
         >
@@ -1026,6 +1026,16 @@
     @confirm="processRejection"
   />
 
+  <!-- EXPORT COLUMN MODAL -->
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="pagination?.total || sortedRows.length"
+    title="Pilih Kolom Export Verifikasi Penomoran"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
+
   <!-- TOOLTIP -->
   <Teleport to="body">
     <div
@@ -1046,6 +1056,7 @@ import { Search, Copy, ArrowUpDown, ChevronDown } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
 import { Modal } from '#components'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
 import { usePenomoran } from '~/composables/usePenomoran'
 import * as XLSX from 'xlsx'
@@ -1122,20 +1133,37 @@ const highlight = (text: string | number | null | undefined, keyword: string) =>
   )
 }
 
-// ─── Export Excel ─────────────────────────────────────────────────────────────
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+const showExportModal = ref(false)
 const isExporting = ref(false)
 
-const handleExport = async () => {
-  if (!hasPermission('penomoran', 'report')) {
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut baris data' },
+  { key: 'jenis', label: 'Jenis Naskah', desc: 'Jenis naskah surat' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal surat dibuat' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal naskah surat' },
+  { key: 'penandatangan', label: 'Penandatangan', desc: 'Pejabat penandatangan surat' },
+  { key: 'jumlah', label: 'Jumlah Nomor', desc: 'Jumlah nomor yang diajukan' },
+  { key: 'pengusul', label: 'Pengusul', desc: 'Nama pegawai pengusul' },
+  { key: 'tglUsulan', label: 'Tanggal Usulan', desc: 'Waktu usulan diajukan' },
+  { key: 'status', label: 'Status', desc: 'Status verifikasi usulan' }
+])
+
+const openExportModal = () => {
+  if (!hasPermission('penomoran', 'export-verifikasi') && !hasPermission('penomoran', 'report')) {
     toast.add({
       title: t('akses_ditolak') || 'Akses Ditolak',
       description: t('akses_export_ditolak') || 'Anda tidak memiliki izin untuk export laporan.',
       color: 'error',
       icon: 'i-lucide-x-circle'
-    });
-    return;
+    })
+    return
   }
-  if (isExporting.value || sortedRows.value.length === 0) return
+  showExportModal.value = true
+}
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (isExporting.value || sortedRows.value.length === 0 || selectedKeys.length === 0) return
   isExporting.value = true
 
   try {
@@ -1170,17 +1198,19 @@ const handleExport = async () => {
       })
     }
 
-    const sheetData = exportRows.map((row: any, idx: number) => ({
-      No: idx + 1,
-      'Jenis Naskah': row.jenis,
-      Tanggal: row.tanggal,
-      Perihal: row.perihal,
-      Penandatangan: row.penandatangan,
-      'Jumlah Nomor': row.jumlah,
-      Pengusul: row.pengusul,
-      'Tanggal Usulan': row.tglUsulan,
-      Status: getRowStatusLabel(row.status)
-    }))
+    const sheetData = exportRows.map((row: any, idx: number) => {
+      const r: Record<string, any> = {}
+      if (selectedKeys.includes('No')) r['No'] = idx + 1
+      if (selectedKeys.includes('jenis')) r['Jenis Naskah'] = row.jenis || '-'
+      if (selectedKeys.includes('tanggal')) r['Tanggal'] = row.tanggal || '-'
+      if (selectedKeys.includes('perihal')) r['Perihal'] = row.perihal || '-'
+      if (selectedKeys.includes('penandatangan')) r['Penandatangan'] = row.penandatangan || '-'
+      if (selectedKeys.includes('jumlah')) r['Jumlah Nomor'] = row.jumlah ?? '-'
+      if (selectedKeys.includes('pengusul')) r['Pengusul'] = row.pengusul || '-'
+      if (selectedKeys.includes('tglUsulan')) r['Tanggal Usulan'] = row.tglUsulan || '-'
+      if (selectedKeys.includes('status')) r['Status'] = getRowStatusLabel(row.status)
+      return r
+    })
 
     if (!sheetData.length) {
       toast.add({
@@ -1206,15 +1236,14 @@ const handleExport = async () => {
     const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
     XLSX.writeFile(wb, `Verifikasi_${statusLabel}_${dateStr}.xlsx`)
 
-    // ← toast sukses
     toast.add({
       title: t('ver_btn_export') || 'Export Berhasil',
       description: `${sheetData.length} data berhasil diexport`,
       color: 'success'
     })
+    showExportModal.value = false
   } catch (e) {
     console.error('❌ Error export:', e)
-    // ← toast error
     toast.add({
       title: 'Export Gagal',
       description: 'Terjadi kesalahan saat export data',

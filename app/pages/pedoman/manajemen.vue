@@ -140,6 +140,14 @@
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
+
+        <!-- Export -->
+        <button
+          @click="onExport"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+        >
+          Export
+        </button>
       </div>
 
       <!-- Table -->
@@ -588,6 +596,16 @@
     cancel-text="Batal"
     @confirm="bulkDeleteNow"
   />
+
+  <!-- Export Column Modal -->
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="filteredPedoman.length"
+    title="Pilih Kolom Export Pedoman"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
   </div>
   </div>
 </template>
@@ -598,7 +616,8 @@ import { Trash2, RotateCcw, Search, Plus, Pencil, ChevronDown, BookOpen, Papercl
 import Modal from '@/components/Modal.vue';
 import EmptyState from '~/components/EmptyState.vue';
 import { usePedoman, PEDOMAN_JENIS_OPTIONS } from '@/composables/usePedoman';
-import type { Pedoman, PedomanJenis, PedomanPayload, LampiranItem } from '@/composables/usePedoman';
+import type { Pedoman, PedomanJenis, PedomanPayload } from '@/composables/usePedoman';
+import type { LampiranItem } from '@/composables/useFaq';
 import { formatDateSlash } from '~/utils/mail-helpers';
 
 const TinymceEditorAsync = defineAsyncComponent(() => import('~/components/TinymceEditorAsync.vue'));
@@ -956,6 +975,72 @@ const getJenisBadgeClass = (jenis: PedomanJenis): string => {
 // ─── Data ────────────────────────────────────────────────────────────────────
 const refreshData = async () => {
   await fetchPedoman({ includeInactive: true });
+};
+
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'Judul', label: 'Judul Pedoman', desc: 'Judul pedoman' },
+  { key: 'Deskripsi', label: 'Deskripsi', desc: 'Uraian ringkas pedoman' },
+  { key: 'Jenis', label: 'Jenis Pedoman', desc: 'Jenis naskah pedoman' },
+  { key: 'NomorDokumen', label: 'Nomor Dokumen', desc: 'Nomor surat / dokumen pedoman' },
+  { key: 'TanggalBerlaku', label: 'Tanggal Berlaku', desc: 'Tanggal mulai berlakunya pedoman' },
+  { key: 'JumlahLampiran', label: 'Jumlah Lampiran', desc: 'Total file lampiran' }
+]);
+
+const onExport = () => {
+  if (filteredPedoman.value.length === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredPedoman.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const data = filteredPedoman.value.map((p, idx) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('Judul')) r['Judul Pedoman'] = p.judul || '-';
+      if (selectedKeys.includes('Deskripsi')) r['Deskripsi'] = stripHtml(p.deskripsi) || '-';
+      if (selectedKeys.includes('Jenis')) r['Jenis Pedoman'] = p.jenis || '-';
+      if (selectedKeys.includes('NomorDokumen')) r['Nomor Dokumen'] = p.nomorDokumen || '-';
+      if (selectedKeys.includes('TanggalBerlaku')) r['Tanggal Berlaku'] = p.tanggalBerlaku ? formatDateSlash(p.tanggalBerlaku) : '-';
+      if (selectedKeys.includes('JumlahLampiran')) r['Jumlah Lampiran'] = p.lampirans?.length ?? 0;
+      return r;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((r: any) => String(r[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pedoman');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `pedoman_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    toast.add({ title: 'Berhasil', description: `${data.length} data pedoman berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export pedoman error:', err);
+    toast.add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 onMounted(async () => {

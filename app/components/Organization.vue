@@ -180,7 +180,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatDate2Digit as formatDate } from '~/utils/mail-helpers'
+import { formatDateSlash as formatDate } from '~/utils/mail-helpers'
 import {
   ChevronDown,
   ChevronRight,

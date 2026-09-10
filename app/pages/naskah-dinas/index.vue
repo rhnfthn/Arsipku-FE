@@ -100,10 +100,11 @@
           />
         </div>
 
+        <!-- Export -->
         <button
           v-if="hasPermission('naskah-masuk', 'export')"
-          @click="exportExcel"
-          class="flex items-center gap-2 bg-primary-400 hover:bg-primary-600 text-white h-8 px-6 rounded-lg text-xs"
+          @click="onExport"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
           {{ $t('export') }}
         </button>
@@ -161,19 +162,8 @@
               class="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700"
             >
               <!-- TANGGAL -->
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-200">
-                <div class="flex gap-2">
-                  <div
-                    v-html="
-                      highlight(formatTanggalJamIndonesia(item.tanggal, item.jam).tanggal, search)
-                    "
-                  />
-                  <div
-                    v-html="
-                      highlight(formatTanggalJamIndonesia(item.tanggal, item.jam).jam, search)
-                    "
-                  />
-                </div>
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                <span v-html="highlight(formatDateSlash(item.tanggal), search)"></span>
               </td>
 
               <!-- ASAL NASKAH — nama + nomor dapat di-search -->
@@ -446,141 +436,8 @@
 
       <div class="flex flex-col">
         <div class="flex flex-col gap-4 p-1 pb-4">
-          <!-- JENIS NASKAH -->
-          <div>
-            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_jenisnaskah') }}<span class="text-red-500">*</span>
-            </Heading>
-            <div class="relative mt-1" data-custom-dropdown>
-              <button
-                :class="[
-                  'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                  modalErrors.jenisnaskah
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                ]"
-                @click.stop="openNewJenisNaskah = !openNewJenisNaskah"
-              >
-                <span
-                  :class="
-                    newDelegasi.jenisnaskah
-                      ? 'text-gray-700 dark:text-gray-200'
-                      : 'text-gray-400 dark:text-gray-500'
-                  "
-                >
-                  {{ newDelegasi.jenisnaskah || $t('nm_pilih_jenis_naskah') }}
-                </span>
-              </button>
-
-              <div
-                v-if="openNewJenisNaskah"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[999] max-h-56 overflow-auto"
-              >
-                <button
-                  v-for="p in jenisnaskahList"
-                  :key="p.id"
-                  class="w-full text-left px-3 py-2 mt-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
-                  @click.prevent="selectNewJenisNaskah(p.value)"
-                >
-                  {{ p.label }}
-                </button>
-              </div>
-            </div>
-            <p v-if="modalErrors.jenisnaskah" class="text-xs text-red-500 mt-1">
-              {{ $t('nm_jenisnaskah') }}
-            </p>
-          </div>
-
-          <!-- TANGGAL SURAT -->
-          <div class="flex flex-wrap flex-col">
-            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_tanggalsurat') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="newDelegasi.tanggal_surat"
-              type="date"
-              :class="[
-                'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                modalErrors.tanggal_surat
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 dark:border-gray-600'
-              ]"
-              @change="modalErrors.tanggal_surat = false"
-            />
-            <p v-if="modalErrors.tanggal_surat" class="text-xs text-red-500 mt-1">
-              {{ $t('nm_tanggalsurat') }}
-            </p>
-          </div>
-
-          <!-- SIFAT NASKAH -->
-          <div>
-            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_sifatnaskah') }} <span class="text-red-500">*</span>
-            </Heading>
-            <div class="relative mt-1" data-custom-dropdown>
-              <button
-                :class="[
-                  'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                  modalErrors.sifat_naskah
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
-                ]"
-                @click.stop="openNewSifatNaskah = !openNewSifatNaskah"
-              >
-                <span
-                  :class="
-                    newDelegasi.sifat_naskah
-                      ? 'text-gray-700 dark:text-gray-200'
-                      : 'text-gray-400 dark:text-gray-500'
-                  "
-                >
-                  {{ newDelegasi.sifat_naskah || $t('nm_pilih_sifat_naskah') }}
-                </span>
-              </button>
-
-              <div
-                v-if="openNewSifatNaskah"
-                class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
-              >
-                <button
-                  v-for="s in sifatnaskahList"
-                  :key="s.id"
-                  class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
-                  @click.prevent="selectNewSifatNaskah(s.value)"
-                >
-                  {{ s.label }}
-                </button>
-              </div>
-            </div>
-            <p v-if="modalErrors.sifat_naskah" class="text-xs text-red-500 mt-1">
-              {{ $t('nm_sifatnaskah') }}
-            </p>
-          </div>
-
-          <!-- NOMOR ASAL -->
-          <div class="flex flex-wrap flex-col">
-            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_noasal') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              v-model="newDelegasi.nomor_asal"
-              type="text"
-              :class="[
-                'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
-                modalErrors.nomor_asal
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 dark:border-gray-600'
-              ]"
-              :placeholder="$t('nm_masukan_nomor')"
-              @input="modalErrors.nomor_asal = false"
-            />
-            <p v-if="modalErrors.nomor_asal" class="text-xs text-red-500 mt-1">
-              {{ $t('nm_noasal') }}
-            </p>
-          </div>
-
-          <!-- ASAL NASKAH -->
-          <div class="flex flex-col">
+          <!-- 1. ASAL NASKAH -->
+          <div class="flex flex-col relative z-30">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               {{ $t('nm_asalnaskah') }} <span class="text-red-500">*</span>
             </Heading>
@@ -610,6 +467,16 @@
                 v-if="openNewAsalNaskah"
                 class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
               >
+                <div class="p-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+                  <input
+                    v-model="searchAsalNaskah"
+                    type="text"
+                    :placeholder="$t('nm_cari_asal_naskah')"
+                    class="w-full px-2 py-1 text-xs border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 outline-none focus:ring-1 focus:ring-primary-500"
+                    @click.stop
+                  />
+                </div>
+
                 <div
                   v-if="loadingAsalNaskah"
                   class="px-3 py-2 text-xs text-gray-400 dark:text-gray-500"
@@ -639,8 +506,147 @@
             </p>
           </div>
 
-          <!-- PERIHAL -->
-          <div class="flex flex-wrap flex-col">
+          <!-- 2. NOMOR ASAL & TANGGAL SURAT -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
+            <!-- NOMOR ASAL -->
+            <div class="flex flex-col">
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+                {{ $t('nm_noasal') }} <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="newDelegasi.nomor_asal"
+                type="text"
+                :class="[
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+                  modalErrors.nomor_asal
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
+                ]"
+                :placeholder="$t('nm_masukan_nomor')"
+                @input="modalErrors.nomor_asal = false"
+              />
+              <p v-if="modalErrors.nomor_asal" class="text-xs text-red-500 mt-1">
+                {{ $t('nm_noasal') }}
+              </p>
+            </div>
+
+            <!-- TANGGAL SURAT -->
+            <div class="flex flex-col">
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+                {{ $t('nm_tanggalsurat') }} <span class="text-red-500">*</span>
+              </Heading>
+              <input
+                v-model="newDelegasi.tanggal_surat"
+                type="date"
+                :class="[
+                  'mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 dark:bg-gray-700 dark:text-white',
+                  modalErrors.tanggal_surat
+                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500'
+                ]"
+                @input="modalErrors.tanggal_surat = false"
+              />
+              <p v-if="modalErrors.tanggal_surat" class="text-xs text-red-500 mt-1">
+                {{ $t('nm_tanggalsurat') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 3. JENIS NASKAH & SIFAT NASKAH -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
+            <!-- JENIS NASKAH -->
+            <div class="flex flex-col">
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+                {{ $t('nm_jenisnaskah') }}<span class="text-red-500">*</span>
+              </Heading>
+              <div class="relative mt-1" data-custom-dropdown>
+                <button
+                  :class="[
+                    'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+                    modalErrors.jenisnaskah
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600'
+                  ]"
+                  @click.stop="openNewJenisNaskah = !openNewJenisNaskah"
+                >
+                  <span
+                    :class="
+                      newDelegasi.jenisnaskah
+                        ? 'text-gray-700 dark:text-gray-200'
+                        : 'text-gray-400 dark:text-gray-500'
+                    "
+                  >
+                    {{ newDelegasi.jenisnaskah || $t('nm_pilih_jenis_naskah') }}
+                  </span>
+                </button>
+
+                <div
+                  v-if="openNewJenisNaskah"
+                  class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+                >
+                  <button
+                    v-for="p in jenisnaskahList"
+                    :key="p.id"
+                    class="w-full text-left px-3 py-2 mt-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+                    @click.prevent="selectNewJenisNaskah(p.value)"
+                  >
+                    {{ p.label }}
+                  </button>
+                </div>
+              </div>
+              <p v-if="modalErrors.jenisnaskah" class="text-xs text-red-500 mt-1">
+                {{ $t('nm_jenisnaskah') }}
+              </p>
+            </div>
+
+            <!-- SIFAT NASKAH -->
+            <div class="flex flex-col">
+              <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+                {{ $t('nm_sifatnaskah') }} <span class="text-red-500">*</span>
+              </Heading>
+              <div class="relative mt-1" data-custom-dropdown>
+                <button
+                  :class="[
+                    'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200',
+                    modalErrors.sifat_naskah
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 dark:border-gray-600'
+                  ]"
+                  @click.stop="openNewSifatNaskah = !openNewSifatNaskah"
+                >
+                  <span
+                    :class="
+                      newDelegasi.sifat_naskah
+                        ? 'text-gray-700 dark:text-gray-200'
+                        : 'text-gray-400 dark:text-gray-500'
+                    "
+                  >
+                    {{ sifatnaskahList.find(s => s.value === newDelegasi.sifat_naskah)?.label || newDelegasi.sifat_naskah || 'Biasa / Terbuka' }}
+                  </span>
+                </button>
+
+                <div
+                  v-if="openNewSifatNaskah"
+                  class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-56 overflow-auto"
+                >
+                  <button
+                    v-for="s in sifatnaskahList"
+                    :key="s.id"
+                    class="w-full text-left px-3 py-2 mt-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+                    @click.prevent="selectNewSifatNaskah(s.value)"
+                  >
+                    {{ s.label }}
+                  </button>
+                </div>
+              </div>
+              <p v-if="modalErrors.sifat_naskah" class="text-xs text-red-500 mt-1">
+                {{ $t('nm_sifatnaskah') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 4. PERIHAL -->
+          <div class="flex flex-col relative z-10">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               {{ $t('nm_perihal') }} <span class="text-red-500">*</span>
             </Heading>
@@ -661,22 +667,8 @@
             </p>
           </div>
 
-          <!-- LAMPIRAN (readonly) -->
-          <div class="flex flex-wrap flex-col">
-            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_lampiran') }} <span class="text-red-500">*</span>
-            </Heading>
-            <input
-              :value="lampiranText"
-              type="text"
-              disabled
-              class="mt-1 w-full text-left border bg-gray-100 border-gray-100 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200"
-              :placeholder="$t('nm_0lampiran')"
-            />
-          </div>
-
-          <!-- TERTUJU -->
-          <div class="flex flex-wrap flex-col">
+          <!-- 5. TERTUJU -->
+          <div :class="['flex flex-col relative', openNewTertuju ? 'z-40' : 'z-20']">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
               {{ $t('tertuju') }} <span class="text-red-500">*</span>
             </Heading>
@@ -684,35 +676,37 @@
             <div class="relative mt-1 dropdown-input" data-custom-dropdown>
               <div
                 :class="[
-                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2',
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2 cursor-text',
                   modalErrors.tertuju ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 ]"
                 @click.stop="openNewTertuju = true"
               >
-                <!-- CHIP CONTAINER -->
-                <div v-if="newDelegasi.tertuju.length > 0" class="flex flex-wrap gap-2">
-                  <span
+                <!-- CONTAINER - DISPLAY PER-BARIS (1 BARIS PER ITEM) -->
+                <div v-if="newDelegasi.tertuju.length > 0" class="flex flex-col gap-1.5 w-full">
+                  <div
                     v-for="t in newDelegasi.tertuju"
                     :key="t.position"
-                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
+                    class="flex items-center justify-between bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs w-full"
                   >
-                    <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                      {{ t.position_text }}
-                    </span>
-                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
-                      {{ t.persnum_person_text }}
-                    </span>
-                    <span class="text-[9px] text-gray-400 dark:text-gray-500">
-                      {{ t.organization_parent_text }}
-                    </span>
+                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                      <span class="font-semibold text-xs text-primary-600 dark:text-primary-300 truncate">
+                        {{ t.position_text }}
+                      </span>
+                      <span class="text-[11px] text-gray-800 dark:text-gray-200 font-medium truncate">
+                        {{ t.persnum_person_text }}
+                      </span>
+                      <span v-if="t.organization_parent_text" class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        {{ t.organization_parent_text }}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      class="text-red-500 text-[10px] self-end"
+                      class="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50 p-1 rounded transition-colors text-xs font-bold shrink-0 ml-2"
                       @click.stop="removeTertuju(t.position)"
                     >
                       ✕
                     </button>
-                  </span>
+                  </div>
                 </div>
 
                 <!-- INPUT SEARCH - SELALU DI BAWAH -->
@@ -720,7 +714,7 @@
                   v-model="searchTertuju"
                   @focus="openNewTertuju = true"
                   :placeholder="$t('nm_cari_tertuju')"
-                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 bg-transparent"
                 />
               </div>
 
@@ -745,13 +739,13 @@
                 <button
                   v-for="item in filteredTertujuList"
                   :key="item.position"
-                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs border-b border-gray-50 dark:border-gray-750 last:border-0"
                   @click.prevent="selectNewTertuju(item)"
                 >
-                  <div class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
+                  <div class="font-medium text-[13px] text-primary-600 dark:text-primary-300">
                     {{ item.position_text }}
                   </div>
-                  <div class="text-[10px] text-gray-800 dark:text-gray-300">
+                  <div class="text-[10px] text-gray-800 dark:text-gray-300 font-medium">
                     {{ item.persnum_person_text }}
                   </div>
                   <div class="text-[9px] text-gray-400 dark:text-gray-500">
@@ -765,59 +759,54 @@
             </p>
           </div>
 
-          <!-- VERIFIKATOR -->
-          <div class="flex flex-col gap-2">
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-              <input
-                v-model="newDelegasi.useVerifikator"
-                type="checkbox"
-                class="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                @change="handleToggleVerifikator"
-              />
-              <span class="font-medium">Verifikator</span>
-            </label>
+          <!-- 6. VERIFIKATOR -->
+          <div :class="['flex flex-col relative', openNewVerifikator ? 'z-30' : 'z-10']">
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              Verifikator <span class="text-xs font-normal text-gray-400 dark:text-gray-400">(Opsional)</span>
+            </Heading>
 
-            <div
-              v-if="newDelegasi.useVerifikator"
-              class="relative mt-1 dropdown-input"
-              data-custom-dropdown
-            >
+            <div class="relative mt-1 dropdown-input" data-custom-dropdown>
               <div
                 :class="[
-                  'w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2',
-                  modalErrors.verifikator
-                    ? 'border-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
+                  'mt-1 w-full text-left border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm dark:bg-gray-700 dark:text-gray-200 flex flex-col gap-2 cursor-text',
+                  modalErrors.verifikator ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 ]"
-                @click.stop="openNewVerifikator = true"
+                @click.stop="handleFocusVerifikator"
               >
-                <div v-if="newDelegasi.verifikator.length > 0" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="verifikator in newDelegasi.verifikator"
-                    :key="verifikator.persnum"
-                    class="flex flex-col bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs"
+                <!-- CONTAINER - DISPLAY PER-BARIS (1 BARIS PER ITEM) -->
+                <div v-if="newDelegasi.verifikator.length > 0" class="flex flex-col gap-1.5 w-full">
+                  <div
+                    v-for="v in newDelegasi.verifikator"
+                    :key="v.persnum"
+                    class="flex items-center justify-between bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs w-full"
                   >
-                    <span class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                      {{ verifikator.nama || '-' }}
-                    </span>
-                    <span class="text-[10px] text-gray-800 dark:text-gray-300">
-                      {{ verifikator.jabatan || '-' }}
-                    </span>
+                    <div class="flex flex-col min-w-0 flex-1 pr-2">
+                      <span class="font-semibold text-xs text-primary-600 dark:text-primary-300 truncate">
+                        {{ v.jabatan || 'Verifikator' }}
+                      </span>
+                      <span class="text-[11px] text-gray-800 dark:text-gray-200 font-medium truncate">
+                        {{ v.nama }}
+                      </span>
+                      <span v-if="v.lokasi || v.areaText" class="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                        {{ v.lokasi || v.areaText }}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      class="text-red-500 text-[10px] self-end"
-                      @click.stop="removeVerifikator(verifikator.persnum)"
+                      class="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50 p-1 rounded transition-colors text-xs font-bold shrink-0 ml-2"
+                      @click.stop="removeVerifikator(v.persnum)"
                     >
-                      x
+                      ✕
                     </button>
-                  </span>
+                  </div>
                 </div>
 
+                <!-- INPUT SEARCH - SELALU DI BAWAH -->
                 <input
                   v-model="searchVerifikator"
-                  @focus="openNewVerifikator = true"
-                  placeholder="Cari verifikator"
-                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500"
+                  @focus="handleFocusVerifikator"
+                  placeholder="Pilih verifikator..."
+                  class="w-full outline-none text-sm dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 bg-transparent"
                 />
               </div>
 
@@ -840,33 +829,29 @@
                 </div>
 
                 <button
-                  v-for="verifikator in filteredVerifikatorList"
-                  :key="verifikator.persnum"
-                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
-                  @click.prevent="selectVerifikator(verifikator)"
+                  v-for="item in filteredVerifikatorList"
+                  :key="item.persnum"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs border-b border-gray-50 dark:border-gray-750 last:border-0"
+                  @click.prevent="selectVerifikator(item)"
                 >
-                  <div class="font-medium text-[13px] text-primary-400 dark:text-primary-300">
-                    {{ verifikator.nama || '-' }}
+                  <div class="font-medium text-[13px] text-primary-600 dark:text-primary-300">
+                    {{ item.jabatan || item.nama }}
                   </div>
-                  <div class="text-[10px] text-gray-800 dark:text-gray-300">
-                    {{ verifikator.jabatan || '-' }}
+                  <div class="text-[10px] text-gray-800 dark:text-gray-300 font-medium">
+                    {{ item.nama }}
                   </div>
-                  <div class="text-[9px] text-gray-400 dark:text-gray-500">
-                    {{ verifikator.lokasi || verifikator.areaText || '-' }}
+                  <div v-if="item.lokasi || item.areaText" class="text-[9px] text-gray-400 dark:text-gray-500">
+                    {{ item.lokasi || item.areaText }}
                   </div>
                 </button>
               </div>
             </div>
-
-            <p v-if="modalErrors.verifikator" class="text-xs text-red-500 mt-1">
-              Pilih minimal satu verifikator
-            </p>
           </div>
 
-          <!-- FILE UPLOAD -->
-          <div class="flex flex-col gap-2">
+          <!-- 7. LAMPIRAN (FILE UPLOAD) -->
+          <div class="flex flex-col gap-2 relative z-0">
             <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-              {{ $t('nm_file') }}
+              {{ $t('nm_lampiran') }}
               <span v-if="!isEditMode" class="text-red-500">*</span>
             </Heading>
 
@@ -887,6 +872,9 @@
               <p class="text-xs text-gray-600 dark:text-gray-400">
                 {{ $t('nm_text1') }}
                 <span class="text-primary-500 font-medium">{{ $t('nm_text2') }}</span>
+              </p>
+              <p class="text-[10px] text-gray-400 dark:text-gray-500">
+                PDF (Maks. 10MB)
               </p>
 
               <input
@@ -945,9 +933,17 @@
               </div>
             </div>
             <p v-if="modalErrors.file" class="text-xs text-red-500 mt-1">
-              {{ $t('nm_file') }}
+              {{ $t('nm_lampiran') }} wajib diisi
             </p>
           </div>
+
+          <!-- TANGGAL DIBUAT (hanya saat edit, seragam dengan master data) -->
+          <p
+            v-if="isEditMode && (selectedNaskah?.created_at || selectedNaskah?.tanggal)"
+            class="px-1 text-xs text-gray-500 dark:text-gray-400"
+          >
+            {{ formatFullDate(selectedNaskah.created_at || selectedNaskah.tanggal) }}
+          </p>
         </div>
       </div>
     </Modal>
@@ -978,7 +974,7 @@
           <div>
             <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('tanggal') }}</p>
             <p class="font-medium text-gray-900 dark:text-white">
-              {{ formatTanggalJamIndonesia(selectedDetail.tanggal, selectedDetail.jam).tanggal }}
+              {{ formatDateSlash(selectedDetail.tanggal) }}
             </p>
           </div>
           <div>
@@ -1070,6 +1066,112 @@
       </div>
     </Modal>
   </Teleport>
+
+  <!-- Export Column Modal -->
+  <Teleport to="body">
+    <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+      <template #title>
+        <div class="ml-5 my-3.5">
+          <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+            {{ t('pilih_kolom_export') }}
+          </Heading>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+          </p>
+        </div>
+      </template>
+
+      <div class="space-y-3.5 py-1">
+        <!-- Selection Status Bar & Toggle All -->
+        <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+              :class="selectedExportColumns.length > 0
+                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+            >
+              {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+            </span>
+            <span class="text-gray-600 dark:text-gray-300 font-medium">
+              Kolom Terpilih
+            </span>
+          </div>
+
+          <button
+            type="button"
+            @click="toggleAllExport"
+            class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+            :class="allExportSelected
+              ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+          >
+            {{ allExportSelected ? 'Batal Pilih Semua' : t('pilih_semua') }}
+          </button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+          <div
+            v-for="col in exportColumns"
+            :key="col.key"
+            @click="toggleColumn(col.key)"
+            class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+            :class="selectedExportColumns.includes(col.key)
+              ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+          >
+            <div class="flex items-center gap-3 min-w-0 w-full">
+              <!-- Checkmark Box -->
+              <div
+                class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                :class="selectedExportColumns.includes(col.key)
+                  ? 'border-primary bg-primary text-white shadow-sm'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+              >
+                <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold truncate leading-tight">
+                  {{ col.label }}
+                </p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                  {{ col.desc }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Notice -->
+        <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+          <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+          <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ filteredData.length }} baris</span></span>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+          <button
+            type="button"
+            @click="showExportModal = false"
+            class="px-4 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+          >
+            {{ t('batal') }}
+          </button>
+          <button
+            type="button"
+            @click="handleExportConfirm"
+            :disabled="selectedExportColumns.length === 0"
+            class="px-5 py-2 text-xs font-semibold bg-primary hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg shadow-sm shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+          </button>
+        </div>
+      </template>
+    </Modal>
+  </Teleport>
   </template>
 </template>
 
@@ -1086,7 +1188,8 @@ import {
   FileText,
   X,
   Eye,
-  Pencil
+  Pencil,
+  Check
 } from 'lucide-vue-next';
 
 import Modal from '~/components/Modal.vue';
@@ -1095,6 +1198,7 @@ import { useNaskahDinas } from '~/composables/useNaskahDinas';
 import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
 import { useToast } from '#imports';
 import { useAuth } from '~/composables/useAuth';
+import { formatDateSlash } from '~/utils/mail-helpers';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -1160,6 +1264,7 @@ onMounted(() => {
   fetchNaskahDinas();
   fetchTertujuEksternal();
   fetchRecipients();
+  fetchVerifikator();
   document.addEventListener('click', handleDocumentClick);
 });
 
@@ -1181,17 +1286,26 @@ const filteredAsalNaskahList = computed(() => {
 });
 
 const filteredVerifikatorList = computed(() => {
-  const selectedPersnums = new Set(newDelegasi.value.verifikator.map((item: any) => item.persnum));
   const keyword = searchVerifikator.value.toLowerCase();
-  const available = verifikatorList.value.filter((item: any) => !selectedPersnums.has(item.persnum));
-
-  if (!keyword) return available;
-
-  return available.filter((item: any) =>
-    `${item.nama || ''} ${item.jabatan || ''} ${item.lokasi || ''}`
-      .toLowerCase()
-      .includes(keyword)
+  if (!keyword) return verifikatorList.value;
+  return verifikatorList.value.filter(
+    (item: any) =>
+      item.nama?.toLowerCase().includes(keyword) ||
+      item.jabatan?.toLowerCase().includes(keyword) ||
+      item.lokasi?.toLowerCase().includes(keyword) ||
+      item.areaText?.toLowerCase().includes(keyword) ||
+      String(item.persnum).includes(keyword)
   );
+});
+
+const verifikatorOptions = computed(() => {
+  return verifikatorList.value.map((item: any) => ({
+    ...item,
+    label: item.nama ? `${item.nama} - ${item.jabatan || ''}`.trim() : `Persnum ${item.persnum}`,
+    nama: item.nama || `Persnum ${item.persnum}`,
+    jabatan: item.jabatan || '-',
+    lokasi: item.lokasi || item.areaText || ''
+  }));
 });
 
 // ==============================
@@ -1234,9 +1348,10 @@ const filteredData = computed(() => {
 
   if (keyword) {
     data = data.filter((item) => {
-      // Kolom Tanggal & Jam (formatted Indonesia)
+      // Kolom Tanggal (formatted Indonesia seperti master data)
       const waktu = formatTanggalJamIndonesia(item.tanggal, item.jam);
       const tanggalFormatted = (waktu.tanggal || '').toLowerCase();
+      const tanggalSlash = (formatDateSlash(item.tanggal) || '').toLowerCase();
       const jamFormatted = (waktu.jam || '').toLowerCase();
       // Kolom Asal Naskah — nama pengirim
       const asalNaskahNama = (item.pengirim?.nama || '').toLowerCase();
@@ -1261,6 +1376,7 @@ const filteredData = computed(() => {
 
       return (
         tanggalFormatted.includes(keyword) ||
+        tanggalSlash.includes(keyword) ||
         jamFormatted.includes(keyword) ||
         asalNaskahNama.includes(keyword) ||
         asalNaskahPersnum.includes(keyword) ||
@@ -1360,11 +1476,28 @@ const lampiranText = computed(() => {
   return `${total} lampiran`;
 });
 
+const getTodayDateString = () => new Date().toISOString().slice(0, 10);
+
+const formatFullDate = (value?: string | null) => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = d.toLocaleString('id-ID', { month: 'long' });
+  const year = d.getFullYear();
+  if (value.includes('T') || value.includes(':')) {
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+    return `Dibuat pada: ${day} ${month} ${year} pukul ${hour}.${minute}`;
+  }
+  return `Dibuat pada: ${day} ${month} ${year}`;
+};
+
 const newDelegasi = ref({
   jenisnaskah: '',
-  tanggal_surat: '',
+  tanggal_surat: getTodayDateString(),
   nomor_asal: '',
-  sifat_naskah: '',
+  sifat_naskah: 'Biasa / Terbuka',
   perihal: '',
   asal_naskah: null as string | null,
   asal_naskah_label: '',
@@ -1384,8 +1517,7 @@ const saveDelegasi = async () => {
   modalErrors.value.asal_naskah = !newDelegasi.value.asal_naskah;
   modalErrors.value.perihal = !newDelegasi.value.perihal.trim();
   modalErrors.value.tertuju = newDelegasi.value.tertuju.length === 0;
-  modalErrors.value.verifikator =
-    newDelegasi.value.useVerifikator && newDelegasi.value.verifikator.length === 0;
+  modalErrors.value.verifikator = false;
   modalErrors.value.file = !isEditMode.value && filesRef.value.length === 0;
 
   const emptyFields: string[] = [];
@@ -1396,8 +1528,7 @@ const saveDelegasi = async () => {
   if (modalErrors.value.asal_naskah) emptyFields.push('Asal Naskah');
   if (modalErrors.value.perihal) emptyFields.push('Perihal');
   if (modalErrors.value.tertuju) emptyFields.push('Tertuju Eksternal');
-  if (modalErrors.value.verifikator) emptyFields.push('Verifikator');
-  if (modalErrors.value.file) emptyFields.push('File');
+  if (modalErrors.value.file) emptyFields.push('Lampiran');
 
   if (emptyFields.length > 0) {
     toast.add({
@@ -1422,9 +1553,9 @@ const saveDelegasi = async () => {
       lampiran: lampiranText.value,
       file: filesRef.value,
       pembuat_id: Number(user.value?.position),
-      verifikator: newDelegasi.value.useVerifikator
-        ? newDelegasi.value.verifikator.map((verifikator: any) => Number(verifikator.persnum))
-        : []
+      verifikator: (newDelegasi.value.verifikator || []).map((verifikator: any) =>
+        Number(verifikator.persnum)
+      )
     };
 
     if (isEditMode.value && selectedNaskah.value?.id) {
@@ -1465,7 +1596,7 @@ const jenisnaskahList = [
 ];
 
 const sifatnaskahList = [
-  { id: 1, label: 'Biasa/Terbuka', value: 'Biasa' },
+  { id: 1, label: 'Biasa / Terbuka', value: 'Biasa / Terbuka' },
   { id: 2, label: 'Terbatas', value: 'Terbatas' },
   { id: 3, label: 'Rahasia', value: 'Rahasia' },
   { id: 4, label: 'Sangat Rahasia', value: 'Sangat Rahasia' }
@@ -1555,15 +1686,8 @@ function removeTertuju(position: number) {
   newDelegasi.value.tertuju = newDelegasi.value.tertuju.filter((t) => t.position !== position);
 }
 
-async function handleToggleVerifikator() {
-  modalErrors.value.verifikator = false;
-  if (!newDelegasi.value.useVerifikator) {
-    newDelegasi.value.verifikator = [];
-    openNewVerifikator.value = false;
-    searchVerifikator.value = '';
-    return;
-  }
-
+async function handleFocusVerifikator() {
+  openNewVerifikator.value = true;
   if (verifikatorList.value.length === 0) {
     await fetchVerifikator();
   }
@@ -1594,11 +1718,23 @@ function handleFileChange(e: Event) {
   if (!input.files || input.files.length === 0) return;
 
   const file = input.files[0];
+  const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 
-  if (file.type !== 'application/pdf') {
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
     toast.add({
       title: t('nm_file_tidak_valid'),
-      description: t('nm_file_hanya_pdf'),
+      description: t('nm_file_hanya_pdf') || 'Format file harus PDF',
+      color: 'warning',
+      icon: 'i-lucide-alert-circle'
+    });
+    input.value = '';
+    return;
+  }
+
+  if (file.size > maxSizeBytes) {
+    toast.add({
+      title: t('nm_file_tidak_valid'),
+      description: 'Ukuran file maksimal 10MB',
       color: 'warning',
       icon: 'i-lucide-alert-circle'
     });
@@ -1620,7 +1756,7 @@ function formatTanggalJamIndonesia(tanggal?: string, jam?: string) {
   const date = parseUtcTanggalJam(tanggal, jam);
   if (!date) return { tanggal: '-', jam: '-' };
   return {
-    tanggal: date.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' }),
+    tanggal: formatDateSlash(date.toISOString()),
     jam: date.toLocaleTimeString('id-ID', {
       timeZone: 'Asia/Jakarta',
       hour: '2-digit',
@@ -1632,9 +1768,9 @@ function formatTanggalJamIndonesia(tanggal?: string, jam?: string) {
 function resetNewDelegasi() {
   newDelegasi.value = {
     jenisnaskah: '',
-    tanggal_surat: '',
+    tanggal_surat: getTodayDateString(),
     nomor_asal: '',
-    sifat_naskah: '',
+    sifat_naskah: 'Biasa / Terbuka',
     perihal: '',
     asal_naskah: null,
     asal_naskah_label: '',
@@ -1670,16 +1806,32 @@ function resetNewDelegasi() {
 
 function openAddModal() {
   resetNewDelegasi();
+  isEditMode.value = false;
   showAddModal.value = true;
+  if (verifikatorList.value.length === 0) {
+    fetchVerifikator();
+  }
 }
 
 function populateFormFromNaskah(data: any) {
   selectedNaskah.value = data;
+  const rawSifat = (data.sifat || data.sifat_naskah || '').toLowerCase();
+  const matchedSifat =
+    rawSifat === 'biasa' || rawSifat === 'terbuka' || rawSifat === 'biasa / terbuka'
+      ? 'Biasa / Terbuka'
+      : rawSifat === 'terbatas'
+      ? 'Terbatas'
+      : rawSifat === 'rahasia'
+      ? 'Rahasia'
+      : rawSifat === 'sangat rahasia' || rawSifat === 'sangat_rahasia'
+      ? 'Sangat Rahasia'
+      : data.sifat || data.sifat_naskah || 'Biasa / Terbuka';
+
   newDelegasi.value = {
     jenisnaskah: data.jenis === 'SDE' ? 'Surat Dinas Eksternal' : data.jenis || '',
-    tanggal_surat: data.tanggal || '',
+    tanggal_surat: data.tanggal || getTodayDateString(),
     nomor_asal: data.nomor || '',
-    sifat_naskah: data.sifat || data.sifat_naskah || 'Biasa',
+    sifat_naskah: matchedSifat,
     perihal: data.perihal || '',
     asal_naskah: data.pengirim?.id ? String(data.pengirim.id) : null,
     asal_naskah_label: data.pengirim?.nama || '',
@@ -1716,7 +1868,7 @@ async function openEditModal(item: any) {
   try {
     const detailData = await fetchNaskahDinasDetail(item.id);
     populateFormFromNaskah(detailData || item);
-    if (newDelegasi.value.useVerifikator && verifikatorList.value.length === 0) {
+    if (verifikatorList.value.length === 0) {
       await fetchVerifikator();
     }
   } catch (error) {
@@ -1859,7 +2011,35 @@ function setPerPage(val: number | 'all') {
   openFilterStatus.value = false;
 }
 
-function exportExcel() {
+// ==============================
+// EXPORT DATA
+// ==============================
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const exportColumns = computed(() => [
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'tanggal', label: t('tanggal'), desc: 'Tanggal surat naskah dinas' },
+  { key: 'jam', label: 'Jam', desc: 'Waktu surat dibuat' },
+  { key: 'asal_naskah', label: t('asal_naskah'), desc: 'Instansi / nama pengirim' },
+  { key: 'nomor_naskah', label: t('nm_noasal'), desc: 'Nomor surat asal naskah' },
+  { key: 'tertuju', label: t('tertuju'), desc: 'Penerima naskah internal' },
+  { key: 'perihal', label: t('perihal'), desc: 'Perihal / subjek surat' },
+  { key: 'pembuat', label: t('pembuat'), desc: 'Nama penginput / pembuat naskah' },
+  { key: 'jabatan_pembuat', label: 'Jabatan Pembuat', desc: 'Jabatan penginput / pembuat naskah' },
+  { key: 'progress_verifikator', label: 'Progress Verifikator', desc: 'Status verifikasi naskah' },
+  { key: 'jumlah_verifikator', label: 'Jumlah Verifikator', desc: 'Total verifikator naskah' },
+  { key: 'verifikator', label: 'Verifikator', desc: 'Daftar nama verifikator' },
+  { key: 'final_pdf_url', label: 'Link Dokumen PDF', desc: 'URL dokumen final PDF' }
+]);
+
+const allExportSelected = computed(
+  () =>
+    selectedExportColumns.value.length === exportColumns.value.length &&
+    exportColumns.value.length > 0
+);
+
+const onExport = () => {
   if (filteredData.value.length === 0) {
     toast.add({
       title: t('export_tidak_ada'),
@@ -1869,24 +2049,56 @@ function exportExcel() {
     });
     return;
   }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
 
   const excelData = filteredData.value.map((item, index) => {
     const waktu = formatTanggalJamIndonesia(item.tanggal, item.jam);
-    return {
-      No: index + 1,
-      'Asal Naskah': item.pengirim?.nama || '-',
-      'Nomor Naskah': item.nomor || '-',
-      Tanggal: waktu.tanggal,
-      Jam: waktu.jam,
-      Tertuju: item.penerima?.map((p: any) => p.position_text).join(', ') || '-',
-      Perihal: item.perihal || '-',
-      Pembuat: item.pembuat?.nama || '-',
-      'Jabatan Pembuat': item.pembuat?.position_text || '-',
-      'Progress Verifikator': getProgressLabel(item),
-      'Jumlah Verifikator': item.totalVerifikator || 0,
-      Verifikator: item.verifikators?.map((v: any) => v.nama).join(', ') || '-',
-      'Final PDF URL': item.final_pdf_url || '-'
-    };
+    const row: Record<string, any> = {};
+
+    if (selectedKeys.includes('No')) row['No'] = index + 1;
+    if (selectedKeys.includes('tanggal')) row[t('tanggal')] = formatDateSlash(item.tanggal);
+    if (selectedKeys.includes('jam')) row['Jam'] = waktu.jam;
+    if (selectedKeys.includes('asal_naskah')) row[t('asal_naskah')] = item.pengirim?.nama || '-';
+    if (selectedKeys.includes('nomor_naskah')) row[t('nm_noasal')] = item.nomor || '-';
+    if (selectedKeys.includes('tertuju'))
+      row[t('tertuju')] = item.penerima?.map((p: any) => p.position_text).join(', ') || '-';
+    if (selectedKeys.includes('perihal')) row[t('perihal')] = item.perihal || '-';
+    if (selectedKeys.includes('pembuat')) row[t('pembuat')] = item.pembuat?.nama || '-';
+    if (selectedKeys.includes('jabatan_pembuat'))
+      row['Jabatan Pembuat'] = item.pembuat?.position_text || '-';
+    if (selectedKeys.includes('progress_verifikator'))
+      row['Progress Verifikator'] = getProgressLabel(item);
+    if (selectedKeys.includes('jumlah_verifikator'))
+      row['Jumlah Verifikator'] = item.totalVerifikator || 0;
+    if (selectedKeys.includes('verifikator'))
+      row['Verifikator'] = item.verifikators?.map((v: any) => v.nama).join(', ') || '-';
+    if (selectedKeys.includes('final_pdf_url'))
+      row['Final PDF URL'] = item.final_pdf_url || '-';
+
+    return row;
   });
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -1907,7 +2119,9 @@ function exportExcel() {
     color: 'success',
     icon: 'i-lucide-check-circle'
   });
-}
+
+  showExportModal.value = false;
+};
 </script>
 
 <style scoped>

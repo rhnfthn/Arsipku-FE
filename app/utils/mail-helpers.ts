@@ -117,7 +117,7 @@ export const formatDate2Digit = (dateString: string | null | undefined): string 
   return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-/** Format tanggal dd/mm/yyyy */
+/** Format tanggal dd/mm/yyyy (contoh: 31/12/2029) */
 export const formatDateSlash = (dateString: string | null | undefined): string => {
   if (!dateString) return "-";
   const date = new Date(dateString);

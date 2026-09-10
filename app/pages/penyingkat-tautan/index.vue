@@ -186,6 +186,15 @@
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
+
+        <!-- Export -->
+        <button
+          v-if="hasPermission('penyingkat-tautan', 'export') || true"
+          @click="onExport"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+        >
+          Export
+        </button>
       </div>
 
       <!-- TABLE WRAPPER -->
@@ -468,6 +477,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="total || data.length"
+      title="Pilih Kolom Export Penyingkat Tautan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -913,6 +932,80 @@ function highlight(text: string, keyword: string): string {
     '<mark class="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-white rounded px-0.5">$1</mark>'
   );
 }
+
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'Tanggal', label: 'Tanggal', desc: 'Tanggal pembuatan tautan' },
+  { key: 'OriginalUrl', label: 'URL Asli', desc: 'Tautan asli panjang' },
+  { key: 'ShortUrl', label: 'URL Modifikasi', desc: 'Tautan pendek yang dibuat' },
+  { key: 'Keterangan', label: 'Keterangan', desc: 'Catatan / keterangan tautan' }
+]);
+
+const onExport = () => {
+  if (data.value.length === 0) {
+    toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    return;
+  }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (data.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    let exportItems = data.value;
+    if (total.value > perPage.value) {
+      await fetchShortUrls({
+        page: 0,
+        size: total.value,
+        orderby: 'udate',
+        sortby: sortOrder.value,
+        cari: search.value,
+      });
+      exportItems = data.value;
+    }
+
+    const exportRows = exportItems.map((item: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('Tanggal')) r['Tanggal'] = formatDate(item.created_at || item.createdAt || item.tanggal);
+      if (selectedKeys.includes('OriginalUrl')) r['URL Asli'] = item.long_url || item.longUrl || item.LUrl || '-';
+      if (selectedKeys.includes('ShortUrl')) r['URL Modifikasi'] = item.short_url || item.shortUrl || item.SUrl || '-';
+      if (selectedKeys.includes('Keterangan')) r['Keterangan'] = item.keterangan || '-';
+      return r;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const colWidths = Object.keys(exportRows[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...exportRows.map((r: any) => String(r[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Penyingkat Tautan');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `penyingkat_tautan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    toast.add({ title: 'Berhasil', description: `${exportRows.length} data tautan berhasil diexport`, color: 'success' });
+  } catch (err) {
+    console.error('Export penyingkat tautan error:', err);
+    toast.add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>
 
 <style scoped>
