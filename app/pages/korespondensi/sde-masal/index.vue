@@ -54,16 +54,24 @@
                 Tidak ada folder yang ditemukan.
               </td>
             </tr>
-            <tr v-else v-for="folder in folders" :key="folder.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-              <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[220px] truncate" :title="folder.judul">
+            <tr v-else v-for="folder in sortedFolders" :key="folder.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <td
+                class="px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 max-w-[220px] truncate"
+                :class="isChangedFolder(folder) ? 'font-bold' : 'font-medium'"
+                :title="folder.judul"
+              >
                 {{ folder.judul }}
               </td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[200px] truncate" :title="folder.pengirimName || ''">{{ folder.pengirimName || '-' }}</td>
+              <td
+                class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[200px] truncate"
+                :class="isChangedFolder(folder) ? 'font-bold' : ''"
+                :title="folder.pengirimName || ''"
+              >{{ folder.pengirimName || '-' }}</td>
               <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="folder.klasifikasi || ''">
                 {{ folder.klasifikasi || '-' }}
                 <span v-if="folder.klasifikasiText" class="text-gray-400"> · {{ folder.klasifikasiText }}</span>
               </td>
-              <td class="px-4 py-2.5 text-center">
+              <td class="px-4 py-2.5 text-center" :class="isChangedFolder(folder) ? 'font-bold' : ''">
                 <span :class="statusBadge(folder.status)">{{ statusLabel(folder.status) }}</span>
               </td>
               <td class="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formatDate(folder.tanggal || folder.createdAt) }}</td>
@@ -137,6 +145,11 @@ definePageMeta({ middleware: ['auth'] });
 
 const { fetchFolders } = useSdeMasal();
 const { getKlasifikasiList } = useKlasifikasi();
+const {
+  notifications,
+  fetchNotifications,
+  markSdeMasalFolderNotificationsAsRead,
+} = useNotifications();
 const folders = ref<SdeMasalFolder[]>([]);
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const loading = ref(true);
@@ -205,15 +218,41 @@ const changePage = (page: number) => {
 };
 const openFolderEditor = (folderId: string) => {
   if (!folderId) return;
-  return navigateTo({
-    path: '/korespondensi/tulis/sde-masal',
-    query: { folderId: String(folderId) },
-  });
+  return markSdeMasalFolderNotificationsAsRead(folderId).finally(() =>
+    navigateTo({
+      path: '/korespondensi/tulis/sde-masal',
+      query: { folderId: String(folderId) },
+    }),
+  );
 };
 const formatDate = (value: string | Date) =>
-  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const statusLabel = sdeMasalStatusLabel;
 const statusBadge = sdeMasalStatusBadge;
+
+const isChangedFolder = (folder: SdeMasalFolder) =>
+  notifications.value.some((notification) => {
+    const data = notification.data;
+    return Boolean(
+      !notification.isRead &&
+      data?.category === 'SDE_MASAL' &&
+      data?.action === 'OPEN_SDE_MASAL_FOLDER' &&
+      String(data?.folderId || data?.folder_id || '') === String(folder.id),
+    );
+  });
+
+const sortedFolders = computed(() =>
+  [...folders.value].sort((a, b) => {
+    const aChanged = isChangedFolder(a);
+    const bChanged = isChangedFolder(b);
+    if (aChanged !== bChanged) return aChanged ? -1 : 1;
+
+    const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    if (bTime !== aTime) return bTime - aTime;
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  }),
+);
 
 const exportData = async () => {
   exporting.value = true;
@@ -242,6 +281,7 @@ onMounted(async () => {
     const [classifications] = await Promise.all([
       getKlasifikasiList().catch(() => []),
       loadFolders(),
+      fetchNotifications(1, 100, true),
     ]);
     klasifikasiList.value = classifications;
   } catch (error) {

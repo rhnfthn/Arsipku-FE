@@ -1113,12 +1113,17 @@ const openVerificationSelection = async () => {
     // posisi aktif lama mengubah daftar atasan Raihan.
     if (props.konsep?.parentNaskahId) {
       try {
+        // Gunakan endpoint chain yang sama dengan halaman Kotak Masuk agar
+        // daftar verifikator mengikuti rangkaian disposisi yang ditampilkan
+        // user pada naskah parent.
         const disposisiRes: any = await apiGet(
-          `/DI/${encodeURIComponent(props.konsep.parentNaskahId)}`,
+          `/persuratan/naskah/${encodeURIComponent(props.konsep.parentNaskahId)}`,
           {},
           { skipCache: true },
         );
-        const flow = disposisiRes?.data?.flow || disposisiRes?.flow || [];
+        const flow = Array.isArray(disposisiRes?.data)
+          ? disposisiRes.data
+          : disposisiRes?.data?.flow || disposisiRes?.flow || [];
         const profilePersnum = String(profile?.persnum ?? '').trim();
         const profileName = String(profile?.nama ?? '').trim().toLowerCase();
         const currentDisposisi = Array.isArray(flow) ? flow[0] : null;
@@ -1160,6 +1165,8 @@ const openVerificationSelection = async () => {
         // Setiap pengirim pada node chain adalah pejabat yang meneruskan
         // disposisi ke bawah. Inilah rantai atasan yang sebenarnya untuk
         // SDE Massal, bukan seluruh AVP/VP dalam divisi yang sama.
+        // Gunakan seluruh pengirim pada flow disposisi awal sebagai sumber
+        // chain verifikator.
         const byRank = new Map<number, any>();
         (Array.isArray(flow) ? flow : [])
           .map((node: any) => node?.pengirim)

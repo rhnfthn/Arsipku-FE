@@ -54,8 +54,8 @@
         v-if="currentStep === 1"
         :key="folderId || 'new-sde-masal'"
         v-model="wizardState.konsep"
-        :parent-naskah-id="parentNaskahId"
-        :readonly="Boolean(folderId)"
+        :parent-naskah-id="props.parentNaskahId || wizardState.konsep?.parentNaskahId"
+        :readonly="Boolean(props.folderId)"
       />
 
       <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->

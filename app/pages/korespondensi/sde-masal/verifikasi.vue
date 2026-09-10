@@ -55,8 +55,16 @@
               </td>
             </tr>
             <tr v-else v-for="folder in paginatedRows" :key="folder.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-              <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[220px] truncate" :title="folder.judul">{{ folder.judul || '-' }}</td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate" :title="folder.pengirimName || ''">{{ folder.pengirimName || '-' }}</td>
+              <td
+                class="px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 max-w-[220px] truncate"
+                :class="isNewVerificationFolder(folder) ? 'font-bold' : 'font-medium'"
+                :title="folder.judul"
+              >{{ folder.judul || '-' }}</td>
+              <td
+                class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate"
+                :class="isNewVerificationFolder(folder) ? 'font-bold' : ''"
+                :title="folder.pengirimName || ''"
+              >{{ folder.pengirimName || '-' }}</td>
               <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="folder.klasifikasi || ''">
                 {{ folder.klasifikasi || '-' }}
                 <span v-if="folder.klasifikasiText" class="text-gray-400"> · {{ folder.klasifikasiText }}</span>
@@ -125,6 +133,7 @@ import type { Klasifikasi } from '~/types/klasifikasi';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useAuth } from '~/composables/useAuth';
+import { useNotifications } from '~/composables/useNotifications';
 import { sdeMasalStatusBadge, sdeMasalStatusLabel } from '~/utils/sde-masal-status';
 
 definePageMeta({ middleware: ['auth'] });
@@ -133,6 +142,7 @@ const toast = useToast();
 const { user, getProfile } = useAuth();
 const { fetchVerificationFolders } = useSdeMasal();
 const { getKlasifikasiList } = useKlasifikasi();
+const { notifications, fetchNotifications } = useNotifications();
 
 const rows = ref<any[]>([]);
 const loading = ref(false);
@@ -155,6 +165,12 @@ const breadcrumbs = [
 
 const filteredRows = computed(() => {
   let result = [...rows.value].sort((a, b) => {
+    // Perubahan yang belum dibuka selalu berada paling atas, termasuk folder
+    // yang baru masuk ke giliran verifikasi berikutnya.
+    const aChanged = isNewVerificationFolder(a);
+    const bChanged = isNewVerificationFolder(b);
+    if (aChanged !== bChanged) return aChanged ? -1 : 1;
+
     // Folder yang masih membutuhkan tindakan harus selalu didahulukan.
     // Setelah prioritas workflow sama, gunakan aktivitas terakhir agar
     // folder yang baru diterima atau baru berpindah giliran berada di atas.
@@ -246,7 +262,7 @@ const loadData = async () => {
 };
 
 const formatDate = (value: string | Date) =>
-  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 const statusLabel = sdeMasalStatusLabel;
 
@@ -255,9 +271,38 @@ const displayStatus = (folder: any) =>
 
 const statusBadge = sdeMasalStatusBadge;
 
+const isNewVerificationFolder = (folder: any) => {
+  if (
+    Number(folder?.waitingCount || 0) <= 0
+  ) {
+    return false;
+  }
+
+  const expectedAction = folder?.workflowRole === 'VERIFIKATOR'
+    ? 'OPEN_SDE_MASAL_VERIFIKASI'
+    : folder?.workflowRole === 'PENGIRIM_AKHIR'
+      ? 'OPEN_SDE_MASAL_FOLDER'
+      : null;
+  if (!expectedAction) return false;
+
+  return notifications.value.some((notification) => {
+    if (
+      notification.isRead ||
+      notification.data?.category !== 'SDE_MASAL' ||
+      notification.data?.action !== expectedAction
+    ) return false;
+    const notificationFolderId =
+      notification.data?.folderId || notification.data?.folder_id;
+    return String(notificationFolderId || '') === String(folder?.id || '');
+  });
+};
+
 onMounted(async () => {
   if (!user.value) await getProfile();
   await loadData();
+  // Pastikan status unread folder tersedia walaupun halaman dibuka langsung
+  // sebelum daftar notifikasi global selesai dimuat.
+  await fetchNotifications(1, 100, true);
   getKlasifikasiList().then((data) => { klasifikasiOptions.value = data; });
 });
 </script>
