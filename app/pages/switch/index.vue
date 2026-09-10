@@ -13,10 +13,30 @@
       >
         Perusahaan Default
       </button>
+
+      <button
+        class="px-4 py-2 rounded-lg text-sm text-white bg-primary hover:bg-primary-800 transition inline-flex items-center gap-1.5"
+        @click="openExportModal"
+      >
+        <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
+      </button>
     </div>
 
     <!-- Card -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700">
+      <!-- Search -->
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="relative max-w-sm">
+          <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari perusahaan atau kode..."
+            class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+      </div>
+
       <!-- Table -->
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
@@ -31,7 +51,7 @@
 
           <tbody>
             <tr
-              v-for="item in companies"
+              v-for="item in filteredCompanies"
               :key="item.relationSpId"
               class="border-b border-b-gray-200 dark:border-b-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
@@ -67,7 +87,7 @@
             </tr>
 
             <!-- Empty State -->
-            <tr v-if="!loading && companies.length === 0">
+            <tr v-if="!loading && filteredCompanies.length === 0">
               <td colspan="4" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                 Tidak ada perusahaan tersedia
               </td>
@@ -79,14 +99,26 @@
       <!-- Loading -->
       <div v-if="loading" class="p-6 text-center text-gray-500 dark:text-gray-400">Memuat data...</div>
     </div>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredCompanies.length"
+      title="Pilih Kolom Export Perusahaan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import type { BreadcrumbItem } from '@nuxt/ui';
 import { useSwitch } from '@/composables/useSwitch';
 import { useToast } from '#imports';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const toast = useToast();
 const items = [
@@ -96,6 +128,18 @@ const items = [
 
 const { companies, loading, switchingId, getAvailableCompanies, switchCompany, resetCompany } =
   useSwitch();
+
+const searchQuery = ref('');
+
+const filteredCompanies = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return companies.value;
+  return companies.value.filter(
+    (item: any) =>
+      (item.companyText || '').toLowerCase().includes(q) ||
+      (item.company || '').toLowerCase().includes(q)
+  );
+});
 
 // ✅ Deteksi apakah sedang dalam mode delegasi
 const isInDelegasiMode = computed(() => {
@@ -152,4 +196,49 @@ const onResetCompany = async () => {
 definePageMeta({
   middleware: 'auth'
 });
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'perusahaan', label: 'Perusahaan', desc: 'Nama perusahaan' },
+  { key: 'kode', label: 'Kode', desc: 'Kode perusahaan' },
+  { key: 'masaBerlaku', label: 'Masa Berlaku', desc: 'Periode masa berlaku' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredCompanies.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = filteredCompanies.value.map((item: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('perusahaan')) r['Perusahaan'] = item.companyText || '-';
+      if (selectedKeys.includes('kode')) r['Kode'] = item.company || '-';
+      if (selectedKeys.includes('masaBerlaku'))
+        r['Masa Berlaku'] = `${formatDate(item.startDate)} – ${formatDate(item.endDate)}`;
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pindah Perusahaan');
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `perusahaan-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export perusahaan:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>

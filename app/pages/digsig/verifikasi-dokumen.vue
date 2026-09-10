@@ -76,6 +76,15 @@
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
+
+        <!-- EXPORT BUTTON -->
+        <button
+          @click="openExportModal"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
+        >
+          <FileDown class="w-4 h-4" />
+          Export
+        </button>
       </div>
 
       <!-- LOADING (SKELETON) -->
@@ -1053,6 +1062,15 @@
         </div>
       </template>
     </USlideover>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredRows.length"
+      :title="$t('vd_export_title')"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
     </div>
   </div>
 </template>
@@ -1068,12 +1086,16 @@ import {
   Eye,
   ChevronDown,
   ArrowUpDown,
-  ChevronRight
+  ChevronRight,
+  FileDown
 } from 'lucide-vue-next';
 
 import { useDigsig } from '~/composables/useDigsig';
 import type { Verifikator } from '~/types/digsig';
 import { formatDateTimeNumeric as formatDate } from '~/utils/mail-helpers';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 definePageMeta({
   middleware: 'auth'
 });
@@ -1972,6 +1994,54 @@ watch(isOpenPreview, (open) => {
     }
   }
 });
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'tanggal', label: t('tanggal'), desc: 'Tanggal pembuatan dokumen' },
+  { key: 'nomor', label: t('nodokumen'), desc: 'Nomor dokumen' },
+  { key: 'perihal', label: t('perihal'), desc: 'Perihal dokumen' },
+  { key: 'penandatangan', label: t('sign'), desc: 'Jumlah penandatangan' },
+  { key: 'status', label: 'Status', desc: 'Status verifikasi dokumen' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredRows.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = filteredRows.value.map((doc: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('tanggal')) r[t('tanggal')] = formatDate(doc.createdAt);
+      if (selectedKeys.includes('nomor')) r[t('nodokumen')] = doc.nomorDokumen || '-';
+      if (selectedKeys.includes('perihal')) r[t('perihal')] = doc.perihal || '-';
+      if (selectedKeys.includes('penandatangan')) r[t('sign')] = doc.totalSigners ?? '-';
+      if (selectedKeys.includes('status')) r['Status'] = getStatusLabel(doc.status);
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t('vd_title'));
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `verifikasi_dokumen_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export verifikasi dokumen:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>
 <style scoped>
 /* Animasi dropdown filter — sama dengan halaman Delegasi */

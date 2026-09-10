@@ -39,6 +39,9 @@
         <div class="flex gap-2">
           <button @click="reload" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">Tampilkan</button>
           <button @click="resetFilter" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Reset</button>
+          <button @click="openExportModal" class="flex-1 h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center justify-center gap-1.5">
+            <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
+          </button>
         </div>
       </div>
     </div>
@@ -87,6 +90,15 @@
         </div>
       </div>
     </div>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="list.length"
+      title="Pilih Kolom Export Pemindahan Arsip Inaktif"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -94,6 +106,9 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useTransferInactiveFile } from '~/composables/useTransferInactiveFile';
 import type { TransferFilter, TransferInactiveFileStatus } from '~/types/transfer-inactive-file';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -178,6 +193,54 @@ const loadData = async () => {
 const reload = () => { filter.page = 1; loadData(); };
 const resetFilter = () => { filter.status = undefined; filter.search = ''; filter.startDate = ''; filter.page = 1; loadData(); };
 const goPage = (p: number) => { filter.page = p; loadData(); };
+
+// ─── Export Excel ──────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nomor', label: 'Nomor Usulan', desc: 'Nomor usulan pemindahan' },
+  { key: 'perihal', label: 'Perihal Arsip', desc: 'Perihal arsip' },
+  { key: 'pengusul', label: 'Pengusul', desc: 'Nama pengusul' },
+  { key: 'status', label: 'Status', desc: 'Status usulan' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal usulan' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (list.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = list.value.map((row: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('nomor')) r['Nomor Usulan'] = row.nomorUsulan || '-';
+      if (selectedKeys.includes('perihal')) r['Perihal Arsip'] = row.arsipPerihal || '-';
+      if (selectedKeys.includes('pengusul')) r['Pengusul'] = row.sekretarisName || '-';
+      if (selectedKeys.includes('status')) r['Status'] = statusLabel(row.status);
+      if (selectedKeys.includes('tanggal')) r['Tanggal'] = formatDate(row.tanggalUsulan);
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pemindahan Arsip Inaktif');
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `pemindahan-arsip-inaktif-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 onMounted(() => loadData());
 </script>
