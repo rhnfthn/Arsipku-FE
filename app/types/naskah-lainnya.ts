@@ -106,6 +106,8 @@ export interface NaskahListItem {
   // Sub-status legal per naskah (badge kolom Status di halaman Legal Drafting).
   // Dihitung BE getLegalDrafting: 'belum_dikirim' | 'menunggu_persetujuan' | 'revisi' | 'sudah_dikerjakan'.
   statusLegal?: string;
+  /** Status relasi user pada menu Persetujuan, independen dari tahapan naskah. */
+  approvalStatus?: Extract<StatusApprover, 'waiting' | 'verified' | 'rejected'>;
 }
 
 export interface DokumenFile {
