@@ -1,5 +1,5 @@
 // fe/app/composables/useNotifications.ts
-import { ref, readonly, computed } from 'vue';
+import { ref, readonly, computed, watch } from 'vue';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '~/composables/useAuth';
 import type {
@@ -150,6 +150,97 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
 export const useNotifications = () => {
   const { apiGet, apiPatch, apiDelete } = useApi();
   const toast = useToast();
+
+  // Satu browser hanya boleh memiliki satu kartu toast untuk isi notifikasi
+  // SDE Massal yang sama. Watcher ini menjadi lapisan terakhir untuk kasus
+  // beberapa listener/socket aktif bersamaan.
+  if (process.client) {
+    const browser = window as typeof window & {
+      __arsipkuSdeMasalToastDedupWatcher?: boolean;
+    };
+    if (!browser.__arsipkuSdeMasalToastDedupWatcher) {
+      browser.__arsipkuSdeMasalToastDedupWatcher = true;
+      watch(
+        toast.toasts,
+        (items) => {
+          const seen = new Set<string>();
+          let changed = false;
+          const deduplicated = items.filter((item) => {
+            const title = String(item.title || '').trim();
+            if (!title.startsWith('SDE Massal ')) return true;
+
+            const description = String(item.description || '')
+              .trim()
+              .replace(/\s+/g, ' ');
+            const key = `${title}|${description}`;
+            if (seen.has(key)) {
+              changed = true;
+              return false;
+            }
+            seen.add(key);
+            return true;
+          });
+
+          if (changed) {
+            // Hapus langsung dari state toast agar tidak meninggalkan kartu
+            // kosong selama animasi close.
+            toast.toasts.value = deduplicated;
+          }
+        },
+        { deep: true, immediate: true },
+      );
+    }
+  }
+
+  const recentToastKeys = useState<Record<string, number>>(
+    'notifications:sde-masal-toast-keys',
+    () => ({}),
+  );
+  const toastDedupMs = 5 * 60_000;
+
+  const getNotificationToastKey = (payload: NotificationItem): string => {
+    const data = payload.data || {};
+    const isSdeMasal = data.category === 'SDE_MASAL';
+    if (isSdeMasal) {
+      const folderId = String(data.folderId || data.folder_id || '').trim();
+      const status = String(data.status || '').trim();
+      // Untuk SDE Massal, satu folder pada status workflow yang sama hanya
+      // boleh menghasilkan satu toast meskipun event memiliki ID berbeda.
+      return `SDE_MASAL|${folderId || payload.body || payload.title || ''}|${status}`;
+    }
+    return `${payload.title || ''}|${payload.body || ''}`;
+  };
+
+  const shouldShowNotificationToast = (payload: NotificationItem): boolean => {
+    const key = getNotificationToastKey(payload);
+    const now = Date.now();
+
+    Object.entries(recentToastKeys.value).forEach(([cachedKey, timestamp]) => {
+      if (now - timestamp > toastDedupMs) delete recentToastKeys.value[cachedKey];
+    });
+
+    // Bersihkan toast SDE Massal yang sama bila event lama sudah lebih dulu
+    // masuk ke UI sebelum guard ini berjalan. Sisakan satu saja.
+    if (payload.data?.category === 'SDE_MASAL') {
+      const title = payload.title || 'Notifikasi baru';
+      const description = payload.body || undefined;
+      const sameToasts = toast.toasts.value.filter(
+        (item) => item.title === title && item.description === description,
+      );
+      if (sameToasts.length > 0) {
+        const duplicateIds = new Set(sameToasts.slice(1).map((item) => item.id));
+        toast.toasts.value = toast.toasts.value.filter(
+          (item) => !duplicateIds.has(item.id),
+        );
+        recentToastKeys.value[key] = now;
+        return false;
+      }
+    }
+
+    if (recentToastKeys.value[key]) return false;
+    recentToastKeys.value[key] = now;
+    return true;
+  };
 
   // ============================================================
   // REST
@@ -440,12 +531,24 @@ export const useNotifications = () => {
         const exists = notifications.value.some((n) => n.id === payload.id);
         if (!exists) {
           notifications.value.unshift(payload);
-          toast.add({
-            title: payload.title || 'Notifikasi baru',
-            description: payload.body || undefined,
-            color: 'neutral',
-            icon: 'i-lucide-bell',
-          });
+          const isSdeMasal = payload.data?.category === 'SDE_MASAL';
+          const isReturned = payload.data?.status === 'DIKEMBALIKAN';
+          const isVerification = payload.data?.action === 'OPEN_SDE_MASAL_VERIFIKASI';
+          if (shouldShowNotificationToast(payload)) {
+            toast.add({
+              id: `notification:${getNotificationToastKey(payload)}`,
+              title: payload.title || 'Notifikasi baru',
+              description: payload.body || undefined,
+              color: isReturned ? 'warning' : isSdeMasal ? 'info' : 'neutral',
+              icon: isReturned
+                ? 'i-lucide-rotate-ccw'
+                : isVerification
+                  ? 'i-lucide-folder-check'
+                  : isSdeMasal
+                    ? 'i-lucide-folder'
+                    : 'i-lucide-bell',
+            });
+          }
           unreadCount.value += 1;
           if (payload.data?.category === 'SDE_MASAL') {
             sdeMasalUnreadCount.value += 1;
@@ -560,6 +663,7 @@ export const useNotifications = () => {
   const destroy = () => {
     disconnectSocket();
     activeToken = null;
+    recentToastKeys.value = {};
     resetFetchGuards();
     notifications.value = [];
     unreadCount.value = 0;
