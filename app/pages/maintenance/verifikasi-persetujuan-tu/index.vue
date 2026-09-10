@@ -104,10 +104,12 @@
         </div>
         <!-- Export Button -->
         <button
-          @click="exportCSV"
-          class="h-10 shrink-0 inline-flex items-center gap-2 px-4 text-sm font-medium rounded-lg bg-[#457fb6] text-white hover:bg-[#3a6d9c] transition-colors"
+          @click="onExport"
+          :disabled="isExporting"
+          class="h-10 shrink-0 inline-flex items-center gap-2 px-4 text-sm font-medium rounded-lg bg-[#457fb6] text-white hover:bg-[#3a6d9c] transition-colors disabled:opacity-60"
         >
-          <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
+          <UIcon v-if="isExporting" name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
+          <UIcon v-else name="i-lucide-download" class="w-4 h-4" /> Export
         </button>
       </div>
 
@@ -180,6 +182,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="total"
+      title="Pilih Kolom Export Verifikasi Persetujuan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -188,8 +200,25 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useApi } from '~/composables/useApi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
 
 definePageMeta({ middleware: ['auth'] })
+
+const showExportModal = ref(false)
+const isExporting = ref(false)
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'arsipPerihal', label: 'Nama Berkas', desc: 'Perihal atau nama berkas' },
+  { key: 'arsipKode', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'nomorUsulan', label: 'Nomor Usulan', desc: 'Nomor berkas usulan' },
+  { key: 'arsipKlasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'tuName', label: 'Unit Dokumen', desc: 'Nama unit tata naskah' },
+  { key: 'tanggalDikirim', label: 'Tgl Kirim', desc: 'Tanggal dikirim' },
+  { key: 'status', label: 'Status', desc: 'Status verifikasi usulan' }
+])
 
 const { fetchAtasanTuList } = useTuVerifikasi()
 const { apiGet } = useApi()
@@ -279,25 +308,53 @@ const formatDate = (d: string) => {
   return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-const exportCSV = () => {
-  const headers = ['Nama Berkas', 'Kode Berkas', 'Nomor Usulan', 'Klasifikasi', 'Unit Dokumen', 'Tgl Kirim', 'Status']
-  const rows = list.value.map((item) => [
-    `"${(item.arsipPerihal ?? '').replace(/"/g, '""')}"`,
-    `"${(item.arsipKode ?? '').replace(/"/g, '""')}"`,
-    `"${(item.nomorUsulan ?? '').replace(/"/g, '""')}"`,
-    `"${(item.arsipKlasifikasi ?? '').replace(/"/g, '""')}"`,
-    `"${(item.tuName ?? '').replace(/"/g, '""')}"`,
-    `"${formatDate(item.tanggalDikirim ?? '')}"`,
-    `"${statusLabel(item.status)}"`,
-  ].join(','))
-  const csv = [headers.join(','), ...rows].join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `verifikasi-persetujuan-tu-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+const onExport = () => {
+  if (list.value.length === 0) {
+    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' })
+    return
+  }
+  showExportModal.value = true
+}
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (list.value.length === 0 || selectedKeys.length === 0) return
+  isExporting.value = true
+  try {
+    const data = list.value.map((item, idx) => {
+      const row: Record<string, any> = {}
+      if (selectedKeys.includes('No')) row['No'] = idx + 1
+      if (selectedKeys.includes('arsipPerihal')) row['Nama Berkas'] = item.arsipPerihal || '-'
+      if (selectedKeys.includes('arsipKode')) row['Kode Berkas'] = item.arsipKode || '-'
+      if (selectedKeys.includes('nomorUsulan')) row['Nomor Usulan'] = item.nomorUsulan || '-'
+      if (selectedKeys.includes('arsipKlasifikasi')) row['Klasifikasi'] = item.arsipKlasifikasi || '-'
+      if (selectedKeys.includes('tuName')) row['Unit Dokumen'] = item.tuName || '-'
+      if (selectedKeys.includes('tanggalDikirim')) row['Tgl Kirim'] = formatDate(item.tanggalDikirim ?? '')
+      if (selectedKeys.includes('status')) row['Status'] = statusLabel(item.status)
+      return row
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }))
+    worksheet['!cols'] = colWidths
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi Persetujuan TU')
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    saveAs(blob, `verifikasi_persetujuan_tu_${new Date().toISOString().slice(0, 10)}.xlsx`)
+
+    showExportModal.value = false
+    useToast().add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' })
+  } catch (err) {
+    console.error('Export verifikasi persetujuan TU error:', err)
+    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' })
+  } finally {
+    isExporting.value = false
+  }
 }
 
 const statusLabel = (s: string) => {

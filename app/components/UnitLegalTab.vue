@@ -15,57 +15,53 @@
     </div>
 
     <!-- Table -->
-    <div v-else class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-      <table class="w-full text-sm">
-        <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
-          <tr>
-            <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">No</th>
-            <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Nama</th>
-            <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Jabatan</th>
-            <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Unit</th>
-            <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Level</th>
-            <th class="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Aktif</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-          <tr
-            v-for="(person, idx) in persons"
-            :key="person.positionId"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+    <div v-else class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+      <DataTable
+        :columns="columns"
+        :rows="persons"
+        :skeleton-rows="5"
+        empty-message="Belum ada data Unit Legal."
+      >
+        <template #cell-no="{ index }">
+          {{ index + 1 }}
+        </template>
+        <template #cell-nama="{ row }">
+          <div class="flex items-center gap-2">
+            <span class="font-medium text-gray-900 dark:text-white">{{ row.nama }}</span>
+            <UBadge v-if="row.chief" color="primary" size="sm">Chief</UBadge>
+          </div>
+        </template>
+        <template #cell-jabatan="{ row }">
+          <span class="text-gray-600 dark:text-gray-300">{{ row.jabatan }}</span>
+        </template>
+        <template #cell-unitName="{ row }">
+          <span class="text-gray-600 dark:text-gray-300">{{ row.unitName }}</span>
+        </template>
+        <template #cell-level="{ row }">
+          <span class="text-gray-500">L{{ row.level }}</span>
+        </template>
+        <template #cell-aktif="{ row }">
+          <button
+            type="button"
+            class="mx-auto flex"
+            @click="togglePerson(row)"
+            :disabled="togglingId === row.positionId"
+            :class="[
+              'relative inline-flex h-7 w-13 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+              row.isActive
+                ? 'bg-primary'
+                : 'bg-gray-200 dark:bg-gray-600',
+            ]"
           >
-            <td class="px-4 py-3 text-gray-500">{{ idx + 1 }}</td>
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <span class="font-medium text-gray-900 dark:text-white">{{ person.nama }}</span>
-                <UBadge v-if="person.chief" color="primary" size="sm">Chief</UBadge>
-              </div>
-            </td>
-            <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ person.jabatan }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ person.unitName }}</td>
-            <td class="px-4 py-3 text-gray-500">L{{ person.level }}</td>
-            <td class="px-4 py-3 text-center">
-              <button
-                type="button"
-                @click="togglePerson(person)"
-                :disabled="togglingId === person.positionId"
-                :class="[
-                  'relative inline-flex h-7 w-13 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                  person.isActive
-                    ? 'bg-primary'
-                    : 'bg-gray-200 dark:bg-gray-600',
-                ]"
-              >
-                <span
-                  :class="[
-                    'pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out',
-                    person.isActive ? 'translate-x-6' : 'translate-x-0',
-                  ]"
-                />
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <span
+              :class="[
+                'pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out',
+                row.isActive ? 'translate-x-6' : 'translate-x-0',
+              ]"
+            />
+          </button>
+        </template>
+      </DataTable>
     </div>
   </div>
 </template>
@@ -77,6 +73,16 @@ const toast = useToast();
 const persons = ref([]);
 const loading = ref(true);
 const togglingId = ref('');
+
+// Kolom DataTable Unit Legal — konsisten dengan tabel lain (header primary).
+const columns = [
+  { key: 'no', label: 'No' },
+  { key: 'nama', label: 'Nama' },
+  { key: 'jabatan', label: 'Jabatan' },
+  { key: 'unitName', label: 'Unit' },
+  { key: 'level', label: 'Level' },
+  { key: 'aktif', label: 'Aktif' },
+];
 
 async function fetchPersons() {
   loading.value = true;

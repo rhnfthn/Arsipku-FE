@@ -232,6 +232,7 @@
 
       <!-- Table -->
       <DataTable
+        compact
         :columns="columns"
         :rows="tableRows"
         :loading="pending"
@@ -244,43 +245,64 @@
         @sort="handleSort"
       >
         <template #cell-nomor="{ row }">
-          <button
-            class="font-mono text-xs text-primary-600 hover:underline"
-            @click="openAction(row)"
-          >
-            {{ row.nomor }}
-          </button>
-        </template>
-        <template #cell-jenis="{ row }">
-          <span
-            class="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-            >{{ row.jenis }}</span
-          >
-        </template>
-        <template #cell-perihal="{ row }">
-          <div
-            class="text-sm text-gray-700 dark:text-gray-300 block max-w-xs truncate"
-            :title="row.perihal"
-          >
-            {{ row.perihal }}
+          <div class="min-w-0">
+            <div class="flex min-w-0 items-center gap-1.5">
+              <span
+                class="shrink-0 rounded bg-primary-50 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+              >
+                {{ row.jenis }}
+              </span>
+              <button
+                class="min-w-0 truncate font-mono text-xs text-primary-600 hover:underline"
+                :title="row.nomor"
+                @click="goDetail(row)"
+              >
+                {{ row.nomor }}
+              </button>
+            </div>
+            <div
+              class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400"
+              :title="row.perihal"
+            >
+              {{ row.perihal }}
+            </div>
+            <div
+              v-if="row.tahapanRaw === 'perlu_perbaikan'"
+              class="truncate text-[11px] text-orange-500"
+            >
+              Perlu revisi — lihat detail naskah.
+            </div>
           </div>
-          <div v-if="row.tahapanRaw === 'perlu_perbaikan'" class="text-xs text-orange-500">
-            Perlu revisi — lihat detail naskah.
-          </div>
+        </template>
+        <template #cell-pemrakarsa="{ row }">
+          <span class="block truncate text-xs" :title="row.pemrakarsa">{{ row.pemrakarsa }}</span>
+        </template>
+        <template #cell-konseptor="{ row }">
+          <span class="block truncate text-xs" :title="row.konseptor">{{ row.konseptor }}</span>
         </template>
         <template #cell-tahapan="{ row }">
-          <StatusBadge :status="row.tahapan" />
+          <StatusBadge
+            :status="row.tahapan"
+            :title="row.tahapan"
+            class="max-w-full overflow-hidden whitespace-nowrap !px-1.5 !text-[11px]"
+          />
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :status="approvalStatusKey(row.tahapanRaw)" />
+          <StatusBadge
+            :status="row.approvalStatus"
+            class="max-w-full overflow-hidden whitespace-nowrap !px-1.5 !text-[11px]"
+          />
         </template>
         <template #cell-waktu="{ row }">
-          <span class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          <span
+            class="block truncate text-xs text-gray-500 dark:text-gray-400"
+            :title="row.waktuLabel"
+          >
             {{ row.waktuLabel }}
           </span>
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="openAction(row)"
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)"
             >Detail</UButton
           >
         </template>
@@ -384,6 +406,16 @@
         </div>
       </div>
     </Modal>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems || persetujuan.length"
+      title="Pilih Kolom Export Persetujuan Naskah"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -391,11 +423,22 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
-import { downloadCsv } from '~/utils/csv-export';
-import type { NaskahListItem, Tahapan } from '~/types/naskah-lainnya';
 import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'nomor', label: 'Nomor Naskah', desc: 'Nomor naskah dinas' },
+  { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Nama pembuat/pemrakarsa' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal / subjek naskah' },
+  { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan persetujuan' },
+  { key: 'status', label: 'Status', desc: 'Status persetujuan' }
+]);
 
 const {
   persetujuan,
@@ -488,31 +531,67 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   ditolak: 'Ditolak',
   dibatalkan: 'Dibatalkan',
 };
-const tahapanOptions = [
-  { label: 'Semua Tahapan', value: '' },
-  ...Object.keys(TAHAPAN_STEP).map((value) => ({
-    label: tahapanFilterLabels[value as Tahapan] ?? value.replace(/_/g, ' '),
-    value,
-  })),
+const persetujuanTahapanOrder: Tahapan[] = [
+  'persetujuan',
+  'legal_drafting',
+  'evaluasi',
+  'persetujuan_direksi',
+  'blanko_verbal',
+  'tanda_tangan',
+  'selesai',
+  'perlu_perbaikan',
+  'ditolak',
+  'dibatalkan',
 ];
+// Menu Persetujuan dapat berisi riwayat naskah yang telah bergerak ke tahap
+// berikutnya. Dropdown hanya menampilkan tahapan yang benar-benar ada pada
+// hasil filter status user saat ini.
+const tahapanOptions = computed(() => {
+  const available = new Set(persetujuan.value.map((row) => row.tahapan));
+  const ordered = persetujuanTahapanOrder.filter((value) => available.has(value));
+  const additional = [...available].filter((value) => !ordered.includes(value));
+  return [
+    { label: 'Semua Tahapan', value: '' },
+    ...[...ordered, ...additional].map((value) => ({
+      label: tahapanFilterLabels[value] ?? value.replace(/_/g, ' '),
+      value,
+    })),
+  ];
+});
 const filteredTahapanOptions = computed(() => {
   const q = tahapanFilterSearch.value.trim().toLowerCase();
-  if (!q) return tahapanOptions;
-  return tahapanOptions.filter((opt) =>
+  if (!q) return tahapanOptions.value;
+  return tahapanOptions.value.filter((opt) =>
     [opt.label, opt.value].some((v) => v.toLowerCase().includes(q))
   );
 });
 
 const columns = [
-  { key: 'nomor', label: 'Nomor', sortable: true },
-  { key: 'jenis', label: 'Jenis', sortable: true },
-  { key: 'pemrakarsa', label: 'Pemrakarsa', sortable: true },
-  { key: 'konseptor', label: 'Konseptor', sortable: true },
-  { key: 'perihal', label: 'Perihal', sortable: true },
-  { key: 'tahapan', label: 'Tahapan', sortable: true },
-  { key: 'status', label: 'Status', sortable: true },
-  { key: 'waktu', label: 'Waktu', sortable: true },
-  { key: 'aksi', label: 'Aksi' },
+  { key: 'nomor', label: 'Naskah', sortable: true, class: 'w-[27%]', headerClass: 'w-[27%]' },
+  {
+    key: 'pemrakarsa',
+    label: 'Pemrakarsa',
+    sortable: true,
+    class: 'w-[15%]',
+    headerClass: 'w-[15%]',
+  },
+  {
+    key: 'konseptor',
+    label: 'Konseptor',
+    sortable: true,
+    class: 'hidden xl:table-cell w-[13%]',
+    headerClass: 'hidden xl:table-cell w-[13%]',
+  },
+  { key: 'tahapan', label: 'Tahapan', sortable: true, class: 'w-[14%]', headerClass: 'w-[14%]' },
+  { key: 'status', label: 'Status', sortable: true, class: 'w-[12%]', headerClass: 'w-[12%]' },
+  {
+    key: 'waktu',
+    label: 'Waktu',
+    sortable: true,
+    class: 'hidden lg:table-cell w-[12%]',
+    headerClass: 'hidden lg:table-cell w-[12%]',
+  },
+  { key: 'aksi', label: 'Aksi', class: 'w-[7%]', headerClass: 'w-[7%]' },
 ];
 
 // ── Custom Dropdown Toolbar State (pola berkas-saya) ──────────────
@@ -540,6 +619,9 @@ function toggleFilterStatus() {
   openFilterTahapan.value = false;
 }
 function selectFilterStatus(v: 'semua' | 'menunggu' | 'disetujui' | 'ditolak') {
+  // Tahapan yang tersedia berbeda untuk setiap status approval.
+  filterTahapan.value = '';
+  tahapanFilterSearch.value = '';
   filterStatus.value = v;
   openFilterStatus.value = false;
 }
@@ -572,7 +654,7 @@ function selectFilterTahapan(value: string) {
   openFilterTahapan.value = false;
 }
 const tahapanLabel = computed(
-  () => tahapanOptions.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
+  () => tahapanOptions.value.find((o) => o.value === filterTahapan.value)?.label ?? 'Semua Tahapan'
 );
 
 function handleDocumentClick(e: MouseEvent) {
@@ -611,15 +693,15 @@ const filteredRows = computed(() => {
 // 'waiting' — komparasi row.tahapan (sudah di-spasi-kan) vs 'perlu_perbaikan'
 // (underscore) selalu false → naskah selesai pun tampil "Menunggu".
 const APPROVAL_STATUS_LABEL: Record<string, string> = {
-  selesai: 'Selesai',
-  perlu_perbaikan: 'Perlu Perbaikan',
-  ditolak: 'Ditolak',
-  dibatalkan: 'Dibatalkan',
+  waiting: 'Menunggu',
+  verified: 'Disetujui',
+  rejected: 'Ditolak',
 };
-function approvalStatusKey(tahapanRaw: string): string {
-  if (tahapanRaw === 'selesai') return 'selesai';
-  if (tahapanRaw === 'perlu_perbaikan') return 'perlu_perbaikan';
-  if (tahapanRaw === 'ditolak' || tahapanRaw === 'dibatalkan') return 'ditolak';
+function approvalStatusKey(status?: string): string {
+  if (status === 'waiting' || status === 'verified' || status === 'rejected') return status;
+  // Backward compatibility ketika FE lebih dulu ter-deploy daripada BE.
+  if (filterStatus.value === 'disetujui') return 'verified';
+  if (filterStatus.value === 'ditolak') return 'rejected';
   return 'waiting';
 }
 
@@ -633,7 +715,8 @@ const displayRows = computed(() =>
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
-    status: APPROVAL_STATUS_LABEL[r.tahapan] ?? 'Menunggu',
+    approvalStatus: approvalStatusKey(r.approvalStatus),
+    status: APPROVAL_STATUS_LABEL[approvalStatusKey(r.approvalStatus)] ?? 'Menunggu',
     // Timestamp untuk sort paling baru/lama (kolom Waktu).
     waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
     waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
@@ -682,74 +765,10 @@ function handleSort(key: string) {
 
 // ── Aksi ──────────────────────────────────────────────────────────
 
-async function openAction(row: any) {
+function goDetail(row: any) {
   const n = persetujuan.value.find((i) => i.id === row.id);
   if (!n) return;
-  // Naskah pada tab Disetujui adalah riwayat aksi user. Jangan buka kembali
-  // workspace approval agar approver tidak tampak bisa memproses ulang.
-  if (filterStatus.value === 'disetujui') {
-    await navigateTo(`/naskah-lainnya/${n.id}`);
-    return;
-  }
-  // Defensive check untuk daftar yang status filter-nya stale: backend adalah
-  // sumber kebenaran giliran. Jika user tak punya aksi aktif, buka detail biasa.
-  try {
-    await fetchDetail(n.id);
-    const activeActions = detail.value?.availableActions ?? [];
-    if (
-      ![
-        'setuju',
-        'tolak',
-        'kembalikan',
-        'paraf',
-        'tanda-tangan',
-        'tolak-tanda-tangan',
-        'lanjut-persetujuan',
-        'teruskan-persetujuan',
-        'selesai-persetujuan',
-        'kirim-approval-legal',
-      ].some((a) => activeActions.includes(a as any))
-    ) {
-      await navigateTo(`/naskah-lainnya/${n.id}`);
-      return;
-    }
-  } catch {
-    // Bila detail gagal dimuat, navigasi tahap di bawah tetap menjadi fallback.
-  }
-  if (n.tahapan === 'legal_drafting') {
-    navigateTo(`/naskah-lainnya/${n.id}/legal-drafting`);
-    return;
-  }
-  if (n.tahapan === 'blanko_verbal') {
-    navigateTo(`/naskah-lainnya/${n.id}/blanko-verbal`);
-    return;
-  }
-  if (n.tahapan === 'persetujuan_direksi') {
-    navigateTo(`/naskah-lainnya/${n.id}/persetujuan-direksi`);
-    return;
-  }
-  if (
-    n.tahapan === 'evaluasi' ||
-    n.tahapan === 'persetujuan_lanjutan' ||
-    n.tahapan === 'evaluasi_final'
-  ) {
-    navigateTo(`/naskah-lainnya/${n.id}/evaluasi`);
-    return;
-  }
-  // Penandatangan cukup meninjau lalu menyetujui/menolak dari halaman detail;
-  // tidak masuk workspace upload/revisi.
-  if (
-    n.tahapan === 'tanda_tangan' ||
-    n.tahapan === 'tanda_tangan_pemrakarsa' ||
-    n.tahapan === 'tanda_tangan_legal' ||
-    n.tahapan === 'tanda_tangan_pejabat'
-  ) {
-    navigateTo(`/naskah-lainnya/${n.id}`);
-    return;
-  }
-  // POV approval pemrakarsa punya halaman kerja sendiri agar approver bisa
-  // meninjau dokumen dan stage revisi opsional sebelum setuju/tolak/kembalikan.
-  navigateTo(`/naskah-lainnya/${n.id}/persetujuan`);
+  navigateTo(`/naskah-lainnya/${n.id}`);
 }
 
 async function doSetuju() {
@@ -803,9 +822,7 @@ async function firstWaitingId(): Promise<string> {
   return detail.value?.approval.find((a) => a.status === 'waiting')?.id ?? '';
 }
 
-// ── Export CSV ───────────────────────────────────────────────────
-
-async function exportData() {
+function exportData() {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
@@ -814,23 +831,43 @@ async function exportData() {
     });
     return;
   }
+  showExportModal.value = true;
+}
+
+function handleExportConfirm(selectedKeys: string[]) {
+  const rows = displayRows.value;
+  if (!rows.length || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const rows = displayRows.value;
-    if (!rows.length) {
-      toast.add({
-        title: 'Tidak ada data',
-        description: 'Tidak ada data untuk diexport',
-        color: 'warning',
-      });
-      return;
-    }
-    const headers = ['Naskah', 'Pemrakarsa', 'Perihal', 'Tahapan', 'Status'];
-    const csvRows = rows.map((r) => [r.nomor, r.pemrakarsa, r.perihal, r.tahapan, r.status]);
-    downloadCsv(`persetujuan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+    const data = rows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomor')) row['Nomor Naskah'] = r.nomor || '-';
+      if (selectedKeys.includes('pemrakarsa')) row['Pemrakarsa'] = r.pemrakarsa || '-';
+      if (selectedKeys.includes('perihal')) row['Perihal'] = r.perihal || '-';
+      if (selectedKeys.includes('tahapan')) row['Tahapan'] = r.tahapan || '-';
+      if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Persetujuan Naskah');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `persetujuan_naskah_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({
       title: 'Berhasil',
-      description: `${rows.length} data berhasil diexport`,
+      description: `${data.length} data berhasil diexport`,
       color: 'success',
     });
   } catch (e) {

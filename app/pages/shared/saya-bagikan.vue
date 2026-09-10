@@ -2,8 +2,10 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { RotateCcw, ChevronDown, Search } from 'lucide-vue-next';
 import SharedByMeTab from '~/components/shared/SharedByMeTab.vue';
-import { downloadCsv } from '~/utils/csv-export';
 import { formatShortDate } from '~/utils/mail-helpers';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 definePageMeta({
   layout: 'default',
@@ -13,6 +15,18 @@ definePageMeta({
 const { t } = useI18n();
 useHead({ title: () => t('share_title') });
 const toast = useToast();
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal naskah yang dibagikan' },
+  { key: 'jenis', label: 'Jenis', desc: 'Jenis naskah' },
+  { key: 'nomor', label: 'Nomor Naskah', desc: 'Nomor surat/naskah' },
+  { key: 'penerima', label: 'Dibagikan Kepada', desc: 'Daftar penerima share' },
+  { key: 'akses', label: 'Akses', desc: 'Tipe akses / masa berlaku' },
+  { key: 'status', label: 'Status', desc: 'Status aktif atau berakhir' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal dibagikan' }
+]);
 
 const {
   sharedByMe,
@@ -128,11 +142,16 @@ const resetFilters = () => {
 
 /** Export all data to CSV (fetch with limit = total, then format). */
 const isExporting = ref(false);
-const exportData = async () => {
-  if (pagination.total === 0) {
+const exportData = () => {
+  if (pagination.total === 0 && sharedByMe.value.length === 0) {
     toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if ((pagination.total === 0 && sharedByMe.value.length === 0) || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
     // Fetch SEMUA data (bukan hanya halaman saat ini) dengan filter yang sama
@@ -149,18 +168,36 @@ const exportData = async () => {
       toast.add({ title: t('share_tidak_ada_data'), description: t('share_tidak_ada_export'), color: 'warning' });
       return;
     }
-    const headers = [t('share_perihal'), t('share_jenis'), t('share_nomor'), t('share_dibagikan_kepada'), t('share_akses'), t('share_status'), t('share_tanggal')];
-    const csvRows = rows.map((s: any) => [
-      s.naskahPerihal || t('share_tanpa_perihal'),
-      s.naskahJenis || '-',
-      s.naskahNomor || '-',
-      s.recipients?.map((r: any) => r.nama).join('; ') || '-',
-      s.accessType === 'SEKALI_LIHAT' ? t('share_sekali_lihat') : `${s.durationDays || '-'} ${t('share_hari')}`,
-      s.status === 'AKTIF' ? t('share_aktif') : t('share_berakhir'),
-      formatShortDate(s.createdAt),
-    ]);
-    downloadCsv(`saya-bagikan_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
-    toast.add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: csvRows.length }), color: 'success' });
+
+    const data = rows.map((s: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('perihal')) row[t('share_perihal')] = s.naskahPerihal || t('share_tanpa_perihal');
+      if (selectedKeys.includes('jenis')) row[t('share_jenis')] = s.naskahJenis || '-';
+      if (selectedKeys.includes('nomor')) row[t('share_nomor')] = s.naskahNomor || '-';
+      if (selectedKeys.includes('penerima')) row[t('share_dibagikan_kepada')] = s.recipients?.map((r: any) => r.nama).join('; ') || '-';
+      if (selectedKeys.includes('akses')) row[t('share_akses')] = s.accessType === 'SEKALI_LIHAT' ? t('share_sekali_lihat') : `${s.durationDays || '-'} ${t('share_hari')}`;
+      if (selectedKeys.includes('status')) row[t('share_status')] = s.status === 'AKTIF' ? t('share_aktif') : t('share_berakhir');
+      if (selectedKeys.includes('tanggal')) row[t('share_tanggal')] = formatShortDate(s.createdAt);
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Saya Bagikan');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `saya_bagikan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    toast.add({ title: t('share_berhasil'), description: t('share_berhasil_export', { count: data.length }), color: 'success' });
     // Reload halaman saat ini
     await loadData();
   } catch (e) {
@@ -543,6 +580,16 @@ onMounted(() => { loadData(); });
         </div>
       </div>
     </Teleport>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="pagination.total || sharedByMe.length"
+      title="Pilih Kolom Export Saya Bagikan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 

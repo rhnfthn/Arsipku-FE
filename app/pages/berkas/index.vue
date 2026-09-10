@@ -35,7 +35,8 @@
           />
         </div>
         <button
-          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs"
+          @click="openExportModal"
+          class="flex items-center gap-2 bg-primary text-white h-8 px-6 rounded-lg hover:px-5 text-xs transition"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -196,6 +197,15 @@
           </div>
         </div>
       </Modal>
+
+      <ExportColumnModal
+        v-model="showExportModal"
+        :columns="exportColumns"
+        :total-rows="filteredData.length"
+        title="Pilih Kolom Export Berkas"
+        :is-exporting="isExporting"
+        @confirm="handleExportConfirm"
+      />
     </div>
   </div>
 </template>
@@ -205,8 +215,11 @@ import { ref, computed, onMounted } from 'vue';
 import { Search, FileDown, RotateCcw, Trash2, Pencil, Plus } from 'lucide-vue-next';
 import type { BreadcrumbItem } from '@nuxt/ui';
 import ConfirmPopup from '~/components/ConfirmPopup.vue';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useBerkas } from '~/composables/useBerkas';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 const { getBerkasList, createBerkas, deleteBerkas, updateBerkas, getBerkasById } = useBerkas();
 
 const { hasPermission } = useAuth();
@@ -464,4 +477,55 @@ const confirmDelete = async () => {
 
 const showDeletePopup = ref(false);
 const deleteId = ref<number | null>(null);
+
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode dan nama klasifikasi arsip' },
+  { key: 'berkas', label: 'Judul Berkas', desc: 'Nama judul berkas' },
+  { key: 'lokasi', label: 'Lokasi', desc: 'Lokasi penyimpanan berkas' },
+  { key: 'tanggal', label: 'Tanggal Dibuat', desc: 'Tanggal pembuatan berkas' }
+]);
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredData.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const excelData = filteredData.value.map((item: any, idx: number) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('klasifikasi'))
+        r['Klasifikasi'] = item.klasifikasi_teks
+          ? `${item.klasifikasi} - ${item.klasifikasi_teks}`
+          : item.klasifikasi;
+      if (selectedKeys.includes('berkas')) r['Judul Berkas'] = item.berkas || '-';
+      if (selectedKeys.includes('lokasi')) r['Lokasi'] = item.lokasi || '-';
+      if (selectedKeys.includes('tanggal')) r['Tanggal Dibuat'] = item.tanggal || '-';
+      return r;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Berkas');
+
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `berkas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+  } catch (error) {
+    console.error('Gagal export berkas:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
 </script>

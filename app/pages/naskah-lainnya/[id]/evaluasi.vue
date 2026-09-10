@@ -51,6 +51,7 @@
         :area-description="workspaceAreaDescription"
         :catatan-title="workspaceNoteTitle"
         :catatan-placeholder="workspaceNotePlaceholder"
+        :show-catatan="!canDecideEvaluation"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
@@ -65,7 +66,10 @@
            agar approver melihat dokumen pendukung keputusan sebelum menyetujui. -->
       <div v-if="sheetDokumen.length" class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
-          <UIcon name="i-lucide-file-check-2" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <UIcon
+            name="i-lucide-file-check-2"
+            class="h-4 w-4 text-primary-600 dark:text-primary-400"
+          />
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Dokumen Sheet</h3>
           <span class="text-xs text-gray-400">(Blanko Verbal / Lembar Persetujuan Direksi)</span>
         </div>
@@ -84,11 +88,7 @@
                 PDF · {{ sheetDokumenTipeLabel(doc.tipe) }}
               </p>
             </div>
-            <UButton
-              size="xs"
-              variant="ghost"
-              icon="i-lucide-eye"
-              @click="previewSheetDokumen(doc)"
+            <UButton size="xs" variant="ghost" icon="i-lucide-eye" @click="previewSheetDokumen(doc)"
               >Preview</UButton
             >
           </div>
@@ -345,21 +345,22 @@
       </Modal>
     </Teleport>
 
-    <ConfirmModal
+    <VerifyActionModal
       v-model="showContinueConfirmation"
-      title="Lanjut Persetujuan?"
+      variant="approve"
+      title="Lanjut Persetujuan"
       :description="continueConfirmationDescription"
-      confirm-text="Lanjut Persetujuan"
-      loading-text="Memproses..."
-      variant="primary"
-      :loading="activeAction === 'decision'"
-      @confirm="submitEvaluationDecision('lanjut_persetujuan')"
+      note-placeholder="Catatan persetujuan (opsional)"
+      confirm-label="Lanjut Persetujuan"
+      :saving="activeAction === 'decision'"
+      @confirm="submitContinueDecision"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import type { ApprovalItem, RevisionFilePair } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: 'auth' });
@@ -399,6 +400,7 @@ const selectedRecipientId = ref<string | null>(null);
 const stagedRevision = ref<RevisionFilePair>({ docx: null });
 const showEvaluationRejectOptions = ref(false);
 const showContinueConfirmation = ref(false);
+const continueNote = ref('');
 const rejectionReason = ref('');
 const pendingDecision = ref<'legal_drafting_ulang' | 'batalkan' | null>(null);
 
@@ -568,7 +570,7 @@ const rejectionModalTitle = computed(() =>
 const rejectionModalDescription = computed(() =>
   pendingDecision.value === 'batalkan'
     ? 'Naskah akan dibatalkan dan tidak dilanjutkan. Tuliskan alasan pembatalan.'
-    : 'Naskah dikembalikan ke konseptor pemrakarsa untuk menyunting ulang form awal. Tuliskan alasan pengembalian.'
+    : 'Naskah akan dikembalikan langsung ke tahap Legal Drafting untuk diperbaiki oleh Unit Legal. Tuliskan alasan pengembalian.'
 );
 
 const continueConfirmationDescription = computed(() =>
@@ -580,6 +582,11 @@ const continueConfirmationDescription = computed(() =>
 const openContinueConfirmation = () => {
   if (!canDecideEvaluation.value || isBusy.value) return;
   showContinueConfirmation.value = true;
+};
+
+const submitContinueDecision = (note: string) => {
+  continueNote.value = note;
+  submitEvaluationDecision('lanjut_persetujuan');
 };
 
 const openRejection = (decision: 'legal_drafting_ulang' | 'batalkan') => {
@@ -614,12 +621,14 @@ const submitEvaluationDecision = async (
         ? 'reject-legal'
         : 'reject-cancel';
   try {
-    if (!(await commitRevision())) return;
+    // Pembatalan bersifat terminal. Revisi yang baru di-stage tidak perlu
+    // diunggah karena naskah tidak akan dapat diperbaiki atau dilanjutkan lagi.
+    if (decision !== 'batalkan' && !(await commitRevision())) return;
     await keputusanEvaluasi(id.value, {
       keputusan: decision,
       catatan:
         decision === 'lanjut_persetujuan'
-          ? catatan.value.trim() || undefined
+          ? continueNote.value.trim() || undefined
           : rejectionReason.value.trim(),
     });
     toast.add({ title: 'Keputusan evaluasi berhasil disimpan', color: 'success' });
