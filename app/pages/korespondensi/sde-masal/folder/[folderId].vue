@@ -647,12 +647,11 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
 
   selectedSendType.value = method as typeof selectedSendType.value;
   workflowLoading.value = true;
-  const sourcePath = route.fullPath;
   const selectedCount = selectedItemIds.value.length;
   try {
-    // Mulai request terlebih dahulu, lalu tutup modal agar pengguna tidak
-    // tertahan oleh spinner selama PDF dan BSrE diproses serentak di backend.
-    const finalizeRequest = finalizeDirect({
+    // Seragam dengan finalisasi SDE biasa: modal tetap terbuka dan tombol
+    // menampilkan loading sampai seluruh naskah benar-benar selesai diproses.
+    const result = await finalizeDirect({
       folderId: folder.value.id,
       itemIds: [...selectedItemIds.value],
       penerimaList: items.value
@@ -661,35 +660,37 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
       signOption: selectedSendType.value,
       passphrase: signData.passphrase,
     });
-    isPassphraseModalOpen.value = false;
-    closePreview();
-    showSendConfirm.value = false;
-    toast.add({
-      title: 'Pengiriman sedang diproses',
-      description: `${selectedCount} naskah sedang ditandatangani dan dikirim serentak.`,
-      color: 'info',
-    });
 
-    const result = await finalizeRequest;
-    toast.add({ title: 'Pengiriman selesai', description: `${result?.success || 0} berhasil, ${result?.failed || 0} gagal.`, color: result?.failed ? 'warning' : 'success' });
-    // Jangan memindahkan halaman secara tiba-tiba bila pengguna sudah memilih
-    // halaman lain saat proses berjalan. Data tetap selesai di backend.
-    if ((result?.success || 0) > 0 && route.fullPath === sourcePath) {
+    const success = Number(result?.success || 0);
+    const failed = Number(result?.failed || 0);
+    if (success === selectedCount && failed === 0) {
+      toast.add({
+        title: 'Pengiriman selesai',
+        description: `${success} naskah berhasil ditandatangani dan dikirim.`,
+        color: 'success',
+      });
+      isPassphraseModalOpen.value = false;
+      closePreview();
+      showSendConfirm.value = false;
       await navigateTo('/korespondensi/terkirim');
-    } else if (route.fullPath === sourcePath) {
+    } else {
+      // Jangan keluar dari modal bila masih ada naskah gagal. Pengguna dapat
+      // langsung mencoba lagi; backend otomatis melewati naskah yang sukses.
+      toast.add({
+        title: 'Pengiriman belum selesai',
+        description: `${success} berhasil, ${failed} gagal. Silakan kirim ulang naskah yang gagal.`,
+        color: 'warning',
+      });
       await loadData();
     }
   } catch (error: any) {
     const message = error?.response?.data?.message || error?.message || 'Coba lagi.';
     if (
-      route.fullPath === sourcePath &&
       (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah'))
     ) {
-      isPassphraseModalOpen.value = true;
       await nextTick();
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
-      isPassphraseModalOpen.value = false;
       toast.add({ title: 'Pengiriman gagal', description: message, color: 'error' });
     }
   } finally {
