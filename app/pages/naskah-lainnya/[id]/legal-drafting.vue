@@ -53,15 +53,13 @@
         :dokumen-pendukung="dokumenPendukung"
         area-title="Legal Drafting"
         area-description="Revisi naskah di luar aplikasi: download draf, lengkapi di Microsoft Word, lalu upload kembali. Noted: Jangan menghapus parameter dikarenakan sistem membaca isi dan parameter di dalamnya."
-        catatan-title="Catatan Legal"
-        catatan-placeholder="Catatan hasil pemeriksaan legal…"
+        :show-catatan="false"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         :stage-upload="canActLegalDrafting"
         staged-success-description="Revisi siap dikirim bersama approval legal"
         divided
-        v-model="catatanLegal"
         @preview="previewNaskah"
         @download="downloadNaskah"
         @preview-pendukung="previewPendukung"
@@ -92,23 +90,16 @@
             {{ selectedCertifierFromChain.jabatan }}
           </p>
         </div>
-        <USelectMenu
+        <TulisInputPejabat
           v-else
-          v-model="selectedCertifierId"
+          :model-value="selectedCertifierId"
           :items="certifierOptions"
-          value-key="value"
-          :filter-fields="['label', 'jabatan']"
           placeholder="Pilih pejabat manajerial Unit Legal…"
+          search-placeholder="Cari nama atau jabatan…"
           class="w-full"
           :disabled="!canActLegalDrafting"
-        >
-          <template #item="{ item }">
-            <div class="min-w-0 py-1">
-              <p class="truncate text-sm text-gray-900 dark:text-white">{{ item.label }}</p>
-              <p class="truncate text-xs text-gray-400">{{ item.jabatan }}</p>
-            </div>
-          </template>
-        </USelectMenu>
+          @update:model-value="selectedCertifierId = $event"
+        />
         <p class="mt-2 text-xs text-gray-400">
           Pejabat ini menjadi titik akhir yang mengesahkan dan memfinalkan Legal Drafting.
         </p>
@@ -183,21 +174,14 @@
               Hapus pilihan
             </UButton>
           </div>
-          <USelectMenu
-            v-model="selectedForwardId"
+          <TulisInputPejabat
+            :model-value="selectedForwardId"
             :items="forwardOptions"
-            value-key="value"
-            :filter-fields="['label', 'jabatan']"
             placeholder="Pilih penerima berikutnya di Unit Legal…"
+            search-placeholder="Cari nama atau jabatan…"
             class="w-full"
-          >
-            <template #item="{ item }">
-              <div class="min-w-0 py-1">
-                <p class="truncate text-sm text-gray-900 dark:text-white">{{ item.label }}</p>
-                <p class="truncate text-xs text-gray-400">{{ item.jabatan }}</p>
-              </div>
-            </template>
-          </USelectMenu>
+            @update:model-value="selectedForwardId = $event"
+          />
           <p
             class="mt-2 text-xs"
             :class="selectedForwardRecipient ? 'font-medium text-primary-600' : 'text-gray-400'"
@@ -228,6 +212,17 @@
             </div>
           </div>
           <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <UButton
+              v-if="canRejectLegalDrafting"
+              color="error"
+              variant="outline"
+              icon="i-lucide-circle-x"
+              size="lg"
+              class="w-full justify-center font-semibold sm:w-auto"
+              :disabled="sendingApproval"
+              @click="showRejectModal = true"
+              >Tolak</UButton
+            >
             <UButton
               color="neutral"
               variant="outline"
@@ -304,6 +299,19 @@
       :saving="sendingApproval"
       @confirm="(note) => kirimApproval(note)"
     />
+
+    <VerifyActionModal
+      v-model="showRejectModal"
+      variant="reject"
+      title="Tolak Legal Drafting"
+      description="Legal Drafting akan dikembalikan kepada drafter legal untuk diperbaiki sesuai alasan penolakan."
+      :require-note="true"
+      :min-note-length="5"
+      note-placeholder="Tuliskan alasan penolakan (minimal 5 karakter)…"
+      confirm-label="Tolak Legal Drafting"
+      :saving="sendingApproval"
+      @confirm="(note) => rejectLegalDrafting(note)"
+    />
   </div>
 </template>
 
@@ -320,6 +328,7 @@ const {
   uploadRevisiDokumen,
   kirimApprovalLegal,
   teruskanLegalDrafting,
+  tolak,
   fetchLegalRecipients,
   legalRecipients,
 } = useNaskahLainnya();
@@ -336,10 +345,10 @@ const breadcrumbs = computed(() => [
 
 const loading = ref(true);
 const dokumenPendukung = ref([]);
-const catatanLegal = ref('');
 const sendingApproval = ref(false);
 const showKirimModal = ref(false);
 const showTeruskanModal = ref(false);
+const showRejectModal = ref(false);
 // ── Popup preview dokumen pendukung (PDF iframe / DOCX renderAsync) ──
 const previewOpen = ref(false);
 const previewUrl = ref(null);
@@ -374,14 +383,16 @@ const rejectedLegalRows = computed(() =>
 );
 const hasRejectedLegalRows = computed(() => rejectedLegalRows.value.length > 0);
 
-// Naskah dikembalikan dari evaluasi oleh pemrakarsa → kembali ke legal drafting.
-// Sinyal: baris riwayat TERAKHIR adalah aksi 'kembalikan-evaluasi' (riwayat ASC,
-// terakhir = terbaru). Tampilkan alasan agar drafter legal tahu apa yang direvisi.
+// Naskah dikembalikan dari evaluasi → kembali ke legal drafting.
+// Sinyal: baris riwayat TERAKHIR adalah aksi pengembalian dari evaluasi (riwayat
+// ASC, terakhir = terbaru). Tampilkan alasan agar drafter legal tahu apa yang direvisi.
 // Baris approval legal lama sudah dihapus BE → drafter kirim ulang approval.
 const evaluasiKembalikanRow = computed(() => {
   const r = detail.value?.riwayat ?? [];
   const last = r.length ? r[r.length - 1] : null;
-  return last?.aksi === 'kembalikan-evaluasi' ? last : null;
+  return last && ['kembalikan-evaluasi', 'legal_drafting_ulang'].includes(last.aksi)
+    ? last
+    : null;
 });
 
 const verifiedLegalCount = computed(
@@ -441,7 +452,7 @@ const ldBanner = computed(() => {
       cardBg: 'bg-amber-50 dark:bg-amber-950/30',
       wrap: 'bg-amber-500',
       title: 'Dikembalikan dari Evaluasi',
-      desc: 'Pemrakarsa mengembalikan naskah ke legal drafting untuk direvisi.',
+      desc: 'Naskah dikembalikan ke Unit Legal untuk diperbaiki pada tahap legal drafting.',
       catatan: evaluasiKembalikanRow.value.catatan || null,
     };
   }
@@ -450,7 +461,7 @@ const ldBanner = computed(() => {
     cardBg: 'bg-primary-50 dark:bg-primary-950/30',
     wrap: 'bg-primary-500',
     title: 'Legal Drafting',
-    desc: 'Revisi naskah, isi catatan legal, lalu kirim ke pemberi persetujuan legal.',
+    desc: 'Revisi naskah, lalu gunakan aksi Teruskan atau Kirim untuk menambahkan catatan.',
     catatan: null,
   };
 });
@@ -466,7 +477,7 @@ const certifierOptions = computed(() =>
     .map((v) => ({
       value: v.positionId,
       label: legalRecipientName(v),
-      jabatan: v.jabatan || v.unitName || '',
+      labelJob: v.jabatan || v.unitName || '',
     }))
 );
 const selectedCertifierFromChain = computed(() =>
@@ -496,7 +507,7 @@ const forwardOptions = computed(() =>
     .map((v) => ({
       value: v.positionId,
       label: legalRecipientName(v),
-      jabatan: v.jabatan || v.unitName || '',
+      labelJob: v.jabatan || v.unitName || '',
     }))
 );
 const selectedForwardRecipient = computed(() =>
@@ -531,6 +542,13 @@ const canContinueLegalDrafting = computed(
 const canSendLegalDrafting = computed(
   () => canActLegalDrafting.value && hasSelectedCertifier.value && !selectedForwardRecipient.value
 );
+const canRejectLegalDrafting = computed(
+  () =>
+    canActLegalDrafting.value &&
+    currentIsCertifier.value &&
+    Boolean(currentLegalApprover.value) &&
+    (detail.value?.availableActions ?? []).includes('kirim-approval-legal')
+);
 const legalActionDescription = computed(() => {
   if (!canActLegalDrafting.value) return 'Menunggu penerima aktif menyelesaikan Legal Drafting.';
   if (selectedForwardRecipient.value)
@@ -554,8 +572,6 @@ async function loadDetail() {
   try {
     await fetchDetail(id.value);
     dokumenPendukung.value = (detail.value?.dokumen || []).filter((d) => d.tipe === 'pendukung');
-    // item #4: load catatan legal tersimpan (diisi saat kirim-approval-legal sebelumnya, bila ada).
-    catatanLegal.value = detail.value?.catatanLegal ?? '';
   } catch {
     toast.add({ title: 'Gagal memuat detail naskah', color: 'error' });
   } finally {
@@ -686,7 +702,7 @@ async function kirimApproval(note) {
   try {
     if (!(await commitStagedRevision())) return;
     const certifier = approvalPayload(selectedCertifierRecipient.value);
-    await kirimApprovalLegal(id.value, certifier ? [certifier] : [], note, catatanLegal.value);
+    await kirimApprovalLegal(id.value, certifier ? [certifier] : [], note, note);
     toast.add({
       title: currentIsCertifier.value
         ? 'Legal Drafting selesai dan dilanjutkan ke Evaluasi'
@@ -695,7 +711,7 @@ async function kirimApproval(note) {
     });
     showKirimModal.value = false;
     stagedRevisi.value = { docx: null };
-    await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
+    await navigateTo('/naskah-lainnya/legal-drafting?status=sudah-dikerjakan');
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;
     const errMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
@@ -724,7 +740,7 @@ async function continueLegalDrafting(note) {
       recipient,
       selectedCertifierFromChain.value ? undefined : certifier,
       note,
-      catatanLegal.value
+      note
     );
     toast.add({
       title: `Legal Drafting diteruskan kepada ${selectedForwardRecipient.value.nama}`,
@@ -732,11 +748,38 @@ async function continueLegalDrafting(note) {
     });
     showTeruskanModal.value = false;
     stagedRevisi.value = { docx: null };
-    await navigateTo('/naskah-lainnya/legal-drafting?status=aksi-saya');
+    await navigateTo('/naskah-lainnya/legal-drafting?status=sudah-dikerjakan');
   } catch (e) {
     const rawMsg = e?.response?.data?.message || e?.message;
     toast.add({
       title: 'Gagal meneruskan Legal Drafting',
+      description: Array.isArray(rawMsg) ? rawMsg[0] : rawMsg || '',
+      color: 'error',
+    });
+  } finally {
+    sendingApproval.value = false;
+  }
+}
+
+async function rejectLegalDrafting(note) {
+  const active = currentLegalApprover.value;
+  if (!canRejectLegalDrafting.value || !active) return;
+  sendingApproval.value = true;
+  try {
+    if (!(await commitStagedRevision())) return;
+    await tolak(id.value, active.id, note || '');
+    toast.add({
+      title: 'Legal Drafting ditolak',
+      description: 'Naskah dikembalikan kepada drafter legal untuk diperbaiki.',
+      color: 'success',
+    });
+    showRejectModal.value = false;
+    stagedRevisi.value = { docx: null };
+    await navigateTo('/naskah-lainnya/legal-drafting?status=sudah-dikerjakan');
+  } catch (e) {
+    const rawMsg = e?.response?.data?.message || e?.message;
+    toast.add({
+      title: 'Gagal menolak Legal Drafting',
       description: Array.isArray(rawMsg) ? rawMsg[0] : rawMsg || '',
       color: 'error',
     });

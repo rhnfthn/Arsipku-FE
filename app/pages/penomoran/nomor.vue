@@ -76,7 +76,7 @@
           <button
             v-if="hasPermission('penomoran', 'export-penomoran')"
             type="button"
-            @click="handleExport"
+            @click="openExportModal"
             :disabled="isExporting || rows.length === 0"
             class="flex items-center gap-2 h-9 px-4 text-sm font-medium bg-primary hover:bg-primary-700 disabled:bg-primary-300 dark:disabled:bg-primary-900 text-white rounded-lg transition whitespace-nowrap"
           >
@@ -907,6 +907,16 @@
     class="z-[8500]"
   />
 
+  <!-- EXPORT COLUMN MODAL -->
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="pagination?.total || rows.length"
+    title="Pilih Kolom Export Nomor Surat"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
+
   <!-- TOOLTIP -->
   <Teleport to="body">
     <div
@@ -927,6 +937,7 @@ import AddUsulan from '~/components/AddUsulan.vue'
 import Heading from '~/components/Heading.vue'
 import PageHeader from '~/components/PageHeader.vue'
 import { Modal } from '#components'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
 import { usePenomoran } from '~/composables/usePenomoran'
 import * as XLSX from 'xlsx'
@@ -1288,9 +1299,25 @@ const goToPage = (page: number) => {
   fetchData()
 }
 
-// ─── Export Excel ──────────────────────────────────────────────────────────────
-const handleExport = async () => {
-  if (isExporting.value || rows.value.length === 0) return
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+const showExportModal = ref(false)
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut baris data' },
+  { key: 'jenis', label: 'Jenis Naskah', desc: 'Jenis naskah surat' },
+  { key: 'jabatan', label: 'Penandatangan', desc: 'Pejabat / jabatan penandatangan' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal surat naskah' },
+  { key: 'nomor_surat', label: 'Nomor Surat', desc: 'Daftar nomor surat diterbitkan' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pembuatan surat' },
+  { key: 'pengusul', label: 'Pengusul', desc: 'Nama pengusul nomor' },
+  { key: 'waktu', label: 'Waktu', desc: 'Waktu pembuatan / penomoran' }
+])
+
+const openExportModal = () => {
+  showExportModal.value = true
+}
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (isExporting.value || rows.value.length === 0 || selectedKeys.length === 0) return
   isExporting.value = true
   try {
     let exportRows = rows.value
@@ -1308,16 +1335,18 @@ const handleExport = async () => {
       }
     }
 
-    const sheetData = exportRows.map((row: any, idx: number) => ({
-      No: idx + 1,
-      'Jenis Naskah': row.jenis,
-      Penandatangan: row.jabatan,
-      Perihal: row.perihal,
-      'Nomor Surat': row.nomor_list?.join(', ') || '-',
-      Tanggal: row.tanggal,
-      Pengusul: row.pengusul,
-      Waktu: row.waktu
-    }))
+    const sheetData = exportRows.map((row: any, idx: number) => {
+      const r: Record<string, any> = {}
+      if (selectedKeys.includes('No')) r['No'] = idx + 1
+      if (selectedKeys.includes('jenis')) r['Jenis Naskah'] = row.jenis || '-'
+      if (selectedKeys.includes('jabatan')) r['Penandatangan'] = row.jabatan || '-'
+      if (selectedKeys.includes('perihal')) r['Perihal'] = row.perihal || '-'
+      if (selectedKeys.includes('nomor_surat')) r['Nomor Surat'] = row.nomor_list?.join(', ') || '-'
+      if (selectedKeys.includes('tanggal')) r['Tanggal'] = row.tanggal || '-'
+      if (selectedKeys.includes('pengusul')) r['Pengusul'] = row.pengusul || '-'
+      if (selectedKeys.includes('waktu')) r['Waktu'] = row.waktu || '-'
+      return r
+    })
 
     if (!sheetData.length) return
 
@@ -1339,6 +1368,7 @@ const handleExport = async () => {
       description: `${sheetData.length} data berhasil diexport`,
       color: 'success'
     })
+    showExportModal.value = false
   } catch (e) {
     console.error('❌ Error export:', e)
     toast.add({

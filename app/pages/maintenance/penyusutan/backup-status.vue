@@ -62,7 +62,7 @@
 
         <!-- Export -->
         <button
-          @click="onExport"
+          @click="openExportModal"
           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap shrink-0"
         >
           <UIcon name="i-lucide-download" class="w-4 h-4" /> Export
@@ -119,12 +119,24 @@
         </div>
       </div>
     </div>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredList.length"
+      title="Pilih Kolom Export Backup Status"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
 definePageMeta({ middleware: ['auth'] })
 
@@ -214,6 +226,66 @@ const onExport = () => {
   a.download = `backup-status-${new Date().toISOString().split('T')[0]}.csv`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
+const showExportModal = ref(false)
+const isExporting = ref(false)
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nama', label: 'Nama Berkas', desc: 'Judul berkas' },
+  { key: 'kode', label: 'Kode Berkas', desc: 'Kode berkas' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Klasifikasi arsip' },
+  { key: 'idAsli', label: 'ID Berkas Asli', desc: 'ID berkas sumber' },
+  { key: 'idPenyusutan', label: 'ID Penyusutan', desc: 'ID penyusutan sumber' },
+  { key: 'jenis', label: 'Jenis', desc: 'Jenis backup (Musnah/Permanen)' },
+  { key: 'status', label: 'Status', desc: 'Status backup' },
+  { key: 'tanggal', label: 'Tanggal Backup', desc: 'Tanggal backup dilakukan' },
+  { key: 'diproses', label: 'Diproses Oleh', desc: 'Nama pemroses' }
+])
+
+const openExportModal = () => {
+  showExportModal.value = true
+}
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredList.value.length === 0 || selectedKeys.length === 0) return
+  isExporting.value = true
+  try {
+    const excelData = filteredList.value.map((item: any, idx: number) => {
+      const r: Record<string, any> = {}
+      if (selectedKeys.includes('No')) r['No'] = idx + 1
+      if (selectedKeys.includes('nama')) r['Nama Berkas'] = item.judulBerkas || '-'
+      if (selectedKeys.includes('kode')) r['Kode Berkas'] = item.kodeBerkas ?? '-'
+      if (selectedKeys.includes('klasifikasi'))
+        r['Klasifikasi'] = item.klasifikasiText || item.klasifikasi || '-'
+      if (selectedKeys.includes('idAsli')) r['ID Berkas Asli'] = item.sourceBerkasId ?? '-'
+      if (selectedKeys.includes('idPenyusutan'))
+        r['ID Penyusutan'] = item.sourcePenyusutanId ?? '-'
+      if (selectedKeys.includes('jenis'))
+        r['Jenis'] = item.isMusnah ? 'Musnah' : 'Permanen'
+      if (selectedKeys.includes('status')) r['Status'] = statusLabel(item.status)
+      if (selectedKeys.includes('tanggal'))
+        r['Tanggal Backup'] = formatDate(item.tanggalBackup)
+      if (selectedKeys.includes('diproses')) r['Diproses Oleh'] = item.diprosesOlehName ?? '-'
+      return r
+    })
+
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Backup Status')
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    saveAs(blob, `backup-status-${new Date().toISOString().slice(0, 10)}.xlsx`)
+    showExportModal.value = false
+  } catch (error) {
+    console.error('Gagal export backup status:', error)
+  } finally {
+    isExporting.value = false
+  }
 }
 
 onMounted(async () => {

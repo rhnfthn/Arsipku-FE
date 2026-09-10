@@ -386,6 +386,7 @@ const {
   arsipPersetujuanWaitingCount: rtArsipPersetujuanCount,
   naskahLainnyaPersetujuanWaitingCount: naskahLainnyaPersetujuanCount,
   naskahLainnyaLegalDraftingWaitingCount: legalDraftingCount,
+  correspondenceRoutingUpdate,
   init: rtInit,
   destroy: rtDestroy,
 } = useRealtimeSocket();
@@ -398,6 +399,11 @@ const { t } = useI18n();
 
 const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
+const {
+  canCreateSdi,
+  fetchCapabilities: fetchRoutingCapabilities,
+  invalidateCapabilities: invalidateRoutingCapabilities,
+} = useCorrespondenceRoutingAccess();
 
 const hasBodTag = computed(() => !!user.value?.bodTag?.trim());
 
@@ -544,6 +550,12 @@ watch(
   { deep: true, immediate: true }
 );
 
+watch(correspondenceRoutingUpdate, () => {
+  invalidateRoutingCapabilities();
+  if (!['BOD-2', 'BOD-3'].includes(String(user.value?.bodTag ?? ''))) return;
+  fetchRoutingCapabilities(true).catch(() => {});
+});
+
 // Verifikator count event sudah membawa payload lengkap (waiting number),
 // UI langsung baca dari rtVerifikatorCount — tidak perlu REST fallback.
 
@@ -562,6 +574,8 @@ watch(
       checkAtasanManagerialTuUsulan();
       // Cek apakah user adalah atasan managerial di penyusutan
       checkAtasanManagerialPenyusutan();
+      if (['BOD-2', 'BOD-3'].includes(String(newUser.bodTag ?? '')))
+        fetchRoutingCapabilities().catch(() => {});
     }
   },
   { immediate: true }
@@ -724,7 +738,9 @@ const tulisChildrenByBod = computed(() => {
   if (tag === 'BOD' || tag === 'BOD-1') return all;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
     return all.filter(
-      (i) => ![t('surat_dinas_internal'), t('surat_dinas_eksternal'), t('kajian')].includes(i.label)
+      (i) =>
+        ![t('surat_dinas_eksternal'), t('kajian')].includes(i.label) &&
+        (i.label !== t('surat_dinas_internal') || canCreateSdi.value)
     );
   }
   return all.filter((i) => i.label === t('kajian'));
@@ -1408,6 +1424,13 @@ const unitDokumenKelolaMenus = computed(() => [
     icon: 'i-lucide-folder-open',
     children: [
       {
+        label: 'Verifikasi Usulan',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
@@ -1469,6 +1492,13 @@ const sekretarisKelolaMenus = computed(() => [
         badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       },
       {
+        label: 'Verifikasi Usulan',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
+      {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
@@ -1515,6 +1545,13 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
     label: 'Penggunaan',
     icon: 'i-lucide-folder-open',
     children: [
+      {
+        label: 'Verifikasi Usulan',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
       {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
@@ -1578,6 +1615,13 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
     label: 'Penggunaan',
     icon: 'i-lucide-folder-open',
     children: [
+      {
+        label: 'Verifikasi Usulan',
+        to: '/kelola/penggunaan/verifikasi-usulan',
+        icon: 'i-lucide-file-check-2',
+        badge:
+          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+      },
       {
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
@@ -1717,10 +1761,6 @@ const adminMenuKelola = computed(() => {
 
   // ── Menu Penggunaan (scope kita) ──
   // Semua user (SE + Managerial + User biasa) lihat dropdown Penggunaan.
-  // Tiap child tampil berdasarkan actor:
-  //   - Usulan Saya: SE (buat usulan)
-  //   - Pemberian: SEMUA (list akses yang sudah diterbitkan)
-  //   Verifikasi Usulan hanya ada di menu Pemeliharaan (untuk Atasan Managerial).
   const penggunaanChildren = [];
 
   if (isSekretarisActor.value) {
@@ -1732,6 +1772,13 @@ const adminMenuKelola = computed(() => {
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
     });
   }
+
+  penggunaanChildren.push({
+    label: 'Verifikasi Usulan',
+    to: '/kelola/penggunaan/verifikasi-usulan',
+    icon: 'i-lucide-file-check-2',
+    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+  });
 
   penggunaanChildren.push({
     label: 'Pemberian',

@@ -322,7 +322,7 @@
                   ring: 'ring-0',
                   shadow: 'shadow-none',
                   width: 'w-full max-w-[calc(100vw-2rem)]',
-                  content: 'z-[100]',
+                  content: 'z-[10000]',
                 } as any"
                 @update:model-value="onKlasifikasiChange"
               >
@@ -532,7 +532,7 @@
             </div>
           </div>
 
-          <!-- Penyusutan Akhir -->
+          <!-- Penyusutan Akhir (auto dari klasifikasi) -->
           <div
             class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
           >
@@ -542,13 +542,14 @@
               Penyusutan Akhir <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
-              <select
-                v-model="form.tindakan_penyusutan_akhir"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full"
+              <div
+                class="flex-1 text-gray-900 dark:text-white py-1 text-sm w-full opacity-75 cursor-default"
               >
-                <option value="Musnah">Musnah</option>
-                <option value="Permanen">Permanen</option>
-              </select>
+                {{ form.tindakan_penyusutan_akhir || '— otomatis dari klasifikasi —' }}
+              </div>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Diisi otomatis dari kolom Penyusutan pada klasifikasi terpilih.
+              </p>
             </div>
           </div>
 
@@ -623,6 +624,16 @@
         </template>
       </Modal>
     </Teleport>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems || berkasList.length"
+      title="Pilih Kolom Export Berkas Saya"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -636,6 +647,9 @@ import {
   Image as ImageIcon,
   ChevronDown,
 } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 const {
   getBerkasList,
@@ -645,6 +659,19 @@ const {
 } = useArsipDinamis();
 const { apiPost } = useApi();
 const toast = useToast();
+
+const showExportModal = ref(false);
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nama_berkas', label: 'Nama Berkas', desc: 'Perihal atau nama berkas arsip' },
+  { key: 'kode_berkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'kategori', label: 'Kategori', desc: 'Kategori berkas' },
+  { key: 'retensi', label: 'Retensi (A/I)', desc: 'Masa retensi aktif & inaktif' },
+  { key: 'lokasi', label: 'Lokasi Fisik', desc: 'Lokasi fisik penyimpanan berkas' },
+  { key: 'status', label: 'Status', desc: 'Status berkas' },
+  { key: 'updated', label: 'Updated', desc: 'Tanggal terakhir diperbarui' }
+]);
 
 // ── State ────────────────────────────────────────────────────────
 
@@ -887,6 +914,12 @@ const onKlasifikasiChange = () => {
   if (k) {
     selectedRetensiAktif.value = k.retensi_aktif_tahun || 0;
     selectedRetensiInaktif.value = k.retensi_inaktif_tahun || 0;
+    // Penyusutan akhir otomatis mengikuti kolom Penyusutan pada klasifikasi
+    // terpilih (tabel klasifikasi). Fallback ke nilai existing bila kosong.
+    const penyusutan = String(k.penyusutan || '').trim();
+    if (penyusutan) {
+      form.tindakan_penyusutan_akhir = penyusutan;
+    }
   } else {
     selectedRetensiAktif.value = 0;
     selectedRetensiInaktif.value = 0;
@@ -1009,7 +1042,7 @@ const fetchData = async () => {
 
 const isExporting = ref(false);
 
-const exportData = async () => {
+const exportData = () => {
   if (totalItems.value === 0) {
     toast.add({
       title: 'Tidak ada data',
@@ -1018,6 +1051,11 @@ const exportData = async () => {
     });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (totalItems.value === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
     const list = await getBerkasList({
@@ -1037,27 +1075,36 @@ const exportData = async () => {
       });
       return;
     }
-    const headers = [
-      'Nama Berkas',
-      'Kode Berkas',
-      'Klasifikasi',
-      'Kategori',
-      'Retensi (A/I)',
-      'Lokasi Fisik',
-      'Status',
-      'Updated',
-    ];
-    const csvRows = rows.map((b: any) => [
-      b.judulBerkas,
-      b.kodeBerkas,
-      b.klasifikasiTeks,
-      b.kategoriBerkas || '',
-      `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`,
-      b.lokasi,
-      b.status,
-      b.updatedAt,
-    ]);
-    downloadCsv(`berkas-saya_${new Date().toISOString().slice(0, 10)}.csv`, headers, csvRows);
+
+    const data = rows.map((b: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nama_berkas')) row['Nama Berkas'] = b.judulBerkas || '-';
+      if (selectedKeys.includes('kode_berkas')) row['Kode Berkas'] = b.kodeBerkas || '-';
+      if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = b.klasifikasiTeks || '-';
+      if (selectedKeys.includes('kategori')) row['Kategori'] = b.kategoriBerkas || '-';
+      if (selectedKeys.includes('retensi')) row['Retensi (A/I)'] = `${b.retensiAktifTahun || 0}A/${b.retensiInaktifTahun || 0}I`;
+      if (selectedKeys.includes('lokasi')) row['Lokasi Fisik'] = b.lokasi || '-';
+      if (selectedKeys.includes('status')) row['Status'] = b.status || '-';
+      if (selectedKeys.includes('updated')) row['Updated'] = b.updatedAt || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Berkas Saya');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `berkas_saya_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({
       title: 'Berhasil',
       description: `${rows.length} data berhasil diexport`,

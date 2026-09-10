@@ -204,15 +204,42 @@
         :per-page="perPage"
       />
     </div>
+
+    <!-- Export Column Modal -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="totalItems || rows.length"
+      title="Pilih Kolom Export Persetujuan Pemberkasan"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { ChevronDown, Eye } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 
 const { getPersetujuanSaya } = useArsipDinamis();
 const toast = useToast();
+
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut' },
+  { key: 'nama_berkas', label: 'Nama Berkas', desc: 'Perihal atau nama berkas arsip' },
+  { key: 'kode_berkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode atau teks klasifikasi arsip' },
+  { key: 'retensi', label: 'Retensi (A/I)', desc: 'Masa retensi aktif & inaktif' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pengajuan atau tanggal aksi' },
+  { key: 'status', label: 'Status', desc: 'Status persetujuan' },
+  { key: 'catatan', label: 'Catatan', desc: 'Catatan persetujuan / penolakan' }
+]);
 
 const rows = ref<any[]>([]);
 const pending = ref(false);
@@ -364,13 +391,16 @@ watch(arsipPersetujuanWaitingCount, () => {
   }
 });
 
-const isExporting = ref(false);
-
-const exportData = async () => {
+const exportData = () => {
   if (totalItems.value === 0) {
     toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
     return;
   }
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (totalItems.value === 0 || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
     const response: any = await getPersetujuanSaya({
@@ -385,31 +415,35 @@ const exportData = async () => {
       toast.add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
       return;
     }
-    const stamp = new Date().toISOString().slice(0, 10);
-    if (isMenunggu()) {
-      const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Pengajuan', 'Status'];
-      const csvRows = list.map((r: any) => [
-        r.berkas?.judulBerkas,
-        r.berkas?.kodeBerkas,
-        r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
-        `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
-        r.createdAt,
-        statusLabel(r.status),
-      ]);
-      downloadCsv(`persetujuan-pemberkasan_${stamp}.csv`, headers, csvRows);
-    } else {
-      const headers = ['Nama Berkas', 'Kode Berkas', 'Klasifikasi', 'Retensi (A/I)', 'Tanggal Aksi', 'Status', 'Catatan'];
-      const csvRows = list.map((r: any) => [
-        r.berkas?.judulBerkas,
-        r.berkas?.kodeBerkas,
-        r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi,
-        `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`,
-        r.actionAt,
-        statusLabel(r.status),
-        r.catatan,
-      ]);
-      downloadCsv(`riwayat-persetujuan_${stamp}.csv`, headers, csvRows);
-    }
+
+    const data = list.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nama_berkas')) row['Nama Berkas'] = r.berkas?.judulBerkas || '-';
+      if (selectedKeys.includes('kode_berkas')) row['Kode Berkas'] = r.berkas?.kodeBerkas || '-';
+      if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = r.berkas?.klasifikasiTeks || r.berkas?.klasifikasi || '-';
+      if (selectedKeys.includes('retensi')) row['Retensi (A/I)'] = `${r.berkas?.retensiAktifTahun || 0}A/${r.berkas?.retensiInaktifTahun || 0}I`;
+      if (selectedKeys.includes('tanggal')) row['Tanggal'] = isMenunggu() ? (r.createdAt || '-') : (r.actionAt || '-');
+      if (selectedKeys.includes('status')) row['Status'] = statusLabel(r.status);
+      if (selectedKeys.includes('catatan')) row['Catatan'] = r.catatan || '-';
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Persetujuan Pemberkasan');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `persetujuan_pemberkasan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
     toast.add({ title: 'Berhasil', description: `${list.length} data berhasil diexport`, color: 'success' });
   } catch (e) {
     console.error('Gagal export:', e);

@@ -21,42 +21,93 @@
 
       <!-- Card -->
       <div
-        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors"
+        class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
       >
-        <!-- Search -->
-        <div class="p-5 border-b w-full border-gray-100 dark:border-gray-700">
-          <div class="flex items-center gap-3">
-            <div class="relative flex-1 w-full md:w-255">
-              <Search
-                class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-              />
-              <input
-                v-model="search"
-                :placeholder="t('mp_cari_placeholder')"
-                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg pl-12 pr-4 py-2 text-sm dark:text-gray-200 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
-            <!-- Export -->
+        <!-- TOOLBAR (TIDAK ikut scroll) -->
+        <div
+          class="rounded-lg shadow-sm sticky left-0 z-40 bg-white dark:bg-gray-800 flex flex-wrap gap-2 items-center p-3 border-b border-gray-200 dark:border-gray-700 transition-colors"
+        >
+          <!-- Rows per page -->
+          <div class="relative">
             <button
-              v-if="hasPermission('master-data', 'export-perusahaan')"
-              @click="onExport"
-              class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+              type="button"
+              @click="openRowsDropdown = !openRowsDropdown"
+              class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg flex items-center gap-2 min-w-[70px] justify-between hover:border-primary transition-all"
             >
-              Export
+              <span>{{ perPage }}</span>
+              <ChevronDown
+                class="w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': openRowsDropdown }"
+              />
             </button>
+            <Transition name="filter-dd">
+              <div
+                v-if="openRowsDropdown"
+                class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+              >
+                <button
+                  v-for="n in rowsChoices"
+                  :key="n"
+                  type="button"
+                  @click="
+                    perPage = n;
+                    openRowsDropdown = false;
+                    currentPage = 1;
+                  "
+                  :class="[
+                    'w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors',
+                    perPage === n
+                      ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  {{ n }}
+                </button>
+              </div>
+            </Transition>
           </div>
+
+          <!-- Refresh -->
+          <button
+            @click="refreshData"
+            class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
+            title="Refresh"
+          >
+            <RotateCcw class="w-4 h-4" />
+          </button>
+
+          <!-- Search -->
+          <div class="relative flex-1 min-w-40">
+            <Search
+              class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
+            <input
+              v-model="search"
+              :placeholder="t('mp_cari_placeholder')"
+              class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
+            />
+          </div>
+
+          <!-- Export -->
+          <button
+            v-if="hasPermission('master-data', 'export-perusahaan')"
+            @click="onExport"
+            class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+          >
+            Export
+          </button>
         </div>
 
         <!-- Table -->
         <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="bg-primary dark:bg-primary-700 text-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-primary-400 dark:bg-primary-700 text-white">
+              <tr>
                 <th
                   @click="toggleSortTanggalMulai"
-                  class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap cursor-pointer select-none flex items-center gap-2"
+                  class="px-4 py-3 text-left cursor-pointer select-none flex items-center gap-2"
                 >
-                  {{ t('mp_col_tgl') }}
+                  {{ t('mp_col_tgl_mulai') }}
                   <ArrowUpDown
                     class="w-4 h-4 transition-transform duration-300"
                     :class="{
@@ -65,33 +116,29 @@
                     }"
                   />
                 </th>
-                <th class="px-6 py-4 text-center text-sm font-semibold">
-                  {{ t('mp_col_kode') }}
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t('mp_col_nama_pendek') }}
-                </th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">
-                  {{ t('mp_col_nama_panjang') }}
-                </th>
-                <th class="px-6 py-4 text-center text-sm font-semibold">
-                  {{ t('mp_col_aksi') }}
-                </th>
+                <th class="px-4 py-3 text-left">{{ t('mp_col_tgl_berakhir') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('mp_col_kode') }}</th>
+                <th class="px-4 py-3 text-left">{{ t('mp_col_nama_pendek') }}</th>
+                <th class="px-4 py-3 text-left">{{ t('mp_col_nama_panjang') }}</th>
+                <th class="px-4 py-3 text-center">{{ t('mp_col_aksi') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="(row, idx) in filteredRows"
+                v-for="(row, idx) in paginatedRows"
                 :key="row.kode"
                 :class="[
-                  'border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
-                  idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800'
+                  'border-b border-b-gray-200 dark:border-b-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors',
+                  idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800'
                 ]"
               >
-                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                   <span v-html="highlight(formatDateSlash(row.tanggalMulai), search)"></span>
                 </td>
-                <td class="px-6 py-4 items-center">
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                  <span v-html="highlight(formatDateSlash(row.tanggalBerakhir), search)"></span>
+                </td>
+                <td class="px-4 py-3 items-center">
                   <NuxtLink
                     :to="`/master/perusahaan/${row.kode}/struktur`"
                     class="flex px-3 py-1 rounded-lg bg-blue-100 dark:bg-primary hover:dark:bg-primary-600 hover:bg-primary-700 hover:text-white text-blue-700 dark:text-white transition-colors w-fit"
@@ -105,14 +152,14 @@
                   </NuxtLink>
                 </td>
                 <td
-                  class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap uppercase"
+                  class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap uppercase"
                   v-html="highlight(row.namaPendek, search)"
                 ></td>
                 <td
-                  class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 uppercase"
+                  class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 uppercase"
                   v-html="highlight(row.namaPanjang, search)"
                 ></td>
-                <td class="px-6 py-4">
+                <td class="px-4 py-3">
                   <div class="flex items-center justify-center gap-2">
                     <button
                       v-if="hasPermission('master-data', 'update-perusahaan')"
@@ -146,6 +193,87 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- PAGINATION -->
+        <div
+          v-if="totalItems > 0"
+          class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
+        >
+          <div class="text-xs text-gray-600 dark:text-gray-400">
+            {{ t('menampilkan') }} {{ paginatedRows.length }} {{ t('dari') }}
+            {{ totalItems }} {{ t('data') }}
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
+              :class="[
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === 1
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
+              ]"
+            >
+              {{ t('sebelumnya') }}
+            </button>
+
+            <div class="flex items-center gap-1">
+              <button
+                v-if="paginationPages[0] > 1"
+                @click="currentPage = 1"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
+              >
+                1
+              </button>
+              <span
+                v-if="paginationPages[0] > 2"
+                class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >
+                ...
+              </span>
+              <button
+                v-for="page in paginationPages"
+                :key="page"
+                @click="currentPage = page"
+                :class="[
+                  'w-7 h-7 flex items-center justify-center text-sm rounded-lg font-medium transition-all',
+                  currentPage === page
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary'
+                ]"
+              >
+                {{ page }}
+              </button>
+              <span
+                v-if="paginationPages[paginationPages.length - 1] < totalPages - 1"
+                class="px-2 text-gray-400 dark:text-gray-500 text-sm"
+              >
+                ...
+              </span>
+              <button
+                v-if="paginationPages[paginationPages.length - 1] < totalPages"
+                @click="currentPage = totalPages"
+                class="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900 hover:text-primary transition-all"
+              >
+                {{ totalPages }}
+              </button>
+            </div>
+
+            <button
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              :class="[
+                'flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-lg transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-700 text-primary border border-primary dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900'
+              ]"
+            >
+              {{ t('selanjutnya') }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -349,17 +477,136 @@
       :confirm-text="t('mp_pop_confirm')"
       :cancel-text="t('mp_pop_cancel')"
       :is-loading="isDeleting"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="handleDelete"
       @cancel="showDeleteConfirm = false"
     />
+
+    <!-- Blocked Delete Modal -->
+    <ConfirmPopup
+      v-model="showBlockedDeletePopup"
+      type="warning"
+      title="Data Tidak Dapat Dihapus"
+      :message="blockedDeleteMessage"
+      confirm-text="Mengerti"
+      :is-alert="true"
+      @confirm="showBlockedDeletePopup = false"
+    />
+
+    <!-- Export Column Modal -->
+    <Teleport to="body">
+      <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+        <template #title>
+          <div class="ml-5 my-3.5">
+            <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+              {{ t('pilih_kolom_export') }}
+            </Heading>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+            </p>
+          </div>
+        </template>
+
+        <div class="space-y-3.5 py-1">
+          <!-- Selection Status Bar & Toggle All -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+                :class="selectedExportColumns.length > 0
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+              >
+                {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+              </span>
+              <span class="text-gray-600 dark:text-gray-300 font-medium">
+                Kolom Terpilih
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click="toggleAllExport"
+              class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+              :class="allExportSelected
+                ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+            >
+              {{ allExportSelected ? 'Batal Pilih Semua' : t('pilih_semua') }}
+            </button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+            <div
+              v-for="col in exportColumns"
+              :key="col.key"
+              @click="toggleColumn(col.key)"
+              class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+              :class="selectedExportColumns.includes(col.key)
+                ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+            >
+              <div class="flex items-center gap-3 min-w-0 w-full">
+                <!-- Checkmark Box -->
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                  :class="selectedExportColumns.includes(col.key)
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+                >
+                  <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold truncate leading-tight">
+                    {{ col.label }}
+                  </p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                    {{ col.desc }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+            <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+            <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ filteredRows.length }} baris</span></span>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              type="button"
+              @click="showExportModal = false"
+              class="px-4 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+            >
+              {{ t('batal') }}
+            </button>
+            <button
+              type="button"
+              @click="handleExportConfirm"
+              :disabled="selectedExportColumns.length === 0"
+              class="px-5 py-2 text-xs font-semibold bg-primary hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg shadow-sm shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
   </div>
 </template>
 
 <script setup lang="ts">const { canAccessPage } = useFeatureAccess()
 
-import { ref, computed, onMounted } from 'vue';
-import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown } from 'lucide-vue-next';
+import { ref, computed, onMounted, watch } from 'vue';
+import { Search, Plus, MapPin, Pencil, Trash2, Building2, ArrowUpDown, ChevronDown, RotateCcw, Check } from 'lucide-vue-next';
 import { useCompany } from '~/composables/useCompany';
 import { formatDateSlash } from '~/utils/mail-helpers';
 import * as XLSX from 'xlsx';
@@ -385,7 +632,7 @@ const breadcrumbs = computed(() => [
 // ─────────────────────────────────────────────
 // COMPOSABLE & STATE
 // ─────────────────────────────────────────────
-const { getCompanies, createCompany, updateCompany, deleteCompany } = useCompany();
+const { getCompanies, createCompany, updateCompany, deleteCompany, checkCompanyUsage } = useCompany();
 const { clearApiCache } = useApi();
 
 import { useToast } from '#imports';
@@ -395,8 +642,11 @@ const search = ref('');
 const openAddCompany = ref(false);
 const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
+const showBlockedDeletePopup = ref(false);
+const blockedDeleteMessage = ref('');
 const selectedRow = ref<any>(null);
 const isDeleting = ref(false);
+const isCheckingDelete = ref(false);
 const isSavingAddCompany = ref(false);
 const isSavingEditCompany = ref(false);
 
@@ -531,19 +781,49 @@ const toggleSortTanggalMulai = () => {
 };
 
 // ─────────────────────────────────────────────
+// PAGINATION
+// ─────────────────────────────────────────────
+const currentPage = ref(1);
+const perPage = ref(10);
+const rowsChoices = [5, 10, 20, 50];
+const openRowsDropdown = ref(false);
+
+const totalItems = computed(() => filteredRows.value.length);
+const totalPages = computed(() => Math.ceil(totalItems.value / perPage.value));
+
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  const end = start + perPage.value;
+  return filteredRows.value.slice(start, end);
+});
+
+const paginationPages = computed(() => {
+  const windowSize = 5;
+  const half = Math.floor(windowSize / 2);
+  let start = Math.max(1, currentPage.value - half);
+  let end = Math.min(totalPages.value, start + windowSize - 1);
+  if (end - start < windowSize - 1) {
+    start = Math.max(1, end - windowSize + 1);
+  }
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+});
+
+const refreshData = async () => {
+  search.value = '';
+  currentPage.value = 1;
+  await fetchCompanies();
+};
+
+// Reset ke halaman 1 saat search / perPage berubah
+watch([search, perPage], () => {
+  currentPage.value = 1;
+});
+
+// ─────────────────────────────────────────────
 // EXPORT
 // ─────────────────────────────────────────────
 const onExport = () => {
-  const data = filteredRows.value.map((row, idx) => ({
-    No: idx + 1,
-    [t('mp_col_kode')]: row.kode,
-    [t('mp_col_nama_pendek')]: row.namaPendek,
-    [t('mp_col_nama_panjang')]: row.namaPanjang,
-    [t('mp_col_tgl_mulai')]: formatDateSlash(row.tanggalMulai),
-    [t('mp_col_tgl_berakhir')]: formatDateSlash(row.tanggalBerakhir)
-  }));
-
-  if (data.length === 0) {
+  if (filteredRows.value.length === 0) {
     toast.add({
       title: t('gagal'),
       description: 'Tidak ada data untuk diekspor.',
@@ -552,16 +832,68 @@ const onExport = () => {
     });
     return;
   }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
+
+const formatDateDot = (value: string | Date | null | undefined): string => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+const exportColumns = computed(() => [
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'kode', label: t('mp_col_kode'), desc: 'Kode identifikasi perusahaan' },
+  { key: 'nama_pendek', label: t('mp_col_nama_pendek'), desc: 'Nama singkatan perusahaan' },
+  { key: 'nama_panjang', label: t('mp_col_nama_panjang'), desc: 'Nama resmi perusahaan' },
+  { key: 'tgl_mulai', label: t('mp_col_tgl_mulai'), desc: 'Tanggal mulai berlaku' },
+  { key: 'tgl_berakhir', label: t('mp_col_tgl_berakhir'), desc: 'Tanggal akhir berlaku' }
+]);
+
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const allExportSelected = computed(
+  () => selectedExportColumns.value.length === exportColumns.value.length && exportColumns.value.length > 0
+);
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
+  const data = filteredRows.value.map((row, idx) => {
+    const r: Record<string, any> = {};
+    if (selectedKeys.includes('No')) r['No'] = idx + 1;
+    if (selectedKeys.includes('kode')) r[t('mp_col_kode')] = row.kode;
+    if (selectedKeys.includes('nama_pendek')) r[t('mp_col_nama_pendek')] = row.namaPendek;
+    if (selectedKeys.includes('nama_panjang')) r[t('mp_col_nama_panjang')] = row.namaPanjang;
+    if (selectedKeys.includes('tgl_mulai')) r[t('mp_col_tgl_mulai')] = formatDateDot(row.tanggalMulai);
+    if (selectedKeys.includes('tgl_berakhir')) r[t('mp_col_tgl_berakhir')] = formatDateDot(row.tanggalBerakhir);
+    return r;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet['!cols'] = [
-    { wch: 5 },
-    { wch: 12 },
-    { wch: 30 },
-    { wch: 40 },
-    { wch: 15 },
-    { wch: 15 }
-  ];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('mp_title'));
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -575,6 +907,7 @@ const onExport = () => {
     color: 'success',
     icon: 'i-lucide-file-down'
   });
+  showExportModal.value = false;
 };
 
 // ─────────────────────────────────────────────

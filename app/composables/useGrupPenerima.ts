@@ -54,6 +54,15 @@ export const useGrupPenerima = () => {
     return await apiDelete(`/persuratan/grup-penerima/${id}`);
   };
 
+  /** GET /persuratan/grup-penerima/:id/check-usage */
+  const checkGrupPenerimaUsage = async (id: string) => {
+    return await apiGet<{ canDelete: boolean; reason?: string; details?: any }>(
+      `/persuratan/grup-penerima/${id}/check-usage`,
+      {},
+      { skipCache: true },
+    );
+  };
+
   /** GET /persuratan/grup-penerima/:id/members — list members */
   const getGrupPenerimaMembers = async (id: string) => {
     return await apiGet(`/persuratan/grup-penerima/${id}/members`);
@@ -86,6 +95,7 @@ export const useGrupPenerima = () => {
     updateGrupPenerima,
     toggleAktifGrupPenerima,
     deleteGrupPenerima,
+    checkGrupPenerimaUsage,
     getGrupPenerimaMembers,
     addGrupPenerimaMember,
     updateGrupPenerimaMember,

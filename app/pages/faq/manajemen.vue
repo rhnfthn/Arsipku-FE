@@ -636,6 +636,16 @@
     cancel-text="Batal"
     @confirm="bulkDeleteNow"
   />
+
+  <!-- Export Column Modal -->
+  <ExportColumnModal
+    v-model="showExportModal"
+    :columns="exportColumns"
+    :total-rows="filteredFaqs.length"
+    title="Pilih Kolom Export FAQ"
+    :is-exporting="isExporting"
+    @confirm="handleExportConfirm"
+  />
   </div>
   </div>
 </template>
@@ -1032,44 +1042,72 @@ const deleteNow = async () => {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
+
 const refreshData = async () => {
   currentPage.value = 1;
   await fetchFaqs();
 };
-const onExport = () => {
-  const data = filteredFaqs.value.map((faq, idx) => ({
-    No: idx + 1,
-    Pertanyaan: faq.pertanyaan,
-    'Deskripsi/Jawaban': stripHtml(faq.deskripsi),
-    Kategori: faq.kategori,
-    'Terakhir Update': formatDateSlash(faq.updatedAt),
-    Puas: faq.puas,
-    'Tidak Puas': faq.tidakPuas
-  }));
 
-  if (data.length === 0) {
+const showExportModal = ref(false);
+const isExporting = ref(false);
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut baris' },
+  { key: 'Pertanyaan', label: 'Pertanyaan', desc: 'Isi pertanyaan FAQ' },
+  { key: 'Deskripsi', label: 'Deskripsi / Jawaban', desc: 'Teks jawaban FAQ' },
+  { key: 'Kategori', label: 'Kategori', desc: 'Kategori pertanyaan' },
+  { key: 'TerakhirUpdate', label: 'Terakhir Update', desc: 'Tanggal pembaharuan terakhir' },
+  { key: 'Puas', label: 'Puas', desc: 'Jumlah feedback puas' },
+  { key: 'TidakPuas', label: 'Tidak Puas', desc: 'Jumlah feedback tidak puas' }
+]);
+
+const onExport = () => {
+  if (filteredFaqs.value.length === 0) {
     showToast('Info', 'Tidak ada data untuk diekspor.', 'warning');
     return;
   }
+  showExportModal.value = true;
+};
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  worksheet['!cols'] = [
-    { wch: 5 },
-    { wch: 50 },
-    { wch: 60 },
-    { wch: 20 },
-    { wch: 15 },
-    { wch: 8 },
-    { wch: 10 }
-  ];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen FAQ');
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
-  saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  showToast('Berhasil', 'Export berhasil.', 'success');
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredFaqs.value.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const data = filteredFaqs.value.map((faq, idx) => {
+      const r: Record<string, any> = {};
+      if (selectedKeys.includes('No')) r['No'] = idx + 1;
+      if (selectedKeys.includes('Pertanyaan')) r['Pertanyaan'] = faq.pertanyaan || '-';
+      if (selectedKeys.includes('Deskripsi')) r['Deskripsi/Jawaban'] = stripHtml(faq.deskripsi) || '-';
+      if (selectedKeys.includes('Kategori')) r['Kategori'] = faq.kategori || '-';
+      if (selectedKeys.includes('TerakhirUpdate')) r['Terakhir Update'] = formatDateSlash(faq.updatedAt) || '-';
+      if (selectedKeys.includes('Puas')) r['Puas'] = faq.puas ?? 0;
+      if (selectedKeys.includes('TidakPuas')) r['Tidak Puas'] = faq.tidakPuas ?? 0;
+      return r;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((r: any) => String(r[key] ?? '').length)) + 2
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen FAQ');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, `manajemen_faq_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    showExportModal.value = false;
+    showToast('Berhasil', 'Export berhasil.', 'success');
+  } catch (err) {
+    console.error('Export FAQ error:', err);
+    showToast('Gagal', 'Terjadi kesalahan saat mengekspor data.', 'error');
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 const showToast = (

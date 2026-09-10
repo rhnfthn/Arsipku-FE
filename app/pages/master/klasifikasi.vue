@@ -564,7 +564,7 @@
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               >
                 <option value="">{{ t('ka_keamanan_placeholder') }}</option>
-                <option value="Terbuka">Terbuka</option>
+                <option value="Biasa / Terbuka">Biasa / Terbuka</option>
                 <option value="Terbatas">Terbatas</option>
                 <option value="Rahasia">Rahasia</option>
                 <option value="Sangat Rahasia">Sangat Rahasia</option>
@@ -583,7 +583,11 @@
                 <option value="">{{ t('ka_hak_akses_placeholder') }}</option>
                 <option value="BOD-1">BOD-1</option>
                 <option value="BOD-2">BOD-2</option>
+                <option value="BOD-3">BOD-3</option>
+                <option value="Karyawan">Karyawan</option>
+                <option value="Karyawan, Publik">Karyawan, Publik</option>
                 <option value="Pengawas Internal">Pengawas Internal</option>
+                <option value="Karyawan, Publik, Pengawas Eksternal dan Aparat Penegak Hukum">Karyawan, Publik, Pengawas Eksternal dan Aparat Penegak Hukum</option>
               </select>
             </div>
 
@@ -720,7 +724,7 @@
                 class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               >
                 <option value="">{{ t('ka_keamanan_placeholder') }}</option>
-                <option value="Terbuka">Terbuka</option>
+                <option value="Biasa / Terbuka">Biasa / Terbuka</option>
                 <option value="Terbatas">Terbatas</option>
                 <option value="Rahasia">Rahasia</option>
                 <option value="Sangat Rahasia">Sangat Rahasia</option>
@@ -739,7 +743,11 @@
                 <option value="">{{ t('ka_hak_akses_placeholder') }}</option>
                 <option value="BOD-1">BOD-1</option>
                 <option value="BOD-2">BOD-2</option>
+                <option value="BOD-3">BOD-3</option>
+                <option value="Karyawan">Karyawan</option>
+                <option value="Karyawan, Publik">Karyawan, Publik</option>
                 <option value="Pengawas Internal">Pengawas Internal</option>
+                <option value="Karyawan, Publik, Pengawas Eksternal dan Aparat Penegak Hukum">Karyawan, Publik, Pengawas Eksternal dan Aparat Penegak Hukum</option>
               </select>
             </div>
           </div>
@@ -757,9 +765,128 @@
       :confirm-text="t('popup_hapus')"
       :cancel-text="t('popup_batal')"
       :is-loading="deleting"
+      :require-confirmation="true"
+      confirmation-text="KONFIRMASI HAPUS DATA"
       @confirm="confirmDelete"
       @cancel="cancelDelete"
     />
+
+    <!-- POPUP PERINGATAN / TIDAK BISA DIHAPUS -->
+    <ConfirmDialog
+      v-model="showBlockedDeletePopup"
+      type="warning"
+      title="Data Tidak Dapat Dihapus"
+      :message="blockedDeleteMessage"
+      confirm-text="Mengerti"
+      :is-alert="true"
+      @confirm="showBlockedDeletePopup = false"
+    />
+
+    <!-- Export Column Modal -->
+    <Teleport to="body">
+      <Modal v-model="showExportModal" size="lg" :hide-default-footer="true">
+        <template #title>
+          <div class="ml-5 my-3.5">
+            <Heading variant="heading8b" class="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+              {{ t('pilih_kolom_export') }}
+            </Heading>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Sesuaikan kolom data yang akan diekspor ke format Excel (.xlsx)
+            </p>
+          </div>
+        </template>
+
+        <div class="space-y-3.5 py-1">
+          <!-- Selection Status Bar & Toggle All -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-750/60 border border-gray-200/80 dark:border-gray-700/80 text-xs">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center justify-center font-semibold px-2.5 py-0.5 rounded-full text-xs transition-colors"
+                :class="selectedExportColumns.length > 0
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
+              >
+                {{ selectedExportColumns.length }} / {{ exportColumns.length }}
+              </span>
+              <span class="text-gray-600 dark:text-gray-300 font-medium">
+                Kolom Terpilih
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click="toggleAllExport"
+              class="font-medium px-2.5 py-1 rounded-lg text-xs transition-colors"
+              :class="allExportSelected
+                ? 'text-primary hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700'"
+            >
+              {{ allExportSelected ? 'Batal Pilih Semua' : t('pilih_semua') }}
+            </button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+            <div
+              v-for="col in exportColumns"
+              :key="col.key"
+              @click="toggleColumn(col.key)"
+              class="group relative flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+              :class="selectedExportColumns.includes(col.key)
+                ? 'border-primary-500/80 bg-primary-50/60 dark:bg-primary-950/30 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/70 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'"
+            >
+              <div class="flex items-center gap-3 min-w-0 w-full">
+                <!-- Checkmark Box -->
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0"
+                  :class="selectedExportColumns.includes(col.key)
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 group-hover:border-gray-400'"
+                >
+                  <Check v-if="selectedExportColumns.includes(col.key)" class="w-3 h-3 stroke-[3]" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold truncate leading-tight">
+                    {{ col.label }}
+                  </p>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                    {{ col.desc }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+            <span>Format: <span class="font-medium text-gray-700 dark:text-gray-300">Microsoft Excel (.xlsx)</span></span>
+            <span>Total: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ klasifikasiList.length }} baris</span></span>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 flex-shrink-0 gap-3 px-5 py-3 mt-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              type="button"
+              @click="showExportModal = false"
+              class="px-4 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+            >
+              {{ t('batal') }}
+            </button>
+            <button
+              type="button"
+              @click="handleExportConfirm"
+              :disabled="selectedExportColumns.length === 0"
+              class="px-5 py-2 text-xs font-semibold bg-primary hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg shadow-sm shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Export {{ selectedExportColumns.length > 0 ? `(${selectedExportColumns.length} Kolom)` : '' }}
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
   </div>
 </template>
@@ -781,7 +908,8 @@ import {
   ChartNoAxesGantt,
   Calendar,
   ArrowUpDown,
-  ChevronDown
+  ChevronDown,
+  Check
 } from 'lucide-vue-next';
 import type { BreadcrumbItem } from '@nuxt/ui';
 import type { Klasifikasi } from '~/types/klasifikasi';
@@ -838,8 +966,10 @@ const {
   getKlasifikasiDetail,
   createKlasifikasi,
   updateKlasifikasi,
-  deleteKlasifikasi
+  deleteKlasifikasi,
+  checkKlasifikasiUsage
 } = useKlasifikasi();
+
 
 // ─────────────────────────────────────────────
 // FETCH
@@ -1124,7 +1254,10 @@ const submitEditKlasifikasi = async () => {
 // DELETE
 // ─────────────────────────────────────────────
 const showDeletePopup = ref(false);
+const showBlockedDeletePopup = ref(false);
+const blockedDeleteMessage = ref('');
 const deleting = ref(false);
+const checkingDelete = ref(false);
 const deleteTarget = ref<Klasifikasi | null>(null);
 
 const onDelete = (row: Klasifikasi) => {
@@ -1258,25 +1391,70 @@ const onExport = () => {
     });
     return;
   }
+  selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  showExportModal.value = true;
+};
 
-  const excelData = klasifikasiList.value.map((item, index) => ({
-    No: index + 1,
-    [t('ka_kode')]: item.klasifikasi,
-    [t('ka_nama')]: item.klasifikasi_text,
-    [t('ka_deskripsi')]: item.deskripsi ?? '-',
-    Status:
-      item.active === 1
-        ? locale.value === 'id'
-          ? 'Aktif'
-          : 'Active'
-        : locale.value === 'id'
-          ? 'Non Aktif'
-          : 'Inactive'
-  }));
+const exportColumns = computed(() => [
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'kode', label: t('ka_kode'), desc: 'Kode klasifikasi arsip' },
+  { key: 'nama', label: t('ka_nama'), desc: 'Nama klasifikasi arsip' },
+  { key: 'deskripsi', label: t('ka_deskripsi'), desc: 'Penjelasan detail naskah' },
+  { key: 'retensi_aktif', label: t('ka_retensi_aktif'), desc: 'Masa simpan aktif (tahun)' },
+  { key: 'retensi_inaktif', label: t('ka_retensi_inaktif'), desc: 'Masa simpan inaktif (tahun)' },
+  { key: 'penyusutan', label: t('ka_penyusutan'), desc: 'Tindakan penyusutan akhir' },
+  { key: 'keamanan', label: t('ka_keamanan'), desc: 'Tingkat keamanan berkas' },
+  { key: 'hak_akses', label: t('ka_hak_akses'), desc: 'Tingkat jabatan berhak akses' },
+  { key: 'status', label: 'Status', desc: 'Status keaktifan klasifikasi' }
+]);
+
+const showExportModal = ref(false);
+const selectedExportColumns = ref<string[]>([]);
+
+const allExportSelected = computed(
+  () => selectedExportColumns.value.length === exportColumns.value.length && exportColumns.value.length > 0
+);
+
+const toggleAllExport = () => {
+  if (allExportSelected.value) {
+    selectedExportColumns.value = [];
+  } else {
+    selectedExportColumns.value = exportColumns.value.map((c) => c.key);
+  }
+};
+
+const toggleColumn = (key: string) => {
+  const index = selectedExportColumns.value.indexOf(key);
+  if (index > -1) {
+    selectedExportColumns.value.splice(index, 1);
+  } else {
+    selectedExportColumns.value.push(key);
+  }
+};
+
+const handleExportConfirm = () => {
+  const selectedKeys = selectedExportColumns.value;
+  if (selectedKeys.length === 0) return;
+  const excelData = klasifikasiList.value.map((item, index) => {
+    const row: Record<string, any> = {};
+    if (selectedKeys.includes('No')) row['No'] = index + 1;
+    if (selectedKeys.includes('kode')) row[t('ka_kode')] = item.klasifikasi;
+    if (selectedKeys.includes('nama')) row[t('ka_nama')] = item.klasifikasi_text;
+    if (selectedKeys.includes('deskripsi')) row[t('ka_deskripsi')] = item.deskripsi ?? '-';
+    if (selectedKeys.includes('retensi_aktif')) row[t('ka_retensi_aktif')] = item.retensi_aktif_tahun ?? '-';
+    if (selectedKeys.includes('retensi_inaktif')) row[t('ka_retensi_inaktif')] = item.retensi_inaktif_tahun ?? '-';
+    if (selectedKeys.includes('penyusutan')) row[t('ka_penyusutan')] = item.penyusutan ?? '-';
+    if (selectedKeys.includes('keamanan')) row[t('ka_keamanan')] = item.keamanan ?? '-';
+    if (selectedKeys.includes('hak_akses')) row[t('ka_hak_akses')] = item.hak_akses ?? '-';
+    if (selectedKeys.includes('status')) {
+      row['Status'] = item.active === 1
+        ? locale.value === 'id' ? 'Aktif' : 'Active'
+        : locale.value === 'id' ? 'Non Aktif' : 'Inactive';
+    }
+    return row;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(excelData);
-  worksheet['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 12 }];
-
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('ka_title'));
 
@@ -1294,6 +1472,7 @@ const onExport = () => {
     color: 'success',
     icon: 'i-lucide-file-down'
   });
+  showExportModal.value = false;
 };
 
 // Highlight function for search results

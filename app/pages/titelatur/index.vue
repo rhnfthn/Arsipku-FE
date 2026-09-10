@@ -4,12 +4,15 @@ const { hasPermission, user } = useAuth()
 const isUser = computed(() => (user.value?.role || '').toUpperCase() === 'USER')
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Pencil, Trash2, Plus, RotateCcw, ChevronDown, FileDown } from 'lucide-vue-next'
 import Heading from '~/components/Heading.vue'
 import Modal from '~/components/Modal.vue'
 import ConfirmPopup from '~/components/ConfirmPopup.vue'
+import ExportColumnModal from '~/components/ExportColumnModal.vue'
 import { useTitelatur } from '~/composables/useTitelatur'
 import type { TitelaturItem } from '~/types/titelatur'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -273,6 +276,48 @@ const deleteNow = async () => {
     isDeletingItem.value = false
   }
 }
+
+// ─── Export Excel ─────────────────────────────────────────────────────────────
+const showExportModal = ref(false)
+const isExporting = ref(false)
+
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'indonesia', label: t('tit_col_indonesia'), desc: 'Titelatur bahasa Indonesia' },
+  { key: 'inggris', label: t('tit_col_inggris'), desc: 'Titelatur bahasa Inggris' }
+])
+
+const openExportModal = () => {
+  showExportModal.value = true
+}
+
+const handleExportConfirm = (selectedKeys: string[]) => {
+  if (filteredItems.value.length === 0 || selectedKeys.length === 0) return
+  isExporting.value = true
+  try {
+    const excelData = filteredItems.value.map((item: TitelaturItem, idx: number) => {
+      const r: Record<string, any> = {}
+      if (selectedKeys.includes('No')) r['No'] = idx + 1
+      if (selectedKeys.includes('indonesia')) r[t('tit_col_indonesia')] = item.long_text || '-'
+      if (selectedKeys.includes('inggris')) r[t('tit_col_inggris')] = item.long_text_en || '-'
+      return r
+    })
+
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, t('tit_title'))
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    saveAs(blob, `titelatur_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    showExportModal.value = false
+  } catch (error) {
+    console.error('Gagal export titelatur:', error)
+  } finally {
+    isExporting.value = false
+  }
+}
 </script>
 
 <template>
@@ -378,6 +423,15 @@ const deleteNow = async () => {
             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
+
+        <!-- EXPORT BUTTON -->
+        <button
+          @click="openExportModal"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
+        >
+          <FileDown class="w-4 h-4" />
+          Export
+        </button>
       </div>
 
       <!-- TABLE -->
@@ -649,6 +703,15 @@ const deleteNow = async () => {
       cancelColor="primary"
       :loading="isDeletingItem"
       @confirm="deleteNow"
+    />
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="filteredItems.length"
+      :title="$t('tit_export_title')"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
     />
   </div>
 </template>

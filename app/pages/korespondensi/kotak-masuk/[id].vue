@@ -67,6 +67,8 @@ const openNaskahPopup = () => {
 const { t } = useI18n();
 const { user, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
+const { canCreateSdi, fetchCapabilities: fetchRoutingCapabilities } =
+  useCorrespondenceRoutingAccess();
 
 const { fetchInboxDetail, fetchKonsepDetail, fetchInboxNavigation, toggleFlag, markNaskahAsRead } =
   useInbox();
@@ -163,7 +165,11 @@ const isTerkirim = computed(() => {
   return path.includes('terkirim') || path.includes('keluar') || jenis === 'SK';
 });
 
-const getPermissions = (bodTag: string | null | undefined, surat: string) => {
+const getPermissions = (
+  bodTag: string | null | undefined,
+  surat: string,
+  hasManagerSdiAccess = false
+) => {
   const suratNorm = surat?.toUpperCase();
   if (!bodTag) {
     // Non-BOD (AVP, VP, EVP, staf) — bisa lanjut SDE Masal dari disposisi
@@ -197,6 +203,7 @@ const getPermissions = (bodTag: string | null | undefined, surat: string) => {
     }
     // BOD-2/BOD-3 juga bisa lanjut SDE Masal
     const create = suratNorm === 'DI' ? ['DI', 'ND', 'KO', 'SDE'] : ['DI', 'ND', 'SDE'];
+    if (hasManagerSdiAccess) create.push('SDI');
     return { create, forward: [], reject: [], finalize: [] };
   }
   return { create: [], forward: [], reject: [], finalize: [] };
@@ -210,7 +217,7 @@ const allowedActions = computed(() => {
   const tag = user.value?.bodTag;
   const surat = selected.value?.jenis;
   if (!isKonsepData.value) {
-    return getPermissions(tag, surat).create;
+    return getPermissions(tag, surat, canCreateSdi.value).create;
   }
   const aksi = details.value[0]?.aksi;
   const permissions = getPermissions(tag, surat);
@@ -704,6 +711,8 @@ const loadData = async () => {
 };
 
 onMounted(() => {
+  if (['BOD-2', 'BOD-3'].includes(String(user.value?.bodTag ?? '')))
+    fetchRoutingCapabilities().catch(() => {});
   if (process.client) {
     const token = localStorage.getItem('token');
     const sessionId = localStorage.getItem('sessionId');
