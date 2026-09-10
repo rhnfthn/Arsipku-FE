@@ -1003,7 +1003,7 @@ async function confirmTolak(note) {
     toast.add({ title: 'Lembar persetujuan ditolak', color: 'success' });
     tolakModalOpen.value = false;
     activeDirector.value = null;
-    navigateTo(`/naskah-lainnya/${id.value}/legal-drafting`);
+    await navigateTo('/naskah-lainnya/persetujuan?status=ditolak');
   } catch (e) {
     toast.add({
       title: 'Gagal menolak lembar persetujuan',

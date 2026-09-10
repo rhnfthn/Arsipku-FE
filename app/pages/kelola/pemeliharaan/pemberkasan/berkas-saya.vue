@@ -322,7 +322,7 @@
                   ring: 'ring-0',
                   shadow: 'shadow-none',
                   width: 'w-full max-w-[calc(100vw-2rem)]',
-                  content: 'z-[100]',
+                  content: 'z-[10000]',
                 } as any"
                 @update:model-value="onKlasifikasiChange"
               >
@@ -532,7 +532,7 @@
             </div>
           </div>
 
-          <!-- Penyusutan Akhir -->
+          <!-- Penyusutan Akhir (auto dari klasifikasi) -->
           <div
             class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
           >
@@ -542,13 +542,14 @@
               Penyusutan Akhir <span class="text-red-500">*</span>
             </span>
             <div class="flex-1 w-full">
-              <select
-                v-model="form.tindakan_penyusutan_akhir"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full"
+              <div
+                class="flex-1 text-gray-900 dark:text-white py-1 text-sm w-full opacity-75 cursor-default"
               >
-                <option value="Musnah">Musnah</option>
-                <option value="Permanen">Permanen</option>
-              </select>
+                {{ form.tindakan_penyusutan_akhir || '— otomatis dari klasifikasi —' }}
+              </div>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Diisi otomatis dari kolom Penyusutan pada klasifikasi terpilih.
+              </p>
             </div>
           </div>
 
@@ -913,6 +914,12 @@ const onKlasifikasiChange = () => {
   if (k) {
     selectedRetensiAktif.value = k.retensi_aktif_tahun || 0;
     selectedRetensiInaktif.value = k.retensi_inaktif_tahun || 0;
+    // Penyusutan akhir otomatis mengikuti kolom Penyusutan pada klasifikasi
+    // terpilih (tabel klasifikasi). Fallback ke nilai existing bila kosong.
+    const penyusutan = String(k.penyusutan || '').trim();
+    if (penyusutan) {
+      form.tindakan_penyusutan_akhir = penyusutan;
+    }
   } else {
     selectedRetensiAktif.value = 0;
     selectedRetensiInaktif.value = 0;
