@@ -1193,7 +1193,10 @@ const removeNote = () => {
   -->
               <template v-if="data.aksi === 'reject'">
                 <!-- Dropdown: hanya kalau masih ada bawahan (canTurunkanLagi) -->
-                <div v-if="isPengirimKonsep && isHead && canTurunkanLagi" class="relative">
+                <div
+                  v-if="showEdit && isPengirimKonsep && isHead && canTurunkanLagi"
+                  class="relative"
+                >
                   <div
                     @click="showRepairDropdown = !showRepairDropdown"
                     class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
@@ -1245,7 +1248,7 @@ const removeNote = () => {
 
                 <!-- Button langsung (tanpa dropdown): kalau tidak ada bawahan -->
                 <div
-                  v-else-if="isPengirimKonsep && isHead"
+                  v-else-if="showEdit && isPengirimKonsep && isHead"
                   @click="emit('edit')"
                   class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
                 >
@@ -1253,21 +1256,16 @@ const removeNote = () => {
                   <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
                 </div>
 
-                <!-- Card riwayat (bukan head): tampilkan disabled -->
-                <div
-                  v-else-if="isPengirimKonsep && !isHead"
-                  class="flex bg-amber-300 cursor-not-allowed py-2.5 px-6 rounded-lg text-white gap-2 items-center shadow-sm opacity-50"
-                >
-                  <Edit3 class="w-4 h-4" />
-                  <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
-                </div>
               </template>
 
               <!-- aksi turunkan: konsep diturunkan ke saya (bawahan) untuk diperbaiki.
                    Tidak ada Tolak. Perbaiki dropdown: Perbaiki Sendiri / Turunkan ke Bawahan (jika ada bawahan). -->
               <template v-if="data.aksi === 'turunkan'">
                 <!-- Dropdown: hanya kalau masih ada bawahan (canTurunkanLagi) -->
-                <div v-if="isPenerimaKonsepAktif && isHead && canTurunkanLagi" class="relative">
+                <div
+                  v-if="showEdit && isPenerimaKonsepAktif && isHead && canTurunkanLagi"
+                  class="relative"
+                >
                   <div
                     @click="showRepairDropdown = !showRepairDropdown"
                     class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
@@ -1320,7 +1318,7 @@ const removeNote = () => {
 
                 <!-- Button langsung (tanpa dropdown): kalau tidak ada bawahan -->
                 <div
-                  v-else-if="isPenerimaKonsepAktif && isHead"
+                  v-else-if="showEdit && isPenerimaKonsepAktif && isHead"
                   @click="emit('edit')"
                   class="flex bg-amber-500 hover:bg-amber-600 cursor-pointer py-2.5 px-6 rounded-lg text-white gap-2 items-center transition-colors shadow-sm active:scale-[0.98]"
                 >
@@ -1328,14 +1326,6 @@ const removeNote = () => {
                   <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
                 </div>
 
-                <!-- Card riwayat (bukan head): tampilkan disabled -->
-                <div
-                  v-else-if="!isHead"
-                  class="flex bg-amber-300 cursor-not-allowed py-2.5 px-6 rounded-lg text-white gap-2 items-center shadow-sm opacity-50"
-                >
-                  <Edit3 class="w-4 h-4" />
-                  <span class="text-sm font-medium whitespace-nowrap">{{ $t('kon_perbaiki_konsep') }}</span>
-                </div>
               </template>
             </template>
 
