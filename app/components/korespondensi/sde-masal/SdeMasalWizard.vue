@@ -610,6 +610,32 @@ const ensureItemsGenerated = async () => {
       missing.forEach((p, idx) => {
         if (items[idx]) p.id = items[idx].id;
       });
+
+      // Generate bersifat idempotent: jika baris sudah pernah dibuat di
+      // server, endpoint tidak membuat duplikat dan dapat mengembalikan
+      // items kosong. Ambil ulang item folder agar submit verifikasi tetap
+      // memiliki ID database yang benar.
+      if (folderId.value && missing.some((p) => !p.id)) {
+        const folderData = await findNaskahInFolder(folderId.value);
+        const serverItems = folderData?.items || [];
+        const serverItemsByRow = new Map<string, any>();
+        serverItems.forEach((item: any) => {
+          const rowNo = item?.recipient?.no ?? item?.recipientData?.no;
+          if (rowNo !== undefined && rowNo !== null && String(rowNo).trim()) {
+            serverItemsByRow.set(String(rowNo).trim(), item);
+          }
+        });
+
+        missing.forEach((p: any) => {
+          if (p.id) return;
+          const rowNo = p?.no;
+          const serverItem =
+            rowNo !== undefined && rowNo !== null
+              ? serverItemsByRow.get(String(rowNo).trim())
+              : undefined;
+          if (serverItem?.id) p.id = serverItem.id;
+        });
+      }
     } finally {
       itemsGenerationPromise = null;
     }
@@ -731,13 +757,14 @@ const handleSubmitVerification = async (
     const ids = wizardState.penerimaList
       .filter((p) => p.id)
       .map((p) => p.id as string);
-    if (ids.length > 0) {
-      await submitVerification(ids, verifikators);
+    if (ids.length === 0) {
+      throw new Error('Item SDE Massal belum berhasil dibuat di server');
     }
+    const submitResult = await submitVerification(ids, verifikators);
 
     toast.add({
       title: 'Berhasil',
-      description: `${ids.length} SDE Massal berhasil diajukan ke verifikator`,
+      description: `${submitResult?.total || ids.length} SDE Massal berhasil diajukan ke verifikator`,
       color: 'success',
     });
 
