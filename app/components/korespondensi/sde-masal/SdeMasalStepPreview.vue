@@ -1162,26 +1162,70 @@ const openVerificationSelection = async () => {
           matchPenerimaLogin?.position;
         if (posisiDisposisi) positionId = posisiDisposisi;
 
-        // Setiap pengirim pada node chain adalah pejabat yang meneruskan
-        // disposisi ke bawah. Inilah rantai atasan yang sebenarnya untuk
-        // SDE Massal, bukan seluruh AVP/VP dalam divisi yang sama.
-        // Gunakan seluruh pengirim pada flow disposisi awal sebagai sumber
-        // chain verifikator.
+        // Telusuri handoff disposisi dari penerima terakhir ke atas dan
+        // berhenti tepat pada pengirim SDE yang dipilih saat folder dibuat.
+        // Pengirim tersebut tetap menjadi verifikator terakhir, lalu menerima
+        // folder kembali sebagai pengirim/final signer. Pejabat sebelum batas
+        // tersebut (misalnya pengirim Nota Dinas awal) tidak ikut terpilih.
+        const selectedSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
+        const flowNodes = (Array.isArray(flow) ? flow : [])
+          .map((node: any) => {
+            const sender = node?.pengirim
+              ? {
+                  persnum: String(
+                    node.pengirim?.persnum ?? node.pengirim?.id_sirkuler ?? '',
+                  ).trim(),
+                  position: String(
+                    node.pengirim?.position_id ?? node.pengirim?.position ?? '',
+                  ).trim(),
+                  nama: node.pengirim?.nama || '-',
+                  jabatan: node.pengirim?.position_text || node.pengirim?.jabatan || '-',
+                }
+              : null;
+            const recipientPositions = (Array.isArray(node?.penerima) ? node.penerima : [])
+              .map((recipient: any) =>
+                String(recipient?.position_id ?? recipient?.position ?? '').trim(),
+              )
+              .filter(Boolean);
+            return { sender, recipientPositions };
+          })
+          .filter((node: any) => node.sender?.position);
+
+        const tracedVerifiers: any[] = [];
+        const visitedPositions = new Set<string>();
+        let expectedRecipientPosition = String(positionId ?? '').trim();
+        let reachedSelectedSender = !selectedSenderPosition;
+
+        for (let depth = 0; depth < flowNodes.length; depth += 1) {
+          const handoff = flowNodes.find(
+            (node: any) =>
+              !visitedPositions.has(node.sender.position) &&
+              node.recipientPositions.includes(expectedRecipientPosition),
+          );
+          if (!handoff?.sender) break;
+
+          visitedPositions.add(handoff.sender.position);
+          if (handoff.sender.position === selectedSenderPosition) {
+            if (verifierRoleRank(handoff.sender.jabatan) !== null) {
+              tracedVerifiers.push(handoff.sender);
+            }
+            reachedSelectedSender = true;
+            break;
+          }
+
+          if (verifierRoleRank(handoff.sender.jabatan) !== null) {
+            tracedVerifiers.push(handoff.sender);
+          }
+          expectedRecipientPosition = handoff.sender.position;
+        }
+
         const byRank = new Map<number, any>();
-        (Array.isArray(flow) ? flow : [])
-          .map((node: any) => node?.pengirim)
-          .filter(Boolean)
-          .map((sender: any) => ({
-            persnum: String(sender?.persnum ?? sender?.id_sirkuler ?? '').trim(),
-            position: String(sender?.position_id ?? sender?.position ?? '').trim(),
-            nama: sender?.nama || '-',
-            jabatan: sender?.position_text || sender?.jabatan || '-',
-          }))
-          .filter((sender: any) => sender.position)
-          .forEach((sender: any) => {
+        if (reachedSelectedSender) {
+          tracedVerifiers.forEach((sender: any) => {
             const rank = verifierRoleRank(sender.jabatan);
             if (rank !== null && !byRank.has(rank)) byRank.set(rank, sender);
           });
+        }
         verifiersFromDisposition = [...byRank.entries()]
           .sort(([rankA], [rankB]) => rankA - rankB)
           .map(([, sender]) => sender);
@@ -1210,6 +1254,8 @@ const openVerificationSelection = async () => {
     );
     const rows = Array.isArray(result?.data) ? result.data : [];
     const byRank = new Map<number, any>();
+    const selectedSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
+    const selectedSenderRank = verifierRoleRank(pengirimJabatan.value);
     rows
       .filter((row: any) => row.persnum_person || row.persnum)
       .map((row: any) => ({
@@ -1218,7 +1264,17 @@ const openVerificationSelection = async () => {
         nama: row.persnum_person_text || row.nama || '-',
         jabatan: row.position_text || '-',
       }))
-      .filter((person: any) => person.persnum && person.nama !== '-' && verifierRoleRank(person.jabatan) !== null)
+      .filter((person: any) => {
+        const rank = verifierRoleRank(person.jabatan);
+        return (
+          person.persnum &&
+          person.nama !== '-' &&
+          rank !== null &&
+          (person.position === selectedSenderPosition ||
+            selectedSenderRank === null ||
+            rank < selectedSenderRank)
+        );
+      })
       .sort((a: any, b: any) => (verifierRoleRank(a.jabatan) ?? 99) - (verifierRoleRank(b.jabatan) ?? 99))
       .forEach((person: any) => {
         const rank = verifierRoleRank(person.jabatan);

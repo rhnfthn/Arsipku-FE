@@ -207,18 +207,21 @@
           </p>
           <div class="flex items-center gap-1">
             <button
+              type="button"
               @click="currentPage--"
               :disabled="currentPage === 1"
-              class="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:text-gray-300"
+              aria-label="Halaman sebelumnya"
+              class="w-10 h-9 flex items-center justify-center text-sm border border-gray-200 dark:border-gray-600 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:text-gray-300"
             >
-              ‹
+              <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               v-for="p in totalPages"
               :key="p"
+              type="button"
               @click="currentPage = p"
               :class="[
-                'px-3 py-1.5 text-sm border rounded-lg transition-colors',
+                'w-10 h-9 flex items-center justify-center text-sm border rounded-lg transition-colors',
                 currentPage === p
                   ? 'bg-primary text-white border-primary'
                   : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300',
@@ -227,11 +230,13 @@
               {{ p }}
             </button>
             <button
+              type="button"
               @click="currentPage++"
               :disabled="currentPage === totalPages"
-              class="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:text-gray-300"
+              aria-label="Halaman sesudahnya"
+              class="w-10 h-9 flex items-center justify-center text-sm border border-gray-200 dark:border-gray-600 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors dark:text-gray-300"
             >
-              ›
+              <ChevronRight class="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -447,16 +452,17 @@
         :model-value="showMembersModal"
         @update:model-value="showMembersModal = false"
         :hide-default-footer="true"
+        :hide-close-button="true"
         size="md"
       >
         <template #title>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3 px-4 pt-2 pb-1">
             <div
-              class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center"
+              class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0"
             >
-              <Users class="w-4 h-4 text-primary" />
+              <Users class="w-5 h-5 text-primary" />
             </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 class="text-lg sm:text-xl font-bold leading-tight text-gray-900 dark:text-white">
               {{ selectedGrup?.nama }}
             </h3>
           </div>
@@ -738,6 +744,8 @@ import {
   Search,
   RefreshCw,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowUpDown,
   Pencil,
   Trash2,
@@ -812,6 +820,7 @@ const showBlockedDeletePopup = ref(false);
 const blockedDeleteMessage = ref('');
 const deleteTarget = ref<any>(null);
 const checkingDelete = ref(false);
+const actionLoadingId = ref('');
 
 // Members modal
 const showMembersModal = ref(false);
@@ -1087,13 +1096,35 @@ const toggleAktif = async (item: any) => {
 };
 
 // Delete
-const confirmDelete = (item: any) => {
+const confirmDelete = async (item: any) => {
+  if (checkingDelete.value) return;
+  checkingDelete.value = true;
   deleteTarget.value = item;
-  showDeletePopup.value = true;
+  try {
+    const usage = await checkGrupPenerimaUsage(item.id);
+    const usageData = usage?.data ?? usage;
+    if (usageData?.canDelete === false) {
+      blockedDeleteMessage.value = usageData.reason || 'Grup penerima masih digunakan.';
+      showBlockedDeletePopup.value = true;
+      deleteTarget.value = null;
+      return;
+    }
+    showDeletePopup.value = true;
+  } catch (err) {
+    toast.add({
+      title: t('gp_toast_delete_fail'),
+      description: err instanceof Error ? err.message : String(err),
+      color: 'error',
+    });
+    deleteTarget.value = null;
+  } finally {
+    checkingDelete.value = false;
+  }
 };
 
 const doDelete = async () => {
   if (!deleteTarget.value) return;
+  actionLoadingId.value = deleteTarget.value.id;
   try {
     await deleteGrupPenerima(deleteTarget.value.id);
     toast.add({ title: t('gp_toast_delete_ok'), color: 'success' });
@@ -1101,7 +1132,13 @@ const doDelete = async () => {
     deleteTarget.value = null;
     await fetchData();
   } catch (err) {
-    toast.add({ title: t('gp_toast_delete_fail'), color: 'error' });
+    toast.add({
+      title: t('gp_toast_delete_fail'),
+      description: err instanceof Error ? err.message : String(err),
+      color: 'error',
+    });
+  } finally {
+    actionLoadingId.value = '';
   }
 };
 
