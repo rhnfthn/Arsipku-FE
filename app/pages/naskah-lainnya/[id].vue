@@ -30,7 +30,7 @@ const {
   ubahNomorFinalManual,
 } = useNaskahLainnya();
 const { apiGet } = useApi();
-const { user } = useAuth();
+const { user, isLegalRole } = useAuth();
 const toast = useToast();
 const {
   init: initRealtimeSocket,
@@ -96,10 +96,12 @@ const APPROVAL_TAHAP_ORDER = [
   'evaluasi',
   'persetujuan_lanjutan',
   'evaluasi_final',
-  'persetujuan_direksi_ditetapkan',
+  'persetujuan_direksi_pemrakarsa',
   'persetujuan_direksi',
-  'blanko_verbal_ditetapkan',
+  'persetujuan_direksi_ditetapkan',
+  'blanko_verbal_pemrakarsa',
   'blanko_verbal',
+  'blanko_verbal_ditetapkan',
   'tanda_tangan',
 ];
 const APPROVAL_TAHAP_LABEL: Record<string, string> = {
@@ -109,8 +111,10 @@ const APPROVAL_TAHAP_LABEL: Record<string, string> = {
   evaluasi: 'Evaluasi',
   persetujuan_lanjutan: 'Persetujuan Lanjutan',
   evaluasi_final: 'Evaluasi Final EVP',
+  persetujuan_direksi_pemrakarsa: 'Direktur Pemrakarsa',
   persetujuan_direksi_ditetapkan: 'Ditetapkan/Disahkan Oleh',
   persetujuan_direksi: 'Diketahui Oleh',
+  blanko_verbal_pemrakarsa: 'Direktur Pemrakarsa',
   blanko_verbal_ditetapkan: 'Ditetapkan/Disahkan Oleh',
   blanko_verbal: 'Diketahui Oleh',
   tanda_tangan: 'Tanda Tangan',
@@ -195,16 +199,18 @@ const approvalDisplayGroups = computed<ApprovalDisplayGroup[]>(() => {
 
   for (const group of approvalGroups.value) {
     if (used.has(group.tahap)) continue;
-    if (group.tahap === 'persetujuan_direksi_ditetapkan' || group.tahap === 'persetujuan_direksi') {
+    if (group.tahap.startsWith('persetujuan_direksi')) {
       const composite = buildComposite('persetujuan_direksi', 'Persetujuan Direksi', [
-        { tahap: 'persetujuan_direksi_ditetapkan', label: 'Ditetapkan/Disahkan Oleh' },
+        { tahap: 'persetujuan_direksi_pemrakarsa', label: 'Direktur Pemrakarsa' },
         { tahap: 'persetujuan_direksi', label: 'Diketahui Oleh' },
+        { tahap: 'persetujuan_direksi_ditetapkan', label: 'Ditetapkan/Disahkan Oleh' },
       ]);
       if (composite) groups.push(composite);
       continue;
     }
-    if (group.tahap === 'blanko_verbal_ditetapkan' || group.tahap === 'blanko_verbal') {
+    if (group.tahap.startsWith('blanko_verbal')) {
       const composite = buildComposite('blanko_verbal', 'Blanko Verbal Persetujuan Direksi', [
+        { tahap: 'blanko_verbal_pemrakarsa', label: 'Direktur Pemrakarsa' },
         { tahap: 'blanko_verbal', label: 'Diketahui Oleh' },
         { tahap: 'blanko_verbal_ditetapkan', label: 'Ditetapkan/Disahkan Oleh' },
       ]);
@@ -237,8 +243,21 @@ const stepStyle = (status: string) => ({
           : 'text-gray-500',
 });
 
-const approvalStepGroups = computed(() =>
-  approvalDisplayGroups.value.map((g) => ({
+// POV Unit Legal: Langkah Verifikasi hanya menampilkan tahap yang relevan
+// untuk legal — persetujuan direksi/blanko (ranah direksi) dan approval
+// pemrakarsa (sudah selesai sebelum naskah masuk ke legal) disembunyikan.
+const LEGAL_HIDDEN_TAHAPS = new Set([
+  'persetujuan',
+  'persetujuan_direksi_pemrakarsa',
+  'persetujuan_direksi',
+  'persetujuan_direksi_ditetapkan',
+  'blanko_verbal_pemrakarsa',
+  'blanko_verbal',
+  'blanko_verbal_ditetapkan',
+]);
+
+const approvalStepGroups = computed(() => {
+  const groups = approvalDisplayGroups.value.map((g) => ({
     tahap: g.tahap,
     label: g.label,
     children: (g.children?.length ? g.children : [g]).map((child) => ({
@@ -248,8 +267,10 @@ const approvalStepGroups = computed(() =>
       // bukan rantai approval berjenjang, sehingga tidak boleh divisualkan
       // dengan nomor dan garis urutan.
       isParallel: [
+        'persetujuan_direksi_pemrakarsa',
         'persetujuan_direksi_ditetapkan',
         'persetujuan_direksi',
+        'blanko_verbal_pemrakarsa',
         'blanko_verbal_ditetapkan',
         'blanko_verbal',
       ].includes(child.tahap),
@@ -262,8 +283,16 @@ const approvalStepGroups = computed(() =>
         ...stepStyle(a.status),
       })),
     })),
-  }))
-);
+  }));
+  if (!isLegalRole.value) return groups;
+  return groups
+    .filter((g) => !LEGAL_HIDDEN_TAHAPS.has(g.tahap))
+    .map((g) => ({
+      ...g,
+      children: g.children.filter((child) => !LEGAL_HIDDEN_TAHAPS.has(child.tahap)),
+    }))
+    .filter((g) => g.children.length > 0);
+});
 
 const approvalStatusLabel = (status: string) => {
   if (status === 'verified') return 'Disetujui';
@@ -948,25 +977,25 @@ const ACTION_META: Record<
     to: (id: string) => `/naskah-lainnya/${id}/evaluasi`,
   },
   'simpan-blanko': {
-    label: 'Buat Blanko Verbal',
+    label: 'Buat Lembar Persetujuan',
     icon: 'i-lucide-file-check',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
   },
   'kirim-approval-blanko': {
-    label: 'Kirim Approval Blanko',
+    label: 'Kirim untuk Disetujui',
     icon: 'i-lucide-send',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
   },
   'buka-blanko-verbal': {
-    label: 'Lihat Progres Blanko',
+    label: 'Lihat Progres Persetujuan',
     icon: 'i-lucide-file-search',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
   },
   paraf: {
-    label: 'Buka Persetujuan Direksi',
+    label: 'Setujui',
     icon: 'i-lucide-file-check-2',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/persetujuan-direksi`,
@@ -1002,9 +1031,9 @@ function activeApprovalRow() {
   const tahapNow = detail.value?.tahapan;
   const tahaps =
     tahapNow === 'persetujuan_direksi'
-      ? ['persetujuan_direksi_ditetapkan', 'persetujuan_direksi']
+      ? ['persetujuan_direksi_pemrakarsa', 'persetujuan_direksi', 'persetujuan_direksi_ditetapkan']
       : tahapNow === 'blanko_verbal'
-        ? ['blanko_verbal_ditetapkan', 'blanko_verbal']
+        ? ['blanko_verbal_pemrakarsa', 'blanko_verbal', 'blanko_verbal_ditetapkan']
         : [tahapNow];
   return detail.value?.approval
     .filter((ap) => ap.status === 'waiting' && tahaps.includes(ap.tahap))
@@ -1060,6 +1089,9 @@ function buildSheetActionPayload() {
     lampiran: '1 (satu) berkas',
     ditetapkanOleh: directorPayload(
       tahapan === 'blanko_verbal' ? 'blanko_verbal_ditetapkan' : 'persetujuan_direksi_ditetapkan'
+    ),
+    direkturPemrakarsa: directorPayload(
+      tahapan === 'blanko_verbal' ? 'blanko_verbal_pemrakarsa' : 'persetujuan_direksi_pemrakarsa'
     ),
     diketahuiOleh: directorPayload(
       tahapan === 'blanko_verbal' ? 'blanko_verbal' : 'persetujuan_direksi'
@@ -1418,10 +1450,18 @@ function approvalDotClass(status: string) {
 // ── Stepper: hilangkan step 'skip' (mode tanpa legal) & renumber 1..M ──
 // BE buildStepper seharusnya sudah memfilter skip, tapi guard di FE agar UI
 // tetap benar walau BE lama masih mengirim status:'skip'.
+// POV Unit Legal: step Persetujuan (pemrakarsa, sudah lewat) dan Blanko
+// Verbal / Persetujuan Direksi (ranah direksi) disembunyikan — legal hanya
+// perlu melihat Konsep, Legal Drafting, Evaluasi, dan seterusnya.
+const LEGAL_HIDDEN_STEPPER_LABELS = new Set([
+  'Persetujuan',
+  'Blanko Verbal / Persetujuan Direksi',
+]);
 const visibleStepper = computed(() => {
   if (!detail.value?.stepper) return [];
   return detail.value.stepper
     .filter((s) => s.status !== 'skip')
+    .filter((s) => !isLegalRole.value || !LEGAL_HIDDEN_STEPPER_LABELS.has(s.label))
     .map((s, i) => ({ ...s, step: i + 1 }));
 });
 
@@ -2712,7 +2752,7 @@ const signLabel = computed(() =>
                 icon="i-lucide-file-check-2"
                 class="w-full font-semibold sm:w-auto"
                 :to="`/naskah-lainnya/${id}/persetujuan-direksi`"
-                >Buka Persetujuan Direksi</UButton
+                >Setujui</UButton
               >
 
               <!-- Mulai Legal Drafting: aktif di legal_drafting, hide di tahap lain -->
@@ -2765,7 +2805,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/blanko-verbal`"
-                >{{ canBuatBlanko ? 'Buat Blanko Verbal' : 'Lihat Progres Blanko Verbal' }}</UButton
+                >{{ canBuatBlanko ? 'Buat Lembar Persetujuan' : 'Lihat Progres Persetujuan' }}</UButton
               >
 
               <!-- Buat Lembar Persetujuan Direksi: legal menyusun lembar saat evaluasi (butuhLegal) -->
@@ -2776,7 +2816,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/persetujuan-direksi`"
-                >Buat Lembar Persetujuan Direksi</UButton
+                >Buat Lembar Persetujuan</UButton
               >
 
               <!-- Kembalikan ke pemrakarsa (legal drafting) -->
