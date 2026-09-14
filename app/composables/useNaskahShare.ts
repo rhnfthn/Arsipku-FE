@@ -10,7 +10,6 @@ export interface ShareRecipient {
   status?: string;
   openedAt?: string | null;
 }
-
 export interface ShareItem {
   id: string;
   naskahId: string;
@@ -101,9 +100,14 @@ export function useNaskahShare() {
     accessType?: 'SEKALI_LIHAT' | 'RENTANG_WAKTU',
     durationDays?: number,
     naskahIds?: string[],
+    distributionScope: 'SELECTED' | 'ALL_EMPLOYEES' = 'SELECTED',
   ) => {
     try {
-      const payload: any = { recipientIds, catatan: catatan || undefined };
+      const payload: any = {
+        recipientIds: recipientIds.length ? recipientIds : undefined,
+        distributionScope,
+        catatan: catatan || undefined,
+      };
       // Multi-naskah: kirim naskahIds; single: kirim naskahId (backward compat)
       if (naskahIds?.length) {
         payload.naskahIds = naskahIds;

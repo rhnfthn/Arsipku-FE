@@ -184,3 +184,15 @@ svg[aria-describedby]:focus-visible {
   background-color: #ffffff !important;
   border: 1px solid #e5e7eb !important;
 }
+
+/* ── TinyMCE di dalam Modal ──
+   Dropdown/menu aux TinyMCE (menu Table, color picker, dll.) default
+   z-index:1300 — lebih rendah dari Modal (z-index:9999), sehingga menu
+   tertutup overlay modal dan tidak bisa diklik. Naikkan di atas modal. */
+.tox-tinymce-aux {
+  z-index: 10500 !important;
+}
+/* Dialog TinyMCE (insert table grid, dll.) juga perlu di atas modal */
+.tox-dialog-wrap {
+  z-index: 10501 !important;
+}
