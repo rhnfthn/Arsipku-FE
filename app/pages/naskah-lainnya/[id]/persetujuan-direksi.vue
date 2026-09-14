@@ -105,6 +105,16 @@
 
             <div class="py-3 border-b border-gray-200 dark:border-gray-600">
               <DirectorOrderSelector
+                v-model="sheet.diketahuiOleh"
+                label="Diketahui Oleh"
+                hint="urutan paraf direksi"
+                placeholder="Pilih direksi paraf"
+                :recipients="selectableDirectors"
+              />
+            </div>
+
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
                 v-model="sheet.direkturPemrakarsa"
                 label="Direktur Pemrakarsa"
                 hint="otomatis dari direktorat pemrakarsa"
@@ -112,16 +122,6 @@
                 :recipients="selectableDirectors"
                 :max-selections="1"
                 sync-position-on-name-change
-              />
-            </div>
-
-            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
-              <DirectorOrderSelector
-                v-model="sheet.diketahuiOleh"
-                label="Diketahui Oleh"
-                hint="urutan paraf direksi"
-                placeholder="Pilih direksi paraf"
-                :recipients="selectableDirectors"
               />
             </div>
 
@@ -273,27 +273,6 @@
                 </h3>
               </div>
               <div class="space-y-4">
-                <div v-if="pdPemrakarsaDirectors.length" class="space-y-2">
-                  <h4
-                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                  >
-                    Direktur Pemrakarsa
-                  </h4>
-                  <DireksiApprovalProgress
-                    :directors="pdPemrakarsaDirectors"
-                    :is-current-user-approver="isCurrentUserApprover"
-                    :can-approve="canApprove"
-                    :can-approve-item="canApproveDirector"
-                    :busy="busy"
-                    paraf-label="Setuju"
-                    :is-legal="isLegalRole"
-                    @paraf="openParafModal"
-                    @tolak="openTolakModal"
-                    @add-delegate="openAddDelegate"
-                    @edit-delegate="openEditDelegate"
-                    @remove-delegate="removeDelegate"
-                  />
-                </div>
                 <div v-if="pdDitetapkanDirectors.length" class="space-y-2">
                   <h4
                     class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
@@ -323,6 +302,27 @@
                   </h4>
                   <DireksiApprovalProgress
                     :directors="pdDiketahuiDirectors"
+                    :is-current-user-approver="isCurrentUserApprover"
+                    :can-approve="canApprove"
+                    :can-approve-item="canApproveDirector"
+                    :busy="busy"
+                    paraf-label="Setuju"
+                    :is-legal="isLegalRole"
+                    @paraf="openParafModal"
+                    @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
+                  />
+                </div>
+                <div v-if="pdPemrakarsaDirectors.length" class="space-y-2">
+                  <h4
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    Direktur Pemrakarsa
+                  </h4>
+                  <DireksiApprovalProgress
+                    :directors="pdPemrakarsaDirectors"
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
