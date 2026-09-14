@@ -6,9 +6,10 @@ import type {
   SuratMasukTerbaru,
 } from "@/types/dashboard";
 
-export const useDashboard = () => {
+type Translate = (key: string, ...args: any[]) => string;
+
+export const useDashboard = (t: Translate) => {
   const { apiGet } = useApi();
-  const { t } = useI18n();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const dashboardData = ref<DashboardData | null>(null);
