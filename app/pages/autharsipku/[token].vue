@@ -47,7 +47,7 @@
 <script setup>
 import { useRoute, navigateTo } from '#imports'
 
-const { verifyToken, getProfile, setUser } = useAuth()
+const { verifyToken, getProfile, setUser, applyLoginDefaults } = useAuth()
 const route = useRoute()
 const tokenCookie = useCookie('token', { sameSite: 'lax', path: '/' })
 const sessionCookie = useCookie('sessionId', { sameSite: 'lax', path: '/' })
@@ -83,8 +83,7 @@ onMounted(async () => {
       }
 
       // Simpan token
-      localStorage.setItem('token', accessToken)
-      localStorage.setItem('sessionId', sessionId)
+      setStoredAuthSession(accessToken, sessionId, 'legacy')
       tokenCookie.value = accessToken
       sessionCookie.value = sessionId
       roleCookie.value = role || null
@@ -93,6 +92,8 @@ onMounted(async () => {
       if (!profile && result?.data?.user) {
         setUser(result.data.user)
       }
+
+      applyLoginDefaults()
 
       const resolvedRole = profile?.role || role
 
