@@ -1,5 +1,6 @@
 // composables/useAuth.ts
 import type { UserProfile, ActivePermission } from '~/types/auth';
+import { useDark } from '@vueuse/core';
 
 // ── Inflight guard untuk getProfile — mencegah duplicate /auth/profile calls ──
 let inflightProfile: Promise<UserProfile | null> | null = null;
@@ -8,6 +9,8 @@ const PROFILE_DEDUP_MS = 5_000; // 5 detik — jangan fetch ulang jika baru saja
 
 export const useAuth = () => {
   const { apiGet, apiPost, clearApiCache } = useApi();
+  const { setLocale } = useI18n();
+  const isDark = useDark();
   const tokenCookie = useCookie<string | null>('token', {
     sameSite: 'lax',
     path: '/',
@@ -23,6 +26,17 @@ export const useAuth = () => {
   const user = useState<UserProfile | null>('user', () => null);
   const setUser = (data: UserProfile | null) => {
     user.value = data;
+  };
+
+  // Setiap login baru dimulai dengan bahasa Indonesia dan mode terang.
+  // Simpan juga ke storage agar Navbar tidak mengembalikan preferensi lama
+  // ketika halaman beranda selesai dimuat.
+  const applyLoginDefaults = () => {
+    if (!process.client) return;
+
+    setLocale('id');
+    localStorage.setItem('arsipku_locale', 'id');
+    isDark.value = false;
   };
 
   const getProfile = async (force = false): Promise<UserProfile | null> => {
@@ -344,6 +358,7 @@ export const useAuth = () => {
   return {
     user,
     setUser,
+    applyLoginDefaults,
     getProfile,
     getSSORedirectUrl,
     verifyToken,
