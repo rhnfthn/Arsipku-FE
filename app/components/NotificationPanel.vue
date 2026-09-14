@@ -113,7 +113,7 @@
                     : 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
                 "
               >
-                <UIcon :name="resolveNotificationIcon(item.type)" class="w-4 h-4" />
+                <UIcon :name="resolveNotificationIcon(item.type, item.data)" class="w-4 h-4" />
               </div>
 
               <!-- CONTENT -->

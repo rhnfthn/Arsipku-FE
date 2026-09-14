@@ -979,8 +979,11 @@ onMounted(async () => {
     try {
       const result = await fetchKonsepDetail(refId);
       const dataArray = extractDataArray(result);
-      const draftData = dataArray.find((d: any) => d.jenis === 'K');
-      const originFlow = dataArray.find((d: any) => d.jenis !== 'K');
+      const konsepFlows = dataArray.filter(
+        (d: any) => String(d?.jenis || '').toUpperCase() === 'K'
+      );
+      const draftData =
+        konsepFlows.find((d: any) => String(d?.id || '') === String(refId)) || konsepFlows[0];
       /* log removed */
       /* log removed */
 
@@ -1067,25 +1070,34 @@ onMounted(async () => {
         fileSize: f.size || f.fileSize || 0,
       }));
 
-      if (originFlow) {
+      // Pada mode edit, surat referensi adalah snapshot konsep yang diterima
+      // dari konseptor sebelumnya. Jangan memakai node non-K (surat/disposisi
+      // asal) dan jangan fallback ke lampiran karena lampiran bukan dokumen
+      // konsep yang sedang direvisi.
+      const referenceKonsepFlow =
+        (draftData.final_pdf_url ? draftData : null) ||
+        konsepFlows.find((flow: any) => Boolean(flow?.final_pdf_url)) ||
+        draftData;
+
+      if (referenceKonsepFlow) {
         refData.value = {
-          id: originFlow.id,
-          nomor: originFlow.nomor || '-',
-          tanggal: originFlow.tanggal,
-          final_pdf_url: originFlow.final_pdf_url,
-          lampiran_files: originFlow.lampiran_files || [],
-          jenis: originFlow.jenis,
-          pengirim: originFlow.pengirim || null,
+          id: referenceKonsepFlow.id,
+          nomor: referenceKonsepFlow.nomor || '-',
+          tanggal: referenceKonsepFlow.tanggal || referenceKonsepFlow.created_at,
+          final_pdf_url: referenceKonsepFlow.final_pdf_url || null,
+          lampiran_files: [],
+          jenis: referenceKonsepFlow.jenis,
+          pengirim: referenceKonsepFlow.pengirim || null,
         };
         refPengirimPositionId.value = isTurunkanAction.value && route.query.turunkan_position_id
           ? String(route.query.turunkan_position_id)
           : (isRejectAction.value && detail.value?.from_position_id
             ? String(detail.value.from_position_id)
             : (isNewKonsepFromReference.value
-              ? String(originFlow.pengirim?.position_id || originFlow.pengirim?.position || '')
+              ? String(referenceKonsepFlow.pengirim?.position_id || referenceKonsepFlow.pengirim?.position || '')
               : (atasanLangsungInfo.value?.position
                 ? String(atasanLangsungInfo.value.position)
-                : (originFlow.pengirim?.position_id || ''))));
+                : (referenceKonsepFlow.pengirim?.position_id || ''))));
       }
 
     } catch (e) {

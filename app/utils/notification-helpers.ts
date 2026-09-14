@@ -1,4 +1,10 @@
-export const resolveNotificationIcon = (type: string): string => {
+export const resolveNotificationIcon = (type: string, data?: Record<string, any> | null): string => {
+  if (data?.category === 'SDE_MASAL') {
+    if (data.status === 'DIKEMBALIKAN') return 'i-lucide-rotate-ccw';
+    if (data.action === 'OPEN_SDE_MASAL_VERIFIKASI') return 'i-lucide-folder-check';
+    return 'i-lucide-folder';
+  }
+
   const map: Record<string, string> = {
     NASKAH_MASUK: 'i-lucide-mail',
     NASKAH_TEMBUSAN: 'i-lucide-mails',

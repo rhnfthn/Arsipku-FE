@@ -22,6 +22,7 @@ import {
   Layers,
 } from 'lucide-vue-next';
 import { pickKorespondensiListQuery } from '~/utils/korespondensi-list-state';
+import { compareNaskahFlowNewestFirst } from '~/utils/naskah-flow-order';
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
 import NaskahDetailPopup from '~/components/NaskahDetailPopup.vue';
@@ -245,21 +246,16 @@ const visibleDetails = computed(() => {
     (d: any) =>
       d._rawStatus !== 'draf' &&
       !(isKonsepData.value && String(d?.jenis || '').toUpperCase() === 'KN') &&
-      // kotak-masuk: exclude nodes where the current user is the pengirim (sender) —
-      // those are "sent" items (belong in terkirim), not received. terkirim keeps all.
-      // Pengecualian untuk konsep (isKonsepData): node pengirim sendiri TETAP masuk
-      // jika bukan aksi approval review (forward/reject/finalize) — supaya genealogi
-      // root (disposisi) tetap utuh. Aksi approval/forward sendiri di-cut (milik
-      // terkirim), chain di-cut sampai konseptor terakhir sebelum approval/reject.
+      // Khusus workflow konsep, node saat user menjadi pengirim adalah milik
+      // Terkirim dan tidak ditampilkan di riwayat Kotak Masuk. Untuk chain
+      // surat biasa, ancestor yang pernah dikirim user tetap harus terlihat
+      // sebagai konteks (mis. ND user -> DI dari penerima kembali ke user).
       // Catatan: `d.from` = forwarder aktual (flow.pengirim); `d.pengirim` di node
       // konsep = naskah_pengirim (signer), bukan forwarder — jadi cek `from` dulu.
       (isTerkirim.value ||
+        !isKonsepData.value ||
         myPosId === '' ||
-        String(d?.from?.position_id || d?.pengirim?.position_id || '') !== myPosId ||
-        (isKonsepData.value &&
-          !['forward', 'reject', 'finalize'].includes(
-            String(d?.aksi || '').toLowerCase(),
-          )))
+        String(d?.from?.position_id || d?.pengirim?.position_id || '') !== myPosId)
   );
 });
 
@@ -493,9 +489,10 @@ const loadData = async () => {
         showFinalizeActions.value =
           isInPenerima && (lastAksi === 'create' || lastAksi === 'forward') && !lastFlowTinjut;
 
-        const pengirimId = String(lastFlow.pengirim?.position_id || '');
         showEditAction.value =
-          lastAksi === 'reject' && myPosId !== '' && pengirimId !== '' && myPosId === pengirimId && !lastFlowTinjut;
+          isInPenerima &&
+          (lastAksi === 'reject' || lastAksi === 'turunkan') &&
+          !lastFlowTinjut;
 
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
@@ -615,6 +612,28 @@ const loadData = async () => {
       }
 
       if (inboxData && rawFlows.length > 0) {
+        // Backend mengirim chain kronologis (induk -> tindak lanjut), sedangkan
+        // kotak masuk harus menampilkan naskah yang sedang ditindaklanjuti di
+        // posisi paling atas agar header dan tombol aksi menempel ke node itu.
+        rawFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
+
+        // Response chain disusun kronologis oleh backend (root -> naskah yang
+        // sedang dibuka), sehingga elemen pertama bukan selalu sumber aksi.
+        // Gunakan ID route agar tindak lanjut User C mereferensikan disposisi
+        // User B yang dibuka, bukan naskah induk milik User A.
+        const routeNaskahId = String(id.value);
+        const routeFlowIndex = rawFlows.findIndex(
+          (item: any) => String(item?.id || item?.naskahId || item?.raw?.id || '') === routeNaskahId
+        );
+        if (routeFlowIndex > 0) {
+          const [routeFlow] = rawFlows.splice(routeFlowIndex, 1);
+          rawFlows.unshift(routeFlow);
+        }
+
+        // Seluruh fallback detail harus berasal dari node head yang sama.
+        // Ini mencegah penerima/tembusan/konten milik naskah induk terbawa ke
+        // disposisi ketika field anak memang kosong.
+        inboxData = rawFlows[0] || inboxData;
         selected.value = inboxData;
         initFlagState();
 
@@ -777,9 +796,16 @@ const hasTindakLanjutFlag = (entry: any) =>
   isTruthyFollowUpFlag(entry?.raw?.user_sirkulasi?.is_tindak_lanjut) ||
   isTruthyFollowUpFlag(entry?.raw?.user_sirkulasi?.tindak_lanjut);
 
-const hasTindakLanjut = computed(() =>
-  [selected.value, ...details.value].some((entry) => hasTindakLanjutFlag(entry)),
-);
+const hasTindakLanjut = computed(() => {
+  if (isKonsepData.value) {
+    // Setiap forward/revisi membuat K + sirkulasi penerima baru. Flag pada
+    // riwayat lama (mis. reject User A sebelumnya) tidak boleh memblokir aksi
+    // pada node terbaru yang kembali dikirim ke User A.
+    return hasTindakLanjutFlag(selected.value ?? details.value[0]);
+  }
+
+  return [selected.value, ...details.value].some((entry) => hasTindakLanjutFlag(entry));
+});
 
 const canCreateFollowUpAction = computed(() => !hasTindakLanjut.value);
 
@@ -1315,7 +1341,7 @@ const konsepOptions = computed(() => [
   },
   {
     type: 'SDE_MASAL',
-    label: 'SDE Masal (Surat Dinas Eksternal Massal)',
+    label: 'SDE Massal (Surat Dinas Eksternal Massal)',
     path: '/korespondensi/tulis/sde-masal',
     icon: Layers,
     colorClass: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',

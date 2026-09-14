@@ -65,7 +65,7 @@ export interface NotificationListResponse {
 
 export interface UnreadCountResponse {
   success: boolean;
-  data: { count: number };
+  data: { count: number; sdeMasalCount?: number };
 }
 
 export interface NotificationListMeta {

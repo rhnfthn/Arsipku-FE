@@ -8,11 +8,6 @@
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th
-              class="whitespace-nowrap border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
-              No
-            </th>
-            <th
               v-for="column in columns"
               :key="column"
               class="whitespace-nowrap border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
@@ -38,11 +33,6 @@
             class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
             :class="{ 'bg-red-50 dark:bg-red-950/20': !item.isValid }"
           >
-            <td
-              class="border-b border-gray-100 px-3 py-2 text-gray-500 dark:border-gray-700 dark:text-gray-400"
-            >
-              {{ item.no }}
-            </td>
             <td
               v-for="column in columns"
               :key="`${item.no}-${column}`"
@@ -83,6 +73,7 @@
     <!-- Pagination (badge Total/Valid/Invalid di samping info "Menampilkan ...") -->
     <Pagination
       v-if="items.length > 0"
+      class="-ml-4"
       :current-page="currentPage"
       :total-pages="totalPages"
       :total-items="items.length"
@@ -372,7 +363,7 @@ const generatePdfFor = async (idx: number) => {
     currentBlobUrl = URL.createObjectURL(blob);
     pdfUrl.value = currentBlobUrl;
   } catch (e: any) {
-    console.error('Gagal generate preview PDF SDE Masal:', e);
+    console.error('Gagal generate preview PDF SDE Massal:', e);
     // Coba baca error dari blob response (backend mengembalikan JSON error)
     let detail = e?.message || 'Gagal generate PDF';
     if (e?.response?.data instanceof Blob) {
