@@ -104,10 +104,11 @@ export interface AuthComposable {
   user: Ref<UserProfile | null>;
   setUser: (data: UserProfile | null) => void;
   getProfile: () => Promise<UserProfile | null>;
-  getSSORedirectUrl: () => Promise<string | null>;
+  getSSORedirectUrl: (returnTo?: string) => Promise<string | null>;
+  exchangeOidcCode: (code: string, state: string) => Promise<any>;
   verifyToken: (token: string) => Promise<any>;
   logout: () => Promise<boolean>;
-  refreshToken: () => Promise<string>;
+  refreshToken: () => Promise<string | null>;
   hasPermission: (resource: string, action: string) => boolean;
   hasAnyPermission: (resource: string, actions: string[]) => boolean;
   hasRole: (roleName: string) => boolean;
