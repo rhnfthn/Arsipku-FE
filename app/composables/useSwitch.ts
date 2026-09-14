@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import { useApi } from "@/composables/useApi";
+import { replaceStoredAccessToken } from "~/utils/auth-storage";
 
 export interface SwitchCompany {
   relationSpId: string;
@@ -51,7 +52,7 @@ const switchCompany = async (relationSpId: string) => {
     });
 
     if (res?.data?.accessToken) {
-      localStorage.setItem("token", res.data.accessToken);
+      replaceStoredAccessToken(res.data.accessToken);
       tokenCookie.value = res.data.accessToken;
     }
 
@@ -67,7 +68,7 @@ const resetCompany = async () => {
     const res = await apiPost("/company-switch/reset");
 
     if (res?.data?.accessToken) {
-      localStorage.setItem("token", res.data.accessToken);
+      replaceStoredAccessToken(res.data.accessToken);
       tokenCookie.value = res.data.accessToken;
     }
 

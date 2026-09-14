@@ -162,7 +162,7 @@ const { getSSORedirectUrl, getProfile } = useAuth()
 
 const redirectToSSO = async () => {
   // Check if user is already logged in
-  const token = localStorage.getItem('token') || useCookie('token').value
+  const token = getStoredAccessToken() || useCookie('token').value
 
   if (token) {
     try {

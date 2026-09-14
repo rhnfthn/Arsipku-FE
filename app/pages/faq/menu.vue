@@ -321,7 +321,7 @@ const savedVotes = ref<Record<string, VoteType>>({});
 
 const getVoteStorageKey = () => {
   if (!process.client) return 'faq-feedback-votes';
-  const token = localStorage.getItem('token') || 'anonymous';
+  const token = getStoredAccessToken() || 'anonymous';
   return `faq-feedback-votes:${token}`;
 };
 

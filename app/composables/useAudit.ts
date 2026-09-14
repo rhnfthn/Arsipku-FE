@@ -159,7 +159,7 @@ export const useAudit = () => {
       // apiPost mengembalikan JSON; untuk file download, kita pakai axios langsung
       // via $fetch atau window.open. Di sini kita panggil endpoint dan biarkan
       // browser menangani download via blob.
-      const token = process.client ? localStorage.getItem('token') : null;
+      const token = getStoredAccessToken();
       const config = useRuntimeConfig();
       const baseUrl = config.public.apiBaseUrl as string;
       const query = new URLSearchParams();
