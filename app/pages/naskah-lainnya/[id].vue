@@ -445,6 +445,49 @@ const actionDescription = computed(() => {
 
 // ── Toggle expand timeline ──
 const timelineExpanded = ref(false);
+
+// ── Collapse catatan panjang di timeline riwayat ("Lihat selengkapnya") ──
+// Catatan approval bisa memuat pasal/batang tubuh yang panjang; di kolom
+// timeline yang sempit, konten penuh membuat item timeline jadi sangat tinggi.
+// Solusi: konten di-clamp (max-height + fade), tombol "Lihat selengkapnya"
+// muncul hanya jika konten benar-benar melebihi batas (dideteksi via pengukuran
+// DOM setelah render, akurat terhadap lebar kolom saat itu).
+const TIMELINE_NOTE_CLAMP_PX = 72; // tinggi maksimum konten catatan saat ter-clamp (±4,5 baris text-xs)
+const expandedTimelineNotes = ref<Set<string>>(new Set());
+const longTimelineNotes = ref<Set<string>>(new Set());
+
+const isRejectTimelineAction = (action: string) =>
+  action.toLowerCase() === 'tolak' || action.toLowerCase().startsWith('kembalikan');
+
+const toggleTimelineNote = (id: string) => {
+  const next = new Set(expandedTimelineNotes.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  expandedTimelineNotes.value = next;
+};
+
+/** Ukur tinggi konten tiap catatan timeline; tandai yang melebihi clamp. */
+const measureTimelineNotes = async () => {
+  await nextTick();
+  const container = document.querySelector('[data-timeline-notes]');
+  if (!container) return;
+  const next = new Set<string>();
+  container.querySelectorAll<HTMLElement>('[data-note-id]').forEach((el) => {
+    const id = el.dataset.noteId;
+    if (!id) return;
+    // Ukur tinggi natural konten (tanpa clamp) — reset sementara lalu kembalikan.
+    const prevMax = el.style.maxHeight;
+    const prevOverflow = el.style.overflow;
+    el.style.maxHeight = 'none';
+    el.style.overflow = 'visible';
+    const natural = el.scrollHeight;
+    el.style.maxHeight = prevMax;
+    el.style.overflow = prevOverflow;
+    if (natural > TIMELINE_NOTE_CLAMP_PX + 8) next.add(id);
+  });
+  longTimelineNotes.value = next;
+};
+
 const workflowExpanded = ref(false);
 const verificationExpanded = ref(false);
 const approvalExpanded = ref(false);
@@ -1305,6 +1348,12 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     .reverse();
 });
 
+// Deteksi catatan panjang setelah timeline dirender (dan saat timeline dibuka).
+watch([timelineEntries, timelineExpanded], () => {
+  longTimelineNotes.value = new Set();
+  if (timelineExpanded.value) measureTimelineNotes();
+});
+
 // ── Next action info (status terkini) ──
 const nextActionInfo = computed(() => {
   if (!detail.value) return null;
@@ -1450,13 +1499,12 @@ function approvalDotClass(status: string) {
 // ── Stepper: hilangkan step 'skip' (mode tanpa legal) & renumber 1..M ──
 // BE buildStepper seharusnya sudah memfilter skip, tapi guard di FE agar UI
 // tetap benar walau BE lama masih mengirim status:'skip'.
-// POV Unit Legal: step Persetujuan (pemrakarsa, sudah lewat) dan Blanko
-// Verbal / Persetujuan Direksi (ranah direksi) disembunyikan — legal hanya
-// perlu melihat Konsep, Legal Drafting, Evaluasi, dan seterusnya.
-const LEGAL_HIDDEN_STEPPER_LABELS = new Set([
-  'Persetujuan',
-  'Blanko Verbal / Persetujuan Direksi',
-]);
+// POV Unit Legal: hanya step Persetujuan (approval pemrakarsa, sudah lewat
+// sebelum naskah masuk ke legal) yang disembunyikan. Step Blanko Verbal /
+// Persetujuan Direksi TETAP ditampilkan — legal adalah pihak yang membuat
+// dan mengirim blanko verbal, serta perlu melihat progres approval direksi
+// (termasuk saat naskah ditolak dan kembali ke legal drafting).
+const LEGAL_HIDDEN_STEPPER_LABELS = new Set(['Persetujuan']);
 const visibleStepper = computed(() => {
   if (!detail.value?.stepper) return [];
   return detail.value.stepper
@@ -2135,12 +2183,19 @@ const signLabel = computed(() =>
                           <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                             urutan {{ a.urutan }} · {{ fmtDateTime(a.tanggal) }}
                           </p>
-                          <p
+                          <div
                             v-if="a.catatan"
-                            class="mt-1 text-xs italic text-gray-400 dark:text-gray-500"
+                            class="approval-note mt-1 rounded-lg border-l-4 border-primary-400 bg-primary-50/70 px-3 py-1.5 text-xs text-primary-900 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-100"
                           >
-                            "{{ a.catatan }}"
-                          </p>
+                            <span
+                              class="mb-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70"
+                            >
+                              <UIcon name="i-lucide-message-square-text" class="size-3" />
+                              Catatan
+                            </span>
+                            <!-- eslint-disable-next-line vue/no-v-html -->
+                            <div class="approval-note-content" v-html="a.catatan"></div>
+                          </div>
                         </div>
                         <StatusBadge :status="a.status" />
                       </div>
@@ -2380,7 +2435,7 @@ const signLabel = computed(() =>
                   <UIcon name="i-lucide-inbox" class="size-4" />
                   <span>Belum ada riwayat.</span>
                 </div>
-                <ol v-else class="max-h-112 space-y-3 overflow-y-auto pr-1">
+                <ol v-else class="max-h-112 space-y-3 overflow-y-auto pr-1" data-timeline-notes>
                   <li v-for="(entry, idx) in timelineEntries" :key="entry.id" class="flex gap-2.5">
                     <div class="flex flex-col items-center">
                       <span
@@ -2408,12 +2463,57 @@ const signLabel = computed(() =>
                       <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                         {{ fmtDateTime(entry.timestamp) }}
                       </p>
-                      <p
+                      <!-- Catatan approval: render HTML dari editor (pasal/batang
+                           tubuh) dengan panel highlight agar mudah terlihat.
+                           Konten panjang di-clamp dengan tombol "Lihat selengkapnya". -->
+                      <div
                         v-if="entry.catatan"
-                        class="mt-1 rounded bg-gray-50 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700/50 dark:text-gray-300"
+                        class="approval-note mt-1.5 rounded-lg border-l-4 px-3 py-2 text-xs"
+                        :class="
+                          isRejectTimelineAction(entry.action)
+                            ? 'border-red-400 bg-red-50/70 text-red-900 dark:border-red-600 dark:bg-red-900/20 dark:text-red-200'
+                            : 'border-primary-400 bg-primary-50/70 text-primary-900 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-100'
+                        "
                       >
-                        <span class="font-medium">Catatan:</span> {{ entry.catatan }}
-                      </p>
+                        <span
+                          class="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70"
+                        >
+                          <UIcon name="i-lucide-message-square-text" class="size-3" />
+                          {{ isRejectTimelineAction(entry.action) ? 'Alasan' : 'Catatan' }}
+                        </span>
+                        <!-- eslint-disable-next-line vue/no-v-html -->
+                        <div
+                          class="approval-note-content"
+                          :class="
+                            longTimelineNotes.has(entry.id) && !expandedTimelineNotes.has(entry.id)
+                              ? 'note-clamped'
+                              : ''
+                          "
+                          :data-note-id="entry.id"
+                          v-html="entry.catatan"
+                        ></div>
+                        <button
+                          v-if="longTimelineNotes.has(entry.id)"
+                          type="button"
+                          class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70 transition-opacity hover:opacity-100"
+                          :class="
+                            isRejectTimelineAction(entry.action)
+                              ? 'text-red-700 dark:text-red-300'
+                              : 'text-primary-700 dark:text-primary-300'
+                          "
+                          @click="toggleTimelineNote(entry.id)"
+                        >
+                          <UIcon
+                            :name="
+                              expandedTimelineNotes.has(entry.id)
+                                ? 'i-lucide-chevrons-up'
+                                : 'i-lucide-chevrons-down'
+                            "
+                            class="size-3"
+                          />
+                          {{ expandedTimelineNotes.has(entry.id) ? 'Tutup' : 'Lihat selengkapnya' }}
+                        </button>
+                      </div>
                     </div>
                   </li>
                 </ol>
@@ -3085,5 +3185,71 @@ const signLabel = computed(() =>
 :deep(.docx-wrapper > section.docx) {
   border: none !important;
   margin: 0 auto !important;
+}
+
+/* Konten catatan approval (HTML dari TinyMCE — pasal-pasal/batang tubuh) */
+/* break-word: kata sangat panjang tanpa spasi tetap wrap di dalam panel,
+   tidak meluber keluar section catatan. */
+.approval-note-content {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.approval-note-content :deep(p) {
+  margin: 0 0 4px 0;
+}
+.approval-note-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.approval-note-content :deep(ol) {
+  list-style: decimal;
+  padding-left: 18px;
+  margin: 2px 0;
+}
+.approval-note-content :deep(ul) {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 2px 0;
+}
+.approval-note-content :deep(li) {
+  margin: 0 0 2px 0;
+}
+.approval-note-content :deep(table) {
+  border-collapse: collapse;
+  margin: 4px 0;
+  width: 100%;
+}
+.approval-note-content :deep(td),
+.approval-note-content :deep(th) {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 3px 6px;
+}
+.approval-note-content :deep(strong) {
+  font-weight: 700;
+}
+
+/* Catatan timeline terlalu panjang: clamp + fade, tombol "Lihat selengkapnya" */
+.note-clamped {
+  max-height: 72px;
+  overflow: hidden;
+  position: relative;
+}
+.note-clamped::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 28px;
+  background: linear-gradient(to bottom, transparent, var(--note-fade-color, rgba(232, 239, 246, 0.95)));
+  pointer-events: none;
+}
+.approval-note[class*='border-red'] .note-clamped::after {
+  --note-fade-color: rgba(254, 242, 242, 0.95);
+}
+.dark .approval-note[class*='border-red'] .note-clamped::after {
+  --note-fade-color: rgba(12, 22, 38, 0.95);
+}
+.dark .approval-note .note-clamped::after {
+  --note-fade-color: rgba(5, 19, 33, 0.95);
 }
 </style>
