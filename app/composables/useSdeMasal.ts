@@ -99,7 +99,7 @@ export const useSdeMasal = () => {
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${getStoredAccessToken() || ''}`,
+            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
           },
         }
       );

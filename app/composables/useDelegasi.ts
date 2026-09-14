@@ -82,7 +82,7 @@ export const useDelegasi = () => {
           "[DELEGASI] Token diganti, role berubah ke:",
           res.data.user?.positionText,
         );
-        replaceStoredAccessToken(res.data.accessToken);
+        localStorage.setItem("token", res.data.accessToken);
         tokenCookie.value = res.data.accessToken;
         roleCookie.value = res.data.user?.role || null;
       }
