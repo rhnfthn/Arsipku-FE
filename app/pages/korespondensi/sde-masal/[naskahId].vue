@@ -318,7 +318,7 @@ const loadPdfEmbed = async () => {
   try {
     const url = buildPdfUrl(source);
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${getStoredAccessToken() || ''}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
     });
     if (!response.ok) throw new Error('Gagal memuat PDF');
     const blob = await response.blob();
@@ -340,7 +340,7 @@ const downloadPdf = async () => {
   try {
     const url = buildPdfUrl(naskah.value.final_pdf);
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${getStoredAccessToken() || ''}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
     });
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
