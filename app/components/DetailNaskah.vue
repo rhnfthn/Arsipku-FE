@@ -695,9 +695,14 @@ const removeNote = () => {
           v-if="!isKonsepNaskahJenis"
           class="flex items-center gap-4 mb-5 border-gray-200 dark:border-gray-700/50"
         >
-          <UAvatar size="md" class="bg-primary-500 text-white font-semibold">
+          <ProfileAvatar
+            size="md"
+            :persnum="data.from?.persnum || data.pengirim?.persnum || data.from?.id_sirkuler || data.pengirim?.id_sirkuler"
+            :alt="data.from?.nama || data.pengirim?.nama || ''"
+            avatar-class="bg-primary-500 text-white font-semibold"
+          >
             {{ getFlowInitials(data.from?.nama || data.pengirim?.nama) }}
-          </UAvatar>
+          </ProfileAvatar>
           <div>
             <span class="text-sm font-semibold block text-gray-900 dark:text-white">
               {{
@@ -719,19 +724,29 @@ const removeNote = () => {
                 .toLowerCase()
                 .includes('konsep')
             "
-            class="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700"
+            class="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700 flex items-center gap-3"
           >
-            <span
-              class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 block"
+            <ProfileAvatar
+              size="md"
+              :persnum="data.to_konsep.persnum || data.to_konsep.id_sirkuler"
+              :alt="data.to_konsep.nama || ''"
+              avatar-class="bg-primary-500 text-white font-semibold"
             >
-              {{ konsepRecipientLabel }}
-            </span>
-            <span class="text-sm font-semibold block text-gray-900 dark:text-white">
-              {{ data.to_konsep.position_text || data.to_konsep.positionText || '-' }}
-            </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
-              {{ data.to_konsep.nama || '-' }}
-            </span>
+              {{ getFlowInitials(data.to_konsep.nama) }}
+            </ProfileAvatar>
+            <div class="min-w-0">
+              <span
+                class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 block"
+              >
+                {{ konsepRecipientLabel }}
+              </span>
+              <span class="text-sm font-semibold block text-gray-900 dark:text-white">
+                {{ data.to_konsep.position_text || data.to_konsep.positionText || '-' }}
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                {{ data.to_konsep.nama || '-' }}
+              </span>
+            </div>
           </div>
         </div>
 
