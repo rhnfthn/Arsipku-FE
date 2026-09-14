@@ -261,17 +261,16 @@ definePageMeta({
   middleware: 'auth'
 })
 
+const { t } = useI18n()
 const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
 const { canAccessPage } = useFeatureAccess()
 const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
-  useDashboard()
+  useDashboard(t)
 
 const isDark = useDark()
 const dashboardImage = computed(() => isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png')
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
-
-const { t } = useI18n()
 
 const cardUI: Record<string, any> = {
   root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden',
