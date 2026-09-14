@@ -226,7 +226,12 @@ const emit = defineEmits<{
 
 const isOpen = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val)
+  set: (val) => {
+    // Saat request finalisasi berjalan, modal harus tetap tampil sampai server
+    // memastikan dokumen selesai dikirim atau mengembalikan error.
+    if (props.isLoading && !val) return
+    emit('update:open', val)
+  }
 })
 
 const showAllOptions = ref(false)
