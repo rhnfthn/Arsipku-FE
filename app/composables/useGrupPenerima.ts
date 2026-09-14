@@ -8,12 +8,14 @@ export const useGrupPenerima = () => {
     if (params?.area) query.set('area', params.area);
     if (params?.jenis) query.set('jenis', params.jenis);
     const qs = query.toString();
-    return await apiGet(`/persuratan/grup-penerima${qs ? `?${qs}` : ''}`);
+    query.set('includeInactive', 'true');
+    const finalQuery = query.toString();
+    return await apiGet(`/persuratan/grup-penerima?${finalQuery}`, {}, { skipCache: true });
   };
 
   /** GET /persuratan/grup-penerima/:id — get single group */
   const getGrupPenerimaDetail = async (id: string) => {
-    return await apiGet(`/persuratan/grup-penerima/${id}`);
+    return await apiGet(`/persuratan/grup-penerima/${id}`, {}, { skipCache: true });
   };
 
   /** POST /persuratan/grup-penerima — create group */
@@ -24,7 +26,9 @@ export const useGrupPenerima = () => {
     deskripsi_english?: string;
     aktif?: boolean;
   }) => {
-    return await apiPost('/persuratan/grup-penerima', payload);
+    const res = await apiPost('/persuratan/grup-penerima', payload);
+    clearApiCache();
+    return res;
   };
 
   /** PUT /persuratan/grup-penerima/:id — update group */
@@ -38,7 +42,9 @@ export const useGrupPenerima = () => {
       aktif: boolean;
     }>
   ) => {
-    return await apiPut(`/persuratan/grup-penerima/${id}`, payload);
+    const res = await apiPut(`/persuratan/grup-penerima/${id}`, payload);
+    clearApiCache();
+    return res;
   };
 
   /** PUT /persuratan/grup-penerima/:id/toggle-aktif — toggle active */
@@ -51,7 +57,9 @@ export const useGrupPenerima = () => {
 
   /** DELETE /persuratan/grup-penerima/:id — delete group */
   const deleteGrupPenerima = async (id: string) => {
-    return await apiDelete(`/persuratan/grup-penerima/${id}`);
+    const res = await apiDelete(`/persuratan/grup-penerima/${id}`);
+    clearApiCache();
+    return res;
   };
 
   /** GET /persuratan/grup-penerima/:id/check-usage */
@@ -65,7 +73,7 @@ export const useGrupPenerima = () => {
 
   /** GET /persuratan/grup-penerima/:id/members — list members */
   const getGrupPenerimaMembers = async (id: string) => {
-    return await apiGet(`/persuratan/grup-penerima/${id}/members`);
+    return await apiGet(`/persuratan/grup-penerima/${id}/members`, {}, { skipCache: true });
   };
 
   /** POST /persuratan/grup-penerima/:id/members — add member */
@@ -85,7 +93,9 @@ export const useGrupPenerima = () => {
 
   /** DELETE /persuratan/grup-penerima/:id/members/:detailId — remove member */
   const deleteGrupPenerimaMember = async (id: string, detailId: string) => {
-    return await apiDelete(`/persuratan/grup-penerima/${id}/members/${detailId}`);
+    const res = await apiDelete(`/persuratan/grup-penerima/${id}/members/${detailId}`);
+    clearApiCache();
+    return res;
   };
 
   return {

@@ -46,7 +46,7 @@
       class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
-      <div class="flex flex-wrap gap-2 items-center p-3">
+      <div class="flex flex-nowrap items-center gap-2 overflow-x-auto p-3">
         <!-- Rows per page (custom dropdown) -->
         <div class="relative">
           <button
@@ -86,16 +86,23 @@
           </Transition>
         </div>
 
-        <!-- Refresh -->
-        <button
-          @click="refreshData"
-          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
+        <!-- Status -->
+        <USelectMenu
+          v-model="filters.status"
+          :items="externalStatusOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Status"
+          :search-input="false"
+          class="w-36 shrink-0"
+          :ui="{
+            base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-white',
+          }"
+          aria-label="Filter Status"
+        />
 
         <!-- Search -->
-        <div class="relative flex-1 min-w-40">
+        <div class="relative min-w-[220px] flex-1">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
@@ -106,11 +113,22 @@
           />
         </div>
 
+        <!-- Reset Filter -->
+        <button
+          type="button"
+          @click.stop="resetExternalFilters"
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary bg-primary text-white transition-colors hover:bg-primary-700 hover:text-white dark:border-primary-500 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700"
+          title="Reset Filter"
+          aria-label="Reset Filter"
+        >
+          <RotateCcw class="h-4 w-4" />
+        </button>
+
         <!-- Export -->
         <button
           v-if="canExportTertuju"
           @click="onExport"
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+          class="flex shrink-0 items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
           Export
         </button>
@@ -136,8 +154,11 @@
               </div>
             </th>
 
-            <th @click="handleSort('nama')" class="cursor-pointer">
-              <div class="flex items-center gap-2 ml-5">
+            <th
+              @click="handleSort('nama')"
+              class="cursor-pointer px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold"
+            >
+              <div class="flex items-center gap-2">
                 <span>{{ $t('te_nama') }}</span>
                 <ArrowUpDown
                   class="w-4 h-4 origin-center transition-transform duration-300"
@@ -167,7 +188,7 @@
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
               {{ $t('te_pengusul') }}
             </th>
-            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+            <th v-if="isSuperadmin" class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
               {{ $t('aksi') }}
             </th>
           </tr>
@@ -176,7 +197,7 @@
         <tbody>
           <!-- Loading - Skeleton -->
           <tr v-if="loading">
-            <td colspan="8" class="px-4 py-6">
+            <td :colspan="isSuperadmin ? 8 : 7" class="px-4 py-6">
               <div class="space-y-4 animate-pulse">
                 <div
                   v-for="n in skeletonRows"
@@ -253,7 +274,7 @@
               v-html="highlight(item.nama_pembuat, filters.search)"
             ></td>
 
-            <td class="px-4 py-3 text-center flex justify-center gap-3">
+            <td v-if="isSuperadmin" class="px-4 py-3 text-center flex justify-center gap-3">
               <button
                 v-if="canUpdateTertuju"
                 @click="openEdit(item)"
@@ -387,7 +408,7 @@
       class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors"
     >
       <!-- Top Bar -->
-      <div class="flex flex-wrap gap-2 items-center p-3">
+      <div class="flex flex-nowrap items-center gap-2 overflow-x-auto p-3">
         <!-- Rows per page (custom dropdown) -->
         <div class="relative">
           <button
@@ -428,16 +449,38 @@
           </Transition>
         </div>
 
-        <!-- Refresh -->
-        <button
-          @click="fetchInternal"
-          class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
-        >
-          <RotateCcw class="w-4 h-4" />
-        </button>
+        <!-- Unit Organisasi -->
+        <USelectMenu
+          v-model="internalOrganizationFilter"
+          :items="internalOrganizationOptions"
+          placeholder="Unit Organisasi"
+          searchable
+          :search-input="{ placeholder: 'Cari unit organisasi...' }"
+          :content="({ class: 'max-h-[380px]' } as any)"
+          class="w-44 shrink-0"
+          :ui="{
+            base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-white',
+          }"
+          aria-label="Filter Unit Organisasi"
+        />
+
+        <!-- Area -->
+        <USelectMenu
+          v-model="internalAreaFilter"
+          :items="internalAreaOptions"
+          placeholder="Area"
+          searchable
+          :search-input="{ placeholder: 'Cari area...' }"
+          :content="({ class: 'max-h-[380px]' } as any)"
+          class="w-36 shrink-0"
+          :ui="{
+            base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-white',
+          }"
+          aria-label="Filter Area"
+        />
 
         <!-- Search -->
-        <div class="relative flex-1 min-w-40">
+        <div class="relative min-w-[220px] flex-1">
           <Search
             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           />
@@ -448,10 +491,21 @@
           />
         </div>
 
+        <!-- Reset Filter -->
+        <button
+          type="button"
+          @click.stop="resetInternalFilters"
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary bg-primary text-white transition-colors hover:bg-primary-700 hover:text-white dark:border-primary-500 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700"
+          title="Reset Filter"
+          aria-label="Reset Filter"
+        >
+          <RotateCcw class="h-4 w-4" />
+        </button>
+
         <!-- Export -->
         <button
           @click="onExportInternal"
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
+          class="flex shrink-0 items-center gap-2 bg-primary dark:bg-primary-600 text-white h-8 px-4 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 text-xs transition-colors whitespace-nowrap"
         >
           Export
         </button>
@@ -523,38 +577,21 @@
               {{ item.organization_text || '-' }}
             </td>
             <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
-              {{ item.area_text || '-' }}
+              {{ formatArea(item.area_text) }}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <!-- Pagination internal -->
-      <div
+      <!-- Pagination internal: gunakan komponen pagination bersama -->
+      <Pagination
         v-if="filteredInternal.length > 0"
-        class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
-      >
-        <div class="text-xs text-gray-600 dark:text-gray-400">
-          Menampilkan {{ paginatedInternal.length }} dari {{ filteredInternal.length }} data
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            @click="internalPage = Math.max(1, internalPage - 1)"
-            :disabled="internalPage === 1"
-            class="px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Sebelumnya
-          </button>
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ internalPage }} / {{ internalTotalPages }}</span>
-          <button
-            @click="internalPage = Math.min(internalTotalPages, internalPage + 1)"
-            :disabled="internalPage === internalTotalPages"
-            class="px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Selanjutnya
-          </button>
-        </div>
-      </div>
+        :current-page="internalPage"
+        :total-pages="internalTotalPages"
+        :total-items="filteredInternal.length"
+        :rows-per-page="internalPerPage"
+        @update:page="internalPage = $event"
+      />
     </div>
 
     <Teleport to="body">
@@ -928,15 +965,11 @@ const items = computed(() => [
 const auth = useAuth();
 const user = auth.user;
 const { hasPermission, isSuperadmin } = auth;
-const canCreateTertuju = computed(
-  () => isSuperadmin.value || hasPermission('master-data', 'create-tertuju')
-);
-const canUpdateTertuju = computed(
-  () => isSuperadmin.value || hasPermission('master-data', 'update-tertuju')
-);
-const canDeleteTertuju = computed(
-  () => isSuperadmin.value || hasPermission('master-data', 'delete-tertuju')
-);
+// Master data Tertuju hanya dapat diubah oleh Super Admin.
+// Admin/User tetap dapat membuka halaman dan melihat data.
+const canCreateTertuju = computed(() => isSuperadmin.value);
+const canUpdateTertuju = computed(() => isSuperadmin.value);
+const canDeleteTertuju = computed(() => isSuperadmin.value);
 const canExportTertuju = computed(
   () => isSuperadmin.value || hasPermission('master-data', 'export-tertuju')
 );
@@ -964,6 +997,13 @@ const internalSearch = ref('');
 const internalPage = ref(1);
 const internalPerPage = ref(10);
 const openInternalRowsDropdown = ref(false);
+const internalOrganizationFilter = ref<string | undefined>();
+const internalAreaFilter = ref<string | undefined>();
+
+const externalStatusOptions = computed(() => [
+  { label: t('te_aktif'), value: 'aktif' },
+  { label: t('te_tidak_aktif'), value: 'tidak_aktif' },
+]);
 
 const fetchInternal = async () => {
   internalLoading.value = true;
@@ -983,11 +1023,46 @@ const fetchInternal = async () => {
   }
 };
 
+const hasInternalOfficer = (item: any) => {
+  const officer = String(item?.persnum_person_text ?? '').trim();
+  return officer !== '' && officer !== '-';
+};
+
+const formatArea = (value: unknown) => {
+  const area = String(value ?? '').trim();
+  if (!area) return '-';
+  return area.toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+};
+
+const internalRowsWithOfficer = computed(() => internalData.value.filter(hasInternalOfficer));
+
+const internalOrganizationOptions = computed(() =>
+  Array.from(
+    new Set(
+      internalRowsWithOfficer.value
+        .map((item) => String(item.organization_text ?? '').trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'id'))
+);
+
+const internalAreaOptions = computed(() =>
+  Array.from(
+    new Set(
+      internalRowsWithOfficer.value
+        .map((item) => formatArea(item.area_text))
+        .filter((area) => area !== '-')
+    )
+  ).sort((a, b) => a.localeCompare(b, 'id'))
+);
+
 const filteredInternal = computed(() => {
   const q = internalSearch.value.trim().toLowerCase();
-  if (!q) return internalData.value;
-  return internalData.value.filter((item) =>
-    [
+  const organization = (internalOrganizationFilter.value ?? '').trim().toLowerCase();
+  const area = (internalAreaFilter.value ?? '').trim().toLowerCase();
+
+  return internalRowsWithOfficer.value.filter((item) => {
+    const searchableText = [
       String(item.position ?? ''),
       item.position_text,
       item.persnum_person_text,
@@ -995,9 +1070,16 @@ const filteredInternal = computed(() => {
       item.area_text,
     ]
       .join(' ')
-      .toLowerCase()
-      .includes(q)
-  );
+      .toLowerCase();
+    const itemOrganization = String(item.organization_text ?? '').trim().toLowerCase();
+    const itemArea = formatArea(item.area_text).toLowerCase();
+
+    return (
+      (!q || searchableText.includes(q)) &&
+      (!organization || itemOrganization === organization) &&
+      (!area || itemArea === area)
+    );
+  });
 });
 
 const internalTotalPages = computed(() =>
@@ -1009,6 +1091,14 @@ const paginatedInternal = computed(() => {
   return filteredInternal.value.slice(start, start + internalPerPage.value);
 });
 
+const resetInternalFilters = () => {
+  internalOrganizationFilter.value = undefined;
+  internalAreaFilter.value = undefined;
+  internalSearch.value = '';
+  internalPage.value = 1;
+  openInternalRowsDropdown.value = false;
+};
+
 const onExportInternal = () => {
   const exportData = filteredInternal.value.map((item, idx) => ({
     No: idx + 1,
@@ -1016,7 +1106,7 @@ const onExportInternal = () => {
     Jabatan: item.position_text ?? '-',
     Pejabat: item.persnum_person_text ?? '-',
     'Unit Organisasi': item.organization_text ?? '-',
-    Area: item.area_text ?? '-',
+    Area: formatArea(item.area_text),
   }));
 
   if (exportData.length === 0) {
@@ -1049,6 +1139,10 @@ watch(activeTab, (tab) => {
 });
 
 watch(internalSearch, () => {
+  internalPage.value = 1;
+});
+
+watch([internalOrganizationFilter, internalAreaFilter], () => {
   internalPage.value = 1;
 });
 
@@ -1330,8 +1424,11 @@ const filters = ref({
 // Filtered data
 const filteredData = computed(() => {
   const keyword = filters.value.search.toLowerCase();
-  return data.value.filter((item) =>
-    [
+  const status = filters.value.status;
+  return data.value.filter((item) => {
+    const matchesStatus =
+      !status || (status === 'aktif' ? item.aktif : !item.aktif);
+    const matchesSearch = [
       item.company,
       item.area,
       item.nama,
@@ -1339,12 +1436,14 @@ const filteredData = computed(() => {
       item.telepon,
       item.email,
       item.kontak,
-      item.nama_pembuat
+      item.nama_pembuat,
     ]
       .join(' ')
       .toLowerCase()
-      .includes(keyword)
-  );
+      .includes(keyword);
+
+    return matchesStatus && matchesSearch;
+  });
 });
 
 // Sorted data
@@ -1408,15 +1507,20 @@ const sortBy = (column: string) => {
   }
 };
 
-watch([() => filters.value.search, rowsPerPage], () => {
+watch([() => filters.value.search, () => filters.value.status, rowsPerPage], () => {
   currentPage.value = 1;
 });
 
-const refreshData = async () => {
-  loading.value = true;
-  filters.value.search = '';
+const resetExternalFilters = () => {
+  filters.value = {
+    jenis: '',
+    lokasi: '',
+    status: '',
+    tahun: '',
+    search: ''
+  };
   currentPage.value = 1;
-  await fetchTertujuEksternal();
+  openRowsDropdown.value = false;
 };
 
 const onExport = () => {

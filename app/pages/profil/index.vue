@@ -11,10 +11,12 @@
       <div
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
         <div class="p-6 flex flex-col sm:flex-row items-center gap-5">
-          <UAvatar size="xl"
-            class="ring-2 ring-primary-500/30 bg-primary-500 text-white font-bold flex items-center justify-center shadow-sm shrink-0">
+          <ProfileAvatar size="xl"
+            :persnum="(user?.persnum as any)"
+            :alt="user?.nama || ''"
+            avatar-class="ring-2 ring-primary-500/30 bg-primary-500 text-white font-bold flex items-center justify-center shadow-sm shrink-0">
             {{ getInitials(user?.nama || '') }}
-          </UAvatar>
+          </ProfileAvatar>
           <div class="flex-1 text-center sm:text-left min-w-0">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white truncate">
               {{ user?.nama || '-' }}

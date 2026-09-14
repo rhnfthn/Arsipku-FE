@@ -7,7 +7,7 @@ export const sdeMasalStatusLabel = (status: string) => ({
   SEBAGIAN_TERKIRIM: 'Sebagian Terkirim',
   TERKIRIM: 'Selesai',
   DIKEMBALIKAN: 'Dikembalikan',
-  TERVERIFIKASI: 'Terverifikasi',
+  TERVERIFIKASI: 'Disetujui',
   DITOLAK: 'Ditolak',
   GAGAL: 'Gagal',
 }[status] || status);
