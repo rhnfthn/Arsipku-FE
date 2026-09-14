@@ -145,7 +145,6 @@
             <table class="min-w-full text-xs">
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th class="border-b border-gray-200 px-3 py-2 text-left dark:border-gray-700">No</th>
                   <th class="border-b border-gray-200 px-3 py-2 text-left dark:border-gray-700">Lampiran Excel</th>
                   <th class="border-b border-gray-200 px-3 py-2 text-left dark:border-gray-700">Status</th>
                   <th class="border-b border-gray-200 px-3 py-2 text-left dark:border-gray-700">Preview</th>
@@ -153,7 +152,6 @@
               </thead>
               <tbody>
                 <tr v-for="row in attachmentMappingRows" :key="row.no">
-                  <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">{{ row.no }}</td>
                   <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">{{ row.names.join('; ') || '—' }}</td>
                   <td class="border-b border-gray-100 px-3 py-2 dark:border-gray-700">
                     <span :class="row.found ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">{{ row.found ? 'Valid' : 'Invalid' }}</span>
@@ -220,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import type {
   SdeMasalAttachmentRef,
@@ -241,6 +239,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'attachments-confirmed'): void;
+  (e: 'attachments-state', ready: boolean): void;
 }>();
 
 const model = defineModel<SdeMasalPenerima[]>({ default: () => [] });
@@ -266,6 +265,16 @@ const attachmentPreview = ref<{
 const attachmentConfirmed = ref(false);
 const attachmentPreviewUrl = ref<string | null>(null);
 const attachmentPreviewName = ref('Preview Lampiran');
+
+const emitAttachmentReadiness = (ready: boolean) => {
+  emit('attachments-state', ready);
+};
+
+onMounted(() => {
+  // State ZIP tidak dipertahankan saat step dibuat ulang; tanpa ZIP berarti
+  // validasi lampiran tidak boleh mengunci tombol lanjut.
+  emitAttachmentReadiness(true);
+});
 
 const templateColumns = computed(() => {
   return [
@@ -335,6 +344,7 @@ const removeSelectedFile = () => {
   parseError.value = null;
   attachmentPreview.value = null;
   attachmentConfirmed.value = false;
+  emitAttachmentReadiness(true);
   if (fileInput.value) fileInput.value.value = '';
 };
 
@@ -356,6 +366,7 @@ const parseFile = async (file: File) => {
     });
     attachmentPreview.value = null;
     attachmentConfirmed.value = false;
+    updateAttachmentReadiness();
     if (result.some((item) => !item.isValid && item.validationMessage?.startsWith('Template Excel tidak sesuai'))) {
       parseError.value = 'Template Excel tidak sesuai dengan template yang dipilih. Periksa baris berstatus X.';
     }
@@ -386,6 +397,16 @@ const requestedAttachmentNames = computed(() =>
     )
   )
 );
+
+const updateAttachmentReadiness = () => {
+  // Tanpa ZIP, lampiran tetap opsional. Jika ZIP dipilih dan Excel berisi
+  // referensi lampiran, pengguna harus menyelesaikan mapping terlebih dahulu.
+  emitAttachmentReadiness(
+    requestedAttachmentNames.value.length === 0 ||
+      !selectedAttachmentZip.value ||
+      attachmentConfirmed.value
+  );
+};
 
 const validAttachmentCount = computed(() =>
   requestedAttachmentNames.value.filter((name) => Boolean(attachmentPreview.value?.matched[normalizeAttachmentName(name)])).length
@@ -440,6 +461,7 @@ const validateAttachmentZip = (file: File) => {
   attachmentPreview.value = null;
   attachmentConfirmed.value = false;
   attachmentError.value = null;
+  updateAttachmentReadiness();
 };
 
 const onAttachmentSelect = (event: Event) => {
@@ -458,6 +480,7 @@ const removeAttachmentZip = () => {
   attachmentPreview.value = null;
   attachmentConfirmed.value = false;
   attachmentError.value = null;
+  updateAttachmentReadiness();
   if (attachmentInput.value) attachmentInput.value.value = '';
 };
 
@@ -486,9 +509,11 @@ const prepareAttachments = async () => {
       missing: result?.missing || [],
       totalRequested: requestedAttachmentNames.value.length,
     };
+    updateAttachmentReadiness();
   } catch (error: any) {
     attachmentError.value = error?.response?.data?.message || error?.message || 'Gagal memproses ZIP lampiran';
     attachmentPreview.value = null;
+    updateAttachmentReadiness();
   } finally {
     attachmentPreparing.value = false;
   }
@@ -503,6 +528,7 @@ const confirmAttachments = () => {
     return { ...item, lampiran: refs };
   });
   attachmentConfirmed.value = true;
+  updateAttachmentReadiness();
   emit('attachments-confirmed');
 };
 

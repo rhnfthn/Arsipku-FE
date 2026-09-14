@@ -5,25 +5,38 @@
     <div class="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <!-- Filter Bar -->
       <div class="flex flex-row items-center gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
-        <select v-model="f.limit" class="h-10 w-20 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-        </select>
-        <select v-model="f.status" class="h-10 w-40 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option value="">Semua Status</option>
-          <option value="DRAFT">Draft</option>
-          <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
-          <option value="MENUNGGU_PENGIRIM">Menunggu Pengirim</option>
-          <option value="SEBAGIAN_TERKIRIM">Sebagian Terkirim</option>
-          <option value="DIKEMBALIKAN">Dikembalikan</option>
-          <option value="TERKIRIM">Selesai</option>
-          <option value="DITOLAK">Ditolak</option>
-        </select>
-        <select v-model="f.klasifikasiId" class="h-10 w-48 shrink-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-600 outline-none transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-          <option value="">Semua Klasifikasi</option>
-          <option v-for="klasifikasi in klasifikasiOptions" :key="klasifikasi.id" :value="klasifikasi.id">{{ klasifikasi.klasifikasi }} - {{ klasifikasi.klasifikasi_text }}</option>
-        </select>
+        <USelectMenu
+          v-model="f.limit"
+          :items="pageSizeOptions"
+          :search-input="false"
+          class="w-20 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Jumlah data per halaman"
+        />
+        <USelectMenu
+          v-model="selectedStatusFilter"
+          :items="statusOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Semua Status"
+          :search-input="false"
+          class="w-40 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Filter Status"
+        />
+        <USelectMenu
+          v-model="selectedKlasifikasiFilter"
+          :items="klasifikasiFilterOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Semua Klasifikasi"
+          searchable
+          :search-input="{ placeholder: 'Cari klasifikasi...' }"
+          :content="({ class: 'max-h-[380px]' } as any)"
+          class="w-48 shrink-0"
+          :ui="{ base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+          aria-label="Filter Klasifikasi"
+        />
         <div class="relative min-w-0 flex-1">
           <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <input v-model="f.search" type="text" placeholder="Cari Perihal..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
@@ -55,8 +68,16 @@
               </td>
             </tr>
             <tr v-else v-for="folder in paginatedRows" :key="folder.id" class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-              <td class="px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 max-w-[220px] truncate" :title="folder.judul">{{ folder.judul || '-' }}</td>
-              <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate" :title="folder.pengirimName || ''">{{ folder.pengirimName || '-' }}</td>
+              <td
+                class="px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 max-w-[220px] truncate"
+                :class="isNewVerificationFolder(folder) ? 'font-bold' : 'font-medium'"
+                :title="folder.judul"
+              >{{ folder.judul || '-' }}</td>
+              <td
+                class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[220px] truncate"
+                :class="isNewVerificationFolder(folder) ? 'font-bold' : ''"
+                :title="folder.pengirimName || ''"
+              >{{ folder.pengirimName || '-' }}</td>
               <td class="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-300 max-w-[180px] truncate" :title="folder.klasifikasi || ''">
                 {{ folder.klasifikasi || '-' }}
                 <span v-if="folder.klasifikasiText" class="text-gray-400"> · {{ folder.klasifikasiText }}</span>
@@ -83,37 +104,15 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div
+      <!-- Pagination menggunakan komponen bersama -->
+      <Pagination
         v-if="filteredRows.length > 0"
-        class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
-      >
-        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-          <span>
-            Menampilkan {{ (page - 1) * f.limit + 1 }}–{{ Math.min(page * f.limit, filteredRows.length) }}
-            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ filteredRows.length }}</span> folder
-          </span>
-        </div>
-        <div v-if="totalPages > 1" class="flex items-center gap-1">
-          <button
-            :disabled="page <= 1"
-            @click="page--"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-heroicons-chevron-left" class="w-4 h-4" /> Prev
-          </button>
-          <span class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ page }} / {{ totalPages }}
-          </span>
-          <button
-            :disabled="page >= totalPages"
-            @click="page++"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Next <UIcon name="i-heroicons-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="filteredRows.length"
+        :rows-per-page="f.limit"
+        @update:page="page = $event"
+      />
     </div>
   </div>
 </template>
@@ -125,6 +124,7 @@ import type { Klasifikasi } from '~/types/klasifikasi';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { useAuth } from '~/composables/useAuth';
+import { useNotifications } from '~/composables/useNotifications';
 import { sdeMasalStatusBadge, sdeMasalStatusLabel } from '~/utils/sde-masal-status';
 
 definePageMeta({ middleware: ['auth'] });
@@ -133,18 +133,52 @@ const toast = useToast();
 const { user, getProfile } = useAuth();
 const { fetchVerificationFolders } = useSdeMasal();
 const { getKlasifikasiList } = useKlasifikasi();
+const { notifications, fetchNotifications } = useNotifications();
 
 const rows = ref<any[]>([]);
 const loading = ref(false);
 const klasifikasiOptions = ref<Klasifikasi[]>([]);
 const exporting = ref(false);
 const page = ref(1);
+const pageSizeOptions = [10, 25, 50];
+const statusOptions = [
+  { label: 'Semua Status', value: '__ALL__' },
+  { label: 'Draft', value: 'DRAFT' },
+  { label: 'Menunggu Verifikasi', value: 'MENUNGGU_VERIFIKASI' },
+  { label: 'Menunggu Pengirim', value: 'MENUNGGU_PENGIRIM' },
+  { label: 'Sebagian Terkirim', value: 'SEBAGIAN_TERKIRIM' },
+  { label: 'Dikembalikan', value: 'DIKEMBALIKAN' },
+  { label: 'Selesai', value: 'TERKIRIM' },
+  { label: 'Ditolak', value: 'DITOLAK' },
+];
 
 const f = reactive({
   search: '',
   status: '',
   klasifikasiId: '',
   limit: 10,
+});
+
+const klasifikasiFilterOptions = computed(() => [
+  { label: 'Semua Klasifikasi', value: '__ALL__' },
+  ...klasifikasiOptions.value.map((klasifikasi) => ({
+    label: `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`,
+    value: klasifikasi.id,
+  })),
+]);
+
+const selectedStatusFilter = computed({
+  get: () => f.status || '__ALL__',
+  set: (value: string) => {
+    f.status = value === '__ALL__' ? '' : value;
+  },
+});
+
+const selectedKlasifikasiFilter = computed({
+  get: () => f.klasifikasiId || '__ALL__',
+  set: (value: string) => {
+    f.klasifikasiId = value === '__ALL__' ? '' : value;
+  },
 });
 
 const breadcrumbs = [
@@ -155,9 +189,29 @@ const breadcrumbs = [
 
 const filteredRows = computed(() => {
   let result = [...rows.value].sort((a, b) => {
+    // Perubahan yang belum dibuka selalu berada paling atas, termasuk folder
+    // yang baru masuk ke giliran verifikasi berikutnya.
+    const aChanged = isNewVerificationFolder(a);
+    const bChanged = isNewVerificationFolder(b);
+    if (aChanged !== bChanged) return aChanged ? -1 : 1;
+
+    // Folder yang masih membutuhkan tindakan harus selalu didahulukan.
+    // Setelah prioritas workflow sama, gunakan aktivitas terakhir agar
+    // folder yang baru diterima atau baru berpindah giliran berada di atas.
+    const actionableStatuses = new Set([
+      'MENUNGGU_VERIFIKASI',
+      'MENUNGGU_PENGIRIM',
+      'SEBAGIAN_TERKIRIM',
+      'DIKEMBALIKAN',
+    ]);
+    const aActionable = actionableStatuses.has(String(a.status || ''));
+    const bActionable = actionableStatuses.has(String(b.status || ''));
+    if (aActionable !== bActionable) return aActionable ? -1 : 1;
+
     const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
     const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
-    return bTime - aTime;
+    if (bTime !== aTime) return bTime - aTime;
+    return String(b.id || '').localeCompare(String(a.id || ''));
   });
 
   if (f.status) {
@@ -232,7 +286,7 @@ const loadData = async () => {
 };
 
 const formatDate = (value: string | Date) =>
-  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 const statusLabel = sdeMasalStatusLabel;
 
@@ -241,9 +295,38 @@ const displayStatus = (folder: any) =>
 
 const statusBadge = sdeMasalStatusBadge;
 
+const isNewVerificationFolder = (folder: any) => {
+  if (
+    Number(folder?.waitingCount || 0) <= 0
+  ) {
+    return false;
+  }
+
+  const expectedAction = folder?.workflowRole === 'VERIFIKATOR'
+    ? 'OPEN_SDE_MASAL_VERIFIKASI'
+    : folder?.workflowRole === 'PENGIRIM_AKHIR'
+      ? 'OPEN_SDE_MASAL_FOLDER'
+      : null;
+  if (!expectedAction) return false;
+
+  return notifications.value.some((notification) => {
+    if (
+      notification.isRead ||
+      notification.data?.category !== 'SDE_MASAL' ||
+      notification.data?.action !== expectedAction
+    ) return false;
+    const notificationFolderId =
+      notification.data?.folderId || notification.data?.folder_id;
+    return String(notificationFolderId || '') === String(folder?.id || '');
+  });
+};
+
 onMounted(async () => {
   if (!user.value) await getProfile();
   await loadData();
+  // Pastikan status unread folder tersedia walaupun halaman dibuka langsung
+  // sebelum daftar notifikasi global selesai dimuat.
+  await fetchNotifications(1, 100, true);
   getKlasifikasiList().then((data) => { klasifikasiOptions.value = data; });
 });
 </script>
