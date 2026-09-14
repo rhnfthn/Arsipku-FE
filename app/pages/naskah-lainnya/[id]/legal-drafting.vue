@@ -40,12 +40,19 @@
             {{ verifiedLegalCount }}/{{ legalApprovalRows.length }} disetujui
           </span>
         </div>
-        <p
+        <div
           v-if="ldBanner.catatan"
-          class="mt-3 border-t border-black/5 pt-3 pl-10 text-sm italic text-gray-800 dark:border-white/10 dark:text-gray-100"
+          class="approval-note mt-3 rounded-lg border-l-4 border-primary-400 bg-primary-50/70 px-3 py-2 text-sm text-primary-900 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-100"
         >
-          &ldquo;{{ ldBanner.catatan }}&rdquo;
-        </p>
+          <span
+            class="mb-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70"
+          >
+            <UIcon name="i-lucide-message-square-text" class="size-3" />
+            Catatan
+          </span>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="approval-note-content" v-html="ldBanner.catatan"></div>
+        </div>
       </div>
 
       <NaskahDraftWorkspace
@@ -797,6 +804,41 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Konten catatan approval (HTML dari TinyMCE) dirender via v-html */
+/* break-word: kata sangat panjang tanpa spasi tetap wrap di dalam panel. */
+.approval-note-content {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.approval-note-content :deep(ol) {
+  list-style: decimal;
+  padding-left: 18px;
+}
+.approval-note-content :deep(ul) {
+  list-style: disc;
+  padding-left: 18px;
+}
+.approval-note-content :deep(li) {
+  margin: 2px 0;
+}
+.approval-note-content :deep(p) {
+  margin: 4px 0;
+}
+.approval-note-content :deep(table) {
+  border-collapse: collapse;
+  margin: 6px 0;
+}
+.approval-note-content :deep(td),
+.approval-note-content :deep(th) {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 4px 8px;
+}
+.dark .approval-note-content :deep(td),
+.dark .approval-note-content :deep(th) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 :deep(.docx-preview-container) {
   padding: 16px;
 }

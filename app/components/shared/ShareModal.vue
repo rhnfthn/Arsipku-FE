@@ -10,6 +10,9 @@ const props = defineProps<{
   naskahNomor?: string;
   // Multi-naskah: array of { naskahId, perihal, nomor }
   naskahItems?: Array<{ naskahId: string; perihal?: string; nomor?: string }>;
+  /** Penyebarluasan Surat Edaran: penerima diselesaikan backend dari org aktif. */
+  distributionScope?: 'SELECTED' | 'ALL_EMPLOYEES';
+  recipientHint?: string;
 }>();
 
 const emit = defineEmits<{
@@ -28,6 +31,7 @@ const isSubmitting = ref(false);
 const errorMsg = ref('');
 const errors = ref<Record<string, string>>({});
 const triedSubmit = ref(false);
+const isAllEmployees = computed(() => props.distributionScope === 'ALL_EMPLOYEES');
 
 const accessType = ref<'RENTANG_WAKTU' | 'SEKALI_LIHAT'>('RENTANG_WAKTU');
 const durationDays = ref<number | 'CUSTOM'>(7);
@@ -133,7 +137,7 @@ const handleSubmit = async () => {
     errorMsg.value = t('share_id_invalid');
     return;
   }
-  if (selectedRecipients.value.length === 0) {
+  if (!isAllEmployees.value && selectedRecipients.value.length === 0) {
     errors.value.recipients = t('share_pilih_penerima');
   }
   if (accessType.value === 'RENTANG_WAKTU' && durationDays.value === 'CUSTOM' && !customTanggalSelesai.value) {
@@ -144,7 +148,7 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   errorMsg.value = '';
   try {
-    await createShare(
+    const response = await createShare(
       items[0].naskahId,
       selectedRecipients.value.map((r) => r.id),
       catatan.value || undefined,
@@ -153,10 +157,14 @@ const handleSubmit = async () => {
         ? (durationDays.value === 'CUSTOM' ? undefined : durationDays.value)
         : undefined,
       items.length > 1 ? items.map((i) => i.naskahId) : undefined,
+      props.distributionScope ?? 'SELECTED',
     );
+    const recipientCount = response?.data?.recipientCount ?? selectedRecipients.value.length;
     useToast().add({
       title: t('share_berhasil'),
-      description: t('share_berhasil_dibagikan', { count: items.length, recipients: selectedRecipients.value.length }),
+      description: isAllEmployees.value
+        ? `Surat Edaran dibagikan kepada ${recipientCount} karyawan aktif.`
+        : t('share_berhasil_dibagikan', { count: items.length, recipients: recipientCount }),
       color: 'success',
     });
     emit('shared');
@@ -366,7 +374,21 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
           {{ t('share_penerima') }} <span class="text-red-500">*</span>
         </span>
         <div class="flex-1">
-          <div class="relative">
+          <div
+            v-if="isAllEmployees"
+            class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-200"
+          >
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-users" class="mt-0.5 size-4 shrink-0" />
+              <div>
+                <p class="font-medium">Seluruh karyawan aktif</p>
+                <p class="mt-0.5 text-xs text-blue-700 dark:text-blue-300">
+                  {{ recipientHint || 'Penerima diambil otomatis dari data organisasi terbaru saat naskah dibagikan.' }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div v-else class="relative">
             <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               v-model="searchQuery"
@@ -378,7 +400,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
 
           <!-- Search Results -->
           <div
-            v-if="filteredResults.length > 0"
+            v-if="!isAllEmployees && filteredResults.length > 0"
             class="mt-1 rounded-lg border border-gray-200 dark:border-gray-600 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 shadow-lg"
           >
             <div
@@ -393,7 +415,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
           </div>
 
           <!-- Selected Recipients -->
-          <div v-if="selectedRecipients.length > 0" class="mt-2 space-y-1.5">
+          <div v-if="!isAllEmployees && selectedRecipients.length > 0" class="mt-2 space-y-1.5">
             <div
               v-for="recipient in selectedRecipients"
               :key="recipient.id"
@@ -412,6 +434,9 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
               </button>
             </div>
           </div>
+          <p v-if="!isAllEmployees && recipientHint" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+            {{ recipientHint }}
+          </p>
           <p v-if="errors.recipients" class="mt-1 text-xs text-red-500">{{ errors.recipients }}</p>
         </div>
       </div>
