@@ -147,8 +147,10 @@ export type TahapApproval =
   | 'approval_blanko'
   | 'approval_penandatangan'
   | 'persetujuan_direksi'
+  | 'persetujuan_direksi_pemrakarsa'
   | 'persetujuan_direksi_ditetapkan'
   | 'blanko_verbal'
+  | 'blanko_verbal_pemrakarsa'
   | 'blanko_verbal_ditetapkan';
 
 export interface ApprovalRow {
@@ -208,6 +210,7 @@ export interface NaskahDetail extends NaskahListItem {
   availableActions: JenisAksi[]; // dihitung BE/mock dari role + tahapan
   // BE `getDetail` exposes the naskah's company id (for delegasi direksi lookup).
   companyId?: string | null;
+  direkturPemrakarsa?: DirectorApprovalItem | null;
   // Daftar penandatangan (array). BE baru mengirim array.
   // `penandatangan` (inherited dari NaskahListItem) tetap dipertahankan untuk backward compat (item pertama).
   penandatanganList?: Penandatangan[];
@@ -298,6 +301,7 @@ export interface SheetFormModel {
   legalChecker?: string;
   legalCheckerJabatan?: string;
   ditetapkanOleh?: DirectorApprovalItem[];
+  direkturPemrakarsa?: DirectorApprovalItem[];
   diketahuiOleh?: DirectorApprovalItem[];
   alamatInfo?: {
     kantor?: string;

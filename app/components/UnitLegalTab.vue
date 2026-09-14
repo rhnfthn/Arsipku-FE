@@ -1,11 +1,10 @@
 <template>
   <div class="p-6">
-    <Heading variant="heading9sb" class="text-mobile-md">
-      Unit Legal
-    </Heading>
+    <Heading variant="heading9sb" class="text-mobile-md"> Unit Legal </Heading>
     <p class="text-sm text-gray-500 dark:text-gray-400 mb-7 mt-1">
-      Personil unit Legal, Compliance, And Sustainability Division. Aktifkan/nonaktifkan
-      untuk menentukan siapa yang berperan sebagai legal role pada workflow naskah-lainnya.
+      Personil unit Legal, Compliance, And Sustainability Division. Aktifkan/nonaktifkan untuk
+      menentukan legal role, lalu pilih satu penerima pertama untuk naskah yang masuk ke tahap Legal
+      Drafting.
     </p>
 
     <!-- Loading -->
@@ -40,6 +39,19 @@
         <template #cell-level="{ row }">
           <span class="text-gray-500">L{{ row.level }}</span>
         </template>
+        <template #cell-firstRecipient="{ row }">
+          <UButton
+            size="sm"
+            :color="row.isFirstRecipient ? 'primary' : 'neutral'"
+            :variant="row.isFirstRecipient ? 'solid' : 'outline'"
+            :icon="row.isFirstRecipient ? 'i-lucide-circle-check' : 'i-lucide-user-round-check'"
+            :loading="settingFirstId === row.positionId"
+            :disabled="!row.isActive || row.isFirstRecipient"
+            @click="setFirstRecipient(row)"
+          >
+            {{ row.isFirstRecipient ? 'Penerima Pertama' : 'Jadikan Penerima Pertama' }}
+          </UButton>
+        </template>
         <template #cell-aktif="{ row }">
           <button
             type="button"
@@ -48,9 +60,7 @@
             :disabled="togglingId === row.positionId"
             :class="[
               'relative inline-flex h-7 w-13 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-              row.isActive
-                ? 'bg-primary'
-                : 'bg-gray-200 dark:bg-gray-600',
+              row.isActive ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600',
             ]"
           >
             <span
@@ -73,6 +83,7 @@ const toast = useToast();
 const persons = ref([]);
 const loading = ref(true);
 const togglingId = ref('');
+const settingFirstId = ref('');
 
 // Kolom DataTable Unit Legal — konsisten dengan tabel lain (header primary).
 const columns = [
@@ -81,6 +92,7 @@ const columns = [
   { key: 'jabatan', label: 'Jabatan' },
   { key: 'unitName', label: 'Unit' },
   { key: 'level', label: 'Level' },
+  { key: 'firstRecipient', label: 'Penerima Awal' },
   { key: 'aktif', label: 'Aktif' },
 ];
 
@@ -100,15 +112,32 @@ async function togglePerson(person) {
   togglingId.value = person.positionId;
   try {
     const res = await apiPatch(`/konfigurasi/unit-legal/${person.positionId}/toggle`);
-    person.isActive = res.data.isActive;
+    await fetchPersons();
     toast.add({
-      title: person.isActive ? 'Legal role diaktifkan' : 'Legal role dinonaktifkan',
-      color: person.isActive ? 'success' : 'warning',
+      title: res.data.isActive ? 'Legal role diaktifkan' : 'Legal role dinonaktifkan',
+      color: res.data.isActive ? 'success' : 'warning',
     });
   } catch {
     toast.add({ title: 'Gagal mengubah status', color: 'error' });
   } finally {
     togglingId.value = '';
+  }
+}
+
+async function setFirstRecipient(person) {
+  settingFirstId.value = person.positionId;
+  try {
+    await apiPatch(`/konfigurasi/unit-legal/${person.positionId}/first-recipient`);
+    await fetchPersons();
+    toast.add({
+      title: 'Penerima pertama berhasil diperbarui',
+      description: `${person.nama} akan menerima naskah yang masuk ke Legal Drafting.`,
+      color: 'success',
+    });
+  } catch {
+    toast.add({ title: 'Gagal mengubah penerima pertama', color: 'error' });
+  } finally {
+    settingFirstId.value = '';
   }
 }
 
