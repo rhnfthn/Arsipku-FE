@@ -34,12 +34,14 @@
                     class="w-full p-0"
                     :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any"
                     :search-input="{ placeholder: 'Cari nama...' }"
-                    :ui="{
-                      base: 'w-full',
-                      input: 'w-full',
-                      value: 'p-0 w-full',
-                      viewport: 'max-h-[380px]',
-                    } as any"
+                    :ui="
+                      {
+                        base: 'w-full',
+                        input: 'w-full',
+                        value: 'p-0 w-full',
+                        viewport: 'max-h-[380px]',
+                      } as any
+                    "
                     @update:model-value="pickNama(director, $event)"
                   >
                     <template #item="{ item }">
@@ -52,7 +54,10 @@
                         >
                           {{ item.label }}
                         </span>
-                        <span v-if="item.jabatan" class="block truncate text-left text-xs text-gray-500">
+                        <span
+                          v-if="item.jabatan"
+                          class="block truncate text-left text-xs text-gray-500"
+                        >
                           {{ item.jabatan }}
                         </span>
                       </div>
@@ -113,7 +118,10 @@
       <div v-if="recipients.length === 0" class="py-1 text-sm text-gray-400">
         {{ emptyText }}
       </div>
-      <div v-else-if="availableOptions.length > 0" class="flex items-center gap-2">
+      <div
+        v-else-if="availableOptions.length > 0 && (!maxSelections || model.length < maxSelections)"
+        class="flex items-center gap-2"
+      >
         <span
           class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500 text-white text-xs font-bold shrink-0"
         >
@@ -156,7 +164,13 @@
           </template>
         </USelectMenu>
       </div>
-      <p v-else class="text-xs text-gray-400">Semua direksi tersedia sudah dipilih.</p>
+      <p v-else class="text-xs text-gray-400">
+        {{
+          maxSelections && model.length >= maxSelections
+            ? 'Batas pilihan sudah terpenuhi.'
+            : 'Semua direksi tersedia sudah dipilih.'
+        }}
+      </p>
     </div>
   </div>
 </template>
@@ -175,11 +189,15 @@ const props = withDefaults(
     hint?: string;
     placeholder?: string;
     emptyText?: string;
+    maxSelections?: number;
+    syncPositionOnNameChange?: boolean;
   }>(),
   {
     hint: '',
     placeholder: 'Pilih direksi...',
     emptyText: 'Tidak ada data direksi.',
+    maxSelections: 0,
+    syncPositionOnNameChange: false,
   }
 );
 
@@ -201,6 +219,16 @@ onMounted(() => {
     });
 });
 const namaOptions = computed(() => {
+  if (props.syncPositionOnNameChange) {
+    return props.recipients
+      .filter((item) => item.nama)
+      .map((item) => ({
+        label: item.nama,
+        jabatan: item.jabatan,
+        value: item.nama,
+        type: 'person',
+      }));
+  }
   const seen = new Set<string>();
   const byTag = (tag: string) =>
     bodBod1Options.value.filter((v) => {
@@ -215,7 +243,13 @@ const namaOptions = computed(() => {
     value: v.nama,
     type: 'person',
   });
-  const direksi = byTag('BOD').map(person);
+  const direksi = byTag('BOD')
+    .sort(
+      (a, b) =>
+        Number(/direktur\s*utama/i.test(b.jabatan || '')) -
+        Number(/direktur\s*utama/i.test(a.jabatan || ''))
+    )
+    .map(person);
   const evp = byTag('BOD-1').map(person);
   const options: any[] = [];
   if (direksi.length) options.push({ label: 'Direksi', type: 'label' });
@@ -243,6 +277,23 @@ function syncDelegasi(director: DirectorApprovalItem) {
 }
 
 function pickNama(director: DirectorApprovalItem, nama: string) {
+  if (props.syncPositionOnNameChange) {
+    const selected = props.recipients.find(
+      (item) => (item.nama || '').trim().toLowerCase() === nama.trim().toLowerCase()
+    );
+    if (selected) {
+      director.positionId = selected.positionId;
+      director.persnum = selected.persnum;
+      director.nama = selected.nama;
+      director.jabatan = selected.jabatan;
+      director.bodTag = selected.bodTag;
+      director.delegator = 'ybs';
+      director.delegatePersnum = undefined;
+      director.delegateName = undefined;
+      director.delegatePositionStatus = null;
+      return;
+    }
+  }
   director.nama = nama;
   syncDelegasi(director);
 }
