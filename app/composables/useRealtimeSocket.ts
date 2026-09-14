@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '~/composables/useAuth';
+import { getStoredAccessToken } from '~/utils/auth-storage';
 
 /**
  * useRealtimeSocket
@@ -80,8 +81,7 @@ const getSocketUrl = (): string => {
 };
 
 const getToken = (): string | null => {
-  if (!process.client) return null;
-  return localStorage.getItem('token');
+  return getStoredAccessToken();
 };
 
 // ──────────────────────────────────────────────

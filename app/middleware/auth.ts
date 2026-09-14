@@ -2,9 +2,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const tokenCookie = useCookie<string | null>('token', { sameSite: 'lax', path: '/' });
   const roleCookie = useCookie<string | null>('auth_role', { sameSite: 'lax', path: '/' });
 
-  const token = process.client
-    ? localStorage.getItem('token') || tokenCookie.value
-    : tokenCookie.value;
+  const token = process.client ? getStoredAccessToken() || tokenCookie.value : tokenCookie.value;
   const path = to.path;
   const tertujuPaths = [
     '/master/tertuju-eksternal',
@@ -34,7 +32,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (process.server) return navigateTo('/');
 
     const { getSSORedirectUrl } = useAuth();
-    const ssoUrl = await getSSORedirectUrl();
+    const ssoUrl = await getSSORedirectUrl(to.fullPath);
 
     if (ssoUrl) {
       return navigateTo(ssoUrl, { external: true });
