@@ -121,7 +121,8 @@
               {{ note.nama }}
               <span class="font-normal text-gray-400">({{ note.tahapLabel }})</span>
             </span>
-            <span class="text-gray-600 dark:text-gray-300">{{ note.catatan }}</span>
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="approval-note-content" v-html="note.catatan"></div>
           </div>
         </div>
 
@@ -170,13 +171,20 @@
             >
               {{ approvalStatusLabel(row.status, row.id === activeApprovalRow?.id) }}
             </span>
-            <!-- Catatan approver (tampil bila sudah memberi aksi: disetujui/ditolak) -->
+            <!-- Catatan approver (tampil bila sudah memberi aksi: disetujui/ditolak).
+                 Render HTML dari editor TinyMCE (pasal/batang tubuh). -->
             <div
               v-if="row.catatan && row.status !== 'waiting' && row.status !== 'pending'"
-              class="w-full rounded-md bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600 dark:bg-gray-700/60 dark:text-gray-300 sm:w-auto sm:flex-[0_0_100%]"
+              class="approval-note w-full rounded-md border-l-4 border-primary-400 bg-primary-50/70 px-3 py-2 text-xs leading-relaxed text-primary-900 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-100 sm:w-auto sm:flex-[0_0_100%]"
             >
-              <span class="font-semibold text-gray-700 dark:text-gray-200">Catatan:</span>
-              {{ row.catatan }}
+              <span
+                class="mb-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70"
+              >
+                <UIcon name="i-lucide-message-square-text" class="size-3" />
+                Catatan
+              </span>
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <div class="approval-note-content" v-html="row.catatan"></div>
             </div>
           </div>
         </div>
@@ -715,5 +723,45 @@ onMounted(loadDetail);
 :deep(.docx-wrapper > section.docx) {
   border: none !important;
   margin: 0 auto !important;
+}
+
+/* Konten catatan approval (HTML dari TinyMCE — pasal-pasal/batang tubuh) */
+/* break-word: kata sangat panjang tanpa spasi tetap wrap di dalam panel. */
+.approval-note-content {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.approval-note-content :deep(p) {
+  margin: 0 0 4px 0;
+}
+.approval-note-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.approval-note-content :deep(ol) {
+  list-style: decimal;
+  padding-left: 18px;
+  margin: 2px 0;
+}
+.approval-note-content :deep(ul) {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 2px 0;
+}
+.approval-note-content :deep(li) {
+  margin: 0 0 2px 0;
+}
+.approval-note-content :deep(table) {
+  border-collapse: collapse;
+  margin: 4px 0;
+  width: 100%;
+}
+.approval-note-content :deep(td),
+.approval-note-content :deep(th) {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 3px 6px;
+}
+.approval-note-content :deep(strong) {
+  font-weight: 700;
 }
 </style>
