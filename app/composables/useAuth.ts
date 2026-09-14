@@ -1,15 +1,5 @@
 // composables/useAuth.ts
 import type { UserProfile, ActivePermission } from '~/types/auth';
-import type { AuthMode } from '~/utils/auth-storage';
-import { useDark } from '@vueuse/core';
-import {
-  clearStoredAuthSession,
-  getStoredAccessToken,
-  getStoredAuthMode,
-  getStoredSessionId,
-  replaceStoredAccessToken,
-  setStoredAuthSession,
-} from '~/utils/auth-storage';
 
 // ── Inflight guard untuk getProfile — mencegah duplicate /auth/profile calls ──
 let inflightProfile: Promise<UserProfile | null> | null = null;
@@ -18,10 +8,6 @@ const PROFILE_DEDUP_MS = 5_000; // 5 detik — jangan fetch ulang jika baru saja
 
 export const useAuth = () => {
   const { apiGet, apiPost, clearApiCache } = useApi();
-  const { setLocale } = useI18n();
-  const isDark = useDark();
-  const runtimeConfig = useRuntimeConfig();
-  const { createAuthorizeUrl, consumeTransaction, clearTransaction } = useOidcPkce();
   const tokenCookie = useCookie<string | null>('token', {
     sameSite: 'lax',
     path: '/',
@@ -39,17 +25,6 @@ export const useAuth = () => {
     user.value = data;
   };
 
-  // Setiap login baru dimulai dari tampilan awal aplikasi yang konsisten.
-  // Nilai ini sengaja disimpan agar Navbar tidak mengembalikan preferensi sesi
-  // sebelumnya saat komponen dashboard selesai dimuat.
-  const applyLoginDefaults = () => {
-    if (!process.client) return;
-
-    setLocale('id');
-    localStorage.setItem('arsipku_locale', 'id');
-    isDark.value = false;
-  };
-
   const getProfile = async (force = false): Promise<UserProfile | null> => {
     // Inflight guard — jika getProfile sedang berjalan, tunggu itu saja
     if (inflightProfile && !force) return inflightProfile;
@@ -59,7 +34,7 @@ export const useAuth = () => {
       return user.value;
     }
 
-    const token = process.client ? getStoredAccessToken() : tokenCookie.value;
+    const token = process.client ? localStorage.getItem('token') : tokenCookie.value;
     if (!token) {
       if (force) {
         setUser(null);
@@ -140,15 +115,8 @@ export const useAuth = () => {
     }
   };
 
-  const configuredAuthMode = (): AuthMode =>
-    String(runtimeConfig.public.authMode) === 'oidc-pkce' ? 'oidc-pkce' : 'legacy';
-
-  const getSSORedirectUrl = async (returnTo = '/beranda') => {
+  const getSSORedirectUrl = async () => {
     try {
-      if (configuredAuthMode() === 'oidc-pkce') {
-        return await createAuthorizeUrl(returnTo);
-      }
-
       // Gunakan sso-redirect-local saat development (localhost) agar redirect ke localhost:3000/autharsipku
       const isLocal =
         process.client &&
@@ -162,25 +130,6 @@ export const useAuth = () => {
     }
   };
 
-  const exchangeOidcCode = async (code: string, state: string) => {
-    const transaction = consumeTransaction(state);
-    const result: any = await apiPost('/auth/oidc/exchange', {
-      code,
-      codeVerifier: transaction.codeVerifier,
-    });
-    const data = result?.data ?? result;
-    if (!data?.accessToken || !data?.sessionId) {
-      throw new Error('Backend tidak mengembalikan sesi ArsipKu yang valid');
-    }
-
-    setStoredAuthSession(data.accessToken, data.sessionId, 'oidc-pkce');
-    tokenCookie.value = data.accessToken;
-    sessionCookie.value = data.sessionId;
-    roleCookie.value = data.user?.role ?? null;
-    clearApiCache();
-    return { ...data, returnTo: transaction.returnTo };
-  };
-
   const verifyToken = async (token: string) => {
     try {
       return await apiPost('/auth/verify-token', { token });
@@ -191,37 +140,28 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    const activeMode = getStoredAuthMode();
     try {
-      const sessionId = getStoredSessionId();
-      const token = getStoredAccessToken();
+      const sessionId = process.client ? localStorage.getItem('sessionId') : null;
+      const token = process.client ? localStorage.getItem('token') : null;
 
       // 1️⃣ Logout internal (hapus sessionId)
       if (sessionId && token) {
-        if (activeMode === 'oidc-pkce') {
-          await apiPost(
-            '/auth/oidc/logout',
-            { sessionId },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-              validateStatus: (s: number) => s < 400,
-            }
-          );
-        } else {
-          await apiGet(`/auth/logout-v2?sessionId=${encodeURIComponent(sessionId)}`, {
-            headers: { Authorization: `Bearer ${token}` },
-            validateStatus: (s: number) => s < 400,
-          });
-        }
+        await apiGet(`/auth/logout-v2?sessionId=${sessionId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          validateStatus: (s: number) => s < 400,
+        });
       }
     } catch (error) {
-      console.warn('[AUTH] provider logout gagal; sesi lokal tetap dibersihkan:', error);
+      console.warn('[AUTH] logout-v2 error (ignored):', error);
     }
 
     // 2️⃣ Bersihkan state lokal
     if (process.client) {
-      clearStoredAuthSession();
-      clearTransaction();
+      localStorage.removeItem('token');
+      localStorage.removeItem('sessionId');
+      localStorage.removeItem('arsipku_active_profile');
     }
     tokenCookie.value = null;
     sessionCookie.value = null;
@@ -232,10 +172,6 @@ export const useAuth = () => {
 
     // 3️⃣ Redirect ke SSO AirNav
     if (process.client) {
-      if (activeMode === 'oidc-pkce') {
-        await navigateTo('/', { replace: true });
-        return true;
-      }
       const redirectTarget = window.location.origin + '/autharsipku'; // Lebih dinamis
       const encodedRedirect = btoa(redirectTarget);
 
@@ -249,23 +185,17 @@ export const useAuth = () => {
 
   const refreshToken = async () => {
     if (!process.client) return null;
-    const sessionId = getStoredSessionId();
+    const sessionId = localStorage.getItem('sessionId');
     if (!sessionId) throw new Error('No sessionId');
 
-    const isOidc = getStoredAuthMode() === 'oidc-pkce';
-    const token = getStoredAccessToken();
+    const res: any = await apiPost('/auth/refresh-token', {
+      sessionId,
+    });
 
-    const res: any = await apiPost(
-      isOidc ? '/auth/oidc/refresh' : '/auth/refresh-token',
-      { sessionId },
-      token ? { headers: { Authorization: `Bearer ${token}` } } : {}
-    );
-
-    const refreshData = res?.data?.data ?? res?.data ?? res;
-    const newAccessToken = refreshData?.accessToken;
+    const newAccessToken = res?.data?.accessToken;
     if (!newAccessToken) throw new Error('Refresh token failed');
 
-    replaceStoredAccessToken(newAccessToken);
+    localStorage.setItem('token', newAccessToken);
     tokenCookie.value = newAccessToken;
     clearApiCache();
     return newAccessToken as string;
@@ -314,7 +244,7 @@ export const useAuth = () => {
 
   const switchRole = async (roleId: string) => {
     if (!process.client) return;
-    const token = getStoredAccessToken();
+    const token = localStorage.getItem('token');
     const res: any = await apiPost(
       '/rbac/switch-role',
       { roleId },
@@ -323,7 +253,7 @@ export const useAuth = () => {
     const data = res?.data ?? res;
     const newToken = data?.accessToken;
     if (newToken) {
-      replaceStoredAccessToken(newToken);
+      localStorage.setItem('token', newToken);
       tokenCookie.value = newToken;
       clearApiCache();
     }
@@ -345,7 +275,7 @@ export const useAuth = () => {
    */
   const switchProfile = async (profile: 'akun_asli' | 'sekretaris') => {
     if (!process.client) return;
-    const token = getStoredAccessToken();
+    const token = localStorage.getItem('token');
     const res: any = await apiPost(
       '/auth/switch-profile',
       { profile },
@@ -354,7 +284,7 @@ export const useAuth = () => {
     const data = res?.data ?? res;
     const newToken = data?.accessToken;
     if (newToken) {
-      replaceStoredAccessToken(newToken);
+      localStorage.setItem('token', newToken);
       tokenCookie.value = newToken;
       clearApiCache();
     }
@@ -379,7 +309,7 @@ export const useAuth = () => {
 
   const refreshPermissions = async (): Promise<void> => {
     try {
-      const token = getStoredAccessToken();
+      const token = process.client ? localStorage.getItem('token') : null;
       if (!token) return;
 
       clearApiCache();
@@ -391,7 +321,7 @@ export const useAuth = () => {
       const data = res?.data ?? res;
       const newToken = data?.accessToken;
       if (newToken) {
-        replaceStoredAccessToken(newToken);
+        localStorage.setItem('token', newToken);
         tokenCookie.value = newToken;
       }
       if (data?.activePermissions) {
@@ -414,10 +344,8 @@ export const useAuth = () => {
   return {
     user,
     setUser,
-    applyLoginDefaults,
     getProfile,
     getSSORedirectUrl,
-    exchangeOidcCode,
     verifyToken,
     logout,
     refreshToken,

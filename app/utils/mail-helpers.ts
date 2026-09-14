@@ -227,7 +227,7 @@ export const fetchFileWithAuth = async (
 
   // Relative path → fetch dari backend dengan token
   const fullUrl = buildFileUrl(url);
-  const token = getStoredAccessToken();
+  const token = process.client ? localStorage.getItem("token") : null;
 
   try {
     const response = await fetch(fullUrl, {
