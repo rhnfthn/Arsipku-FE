@@ -201,12 +201,14 @@
             </UTooltip>
           </div>
 
-          <UAvatar
+          <ProfileAvatar
             size="md"
-            class="ring-2 ring-transparent group-hover:ring-primary-500/30 transition-all duration-200 bg-primary-500 text-white font-bold flex items-center justify-center shadow-sm"
+            :persnum="user?.persnum"
+            :alt="user?.nama || ''"
+            avatar-class="ring-2 ring-transparent group-hover:ring-primary-500/30 transition-all duration-200 bg-primary-500 text-white font-bold flex items-center justify-center shadow-sm"
           >
             {{ getInitials(user?.nama || '') }}
-          </UAvatar>
+          </ProfileAvatar>
         </div>
 
         <template #delegation-item="{ item }: { item: any }">
