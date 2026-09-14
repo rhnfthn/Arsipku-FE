@@ -344,11 +344,20 @@
             <div>
               <h3 class="font-semibold text-gray-900 dark:text-white">Naskah Selesai</h3>
               <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                Naskah telah diselesaikan. Unduh dokumen final atau lihat detail lengkap.
+                Naskah telah diselesaikan. Unduh, lihat detail, atau sebarkan dokumen final.
               </p>
             </div>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <UButton
+              v-if="canShareCompleted"
+              color="success"
+              icon="i-lucide-share-2"
+              size="lg"
+              class="w-full font-semibold shadow-lg shadow-green-500/20 sm:w-auto"
+              @click="showShareModal = true"
+              >Bagikan</UButton
+            >
             <UButton
               color="primary"
               icon="i-lucide-eye"
@@ -399,6 +408,17 @@
         </div>
       </template>
     </USlideover>
+
+    <SharedShareModal
+      v-if="showShareModal && detail"
+      :naskah-id="String(id)"
+      :naskah-perihal="detail.perihal"
+      :naskah-nomor="detail.nomor || undefined"
+      :distribution-scope="shareDistributionScope"
+      :recipient-hint="shareRecipientHint"
+      @close="showShareModal = false"
+      @shared="handleShared"
+    />
   </div>
 </template>
 
@@ -411,6 +431,7 @@ const route = useRoute();
 const id = computed(() => route.params.id);
 const { apiGet } = useApi();
 const { detail, fetchDetail } = useNaskahLainnya();
+const { user } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -431,6 +452,37 @@ const previewDocxContainer = ref(null);
 const previewLoading = ref(false);
 // Key aksi yang sedang berjalan (preview:/dl:<id>) — untuk loading & disable per tombol.
 const busyKey = ref(null);
+const showShareModal = ref(false);
+const shareEnabled = ref(false);
+
+// Penyebarluasan resmi hanya dilakukan pemrakarsa/pembuat naskah. Penandatangan
+// yang kebetulan dapat membuka halaman selesai tidak otomatis menjadi pemberi.
+const canShareCompleted = computed(() => {
+  const ownerPersnum = detail.value?.pemrakarsa?.persnum;
+  return (
+    shareEnabled.value &&
+    ownerPersnum != null &&
+    Number(ownerPersnum) === Number(user.value?.persnum)
+  );
+});
+
+const shareDistributionScope = computed(() =>
+  detail.value?.jenis === 'EDR' ? 'ALL_EMPLOYEES' : 'SELECTED'
+);
+
+const shareRecipientHint = computed(() => {
+  if (detail.value?.jenis === 'EDR') {
+    return 'Surat Edaran akan masuk ke menu Dibagikan kepada Saya milik seluruh karyawan aktif.';
+  }
+  if (detail.value?.jenis === 'KEP') {
+    return 'Pilih karyawan yang menjadi pihak dalam Keputusan Direksi ini.';
+  }
+  return 'Pilih karyawan yang berhak menerima naskah final ini.';
+});
+
+function handleShared() {
+  showShareModal.value = false;
+}
 
 const jenisLabel = (j) => JENIS_LABELS[j] ?? j;
 
@@ -510,6 +562,22 @@ async function loadDetail() {
   loading.value = true;
   try {
     await fetchDetail(id.value);
+    shareEnabled.value = false;
+    if (detail.value?.jenis) {
+      try {
+        const response = await apiGet(
+          `/config/naskah-lainnya/${detail.value.jenis}`,
+          {},
+          {
+            skipCache: true,
+          }
+        );
+        const config = response?.data ?? response;
+        shareEnabled.value = config?.shareEnabled === true;
+      } catch {
+        // Fail closed: bila konfigurasi tidak dapat dibaca, tombol tidak ditampilkan.
+      }
+    }
     if (detail.value?.signOption === 'ttd_basah' && detail.value?.manualFinalStatus !== 'final') {
       await navigateTo(`/naskah-lainnya/${id.value}`, { replace: true });
     }

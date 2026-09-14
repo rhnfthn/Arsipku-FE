@@ -2,8 +2,7 @@
   <div class="p-6">
     <Heading variant="heading9sb" class="text-mobile-md">Naskah Lainnya</Heading>
     <p class="text-sm text-gray-500 dark:text-gray-400 mb-7 mt-1">
-      Atur default Legal Drafting dan klasifikasi untuk setiap jenis naskah lainnya. Default ini
-      langsung terisi di form tulis saat pemrakarsa memilih jenis naskah.
+      Atur Legal Drafting, klasifikasi, dan izin penyebarluasan untuk setiap jenis naskah lainnya.
     </p>
 
     <div v-if="isLoading" class="space-y-3">
@@ -32,7 +31,8 @@
           </p>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Legal Drafting: {{ row.butuhLegal ? 'Ya' : 'Tidak' }} · Klasifikasi:
-            {{ row.defaultKlasifikasi || '-' }}
+            {{ row.defaultKlasifikasi || '-' }} · Boleh Dibagikan:
+            {{ row.shareEnabled ? 'Ya' : 'Tidak' }}
           </p>
         </div>
 
@@ -55,6 +55,20 @@
               {{ opt.label }}
             </button>
           </div>
+
+          <!-- Izin penyebarluasan naskah final -->
+          <button
+            type="button"
+            :disabled="isSaving === row.jenisNaskah"
+            class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border px-3 text-xs font-medium transition sm:w-44"
+            :class="row.shareEnabled
+              ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+              : 'border-gray-200 bg-white text-gray-500 hover:border-emerald-400 hover:text-emerald-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400'"
+            @click="setShareEnabled(row, !row.shareEnabled)"
+          >
+            <UIcon name="i-lucide-share-2" class="size-4" />
+            {{ row.shareEnabled ? 'Boleh Dibagikan' : 'Tidak Dibagikan' }}
+          </button>
 
           <!-- Default Klasifikasi (UI menyusul form tulis: parent/child, search, deskripsi) -->
           <USelectMenu
@@ -123,8 +137,9 @@
       <div class="text-sm text-primary-800 dark:text-primary-200 leading-relaxed">
         <span class="font-semibold block mb-1">Informasi</span>
         <p>
-          Perubahan langsung tersimpan. Form tulis naskah lainnya akan mengisi Legal Drafting dan
-          klasifikasi secara otomatis sesuai jenis yang dipilih; pemrakarsa tetap bisa mengubahnya.
+          Perubahan langsung tersimpan. Opsi Boleh Dibagikan menentukan apakah tombol
+          Sebarluaskan tersedia setelah naskah selesai. Surat Edaran dikirim ke seluruh karyawan;
+          jenis lainnya menggunakan penerima yang dipilih.
         </p>
       </div>
     </div>
@@ -138,6 +153,7 @@ import type { Klasifikasi } from '~/types/klasifikasi';
 interface NaskahLainnyaConfigRow {
   jenisNaskah: string;
   butuhLegal: boolean;
+  shareEnabled: boolean;
   defaultKlasifikasi: string | null;
 }
 
@@ -220,6 +236,7 @@ async function save(row: NaskahLainnyaConfigRow, prev: NaskahLainnyaConfigRow) {
   try {
     await apiPut(`/admin/config/naskah-lainnya/${row.jenisNaskah}`, {
       butuhLegal: row.butuhLegal,
+      shareEnabled: row.shareEnabled,
       defaultKlasifikasi: row.defaultKlasifikasi || null,
     });
     toast.add({
@@ -229,6 +246,7 @@ async function save(row: NaskahLainnyaConfigRow, prev: NaskahLainnyaConfigRow) {
     });
   } catch {
     row.butuhLegal = prev.butuhLegal;
+    row.shareEnabled = prev.shareEnabled;
     row.defaultKlasifikasi = prev.defaultKlasifikasi;
     toast.add({
       title: 'Gagal',
@@ -244,6 +262,13 @@ function setButuhLegal(row: NaskahLainnyaConfigRow, value: boolean) {
   if (isSaving.value) return;
   const prev = { ...row };
   row.butuhLegal = value;
+  save(row, prev);
+}
+
+function setShareEnabled(row: NaskahLainnyaConfigRow, value: boolean) {
+  if (isSaving.value) return;
+  const prev = { ...row };
+  row.shareEnabled = value;
   save(row, prev);
 }
 
