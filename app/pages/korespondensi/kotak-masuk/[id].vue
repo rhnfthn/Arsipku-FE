@@ -733,8 +733,8 @@ onMounted(() => {
   if (['BOD-2', 'BOD-3'].includes(String(user.value?.bodTag ?? '')))
     fetchRoutingCapabilities().catch(() => {});
   if (process.client) {
-    const token = getStoredAccessToken();
-    const sessionId = getStoredSessionId();
+    const token = localStorage.getItem('token');
+    const sessionId = localStorage.getItem('sessionId');
     sessionDebug.value = {
       user: user.value || null,
       sessionId: sessionId || null,

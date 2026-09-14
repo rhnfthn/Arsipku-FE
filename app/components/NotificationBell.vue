@@ -116,7 +116,7 @@ const onItemClick = (item: NotificationItem) => {
 
 const getAuthToken = () => {
   if (!process.client) return tokenCookie.value;
-  return getStoredAccessToken() || tokenCookie.value;
+  return localStorage.getItem('token') || tokenCookie.value;
 };
 
 const initWhenAuthenticated = (force = false) => {

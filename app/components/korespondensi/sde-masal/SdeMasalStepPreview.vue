@@ -1162,12 +1162,12 @@ const openVerificationSelection = async () => {
           matchPenerimaLogin?.position;
         if (posisiDisposisi) positionId = posisiDisposisi;
 
-        // Untuk SDE yang dibuat dari disposisi, verifikator adalah pembuat
-        // disposisi yang menyerahkan pekerjaan kepada konseptor. Jangan
-        // menggunakan seluruh hierarki atasan konseptor karena itu dapat
-        // memasukkan pejabat yang tidak terlibat dalam disposisi aktif.
-        // Pengirim SDE yang dipilih pada konsep (misalnya Zainal Arifin)
-        // adalah final signer, bukan verifikator.
+        // Telusuri handoff disposisi dari penerima terakhir ke atas dan
+        // berhenti tepat pada pengirim SDE yang dipilih saat folder dibuat.
+        // Pengirim tersebut tetap menjadi verifikator terakhir, lalu menerima
+        // folder kembali sebagai pengirim/final signer. Pejabat sebelum batas
+        // tersebut (misalnya pengirim Nota Dinas awal) tidak ikut terpilih.
+        const selectedSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
         const flowNodes = (Array.isArray(flow) ? flow : [])
           .map((node: any) => {
             const sender = node?.pengirim
@@ -1191,17 +1191,44 @@ const openVerificationSelection = async () => {
           })
           .filter((node: any) => node.sender?.position);
 
-        const conceptorPosition = String(positionId ?? '').trim();
-        // Endpoint mengembalikan node terbaru lebih dahulu. Jika ID posisi
-        // penerima pada data lama tidak sama formatnya dengan master posisi,
-        // node pertama tetap merupakan disposisi aktif ke konseptor.
-        const directDisposition =
-          flowNodes.find((node: any) => node.recipientPositions.includes(conceptorPosition)) ||
-          flowNodes[0];
-        const dispositionMaker = directDisposition?.sender;
-        if (dispositionMaker && verifierRoleRank(dispositionMaker.jabatan) !== null) {
-          verifiersFromDisposition = [dispositionMaker];
+        const tracedVerifiers: any[] = [];
+        const visitedPositions = new Set<string>();
+        let expectedRecipientPosition = String(positionId ?? '').trim();
+        let reachedSelectedSender = !selectedSenderPosition;
+
+        for (let depth = 0; depth < flowNodes.length; depth += 1) {
+          const handoff = flowNodes.find(
+            (node: any) =>
+              !visitedPositions.has(node.sender.position) &&
+              node.recipientPositions.includes(expectedRecipientPosition),
+          );
+          if (!handoff?.sender) break;
+
+          visitedPositions.add(handoff.sender.position);
+          if (handoff.sender.position === selectedSenderPosition) {
+            if (verifierRoleRank(handoff.sender.jabatan) !== null) {
+              tracedVerifiers.push(handoff.sender);
+            }
+            reachedSelectedSender = true;
+            break;
+          }
+
+          if (verifierRoleRank(handoff.sender.jabatan) !== null) {
+            tracedVerifiers.push(handoff.sender);
+          }
+          expectedRecipientPosition = handoff.sender.position;
         }
+
+        const byRank = new Map<number, any>();
+        if (reachedSelectedSender) {
+          tracedVerifiers.forEach((sender: any) => {
+            const rank = verifierRoleRank(sender.jabatan);
+            if (rank !== null && !byRank.has(rank)) byRank.set(rank, sender);
+          });
+        }
+        verifiersFromDisposition = [...byRank.entries()]
+          .sort(([rankA], [rankB]) => rankA - rankB)
+          .map(([, sender]) => sender);
       } catch {
         // Tetap gunakan posisi profil terbaru bila flow disposisi tidak dapat
         // dibaca, tanpa mengubah alur SDE Massal yang sudah ada.
@@ -1216,13 +1243,6 @@ const openVerificationSelection = async () => {
       selectedVerifiers.value = verifiersFromDisposition.slice(0, 3);
       sortSelectedVerifiers();
       return;
-    }
-
-    // Dokumen berbasis disposisi tidak boleh jatuh ke endpoint hierarki
-    // managerial umum. Fallback tersebut sebelumnya menyebabkan Riza dan
-    // Zulkarnain ikut menjadi verifikator meskipun tidak ada di chain.
-    if (props.konsep?.parentNaskahId) {
-      throw new Error('Verifikator dari chain disposisi tidak ditemukan');
     }
 
     if (positionId == null || String(positionId).trim() === '') {

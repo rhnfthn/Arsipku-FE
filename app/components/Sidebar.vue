@@ -583,7 +583,7 @@ watch(
 
 // Cleanup socket saat user logout
 watch(
-  () => getStoredAccessToken(),
+  () => (process.client ? localStorage.getItem('token') : null),
   (token) => {
     if (!token) rtDestroy();
   }

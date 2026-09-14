@@ -1,12 +1,5 @@
-import axios from "axios";
+  import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig } from "axios";
-import {
-  clearStoredAuthSession,
-  getStoredAccessToken,
-  getStoredAuthMode,
-  getStoredSessionId,
-  replaceStoredAccessToken,
-} from "~/utils/auth-storage";
 
 const isDev = process.dev;
 
@@ -85,7 +78,7 @@ const getHeaderValue = (
 const getAuthCacheScope = (config?: AxiosRequestConfig): string => {
   const authHeader = getHeaderValue(config?.headers, "Authorization");
   const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
-  const storedToken = getStoredAccessToken();
+  const storedToken = process.client ? localStorage.getItem("token") : null;
   const token = headerToken || storedToken;
   const scope = token ? `auth:${hashString(token)}` : "anonymous";
 
@@ -162,7 +155,9 @@ export const useApi = () => {
     if (!process.client || handledExpiredToken === expiredToken) return;
     handledExpiredToken = expiredToken;
 
-    clearStoredAuthSession();
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionId");
+    localStorage.removeItem("arsipku_active_profile");
     tokenCookie.value = null;
     sessionCookie.value = null;
     roleCookie.value = null;
@@ -184,27 +179,19 @@ export const useApi = () => {
     if (!process.client) return Promise.resolve(null);
     if (refreshTokenRequest) return refreshTokenRequest;
 
-    const sessionId = getStoredSessionId();
-    const currentToken = getStoredAccessToken();
+    const sessionId = localStorage.getItem("sessionId");
     if (!sessionId) return Promise.resolve(null);
-
-    const oidcSession = getStoredAuthMode() === "oidc-pkce";
-    const endpoint = oidcSession ? "/auth/oidc/refresh" : "/auth/refresh-token";
 
     refreshTokenRequest = axios
       .post(
-        endpoint,
+        "/auth/refresh-token",
         { sessionId },
-        {
-          baseURL: String(config.public.apiBaseUrl || ""),
-          headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
-        }
+        { baseURL: String(config.public.apiBaseUrl || "") }
       )
       .then((response) => {
-        const responseData = response.data?.data?.data ?? response.data?.data ?? response.data;
-        const newToken = responseData?.accessToken;
+        const newToken = response.data?.data?.accessToken;
         if (!newToken) return null;
-        replaceStoredAccessToken(String(newToken));
+        localStorage.setItem("token", newToken);
         tokenCookie.value = newToken;
         handledExpiredToken = null;
         cache.clear();
@@ -219,7 +206,7 @@ export const useApi = () => {
   };
 
   api.interceptors.request.use((config) => {
-    const token = getStoredAccessToken();
+    const token = process.client ? localStorage.getItem("token") : null;
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
@@ -241,21 +228,15 @@ export const useApi = () => {
         | (AxiosRequestConfig & { _authRetry?: boolean })
         | undefined;
       const requestUrl = String(originalConfig?.url ?? "");
-      const currentToken = getStoredAccessToken();
-      const isAuthLifecycleRequest = [
-        "/auth/refresh-token",
-        "/auth/oidc/config",
-        "/auth/oidc/exchange",
-        "/auth/oidc/refresh",
-        "/auth/oidc/logout",
-      ].some((path) => requestUrl.includes(path));
+      const currentToken = process.client ? localStorage.getItem("token") : null;
+      const isRefreshRequest = requestUrl.includes("/auth/refresh-token");
       const requestAuthHeader = getHeaderValue(originalConfig?.headers, "Authorization");
       const requestToken = requestAuthHeader?.startsWith("Bearer ")
         ? requestAuthHeader.slice(7)
         : requestAuthHeader;
 
       if (process.client && status === 401 && currentToken) {
-        if (!isAuthLifecycleRequest && originalConfig && !originalConfig._authRetry) {
+        if (!isRefreshRequest && originalConfig && !originalConfig._authRetry) {
           originalConfig._authRetry = true;
           // Respons lama bisa tiba setelah request lain selesai memperbarui token.
           // Ulangi dengan token terbaru tanpa memulai refresh kedua.
@@ -316,11 +297,7 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => apiGet<T>(url, axiosConfig, { skipCache: true });
 
-  const apiPost = async <T = any>(
-    url: string,
-    data?: any,
-    axiosConfig: AxiosRequestConfig = {}
-  ): Promise<T> => {
+  const apiPost = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
       if (isDev) console.log("[api] POST ->", fullUrl, data);
@@ -334,11 +311,7 @@ export const useApi = () => {
     }
   };
 
-  const apiPut = async <T = any>(
-    url: string,
-    data?: any,
-    axiosConfig: AxiosRequestConfig = {}
-  ): Promise<T> => {
+  const apiPut = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
       if (isDev) console.log("[api] PUT ->", fullUrl, data);
@@ -352,11 +325,7 @@ export const useApi = () => {
     }
   };
 
-  const apiPatch = async <T = any>(
-    url: string,
-    data?: any,
-    axiosConfig: AxiosRequestConfig = {}
-  ): Promise<T> => {
+  const apiPatch = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
       if (isDev) console.log("[api] PATCH ->", fullUrl, data);
