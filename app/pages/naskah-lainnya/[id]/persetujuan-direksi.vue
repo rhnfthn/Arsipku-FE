@@ -376,12 +376,13 @@
       </UCard>
 
       <!-- ── Kirim Modal (selaras dengan Blanko Verbal) ── -->
-      <VerifyActionModal
+      <ApprovalNoteEditor
         v-model="showKirimModal"
         variant="approve"
         title="Kirim Lembar Persetujuan Direksi"
         description="Lembar akan dikirim ke Direktur Pemrakarsa, lalu seluruh Diketahui Oleh, dan terakhir Ditetapkan/Disahkan Oleh."
         :require-note="false"
+        note-label="Catatan"
         note-placeholder="Catatan opsional…"
         confirm-label="Kirim Lembar Persetujuan Direksi"
         :saving="busy"
@@ -389,12 +390,13 @@
       />
 
       <!-- ── Paraf Modal ── -->
-      <VerifyActionModal
+      <ApprovalNoteEditor
         v-model="parafModalOpen"
         variant="approve"
         title="Setuju"
         description="Anda akan menyetujui lembar persetujuan direksi atas nama pejabat berikut."
-        note-placeholder="Catatan opsional…"
+        note-label="Catatan"
+        note-placeholder="Catatan opsional — dapat memuat pasal-pasal atau batang tubuh…"
         confirm-label="Setuju"
         :saving="busy"
         @confirm="confirmParaf"
@@ -423,7 +425,7 @@
             </div>
           </div>
         </template>
-      </VerifyActionModal>
+      </ApprovalNoteEditor>
 
       <TulisDigsigPassphraseModalAsync
         ref="signMethodModalRef"
@@ -435,13 +437,14 @@
       />
 
       <!-- ── Tolak Modal ── -->
-      <VerifyActionModal
+      <ApprovalNoteEditor
         v-model="tolakModalOpen"
         variant="reject"
         title="Tolak"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
-        note-placeholder="Alasan penolakan (minimal 5 karakter)…"
+        note-label="Alasan Penolakan"
+        note-placeholder="Alasan penolakan (minimal 5 karakter) — dapat memuat pasal-pasal atau batang tubuh…"
         confirm-label="Tolak"
         :saving="busy"
         :require-note="true"
@@ -473,7 +476,7 @@ import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelec
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
 import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: ['auth'] });
