@@ -1,5 +1,23 @@
 import type { SdeMasalConcept, SdeMasalPenerima } from '~/types/sde-masal';
 
+/** Format an ISO date without parsing it as UTC (which can shift the day). */
+export function formatSdeMasalDate(value: string | null | undefined): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '[Tanggal Surat]';
+
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const date = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(raw);
+
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 /**
  * Konversi nilai tembusan (bisa berupa kode seperti "112" atau "112 — PT Garuda")
  * menjadi nama penerima eksternal. Data master diambil dari store tertuju eksternal.
@@ -168,13 +186,7 @@ export function renderSdeMasalKonten(
       .replace(/\{\{nama_signer\}\}/g, val('nama_signer') || p.namaSigner || '-')
       .replace(
         /\{\{tanggal_surat\}\}/g,
-        konsep?.tanggalKonsep
-          ? new Date(konsep.tanggalKonsep).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })
-          : '[Tanggal Surat]'
+        formatSdeMasalDate(konsep?.tanggalKonsep)
       )
       .replace(/\{\{nomor_surat\}\}/g, '[Nomor Surat]')
       .replace(/\{\{sifat_surat\}\}/g, konsep?.sifat || 'Biasa')
