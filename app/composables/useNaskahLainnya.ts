@@ -349,9 +349,13 @@ export function useNaskahLainnya() {
   const parafLembarPersetujuanDireksi = (
     id: string,
     sheet: SheetFormModel,
-    catatan?: string,
+    approvalNote?: string,
     approvalId?: string
-  ) => act(id, 'parafLembarPersetujuanDireksi', { ...sheet, catatan, approvalId });
+  ) =>
+    // approvalNote = catatan approver (riwayat approval saja). `catatan` di dalam
+    // sheet tetap catatan lembar dari form — jangan ditimpa catatan approver
+    // agar tidak tercetak ke template dokumen.
+    act(id, 'parafLembarPersetujuanDireksi', { ...sheet, approvalNote, approvalId });
 
   const tolakLembarPersetujuanDireksi = (id: string, catatan: string, approvalId?: string) =>
     act(id, 'tolakLembarPersetujuanDireksi', { catatan, approvalId });
@@ -373,9 +377,13 @@ export function useNaskahLainnya() {
   const parafBlankoVerbal = (
     id: string,
     sheet: SheetFormModel,
-    catatan?: string,
+    approvalNote?: string,
     approvalId?: string
-  ) => act(id, 'parafBlankoVerbal', { ...sheet, catatan, approvalId });
+  ) =>
+    // approvalNote = catatan approver (riwayat approval saja). `catatan` di dalam
+    // sheet tetap catatan lembar/blanko dari form — jangan ditimpa catatan approver
+    // agar tidak tercetak ke template dokumen.
+    act(id, 'parafBlankoVerbal', { ...sheet, approvalNote, approvalId });
 
   const tolakBlankoVerbal = (id: string, catatan: string, approvalId?: string) =>
     act(id, 'tolakBlankoVerbal', { catatan, approvalId });

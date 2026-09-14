@@ -105,6 +105,18 @@
 
             <div class="py-3 border-b border-gray-200 dark:border-gray-600">
               <DirectorOrderSelector
+                v-model="sheet.direkturPemrakarsa"
+                label="Direktur Pemrakarsa"
+                hint="otomatis dari direktorat pemrakarsa"
+                placeholder="Pilih direktur pemrakarsa"
+                :recipients="selectableDirectors"
+                :max-selections="1"
+                sync-position-on-name-change
+              />
+            </div>
+
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
                 v-model="sheet.diketahuiOleh"
                 label="Diketahui Oleh"
                 hint="urutan paraf direksi"
@@ -261,6 +273,27 @@
                 </h3>
               </div>
               <div class="space-y-4">
+                <div v-if="pdPemrakarsaDirectors.length" class="space-y-2">
+                  <h4
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    Direktur Pemrakarsa
+                  </h4>
+                  <DireksiApprovalProgress
+                    :directors="pdPemrakarsaDirectors"
+                    :is-current-user-approver="isCurrentUserApprover"
+                    :can-approve="canApprove"
+                    :can-approve-item="canApproveDirector"
+                    :busy="busy"
+                    paraf-label="Setuju"
+                    :is-legal="isLegalRole"
+                    @paraf="openParafModal"
+                    @tolak="openTolakModal"
+                    @add-delegate="openAddDelegate"
+                    @edit-delegate="openEditDelegate"
+                    @remove-delegate="removeDelegate"
+                  />
+                </div>
                 <div v-if="pdDitetapkanDirectors.length" class="space-y-2">
                   <h4
                     class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
@@ -343,12 +376,13 @@
       </UCard>
 
       <!-- ── Kirim Modal (selaras dengan Blanko Verbal) ── -->
-      <VerifyActionModal
+      <ApprovalNoteEditor
         v-model="showKirimModal"
         variant="approve"
         title="Kirim Lembar Persetujuan Direksi"
-        description="Lembar persetujuan direksi akan dikirim ke kelompok Diketahui Oleh untuk approval berurutan."
+        description="Lembar akan dikirim ke Direktur Pemrakarsa, lalu seluruh Diketahui Oleh, dan terakhir Ditetapkan/Disahkan Oleh."
         :require-note="false"
+        note-label="Catatan"
         note-placeholder="Catatan opsional…"
         confirm-label="Kirim Lembar Persetujuan Direksi"
         :saving="busy"
@@ -356,12 +390,13 @@
       />
 
       <!-- ── Paraf Modal ── -->
-      <VerifyActionModal
+      <ApprovalNoteEditor
         v-model="parafModalOpen"
         variant="approve"
         title="Setuju"
         description="Anda akan menyetujui lembar persetujuan direksi atas nama pejabat berikut."
-        note-placeholder="Catatan opsional…"
+        note-label="Catatan"
+        note-placeholder="Catatan opsional — dapat memuat pasal-pasal atau batang tubuh…"
         confirm-label="Setuju"
         :saving="busy"
         @confirm="confirmParaf"
@@ -390,7 +425,7 @@
             </div>
           </div>
         </template>
-      </VerifyActionModal>
+      </ApprovalNoteEditor>
 
       <TulisDigsigPassphraseModalAsync
         ref="signMethodModalRef"
@@ -402,13 +437,14 @@
       />
 
       <!-- ── Tolak Modal ── -->
-      <VerifyActionModal
+      <ApprovalNoteEditor
         v-model="tolakModalOpen"
         variant="reject"
         title="Tolak"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
-        note-placeholder="Alasan penolakan (minimal 5 karakter)…"
+        note-label="Alasan Penolakan"
+        note-placeholder="Alasan penolakan (minimal 5 karakter) — dapat memuat pasal-pasal atau batang tubuh…"
         confirm-label="Tolak"
         :saving="busy"
         :require-note="true"
@@ -440,7 +476,7 @@ import DirectorOrderSelector from '~/components/NaskahLainnya/DirectorOrderSelec
 import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalProgress.vue';
 import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
 import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: ['auth'] });
@@ -559,6 +595,9 @@ const isBlankoStage = computed(() => detail.value?.tahapan === 'blanko_verbal');
 const pdRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi')
 );
+const pdPemrakarsaRows = computed(() =>
+  (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi_pemrakarsa')
+);
 const pdDitetapkanRows = computed(() =>
   (detail.value?.approval ?? []).filter((a) => a.tahap === 'persetujuan_direksi_ditetapkan')
 );
@@ -572,12 +611,12 @@ const hasActiveBlankoVerbal = computed(() =>
 const templateLocked = computed(
   () =>
     hasActiveBlankoVerbal.value ||
-    [...pdRows.value, ...pdDitetapkanRows.value].some(
+    [...pdPemrakarsaRows.value, ...pdRows.value, ...pdDitetapkanRows.value].some(
       (a) => a.status === 'waiting' || a.status === 'pending'
     )
 );
 const hasActiveLembarPersetujuan = computed(() =>
-  [...pdRows.value, ...pdDitetapkanRows.value].some(
+  [...pdPemrakarsaRows.value, ...pdRows.value, ...pdDitetapkanRows.value].some(
     (a) => a.status === 'waiting' || a.status === 'pending'
   )
 );
@@ -623,16 +662,25 @@ const mapApprovalDirector = (
 const pdDitetapkanDirectors = computed<DirectorApprovalItem[]>(() =>
   pdDitetapkanRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Ditetapkan/Disahkan Oleh'))
 );
+const pdPemrakarsaDirectors = computed<DirectorApprovalItem[]>(() =>
+  pdPemrakarsaRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Direktur Pemrakarsa'))
+);
 const pdDiketahuiDirectors = computed<DirectorApprovalItem[]>(() =>
   pdRows.value.map((a, idx) => mapApprovalDirector(a, idx, 'Diketahui Oleh'))
 );
 const pdDirectors = computed<DirectorApprovalItem[]>(() => [
-  ...pdDitetapkanDirectors.value,
+  ...pdPemrakarsaDirectors.value,
   ...pdDiketahuiDirectors.value,
+  ...pdDitetapkanDirectors.value,
 ]);
 // Pejabat yang sudah memaraf → stamp visible digsig langsung muncul di live preview.
 const pdSignedDirectors = computed(() => pdDirectors.value.filter((d) => d.status === 'verified'));
-const selectableDirectors = computed(() => bodDirectors.value.filter((d) => d.nama || d.jabatan));
+const selectableDirectors = computed(() =>
+  bodDirectors.value
+    .filter((d) => d.nama || d.jabatan)
+    .slice()
+    .sort((a, b) => Number(isDirut(b)) - Number(isDirut(a)))
+);
 
 const parafDone = computed(() => pdDirectors.value.filter((d) => d.status === 'verified').length);
 const nextDirector = computed(() => pdDirectors.value.find((d) => d.status === 'waiting') ?? null);
@@ -647,7 +695,7 @@ const pdBanner = computed(() => {
       card: 'border-primary-200 bg-primary-50 dark:border-primary-900/50 dark:bg-primary-950/30',
       wrap: 'bg-primary-500',
       title: 'Susun Lembar Persetujuan Direksi',
-      desc: 'Lengkapi data lembar, lalu kirim ke kelompok Diketahui Oleh untuk approval.',
+      desc: 'Lengkapi data lembar, lalu kirim ke Direktur Pemrakarsa untuk approval pertama.',
     };
   }
   if (allPdVerified.value) {
@@ -673,7 +721,7 @@ const aksiLembar = computed(() => {
     return {
       icon: 'i-lucide-send',
       title: 'Kirim Lembar Persetujuan Direksi',
-      desc: 'Tinjau live preview lembar, lalu kirim ke kelompok Diketahui Oleh.',
+      desc: 'Tinjau live preview lembar, lalu kirim ke Direktur Pemrakarsa.',
     };
   }
   if (allPdVerified.value) {
@@ -686,7 +734,7 @@ const aksiLembar = computed(() => {
   return {
     icon: 'i-lucide-stamp',
     title: 'Menunggu Persetujuan Direksi',
-    desc: 'Approval berjalan berurutan: Diketahui Oleh, lalu Ditetapkan/Disahkan Oleh.',
+    desc: 'Approval berjalan: Direktur Pemrakarsa, Diketahui Oleh, lalu Ditetapkan/Disahkan Oleh.',
   };
 });
 
@@ -724,6 +772,7 @@ function cleanSheetPayload(): SheetFormModel {
   return {
     ...sheet.value,
     ditetapkanOleh: sheet.value.ditetapkanOleh?.map(cleanDirector),
+    direkturPemrakarsa: sheet.value.direkturPemrakarsa?.slice(0, 1).map(cleanDirector),
     diketahuiOleh: sheet.value.diketahuiOleh?.map(cleanDirector),
   };
 }
@@ -736,7 +785,7 @@ function latestPemrakarsaApproval() {
 }
 
 function initDirectorSelection() {
-  if (!canEditSheet.value && (pdDirectors.value.length || pdDitetapkanRows.value.length)) {
+  if (!canEditSheet.value && pdDirectors.value.length) {
     // Baris delegasi: nama approval row adalah ybs direksi — untuk preview
     // template, kembalikan ke nama pengganti + status (prefix PT/PH/PS).
     const fromRow = (a: ApprovalRow, idx: number) =>
@@ -752,15 +801,25 @@ function initDirectorSelection() {
         delegatePositionStatus: a.delegatePositionStatus,
       });
     sheet.value.diketahuiOleh = pdRows.value.map(fromRow);
+    sheet.value.direkturPemrakarsa = pdPemrakarsaRows.value.map(fromRow);
     if (pdDitetapkanRows.value.length) {
       sheet.value.ditetapkanOleh = pdDitetapkanRows.value.map(fromRow);
     }
-    return;
+    if (pdPemrakarsaRows.value.length) return;
   }
-  if (!selectableDirectors.value.length) return;
+  const directorPemrakarsa = detail.value?.direkturPemrakarsa;
+  if (directorPemrakarsa && !pdPemrakarsaRows.value.length) {
+    // Detail dan daftar BOD dimuat paralel. Hasil resolver detail harus selalu
+    // mengalahkan nilai sementara dari respons daftar BOD yang datang duluan.
+    sheet.value.direkturPemrakarsa = [compactDirector(directorPemrakarsa)];
+  }
+  if (!selectableDirectors.value.length || !detail.value) return;
   if (!Array.isArray(sheet.value.ditetapkanOleh)) {
     const dirut = selectableDirectors.value.find(isDirut);
     sheet.value.ditetapkanOleh = [compactDirector(dirut ?? selectableDirectors.value[0])];
+  }
+  if (!Array.isArray(sheet.value.direkturPemrakarsa)) {
+    sheet.value.direkturPemrakarsa = [];
   }
   if (!Array.isArray(sheet.value.diketahuiOleh)) {
     const nonDirut = selectableDirectors.value.filter((d) => !isDirut(d));
@@ -769,6 +828,16 @@ function initDirectorSelection() {
     );
   }
 }
+
+watch(
+  () => detail.value?.direkturPemrakarsa,
+  (director) => {
+    if (director && !pdPemrakarsaRows.value.length) {
+      sheet.value.direkturPemrakarsa = [compactDirector(director)];
+    }
+  },
+  { immediate: true }
+);
 
 function isUserApprover(row: ApprovalRow) {
   if (row.status !== 'waiting') return false;
@@ -786,7 +855,7 @@ function isUserApprover(row: ApprovalRow) {
 }
 
 const isCurrentUserApprover = computed(() =>
-  [...pdRows.value, ...pdDitetapkanRows.value].some(isUserApprover)
+  [...pdPemrakarsaRows.value, ...pdRows.value, ...pdDitetapkanRows.value].some(isUserApprover)
 );
 const canApprove = computed(() => isCurrentUserApprover.value);
 const canApproveDirector = (director: DirectorApprovalItem) =>
@@ -820,7 +889,11 @@ function requiresFinalSignatureChoice(director: DirectorApprovalItem): boolean {
     return false;
   }
   const sheetRows = (detail.value?.approval ?? []).filter((approval) =>
-    ['persetujuan_direksi', 'persetujuan_direksi_ditetapkan'].includes(approval.tahap)
+    [
+      'persetujuan_direksi_pemrakarsa',
+      'persetujuan_direksi',
+      'persetujuan_direksi_ditetapkan',
+    ].includes(approval.tahap)
   );
   return (
     sheetRows.length > 0 &&
@@ -881,6 +954,10 @@ function apiErrorMessage(e) {
 }
 
 function openKirim() {
+  if (!sheet.value.direkturPemrakarsa?.length) {
+    toast.add({ title: 'Direktur Pemrakarsa belum tersedia', color: 'warning' });
+    return;
+  }
   if (!sheet.value.ditetapkanOleh?.length) {
     toast.add({
       title: 'Pilih minimal satu pejabat pada Ditetapkan/Disahkan Oleh',
@@ -899,6 +976,10 @@ function openKirim() {
 }
 
 async function kirimSheet() {
+  if (!sheet.value.direkturPemrakarsa?.length) {
+    toast.add({ title: 'Direktur Pemrakarsa belum tersedia', color: 'warning' });
+    return;
+  }
   if (!sheet.value.diketahuiOleh?.length) {
     toast.add({
       title: 'Pilih minimal satu direksi pada Diketahui Oleh',
