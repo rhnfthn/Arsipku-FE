@@ -54,10 +54,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { user, getProfile } = useAuth();
   if (!user.value) {
     try {
-      await getProfile();
+      const profile = await getProfile();
+      // getProfile menangani error API secara aman dan mengembalikan null.
+      // Jangan lanjut dengan role kosong (yang dapat mengulang ke /beranda
+      // dan berakhir sebagai halaman 500); anggap token stale sebagai logout.
+      if (!profile && !user.value) {
+        tokenCookie.value = null;
+        roleCookie.value = null;
+        if (process.server) return navigateTo('/');
+        return navigateTo('/', { replace: true });
+      }
     } catch {
       // Jika getProfile gagal (token expired, network error, dll),
       // redirect ke login di client-side.
+      tokenCookie.value = null;
+      roleCookie.value = null;
       if (process.server) return navigateTo('/');
       return navigateTo('/', { replace: true });
     }
