@@ -3,6 +3,19 @@ import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 const isDev = process.dev;
 
+const redactLogValue = (value: unknown): unknown => {
+  if (value === null || value === undefined || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(redactLogValue);
+
+  const sensitiveKey = /token|authorization|password|secret|verifier|code/i;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+      key,
+      sensitiveKey.test(key) ? '[REDACTED]' : redactLogValue(entry),
+    ])
+  );
+};
+
 interface CacheEntry {
   data: any;
   expiresAt: number;
@@ -288,7 +301,7 @@ export const useApi = () => {
     }
 
     try {
-      if (isDev) console.log('[api] GET ->', fullUrl, axiosConfig);
+      if (isDev) console.log("[api] GET ->", fullUrl, redactLogValue(axiosConfig));
       const res = await api.get(url, axiosConfig);
       if (isDev) console.log('[api] GET response <-', fullUrl, res.status);
       if (!skipCache) setCached(cacheKey, res.data, options.ttlMs);
@@ -310,8 +323,8 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
-      if (isDev) console.log('[api] POST ->', fullUrl, data);
+      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
+      if (isDev) console.log("[api] POST ->", fullUrl, redactLogValue(data));
       const res = await api.post(url, data, axiosConfig);
       if (isDev) console.log('[api] POST response <-', fullUrl, res.status);
       invalidateCache(url.split('?')[0]);
@@ -328,8 +341,8 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
-      if (isDev) console.log('[api] PUT ->', fullUrl, data);
+      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
+      if (isDev) console.log("[api] PUT ->", fullUrl, redactLogValue(data));
       const res = await api.put(url, data, axiosConfig);
       if (isDev) console.log('[api] PUT response <-', fullUrl, res.status);
       invalidateCache(url.split('?')[0]);
@@ -346,8 +359,8 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
-      if (isDev) console.log('[api] PATCH ->', fullUrl, data);
+      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
+      if (isDev) console.log("[api] PATCH ->", fullUrl, redactLogValue(data));
       const res = await api.patch(url, data, axiosConfig);
       if (isDev) console.log('[api] PATCH response <-', fullUrl, res.status);
       invalidateCache(url.split('?')[0]);
