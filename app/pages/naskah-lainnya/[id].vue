@@ -12,7 +12,7 @@ import type {
 } from '~/types/naskah-lainnya';
 import { JENIS_LABELS } from '~/types/naskah-lainnya';
 import { formatNaskahDate, formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import TulisDigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModalAsync.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
@@ -495,7 +495,7 @@ const informationExpanded = ref(false);
 const documentExpanded = ref(false);
 const signerExpanded = ref(false);
 
-// ── Modal Setuju/Tolak (standarisasi VerifyActionModal) ──
+// ── Modal Setuju/Tolak (standarisasi ApprovalNoteEditor) ──
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 const showReturnModal = ref(false);
@@ -2905,7 +2905,9 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/blanko-verbal`"
-                >{{ canBuatBlanko ? 'Buat Lembar Persetujuan' : 'Lihat Progres Persetujuan' }}</UButton
+                >{{
+                  canBuatBlanko ? 'Buat Lembar Persetujuan' : 'Lihat Progres Persetujuan'
+                }}</UButton
               >
 
               <!-- Buat Lembar Persetujuan Direksi: legal menyusun lembar saat evaluasi (butuhLegal) -->
@@ -3009,8 +3011,8 @@ const signLabel = computed(() =>
         </section>
       </main>
 
-      <!-- Modal Setuju (standarisasi VerifyActionModal) -->
-      <VerifyActionModal
+      <!-- Modal Setuju -->
+      <ApprovalNoteEditor
         v-model="showApproveModal"
         variant="approve"
         :title="
@@ -3066,8 +3068,8 @@ const signLabel = computed(() =>
         @submit="handleSignMethodSubmit"
       />
 
-      <!-- Modal Tolak (standarisasi VerifyActionModal) -->
-      <VerifyActionModal
+      <!-- Modal Tolak -->
+      <ApprovalNoteEditor
         v-model="showRejectModal"
         variant="reject"
         :title="
@@ -3113,8 +3115,8 @@ const signLabel = computed(() =>
         @confirm="handleReject"
       />
 
-      <!-- Modal Kembalikan (standarisasi VerifyActionModal) -->
-      <VerifyActionModal
+      <!-- Modal Kembalikan -->
+      <ApprovalNoteEditor
         v-model="showReturnModal"
         variant="reject"
         :title="
@@ -3240,7 +3242,11 @@ const signLabel = computed(() =>
   inset-inline: 0;
   bottom: 0;
   height: 28px;
-  background: linear-gradient(to bottom, transparent, var(--note-fade-color, rgba(232, 239, 246, 0.95)));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--note-fade-color, rgba(232, 239, 246, 0.95))
+  );
   pointer-events: none;
 }
 .approval-note[class*='border-red'] .note-clamped::after {
