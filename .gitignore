@@ -23,6 +23,7 @@ logs
 .env.*
 !.env.example
 !.env.example.qas
+!.env.example.auth
 
 app.composables.useAuth.js
 
