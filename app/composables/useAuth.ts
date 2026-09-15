@@ -217,7 +217,11 @@ export const useAuth = () => {
     // diproses browser tanpa mengekspos token provider.
     if (process.client) {
       const baseUrl = String(useRuntimeConfig().public.apiBaseUrl || '').replace(/\/$/, '');
-      window.location.href = `${baseUrl}/auth/logout`;
+      // Kirim origin frontend saat ini agar backend redirect balik ke sini
+      // setelah logout (mis. QA 172.x), bukan ke AUTH_FRONTEND_URL default.
+      const logoutUrl = new URL(`${baseUrl}/auth/logout`);
+      logoutUrl.searchParams.set('origin', window.location.origin);
+      window.location.href = logoutUrl.toString();
     }
 
     return true;
