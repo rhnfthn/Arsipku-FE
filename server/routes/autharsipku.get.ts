@@ -9,8 +9,13 @@ export default defineEventHandler((event) => {
 
   const config = useRuntimeConfig(event);
   const isLocalFlow = String(state || '').startsWith('local.');
+  const configuredBackend = isLocalFlow
+    ? config.public.authLocalBackendUrl
+    : config.public.authServerBackendUrl;
+  // Avoid String(undefined): it produces the truthy URL "undefined/..." and
+  // throws from new URL(), which Nuxt renders as an HTTP 500 callback page.
   const backendUrl = String(
-    isLocalFlow ? config.public.authLocalBackendUrl : config.public.authServerBackendUrl
+    configuredBackend || config.public.apiBaseUrl || '',
   ).replace(/\/+$/, '');
 
   if (!backendUrl) {

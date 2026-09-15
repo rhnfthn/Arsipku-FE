@@ -22,7 +22,11 @@ const sanitizeReturnTo = (value?: string): string => {
 
 export const useAuth = () => {
   const { apiGet, apiPost, clearApiCache } = useApi();
-  const { setLocale } = useI18n();
+  // useI18n() hanya boleh dipanggil di dalam setup component. useAuth()
+  // dipanggil juga dari middleware/route guard, sehingga memanggil useI18n()
+  // di sini melempar "Must be called at the top of a setup function" (500).
+  // Ambil instance i18n global secara lazy hanya saat applyLoginDefaults()
+  // dijalankan di client (setelah login sukses).
   const isDark = useDark();
   const tokenCookie = useCookie<string | null>('token', {
     sameSite: 'lax',
@@ -47,7 +51,11 @@ export const useAuth = () => {
   const applyLoginDefaults = () => {
     if (!process.client) return;
 
-    setLocale('id');
+    // Lazy: hanya akses i18n saat benar-benar dipakai (client-side).
+    const i18n = useNuxtApp().$i18n;
+    if (i18n?.locale) {
+      i18n.locale.value = 'id';
+    }
     localStorage.setItem('arsipku_locale', 'id');
     isDark.value = false;
   };
