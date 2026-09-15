@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const tokenCookie = useCookie<string | null>('token', { sameSite: 'lax', path: '/' });
   const roleCookie = useCookie<string | null>('auth_role', { sameSite: 'lax', path: '/' });
 
-  const token = process.client
+  let token = process.client
     ? localStorage.getItem('token') || tokenCookie.value
     : tokenCookie.value;
   const path = to.path;
@@ -33,14 +33,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!token) {
     if (process.server) return navigateTo('/');
 
-    const { getSSORedirectUrl } = useAuth();
-    const ssoUrl = await getSSORedirectUrl();
+    const { getSSORedirectUrl, restoreSession } = useAuth();
+    const restored = await restoreSession();
+    token = localStorage.getItem('token') || tokenCookie.value;
+    if (!restored || !token) {
+      const ssoUrl = await getSSORedirectUrl(to.fullPath);
 
-    if (ssoUrl) {
-      return navigateTo(ssoUrl, { external: true });
+      if (ssoUrl) {
+        return navigateTo(ssoUrl, { external: true });
+      }
+
+      return navigateTo('/', { replace: true });
     }
-
-    return navigateTo('/', { replace: true });
   }
 
   if (process.client && tokenCookie.value !== token) {

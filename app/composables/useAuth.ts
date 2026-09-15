@@ -6,6 +6,19 @@ let inflightProfile: Promise<UserProfile | null> | null = null;
 let lastProfileFetchAt = 0;
 const PROFILE_DEDUP_MS = 5_000; // 5 detik — jangan fetch ulang jika baru saja
 
+const sanitizeReturnTo = (value?: string): string => {
+  if (
+    !value ||
+    !value.startsWith('/') ||
+    value.startsWith('//') ||
+    value.startsWith('/auth') ||
+    value.includes('\\')
+  ) {
+    return '/beranda';
+  }
+  return value;
+};
+
 export const useAuth = () => {
   const { apiGet, apiPost, clearApiCache } = useApi();
   const tokenCookie = useCookie<string | null>('token', {
@@ -115,17 +128,41 @@ export const useAuth = () => {
     }
   };
 
-  const getSSORedirectUrl = async () => {
+  const getSSORedirectUrl = async (returnTo = '/beranda') => {
+    const baseUrl = String(useRuntimeConfig().public.apiBaseUrl || '').replace(/\/$/, '');
+    const params = new URLSearchParams({
+      redirect: sanitizeReturnTo(returnTo),
+    });
+    if (process.client) params.set('origin', window.location.origin);
+    return `${baseUrl}/auth/login?${params.toString()}`;
+  };
+
+  /**
+   * Tukar cookie HttpOnly hasil callback menjadi JWT aplikasi ArsipKu.
+   * Access/refresh token milik AirNav Auth tetap berada di backend.
+   */
+  const restoreSession = async (): Promise<UserProfile | null> => {
     try {
-      // Gunakan sso-redirect-local saat development (localhost) agar redirect ke localhost:3000/autharsipku
-      const isLocal =
-        process.client &&
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const endpoint = isLocal ? '/auth/sso-redirect-local' : '/auth/sso-redirect';
-      const res: any = await apiGet(endpoint);
-      return (res?.url as string) ?? null;
-    } catch (error) {
-      console.error('[AUTH] getSSORedirectUrl error:', error);
+      const response: any = await apiGet(
+        '/auth/session',
+        { withCredentials: true },
+        { skipCache: true }
+      );
+      const data = response?.data ?? response;
+      if (!data?.accessToken || !data?.sessionId || !data?.user) return null;
+
+      if (process.client) {
+        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('sessionId', data.sessionId);
+      }
+      tokenCookie.value = data.accessToken;
+      sessionCookie.value = data.sessionId;
+      roleCookie.value = data.user.role ?? null;
+      setUser(data.user as UserProfile);
+      lastProfileFetchAt = Date.now();
+      clearApiCache();
+      return (await getProfile(true)) ?? (data.user as UserProfile);
+    } catch {
       return null;
     }
   };
@@ -140,24 +177,8 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    try {
-      const sessionId = process.client ? localStorage.getItem('sessionId') : null;
-      const token = process.client ? localStorage.getItem('token') : null;
-
-      // 1️⃣ Logout internal (hapus sessionId)
-      if (sessionId && token) {
-        await apiGet(`/auth/logout-v2?sessionId=${sessionId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          validateStatus: (s: number) => s < 400,
-        });
-      }
-    } catch (error) {
-      console.warn('[AUTH] logout-v2 error (ignored):', error);
-    }
-
-    // 2️⃣ Bersihkan state lokal
+    // Bersihkan JWT aplikasi lebih dulu; backend tetap menerima cookie sesi
+    // HttpOnly untuk merevoke token provider secara server-to-server.
     if (process.client) {
       localStorage.removeItem('token');
       localStorage.removeItem('sessionId');
@@ -170,14 +191,11 @@ export const useAuth = () => {
     lastProfileFetchAt = 0;
     clearApiCache();
 
-    // 3️⃣ Redirect ke SSO AirNav
+    // Navigasi penuh diperlukan agar redirect backend dan Set-Cookie logout
+    // diproses browser tanpa mengekspos token provider.
     if (process.client) {
-      const redirectTarget = window.location.origin + '/autharsipku'; // Lebih dinamis
-      const encodedRedirect = btoa(redirectTarget);
-
-      // Pastikan URL logout sesuai environment
-      const ssoLogoutUrl = 'https://auth.airnavindonesia.co.id/user/logout';
-      window.location.href = `${ssoLogoutUrl}?redirect_uri=${encodedRedirect}`;
+      const baseUrl = String(useRuntimeConfig().public.apiBaseUrl || '').replace(/\/$/, '');
+      window.location.href = `${baseUrl}/auth/logout`;
     }
 
     return true;
@@ -187,16 +205,25 @@ export const useAuth = () => {
     if (!process.client) return null;
     const sessionId = localStorage.getItem('sessionId');
     if (!sessionId) throw new Error('No sessionId');
+    const currentToken = localStorage.getItem('token');
 
-    const res: any = await apiPost('/auth/refresh-token', {
-      sessionId,
-    });
+    const res: any = await apiPost(
+      '/auth/refresh',
+      {},
+      {
+        withCredentials: true,
+        headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
+      }
+    );
 
-    const newAccessToken = res?.data?.accessToken;
+    const data = res?.data ?? res;
+    const newAccessToken = data?.accessToken;
     if (!newAccessToken) throw new Error('Refresh token failed');
 
     localStorage.setItem('token', newAccessToken);
+    if (data?.sessionId) localStorage.setItem('sessionId', data.sessionId);
     tokenCookie.value = newAccessToken;
+    if (data?.user) setUser(data.user as UserProfile);
     clearApiCache();
     return newAccessToken as string;
   };
@@ -212,17 +239,15 @@ export const useAuth = () => {
       .replace(/[\s_-]/g, '');
     if (role === 'SUPERADMIN') return true;
     const perms = user.value?.activePermissions || [];
-    return perms.some(
-      (p: ActivePermission) => {
-        // Match: exact, parent→child (user punya parent, FE cek child),
-        // atau child→parent (user punya child, FE cek parent)
-        const resourceMatch =
-          p.resource === resource ||
-          resource.startsWith(p.resource + '.') ||  // parent mencakup child
-          p.resource.startsWith(resource + '.');     // child mencakup parent
-        return resourceMatch && p.actions.includes(action);
-      }
-    );
+    return perms.some((p: ActivePermission) => {
+      // Match: exact, parent→child (user punya parent, FE cek child),
+      // atau child→parent (user punya child, FE cek parent)
+      const resourceMatch =
+        p.resource === resource ||
+        resource.startsWith(p.resource + '.') || // parent mencakup child
+        p.resource.startsWith(resource + '.'); // child mencakup parent
+      return resourceMatch && p.actions.includes(action);
+    });
   };
 
   const hasAnyPermission = (resource: string, actions: string[]): boolean =>
@@ -346,6 +371,7 @@ export const useAuth = () => {
     setUser,
     getProfile,
     getSSORedirectUrl,
+    restoreSession,
     verifyToken,
     logout,
     refreshToken,

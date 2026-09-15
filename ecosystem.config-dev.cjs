@@ -1,16 +1,22 @@
 module.exports = {
-  apps: [{
-    name: 'arsipku-fe',
-    script: 'npm',
-    args: 'run dev',
-    cwd: '/var/www/ArsipKu',
-    env: {
-      PORT: 3012,
-      HOST: '0.0.0.0',
-      NODE_ENV: 'development'
+  apps: [
+    {
+      name: 'arsipku-fe',
+      script: 'npm',
+      args: 'run dev',
+      cwd: '/var/www/ArsipKu',
+      env: {
+        PORT: 3012,
+        HOST: '0.0.0.0',
+        NODE_ENV: 'development',
+        NUXT_PUBLIC_API_BASE_URL: 'http://172.20.16.116:3011',
+        NUXT_PUBLIC_SOCKET_URL: 'http://172.20.16.116:3011',
+        NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL: 'http://localhost:3001',
+        NUXT_PUBLIC_AUTH_SERVER_BACKEND_URL: 'http://172.20.16.116:3011',
+      },
+      watch: false,
+      autorestart: true,
+      max_memory_restart: '500M',
     },
-    watch: false,
-    autorestart: true,
-    max_memory_restart: '500M'
-  }]
-}
+  ],
+};
