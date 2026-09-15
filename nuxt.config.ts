@@ -7,18 +7,18 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "ArsipKu",
-      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+      title: 'ArsipKu',
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
 
-  compatibilityDate: "2025-07-15",
+  compatibilityDate: '2025-07-15',
 
   devtools: {
-    enabled: process.env.NUXT_DEVTOOLS_ENABLED === "true" || false,
+    enabled: process.env.NUXT_DEVTOOLS_ENABLED === 'true' || false,
   },
 
-  modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n", "motion-v/nuxt"],
+  modules: ['@nuxt/ui', '@nuxt/icon', '@nuxtjs/i18n', 'motion-v/nuxt'],
 
   icon: {
     // SPA mode (ssr: false): default provider 'iconify' fetch ke api.iconify.design.
@@ -40,7 +40,7 @@ export default defineNuxtConfig({
   },
 
   build: {
-    transpile: ["@vuepic/vue-datepicker"],
+    transpile: ['@vuepic/vue-datepicker'],
   },
 
   vite: {
@@ -67,29 +67,35 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || "http://localhost:3011",
-      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || "http://localhost:3011",
-      pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || "http://172.20.16.115:3011",
-      previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || "http://172.20.16.115:3011",
-      onlyofficeUrl: process.env.NUXT_PUBLIC_ONLYOFFICE_URL || "http://localhost:80",
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3011',
+      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || 'http://localhost:3011',
+      authLocalBackendUrl:
+        process.env.NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL || 'http://localhost:3011',
+      authServerBackendUrl:
+        process.env.NUXT_PUBLIC_AUTH_SERVER_BACKEND_URL ||
+        process.env.NUXT_PUBLIC_API_BASE_URL ||
+        'http://localhost:3011',
+      pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || 'http://172.20.16.115:3011',
+      previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || 'http://172.20.16.115:3011',
+      onlyofficeUrl: process.env.NUXT_PUBLIC_ONLYOFFICE_URL || 'http://localhost:80',
       // Sentry (frontend error monitoring) — no-op jika tidak di-set
-      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || "",
-      sentryTracesSampleRate: process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || "1.0",
+      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
+      sentryTracesSampleRate: process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || '1.0',
     },
   },
 
   i18n: {
-    defaultLocale: "id",
-    langDir: "locales/",
-    strategy: "no_prefix",
+    defaultLocale: 'id',
+    langDir: 'locales/',
+    strategy: 'no_prefix',
     strictMessage: false,
     locales: [
-      { code: "id", name: "ID", file: "id.json" },
-      { code: "en", name: "EN", file: "en.json" },
+      { code: 'id', name: 'ID', file: 'id.json' },
+      { code: 'en', name: 'EN', file: 'en.json' },
     ],
   },
 
-  css: ["~/assets/css/main.css"],
+  css: ['~/assets/css/main.css'],
 
   typescript: {
     tsConfig: {
@@ -103,22 +109,15 @@ export default defineNuxtConfig({
     fonts: false,
     colorMode: false,
     theme: {
-      colors: [
-        "primary",
-        "secondary",
-        "warning",
-        "error",
-        "success",
-        "neutral",
-      ],
+      colors: ['primary', 'secondary', 'warning', 'error', 'success', 'neutral'],
       transitions: false,
       defaultVariants: {
-        color: "neutral",
-        size: "sm",
+        color: 'neutral',
+        size: 'sm',
       },
     },
     experimental: {
-      componentDetection: ["Modal", "Dropdown", "Popover"],
+      componentDetection: ['Modal', 'Dropdown', 'Popover'],
     },
   },
 });
