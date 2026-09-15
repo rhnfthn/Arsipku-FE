@@ -64,6 +64,7 @@
         catatan-placeholder="Tuliskan catatan hasil tinjauan…"
         :show-actions="false"
         :show-area-kerja="false"
+        :catatan-rich="true"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
         divided
@@ -235,7 +236,7 @@
     </USlideover>
 
     <!-- Tandatangani Modal (catatan/konfirmasi sebelum sign — selaraskan dgn legal-drafting) -->
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showSignModal"
       variant="approve"
       title="Tandatangani Naskah"
@@ -247,7 +248,7 @@
     />
 
     <!-- Kembalikan Modal -->
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showKembalikanModal"
       variant="reject"
       title="Kembalikan Naskah"
@@ -263,7 +264,7 @@
 
 <script setup>
 import { renderAsync } from 'docx-preview';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 
 const route = useRoute();
 const id = computed(() => route.params.id);
@@ -500,10 +501,10 @@ async function afterSignNavigate() {
   await navigateTo('/naskah-lainnya/persetujuan?status=disetujui');
 }
 
-async function tandaTanganConfirm() {
+async function tandaTanganConfirm(note) {
   busy.value = true;
   try {
-    await tandaTangan(id.value);
+    await tandaTangan(id.value, { catatan: note || catatan.value || undefined });
     toast.add({ title: 'Naskah ditandatangani', color: 'success' });
     showSignModal.value = false;
     await afterSignNavigate();

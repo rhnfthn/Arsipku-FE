@@ -283,7 +283,7 @@
       </template>
     </USlideover>
 
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showTeruskanModal"
       variant="approve"
       title="Teruskan Legal Drafting"
@@ -295,7 +295,7 @@
       @confirm="(note) => continueLegalDrafting(note)"
     />
 
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showKirimModal"
       variant="approve"
       title="Kirim Legal Drafting"
@@ -307,7 +307,7 @@
       @confirm="(note) => kirimApproval(note)"
     />
 
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showRejectModal"
       variant="reject"
       title="Tolak Legal Drafting"
@@ -324,7 +324,7 @@
 
 <script setup>
 import { renderAsync } from 'docx-preview';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 
 const route = useRoute();
 const id = computed(() => route.params.id);
@@ -397,9 +397,7 @@ const hasRejectedLegalRows = computed(() => rejectedLegalRows.value.length > 0);
 const evaluasiKembalikanRow = computed(() => {
   const r = detail.value?.riwayat ?? [];
   const last = r.length ? r[r.length - 1] : null;
-  return last && ['kembalikan-evaluasi', 'legal_drafting_ulang'].includes(last.aksi)
-    ? last
-    : null;
+  return last && ['kembalikan-evaluasi', 'legal_drafting_ulang'].includes(last.aksi) ? last : null;
 });
 
 const verifiedLegalCount = computed(

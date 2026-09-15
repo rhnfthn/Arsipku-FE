@@ -26,11 +26,7 @@
             @click="$emit('preview')"
             >Preview</UButton
           >
-          <UButton
-            size="xs"
-            variant="outline"
-            icon="i-lucide-download"
-            @click="$emit('download')"
+          <UButton size="xs" variant="outline" icon="i-lucide-download" @click="$emit('download')"
             >Unduh</UButton
           >
         </div>
@@ -76,7 +72,9 @@
           class="flex items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-700"
         >
           <UIcon name="i-lucide-paperclip" class="h-4 w-4 text-gray-400" />
-          <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <h4
+            class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+          >
             Dokumen Pendukung
           </h4>
           <span class="text-xs text-gray-400">({{ dokumenPendukung.length }} file)</span>
@@ -165,7 +163,7 @@
             class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/40"
           >
             <UIcon name="i-lucide-check-circle" class="h-5 w-5 text-green-600" />
-            <div class="flex-1">
+            <div class="min-w-0 flex-1">
               <p class="text-sm font-medium text-green-800 dark:text-green-300">
                 {{ revisiDocx.name }}
               </p>
@@ -177,6 +175,47 @@
                 }}
               </p>
             </div>
+          </div>
+
+          <button
+            type="button"
+            class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400"
+            :disabled="revisiPreviewLoading"
+            @click="toggleRevisiPreview"
+          >
+            <UIcon
+              :name="
+                revisiPreviewLoading
+                  ? 'i-lucide-loader-2'
+                  : revisiPreviewOpen
+                    ? 'i-lucide-chevron-down'
+                    : 'i-lucide-chevron-right'
+              "
+              class="h-4 w-4"
+              :class="{ 'animate-spin': revisiPreviewLoading }"
+            />
+            {{ revisiPreviewOpen ? 'Sembunyikan Pratinjau' : 'Tampilkan Pratinjau' }}
+          </button>
+
+          <div
+            v-show="revisiPreviewOpen"
+            class="relative mt-2 min-h-40 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div
+              v-if="revisiPreviewLoading"
+              class="absolute inset-0 z-10 flex min-h-40 items-center justify-center bg-gray-100/80 dark:bg-gray-900/80"
+            >
+              <div class="flex flex-col items-center gap-2">
+                <UIcon name="i-lucide-loader-2" class="h-6 w-6 animate-spin text-primary-500" />
+                <span class="text-sm text-gray-500">Memuat pratinjau revisi...</span>
+              </div>
+            </div>
+            <iframe
+              v-if="revisiPdfPreviewUrl"
+              :src="revisiPdfPreviewUrl"
+              title="Pratinjau PDF revisi"
+              class="h-[500px] w-full border-0 bg-white"
+            />
           </div>
         </div>
       </div>
@@ -289,12 +328,15 @@ const headClass = computed(() =>
   props.divided ? 'px-5 pt-4 pb-2.5' : 'border-b border-gray-100 px-5 py-4 dark:border-gray-700'
 );
 
-const { apiGet } = useApi();
+const { apiGet, apiPost } = useApi();
 const toast = useToast();
 
 const revisiDocx = ref(null);
 const parsing = ref(false);
 const hasRevision = computed(() => !!revisiDocx.value);
+const revisiPreviewOpen = ref(false);
+const revisiPreviewLoading = ref(false);
+const revisiPdfPreviewUrl = ref('');
 
 // Nama file naskah kanonik (display + download) — rumus shared di utils/naskah-file-name,
 // identik dengan BE agar konsisten di semua halaman + object storage.
@@ -364,7 +406,43 @@ function emitRevision() {
   });
 }
 
+function resetRevisiPreview() {
+  revisiPreviewOpen.value = false;
+  revisiPreviewLoading.value = false;
+  if (revisiPdfPreviewUrl.value) {
+    URL.revokeObjectURL(revisiPdfPreviewUrl.value);
+    revisiPdfPreviewUrl.value = '';
+  }
+}
+
+async function toggleRevisiPreview() {
+  revisiPreviewOpen.value = !revisiPreviewOpen.value;
+  if (!revisiPreviewOpen.value || !revisiDocx.value) return;
+
+  revisiPreviewLoading.value = true;
+  try {
+    if (!revisiPdfPreviewUrl.value) {
+      const formData = new FormData();
+      formData.append('file', revisiDocx.value);
+      const response = await apiPost('/naskah-lainnya/preview-docx', formData, {
+        responseType: 'blob',
+      });
+      const pdf =
+        response instanceof Blob
+          ? new Blob([await response.arrayBuffer()], { type: 'application/pdf' })
+          : new Blob([response], { type: 'application/pdf' });
+      revisiPdfPreviewUrl.value = URL.createObjectURL(pdf);
+    }
+  } catch {
+    toast.add({ title: 'Gagal membuat PDF pratinjau revisi', color: 'error' });
+    revisiPreviewOpen.value = false;
+  } finally {
+    revisiPreviewLoading.value = false;
+  }
+}
+
 async function onRevisiDocxFiles(files) {
+  resetRevisiPreview();
   revisiDocx.value = files?.[files.length - 1] ?? null;
   emitRevision();
   await persistRevisionIfReady();
@@ -394,6 +472,7 @@ watch(
 
 onBeforeUnmount(() => {
   resetAwalPreview();
+  resetRevisiPreview();
 });
 
 // ── Section 3: TinyMCE init (item #4) — disederhanakan dari layanan-email pattern ──
