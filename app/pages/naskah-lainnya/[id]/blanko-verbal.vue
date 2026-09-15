@@ -865,6 +865,16 @@ onMounted(async () => {
 
             <div class="py-3 border-b border-gray-200 dark:border-gray-600">
               <DirectorOrderSelector
+                v-model="form.diketahuiOleh"
+                label="Diketahui Oleh"
+                hint="urutan paraf direksi"
+                placeholder="Pilih direksi paraf"
+                :recipients="selectableDirectors"
+              />
+            </div>
+
+            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
+              <DirectorOrderSelector
                 v-model="form.direkturPemrakarsa"
                 label="Direktur Pemrakarsa"
                 hint="otomatis dari direktorat pemrakarsa"
@@ -872,16 +882,6 @@ onMounted(async () => {
                 :recipients="selectableDirectors"
                 :max-selections="1"
                 sync-position-on-name-change
-              />
-            </div>
-
-            <div class="py-3 border-b border-gray-200 dark:border-gray-600">
-              <DirectorOrderSelector
-                v-model="form.diketahuiOleh"
-                label="Diketahui Oleh"
-                hint="urutan paraf direksi"
-                placeholder="Pilih direksi paraf"
-                :recipients="selectableDirectors"
               />
             </div>
 
@@ -1067,14 +1067,18 @@ onMounted(async () => {
                 </h3>
               </div>
               <div class="space-y-4">
-                <div v-if="bvPemrakarsaDirectors.length" class="space-y-2">
+                <div v-if="bvDitetapkanDirectors.length" class="space-y-2">
                   <h4
                     class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
                   >
-                    1. Direktur Pemrakarsa
+                    Ditetapkan/Disahkan Oleh
                   </h4>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Aktif setelah seluruh Diketahui Oleh menyetujui. Persetujuan sekaligus
+                    menandatangani blanko verbal dan naskah final.
+                  </p>
                   <DireksiApprovalProgress
-                    :directors="bvPemrakarsaDirectors"
+                    :directors="bvDitetapkanDirectors"
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
@@ -1092,7 +1096,7 @@ onMounted(async () => {
                   <h4
                     class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
                   >
-                    2. Diketahui Oleh
+                    Diketahui Oleh
                   </h4>
                   <DireksiApprovalProgress
                     :directors="bvDiketahuiDirectors"
@@ -1109,18 +1113,14 @@ onMounted(async () => {
                     @remove-delegate="removeDelegate"
                   />
                 </div>
-                <div v-if="bvDitetapkanDirectors.length" class="space-y-2">
+                <div v-if="bvPemrakarsaDirectors.length" class="space-y-2">
                   <h4
                     class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
                   >
-                    3. Ditetapkan/Disahkan Oleh
+                    Direktur Pemrakarsa
                   </h4>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Aktif setelah seluruh Diketahui Oleh menyetujui. Persetujuan sekaligus
-                    menandatangani blanko verbal dan naskah final.
-                  </p>
                   <DireksiApprovalProgress
-                    :directors="bvDitetapkanDirectors"
+                    :directors="bvPemrakarsaDirectors"
                     :is-current-user-approver="isCurrentUserApprover"
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
@@ -1288,7 +1288,11 @@ onMounted(async () => {
   inset-inline: 0;
   bottom: 0;
   height: 28px;
-  background: linear-gradient(to bottom, transparent, var(--note-fade-color, rgba(254, 242, 242, 0.95)));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--note-fade-color, rgba(254, 242, 242, 0.95))
+  );
   pointer-events: none;
 }
 .dark .note-clamped::after {
