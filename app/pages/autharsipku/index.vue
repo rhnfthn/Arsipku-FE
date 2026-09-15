@@ -18,11 +18,22 @@ onMounted(() => {
   const route = useRoute();
   const config = useRuntimeConfig();
   const state = Array.isArray(route.query.state) ? route.query.state[0] : route.query.state;
-  const baseUrl = String(
+  const configuredBackend = String(
     String(state || '').startsWith('local.')
       ? config.public.authLocalBackendUrl
       : config.public.authServerBackendUrl
   ).replace(/\/$/, '');
+  // Static hosting may not expose the flow-specific runtime variables. The
+  // API base is still a valid backend fallback; never call new URL() with an
+  // empty value because that turns a callback configuration issue into Nuxt
+  // HTTP 500.
+  const baseUrl = configuredBackend || String(config.public.apiBaseUrl || '').replace(/\/$/, '');
+  if (!baseUrl) {
+    return navigateTo(
+      `/auth/callback?error=${encodeURIComponent('Alamat backend Auth v2 belum dikonfigurasi')}`,
+      { replace: true },
+    );
+  }
   const callback = new URL(`${baseUrl}/auth/callback`);
 
   for (const key of ['code', 'state', 'error', 'error_description']) {
