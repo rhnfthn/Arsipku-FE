@@ -104,7 +104,8 @@ export interface AuthComposable {
   user: Ref<UserProfile | null>;
   setUser: (data: UserProfile | null) => void;
   getProfile: () => Promise<UserProfile | null>;
-  getSSORedirectUrl: () => Promise<string | null>;
+  getSSORedirectUrl: (returnTo?: string) => Promise<string>;
+  restoreSession: () => Promise<UserProfile | null>;
   verifyToken: (token: string) => Promise<any>;
   logout: () => Promise<boolean>;
   refreshToken: () => Promise<string>;
