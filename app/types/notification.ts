@@ -20,7 +20,11 @@ export type NotificationType =
   | 'NASKAH_DINAS_VERIFIKASI_SELESAI'
   | 'NASKAH_DINAS_DITOLAK'
   | 'DELEGASI'
-  | 'SYSTEM';
+  | 'SYSTEM'
+  | 'TUGAS_MEMBER_ADDED'
+  | 'TUGAS_ASSIGNED'
+  | 'TUGAS_DONE'
+  | 'TUGAS_DUE';
 
 export type NotificationAction =
   | 'OPEN_INBOX_DETAIL'
@@ -37,7 +41,8 @@ export type NotificationAction =
   | 'OPEN_NASKAH_LAINNYA_PERSETUJUAN'
   | 'OPEN_NASKAH_LAINNYA_LEGAL_DRAFTING'
   | 'OPEN_DELEGASI'
-  | 'OPEN_SYSTEM_ANNOUNCEMENT';
+  | 'OPEN_SYSTEM_ANNOUNCEMENT'
+  | 'OPEN_TUGAS_TASK';
 
 export interface NotificationData {
   action?: NotificationAction | string;

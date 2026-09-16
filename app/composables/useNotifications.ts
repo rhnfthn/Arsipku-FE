@@ -140,6 +140,18 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
       : { path: '/korespondensi/sde-masal' };
   }
 
+  // Tugas: deep-link ke papan + auto-buka modal task (?task=).
+  if (action === 'OPEN_TUGAS_TASK') {
+    const boardId = getString('boardId', 'board_id');
+    const taskId = getString('taskId', 'task_id');
+    if (boardId) {
+      const query: Record<string, string> = {};
+      if (taskId) query.task = taskId;
+      return { path: `/tugas/${encodeURIComponent(boardId)}`, query };
+    }
+    return { path: '/tugas' };
+  }
+
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
   const query: Record<string, string> = { ...detailQuery };
   if (naskahId) query.naskahId = naskahId;
