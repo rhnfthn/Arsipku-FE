@@ -95,6 +95,11 @@ export default defineNuxtConfig({
     langDir: 'locales/',
     strategy: 'no_prefix',
     strictMessage: false,
+    // Akun/pengunjung baru selalu mulai dengan bahasa Indonesia.
+    // Deteksi bahasa browser dinonaktifkan agar browser berbahasa Inggris
+    // tidak menimpa default. Preferensi eksplisit user tetap dihormati
+    // lewat localStorage 'arsipku_locale' (diterapkan di Navbar).
+    detectBrowserLanguage: false,
     locales: [
       { code: 'id', name: 'ID', file: 'id.json' },
       { code: 'en', name: 'EN', file: 'en.json' },

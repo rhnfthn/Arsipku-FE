@@ -27,7 +27,10 @@ export const useAuth = () => {
   // di sini melempar "Must be called at the top of a setup function" (500).
   // Ambil instance i18n global secara lazy hanya saat applyLoginDefaults()
   // dijalankan di client (setelah login sukses).
-  const isDark = useDark();
+  // Default light mode untuk pengunjung/akun baru. Tanpa initialValue,
+  // useDark() default 'auto' → mengikuti preferensi OS dan membuat akun
+  // baru di perangkat dark langsung tampil gelap.
+  const isDark = useDark({ initialValue: 'light' });
   const tokenCookie = useCookie<string | null>('token', {
     sameSite: 'lax',
     path: '/',

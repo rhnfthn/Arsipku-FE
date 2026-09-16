@@ -267,7 +267,8 @@ const { canAccessPage } = useFeatureAccess()
 const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
   useDashboard(t)
 
-const isDark = useDark()
+// Default light mode untuk akun baru (bukan 'auto' yang mengikuti OS).
+const isDark = useDark({ initialValue: 'light' })
 const dashboardImage = computed(() => isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png')
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
