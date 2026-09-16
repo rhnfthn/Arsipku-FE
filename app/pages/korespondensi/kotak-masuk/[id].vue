@@ -140,11 +140,10 @@ const konsepRouteMap: Record<string, string> = {
 // bukan hardcoded nota-dinas. Jenis-asli dari field jenis_naskah_konsep flow.
 const resolveKonsepEditPath = (sel: any): string => {
   const rawKind = String(
-    sel?.jenis_naskah_konsep ||
-    sel?.detail?.jenis_naskah_konsep ||
-    sel?.jenis ||
-    'ND',
-  ).trim().toUpperCase();
+    sel?.jenis_naskah_konsep || sel?.detail?.jenis_naskah_konsep || sel?.jenis || 'ND'
+  )
+    .trim()
+    .toUpperCase();
   const seg = konsepRouteMap[rawKind] ?? 'nota-dinas';
   return `/korespondensi/tulis/konsep/${seg}`;
 };
@@ -503,17 +502,13 @@ const loadData = async () => {
         // konsep ini). Sebelumnya cuma cek aksi create/forward → tombol tetap
         // muncul walau user sudah forward/reject/turunkan.
         const lastFlowTinjut =
-          lastFlow?.user_sirkulasi?.is_tindak_lanjut ??
-          lastFlow?.is_tindak_lanjut ??
-          false;
+          lastFlow?.user_sirkulasi?.is_tindak_lanjut ?? lastFlow?.is_tindak_lanjut ?? false;
 
         showFinalizeActions.value =
           isInPenerima && (lastAksi === 'create' || lastAksi === 'forward') && !lastFlowTinjut;
 
         showEditAction.value =
-          isInPenerima &&
-          (lastAksi === 'reject' || lastAksi === 'turunkan') &&
-          !lastFlowTinjut;
+          isInPenerima && (lastAksi === 'reject' || lastAksi === 'turunkan') && !lastFlowTinjut;
 
         details.value = sortedFlows.map((flow: any, index: number) => {
           const aksi = flow.detail?.aksi || flow.aksi || 'read';
@@ -532,9 +527,10 @@ const loadData = async () => {
 
           // Untuk K (workflow): penerima = flow.penerima (K penerima = yang berhak aksi).
           // Untuk KN/ND (naskah asli): penerima = naskah_penerima (penerima naskah final).
-          const rawPenerima: any[] = jenis === 'K'
-            ? (flow.penerima || [])
-            : (flow.detail?.naskah_penerima || flow.penerima || []);
+          const rawPenerima: any[] =
+            jenis === 'K'
+              ? flow.penerima || []
+              : flow.detail?.naskah_penerima || flow.penerima || [];
           const penerimaGrup =
             (flow.detail?.penerima_grup?.length ? flow.detail.penerima_grup : null) ||
             (flow.penerima_grup?.length ? flow.penerima_grup : null) ||
@@ -1157,7 +1153,7 @@ const handleTurunkanKonsep = () => {
   // bukan first-in-DESC, agar tak salah ambil atasan yang menurunkan (aksi turunkan
   // diexclude; forward lama bisa ambigu tapi tertua = bawahan asli).
   if (!turunkanPositionId) {
-    const rawFlows = Array.isArray(raw?.flow) ? raw.flow : (Array.isArray(raw?.data) ? raw.data : []);
+    const rawFlows = Array.isArray(raw?.flow) ? raw.flow : Array.isArray(raw?.data) ? raw.data : [];
     console.log('🐛 [Turunkan] rawFlows count:', rawFlows.length);
     let best: { flow: any; ts: number } | null = null;
     for (const flow of rawFlows) {
@@ -1178,7 +1174,15 @@ const handleTurunkanKonsep = () => {
       turunkanPositionId = String(best.flow?.pengirim?.position_id || '');
       turunkanNama = best.flow?.pengirim?.position_text || '';
       turunkanPersonNama = best.flow?.pengirim?.nama || '';
-      console.log('🐛 [Turunkan] STRAT 2 raw flow (tertua):', turunkanPositionId, turunkanNama, 'aksi:', String(best.flow?.detail?.aksi || best.flow?.aksi || ''), 'ts:', best.ts);
+      console.log(
+        '🐛 [Turunkan] STRAT 2 raw flow (tertua):',
+        turunkanPositionId,
+        turunkanNama,
+        'aksi:',
+        String(best.flow?.detail?.aksi || best.flow?.aksi || ''),
+        'ts:',
+        best.ts
+      );
     }
   }
 
@@ -1187,12 +1191,23 @@ const handleTurunkanKonsep = () => {
     const allDetails = details.value || [];
     for (const d of allDetails) {
       const penerimaList = d.penerima || [];
-      console.log('🐛 [Turunkan] checking detail:', d.id, d.aksi, 'penerima:', penerimaList.map((p: any) => ({ id: p.id, pos: p.position_id, label: p.label })));
-      const isRecipient = penerimaList.some((p: any) =>
-        String(p.position_id) === myPosId || String(p.id) === myPosId
+      console.log(
+        '🐛 [Turunkan] checking detail:',
+        d.id,
+        d.aksi,
+        'penerima:',
+        penerimaList.map((p: any) => ({ id: p.id, pos: p.position_id, label: p.label }))
+      );
+      const isRecipient = penerimaList.some(
+        (p: any) => String(p.position_id) === myPosId || String(p.id) === myPosId
       );
       const fromId = String(d.from?.position_id || '');
-      if (isRecipient && fromId && fromId !== myPosId && ['forward', 'disposisi', 'create'].includes(d.aksi || '')) {
+      if (
+        isRecipient &&
+        fromId &&
+        fromId !== myPosId &&
+        ['forward', 'disposisi', 'create'].includes(d.aksi || '')
+      ) {
         turunkanPositionId = fromId;
         turunkanNama = d.from?.position_text || '';
         console.log('🐛 [Turunkan] STRAT 3 details:', turunkanPositionId, turunkanNama);
@@ -1373,449 +1388,454 @@ const konsepOptions = computed(() => [
 <template>
   <AccessDenied v-if="!canAccessPage()" />
   <template v-else>
-  <div class="flex items-center justify-between gap-4">
-    <PageHeader title="Detail Surat" :items="breadcrumbs" />
-    <UButton
-      v-if="canQuickCreateTugas"
-      icon="i-lucide-list-plus"
-      size="sm"
-      @click="showTugasQuickCreate = true"
-    >
-      {{ t('tugas_buat_dari_naskah') }}
-    </UButton>
-  </div>
-
-  <div class="w-full flex gap-4 pt-4 relative">
-    <!-- Main content -->
-    <div class="flex-1 flex flex-col gap-6 min-w-0">
-      <div
-        v-if="isLoading"
-        class="w-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden animate-pulse shadow-sm border border-gray-200 dark:border-gray-800"
+    <div class="flex items-center justify-between gap-4">
+      <PageHeader title="Detail Surat" :items="breadcrumbs" />
+      <UButton
+        v-if="canQuickCreateTugas"
+        icon="i-lucide-list-plus"
+        size="sm"
+        @click="showTugasQuickCreate = true"
       >
-        <div
-          class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center px-4 bg-gray-50 dark:bg-gray-900/50"
-        >
-          <div class="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
-        </div>
-        <div class="p-8 space-y-4">
-          <div class="h-8 w-1/2 bg-gray-200 dark:bg-gray-800 rounded"></div>
-          <div class="h-32 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
-      </div>
-
-      <div v-else-if="visibleDetails && visibleDetails.length > 0" class="flex flex-col gap-3">
-        <div
-          v-for="(detail, index) in visibleDetails"
-          :key="detail.id || detail.urutan || index"
-          :id="`card-${detail.id || detail.urutan}`"
-          class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
-          :class="{
-            'ring-2 ring-primary-200 rounded-xl': (details.length > 1 && isHighlighted(detail)) || (isKonsepData && index === 0),
-          }"
-        >
-          <!-- Card content -->
-          <div>
-            <DetailNaskah
-              context="inbox"
-              :data="detail"
-              :is-head="index === 0"
-              :is-starred="getDetailFlagState(detail, index).isStarred"
-              :is-tinjut="getDetailFlagState(detail, index).isTinjut"
-              :is-locked="getDetailFlagState(detail, index).isLocked"
-              :is-note="getDetailFlagState(detail, index).isNote"
-              :collapsed="isCardCollapsed(index)"
-              :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
-              :show-edit="isKonsepData && index === 0 && showEditAction"
-              :is-pengirim-konsep="isPengirimKonsep"
-              :can-turunkan-lagi="canTurunkanLagi"
-              :show-footer-actions="
-                !isKonsepData && index === 0 && !isTerkirim && canCreateFollowUpAction
-              "
-              :allowed-actions="allowedActions"
-              :konsep-naskah="isKonsepData && index === 0 ? konsepNaskahDetail : null"
-              :user-position-id="user?.position"
-              @back="goBack"
-              @preview="(url) => openDocumentPreview(url, detail.perihal)"
-              @preview-file="openPreviewFile"
-              @finalize="handleFinalize"
-              @reject="handleReject"
-              @edit="handleEditKonsep"
-              @turunkan-konsep="handleTurunkanKonsep"
-              @lanjut-nota="handleLanjutNotaDinas"
-              @lanjut-sdi="handleLanjutSDI"
-              @lanjut-sde="handleLanjutSDE"
-              @lanjut-sde-massal="handleLanjutSDEMassal"
-              @lanjut-disposisi="handleLanjutDisposisi"
-              :draft="
-                index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null
-              "
-              @lanjut-konsep="handleLanjutKonsep"
-              @nav-newer="goToNewer"
-              @nav-older="goToOlder"
-              @favorite="handleToggleFlag('favorit')"
-              @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
-              @lock="handleToggleFlag('lock')"
-              @catatan="(text) => handleToggleFlag('note', text)"
-              @toggle-collapse="toggleCardCollapse(index)"
-            />
-          </div>
-        </div>
-      </div>
-      <div v-else class="w-full text-center py-12 text-sm text-gray-400 dark:text-gray-500">
-        Surat tidak ditemukan atau tidak dapat ditampilkan.
-      </div>
+        {{ t('tugas_buat_dari_naskah') }}
+      </UButton>
     </div>
-    <!-- end main content -->
 
-    <!-- Floating scroll FAB -->
-    <button
-      v-if="!isLoading && visibleDetails.length > 1"
-      @click="scrollToEdge"
-      class="fixed right-4 bottom-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:bg-primary-700 active:scale-95 transition-all duration-200"
-      :aria-label="isAtBottom ? 'Ke atas' : 'Ke bawah'"
-    >
-      <ArrowUpDown
-        class="w-4 h-4 transition-transform duration-300"
-        :class="isAtBottom ? 'rotate-180' : ''"
-      />
-      <span class="text-xs font-semibold">{{ isAtBottom ? 'Ke Atas' : 'Ke Bawah' }}</span>
-    </button>
-
-    <!-- Toggle sidebar button (Daftar Surat) -->
-    <button
-      v-if="!showSidebar && !isLoading && visibleDetails.length > 1"
-      @click="toggleSidebar"
-      class="fixed right-4 bottom-20 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-primary-500 hover:text-white hover:border-primary-500 active:scale-95 transition-all duration-200"
-    >
-      <PanelRightOpen class="w-4 h-4" />
-      <span>Daftar Surat</span>
-    </button>
-
-    <!-- Sidebar TOC Panel (right side) -->
-    <AnimatePresence>
-      <Motion
-        v-if="showSidebar && !isLoading && visibleDetails.length > 1"
-        :initial="{ opacity: 0, x: 50 }"
-        :animate="{ opacity: 1, x: 0 }"
-        :exit="{ opacity: 0, x: 50 }"
-        :transition="{ duration: 0.3, ease: 'easeInOut' }"
-        class="hidden lg:flex flex-col w-64 shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)]"
-        tag="div"
-      >
+    <div class="w-full flex gap-4 pt-4 relative">
+      <!-- Main content -->
+      <div class="flex-1 flex flex-col gap-6 min-w-0">
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
+          v-if="isLoading"
+          class="w-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden animate-pulse shadow-sm border border-gray-200 dark:border-gray-800"
         >
           <div
-            class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50"
+            class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center px-4 bg-gray-50 dark:bg-gray-900/50"
           >
-            <div
-              class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
-            >
-              <List class="w-4 h-4 text-primary-500" />
-              Daftar Surat
-            </div>
-            <button
-              @click="toggleSidebar"
-              class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              <PanelRightClose class="w-4 h-4" />
-            </button>
+            <div class="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
           </div>
-          <div class="overflow-y-auto flex-1 p-2 space-y-1">
-            <button
-              v-for="(detail, index) in visibleDetails"
-              :key="detail.id || detail.urutan || index"
-              @click="navigateToSurat(index)"
-              class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group"
-              :class="
-                activeSuratIndex === index
-                  ? 'bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'
-              "
-            >
-              <div class="flex items-center gap-2 mb-1">
-                <span
-                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                  :class="
-                    index === 0
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                  "
-                >
-                  {{ visibleDetails.length - index }}
-                </span>
-                <span
-                  class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 truncate"
-                >
-                  {{ detail.jenis_label || detail.jenis || '-' }}
-                </span>
-              </div>
-              <p
-                class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate"
-                :class="activeSuratIndex === index ? 'text-primary-700 dark:text-primary-300' : ''"
-              >
-                {{ detail.perihal || detail.subject || '(Tidak ada perihal)' }}
-              </p>
-              <p class="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                {{ detail.pengirim?.position_text || detail.from?.position_text || '-' }}
-              </p>
-            </button>
+          <div class="p-8 space-y-4">
+            <div class="h-8 w-1/2 bg-gray-200 dark:bg-gray-800 rounded"></div>
+            <div class="h-32 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
           </div>
         </div>
-      </Motion>
-    </AnimatePresence>
 
-    <UModal
-      v-model:open="isOpenKonsepModal"
-      :dismissible="false"
-      :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }"
-    >
-      <template #header>
-        <div class="w-full flex justify-between items-start">
-          <div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-              Pilih Jenis Konsep
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Pilih jenis konsep surat yang ingin Anda buat
-            </p>
-          </div>
-          <button
-            @click="isOpenKonsepModal = false"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-      </template>
-      <template #body>
-        <div class="space-y-3">
+        <div v-else-if="visibleDetails && visibleDetails.length > 0" class="flex flex-col gap-3">
           <div
-            v-for="(opt, idx) in konsepOptions"
-            :key="idx"
-            @click="selectKonsep(opt)"
-            class="group flex items-center gap-4 p-4 rounded-xl border transition-all duration-200"
-            :class="
-              draftItem && opt.type !== 'SDE_MASAL'
-                ? opt.type === draftItem.jenis
-                  ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-600 cursor-pointer'
-                  : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 opacity-40 cursor-not-allowed'
-                : 'border-gray-200 dark:border-gray-700 hover:border-primary-500 cursor-pointer'
-            "
+            v-for="(detail, index) in visibleDetails"
+            :key="detail.id || detail.urutan || index"
+            :id="`card-${detail.id || detail.urutan}`"
+            class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
+            :class="{
+              'ring-2 ring-primary-200 rounded-xl':
+                (details.length > 1 && isHighlighted(detail)) || (isKonsepData && index === 0),
+            }"
+          >
+            <!-- Card content -->
+            <div>
+              <DetailNaskah
+                context="inbox"
+                :data="detail"
+                :is-head="index === 0"
+                :is-starred="getDetailFlagState(detail, index).isStarred"
+                :is-tinjut="getDetailFlagState(detail, index).isTinjut"
+                :is-locked="getDetailFlagState(detail, index).isLocked"
+                :is-note="getDetailFlagState(detail, index).isNote"
+                :collapsed="isCardCollapsed(index)"
+                :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
+                :show-edit="isKonsepData && index === 0 && showEditAction"
+                :is-pengirim-konsep="isPengirimKonsep"
+                :can-turunkan-lagi="canTurunkanLagi"
+                :show-footer-actions="
+                  !isKonsepData && index === 0 && !isTerkirim && canCreateFollowUpAction
+                "
+                :allowed-actions="allowedActions"
+                :konsep-naskah="isKonsepData && index === 0 ? konsepNaskahDetail : null"
+                :user-position-id="user?.position"
+                @back="goBack"
+                @preview="(url) => openDocumentPreview(url, detail.perihal)"
+                @preview-file="openPreviewFile"
+                @finalize="handleFinalize"
+                @reject="handleReject"
+                @edit="handleEditKonsep"
+                @turunkan-konsep="handleTurunkanKonsep"
+                @lanjut-nota="handleLanjutNotaDinas"
+                @lanjut-sdi="handleLanjutSDI"
+                @lanjut-sde="handleLanjutSDE"
+                @lanjut-sde-massal="handleLanjutSDEMassal"
+                @lanjut-disposisi="handleLanjutDisposisi"
+                :draft="
+                  index === 0 && draftItem ? { id: draftItem.id, jenis: draftItem.jenis } : null
+                "
+                @lanjut-konsep="handleLanjutKonsep"
+                @nav-newer="goToNewer"
+                @nav-older="goToOlder"
+                @favorite="handleToggleFlag('favorit')"
+                @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
+                @lock="handleToggleFlag('lock')"
+                @catatan="(text) => handleToggleFlag('note', text)"
+                @toggle-collapse="toggleCardCollapse(index)"
+              />
+            </div>
+          </div>
+        </div>
+        <div v-else class="w-full text-center py-12 text-sm text-gray-400 dark:text-gray-500">
+          Surat tidak ditemukan atau tidak dapat ditampilkan.
+        </div>
+      </div>
+      <!-- end main content -->
+
+      <!-- Floating scroll FAB -->
+      <button
+        v-if="!isLoading && visibleDetails.length > 1"
+        @click="scrollToEdge"
+        class="fixed right-4 bottom-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:bg-primary-700 active:scale-95 transition-all duration-200"
+        :aria-label="isAtBottom ? 'Ke atas' : 'Ke bawah'"
+      >
+        <ArrowUpDown
+          class="w-4 h-4 transition-transform duration-300"
+          :class="isAtBottom ? 'rotate-180' : ''"
+        />
+        <span class="text-xs font-semibold">{{ isAtBottom ? 'Ke Atas' : 'Ke Bawah' }}</span>
+      </button>
+
+      <!-- Toggle sidebar button (Daftar Surat) -->
+      <button
+        v-if="!showSidebar && !isLoading && visibleDetails.length > 1"
+        @click="toggleSidebar"
+        class="fixed right-4 bottom-20 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-primary-500 hover:text-white hover:border-primary-500 active:scale-95 transition-all duration-200"
+      >
+        <PanelRightOpen class="w-4 h-4" />
+        <span>Daftar Surat</span>
+      </button>
+
+      <!-- Sidebar TOC Panel (right side) -->
+      <AnimatePresence>
+        <Motion
+          v-if="showSidebar && !isLoading && visibleDetails.length > 1"
+          :initial="{ opacity: 0, x: 50 }"
+          :animate="{ opacity: 1, x: 0 }"
+          :exit="{ opacity: 0, x: 50 }"
+          :transition="{ duration: 0.3, ease: 'easeInOut' }"
+          class="hidden lg:flex flex-col w-64 shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)]"
+          tag="div"
+        >
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
           >
             <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
-              :class="[
-                opt.colorClass,
-                draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
-                  ? ''
-                  : 'transition-transform group-hover:scale-110',
-              ]"
+              class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50"
             >
-              <component :is="opt.icon" class="w-6 h-6" />
+              <div
+                class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >
+                <List class="w-4 h-4 text-primary-500" />
+                Daftar Surat
+              </div>
+              <button
+                @click="toggleSidebar"
+                class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <PanelRightClose class="w-4 h-4" />
+              </button>
             </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h4
-                  class="text-base font-bold text-gray-900 dark:text-white"
+            <div class="overflow-y-auto flex-1 p-2 space-y-1">
+              <button
+                v-for="(detail, index) in visibleDetails"
+                :key="detail.id || detail.urutan || index"
+                @click="navigateToSurat(index)"
+                class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group"
+                :class="
+                  activeSuratIndex === index
+                    ? 'bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-transparent'
+                "
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <span
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                    :class="
+                      index === 0
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                    "
+                  >
+                    {{ visibleDetails.length - index }}
+                  </span>
+                  <span
+                    class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 truncate"
+                  >
+                    {{ detail.jenis_label || detail.jenis || '-' }}
+                  </span>
+                </div>
+                <p
+                  class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate"
                   :class="
-                    draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
-                      ? ''
-                      : 'group-hover:text-primary-600 transition-colors'
+                    activeSuratIndex === index ? 'text-primary-700 dark:text-primary-300' : ''
                   "
                 >
-                  {{ opt.label }}
-                </h4>
-                <span
-                  v-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type === draftItem.jenis"
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-white uppercase tracking-wide"
-                >
-                  Draft Tersimpan
-                </span>
-                <span
-                  v-else-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis"
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-300 dark:bg-gray-600 text-white uppercase tracking-wide"
-                >
-                  Tidak Tersedia
-                </span>
-              </div>
-              <p
-                v-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type === draftItem.jenis"
-                class="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5"
-              >
-                Klik untuk melanjutkan draft yang sudah ada
-              </p>
-              <p
-                v-else-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis"
-                class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
-              >
-                Selesaikan draft yang ada terlebih dahulu
-              </p>
+                  {{ detail.perihal || detail.subject || '(Tidak ada perihal)' }}
+                </p>
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                  {{ detail.pengirim?.position_text || detail.from?.position_text || '-' }}
+                </p>
+              </button>
             </div>
-            <ChevronRight
-              class="w-5 h-5 transition-colors"
-              :class="
-                draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
-                  ? 'text-gray-200 dark:text-gray-700'
-                  : 'text-gray-300 group-hover:text-primary-500'
-              "
-            />
           </div>
-        </div>
-      </template>
-    </UModal>
+        </Motion>
+      </AnimatePresence>
 
-    <UModal
-      v-model:open="showFinalizeOptionsModal"
-      :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }"
-    >
-      <template #header>
-        <div class="w-full flex justify-between items-start">
-          <div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-              Finalisasi Konsep
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Apakah Anda yakin ingin memfinalisasi konsep ini?
-            </p>
-          </div>
-          <button
-            @click="showFinalizeOptionsModal = false"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-      </template>
-      <template #body>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="showFinalizeOptionsModal = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
-          >
-            Batal
-          </button>
-          <button
-            @click="handleFinalizeAndRedirect"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700"
-          >
-            <CheckCircle class="w-4 h-4" /> Ya, Finalisasi
-          </button>
-        </div>
-      </template>
-    </UModal>
-
-    <UModal v-model:open="showRejectModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
-      <template #header>
-        <div class="w-full flex justify-between items-center">
-          <div class="flex items-center gap-2">
+      <UModal
+        v-model:open="isOpenKonsepModal"
+        :dismissible="false"
+        :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }"
+      >
+        <template #header>
+          <div class="w-full flex justify-between items-start">
             <div>
               <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                Tolak Konsep
+                Pilih Jenis Konsep
               </h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Berikan alasan penolakan konsep ini.
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Pilih jenis konsep surat yang ingin Anda buat
               </p>
             </div>
-          </div>
-          <button
-            @click="showRejectModal = false"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-      </template>
-      <template #body>
-        <div class="space-y-4">
-          <div class="space-y-1.5">
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-200"
-              >Catatan Penolakan <span class="text-red-500">*</span></label
+            <button
+              @click="isOpenKonsepModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
             >
-            <textarea
-              v-model="rejectNote"
-              rows="4"
-              class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400 dark:text-white mt-2"
-              placeholder="Contoh: Perihal kurang jelas..."
-            ></textarea>
+              <X class="w-5 h-5" />
+            </button>
           </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="showRejectModal = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
-          >
-            Batal
-          </button>
-          <button
-            @click="handleConfirmReject"
-            :disabled="isRejecting || !rejectNote.trim()"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-          >
-            <Loader2 v-if="isRejecting" class="w-4 h-4 animate-spin" />
-            {{ isRejecting ? 'Memproses...' : 'Tolak Konsep' }}
-          </button>
-        </div>
-      </template>
-    </UModal>
+        </template>
+        <template #body>
+          <div class="space-y-3">
+            <div
+              v-for="(opt, idx) in konsepOptions"
+              :key="idx"
+              @click="selectKonsep(opt)"
+              class="group flex items-center gap-4 p-4 rounded-xl border transition-all duration-200"
+              :class="
+                draftItem && opt.type !== 'SDE_MASAL'
+                  ? opt.type === draftItem.jenis
+                    ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-600 cursor-pointer'
+                    : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/30 opacity-40 cursor-not-allowed'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-primary-500 cursor-pointer'
+              "
+            >
+              <div
+                class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+                :class="[
+                  opt.colorClass,
+                  draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
+                    ? ''
+                    : 'transition-transform group-hover:scale-110',
+                ]"
+              >
+                <component :is="opt.icon" class="w-6 h-6" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h4
+                    class="text-base font-bold text-gray-900 dark:text-white"
+                    :class="
+                      draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
+                        ? ''
+                        : 'group-hover:text-primary-600 transition-colors'
+                    "
+                  >
+                    {{ opt.label }}
+                  </h4>
+                  <span
+                    v-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type === draftItem.jenis"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400 text-white uppercase tracking-wide"
+                  >
+                    Draft Tersimpan
+                  </span>
+                  <span
+                    v-else-if="
+                      draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
+                    "
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-300 dark:bg-gray-600 text-white uppercase tracking-wide"
+                  >
+                    Tidak Tersedia
+                  </span>
+                </div>
+                <p
+                  v-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type === draftItem.jenis"
+                  class="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5"
+                >
+                  Klik untuk melanjutkan draft yang sudah ada
+                </p>
+                <p
+                  v-else-if="draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis"
+                  class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
+                >
+                  Selesaikan draft yang ada terlebih dahulu
+                </p>
+              </div>
+              <ChevronRight
+                class="w-5 h-5 transition-colors"
+                :class="
+                  draftItem && opt.type !== 'SDE_MASAL' && opt.type !== draftItem.jenis
+                    ? 'text-gray-200 dark:text-gray-700'
+                    : 'text-gray-300 group-hover:text-primary-500'
+                "
+              />
+            </div>
+          </div>
+        </template>
+      </UModal>
 
-    <USlideover
-      v-model:open="isPreviewOpen"
-      :title="previewTitle"
-      :description="previewTitle"
-      side="bottom"
-      :ui="{
-        content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
-        body: 'p-0',
-        footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
-      }"
-    >
-      <template #body>
-        <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
-          <div
-            v-if="isLocalPdfLoading"
-            class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90 z-20"
-          >
-            <Loader2 class="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400 mb-2" /><span
-              class="text-xs text-gray-500 dark:text-gray-400"
-              >Memuat Dokumen...</span
+      <UModal
+        v-model:open="showFinalizeOptionsModal"
+        :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }"
+      >
+        <template #header>
+          <div class="w-full flex justify-between items-start">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                Finalisasi Konsep
+              </h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Apakah Anda yakin ingin memfinalisasi konsep ini?
+              </p>
+            </div>
+            <button
+              @click="showFinalizeOptionsModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
             >
+              <X class="w-5 h-5" />
+            </button>
           </div>
-          <iframe
-            v-if="activePdfUrl"
-            :src="activePdfUrl"
-            class="w-full h-full border-none flex-1"
-          />
-          <div
-            v-else-if="!isLocalPdfLoading"
-            class="flex items-center justify-center h-full text-gray-500 flex-col gap-2"
-          >
-            <FileText class="w-12 h-12l opacity-30" /><span class="text-sm"
-              >Dokumen tidak dapat ditampilkan.</span
+        </template>
+        <template #body>
+          <div class="flex justify-end gap-3">
+            <button
+              @click="showFinalizeOptionsModal = false"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
             >
+              Batal
+            </button>
+            <button
+              @click="handleFinalizeAndRedirect"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700"
+            >
+              <CheckCircle class="w-4 h-4" /> Ya, Finalisasi
+            </button>
           </div>
-        </div>
-      </template>
-    </USlideover>
+        </template>
+      </UModal>
 
-    <!-- Popup Detail Naskah (sama dengan preview-berkas) -->
-    <NaskahDetailPopup
-      v-model="showNaskahPopup"
-      :nomor-surat="popupNaskah?.nomorSurat || popupNaskah?.nomor"
-      :tanggal-naskah="popupNaskah?.tanggalNaskah || popupNaskah?.tanggal"
-      :perihal="popupNaskah?.perihal"
-      :jenis="popupNaskah?.jenis || popupNaskah?.jenis_kode"
-      :sumber="popupNaskah?.sumber || (isTerkirim ? 'terkirim' : 'inbox')"
-      :detail="popupDetail"
-    />
-    <TugasQuickCreateModal
-      v-model="showTugasQuickCreate"
-      :reference-type="tugasReferenceType"
-      :reference-id="id"
-      :reference-label="tugasReferenceLabel"
-    />
-  </div>
+      <UModal v-model:open="showRejectModal" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+        <template #header>
+          <div class="w-full flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                  Tolak Konsep
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Berikan alasan penolakan konsep ini.
+                </p>
+              </div>
+            </div>
+            <button
+              @click="showRejectModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+        </template>
+        <template #body>
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-200"
+                >Catatan Penolakan <span class="text-red-500">*</span></label
+              >
+              <textarea
+                v-model="rejectNote"
+                rows="4"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400 dark:text-white mt-2"
+                placeholder="Contoh: Perihal kurang jelas..."
+              ></textarea>
+            </div>
+          </div>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <button
+              @click="showRejectModal = false"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
+            >
+              Batal
+            </button>
+            <button
+              @click="handleConfirmReject"
+              :disabled="isRejecting || !rejectNote.trim()"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              <Loader2 v-if="isRejecting" class="w-4 h-4 animate-spin" />
+              {{ isRejecting ? 'Memproses...' : 'Tolak Konsep' }}
+            </button>
+          </div>
+        </template>
+      </UModal>
+
+      <USlideover
+        v-model:open="isPreviewOpen"
+        :title="previewTitle"
+        :description="previewTitle"
+        side="bottom"
+        :ui="{
+          content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+          body: 'p-0',
+          footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
+        }"
+      >
+        <template #body>
+          <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
+            <div
+              v-if="isLocalPdfLoading"
+              class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90 z-20"
+            >
+              <Loader2 class="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400 mb-2" /><span
+                class="text-xs text-gray-500 dark:text-gray-400"
+                >Memuat Dokumen...</span
+              >
+            </div>
+            <iframe
+              v-if="activePdfUrl"
+              :src="activePdfUrl"
+              class="w-full h-full border-none flex-1"
+            />
+            <div
+              v-else-if="!isLocalPdfLoading"
+              class="flex items-center justify-center h-full text-gray-500 flex-col gap-2"
+            >
+              <FileText class="w-12 h-12l opacity-30" /><span class="text-sm"
+                >Dokumen tidak dapat ditampilkan.</span
+              >
+            </div>
+          </div>
+        </template>
+      </USlideover>
+
+      <!-- Popup Detail Naskah (sama dengan preview-berkas) -->
+      <NaskahDetailPopup
+        v-model="showNaskahPopup"
+        :nomor-surat="popupNaskah?.nomorSurat || popupNaskah?.nomor"
+        :tanggal-naskah="popupNaskah?.tanggalNaskah || popupNaskah?.tanggal"
+        :perihal="popupNaskah?.perihal"
+        :jenis="popupNaskah?.jenis || popupNaskah?.jenis_kode"
+        :sumber="popupNaskah?.sumber || (isTerkirim ? 'terkirim' : 'inbox')"
+        :detail="popupDetail"
+      />
+      <TugasQuickCreateModal
+        v-model="showTugasQuickCreate"
+        :reference-type="tugasReferenceType"
+        :reference-id="id"
+        :reference-label="tugasReferenceLabel"
+      />
+    </div>
   </template>
 </template>
