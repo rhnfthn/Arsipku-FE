@@ -103,6 +103,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/layanan-email',
     '/naskah-lainnya',
     '/naskah-dinas/verifikator',
+    '/tugas',
     '/kelola/pemeliharaan/pemberkasan',
     '/kelola/pemeliharaan/persetujuan-pemberkasan',
     '/kelola/penggunaan',
