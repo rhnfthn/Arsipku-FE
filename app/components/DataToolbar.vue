@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-wrap gap-2 items-center p-3">
-    <div class="relative">
+    <div v-if="showRows" class="relative">
       <button
         type="button"
         @click="openRows = !openRows"
@@ -73,17 +73,19 @@ import { Search, RotateCcw, ChevronDown } from 'lucide-vue-next';
 
 withDefaults(
   defineProps<{
-    modelValue: number;
+    modelValue?: number;
     search: string;
     searchPlaceholder?: string;
     rowsChoices?: number[];
     showExport?: boolean;
+    showRows?: boolean;
     exportLabel?: string;
     refreshLabel?: string;
   }>(),
   {
     rowsChoices: () => [5, 10, 25, 50, 100],
     showExport: true,
+    showRows: true,
     exportLabel: 'Export',
     refreshLabel: 'Refresh',
     searchPlaceholder: 'Cari...',

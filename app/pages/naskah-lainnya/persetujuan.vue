@@ -302,9 +302,7 @@
           </span>
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)"
-            >Detail</UButton
-          >
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)">Detail</UButton>
         </template>
       </DataTable>
 
@@ -324,66 +322,67 @@
     </div>
 
     <!-- Modal Setujui -->
-    <Modal v-model="modalOpen" :hide-default-footer="true">
-      <template #title>Setujui — {{ selected?.nomor ?? '' }}</template>
-      <div class="flex flex-col gap-3">
-        <p class="text-sm text-gray-500">{{ selected?.perihal }}</p>
-        <UInput v-model="catatan" placeholder="Catatan (opsional)" />
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex gap-2">
-            <UButton
-              size="xs"
-              color="error"
-              variant="soft"
-              icon="i-lucide-x"
-              @click="tolakOpen = true"
-              >Tolak</UButton
-            >
-            <UButton
-              size="xs"
-              color="warning"
-              variant="soft"
-              icon="i-lucide-undo-2"
-              @click="kembaliOpen = true"
-              >Kembalikan</UButton
-            >
-          </div>
-          <div class="flex gap-2">
-            <UButton color="neutral" variant="ghost" @click="modalOpen = false">Batal</UButton>
-            <UButton color="success" icon="i-lucide-check" :loading="busy" @click="doSetuju"
-              >Setujui</UButton
-            >
-          </div>
-        </div>
-      </div>
-    </Modal>
-
-    <!-- Modal Tolak -->
-    <Modal v-model="tolakOpen" :hide-default-footer="true">
-      <template #title>Tolak — {{ selected?.nomor ?? '' }}</template>
-      <div class="flex flex-col gap-3">
-        <p class="text-sm text-gray-500">Alasan penolakan wajib diisi.</p>
-        <UTextarea v-model="alasan" placeholder="Alasan…" />
-        <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="tolakOpen = false">Batal</UButton>
+    <ApprovalNoteEditor
+      v-model="modalOpen"
+      variant="approve"
+      :title="`Setujui — ${selected?.nomor ?? ''}`"
+      :description="selected?.perihal ?? ''"
+      note-label="Catatan"
+      note-placeholder="Catatan persetujuan (opsional)…"
+      confirm-label="Setujui"
+      :saving="busy"
+      @confirm="doSetuju"
+    >
+      <template #highlight>
+        <div class="flex gap-2">
           <UButton
+            size="xs"
             color="error"
+            variant="soft"
             icon="i-lucide-x"
-            :loading="busy"
-            :disabled="!alasan"
-            @click="doTolak"
+            @click="tolakOpen = true"
             >Tolak</UButton
           >
+          <UButton
+            size="xs"
+            color="warning"
+            variant="soft"
+            icon="i-lucide-undo-2"
+            @click="kembaliOpen = true"
+            >Kembalikan</UButton
+          >
         </div>
-      </div>
-    </Modal>
+      </template>
+    </ApprovalNoteEditor>
+
+    <!-- Modal Tolak -->
+    <ApprovalNoteEditor
+      v-model="tolakOpen"
+      variant="reject"
+      :title="`Tolak — ${selected?.nomor ?? ''}`"
+      description="Alasan penolakan wajib diisi."
+      note-label="Alasan Penolakan"
+      note-placeholder="Tuliskan alasan penolakan…"
+      confirm-label="Tolak"
+      :saving="busy"
+      :require-note="true"
+      @confirm="doTolak"
+    />
 
     <!-- Modal Kembalikan -->
-    <Modal v-model="kembaliOpen" :hide-default-footer="true">
-      <template #title>Kembalikan — {{ selected?.nomor ?? '' }}</template>
-      <div class="flex flex-col gap-3">
-        <p class="text-sm text-gray-500">Alasan wajib diisi; sertakan dokumen revisi bila ada.</p>
-        <UTextarea v-model="alasan" placeholder="Alasan…" />
+    <ApprovalNoteEditor
+      v-model="kembaliOpen"
+      variant="reject"
+      :title="`Kembalikan — ${selected?.nomor ?? ''}`"
+      description="Alasan wajib diisi; sertakan dokumen revisi bila ada."
+      note-label="Alasan Pengembalian"
+      note-placeholder="Tuliskan alasan pengembalian…"
+      confirm-label="Kembalikan"
+      :saving="busy"
+      :require-note="true"
+      @confirm="doKembali"
+    >
+      <template #highlight>
         <div>
           <FileUpload
             v-model="revisiDocxFiles"
@@ -393,19 +392,8 @@
             description="PDF pratinjau dibuat otomatis oleh sistem"
           />
         </div>
-        <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="kembaliOpen = false">Batal</UButton>
-          <UButton
-            color="warning"
-            icon="i-lucide-undo-2"
-            :loading="busy"
-            :disabled="!alasan"
-            @click="doKembali"
-            >Kembalikan</UButton
-          >
-        </div>
-      </div>
-    </Modal>
+      </template>
+    </ApprovalNoteEditor>
 
     <!-- Export Column Modal -->
     <ExportColumnModal
@@ -427,6 +415,7 @@ import { JENIS_LABELS, TAHAPAN_STEP } from '~/types/naskah-lainnya';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 
@@ -437,7 +426,7 @@ const exportColumns = ref([
   { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Nama pembuat/pemrakarsa' },
   { key: 'perihal', label: 'Perihal', desc: 'Perihal / subjek naskah' },
   { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan persetujuan' },
-  { key: 'status', label: 'Status', desc: 'Status persetujuan' }
+  { key: 'status', label: 'Status', desc: 'Status persetujuan' },
 ]);
 
 const {
@@ -466,8 +455,6 @@ const selected = ref<NaskahListItem | null>(null);
 const modalOpen = ref(false);
 const tolakOpen = ref(false);
 const kembaliOpen = ref(false);
-const catatan = ref('');
-const alasan = ref('');
 const busy = ref(false);
 const revisiDocxFiles = ref<File[]>([]);
 
@@ -771,12 +758,12 @@ function goDetail(row: any) {
   navigateTo(`/naskah-lainnya/${n.id}`);
 }
 
-async function doSetuju() {
+async function doSetuju(note: string) {
   if (!selected.value) return;
   busy.value = true;
   try {
     const approvalId = await firstWaitingId();
-    await setuju(selected.value.id, approvalId, catatan.value || undefined);
+    await setuju(selected.value.id, approvalId, note || undefined);
     await fetchPersetujuan(filterStatus.value);
     modalOpen.value = false;
   } finally {
@@ -784,12 +771,12 @@ async function doSetuju() {
   }
 }
 
-async function doTolak() {
+async function doTolak(note: string) {
   if (!selected.value) return;
   busy.value = true;
   try {
     const approvalId = await firstWaitingId();
-    await tolak(selected.value.id, approvalId, alasan.value);
+    await tolak(selected.value.id, approvalId, note);
     await fetchPersetujuan(filterStatus.value);
     tolakOpen.value = false;
     modalOpen.value = false;
@@ -798,7 +785,7 @@ async function doTolak() {
   }
 }
 
-async function doKembali() {
+async function doKembali(note: string) {
   if (!selected.value) return;
   const docx = revisiDocxFiles.value.at(-1) ?? null;
   busy.value = true;
@@ -807,7 +794,7 @@ async function doKembali() {
       await uploadRevisiDokumen(selected.value.id, { docx });
     }
     const approvalId = await firstWaitingId();
-    await kembalikan(selected.value.id, approvalId, alasan.value);
+    await kembalikan(selected.value.id, approvalId, note);
     await fetchPersetujuan(filterStatus.value);
     kembaliOpen.value = false;
     modalOpen.value = false;
@@ -852,7 +839,7 @@ function handleExportConfirm(selectedKeys: string[]) {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
     }));
     worksheet['!cols'] = colWidths;
 
@@ -860,7 +847,7 @@ function handleExportConfirm(selectedKeys: string[]) {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Persetujuan Naskah');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     saveAs(blob, `persetujuan_naskah_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
