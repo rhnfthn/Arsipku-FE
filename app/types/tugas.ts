@@ -110,6 +110,12 @@ export interface TugasActivityItem {
   detail: Record<string, unknown> | null;
   actorPersnum: number;
   actorPositionId: string;
+  actor: {
+    persnum: number;
+    positionId: string;
+    nama: string;
+    positionText: string | null;
+  };
   createdAt: string;
 }
 
