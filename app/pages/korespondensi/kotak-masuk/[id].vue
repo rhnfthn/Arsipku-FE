@@ -26,6 +26,8 @@ import { compareNaskahFlowNewestFirst } from '~/utils/naskah-flow-order';
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
 import NaskahDetailPopup from '~/components/NaskahDetailPopup.vue';
+import TugasQuickCreateModal from '~/components/tugas/TugasQuickCreateModal.vue';
+import type { TugasReferenceType } from '~/types/tugas';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -262,6 +264,25 @@ const visibleDetails = computed(() => {
 // --- STATE ---
 const details = ref<any[]>([]);
 const selected = ref<any>(null);
+const showTugasQuickCreate = ref(false);
+const tugasReferenceType = computed<TugasReferenceType>(() =>
+  String(selected.value?.jenis || visibleDetails.value?.[0]?.jenis || '').toUpperCase() === 'DI'
+    ? 'disposisi'
+    : 'naskah_masuk'
+);
+const tugasReferenceLabel = computed(() => {
+  const current = visibleDetails.value?.[0] || selected.value;
+  const nomor = current?.nomor && current.nomor !== '-' ? current.nomor : '';
+  const perihal = current?.perihal || current?.subject || 'Naskah';
+  return [nomor, perihal].filter(Boolean).join(' — ');
+});
+const canQuickCreateTugas = computed(
+  () =>
+    hasPermission('tugas', 'create-task') &&
+    Boolean(selected.value) &&
+    !isKonsepData.value &&
+    !isTerkirim.value
+);
 const rawKonsepResponse = ref<any>(null); // Raw API response for riwayat lookup
 const isLoading = ref(true);
 const isKonsepData = ref(false);
@@ -1354,6 +1375,14 @@ const konsepOptions = computed(() => [
   <template v-else>
   <div class="flex items-center justify-between gap-4">
     <PageHeader title="Detail Surat" :items="breadcrumbs" />
+    <UButton
+      v-if="canQuickCreateTugas"
+      icon="i-lucide-list-plus"
+      size="sm"
+      @click="showTugasQuickCreate = true"
+    >
+      {{ t('tugas_buat_dari_naskah') }}
+    </UButton>
   </div>
 
   <div class="w-full flex gap-4 pt-4 relative">
@@ -1780,6 +1809,12 @@ const konsepOptions = computed(() => [
       :jenis="popupNaskah?.jenis || popupNaskah?.jenis_kode"
       :sumber="popupNaskah?.sumber || (isTerkirim ? 'terkirim' : 'inbox')"
       :detail="popupDetail"
+    />
+    <TugasQuickCreateModal
+      v-model="showTugasQuickCreate"
+      :reference-type="tugasReferenceType"
+      :reference-id="id"
+      :reference-label="tugasReferenceLabel"
     />
   </div>
   </template>
