@@ -238,7 +238,12 @@ const tinyMceInit = {
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; } .${VAR_CLASS} { color: #2563eb; font-weight: 600; background: rgba(37,99,235,0.10); padding: 0 2px; border-radius: 3px; }`,
   setup(editor: TinyMCEEditor) {
     tinymceEditor.value = editor;
-    editor.on('input', scheduleWrap);
+    // Keep the parent model current immediately so TemplateManager never
+    // validates a stale/empty value when Save is clicked right after typing.
+    editor.on('input', () => {
+      kontenModel.value = editor.getContent();
+      scheduleWrap();
+    });
     editor.on('SetContent', scheduleWrap);
   },
 };
