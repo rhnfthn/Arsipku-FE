@@ -180,6 +180,10 @@ const selectedAssignee = computed({
     form.value.assigneeMemberId = value === NO_PIC ? null : value;
   },
 });
+
+const selectedAssigneeMember = computed(() =>
+  props.members.find((member) => member.id === form.value.assigneeMemberId)
+);
 </script>
 
 <template>
@@ -315,6 +319,35 @@ const selectedAssignee = computed({
               }"
               :aria-label="t('tugas_assignee')"
             />
+            <div
+              v-if="selectedAssigneeMember"
+              class="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2 dark:bg-gray-700/50"
+            >
+              <ProfileAvatar
+                size="xs"
+                :persnum="selectedAssigneeMember.persnum"
+                :alt="selectedAssigneeMember.nama"
+                avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+              >
+                {{
+                  selectedAssigneeMember.nama
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join('')
+                    .toUpperCase()
+                }}
+              </ProfileAvatar>
+              <div class="min-w-0">
+                <p class="truncate text-xs font-semibold text-gray-700 dark:text-gray-200">
+                  {{ selectedAssigneeMember.nama }}
+                </p>
+                <p class="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                  {{ selectedAssigneeMember.positionText ?? selectedAssigneeMember.positionId }}
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Evidence pekerjaan (JPG/PNG) -->

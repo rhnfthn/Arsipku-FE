@@ -162,13 +162,23 @@ const initials = (nama: string) => {
                 class="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-primary-300 hover:bg-primary-50/50 dark:border-gray-600 dark:hover:bg-gray-700/50"
                 @click="addMember(candidate)"
               >
-                <div class="min-w-0">
+                <div class="flex min-w-0 items-center gap-2">
+                  <ProfileAvatar
+                    size="xs"
+                    :persnum="candidate.persnum"
+                    :alt="candidate.nama"
+                    avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                  >
+                    {{ initials(candidate.nama) }}
+                  </ProfileAvatar>
+                  <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
                     {{ candidate.nama }}
                   </p>
                   <p class="truncate text-[11px] text-gray-500 dark:text-gray-400">
                     {{ candidate.positionText }}
                   </p>
+                  </div>
                 </div>
                 <UserPlus class="h-4 w-4 shrink-0 text-primary-500" />
               </button>
@@ -192,11 +202,14 @@ const initials = (nama: string) => {
                 class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-600"
               >
                 <div class="flex min-w-0 items-center gap-2">
-                  <span
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                  <ProfileAvatar
+                    size="xs"
+                    :persnum="member.persnum"
+                    :alt="member.nama"
+                    avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
                   >
                     {{ initials(member.nama) }}
-                  </span>
+                  </ProfileAvatar>
                   <div class="min-w-0">
                     <p
                       class="flex items-center gap-1 truncate text-sm font-medium text-gray-900 dark:text-white"
