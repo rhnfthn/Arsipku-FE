@@ -357,12 +357,12 @@ const myTemplatesAccordion = computed(() => {
 const fetchMyTemplates = async () => {
   if (!user.value) await getProfile();
 
-  const positionId = user.value?.position;
+  const positionId = user.value?.position ?? user.value?.position_id;
   if (!positionId) return;
 
   try {
     isLoadingList.value = true;
-    const data = await getTemplatesByPosition(positionId);
+    const data = await getTemplatesByPosition(String(positionId));
     myTemplates.value = data;
   } catch (error) {
     // Error handled in useApi usually, or simple toast
@@ -403,7 +403,7 @@ const openEditModal = (item: any) => {
 // 3. Submit (Create / Update)
 const submitTemplate = async () => {
   if (!user.value) await getProfile();
-  const positionId = user.value?.position;
+  const positionId = user.value?.position ?? user.value?.position_id;
 
   if (!positionId) {
     Alert.error(t('f_gagal'), t('tmpl_error_posisi'));
@@ -412,7 +412,7 @@ const submitTemplate = async () => {
 
   // Payload
   const payload: TemplatePayload = {
-    id_position: positionId,
+    id_position: String(positionId),
     nama_template: newTemplateName.value,
     content: props.currentContent // Selalu ambil konten dari editor saat ini
   };

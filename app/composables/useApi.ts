@@ -208,7 +208,9 @@ export const useApi = () => {
         }
       )
       .then((response) => {
-        const newToken = response.data?.data?.accessToken;
+        // /auth/refresh memakai @SkipTransform() di backend → response flat
+        // { accessToken, ... } tanpa wrapper { data }. Dukung kedua bentuk.
+        const newToken = response.data?.accessToken ?? response.data?.data?.accessToken;
         if (!newToken) return null;
         localStorage.setItem('token', newToken);
         tokenCookie.value = newToken;
@@ -248,8 +250,10 @@ export const useApi = () => {
         | undefined;
       const requestUrl = String(originalConfig?.url ?? '');
       const currentToken = process.client ? localStorage.getItem('token') : null;
+      // Hanya endpoint refresh yang dikecualikan dari retry — jangan ikut
+      // mencocokkan /auth/refresh-permissions (request biasa yang perlu retry).
       const isRefreshRequest =
-        requestUrl.includes('/auth/refresh-token') || requestUrl.includes('/auth/refresh');
+        requestUrl.includes('/auth/refresh-token') || /\/auth\/refresh(?:[/?#]|$)/.test(requestUrl);
       const requestAuthHeader = getHeaderValue(originalConfig?.headers, 'Authorization');
       const requestToken = requestAuthHeader?.startsWith('Bearer ')
         ? requestAuthHeader.slice(7)
@@ -301,7 +305,7 @@ export const useApi = () => {
     }
 
     try {
-      if (isDev) console.log("[api] GET ->", fullUrl, redactLogValue(axiosConfig));
+      if (isDev) console.log('[api] GET ->', fullUrl, redactLogValue(axiosConfig));
       const res = await api.get(url, axiosConfig);
       if (isDev) console.log('[api] GET response <-', fullUrl, res.status);
       if (!skipCache) setCached(cacheKey, res.data, options.ttlMs);
@@ -323,8 +327,8 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
-      if (isDev) console.log("[api] POST ->", fullUrl, redactLogValue(data));
+      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
+      if (isDev) console.log('[api] POST ->', fullUrl, redactLogValue(data));
       const res = await api.post(url, data, axiosConfig);
       if (isDev) console.log('[api] POST response <-', fullUrl, res.status);
       invalidateCache(url.split('?')[0]);
@@ -341,8 +345,8 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
-      if (isDev) console.log("[api] PUT ->", fullUrl, redactLogValue(data));
+      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
+      if (isDev) console.log('[api] PUT ->', fullUrl, redactLogValue(data));
       const res = await api.put(url, data, axiosConfig);
       if (isDev) console.log('[api] PUT response <-', fullUrl, res.status);
       invalidateCache(url.split('?')[0]);
@@ -359,8 +363,8 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => {
     try {
-      const fullUrl = `${api.defaults.baseURL || ""}${url}`;
-      if (isDev) console.log("[api] PATCH ->", fullUrl, redactLogValue(data));
+      const fullUrl = `${api.defaults.baseURL || ''}${url}`;
+      if (isDev) console.log('[api] PATCH ->', fullUrl, redactLogValue(data));
       const res = await api.patch(url, data, axiosConfig);
       if (isDev) console.log('[api] PATCH response <-', fullUrl, res.status);
       invalidateCache(url.split('?')[0]);
