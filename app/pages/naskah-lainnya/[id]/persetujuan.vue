@@ -66,7 +66,10 @@
            agar approver melihat dokumen pendukung keputusan sebelum menyetujui. -->
       <div v-if="sheetDokumen.length" class="px-5 py-4">
         <div class="mb-3 flex items-center gap-2">
-          <UIcon name="i-lucide-file-check-2" class="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          <UIcon
+            name="i-lucide-file-check-2"
+            class="h-4 w-4 text-primary-600 dark:text-primary-400"
+          />
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Dokumen Sheet</h3>
           <span class="text-xs text-gray-400">(Blanko Verbal / Lembar Persetujuan Direksi)</span>
         </div>
@@ -85,11 +88,7 @@
                 PDF · {{ sheetDokumenTipeLabel(doc.tipe) }}
               </p>
             </div>
-            <UButton
-              size="xs"
-              variant="ghost"
-              icon="i-lucide-eye"
-              @click="previewPendukung(doc)"
+            <UButton size="xs" variant="ghost" icon="i-lucide-eye" @click="previewPendukung(doc)"
               >Preview</UButton
             >
           </div>
@@ -108,7 +107,9 @@
           v-if="previousStageNotes.length"
           class="mb-3 space-y-2 rounded-lg border border-gray-200 bg-gray-50/70 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900/40"
         >
-          <p class="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+          <p
+            class="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300"
+          >
             <UIcon name="i-lucide-message-square-quote" class="size-3.5" />
             Catatan dari Tahap Sebelumnya
           </p>
@@ -235,7 +236,7 @@
       </div>
     </div>
 
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showApproveModal"
       variant="approve"
       :title="workspaceCopy.submitTitle"
@@ -246,7 +247,7 @@
       @confirm="setujui"
     />
 
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showRejectModal"
       variant="reject"
       title="Tolak Naskah"
@@ -292,7 +293,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { renderAsync } from 'docx-preview';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import type { ApprovalRow, RevisionFilePair, TahapApproval } from '~/types/naskah-lainnya';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });

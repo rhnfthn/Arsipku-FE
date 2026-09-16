@@ -24,7 +24,10 @@ body,
   --z-dropdown: 50;
   --z-modal-backdrop: 9998;
   --z-modal: 9999;
-  --z-toast: 10000;
+  /* Confirm dialog harus di atas modal apa pun (mis. hapus task dari
+     dalam modal detail) — tapi tetap di bawah toast. */
+  --z-confirm: 10001;
+  --z-toast: 10002;
 
   /* Backdrop */
   --backdrop-sm: rgba(0, 0, 0, 0.32);
