@@ -7,18 +7,18 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "ArsipKu",
-      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+      title: 'ArsipKu',
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
 
-  compatibilityDate: "2025-07-15",
+  compatibilityDate: '2025-07-15',
 
   devtools: {
-    enabled: process.env.NUXT_DEVTOOLS_ENABLED === "true" || false,
+    enabled: process.env.NUXT_DEVTOOLS_ENABLED === 'true' || false,
   },
 
-  modules: ["@nuxt/ui", "@nuxt/icon", "@nuxtjs/i18n", "motion-v/nuxt"],
+  modules: ['@nuxt/ui', '@nuxt/icon', '@nuxtjs/i18n', 'motion-v/nuxt'],
 
   icon: {
     // SPA mode (ssr: false): default provider 'iconify' fetch ke api.iconify.design.
@@ -40,35 +40,25 @@ export default defineNuxtConfig({
   },
 
   build: {
-    transpile: ["@vuepic/vue-datepicker"],
+    transpile: ['@vuepic/vue-datepicker'],
   },
 
   vite: {
     build: {
-      // Entry chunk default ~1.8MB (Vue + Nuxt UI + reka-ui + motion-v + Sentry).
-      // Naikkan limit agar warning hilang; vendor besar sudah di-split via
-      // manualChunks di bawah, sisanya memang harus ada di entry (runtime inti).
-      chunkSizeWarningLimit: 2000,
+      chunkSizeWarningLimit: 900,
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            // Vendor besar → chunk terpisah agar cache browser lebih efisien
-            // (vendor jarang berubah, app code sering berubah).
-            if (id.includes('node_modules')) {
-              if (id.includes('@sentry')) return 'sentry';
-              if (id.includes('motion-v')) return 'motion';
-              if (id.includes('reka-ui')) return 'reka-ui';
-              if (id.includes('vue-i18n') || id.includes('@intlify')) return 'i18n';
-              if (id.includes('lucide-vue-next')) return 'lucide';
-              if (id.includes('@vuepic/vue-datepicker')) return 'datepicker';
-              if (id.includes('@internationalized/date')) return 'internationalized-date';
-              if (id.includes('xlsx')) return 'xlsx';
-              if (id.includes('file-saver')) return 'file-saver';
-              if (id.includes('chart.js')) return 'chart';
-              if (id.includes('zod')) return 'zod';
-              if (id.includes('axios')) return 'axios';
-              if (id.includes('@tinymce/tinymce-vue')) return 'tinymce';
-            }
+          manualChunks: {
+            tinymce: ["@tinymce/tinymce-vue"],
+            lucide: ["lucide-vue-next"],
+            datepicker: ["@vuepic/vue-datepicker"],
+            "internationalized-date": ["@internationalized/date"],
+            xlsx: ["xlsx"],
+            "file-saver": ["file-saver"],
+            chart: ["chart.js/auto"],
+            "reka-ui": ["reka-ui"],
+            zod: ["zod"],
+            axios: ["axios"],
           },
         },
       },
@@ -77,29 +67,35 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || "http://localhost:3011",
-      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || "http://localhost:3011",
-      pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || "http://172.20.16.115:3011",
-      previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || "http://172.20.16.115:3011",
-      onlyofficeUrl: process.env.NUXT_PUBLIC_ONLYOFFICE_URL || "http://localhost:80",
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3011',
+      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || 'http://localhost:3011',
+      authLocalBackendUrl:
+        process.env.NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL || 'http://localhost:3011',
+      authServerBackendUrl:
+        process.env.NUXT_PUBLIC_AUTH_SERVER_BACKEND_URL ||
+        process.env.NUXT_PUBLIC_API_BASE_URL ||
+        'http://localhost:3011',
+      pdfServiceUrl: process.env.NUXT_PUBLIC_PDF_SERVICE_URL || 'http://172.20.16.115:3011',
+      previewFileUrl: process.env.NUXT_PUBLIC_PREVIEW_FILE_URL || 'http://172.20.16.115:3011',
+      onlyofficeUrl: process.env.NUXT_PUBLIC_ONLYOFFICE_URL || 'http://localhost:80',
       // Sentry (frontend error monitoring) — no-op jika tidak di-set
-      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || "",
-      sentryTracesSampleRate: process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || "1.0",
+      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
+      sentryTracesSampleRate: process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || '1.0',
     },
   },
 
   i18n: {
-    defaultLocale: "id",
-    langDir: "locales/",
-    strategy: "no_prefix",
+    defaultLocale: 'id',
+    langDir: 'locales/',
+    strategy: 'no_prefix',
     strictMessage: false,
     locales: [
-      { code: "id", name: "ID", file: "id.json" },
-      { code: "en", name: "EN", file: "en.json" },
+      { code: 'id', name: 'ID', file: 'id.json' },
+      { code: 'en', name: 'EN', file: 'en.json' },
     ],
   },
 
-  css: ["~/assets/css/main.css"],
+  css: ['~/assets/css/main.css'],
 
   typescript: {
     tsConfig: {
@@ -113,22 +109,15 @@ export default defineNuxtConfig({
     fonts: false,
     colorMode: false,
     theme: {
-      colors: [
-        "primary",
-        "secondary",
-        "warning",
-        "error",
-        "success",
-        "neutral",
-      ],
+      colors: ['primary', 'secondary', 'warning', 'error', 'success', 'neutral'],
       transitions: false,
       defaultVariants: {
-        color: "neutral",
-        size: "sm",
+        color: 'neutral',
+        size: 'sm',
       },
     },
     experimental: {
-      componentDetection: ["Modal", "Dropdown", "Popover"],
+      componentDetection: ['Modal', 'Dropdown', 'Popover'],
     },
   },
 });

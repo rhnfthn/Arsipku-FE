@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const tokenCookie = useCookie<string | null>('token', { sameSite: 'lax', path: '/' });
   const roleCookie = useCookie<string | null>('auth_role', { sameSite: 'lax', path: '/' });
 
-  const token = process.client
+  let token = process.client
     ? localStorage.getItem('token') || tokenCookie.value
     : tokenCookie.value;
   const path = to.path;
@@ -33,14 +33,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!token) {
     if (process.server) return navigateTo('/');
 
-    const { getSSORedirectUrl } = useAuth();
-    const ssoUrl = await getSSORedirectUrl();
+    const { getSSORedirectUrl, restoreSession } = useAuth();
+    const restored = await restoreSession();
+    token = localStorage.getItem('token') || tokenCookie.value;
+    if (!restored || !token) {
+      const ssoUrl = await getSSORedirectUrl(to.fullPath);
 
-    if (ssoUrl) {
-      return navigateTo(ssoUrl, { external: true });
+      if (ssoUrl) {
+        return navigateTo(ssoUrl, { external: true });
+      }
+
+      return navigateTo('/', { replace: true });
     }
-
-    return navigateTo('/', { replace: true });
   }
 
   if (process.client && tokenCookie.value !== token) {
@@ -50,10 +54,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { user, getProfile } = useAuth();
   if (!user.value) {
     try {
-      await getProfile();
+      const profile = await getProfile();
+      // getProfile menangani error API secara aman dan mengembalikan null.
+      // Jangan lanjut dengan role kosong (yang dapat mengulang ke /beranda
+      // dan berakhir sebagai halaman 500); anggap token stale sebagai logout.
+      if (!profile && !user.value) {
+        tokenCookie.value = null;
+        roleCookie.value = null;
+        if (process.server) return navigateTo('/');
+        return navigateTo('/', { replace: true });
+      }
     } catch {
       // Jika getProfile gagal (token expired, network error, dll),
       // redirect ke login di client-side.
+      tokenCookie.value = null;
+      roleCookie.value = null;
       if (process.server) return navigateTo('/');
       return navigateTo('/', { replace: true });
     }

@@ -84,8 +84,10 @@
         </div>
 
         <div class="mt-12 flex px-10 text-black">
-          <div class="min-w-[250px] text-center">
+          <!-- Layout tanda tangan mengikuti PDF SDE biasa: kolom kiri 50%. -->
+          <div class="w-1/2 text-center">
             <div class="mb-24 text-[14px]">
+              <div>{{ formattedDate }}</div>
               <div class="font-bold">{{ signaturePosition }}</div>
             </div>
             <div class="text-[14px] font-bold underline">{{ signatureName }}</div>
@@ -109,6 +111,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import type { SdeMasalTemplate, SdeMasalConcept, SdeMasalPenerima } from '~/types/sde-masal';
+import { formatSdeMasalDate } from '~/utils/sde-masal-render';
 
 const props = defineProps<{
   konsep: SdeMasalConcept | null;
@@ -122,10 +125,17 @@ const kontenModel = ref<string>('');
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 const { user, getProfile } = useAuth();
 
+const tempat = computed(() => {
+  const area = user.value?.areaText || '';
+  if (!area || area.toLowerCase().includes('kantor pusat')) {
+    return user.value?.alamatInfo?.kota || 'Tangerang';
+  }
+  return area.replace('Kantor', '').trim() || 'Tangerang';
+});
+
 const formattedDate = computed(() => {
-  if (!props.konsep?.tanggalKonsep) return 'Tangerang, Tanggal surat';
-  const date = new Date(`${props.konsep.tanggalKonsep}T00:00:00`);
-  return `${user.value?.areaText?.replace('Kantor', '') || 'Tangerang'}, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  const date = formatSdeMasalDate(props.konsep?.tanggalKonsep);
+  return date === '[Tanggal Surat]' ? 'Tangerang, Tanggal surat' : `${tempat.value}, ${date}`;
 });
 const signatureParts = computed(() =>
   (props.konsep?.pengirimName || '')
