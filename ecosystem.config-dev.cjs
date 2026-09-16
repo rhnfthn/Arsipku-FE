@@ -11,7 +11,7 @@ module.exports = {
         NODE_ENV: 'development',
         NUXT_PUBLIC_API_BASE_URL: 'http://172.20.16.116:3011',
         NUXT_PUBLIC_SOCKET_URL: 'http://172.20.16.116:3011',
-        NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL: 'http://localhost:3001',
+        NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL: 'http://localhost:3011',
         NUXT_PUBLIC_AUTH_SERVER_BACKEND_URL: 'http://172.20.16.116:3011',
       },
       watch: false,

@@ -49,16 +49,16 @@ export default defineNuxtConfig({
       rollupOptions: {
         output: {
           manualChunks: {
-            tinymce: ["@tinymce/tinymce-vue"],
-            lucide: ["lucide-vue-next"],
-            datepicker: ["@vuepic/vue-datepicker"],
-            "internationalized-date": ["@internationalized/date"],
-            xlsx: ["xlsx"],
-            "file-saver": ["file-saver"],
-            chart: ["chart.js/auto"],
-            "reka-ui": ["reka-ui"],
-            zod: ["zod"],
-            axios: ["axios"],
+            tinymce: ['@tinymce/tinymce-vue'],
+            lucide: ['lucide-vue-next'],
+            datepicker: ['@vuepic/vue-datepicker'],
+            'internationalized-date': ['@internationalized/date'],
+            xlsx: ['xlsx'],
+            'file-saver': ['file-saver'],
+            chart: ['chart.js/auto'],
+            'reka-ui': ['reka-ui'],
+            zod: ['zod'],
+            axios: ['axios'],
           },
         },
       },
@@ -69,8 +69,14 @@ export default defineNuxtConfig({
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3011',
       socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || 'http://localhost:3011',
+      // Fallback auth backend: pakai apiBaseUrl (bukan localhost hardcode)
+      // agar deployment yang hanya set API base tetap dapat callback bridge
+      // yang benar. NUXT_PUBLIC_* di-inline saat build, jadi default ini
+      // menentukan perilaku build tanpa env.
       authLocalBackendUrl:
-        process.env.NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL || 'http://localhost:3011',
+        process.env.NUXT_PUBLIC_AUTH_LOCAL_BACKEND_URL ||
+        process.env.NUXT_PUBLIC_API_BASE_URL ||
+        'http://localhost:3011',
       authServerBackendUrl:
         process.env.NUXT_PUBLIC_AUTH_SERVER_BACKEND_URL ||
         process.env.NUXT_PUBLIC_API_BASE_URL ||
