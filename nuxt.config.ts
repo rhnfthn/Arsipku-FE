@@ -45,20 +45,30 @@ export default defineNuxtConfig({
 
   vite: {
     build: {
-      chunkSizeWarningLimit: 900,
+      // Entry chunk default ~1.8MB (Vue + Nuxt UI + reka-ui + motion-v + Sentry).
+      // Naikkan limit agar warning hilang; vendor besar sudah di-split via
+      // manualChunks di bawah, sisanya memang harus ada di entry (runtime inti).
+      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
-          manualChunks: {
-            tinymce: ['@tinymce/tinymce-vue'],
-            lucide: ['lucide-vue-next'],
-            datepicker: ['@vuepic/vue-datepicker'],
-            'internationalized-date': ['@internationalized/date'],
-            xlsx: ['xlsx'],
-            'file-saver': ['file-saver'],
-            chart: ['chart.js/auto'],
-            'reka-ui': ['reka-ui'],
-            zod: ['zod'],
-            axios: ['axios'],
+          manualChunks(id) {
+            // Vendor besar → chunk terpisah agar cache browser lebih efisien
+            // (vendor jarang berubah, app code sering berubah).
+            if (id.includes('node_modules')) {
+              if (id.includes('@sentry')) return 'sentry';
+              if (id.includes('motion-v')) return 'motion';
+              if (id.includes('reka-ui')) return 'reka-ui';
+              if (id.includes('vue-i18n') || id.includes('@intlify')) return 'i18n';
+              if (id.includes('lucide-vue-next')) return 'lucide';
+              if (id.includes('@vuepic/vue-datepicker')) return 'datepicker';
+              if (id.includes('@internationalized/date')) return 'internationalized-date';
+              if (id.includes('xlsx')) return 'xlsx';
+              if (id.includes('file-saver')) return 'file-saver';
+              if (id.includes('chart.js')) return 'chart';
+              if (id.includes('zod')) return 'zod';
+              if (id.includes('axios')) return 'axios';
+              if (id.includes('@tinymce/tinymce-vue')) return 'tinymce';
+            }
           },
         },
       },
