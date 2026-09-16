@@ -163,12 +163,15 @@ const formatTanggal = (value: string) =>
     <!-- PIC + tipe papan -->
     <div class="mt-4 flex items-center justify-between gap-2">
       <div v-if="board.owner" class="flex min-w-0 items-center gap-1.5">
-        <span
-          class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+        <ProfileAvatar
+          size="2xs"
+          :persnum="board.owner.persnum"
+          :alt="board.owner.nama"
+          avatar-class="shrink-0 bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
           :title="`${board.owner.nama}${board.owner.positionText ? ` — ${board.owner.positionText}` : ''}`"
         >
           {{ initials(board.owner.nama) }}
-        </span>
+        </ProfileAvatar>
         <span class="min-w-0 truncate text-[11px] text-gray-500 dark:text-gray-400">
           {{ board.owner.nama }}
         </span>
