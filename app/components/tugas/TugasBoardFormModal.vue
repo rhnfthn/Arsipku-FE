@@ -24,7 +24,13 @@ const props = defineProps<{
   board: TugasBoardSummary | null; // null = mode create
   saving: boolean;
   /** Anggota existing saat edit papan bersama (info saja, tidak diubah di sini). */
-  existingMembers?: { id: string; nama: string; positionText?: string | null; role: string }[];
+  existingMembers?: {
+    id: string;
+    persnum?: number;
+    nama: string;
+    positionText?: string | null;
+    role: string;
+  }[];
 }>();
 
 const emit = defineEmits<{
@@ -341,11 +347,14 @@ const initials = (nama: string) => {
                 :key="member.positionId"
                 class="inline-flex items-center gap-1.5 rounded-full bg-primary-50 py-1 pl-1.5 pr-2 text-xs font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
               >
-                <span
-                  class="flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[9px] font-bold text-primary-700 dark:bg-primary-800 dark:text-primary-200"
+                <ProfileAvatar
+                  size="2xs"
+                  :persnum="member.persnum"
+                  :alt="member.nama"
+                  avatar-class="bg-primary-100 text-[9px] font-bold text-primary-700 dark:bg-primary-800 dark:text-primary-200"
                 >
                   {{ initials(member.nama) }}
-                </span>
+                </ProfileAvatar>
                 {{ member.nama }}
                 <button
                   type="button"
@@ -395,13 +404,23 @@ const initials = (nama: string) => {
                 class="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-primary-300 hover:bg-primary-50/50 dark:border-gray-600 dark:hover:bg-gray-700/50"
                 @click="addMember(candidate)"
               >
-                <div class="min-w-0">
+                <div class="flex min-w-0 items-center gap-2">
+                  <ProfileAvatar
+                    size="xs"
+                    :persnum="candidate.persnum"
+                    :alt="candidate.nama"
+                    avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                  >
+                    {{ initials(candidate.nama) }}
+                  </ProfileAvatar>
+                  <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
                     {{ candidate.nama }}
                   </p>
                   <p class="truncate text-[11px] text-gray-500 dark:text-gray-400">
                     {{ candidate.positionText }}
                   </p>
+                  </div>
                 </div>
                 <UserPlus class="h-4 w-4 shrink-0 text-primary-500" />
               </button>
@@ -426,11 +445,14 @@ const initials = (nama: string) => {
                   :key="member.id"
                   class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 py-1 pl-1.5 pr-2 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                 >
-                  <span
-                    class="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[9px] font-bold text-gray-600 dark:bg-gray-600 dark:text-gray-200"
+                  <ProfileAvatar
+                    size="2xs"
+                    :persnum="member.persnum"
+                    :alt="member.nama"
+                    avatar-class="bg-gray-200 text-[9px] font-bold text-gray-600 dark:bg-gray-600 dark:text-gray-200"
                   >
                     {{ initials(member.nama) }}
-                  </span>
+                  </ProfileAvatar>
                   {{ member.nama }}
                 </span>
               </div>
