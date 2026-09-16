@@ -44,6 +44,7 @@ const naskahDinasVerifikatorWaitingCount = ref<number>(0);
 const arsipPersetujuanWaitingCount = ref<number>(0);
 const naskahLainnyaPersetujuanWaitingCount = ref<number>(0);
 const naskahLainnyaLegalDraftingWaitingCount = ref<number>(0);
+const tugasAssignedWaitingCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
 const correspondenceRoutingUpdate = ref<{
@@ -66,9 +67,36 @@ const flagUpdate = ref<{
   note_text?: string | null;
 } | null>(null);
 
+// Tugas board events (Phase 6) — payload ringkas dari server.
+const tugasBoardUpdate = ref<{
+  boardId: string;
+  revision: number;
+  action: string;
+  taskId?: string | null;
+  occurredAt: string;
+} | null>(null);
+
+const tugasTaskMoved = ref<{
+  boardId: string;
+  taskId: string;
+  from: string;
+  to: string;
+  urutan: number;
+  revision: number;
+  occurredAt: string;
+} | null>(null);
+const tugasTaskUpdate = ref<{
+  boardId: string;
+  taskId: string;
+  revision: number;
+  action: string;
+  occurredAt: string;
+} | null>(null);
+
 let socket: Socket | null = null;
 let connectPromise: Promise<void> | null = null;
 const naskahLainnyaSubscriptions = new Map<string, number>();
+const tugasBoardSubscriptions = new Map<string, number>();
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -129,6 +157,10 @@ const connectSocket = async (): Promise<void> => {
       socket?.emit('realtime:subscribe');
       for (const naskahId of naskahLainnyaSubscriptions.keys()) {
         socket?.emit('naskah-lainnya:subscribe', { naskahId });
+      }
+      // Resubscribe seluruh board Tugas aktif setelah reconnect/token refresh.
+      for (const boardId of tugasBoardSubscriptions.keys()) {
+        socket?.emit('tugas:subscribe', { boardId });
       }
       done();
     });
@@ -199,6 +231,9 @@ const connectSocket = async (): Promise<void> => {
         naskahLainnyaLegalDraftingWaitingCount.value = Number(
           payload.naskahLainnyaLegalDraftingWaitingCount
         );
+      }
+      if (payload.tugasAssignedWaitingCount != null) {
+        tugasAssignedWaitingCount.value = Number(payload.tugasAssignedWaitingCount);
       }
       if (payload.nomorCounts && typeof payload.nomorCounts === 'object') {
         nomorCounts.value = { ...nomorCounts.value, ...payload.nomorCounts };
@@ -275,6 +310,52 @@ const connectSocket = async (): Promise<void> => {
       if (payload?.mutationId) correspondenceRoutingUpdate.value = payload;
     });
 
+    // ── Tugas events (Phase 6) ──
+
+    socket.on('tugas:assigned-count', (payload: any) => {
+      if (payload && typeof payload.count === 'number') {
+        tugasAssignedWaitingCount.value = payload.count;
+      }
+    });
+
+    socket.on('tugas:board-updated', (payload: any) => {
+      if (payload?.boardId && typeof payload.revision === 'number') {
+        tugasBoardUpdate.value = {
+          boardId: String(payload.boardId),
+          revision: Number(payload.revision),
+          action: String(payload.action ?? ''),
+          taskId: payload.taskId ?? null,
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
+    socket.on('tugas:task-moved', (payload: any) => {
+      if (payload?.boardId && payload?.taskId) {
+        tugasTaskMoved.value = {
+          boardId: String(payload.boardId),
+          taskId: String(payload.taskId),
+          from: String(payload.from ?? ''),
+          to: String(payload.to ?? ''),
+          urutan: Number(payload.urutan ?? 0),
+          revision: Number(payload.revision ?? 0),
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
+    socket.on('tugas:task-updated', (payload: any) => {
+      if (payload?.boardId && payload?.taskId && typeof payload.revision === 'number') {
+        tugasTaskUpdate.value = {
+          boardId: String(payload.boardId),
+          taskId: String(payload.taskId),
+          revision: Number(payload.revision),
+          action: String(payload.action ?? ''),
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
     socket.on('realtime:connected', () => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
@@ -315,6 +396,7 @@ const disconnectSocket = () => {
   isConnected.value = false;
   connectPromise = null;
   naskahLainnyaSubscriptions.clear();
+  tugasBoardSubscriptions.clear();
 };
 
 const subscribeNaskahLainnya = (naskahId: string) => {
@@ -338,6 +420,36 @@ const unsubscribeNaskahLainnya = (naskahId: string) => {
   naskahLainnyaSubscriptions.delete(id);
   if (socket?.connected) {
     socket.emit('naskah-lainnya:unsubscribe', { naskahId: id });
+  }
+};
+
+// ──────────────────────────────────────────────
+// Tugas board subscriptions (Phase 6)
+// Reference-count agar mount ganda (mis. modal + halaman) tidak
+// unsubscribe terlalu dini; resubscribe otomatis saat reconnect.
+// ──────────────────────────────────────────────
+
+const subscribeTugasBoard = (boardId: string) => {
+  const id = String(boardId ?? '').trim();
+  if (!id) return;
+  const count = tugasBoardSubscriptions.get(id) ?? 0;
+  tugasBoardSubscriptions.set(id, count + 1);
+  if (count === 0 && socket?.connected) {
+    socket.emit('tugas:subscribe', { boardId: id });
+  }
+};
+
+const unsubscribeTugasBoard = (boardId: string) => {
+  const id = String(boardId ?? '').trim();
+  if (!id) return;
+  const count = tugasBoardSubscriptions.get(id) ?? 0;
+  if (count > 1) {
+    tugasBoardSubscriptions.set(id, count - 1);
+    return;
+  }
+  tugasBoardSubscriptions.delete(id);
+  if (socket?.connected) {
+    socket.emit('tugas:unsubscribe', { boardId: id });
   }
 };
 
@@ -373,6 +485,10 @@ export function useRealtimeSocket() {
     arsipPersetujuanWaitingCount,
     naskahLainnyaPersetujuanWaitingCount,
     naskahLainnyaLegalDraftingWaitingCount,
+    tugasAssignedWaitingCount,
+    tugasBoardUpdate,
+    tugasTaskMoved,
+    tugasTaskUpdate,
     flagUpdate,
     correspondenceRoutingUpdate,
     naskahLainnyaUpdate,
@@ -387,5 +503,7 @@ export function useRealtimeSocket() {
     disconnectSocket,
     subscribeNaskahLainnya,
     unsubscribeNaskahLainnya,
+    subscribeTugasBoard,
+    unsubscribeTugasBoard,
   };
 }
