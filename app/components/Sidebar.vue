@@ -1017,6 +1017,30 @@ const faqMenuAdmin = computed(() => [
   },
 ]);
 
+// ─── Tugas (section tersendiri, di bawah Utilitas) ────────────────────────────
+
+const tugasMenu = computed(() => [
+  {
+    label: t('tugas_papan', 'Papan'),
+    to: '/tugas',
+    icon: 'i-lucide-kanban',
+    permission: { resource: 'tugas', action: 'read' },
+    // exact: /tugas adalah section-index — tanpa ini, prefix-match membuat
+    // menu Papan ikut aktif saat user membuka /tugas/saya.
+    exact: true,
+  },
+  {
+    label: t('tugas_saya', 'Tugas Saya'),
+    to: '/tugas/saya',
+    icon: 'i-lucide-list-todo',
+    permission: { resource: 'tugas', action: 'read' },
+    // Badge: jumlah task aktif yang ditugaskan ke posisi ini (belum done).
+    // Realtime via socket (summary + tugas:assigned-count), konsisten dengan
+    // dot merah di ikon app Tugas.
+    badge: rtTugasAssignedCount.value > 0 ? rtTugasAssignedCount.value : null,
+  },
+]);
+
 // ─── Admin menus ──────────────────────────────────────────────────────────────
 
 const adminMenuUtama = computed(() => [
@@ -1965,6 +1989,11 @@ const hasUtilitasNotification = computed(() => {
   );
 });
 
+// Tugas: badge realtime dari summary socket (task aktif yang ditugaskan
+// ke posisi ini dan belum done). Phase 6 — tanpa polling baru.
+const { tugasAssignedWaitingCount: rtTugasAssignedCount } = useRealtimeSocket();
+const hasTugasNotification = computed(() => rtTugasAssignedCount.value > 0);
+
 const filterMenuByPermission = (items) => {
   // Menu RBAC management selalu tampil untuk superadmin (tidak difilter)
   // Menu lain difilter berdasarkan permission, termasuk superadmin
@@ -2115,6 +2144,13 @@ const apps = computed(() => {
         hasNotification: hasUtilitasNotification.value, // ← UBAH dari false
       },
       {
+        id: 'admin-tugas',
+        label: t('tugas', 'Tugas'),
+        icon: 'i-lucide-square-kanban',
+        menus: filterMenuByPermission(tugasMenu.value),
+        hasNotification: hasTugasNotification.value,
+      },
+      {
         id: 'admin-administrasi',
         label: t('administrasi'),
         // FIX: Was 'i-lucide-settings' in original. This is correct per img 1/2.
@@ -2166,6 +2202,13 @@ const apps = computed(() => {
       icon: 'i-heroicons-squares-plus',
       menus: filterMenuByPermission(userMenuUtilitas.value),
       hasNotification: hasUtilitasNotification.value,
+    },
+    {
+      id: 'user-tugas',
+      label: t('tugas', 'Tugas'),
+      icon: 'i-lucide-square-kanban',
+      menus: filterMenuByPermission(tugasMenu.value),
+      hasNotification: hasTugasNotification.value,
     },
     {
       id: 'user-faq',

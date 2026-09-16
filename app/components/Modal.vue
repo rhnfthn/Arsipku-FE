@@ -114,7 +114,7 @@ const props = defineProps({
 
   /**
    * size:
-   * - sm | md | lg | xl | full
+   * - sm | md | lg | xl | approval | full
    * - atau custom tailwind class (ex: "w-[900px]")
    */
   size: {
@@ -145,6 +145,8 @@ const modalSizeClass = computed(() => {
       return 'w-[570px] max-h-[90vh]';
     case 'xl':
       return 'w-[700px] max-w-[90vw] max-h-[90vh]';
+    case 'approval':
+      return 'w-[calc(100vw-2rem)] max-w-5xl max-h-[calc(100dvh-2rem)] sm:w-[92vw] sm:max-h-[92dvh]';
     case 'full':
       return 'w-[95vw] max-w-none max-h-[90vh]';
     default:

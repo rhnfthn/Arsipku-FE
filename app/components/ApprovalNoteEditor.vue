@@ -1,8 +1,8 @@
 <template>
   <Teleport to="body">
-    <Modal v-model="isOpen" :hideDefaultFooter="true" size="full">
+    <Modal v-model="isOpen" :hideDefaultFooter="true" size="approval">
       <template #title>
-        <div class="ml-5 mt-5 mb-2 flex items-center gap-2.5">
+        <div class="mt-4 mb-2 ml-2 flex min-w-0 items-center gap-2.5 sm:mt-5 sm:ml-5">
           <span
             class="flex size-9 shrink-0 items-center justify-center rounded-lg"
             :class="
@@ -23,7 +23,7 @@
           </span>
           <Heading
             variant="heading9b"
-            class="text-sm font-bold dark:text-white"
+            class="min-w-0 break-words pr-2 text-sm font-bold dark:text-white"
             :class="variant === 'reject' ? 'text-red-600 dark:text-red-400' : 'text-gray-900'"
           >
             {{ title }}
@@ -31,8 +31,8 @@
         </div>
       </template>
 
-      <div class="mx-auto w-full max-w-6xl space-y-3 px-6 pb-6">
-        <p class="text-sm text-gray-700 dark:text-gray-300">
+      <div class="mx-auto w-full min-w-0 space-y-3 px-0 pb-3 sm:px-3 sm:pb-5 lg:px-5">
+        <p class="break-words text-sm text-gray-700 dark:text-gray-300">
           {{ description }}
         </p>
 
@@ -48,32 +48,31 @@
         </div>
 
         <!-- Catatan / alasan dengan TinyMCE editor -->
-        <div>
+        <div class="approval-note-editor min-w-0">
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             {{ noteLabel }}
             <span v-if="requireNote" class="text-red-500">*</span>
             <span v-else class="text-xs font-normal text-gray-400">(opsional)</span>
           </label>
-          <TinymceEditorAsync
-            v-model="note"
-            api-key="no-api-key"
-            :init="editorInit"
-          />
+          <TinymceEditorAsync v-model="note" api-key="no-api-key" :init="editorInit" />
           <p v-if="errors.note" class="mt-1 text-xs text-red-500">{{ errors.note }}</p>
           <p v-else class="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            Mendukung format teks kaya: cetak tebal/miring, daftar bernomor (pasal-pasal), tabel, dan batang tubuh.
+            Mendukung format teks kaya: cetak tebal/miring, daftar bernomor (pasal-pasal), tabel,
+            dan batang tubuh.
           </p>
         </div>
 
-        <div class="flex gap-3 pt-1">
+        <div
+          class="sticky bottom-0 z-10 -mx-1 flex flex-col-reverse gap-2 border-t border-gray-200 bg-white/95 px-1 pt-3 pb-1 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/95 sm:flex-row sm:gap-3"
+        >
           <button
-            class="flex-1 px-6 py-2 text-sm font-medium border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-900 dark:text-white"
+            class="w-full flex-1 rounded-lg border border-gray-400 px-4 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-100 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 sm:px-6"
             @click="handleCancel"
           >
             Batal
           </button>
           <button
-            class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50"
+            class="w-full flex-1 rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50 sm:px-6"
             :class="
               variant === 'reject'
                 ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800'
@@ -147,16 +146,15 @@ const errors = ref<Record<string, string>>({});
 const editorInit = {
   base_url: '/tinymce',
   suffix: '.min',
-  min_height: 360,
-  max_height: 640,
+  min_height: 240,
+  max_height: 520,
   menubar: false,
   promotion: false,
   branding: false,
   statusbar: false,
   placeholder: props.notePlaceholder,
   plugins: 'lists table',
-  toolbar:
-    'bold italic underline strikethrough | bullist numlist | table | removeformat',
+  toolbar: 'bold italic underline strikethrough | bullist numlist | table | removeformat',
   toolbar_mode: 'sliding',
   invalid_elements: 'script,iframe,object,embed,form,input,style,link,meta',
   // Placeholder TinyMCE default left:1px — sejajarkan dengan padding body (12px)
@@ -191,11 +189,7 @@ const validate = (): boolean => {
   const e: Record<string, string> = {};
   const value = plainText(note.value);
   if (props.requireNote && !value) e.note = 'Catatan wajib diisi';
-  if (
-    (props.requireNote || value) &&
-    props.minNoteLength > 0 &&
-    value.length < props.minNoteLength
-  )
+  if ((props.requireNote || value) && props.minNoteLength > 0 && value.length < props.minNoteLength)
     e.note = `Minimal ${props.minNoteLength} karakter`;
   errors.value = e;
   return Object.keys(e).length === 0;
@@ -211,3 +205,22 @@ const handleCancel = () => {
   isOpen.value = false;
 };
 </script>
+
+<style scoped>
+.approval-note-editor :deep(.tox-tinymce) {
+  height: clamp(240px, 48dvh, 520px) !important;
+  max-width: 100%;
+}
+
+.approval-note-editor :deep(.tox-editor-header),
+.approval-note-editor :deep(.tox-toolbar-overlord),
+.approval-note-editor :deep(.tox-toolbar__primary) {
+  max-width: 100%;
+}
+
+@media (max-height: 640px) {
+  .approval-note-editor :deep(.tox-tinymce) {
+    height: 240px !important;
+  }
+}
+</style>

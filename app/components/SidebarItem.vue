@@ -159,6 +159,12 @@ const isActive = computed(() => {
   if (!props.item) return false;
 
   if (props.item.to && !hasChildren.value) {
+    // `exact` pada leaf (menu level atas tanpa children): batasi ke match persis
+    // (+ activePaths) agar menu section-index (mis. Papan /tugas) tidak ikut
+    // aktif saat user berada di route sibling (/tugas/saya) di bawah prefix sama.
+    if (props.item.exact) {
+      return isActiveChild(props.item.to, props.item.activePaths, true);
+    }
     return isActivePath(props.item.to);
   }
 
