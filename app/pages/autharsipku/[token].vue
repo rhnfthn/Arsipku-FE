@@ -47,7 +47,7 @@
 <script setup>
 import { useRoute, navigateTo } from '#imports'
 
-const { verifyToken, getProfile, setUser } = useAuth()
+const { verifyToken, getProfile, setUser, applyLoginDefaults } = useAuth()
 const route = useRoute()
 const tokenCookie = useCookie('token', { sameSite: 'lax', path: '/' })
 const sessionCookie = useCookie('sessionId', { sameSite: 'lax', path: '/' })
@@ -93,6 +93,8 @@ onMounted(async () => {
       if (!profile && result?.data?.user) {
         setUser(result.data.user)
       }
+
+      applyLoginDefaults()
 
       const resolvedRole = profile?.role || role
 

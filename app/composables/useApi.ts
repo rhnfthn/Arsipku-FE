@@ -1,7 +1,20 @@
-  import axios from "axios";
-import type { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios from 'axios';
+import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 const isDev = process.dev;
+
+const redactLogValue = (value: unknown): unknown => {
+  if (value === null || value === undefined || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(redactLogValue);
+
+  const sensitiveKey = /token|authorization|password|secret|verifier|code/i;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+      key,
+      sensitiveKey.test(key) ? '[REDACTED]' : redactLogValue(entry),
+    ])
+  );
+};
 
 interface CacheEntry {
   data: any;
@@ -12,7 +25,7 @@ const cache = new Map<string, CacheEntry>();
 const MAX_CACHE_SIZE = 100;
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 menit
 
-let lastAuthCacheScope = "anonymous";
+let lastAuthCacheScope = 'anonymous';
 let refreshTokenRequest: Promise<string | null> | null = null;
 let handledExpiredToken: string | null = null;
 
@@ -48,7 +61,7 @@ const normalizeApiUrl = (url: string): string => {
     // Keep original URL if parsing fails.
   }
 
-  return url.startsWith("/") ? url : `/${url}`;
+  return url.startsWith('/') ? url : `/${url}`;
 };
 
 const shouldBypassCache = (url: string, options: ApiGetOptions = {}): boolean => {
@@ -67,7 +80,7 @@ const hashString = (value: string): string => {
 };
 
 const getHeaderValue = (
-  headers: AxiosRequestConfig["headers"] | undefined,
+  headers: AxiosRequestConfig['headers'] | undefined,
   name: string
 ): string | undefined => {
   const rawHeaders = headers as any;
@@ -76,11 +89,11 @@ const getHeaderValue = (
 };
 
 const getAuthCacheScope = (config?: AxiosRequestConfig): string => {
-  const authHeader = getHeaderValue(config?.headers, "Authorization");
-  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
-  const storedToken = process.client ? localStorage.getItem("token") : null;
+  const authHeader = getHeaderValue(config?.headers, 'Authorization');
+  const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  const storedToken = process.client ? localStorage.getItem('token') : null;
   const token = headerToken || storedToken;
-  const scope = token ? `auth:${hashString(token)}` : "anonymous";
+  const scope = token ? `auth:${hashString(token)}` : 'anonymous';
 
   if (scope !== lastAuthCacheScope) {
     cache.clear();
@@ -93,9 +106,9 @@ const getAuthCacheScope = (config?: AxiosRequestConfig): string => {
 const buildCacheKey = (
   url: string,
   config?: AxiosRequestConfig,
-  authScope = "anonymous"
+  authScope = 'anonymous'
 ): string => {
-  const params = config?.params ? JSON.stringify(config.params) : "";
+  const params = config?.params ? JSON.stringify(config.params) : '';
   return `${authScope}:${url}?${params}`;
 };
 
@@ -118,8 +131,8 @@ const setCached = (key: string, data: any, ttlMs = DEFAULT_TTL_MS): void => {
 };
 
 const buildInvalidationPrefixes = (url: string): string[] => {
-  const normalizedUrl = normalizeApiUrl(url).split("?")[0] || "/";
-  const segments = normalizedUrl.split("/").filter(Boolean);
+  const normalizedUrl = normalizeApiUrl(url).split('?')[0] || '/';
+  const segments = normalizedUrl.split('/').filter(Boolean);
   const prefixes = new Set<string>([normalizedUrl]);
 
   if (segments.length > 0) {
@@ -143,55 +156,61 @@ const invalidateCache = (urlPrefix: string): void => {
 export const useApi = () => {
   const config = useRuntimeConfig();
   const toast = useToast();
-  const tokenCookie = useCookie<string | null>("token", { sameSite: "lax", path: "/" });
-  const sessionCookie = useCookie<string | null>("sessionId", { sameSite: "lax", path: "/" });
-  const roleCookie = useCookie<string | null>("auth_role", { sameSite: "lax", path: "/" });
-  const user = useState<any>("user", () => null);
+  const tokenCookie = useCookie<string | null>('token', { sameSite: 'lax', path: '/' });
+  const sessionCookie = useCookie<string | null>('sessionId', { sameSite: 'lax', path: '/' });
+  const roleCookie = useCookie<string | null>('auth_role', { sameSite: 'lax', path: '/' });
+  const user = useState<any>('user', () => null);
   const api = axios.create({
     baseURL: config.public.apiBaseUrl,
+    withCredentials: true,
   });
 
   const clearExpiredSession = async (expiredToken: string): Promise<void> => {
     if (!process.client || handledExpiredToken === expiredToken) return;
     handledExpiredToken = expiredToken;
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("sessionId");
-    localStorage.removeItem("arsipku_active_profile");
+    localStorage.removeItem('token');
+    localStorage.removeItem('sessionId');
+    localStorage.removeItem('arsipku_active_profile');
     tokenCookie.value = null;
     sessionCookie.value = null;
     roleCookie.value = null;
     user.value = null;
     cache.clear();
-    lastAuthCacheScope = "anonymous";
+    lastAuthCacheScope = 'anonymous';
 
     toast.add({
-      title: "Sesi Anda telah berakhir",
-      description: "Silakan login kembali untuk melanjutkan.",
-      color: "warning",
-      icon: "i-lucide-log-in",
+      title: 'Sesi Anda telah berakhir',
+      description: 'Silakan login kembali untuk melanjutkan.',
+      color: 'warning',
+      icon: 'i-lucide-log-in',
       duration: 6000,
     });
-    await navigateTo("/", { replace: true });
+    await navigateTo('/', { replace: true });
   };
 
   const refreshAccessToken = (): Promise<string | null> => {
     if (!process.client) return Promise.resolve(null);
     if (refreshTokenRequest) return refreshTokenRequest;
 
-    const sessionId = localStorage.getItem("sessionId");
+    const sessionId = localStorage.getItem('sessionId');
     if (!sessionId) return Promise.resolve(null);
+    const currentToken = localStorage.getItem('token');
 
     refreshTokenRequest = axios
       .post(
-        "/auth/refresh-token",
-        { sessionId },
-        { baseURL: String(config.public.apiBaseUrl || "") }
+        '/auth/refresh',
+        {},
+        {
+          baseURL: String(config.public.apiBaseUrl || ''),
+          withCredentials: true,
+          headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
+        }
       )
       .then((response) => {
         const newToken = response.data?.data?.accessToken;
         if (!newToken) return null;
-        localStorage.setItem("token", newToken);
+        localStorage.setItem('token', newToken);
         tokenCookie.value = newToken;
         handledExpiredToken = null;
         cache.clear();
@@ -206,15 +225,15 @@ export const useApi = () => {
   };
 
   api.interceptors.request.use((config) => {
-    const token = process.client ? localStorage.getItem("token") : null;
+    const token = process.client ? localStorage.getItem('token') : null;
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     // JIKA FormData → JANGAN SET CONTENT-TYPE
-    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
-      delete config.headers?.["Content-Type"];
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers?.['Content-Type'];
     }
 
     return config;
@@ -227,11 +246,12 @@ export const useApi = () => {
       const originalConfig = error?.config as
         | (AxiosRequestConfig & { _authRetry?: boolean })
         | undefined;
-      const requestUrl = String(originalConfig?.url ?? "");
-      const currentToken = process.client ? localStorage.getItem("token") : null;
-      const isRefreshRequest = requestUrl.includes("/auth/refresh-token");
-      const requestAuthHeader = getHeaderValue(originalConfig?.headers, "Authorization");
-      const requestToken = requestAuthHeader?.startsWith("Bearer ")
+      const requestUrl = String(originalConfig?.url ?? '');
+      const currentToken = process.client ? localStorage.getItem('token') : null;
+      const isRefreshRequest =
+        requestUrl.includes('/auth/refresh-token') || requestUrl.includes('/auth/refresh');
+      const requestAuthHeader = getHeaderValue(originalConfig?.headers, 'Authorization');
+      const requestToken = requestAuthHeader?.startsWith('Bearer ')
         ? requestAuthHeader.slice(7)
         : requestAuthHeader;
 
@@ -267,7 +287,7 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {},
     options: ApiGetOptions = {}
   ): Promise<T> => {
-    const baseUrl = api.defaults.baseURL || "";
+    const baseUrl = api.defaults.baseURL || '';
     const fullUrl = `${baseUrl}${url}`;
     const cacheKey = buildCacheKey(url, axiosConfig, getAuthCacheScope(axiosConfig));
     const skipCache = shouldBypassCache(url, options);
@@ -275,19 +295,19 @@ export const useApi = () => {
     if (!skipCache) {
       const cached = getCached<T>(cacheKey);
       if (cached !== undefined) {
-        if (isDev) console.log("[api] GET cache hit ->", fullUrl);
+        if (isDev) console.log('[api] GET cache hit ->', fullUrl);
         return cached;
       }
     }
 
     try {
-      if (isDev) console.log("[api] GET ->", fullUrl, axiosConfig);
+      if (isDev) console.log("[api] GET ->", fullUrl, redactLogValue(axiosConfig));
       const res = await api.get(url, axiosConfig);
-      if (isDev) console.log("[api] GET response <-", fullUrl, res.status);
+      if (isDev) console.log('[api] GET response <-', fullUrl, res.status);
       if (!skipCache) setCached(cacheKey, res.data, options.ttlMs);
       return res.data;
     } catch (err) {
-      if (isDev) console.error("[api] GET error ->", url, err);
+      if (isDev) console.error('[api] GET error ->', url, err);
       throw err;
     }
   };
@@ -297,51 +317,63 @@ export const useApi = () => {
     axiosConfig: AxiosRequestConfig = {}
   ): Promise<T> => apiGet<T>(url, axiosConfig, { skipCache: true });
 
-  const apiPost = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
+  const apiPost = async <T = any>(
+    url: string,
+    data?: any,
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
-      if (isDev) console.log("[api] POST ->", fullUrl, data);
+      if (isDev) console.log("[api] POST ->", fullUrl, redactLogValue(data));
       const res = await api.post(url, data, axiosConfig);
-      if (isDev) console.log("[api] POST response <-", fullUrl, res.status);
-      invalidateCache(url.split("?")[0]);
+      if (isDev) console.log('[api] POST response <-', fullUrl, res.status);
+      invalidateCache(url.split('?')[0]);
       return res.data;
     } catch (err) {
-      if (isDev) console.error("[api] POST error ->", url, err);
+      if (isDev) console.error('[api] POST error ->', url, err);
       throw err;
     }
   };
 
-  const apiPut = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
+  const apiPut = async <T = any>(
+    url: string,
+    data?: any,
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
-      if (isDev) console.log("[api] PUT ->", fullUrl, data);
+      if (isDev) console.log("[api] PUT ->", fullUrl, redactLogValue(data));
       const res = await api.put(url, data, axiosConfig);
-      if (isDev) console.log("[api] PUT response <-", fullUrl, res.status);
-      invalidateCache(url.split("?")[0]);
+      if (isDev) console.log('[api] PUT response <-', fullUrl, res.status);
+      invalidateCache(url.split('?')[0]);
       return res.data;
     } catch (err) {
-      if (isDev) console.error("[api] PUT error ->", url, err);
+      if (isDev) console.error('[api] PUT error ->', url, err);
       throw err;
     }
   };
 
-  const apiPatch = async <T = any>(url: string, data?: any, axiosConfig: AxiosRequestConfig = {}): Promise<T> => {
+  const apiPatch = async <T = any>(
+    url: string,
+    data?: any,
+    axiosConfig: AxiosRequestConfig = {}
+  ): Promise<T> => {
     try {
       const fullUrl = `${api.defaults.baseURL || ""}${url}`;
-      if (isDev) console.log("[api] PATCH ->", fullUrl, data);
+      if (isDev) console.log("[api] PATCH ->", fullUrl, redactLogValue(data));
       const res = await api.patch(url, data, axiosConfig);
-      if (isDev) console.log("[api] PATCH response <-", fullUrl, res.status);
-      invalidateCache(url.split("?")[0]);
+      if (isDev) console.log('[api] PATCH response <-', fullUrl, res.status);
+      invalidateCache(url.split('?')[0]);
       return res.data as T;
     } catch (err) {
-      if (isDev) console.error("[api] PATCH error ->", url, err);
+      if (isDev) console.error('[api] PATCH error ->', url, err);
       throw err;
     }
   };
 
   const apiDelete = async <T = any>(url: string): Promise<T> => {
     const res = await api.delete(url);
-    invalidateCache(url.split("?")[0]);
+    invalidateCache(url.split('?')[0]);
     return res.data;
   };
 

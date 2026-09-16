@@ -1866,7 +1866,6 @@ const confirmLogout = async () => {
   await logout();
   isLoggingOut.value = false;
   showLogoutPopup.value = false;
-  navigateTo('/');
 };
 
 // --- SEARCH ---
