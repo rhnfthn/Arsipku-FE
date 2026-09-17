@@ -96,6 +96,7 @@
             Reset
           </button>
           <button
+            v-if="canExport"
             @click="onExport"
             :disabled="exporting"
             class="h-10 px-4 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 dark:hover:bg-[#457fb6]/20 transition-colors whitespace-nowrap disabled:opacity-50"
@@ -211,13 +212,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { computed, ref, reactive, onMounted } from 'vue';
 import { useAudit } from '~/composables/useAudit';
 import type { AuditSummary } from '~/types/audit';
 
 definePageMeta({ middleware: ['auth', 'audit-admin'] });
 
 const { fetchSummary, exportReport, summary } = useAudit();
+const { hasPermission } = useAuth();
+const canExport = computed(() => hasPermission('audit', 'export'));
 
 const items = [
   { label: 'Beranda', to: '/' },

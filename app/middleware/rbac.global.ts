@@ -13,7 +13,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // Cek page permission — jika tidak ada akses, redirect ke /access-denied
   const { canAccessPage } = useFeatureAccess();
-  if (!canAccessPage(to.path)) {
+  if (!canAccessPage(to.path, to.query)) {
     return navigateTo(`/access-denied?from=${encodeURIComponent(to.fullPath)}`);
   }
 });
