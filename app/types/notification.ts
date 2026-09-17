@@ -24,7 +24,8 @@ export type NotificationType =
   | 'TUGAS_MEMBER_ADDED'
   | 'TUGAS_ASSIGNED'
   | 'TUGAS_DONE'
-  | 'TUGAS_DUE';
+  | 'TUGAS_DUE'
+  | 'TUGAS_TAGGED';
 
 export type NotificationAction =
   | 'OPEN_INBOX_DETAIL'
@@ -42,7 +43,8 @@ export type NotificationAction =
   | 'OPEN_NASKAH_LAINNYA_LEGAL_DRAFTING'
   | 'OPEN_DELEGASI'
   | 'OPEN_SYSTEM_ANNOUNCEMENT'
-  | 'OPEN_TUGAS_TASK';
+  | 'OPEN_TUGAS_TASK'
+  | 'OPEN_TUGAS_FORUM';
 
 export interface NotificationData {
   action?: NotificationAction | string;
