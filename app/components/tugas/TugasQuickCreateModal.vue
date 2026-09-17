@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X, FileText, KanbanSquare } from 'lucide-vue-next';
+import { FileText, KanbanSquare } from 'lucide-vue-next';
 import type { TugasReferenceType, TugasTaskPriority } from '~/types/tugas';
 
 /**
@@ -32,9 +32,9 @@ const { boards, boardDetails, fetchBoards, fetchBoardDetail, createTask, mapTuga
 const form = ref({
   boardId: '',
   judul: '',
-  prioritas: '' as TugasTaskPriority | '',
+  prioritas: null as TugasTaskPriority | null,
   tenggat: '',
-  assigneeMemberId: '',
+  assigneeMemberId: null as string | null,
 });
 
 const isSaving = ref(false);
@@ -42,11 +42,51 @@ const isLoadingBoards = ref(false);
 
 const canCreateTask = computed(() => hasPermission('tugas', 'create-task'));
 const boardMembers = computed(() => boardDetails.value[form.value.boardId]?.members ?? []);
+const NO_PRIORITY = '__NO_PRIORITY__';
+const NO_PIC = '__NO_PIC__';
+
+const boardOptions = computed(() =>
+  boards.value.map((board) => ({
+    label: board.nama,
+    value: board.id,
+    icon: 'i-lucide-kanban',
+  }))
+);
+const priorityOptions = computed(() => [
+  { label: t('tugas_tanpa_prioritas'), value: NO_PRIORITY, icon: 'i-lucide-minus' },
+  { label: t('tugas_prioritas_tinggi'), value: 'tinggi', icon: 'i-lucide-chevrons-up' },
+  { label: t('tugas_prioritas_sedang'), value: 'sedang', icon: 'i-lucide-equal' },
+  { label: t('tugas_prioritas_rendah'), value: 'rendah', icon: 'i-lucide-chevrons-down' },
+]);
+const assigneeOptions = computed(() => [
+  { label: t('tugas_tanpa_assignee'), value: NO_PIC },
+  ...boardMembers.value.map((member) => ({
+    label: member.positionText ? `${member.nama} — ${member.positionText}` : member.nama,
+    value: member.id,
+  })),
+]);
+
+const selectedPriority = computed({
+  get: () => form.value.prioritas ?? NO_PRIORITY,
+  set: (value: string) => {
+    form.value.prioritas = value === NO_PRIORITY ? null : (value as TugasTaskPriority);
+  },
+});
+const selectedAssignee = computed({
+  get: () => form.value.assigneeMemberId ?? NO_PIC,
+  set: (value: string) => {
+    form.value.assigneeMemberId = value === NO_PIC ? null : value;
+  },
+});
 const selectedAssigneeMember = computed(() =>
   boardMembers.value.find((member) => member.id === form.value.assigneeMemberId)
 );
 
 const close = () => emit('update:modelValue', false);
+const isOpen = computed({
+  get: () => props.modelValue,
+  set: (value: boolean) => emit('update:modelValue', value),
+});
 
 watch(
   () => props.modelValue,
@@ -55,9 +95,9 @@ watch(
     form.value = {
       boardId: '',
       judul: props.referenceLabel.slice(0, 255),
-      prioritas: '',
+      prioritas: null,
       tenggat: '',
-      assigneeMemberId: '',
+      assigneeMemberId: null,
     };
     if (!boards.value.length) {
       isLoadingBoards.value = true;
@@ -77,7 +117,7 @@ watch(
 watch(
   () => form.value.boardId,
   async (boardId) => {
-    form.value.assigneeMemberId = '';
+    form.value.assigneeMemberId = null;
     if (!props.modelValue || !boardId || boardDetails.value[boardId]) return;
     try {
       await fetchBoardDetail(boardId);
@@ -93,9 +133,9 @@ const save = async () => {
   try {
     const res = await createTask(form.value.boardId, {
       judul: form.value.judul.trim(),
-      prioritas: form.value.prioritas || null,
+      prioritas: form.value.prioritas,
       tenggat: form.value.tenggat || null,
-      assigneeMemberId: form.value.assigneeMemberId || null,
+      assigneeMemberId: form.value.assigneeMemberId,
       referenceType: props.referenceType,
       referenceId: props.referenceId,
     });
@@ -112,167 +152,164 @@ const save = async () => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="modelValue"
-      class="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4"
-      @click.self="close"
-    >
-      <div
-        class="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl border border-gray-100 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800"
-        role="dialog"
-        aria-modal="true"
-      >
-        <!-- Header -->
-        <div
-          class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700"
+  <Modal v-model="isOpen" size="md" :saving="isSaving" :hide-default-footer="true">
+    <template #title>
+      <div class="flex items-center gap-3 px-5 pb-3 pt-4">
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
         >
-          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+          <KanbanSquare class="h-5 w-5" />
+        </span>
+        <div>
+          <Heading variant="heading9sb" as="h3" class="text-gray-900 dark:text-white">
             {{ t('tugas_buat_dari_naskah') }}
-          </h3>
-          <button
-            class="text-gray-500 hover:text-gray-800 dark:hover:text-white"
-            aria-label="Tutup"
-            @click="close"
-          >
-            <X class="h-4 w-4" />
-          </button>
-        </div>
-
-        <!-- Body -->
-        <div class="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-          <!-- Konteks referensi (read-only) -->
-          <div
-            class="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/30"
-          >
-            <FileText class="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-            <p class="line-clamp-2 text-xs text-blue-700 dark:text-blue-300">
-              {{ referenceLabel }}
-            </p>
-          </div>
-
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('tugas_pilih_papan') }}
-            </label>
-            <div v-if="isLoadingBoards" class="space-y-1.5">
-              <USkeleton class="h-10 rounded-lg bg-gray-200 dark:bg-gray-700" />
-              <USkeleton class="h-10 rounded-lg bg-gray-200 dark:bg-gray-700" />
-            </div>
-            <select
-              v-else
-              v-model="form.boardId"
-              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-            >
-              <option v-for="board in boards" :key="board.id" :value="board.id">
-                {{ board.nama }}
-              </option>
-            </select>
-            <p v-if="!isLoadingBoards && !boards.length" class="mt-1 text-xs text-gray-400">
-              {{ t('tugas_papan_kosong_quick_create') }}
-            </p>
-          </div>
-
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('tugas_judul_task') }}
-            </label>
-            <input
-              v-model="form.judul"
-              type="text"
-              maxlength="255"
-              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('tugas_prioritas') }}
-              </label>
-              <select
-                v-model="form.prioritas"
-                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="">{{ t('tugas_tanpa_prioritas') }}</option>
-                <option value="tinggi">{{ t('tugas_prioritas_tinggi') }}</option>
-                <option value="sedang">{{ t('tugas_prioritas_sedang') }}</option>
-                <option value="rendah">{{ t('tugas_prioritas_rendah') }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('tugas_tenggat') }}
-              </label>
-              <input
-                v-model="form.tenggat"
-                type="date"
-                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('tugas_assignee') }}
-            </label>
-            <select
-              v-model="form.assigneeMemberId"
-              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-            >
-              <option value="">{{ t('tugas_tanpa_assignee') }}</option>
-              <option v-for="member in boardMembers" :key="member.id" :value="member.id">
-                {{ member.nama }}{{ member.positionText ? ` — ${member.positionText}` : '' }}
-              </option>
-            </select>
-            <div
-              v-if="selectedAssigneeMember"
-              class="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2 dark:bg-gray-700/50"
-            >
-              <ProfileAvatar
-                size="xs"
-                :persnum="selectedAssigneeMember.persnum"
-                :alt="selectedAssigneeMember.nama"
-                avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
-              >
-                {{
-                  selectedAssigneeMember.nama
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part[0])
-                    .join('')
-                    .toUpperCase()
-                }}
-              </ProfileAvatar>
-              <div class="min-w-0">
-                <p class="truncate text-xs font-semibold text-gray-700 dark:text-gray-200">
-                  {{ selectedAssigneeMember.nama }}
-                </p>
-                <p class="truncate text-[11px] text-gray-500 dark:text-gray-400">
-                  {{ selectedAssigneeMember.positionText ?? selectedAssigneeMember.positionId }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="flex justify-end gap-2 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
-          <UButton color="neutral" variant="outline" :disabled="isSaving" @click="close">
-            {{ t('batal') }}
-          </UButton>
-          <UButton
-            color="primary"
-            :loading="isSaving"
-            :disabled="!form.boardId || !form.judul.trim() || !canCreateTask"
-            @click="save"
-          >
-            <KanbanSquare class="mr-1 h-4 w-4" />
-            {{ t('tugas_buat_task') }}
-          </UButton>
+          </Heading>
+          <Paragraph variant="body3" class="mt-0.5 text-gray-500 dark:text-gray-400">
+            {{ t('tugas_tambah_task_desc') }}
+          </Paragraph>
         </div>
       </div>
+    </template>
+
+    <div class="space-y-4 pb-1">
+      <!-- Konteks referensi (read-only) -->
+      <div
+        class="flex items-start gap-3 rounded-xl border border-primary-100 bg-primary-50/70 p-3 dark:border-primary-900/60 dark:bg-primary-900/20"
+      >
+        <span
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-primary-600 shadow-sm dark:bg-gray-800 dark:text-primary-400"
+        >
+          <FileText class="h-4 w-4" />
+        </span>
+        <div class="min-w-0">
+          <Paragraph variant="caption2m" class="text-primary-600 dark:text-primary-400">
+            {{ t('tugas_referensi') }}
+          </Paragraph>
+          <Paragraph variant="body3m" class="mt-0.5 line-clamp-2 text-gray-700 dark:text-gray-200">
+            {{ referenceLabel }}
+          </Paragraph>
+        </div>
+      </div>
+
+      <UFormField :label="t('tugas_pilih_papan')" required>
+        <USelectMenu
+          v-model="form.boardId"
+          :items="boardOptions"
+          value-key="value"
+          label-key="label"
+          :loading="isLoadingBoards"
+          :disabled="isLoadingBoards || !boards.length"
+          :search-input="{ placeholder: t('tugas_cari_papan') }"
+          :placeholder="t('tugas_pilih_papan')"
+          class="w-full"
+          :ui="{
+            base: 'w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
+            content: 'z-[var(--z-toast)]',
+          }"
+        />
+        <Paragraph
+          v-if="!isLoadingBoards && !boards.length"
+          variant="caption2"
+          class="mt-1 text-gray-500 dark:text-gray-400"
+        >
+          {{ t('tugas_papan_kosong_quick_create') }}
+        </Paragraph>
+      </UFormField>
+
+      <UFormField :label="t('tugas_judul_task')" required>
+        <UInput
+          v-model="form.judul"
+          maxlength="255"
+          :placeholder="t('tugas_judul_task_placeholder')"
+          class="w-full"
+        />
+      </UFormField>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <UFormField :label="t('tugas_prioritas')">
+          <USelectMenu
+            v-model="selectedPriority"
+            :items="priorityOptions"
+            value-key="value"
+            label-key="label"
+            :search-input="false"
+            class="w-full"
+            :ui="{
+              base: 'w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
+              content: 'z-[var(--z-toast)]',
+            }"
+          />
+        </UFormField>
+
+        <UFormField :label="t('tugas_tenggat')">
+          <UInput v-model="form.tenggat" type="date" class="w-full" />
+        </UFormField>
+      </div>
+
+      <UFormField :label="t('tugas_assignee')">
+        <USelectMenu
+          v-model="selectedAssignee"
+          :items="assigneeOptions"
+          value-key="value"
+          label-key="label"
+          :disabled="!form.boardId"
+          :search-input="{ placeholder: t('tugas_cari_pic') }"
+          :placeholder="t('tugas_tanpa_assignee')"
+          class="w-full"
+          :ui="{
+            base: 'w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
+            content: 'z-[var(--z-toast)]',
+          }"
+        />
+        <div
+          v-if="selectedAssigneeMember"
+          class="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2 dark:bg-gray-700/50"
+        >
+          <ProfileAvatar
+            size="xs"
+            :persnum="selectedAssigneeMember.persnum"
+            :alt="selectedAssigneeMember.nama"
+            avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+          >
+            {{
+              selectedAssigneeMember.nama
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0])
+                .join('')
+                .toUpperCase()
+            }}
+          </ProfileAvatar>
+          <div class="min-w-0">
+            <Paragraph variant="caption1sb" class="truncate text-gray-700 dark:text-gray-200">
+              {{ selectedAssigneeMember.nama }}
+            </Paragraph>
+            <Paragraph variant="caption2" class="truncate text-gray-500 dark:text-gray-400">
+              {{ selectedAssigneeMember.positionText ?? selectedAssigneeMember.positionId }}
+            </Paragraph>
+          </div>
+        </div>
+      </UFormField>
     </div>
-  </Teleport>
+
+    <template #footer>
+      <div
+        class="mt-5 flex shrink-0 justify-end gap-2 border-t border-gray-200 px-5 py-4 dark:border-gray-700"
+      >
+        <UButton color="neutral" variant="outline" :disabled="isSaving" @click="close">
+          {{ t('batal') }}
+        </UButton>
+        <UButton
+          icon="i-lucide-list-plus"
+          color="primary"
+          :loading="isSaving"
+          :disabled="!form.boardId || !form.judul.trim() || !canCreateTask"
+          @click="save"
+        >
+          {{ t('tugas_buat_task') }}
+        </UButton>
+      </div>
+    </template>
+  </Modal>
 </template>
