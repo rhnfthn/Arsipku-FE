@@ -52,6 +52,7 @@
         :catatan-title="workspaceNoteTitle"
         :catatan-placeholder="workspaceNotePlaceholder"
         :show-catatan="!canDecideEvaluation"
+        :catatan-rich="true"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
@@ -277,75 +278,20 @@
       description="Tidak ada tindakan persetujuan lanjutan yang perlu Anda kerjakan saat ini."
     />
 
-    <Teleport to="body">
-      <Modal
-        v-model="showEvaluationRejectOptions"
-        :hide-default-footer="true"
-        :saving="isBusy"
-        size="lg"
-      >
-        <template #title>
-          <Heading
-            variant="heading9b"
-            class="ml-5 mt-5 mb-2 text-sm font-bold"
-            :class="
-              pendingDecision === 'batalkan'
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-amber-600 dark:text-amber-400'
-            "
-          >
-            {{ rejectionModalTitle }}
-          </Heading>
-        </template>
+    <ApprovalNoteEditor
+      v-model="showEvaluationRejectOptions"
+      variant="reject"
+      :title="rejectionModalTitle"
+      :description="rejectionModalDescription"
+      note-label="Alasan"
+      note-placeholder="Tuliskan alasan keputusan Anda…"
+      :confirm-label="rejectionModalTitle"
+      :saving="isBusy"
+      :require-note="true"
+      @confirm="submitPendingDecision"
+    />
 
-        <div class="space-y-4 px-6 pb-6">
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            {{ rejectionModalDescription }}
-          </p>
-
-          <UFormField label="Alasan" required>
-            <UTextarea
-              v-model="rejectionReason"
-              :rows="4"
-              autoresize
-              placeholder="Tuliskan alasan keputusan Anda…"
-              size="lg"
-              class="w-full"
-            />
-          </UFormField>
-
-          <div
-            class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:flex-row sm:justify-end"
-          >
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="lg"
-              :disabled="isBusy"
-              @click="showEvaluationRejectOptions = false"
-            >
-              Batal
-            </UButton>
-            <UButton
-              size="lg"
-              :color="pendingDecision === 'batalkan' ? 'error' : 'warning'"
-              :icon="pendingDecision === 'batalkan' ? 'i-lucide-ban' : 'i-lucide-rotate-ccw'"
-              :loading="
-                pendingDecision === 'batalkan'
-                  ? activeAction === 'reject-cancel'
-                  : activeAction === 'reject-legal'
-              "
-              :disabled="isBusy || !rejectionReason.trim()"
-              @click="submitPendingDecision"
-            >
-              {{ rejectionModalTitle }}
-            </UButton>
-          </div>
-        </div>
-      </Modal>
-    </Teleport>
-
-    <VerifyActionModal
+    <ApprovalNoteEditor
       v-model="showContinueConfirmation"
       variant="approve"
       title="Lanjut Persetujuan"
@@ -360,7 +306,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import type { ApprovalItem, RevisionFilePair } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: 'auth' });
@@ -596,8 +542,9 @@ const openRejection = (decision: 'legal_drafting_ulang' | 'batalkan') => {
   showEvaluationRejectOptions.value = true;
 };
 
-const submitPendingDecision = () => {
+const submitPendingDecision = (note: string) => {
   if (!pendingDecision.value) return;
+  rejectionReason.value = note;
   submitEvaluationDecision(pendingDecision.value);
 };
 
