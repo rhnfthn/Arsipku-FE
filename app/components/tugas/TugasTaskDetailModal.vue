@@ -54,7 +54,7 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'remove-reference', referenceId: string): void;
   (e: 'add-reference', referenceType: TugasReferenceType, referenceId: string): void;
-  (e: 'add-evidence', file: File): void;
+  (e: 'add-evidence', file: File, onSettled: () => void): void;
   (e: 'remove-evidence', evidenceId: string): void;
   (e: 'invalid-evidence'): void;
 }>();
@@ -140,11 +140,13 @@ const addReference = () => {
   emit('add-reference', referenceForm.value.type, referenceId);
 };
 
-const addEvidence = () => {
-  const file = evidenceFiles.value[0];
+const handleEvidenceSelection = (files: File[]) => {
+  evidenceFiles.value = files;
+  const file = files[0];
   if (!file || props.uploadingEvidence) return;
-  emit('add-evidence', file);
-  evidenceFiles.value = [];
+  emit('add-evidence', file, () => {
+    evidenceFiles.value = [];
+  });
 };
 
 const formatFileSize = (bytes: number) =>
@@ -402,26 +404,22 @@ const selectedAssigneeMember = computed(() =>
 
             <div v-if="!isReadOnly && canUpdateTask" class="space-y-2">
               <FileUpload
-                v-model="evidenceFiles"
+                :model-value="evidenceFiles"
                 accept="image/jpeg,image/png,.jpg,.jpeg,.png"
                 :multiple="false"
                 :max-size="10 * 1024 * 1024"
                 :label="t('tugas_pilih_evidence')"
                 :description="t('tugas_evidence_ketentuan')"
+                :class="{ 'pointer-events-none opacity-70': uploadingEvidence }"
+                @update:model-value="handleEvidenceSelection"
                 @invalid-files="emit('invalid-evidence')"
               />
-              <div class="flex justify-end">
-                <UButton
-                  icon="i-lucide-upload"
-                  color="primary"
-                  variant="soft"
-                  size="xs"
-                  :loading="uploadingEvidence"
-                  :disabled="evidenceFiles.length === 0"
-                  @click="addEvidence"
-                >
-                  {{ t('tugas_unggah_evidence') }}
-                </UButton>
+              <div
+                v-if="uploadingEvidence"
+                class="flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-2 text-xs font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+              >
+                <UIcon name="i-lucide-loader-circle" class="h-4 w-4 animate-spin" />
+                {{ t('tugas_evidence_sedang_diunggah') }}
               </div>
             </div>
           </div>
