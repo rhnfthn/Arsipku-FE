@@ -93,6 +93,22 @@ const tugasTaskUpdate = ref<{
   occurredAt: string;
 } | null>(null);
 
+// Tugas forum komentar events — payload ringkas; client fetch komentar
+// terkait saat event diterima (komentar tidak menaikkan revision papan).
+const tugasCommentAdded = ref<{
+  boardId: string;
+  taskId: string;
+  commentId: string;
+  occurredAt: string;
+} | null>(null);
+
+const tugasCommentDeleted = ref<{
+  boardId: string;
+  taskId: string;
+  commentId: string;
+  occurredAt: string;
+} | null>(null);
+
 let socket: Socket | null = null;
 let connectPromise: Promise<void> | null = null;
 const naskahLainnyaSubscriptions = new Map<string, number>();
@@ -356,6 +372,28 @@ const connectSocket = async (): Promise<void> => {
       }
     });
 
+    socket.on('tugas:comment-added', (payload: any) => {
+      if (payload?.boardId && payload?.taskId && payload?.commentId) {
+        tugasCommentAdded.value = {
+          boardId: String(payload.boardId),
+          taskId: String(payload.taskId),
+          commentId: String(payload.commentId),
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
+    socket.on('tugas:comment-deleted', (payload: any) => {
+      if (payload?.boardId && payload?.taskId && payload?.commentId) {
+        tugasCommentDeleted.value = {
+          boardId: String(payload.boardId),
+          taskId: String(payload.taskId),
+          commentId: String(payload.commentId),
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
     socket.on('realtime:connected', () => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
@@ -489,6 +527,8 @@ export function useRealtimeSocket() {
     tugasBoardUpdate,
     tugasTaskMoved,
     tugasTaskUpdate,
+    tugasCommentAdded,
+    tugasCommentDeleted,
     flagUpdate,
     correspondenceRoutingUpdate,
     naskahLainnyaUpdate,
