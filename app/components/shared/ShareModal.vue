@@ -21,6 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { createShare, searchUsers, searchResults, clearSearchResults } = useNaskahShare();
+const { hasPermission } = useFeatureAccess();
 const { t } = useI18n();
 
 const isOpen = ref(true);
@@ -32,6 +33,7 @@ const errorMsg = ref('');
 const errors = ref<Record<string, string>>({});
 const triedSubmit = ref(false);
 const isAllEmployees = computed(() => props.distributionScope === 'ALL_EMPLOYEES');
+const canCreateShare = computed(() => hasPermission('naskah-share', 'create'));
 
 const accessType = ref<'RENTANG_WAKTU' | 'SEKALI_LIHAT'>('RENTANG_WAKTU');
 const durationDays = ref<number | 'CUSTOM'>(7);
@@ -476,7 +478,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
       <button
         class="flex-1 px-6 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90 dark:hover:opacity-90"
         style="background-color: #175FA4"
-        :disabled="isSubmitting || isShareMethodComingSoon"
+        :disabled="isSubmitting || isShareMethodComingSoon || !canCreateShare"
         @click="handleSubmit"
       >
         {{ isSubmitting ? t('share_memproses') : t('share_bagikan') }}

@@ -25,6 +25,12 @@ const routePermissions: Record<string, string> = {
   '/korespondensi/tulis/nota-dinas': 'utama.tulis.nota-dinas:read',
   '/korespondensi/tulis/surat-dinas-eksternal': 'utama.tulis.surat-dinas-eksternal:read',
   '/korespondensi/tulis/surat-dinas-internal': 'utama.tulis.surat-dinas-internal:read',
+  // SDE Massal
+  '/korespondensi/sde-masal': 'sde-masal:read',
+  '/korespondensi/sde-masal/verifikasi': 'sde-masal:read-verification',
+  // Berbagi Naskah
+  '/shared/saya-bagikan': 'naskah-share:read',
+  '/shared/dibagikan-kepada-saya': 'naskah-share:read',
   // Utilitas (resource names sesuai seed-rbac.ts)
   '/digsig/verifikasi-dokumen': 'digsig:read-verifikasi-dokumen',
   '/digsig/penandatanganan': 'digsig:read-penandatanganan',
@@ -58,6 +64,10 @@ const routePermissions: Record<string, string> = {
   '/rbac/permissions': 'role:read',
   '/rbac/resources': 'role:read',
   '/rbac/users': 'user:read',
+  // Audit Trail tetap dibatasi backend untuk SUPERADMIN melalui RolesGuard.
+  '/admin/audit': 'audit:read',
+  '/admin/audit/anomaly': 'audit:read',
+  '/admin/audit/report': 'audit:read',
   // Laporan
   '/laporan/rekap-naskah': 'laporan:read-rekap-naskah',
   '/laporan/detail-naskah': 'laporan:read-detail-naskah',
@@ -109,10 +119,19 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
     pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-eksternal/,
     perm: 'utama.tulis.surat-dinas-eksternal:read',
   },
+  { pattern: /^\/korespondensi\/sde-masal\/folder\/[^/]+$/, perm: 'sde-masal:read-detail' },
+  { pattern: /^\/korespondensi\/sde-masal\/[^/]+$/, perm: 'sde-masal:read-detail' },
+  { pattern: /^\/korespondensi\/sde-masal\/verifikasi-detail\/[^/]+$/, perm: 'sde-masal:read-verification' },
+  { pattern: /^\/korespondensi\/tulis\/sde-masal(?:\/|$)/, perm: 'sde-masal:read' },
+  { pattern: /^\/shared\/(?:saya-bagikan|dibagikan-kepada-saya)\/.+$/, perm: 'naskah-share:read' },
   // Master data — sub-pages inherit parent permission
   { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
   { pattern: /^\/naskah-lainnya\/[^/]+(?:\/[^/]+)?$/, perm: 'utama.tulis.naskah-lainnya:read' },
+  // Kelola — detail pages inherit the permission of their list page
+  { pattern: /^\/kelola\/pemeliharaan\/pemberkasan(?:\/|$)/, perm: 'pemeliharaan.pemberkasan:read' },
+  { pattern: /^\/kelola\/pemeliharaan\/persetujuan-pemberkasan(?:\/|$)/, perm: 'pemeliharaan.verifikasi:read' },
+  { pattern: /^\/kelola\/penggunaan\/(?:usulan-akses-berkas|usulan-saya|verifikasi-usulan|pemberian)(?:\/|$)/, perm: 'usulan-akses-berkas:read' },
 ];
 
 /**
