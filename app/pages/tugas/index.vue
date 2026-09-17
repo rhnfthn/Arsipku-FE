@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KanbanSquare, LayoutGrid, UserRound, UsersRound } from 'lucide-vue-next';
+import { KanbanSquare } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import EmptyState from '~/components/EmptyState.vue';
 import ConfirmModal from '~/components/ConfirmModal.vue';
@@ -92,15 +92,21 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onViewportResize);
 });
 
-const filterTabs = computed(() => [
-  { label: t('tugas_filter_semua'), value: 'semua' as const, icon: LayoutGrid },
-  { label: t('tugas_filter_saya_buat'), value: 'saya-buat' as const, icon: UserRound },
-  { label: t('tugas_filter_saya_ikut'), value: 'saya-ikut' as const, icon: UsersRound },
+const filterOptions = computed(() => [
+  { label: t('tugas_filter_semua'), value: 'semua' as const, icon: 'i-lucide-layout-grid' },
+  { label: t('tugas_filter_saya_buat'), value: 'saya-buat' as const, icon: 'i-lucide-user-round' },
+  { label: t('tugas_filter_saya_ikut'), value: 'saya-ikut' as const, icon: 'i-lucide-users-round' },
 ]);
 
 const setFilter = (filter: TugasBoardFilter) => {
+  if (filter === activeFilter.value) return;
   router.replace({ query: { ...route.query, filter, page: '1' } });
 };
+
+const selectedFilter = computed<TugasBoardFilter>({
+  get: () => activeFilter.value,
+  set: setFilter,
+});
 
 const setPage = (page: number) => {
   router.replace({ query: { ...route.query, page: String(page) } });
@@ -263,26 +269,7 @@ const breadcrumbs = computed(() => [
     </div>
 
     <template v-else>
-      <!-- Tab filter (pola pill ala halaman Draf) -->
-      <div class="mb-4 flex gap-2 overflow-x-auto py-1 scrollbar-hide">
-        <UButton
-          v-for="tab in filterTabs"
-          :key="tab.value"
-          color="primary"
-          class="rounded-full border px-4 py-2 text-sm font-normal transition-all"
-          :class="
-            activeFilter === tab.value
-              ? 'bg-primary dark:bg-primary-600 text-white border-primary dark:border-primary-600'
-              : 'bg-white dark:bg-gray-800 text-primary dark:text-primary-400 border-neutral-200/50 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-          "
-          @click="setFilter(tab.value)"
-        >
-          <component :is="tab.icon" class="h-4 w-4" />
-          {{ tab.label }}
-        </UButton>
-      </div>
-
-      <!-- Toolbar (DataToolbar existing: refresh + search; limit otomatis responsif) -->
+      <!-- Toolbar (DataToolbar existing: refresh + search + filter papan) -->
       <div
         class="mb-5 rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
       >
@@ -295,6 +282,19 @@ const breadcrumbs = computed(() => [
           @refresh="loadBoards"
         >
           <template #actions>
+            <USelectMenu
+              v-model="selectedFilter"
+              :items="filterOptions"
+              value-key="value"
+              label-key="label"
+              :search-input="false"
+              class="w-44 shrink-0"
+              :ui="{
+                base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
+              }"
+              :aria-label="t('tugas_filter_semua')"
+            />
+
             <UButton
               v-if="canCreateBoard"
               icon="i-lucide-plus"
@@ -390,14 +390,3 @@ const breadcrumbs = computed(() => [
     />
   </div>
 </template>
-
-<style scoped>
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-</style>

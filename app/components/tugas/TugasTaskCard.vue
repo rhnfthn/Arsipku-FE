@@ -131,12 +131,15 @@ const initials = (nama: string) => {
 
     <!-- Assignee -->
     <div v-if="task.assignee" class="mt-2.5 flex items-center gap-1.5">
-      <span
-        class="flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[9px] font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+      <ProfileAvatar
+        size="2xs"
+        :persnum="task.assignee.persnum"
+        :alt="task.assignee.nama"
+        avatar-class="bg-primary-100 text-[9px] font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
         :title="`${task.assignee.nama} — ${task.assignee.positionText ?? ''}`"
       >
         {{ initials(task.assignee.nama) }}
-      </span>
+      </ProfileAvatar>
       <span class="max-w-[140px] truncate text-[11px] text-gray-500 dark:text-gray-400">
         {{ task.assignee.nama }}
       </span>

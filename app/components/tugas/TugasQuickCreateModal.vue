@@ -42,6 +42,9 @@ const isLoadingBoards = ref(false);
 
 const canCreateTask = computed(() => hasPermission('tugas', 'create-task'));
 const boardMembers = computed(() => boardDetails.value[form.value.boardId]?.members ?? []);
+const selectedAssigneeMember = computed(() =>
+  boardMembers.value.find((member) => member.id === form.value.assigneeMemberId)
+);
 
 const close = () => emit('update:modelValue', false);
 
@@ -222,6 +225,35 @@ const save = async () => {
                 {{ member.nama }}{{ member.positionText ? ` — ${member.positionText}` : '' }}
               </option>
             </select>
+            <div
+              v-if="selectedAssigneeMember"
+              class="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2 dark:bg-gray-700/50"
+            >
+              <ProfileAvatar
+                size="xs"
+                :persnum="selectedAssigneeMember.persnum"
+                :alt="selectedAssigneeMember.nama"
+                avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+              >
+                {{
+                  selectedAssigneeMember.nama
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join('')
+                    .toUpperCase()
+                }}
+              </ProfileAvatar>
+              <div class="min-w-0">
+                <p class="truncate text-xs font-semibold text-gray-700 dark:text-gray-200">
+                  {{ selectedAssigneeMember.nama }}
+                </p>
+                <p class="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                  {{ selectedAssigneeMember.positionText ?? selectedAssigneeMember.positionId }}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
