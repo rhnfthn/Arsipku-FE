@@ -1584,6 +1584,7 @@ const signLabel = computed(() =>
             <UButton
               v-if="canQuickCreateTugas"
               icon="i-lucide-list-plus"
+              color="primary"
               size="sm"
               @click="showTugasQuickCreate = true"
             >

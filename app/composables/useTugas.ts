@@ -12,6 +12,8 @@ import type {
   TugasMyTaskPage,
   TugasMyTaskQuery,
   TugasReferenceType,
+  TugasTaskComment,
+  TugasTaskCommentPage,
   TugasTaskPage,
   TugasTaskQuery,
   TugasTaskEvidence,
@@ -328,6 +330,28 @@ export const useTugas = () => {
     return del(`/tugas/tasks/${taskId}/evidences/${evidenceId}`);
   };
 
+  // ─── Forum diskusi task (komentar) ────────────────────────────────────────
+
+  const fetchTaskComments = async (taskId: string, page = 1, limit = 50) => {
+    const res = await getFresh<TugasTaskCommentPage>(`/tugas/tasks/${taskId}/comments`, {
+      params: { page, limit },
+    });
+    const payload = res.data ?? res;
+    const inner = payload as { data?: TugasTaskComment[]; meta?: TugasTaskCommentPage['meta'] };
+    return {
+      data: Array.isArray(inner?.data) ? inner.data : [],
+      meta: inner?.meta ?? { page, limit, total: 0, totalPages: 1 },
+    };
+  };
+
+  const addTaskComment = async (taskId: string, isi: string) => {
+    return post<{ data: TugasTaskComment }>(`/tugas/tasks/${taskId}/comments`, { isi });
+  };
+
+  const removeTaskComment = async (taskId: string, commentId: string) => {
+    return del(`/tugas/tasks/${taskId}/comments/${commentId}`);
+  };
+
   return {
     // state papan
     boards,
@@ -379,6 +403,10 @@ export const useTugas = () => {
     fetchTaskEvidences,
     addTaskEvidence,
     removeTaskEvidence,
+    // forum diskusi
+    fetchTaskComments,
+    addTaskComment,
+    removeTaskComment,
     // util
     mapTugasError,
   };
