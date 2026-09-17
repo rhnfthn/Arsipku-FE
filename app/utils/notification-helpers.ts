@@ -26,6 +26,10 @@ export const resolveNotificationIcon = (type: string, data?: Record<string, any>
     NASKAH_DINAS_DITOLAK: 'i-lucide-x-circle',
     DELEGASI: 'i-lucide-users',
     SYSTEM: 'i-lucide-megaphone',
+    TUGAS_MEMBER_ADDED: 'i-lucide-user-plus',
+    TUGAS_ASSIGNED: 'i-lucide-list-todo',
+    TUGAS_DONE: 'i-lucide-circle-check-big',
+    TUGAS_DUE: 'i-lucide-alarm-clock',
   };
 
   return map[type] || 'i-lucide-bell';

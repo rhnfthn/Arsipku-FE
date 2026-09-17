@@ -12,8 +12,9 @@ import type {
 } from '~/types/naskah-lainnya';
 import { JENIS_LABELS } from '~/types/naskah-lainnya';
 import { formatNaskahDate, formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
-import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
+import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import TulisDigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModalAsync.vue';
+import TugasQuickCreateModal from '~/components/tugas/TugasQuickCreateModal.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 useHead({ title: 'Detail Naskah Lainnya' });
@@ -30,7 +31,7 @@ const {
   ubahNomorFinalManual,
 } = useNaskahLainnya();
 const { apiGet } = useApi();
-const { user, isLegalRole } = useAuth();
+const { user, isLegalRole, hasPermission } = useAuth();
 const toast = useToast();
 const {
   init: initRealtimeSocket,
@@ -495,7 +496,7 @@ const informationExpanded = ref(false);
 const documentExpanded = ref(false);
 const signerExpanded = ref(false);
 
-// ── Modal Setuju/Tolak (standarisasi VerifyActionModal) ──
+// ── Modal Setuju/Tolak (standarisasi ApprovalNoteEditor) ──
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 const showReturnModal = ref(false);
@@ -525,6 +526,13 @@ const nomorClean = computed(() => {
   const n = detail.value?.nomor;
   return n && !/\{\{[^}]*\}\}/.test(n) ? n : '';
 });
+const showTugasQuickCreate = ref(false);
+const canQuickCreateTugas = computed(
+  () => hasPermission('tugas', 'create-task') && Boolean(detail.value)
+);
+const tugasReferenceLabel = computed(() =>
+  [nomorClean.value, detail.value?.perihal || 'Naskah Lainnya'].filter(Boolean).join(' — ')
+);
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -1573,6 +1581,14 @@ const signLabel = computed(() =>
               {{ detail?.perihal ?? 'Draf Naskah' }}
             </h1>
             <StatusBadge v-if="detail" :status="detailDisplayStatus" />
+            <UButton
+              v-if="canQuickCreateTugas"
+              icon="i-lucide-list-plus"
+              size="sm"
+              @click="showTugasQuickCreate = true"
+            >
+              {{ t('tugas_buat_dari_naskah') }}
+            </UButton>
           </div>
         </template>
         <template #subtitle>
@@ -2905,7 +2921,9 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/blanko-verbal`"
-                >{{ canBuatBlanko ? 'Buat Lembar Persetujuan' : 'Lihat Progres Persetujuan' }}</UButton
+                >{{
+                  canBuatBlanko ? 'Buat Lembar Persetujuan' : 'Lihat Progres Persetujuan'
+                }}</UButton
               >
 
               <!-- Buat Lembar Persetujuan Direksi: legal menyusun lembar saat evaluasi (butuhLegal) -->
@@ -3009,8 +3027,8 @@ const signLabel = computed(() =>
         </section>
       </main>
 
-      <!-- Modal Setuju (standarisasi VerifyActionModal) -->
-      <VerifyActionModal
+      <!-- Modal Setuju -->
+      <ApprovalNoteEditor
         v-model="showApproveModal"
         variant="approve"
         :title="
@@ -3066,8 +3084,8 @@ const signLabel = computed(() =>
         @submit="handleSignMethodSubmit"
       />
 
-      <!-- Modal Tolak (standarisasi VerifyActionModal) -->
-      <VerifyActionModal
+      <!-- Modal Tolak -->
+      <ApprovalNoteEditor
         v-model="showRejectModal"
         variant="reject"
         :title="
@@ -3113,8 +3131,8 @@ const signLabel = computed(() =>
         @confirm="handleReject"
       />
 
-      <!-- Modal Kembalikan (standarisasi VerifyActionModal) -->
-      <VerifyActionModal
+      <!-- Modal Kembalikan -->
+      <ApprovalNoteEditor
         v-model="showReturnModal"
         variant="reject"
         :title="
@@ -3171,6 +3189,13 @@ const signLabel = computed(() =>
 
     <!-- Nested route outlet (legal-drafting, evaluasi, tanda-tangan, dll) -->
     <NuxtPage />
+    <TugasQuickCreateModal
+      v-if="!isChildRoute"
+      v-model="showTugasQuickCreate"
+      reference-type="naskah_lainnya"
+      :reference-id="id"
+      :reference-label="tugasReferenceLabel"
+    />
   </div>
 </template>
 
@@ -3240,7 +3265,11 @@ const signLabel = computed(() =>
   inset-inline: 0;
   bottom: 0;
   height: 28px;
-  background: linear-gradient(to bottom, transparent, var(--note-fade-color, rgba(232, 239, 246, 0.95)));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--note-fade-color, rgba(232, 239, 246, 0.95))
+  );
   pointer-events: none;
 }
 .approval-note[class*='border-red'] .note-clamped::after {
