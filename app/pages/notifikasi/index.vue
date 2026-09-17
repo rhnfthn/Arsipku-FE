@@ -326,6 +326,7 @@ const typeFilterOptions = [
   { label: 'Naskah dinas selesai', value: 'NASKAH_DINAS_VERIFIKASI_SELESAI' },
   { label: 'Naskah dinas ditolak', value: 'NASKAH_DINAS_DITOLAK' },
   { label: 'Delegasi', value: 'DELEGASI' },
+  { label: 'Tag forum tugas', value: 'TUGAS_TAGGED' },
   { label: 'Sistem', value: 'SYSTEM' },
 ] as const;
 
