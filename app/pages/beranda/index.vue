@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <AccessDenied
       v-if="!canAccessPage()"
-      permission-key="utama.beranda:read"
+      :show-permission-key="false"
     />
     <div v-else class="space-y-6">
       <UAlert

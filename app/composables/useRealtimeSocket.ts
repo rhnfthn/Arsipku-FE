@@ -406,9 +406,10 @@ const connectSocket = async (): Promise<void> => {
       console.log('[useRealtimeSocket] RBAC permission changed:', payload);
       if (!process.client) return;
 
-      // Re-fetch profile untuk update activePermissions
-      const { getProfile } = useAuth();
-      await getProfile(true); // force refresh
+      // Re-query permission live dari DB dan perbarui JWT + state user.
+      // getProfile() hanya membaca permission lama dari JWT.
+      const { refreshPermissions } = useAuth();
+      await refreshPermissions();
 
       // Cek apakah halaman saat ini masih bisa diakses
       const { canAccessPage } = useFeatureAccess();
