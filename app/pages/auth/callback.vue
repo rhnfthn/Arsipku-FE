@@ -23,7 +23,7 @@
 definePageMeta({ layout: false });
 
 const route = useRoute();
-const { restoreSession, getSSORedirectUrl } = useAuth();
+const { restoreSession, getSSORedirectUrl, applyLoginDefaults } = useAuth();
 const errorMessage = ref('');
 
 const queryValue = (value: unknown): string =>
@@ -75,6 +75,9 @@ onMounted(async () => {
     errorMessage.value = 'Sesi Auth v2 tidak ditemukan atau sudah kedaluwarsa.';
     return;
   }
+
+  // Login baru selalu mulai dengan light mode + bahasa Indonesia.
+  applyLoginDefaults();
 
   await navigateTo(returnTo, { replace: true });
 });
