@@ -321,6 +321,25 @@ const breadcrumbs = computed(() => [
               </div>
             </div>
 
+            <ProfileAvatar
+              v-if="task.assignee"
+              size="xs"
+              :persnum="task.assignee.persnum"
+              :alt="task.assignee.nama"
+              avatar-class="shrink-0 bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+              :title="`${task.assignee.nama}${task.assignee.positionText ? ` — ${task.assignee.positionText}` : ''}`"
+            >
+              {{
+                task.assignee.nama
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase()
+              }}
+            </ProfileAvatar>
+
             <!-- Tenggat -->
             <div
               v-if="task.tenggat"

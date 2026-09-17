@@ -444,6 +444,16 @@ refreshActivity = () => loadActivity();
 const activityLabel = (action: string) =>
   t(`tugas_aktivitas_${action}`, action.replaceAll('_', ' '));
 
+const activitySubject = (activity: TugasActivityItem): string => {
+  const detail = activity.detail;
+  if (!detail) return '';
+  const value = detail.judul ?? detail.nama ?? detail.originalName ?? detail.label;
+  return typeof value === 'string' ? value.trim() : '';
+};
+
+const activityActorName = (activity: TugasActivityItem): string =>
+  activity.actor?.nama || `Pengguna ${activity.actorPersnum}`;
+
 const formatActivityDate = (value: string) =>
   new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
@@ -766,7 +776,14 @@ const detailTabs = computed(() => [
                   class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 dark:text-gray-400"
                 >
                   <span v-if="board.owner" class="inline-flex min-w-0 items-center gap-1.5">
-                    <UIcon name="i-lucide-user-round" class="h-3.5 w-3.5" />
+                    <ProfileAvatar
+                      size="2xs"
+                      :persnum="board.owner.persnum"
+                      :alt="board.owner.nama"
+                      avatar-class="shrink-0 bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                    >
+                      {{ memberInitials(board.owner.nama) }}
+                    </ProfileAvatar>
                     {{ t('tugas_assignee') }}:
                     <strong class="truncate font-semibold text-gray-700 dark:text-gray-200">
                       {{ board.owner.nama }}
@@ -1060,12 +1077,26 @@ const detailTabs = computed(() => [
             </div>
             <div class="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
               <div v-for="activity in activities" :key="activity.id" class="flex gap-3">
-                <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary-400" />
-                <div class="min-w-0">
-                  <p class="text-sm font-medium capitalize text-gray-800 dark:text-gray-100">
-                    {{ activityLabel(activity.aksi) }}
+                <ProfileAvatar
+                  size="xs"
+                  :persnum="activity.actor?.persnum ?? activity.actorPersnum"
+                  :alt="activityActorName(activity)"
+                  avatar-class="shrink-0 bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                >
+                  {{ memberInitials(activityActorName(activity)) }}
+                </ProfileAvatar>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm text-gray-800 dark:text-gray-100">
+                    <strong class="font-semibold">{{ activityActorName(activity) }}</strong>
+                    <span class="capitalize"> {{ activityLabel(activity.aksi) }}</span>
+                    <span v-if="activitySubject(activity)" class="font-medium">
+                      “{{ activitySubject(activity) }}”
+                    </span>
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    <span v-if="activity.actor?.positionText">
+                      {{ activity.actor.positionText }} ·
+                    </span>
                     {{ formatActivityDate(activity.createdAt) }}
                   </p>
                 </div>
@@ -1123,11 +1154,14 @@ const detailTabs = computed(() => [
               class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-primary-800"
             >
               <div class="flex items-start gap-3">
-                <span
-                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                <ProfileAvatar
+                  size="md"
+                  :persnum="member.persnum"
+                  :alt="member.nama"
+                  avatar-class="shrink-0 bg-primary-100 text-sm font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
                 >
                   {{ memberInitials(member.nama) }}
-                </span>
+                </ProfileAvatar>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
                     <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">
