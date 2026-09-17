@@ -141,6 +141,27 @@ export interface TugasTaskEvidence {
   url: string;
 }
 
+export interface TugasTaskComment {
+  id: string;
+  taskId: string;
+  memberId: string;
+  isi: string;
+  actorPersnum: number;
+  actorPositionId: string;
+  actor: {
+    persnum: number;
+    positionId: string;
+    nama: string;
+    positionText: string | null;
+  };
+  createdAt: string;
+}
+
+export interface TugasTaskCommentPage {
+  data: TugasTaskComment[];
+  meta: TugasPageMeta;
+}
+
 export interface TugasBoardPage {
   data: TugasBoardSummary[];
   meta: TugasPageMeta;
