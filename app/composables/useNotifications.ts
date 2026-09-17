@@ -110,6 +110,21 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     return { path: `/naskah-lainnya/${encodeURIComponent(naskahId)}` };
   }
 
+  // Tugas: deep-link langsung ke modal task atau tab forum papan.
+  // Diselesaikan sebelum lookup baseRoutes karena keduanya merupakan rute
+  // dinamis yang membutuhkan boardId dari payload notifikasi.
+  if (action === 'OPEN_TUGAS_TASK' || action === 'OPEN_TUGAS_FORUM') {
+    const boardId = getString('boardId', 'board_id');
+    const taskId = getString('taskId', 'task_id');
+    if (boardId) {
+      const query: Record<string, string> = {};
+      if (action === 'OPEN_TUGAS_FORUM') query.tab = 'forum';
+      else if (taskId) query.task = taskId;
+      return { path: `/tugas/${encodeURIComponent(boardId)}`, query };
+    }
+    return { path: '/tugas' };
+  }
+
   const baseRoutes: Record<string, string> = {
     OPEN_INBOX_DETAIL: '/korespondensi/kotak-masuk',
     OPEN_DISPOSISI_DETAIL: '/korespondensi/kotak-masuk',
@@ -138,18 +153,6 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     return folderId
       ? { path: `${base}/${encodeURIComponent(folderId)}` }
       : { path: '/korespondensi/sde-masal' };
-  }
-
-  // Tugas: deep-link ke papan + auto-buka modal task (?task=).
-  if (action === 'OPEN_TUGAS_TASK') {
-    const boardId = getString('boardId', 'board_id');
-    const taskId = getString('taskId', 'task_id');
-    if (boardId) {
-      const query: Record<string, string> = {};
-      if (taskId) query.task = taskId;
-      return { path: `/tugas/${encodeURIComponent(boardId)}`, query };
-    }
-    return { path: '/tugas' };
   }
 
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
