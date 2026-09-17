@@ -1,41 +1,41 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
+    <div class="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <PageHeader :title="`${t('rbac_users_title')} ${t('rbac_superadmin_only')}`" :items="items" />
-        <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3">
-          {{ t('rbac_users_subtitle') }}
-        </p>
+        <PageHeader :title="t('rbac_users_title')" :items="items" />
       </div>
       <button
-        v-if="hasPermission('role', 'create')"
+        v-if="hasPermission('user', 'assign-role')"
+        type="button"
+        class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-white transition-colors hover:bg-primary-800"
         @click="openAddRoleModal"
-        class="flex items-center gap-2 px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-lg transition-colors"
       >
-        <UIcon name="i-lucide-user-plus" class="w-4 h-4" />
-        {{ t('rbac_roles_add') }}
+        <UIcon name="i-lucide-user-plus" class="h-4 w-4" />
+        {{ t('rbac_add') }}
       </button>
     </div>
 
-    <!-- B6: Tabel list user dengan role -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+    <div class="rounded-lg border border-gray-200 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
       <DataToolbar
         v-model="listLimit"
         v-model:search="listSearch"
         :search-placeholder="t('rbac_users_list_search')"
+        :show-refresh="false"
         @refresh="fetchList"
+        @export="onExport"
       >
-        <template #actions>
-          <select
+        <template #before-search>
+          <USelectMenu
             v-model="listRoleFilter"
-            class="h-8 px-3 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg"
-            @change="fetchList"
+            :items="roleFilterOptions"
+            value-key="value"
+            label-key="label"
+            :search-input="false"
+            class="w-40 shrink-0"
+            :ui="{ base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200' }"
+            :aria-label="t('rbac_role_filter_all')"
           >
-            <option value="">{{ t('rbac_role_filter_all') }}</option>
-            <option value="SUPERADMIN">SUPERADMIN</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
+          </USelectMenu>
         </template>
       </DataToolbar>
 
@@ -46,184 +46,191 @@
         :skeleton-rows="listLimit"
         :empty-message="t('rbac_users_list_empty')"
       >
-        <template #cell-user="{ row }">
-          <NuxtLink
-            :to="`/rbac/users/${row.persnum}/roles`"
-            class="flex items-start space-x-3 ml-3 hover:text-primary"
-          >
-            <div class="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center text-white text-xs font-semibold uppercase">
-              {{ (row.name || '?').charAt(0) }}
-            </div>
-            <div>
-              <p class="font-semibold text-gray-700 dark:text-white">{{ row.name || '-' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ row.persnum }}</p>
-            </div>
-          </NuxtLink>
+        <template #cell-name="{ row }">
+          <span class="font-semibold text-gray-700 dark:text-white">{{ row.name || '-' }}</span>
+        </template>
+        <template #cell-persnum="{ row }">
+          <span class="text-gray-600 dark:text-gray-300">{{ row.persnum || '-' }}</span>
         </template>
         <template #cell-roleName="{ row }">
-          <RoleBadge :role="row.roleName" />
-        </template>
-        <template #cell-unitKerja="{ row }">
-          <span class="text-gray-600 dark:text-gray-300">{{ row.unitKerja || '-' }}</span>
-        </template>
-        <template #cell-active="{ row }">
-          <StatusBadge :active="row.active" />
+          <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="roleBadgeClass(row.roleName)">
+            {{ row.roleName }}
+          </span>
         </template>
         <template #cell-aksi="{ row }">
-          <div class="flex justify-center gap-2">
-            <NuxtLink
-              v-if="hasPermission('role', 'update')"
-              :to="`/rbac/users/${row.persnum}/roles`"
-              class="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors group"
-              :title="t('rbac_detail')"
-            >
-              <UIcon name="i-lucide-eye" class="w-4 h-4 text-primary group-hover:text-primary-700" />
-            </NuxtLink>
+          <div class="flex justify-center gap-1">
             <button
-              v-if="hasPermission('role', 'delete') && (row.roleName === 'SUPERADMIN' || row.roleName === 'ADMIN')"
+              v-if="hasPermission('user', 'assign-role')"
+              type="button"
+              class="rounded-lg p-2 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+              :title="t('rbac_delete')"
               @click="resetToUser(row)"
-              class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group"
-              :title="t('rbac_reset_to_user') || 'Reset ke User'"
             >
-              <UIcon name="i-lucide-trash-2" class="w-4 h-4 text-red-600 group-hover:text-red-700" />
+              <UIcon name="i-lucide-trash-2" class="h-4 w-4 text-red-600" />
             </button>
           </div>
         </template>
       </DataTable>
 
-      <DataPagination
-        v-model:current-page="listPage"
+      <Pagination
+        :current-page="listPage"
+        :total-pages="listTotalPages"
         :total-items="listTotal"
-        :per-page="listLimit"
+        :rows-per-page="listLimit"
+        :rows-options="[]"
+        @update:page="listPage = $event"
+        @update:rows-per-page="listLimit = $event"
       />
     </div>
 
-    <!-- Modal Tambah Role -->
-    <div v-if="showAddRoleModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="fixed inset-0 bg-black/50 transition-opacity" @click="closeAddRoleModal"></div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto relative z-10">
-        <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('rbac_modal_add_title') }}</h3>
-          <button @click="closeAddRoleModal" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
-            <UIcon name="i-lucide-x" class="w-5 h-5" />
-          </button>
+    <Modal v-model="showAddRoleModal" size="xl" :hide-default-footer="true" :hide-close-button="true">
+      <template #title>
+        <div class="px-5 pt-5 pb-3">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('rbac_add_role_to_user') }}</h2>
         </div>
+      </template>
 
-        <!-- Body -->
-        <div class="p-6 space-y-4">
-          <!-- Search user -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('rbac_modal_search_user_label') }}</label>
-            <div class="relative">
-              <UIcon name="i-lucide-search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                v-model="modalSearchQuery"
-                type="text"
-                :placeholder="t('rbac_modal_search_placeholder')"
-                class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                @input="modalOnSearch"
-                @blur="modalHideSuggestions"
-              />
-              <div v-if="modalIsSearching" class="absolute right-3 top-1/2 -translate-y-1/2">
-                <div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-              <div
-                v-if="modalShowSuggestions && modalSuggestions.length > 0"
-                class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto"
-              >
-                <div
-                  v-for="person in modalSuggestions"
-                  :key="person.id"
-                  @mousedown.prevent="modalSelectPerson(person)"
-                  class="px-4 py-2.5 cursor-pointer text-sm hover:bg-primary-50 dark:hover:bg-gray-700 flex items-center justify-between"
-                >
-                  <div>
-                    <span class="font-medium text-gray-800 dark:text-white">{{ person.name }}</span>
-                    <span class="text-gray-500 ml-1">- {{ person.persnum }}</span>
-                  </div>
-                  <span class="text-xs px-2 py-0.5 rounded-full" :class="roleBadgeClass(modalRoleMap.get(Number(person.persnum)) || 'USER')">
-                    {{ modalRoleMap.get(Number(person.persnum)) || 'USER' }}
-                  </span>
-                </div>
-              </div>
+      <div class="space-y-4 pb-2">
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('rbac_modal_search_user_label') }}
+          </label>
+          <div class="relative">
+            <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              ref="modalSearchInput"
+              v-model="modalSearchQuery"
+              type="text"
+              :placeholder="t('rbac_modal_search_placeholder')"
+              class="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700"
+              @input="modalOnSearch"
+              @focus="updateModalSuggestionsPosition"
+              @blur="modalHideSuggestions"
+            />
+            <div v-if="modalIsSearching" class="absolute right-3 top-1/2 -translate-y-1/2">
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           </div>
 
-          <!-- Selected user + assign form -->
-          <div v-if="modalSelectedPerson" class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center text-white font-bold uppercase">
-                {{ (modalSelectedPerson.name || '?').charAt(0) }}
-              </div>
-              <div>
-                <p class="font-semibold text-gray-800 dark:text-white">{{ modalSelectedPerson.name }}</p>
-                <p class="text-xs text-gray-500">{{ t('rbac_modal_persnum_label') }} {{ modalSelectedPerson.persnum }}</p>
-              </div>
-            </div>
-
-            <!-- Assign form -->
-            <div class="flex items-center gap-2 mb-4 flex-wrap">
-              <select v-model="modalSelectedRoleId" class="border rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600 flex-1 min-w-[140px]">
-                <option value="" disabled>{{ t('rbac_roles_name_placeholder') }}</option>
-                <option v-for="r in assignableRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
-              </select>
+          <Teleport to="body">
+            <div
+              v-if="modalShowSuggestions && modalSuggestions.length"
+              :style="modalSuggestionsStyle"
+              class="fixed z-[var(--z-modal)] max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            >
               <button
-                v-if="hasPermission('user', 'assign-role')"
-                @click="modalAssignRole"
-                :disabled="!modalSelectedRoleId || modalAssigning"
-                class="px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-md disabled:opacity-50 transition-colors whitespace-nowrap"
+                v-for="person in modalSuggestions"
+                :key="person.id"
+                type="button"
+                class="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-primary-50 dark:hover:bg-gray-700"
+                @mousedown.prevent="modalSelectPerson(person)"
               >
-                {{ modalAssigning ? t('rbac_saving') : t('rbac_modal_assign_btn') }}
+                <span>
+                  <span class="font-medium text-gray-800 dark:text-white">{{ person.name }}</span>
+                  <span class="ml-1 text-gray-500">- {{ person.persnum }}</span>
+                </span>
+                <span class="rounded-full px-2 py-0.5 text-xs" :class="roleBadgeClass(modalRoleMap.get(Number(person.persnum)) || 'USER')">
+                  {{ modalRoleMap.get(Number(person.persnum)) || 'USER' }}
+                </span>
               </button>
             </div>
+          </Teleport>
+        </div>
 
-            <!-- Current roles -->
+        <div v-if="modalSelectedPerson" class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-400 font-bold uppercase text-white">
+              {{ (modalSelectedPerson.name || '?').charAt(0) }}
+            </div>
             <div>
-              <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{{ t('rbac_modal_current_roles') }}</p>
-              <div v-if="modalUserRoles.length === 0" class="text-xs text-gray-400 italic">{{ t('rbac_modal_no_role') }}</div>
-              <div class="flex flex-wrap gap-2">
-                <span v-for="ur in modalUserRoles" :key="ur.id"
-                  class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
-                  :class="roleBadgeClass(ur.roleName)">
-                  <UIcon name="i-lucide-shield" class="w-3 h-3" />
-                  {{ ur.roleName }}
-                  <StatusBadge :active="ur.active" />
-                  <button
-                    v-if="modalCanRemove(ur)"
-                    @click="modalRemoveRole(ur)"
-                    class="ml-1 text-red-500 hover:text-red-700"
-                    :title="t('rbac_modal_remove_role_title')">
-                    <UIcon name="i-lucide-x" class="w-3 h-3" />
-                  </button>
-                </span>
-              </div>
+              <p class="font-semibold text-gray-800 dark:text-white">{{ modalSelectedPerson.name }}</p>
+              <p class="text-xs text-gray-500">{{ t('rbac_modal_persnum_label') }} {{ modalSelectedPerson.persnum }}</p>
             </div>
           </div>
 
-          <!-- Empty state -->
-          <div v-else class="text-center py-8 text-gray-400 text-sm">
-            {{ t('rbac_modal_empty_hint') }}
+          <div v-if="canAssignRole" class="mb-4 flex flex-col gap-2 sm:flex-row">
+            <USelectMenu
+              v-model="modalSelectedRoleId"
+              :items="assignableRoleOptions"
+              value-key="value"
+              label-key="label"
+              :search-input="false"
+              :placeholder="t('rbac_roles_name_placeholder')"
+              class="min-w-0 flex-1"
+              :ui="{
+                base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
+                content: 'z-[var(--z-toast)]',
+              }"
+            >
+            </USelectMenu>
+            <button
+              v-if="hasPermission('user', 'assign-role')"
+              type="button"
+              :disabled="!modalSelectedRoleId || modalAssigning"
+              class="rounded-md bg-primary px-4 py-2 text-sm whitespace-nowrap text-white transition-colors hover:bg-primary-800 disabled:opacity-50"
+              @click="modalAssignRole"
+            >
+              {{ modalAssigning ? t('rbac_saving') : t('rbac_assign_role') }}
+            </button>
+          </div>
+
+          <div>
+            <p class="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">{{ t('rbac_current_roles') }}</p>
+            <div v-if="modalUserRoles.length === 0" class="text-xs italic text-gray-400">{{ t('rbac_no_role') }}</div>
+            <div v-else class="flex flex-col gap-2">
+              <div
+                v-for="userRole in modalUserRoles"
+                :key="userRole.id"
+                class="flex items-center gap-2"
+              >
+                <span
+                  class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                  :class="roleBadgeClass(userRole.roleName)"
+                >
+                  {{ userRole.roleName }}
+                </span>
+                <button
+                  v-if="modalCanRemove(userRole) && hasPermission('user', 'assign-role')"
+                  type="button"
+                  class="rounded-md p-1 text-red-500 transition-colors hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-900/30"
+                  :title="t('rbac_modal_remove_role_title')"
+                  :aria-label="t('rbac_delete')"
+                  @click="modalRemoveRole(userRole)"
+                >
+                  <UIcon name="i-lucide-trash-2" class="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-          <button @click="closeAddRoleModal" class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white">
+        <div v-else class="py-8 text-center text-sm text-gray-400">{{ t('rbac_modal_empty_hint') }}</div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end border-t border-gray-300 px-5 py-3 dark:border-gray-700">
+          <button
+            type="button"
+            class="rounded-lg border border-primary-500 px-4 py-2 text-sm text-primary hover:bg-primary-100"
+            @click="showAddRoleModal = false"
+          >
             {{ t('rbac_modal_close') }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </Modal>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRbac, type RbacUserRoleRow, type UserRoleListItem } from '~/composables/useRbac';
 import { usePerson, type PersonSuggestion } from '~/composables/usePerson';
-import { useToast } from '#imports';
 import { Alert, useAlertState } from '~/composables/useAlert';
+import { useToast } from '#imports';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 definePageMeta({ middleware: ['auth', 'rbac-admin'] });
 
@@ -233,44 +240,32 @@ const { roles, fetchRoles, fetchUserRoles, fetchAllUserRoles, assignRoleToUser, 
 const { searchPersons } = usePerson();
 const { user: authUser, hasPermission } = useAuth();
 
-// Hanya SUPERADMIN & ADMIN yang bisa di-assign (USER adalah default, tidak perlu dipilih)
-// Jika user sudah punya role ADMIN, SUPERADMIN tidak bisa ditambah (dan sebaliknya)
-const assignableRoles = computed(() => {
-  const existingRoleNames = new Set(
-    (modalUserRoles.value ?? []).map((ur) => (ur.roleName || '').toUpperCase()),
-  );
-  return roles.value.filter((r) => {
-    if (r.name === 'USER') return false;
-    // Jika user sudah punya role ini → tidak perlu ditampilkan (sudah ada)
-    if (existingRoleNames.has(r.name.toUpperCase())) return false;
-    // Jika user sudah punya ADMIN → SUPERADMIN tidak bisa ditambah
-    if (r.name === 'SUPERADMIN' && existingRoleNames.has('ADMIN')) return false;
-    // Jika user sudah punya SUPERADMIN → ADMIN tidak bisa ditambah
-    if (r.name === 'ADMIN' && existingRoleNames.has('SUPERADMIN')) return false;
-    return true;
-  });
-});
-
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
   { label: t('rbac_title'), to: '/rbac/roles' },
   { label: t('rbac_users'), to: '/rbac/users' },
 ]);
 
-// ── B6: Tabel list user dengan role ──────────────────────────
 const listSearch = ref('');
 const listLimit = ref(10);
 const listPage = ref(1);
 const listTotal = ref(0);
 const listData = ref<UserRoleListItem[]>([]);
 const listLoading = ref(false);
-const listRoleFilter = ref('');
+const ALL_ROLES = '__all__';
+const listRoleFilter = ref(ALL_ROLES);
+const listTotalPages = computed(() => Math.max(1, Math.ceil(listTotal.value / listLimit.value)));
+
+const roleFilterOptions = computed(() => [
+  { label: t('rbac_role_filter_all'), value: ALL_ROLES },
+  { label: 'SUPERADMIN', value: 'SUPERADMIN' },
+  { label: 'ADMIN', value: 'ADMIN' },
+]);
 
 const listColumns = computed(() => [
-  { key: 'user', label: t('namauser') || 'User', class: 'px-7' },
+  { key: 'name', label: t('namauser') || 'Nama', class: 'px-7' },
+  { key: 'persnum', label: t('rbac_personnel_number') },
   { key: 'roleName', label: t('rbac_roles') },
-  { key: 'unitKerja', label: t('rbac_unit_kerja') },
-  { key: 'active', label: t('rbac_status'), headerClass: 'text-center', class: 'text-center' },
   { key: 'aksi', label: t('rbac_col_aksi'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
@@ -278,14 +273,12 @@ const fetchList = async () => {
   listLoading.value = true;
   try {
     const result = await fetchAllUserRoles({
-      search: listSearch.value || undefined,
-      roleName: listRoleFilter.value || undefined,
+      search: listSearch.value.trim() || undefined,
+      roleName: listRoleFilter.value === ALL_ROLES ? undefined : listRoleFilter.value,
       page: listPage.value,
       limit: listLimit.value,
     });
-    // Bug fix: jangan filter klien-side ( bikin pagination rusak & total salah).
-    // Backend /rbac/users sudah mengembalikan data sesuai filter roleName + pagination.
-    listData.value = result.data;
+    listData.value = result.data.filter((row) => ['ADMIN', 'SUPERADMIN'].includes((row.roleName || '').toUpperCase()));
     listTotal.value = result.total;
   } catch {
     listData.value = [];
@@ -295,14 +288,80 @@ const fetchList = async () => {
   }
 };
 
+const onExport = () => {
+  if (listData.value.length === 0) {
+    toast.add({
+      title: t('rbac_info'),
+      description: t('rbac_export_no_data'),
+      color: 'warning',
+      icon: 'i-lucide-info',
+    });
+    return;
+  }
+
+  const data = listData.value.map((row, index) => ({
+    [t('rbac_export_col_no')]: index + 1,
+    [t('namauser') || 'Nama']: row.name || '-',
+    [t('rbac_personnel_number')]: row.persnum,
+    [t('rbac_roles')]: row.roleName,
+    [t('rbac_status')]: row.active ? 'Aktif' : 'Nonaktif',
+  }));
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet['!cols'] = [
+    { wch: 5 },
+    { wch: 28 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 12 },
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'User Role');
+  const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  saveAs(
+    new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    `rbac_user_roles_${new Date().toISOString().slice(0, 10)}.xlsx`,
+  );
+  toast.add({
+    title: t('rbac_success'),
+    description: t('rbac_export_success'),
+    color: 'success',
+    icon: 'i-lucide-check-circle',
+  });
+};
+
 watch([listSearch, listLimit, listRoleFilter], () => {
   listPage.value = 1;
   fetchList();
 });
+watch(listPage, fetchList);
 
-watch(listPage, () => fetchList());
+const assignableRoles = computed(() => {
+  const existing = new Set(
+    modalUserRoles.value
+      .filter((role) => role.active)
+      .map((role) => (role.roleName || '').toUpperCase()),
+  );
+  return roles.value.filter((role) => {
+    const name = role.name.toUpperCase();
+    if (!['ADMIN', 'SUPERADMIN'].includes(name) || existing.has(name)) return false;
+    return !(name === 'ADMIN' && existing.has('SUPERADMIN')) && !(name === 'SUPERADMIN' && existing.has('ADMIN'));
+  });
+});
 
-// ── Modal state ──────────────────────────────────────────────
+const assignableRoleOptions = computed(() =>
+  assignableRoles.value.map((role) => ({ label: role.name, value: role.id })),
+);
+
+const hasAssignedPrivilegedRole = computed(() =>
+  modalUserRoles.value.some(
+    (role) => role.active && ['ADMIN', 'SUPERADMIN'].includes((role.roleName || '').toUpperCase()),
+  ),
+);
+
+const canAssignRole = computed(
+  () => Boolean(modalSelectedPerson.value) && !hasAssignedPrivilegedRole.value && assignableRoleOptions.value.length > 0,
+);
+
 const showAddRoleModal = ref(false);
 const modalSearchQuery = ref('');
 const modalSuggestions = ref<PersonSuggestion[]>([]);
@@ -313,7 +372,20 @@ const modalSelectedRoleId = ref('');
 const modalUserRoles = ref<RbacUserRoleRow[]>([]);
 const modalAssigning = ref(false);
 const modalRoleMap = ref<Map<number, string>>(new Map());
+const modalSearchInput = ref<HTMLInputElement | null>(null);
+const modalSuggestionsStyle = ref<Record<string, string>>({});
 let modalSearchTimer: ReturnType<typeof setTimeout> | null = null;
+
+const updateModalSuggestionsPosition = () => {
+  const input = modalSearchInput.value;
+  if (!input) return;
+  const rect = input.getBoundingClientRect();
+  modalSuggestionsStyle.value = {
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+  };
+};
 
 const openAddRoleModal = () => {
   showAddRoleModal.value = true;
@@ -323,10 +395,6 @@ const openAddRoleModal = () => {
   modalSelectedPerson.value = null;
   modalSelectedRoleId.value = '';
   modalUserRoles.value = [];
-};
-
-const closeAddRoleModal = () => {
-  showAddRoleModal.value = false;
 };
 
 const modalOnSearch = () => {
@@ -339,16 +407,12 @@ const modalOnSearch = () => {
   modalSearchTimer = setTimeout(async () => {
     modalIsSearching.value = true;
     try {
-      const res: any = await searchPersons(modalSearchQuery.value);
-      modalSuggestions.value = res?.data?.data ?? [];
+      const response: any = await searchPersons(modalSearchQuery.value.trim());
+      modalSuggestions.value = response?.data?.data ?? [];
       modalShowSuggestions.value = modalSuggestions.value.length > 0;
-      if (modalSuggestions.value.length > 0) {
-        try {
-          modalRoleMap.value = await getRolesBatch(modalSuggestions.value.map((s) => s.persnum));
-        } catch {
-          modalRoleMap.value = new Map();
-        }
-      }
+      modalRoleMap.value = await getRolesBatch(modalSuggestions.value.map((person) => person.persnum));
+      await nextTick();
+      updateModalSuggestionsPosition();
     } catch {
       modalSuggestions.value = [];
       modalShowSuggestions.value = false;
@@ -358,9 +422,11 @@ const modalOnSearch = () => {
   }, 300);
 };
 
-const modalHideSuggestions = () => {
-  setTimeout(() => (modalShowSuggestions.value = false), 150);
-};
+const modalHideSuggestions = () => setTimeout(() => (modalShowSuggestions.value = false), 150);
+
+watch(showAddRoleModal, (isOpen) => {
+  if (!isOpen) modalShowSuggestions.value = false;
+});
 
 const modalSelectPerson = async (person: PersonSuggestion) => {
   modalSelectedPerson.value = person;
@@ -375,160 +441,73 @@ const modalSelectPerson = async (person: PersonSuggestion) => {
 
 const modalAssignRole = async () => {
   if (!modalSelectedPerson.value || !modalSelectedRoleId.value) return;
-
-  // Validasi: user tidak boleh punya SUPERADMIN + ADMIN sekaligus
-  const selectedRoleName = (roles.value.find((r) => r.id === modalSelectedRoleId.value)?.name || '').toUpperCase();
-  const existingRoleNames = new Set(
-    (modalUserRoles.value ?? []).map((ur) => (ur.roleName || '').toUpperCase()),
-  );
-  if (selectedRoleName === 'SUPERADMIN' && existingRoleNames.has('ADMIN')) {
-    toast.add({
-      title: t('rbac_fail'),
-      description: 'User sudah memiliki role ADMIN. Tidak bisa menambahkan SUPERADMIN.',
-      color: 'error',
-      icon: 'i-lucide-x-circle',
-    });
-    return;
-  }
-  if (selectedRoleName === 'ADMIN' && existingRoleNames.has('SUPERADMIN')) {
-    toast.add({
-      title: t('rbac_fail'),
-      description: 'User sudah memiliki role SUPERADMIN. Tidak bisa menambahkan ADMIN.',
-      color: 'error',
-      icon: 'i-lucide-x-circle',
-    });
-    return;
-  }
+  const roleName = roles.value.find((role) => role.id === modalSelectedRoleId.value)?.name?.toUpperCase();
+  if (!roleName || !['ADMIN', 'SUPERADMIN'].includes(roleName)) return;
 
   modalAssigning.value = true;
-  // Optimistic update — tambah ke state lokal dulu
-  const tempRole: RbacUserRoleRow = {
-    id: 'temp-' + Date.now(),
-    roleId: modalSelectedRoleId.value,
-    roleName: roles.value.find((r) => r.id === modalSelectedRoleId.value)?.name || '',
-    unitKerja: null,
-    active: true,
-    createdAt: new Date().toISOString() as any,
-  };
-  modalUserRoles.value = [...modalUserRoles.value, tempRole];
   try {
     await assignRoleToUser(modalSelectedPerson.value.persnum, modalSelectedRoleId.value, null);
-    toast.add({
-      title: t('rbac_success'),
-      description: t('rbac_role_assigned_to', { name: modalSelectedPerson.value.name }),
-      color: 'success',
-      icon: 'i-lucide-check-circle',
-    });
+    toast.add({ title: t('rbac_success'), description: t('rbac_role_assigned_to', { name: modalSelectedPerson.value.name }), color: 'success', icon: 'i-lucide-check-circle' });
     modalUserRoles.value = await fetchUserRoles(modalSelectedPerson.value.persnum);
     modalSelectedRoleId.value = '';
     await fetchList();
-  } catch (e: any) {
-    // Rollback optimistic update
-    modalUserRoles.value = modalUserRoles.value.filter((r) => r.id !== tempRole.id);
-    toast.add({
-      title: t('rbac_fail'),
-      description: e?.message || t('rbac_role_assign_fail'),
-      color: 'error',
-      icon: 'i-lucide-x-circle',
-    });
+  } catch (error: any) {
+    toast.add({ title: t('rbac_fail'), description: error?.message || t('rbac_role_assign_fail'), color: 'error', icon: 'i-lucide-x-circle' });
   } finally {
     modalAssigning.value = false;
   }
 };
 
-const modalCanRemove = (ur: RbacUserRoleRow) => {
-  // Badge USER adalah role default — tidak bisa dihapus, hanya SUPERADMIN & ADMIN yang bisa dihapus.
-  const name = (ur.roleName || '').toUpperCase();
-  if (name === 'USER') return false;
-  if (name === 'SUPERADMIN' && authUser.value?.persnum === modalSelectedPerson.value?.persnum) {
-    return false;
-  }
-  return true;
+const modalCanRemove = (userRole: RbacUserRoleRow) => {
+  if (!userRole.active) return false;
+  const name = (userRole.roleName || '').toUpperCase();
+  return name !== 'USER';
 };
 
-const modalRemoveRole = async (ur: RbacUserRoleRow) => {
+const modalRemoveRole = async (userRole: RbacUserRoleRow) => {
   if (!modalSelectedPerson.value) return;
-  const isSuperadmin = ur.roleName === 'SUPERADMIN';
-  const title = isSuperadmin ? t('rbac_remove_superadmin_title') : t('rbac_remove_role_title');
-  const message = isSuperadmin
-    ? t('rbac_remove_superadmin_desc')
-    : t('rbac_remove_role_desc');
-  const ok = await Alert.confirm(
-    title,
-    message,
-    t('rbac_delete'),
-    t('rbac_cancel'),
-    true
-  );
-  if (!ok) return;
-  // Nyalakan spinner di tombol confirm Alert selama proses hapus berlangsung.
-  const alertState = useAlertState();
-  alertState.isLoading = true;
-  // Optimistic update — hapus dari state lokal dulu
-  modalUserRoles.value = modalUserRoles.value.filter((r) => r.id !== ur.id);
+  const confirmed = await Alert.confirm(t('rbac_remove_role_title'), t('rbac_remove_role_desc'), t('rbac_delete'), t('rbac_cancel'), true);
+  if (!confirmed) return;
+  useAlertState().isLoading = true;
   try {
-    await removeRoleFromUser(modalSelectedPerson.value.persnum, ur.roleId);
+    await removeRoleFromUser(modalSelectedPerson.value.persnum, userRole.roleId);
     Alert.close();
-    toast.add({
-      title: t('rbac_success'),
-      description: t('rbac_role_removed_from', { name: modalSelectedPerson.value.name }),
-      color: 'success',
-      icon: 'i-lucide-check-circle',
-    });
     modalUserRoles.value = await fetchUserRoles(modalSelectedPerson.value.persnum);
     await fetchList();
-  } catch (e: any) {
-    // Tutup alert & reset loading
+    toast.add({ title: t('rbac_success'), description: t('rbac_role_removed_from', { name: modalSelectedPerson.value.name }), color: 'success', icon: 'i-lucide-check-circle' });
+  } catch (error: any) {
     Alert.close();
-    // Rollback
-    modalUserRoles.value = await fetchUserRoles(modalSelectedPerson.value.persnum);
-    toast.add({
-      title: t('rbac_fail'),
-      description: e?.message || t('rbac_role_remove_fail'),
-      color: 'error',
-      icon: 'i-lucide-x-circle',
-    });
+    toast.add({ title: t('rbac_fail'), description: error?.message || t('rbac_role_remove_fail'), color: 'error', icon: 'i-lucide-x-circle' });
   }
 };
 
 const roleBadgeClass = (name?: string) => {
-  const n = (name || '').toUpperCase();
-  if (n === 'SUPERADMIN')
-    return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
-  if (n === 'ADMIN') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+  const normalized = (name || '').toUpperCase();
+  return normalized === 'SUPERADMIN'
+    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+    : normalized === 'ADMIN'
+      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
 };
 
-// Reset role user ke default USER (hapus role SUPERADMIN/ADMIN)
 const resetToUser = async (row: UserRoleListItem) => {
-  const ok = await Alert.confirm(
+  const confirmed = await Alert.confirm(
     t('rbac_reset_to_user_title') || 'Reset ke User?',
-    t('rbac_reset_to_user_desc', { name: row.name, role: row.roleName }) || `User "${row.name}" akan direset menjadi User biasa. Role ${row.roleName} akan dihapus. Yakin?`,
-    t('rbac_delete') || 'Hapus',
-    t('rbac_cancel') || 'Batal',
-    true
+    t('rbac_reset_to_user_desc', { name: row.name, role: row.roleName }) || `Role ${row.roleName} akan dihapus dari ${row.name}.`,
+    t('rbac_delete'),
+    t('rbac_cancel'),
+    true,
   );
-  if (!ok) return;
-  const alertState = useAlertState();
-  alertState.isLoading = true;
+  if (!confirmed) return;
+  useAlertState().isLoading = true;
   try {
     await removeRoleFromUser(row.persnum, row.roleId);
     Alert.close();
-    toast.add({
-      title: t('rbac_success'),
-      description: t('rbac_reset_success', { name: row.name }) || `Role ${row.roleName} dihapus. ${row.name} sekarang User biasa.`,
-      color: 'success',
-      icon: 'i-lucide-check-circle',
-    });
     await fetchList();
-  } catch (e: any) {
+    toast.add({ title: t('rbac_success'), description: t('rbac_reset_success', { name: row.name }) || t('rbac_role_removed'), color: 'success', icon: 'i-lucide-check-circle' });
+  } catch (error: any) {
     Alert.close();
-    toast.add({
-      title: t('rbac_fail'),
-      description: e?.message || (t('rbac_role_remove_fail') || 'Gagal reset role'),
-      color: 'error',
-      icon: 'i-lucide-x-circle',
-    });
+    toast.add({ title: t('rbac_fail'), description: error?.message || t('rbac_role_remove_fail'), color: 'error', icon: 'i-lucide-x-circle' });
   }
 };
 
