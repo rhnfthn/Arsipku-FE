@@ -28,6 +28,8 @@ const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 const { hasPermission, user } = useAuth();
+const { notifications: globalNotifications, markAsRead: markNotificationAsRead } =
+  useNotifications();
 const {
   boardDetails,
   isLoadingBoard,
@@ -510,6 +512,39 @@ const removingCommentIds = ref(new Set<string>());
 let forumRequestId = 0;
 let forumLoadedOnce = false;
 
+/**
+ * Gabungkan komentar berdasarkan ID. Event socket dapat tiba sebelum response
+ * POST komentar sendiri, dan pagination dapat bergeser saat ada pesan baru.
+ * Keduanya tidak boleh menghasilkan kartu chat ganda.
+ */
+const mergeForumComments = (items: TugasTaskComment[]) => {
+  const unique = new Map<string, TugasTaskComment>();
+  for (const item of items) unique.set(item.id, item);
+  return [...unique.values()].sort((a, b) => {
+    const dateDiff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    return dateDiff || a.id.localeCompare(b.id);
+  });
+};
+
+const unreadForumMentions = computed(() =>
+  globalNotifications.value.filter((notification) => {
+    const data = notification.data ?? {};
+    const relatedBoardId = data.boardId ?? data.board_id;
+    return (
+      !notification.isRead &&
+      notification.type === 'TUGAS_TAGGED' &&
+      String(relatedBoardId ?? '') === boardId.value
+    );
+  })
+);
+
+const markCurrentBoardForumMentionsAsRead = async () => {
+  if (!unreadForumMentions.value.length) return;
+  await Promise.allSettled(
+    unreadForumMentions.value.map((notification) => markNotificationAsRead(notification.id))
+  );
+};
+
 const loadForumComments = async (reset = true) => {
   const requestId = ++forumRequestId;
   if (reset) isLoadingForum.value = true;
@@ -521,7 +556,9 @@ const loadForumComments = async (reset = true) => {
     // API mengembalikan terbaru duluan; urutkan ascending agar chat
     // mengalir dari atas (terlama) ke bawah (terbaru).
     const rows = [...result.data].reverse();
-    forumComments.value = reset ? rows : [...rows, ...forumComments.value];
+    forumComments.value = mergeForumComments(
+      reset ? rows : [...rows, ...forumComments.value]
+    );
     forumPage.value = page;
     forumLastPage.value = result.meta.totalPages ?? page;
   } catch (error) {
@@ -544,7 +581,9 @@ const handleSendComment = async (isi: string, taskId: string | null) => {
     const payload = (res as { data?: unknown }).data ?? res;
     const inner = payload as { data?: TugasTaskComment };
     const comment = inner?.data;
-    if (comment) forumComments.value.push(comment);
+    if (comment) {
+      forumComments.value = mergeForumComments([...forumComments.value, comment]);
+    }
     toast.add({ title: t('tugas_forum_berhasil_dikirim'), color: 'success' });
   } catch (error) {
     toast.add({ title: mapTugasError(error), color: 'error' });
@@ -579,12 +618,27 @@ const handleRemoveComment = async (
 const handleLoadMoreComments = () => loadForumComments(false);
 
 // Muat komentar saat tab forum dibuka pertama kali.
-watch(activeTab, (tab) => {
-  if (tab === 'forum' && !forumLoadedOnce) {
-    forumLoadedOnce = true;
-    loadForumComments();
+watch(
+  activeTab,
+  (tab) => {
+    if (tab !== 'forum') return;
+    if (!forumLoadedOnce) {
+      forumLoadedOnce = true;
+      loadForumComments();
+    }
+    void markCurrentBoardForumMentionsAsRead();
+  },
+  { immediate: true }
+);
+
+// Notifikasi dapat tiba setelah tab forum sudah terbuka. Tandai langsung
+// sebagai dibaca karena pengguna sedang melihat diskusi papan tersebut.
+watch(
+  () => unreadForumMentions.value.map((notification) => notification.id).join(','),
+  () => {
+    if (activeTab.value === 'forum') void markCurrentBoardForumMentionsAsRead();
   }
-});
+);
 
 // Realtime: komentar baru/dihapus anggota lain → refresh forum papan.
 watch(tugasCommentAdded, (event) => {
@@ -838,6 +892,7 @@ const detailTabs = computed(() => [
     value: 'forum' as const,
     label: t('tugas_forum'),
     icon: 'i-lucide-message-square',
+    badge: unreadForumMentions.value.length || undefined,
   },
 ]);
 </script>
