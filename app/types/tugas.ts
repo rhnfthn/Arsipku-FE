@@ -143,7 +143,11 @@ export interface TugasTaskEvidence {
 
 export interface TugasTaskComment {
   id: string;
-  taskId: string;
+  boardId: string;
+  /** Task yang di-tag — null bila komentar umum tanpa rujukan task. */
+  taskId: string | null;
+  /** Judul task saat komentar dibuat — untuk render chip tag. */
+  taskJudul: string | null;
   memberId: string;
   isi: string;
   actorPersnum: number;

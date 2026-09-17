@@ -51,9 +51,9 @@ const {
   addTaskEvidence,
   removeTaskEvidence,
   fetchBoardActivity,
-  fetchTaskComments,
-  addTaskComment,
-  removeTaskComment,
+  fetchBoardComments,
+  addBoardComment,
+  removeBoardComment,
 } = useTugas();
 
 const boardId = computed(() => String(route.params.id));
@@ -112,6 +112,15 @@ const userPersnum = computed(() => Number(user.value?.persnum ?? 0));
 /** Member saya di papan ini — null bila data belum termuat. */
 const myMember = computed<TugasMember | null>(
   () => members.value.find((member) => member.positionId === userPositionId.value) ?? null
+);
+
+/**
+ * Kepemilikan papan: hanya owner yang boleh mengubah papan dan mengelola
+ * anggota — backend memvalidasi via assertBoardOwner, jadi tombol aksi
+ * disembunyikan untuk anggota biasa papan milik orang lain.
+ */
+const isBoardOwner = computed(
+  () => myMember.value?.role === 'owner'
 );
 
 /** Pembuat tetap menjadi pemilik task, termasuk hak hapus. */
@@ -483,15 +492,14 @@ const memberInitials = (name: string) => {
   return `${parts[0]?.[0] ?? ''}${parts.length > 1 ? (parts.at(-1)?.[0] ?? '') : ''}`.toUpperCase();
 };
 
-// ─── Forum diskusi task ──────────────────────────────────────────────────────
+// ─── Forum diskusi papan ──────────────────────────────────────────────────────
 
 /**
- * Forum diskusi per task: komentar terbuka untuk semua anggota papan.
- * Task aktif dipilih via dropdown; komentar dimuat per task terpilih.
+ * Forum diskusi umum papan: satu channel untuk seluruh anggota.
+ * Komentar dapat men-tag task tertentu sebagai rujukan diskusi.
  * Realtime: event socket comment-added/deleted memicu refresh komentar
- * task yang sedang dibuka (tanpa refetch penuh board).
+ * (tanpa refetch penuh board).
  */
-const forumTaskId = ref<string | null>(null);
 const forumComments = ref<TugasTaskComment[]>([]);
 const forumPage = ref(1);
 const forumLastPage = ref(1);
@@ -500,19 +508,15 @@ const isLoadingMoreForum = ref(false);
 const isSendingComment = ref(false);
 const removingCommentIds = ref(new Set<string>());
 let forumRequestId = 0;
-
-const forumTask = computed(
-  () => tasks.value.find((task) => task.id === forumTaskId.value) ?? null
-);
+let forumLoadedOnce = false;
 
 const loadForumComments = async (reset = true) => {
-  if (!forumTaskId.value) return;
   const requestId = ++forumRequestId;
   if (reset) isLoadingForum.value = true;
   else isLoadingMoreForum.value = true;
   const page = reset ? 1 : forumPage.value + 1;
   try {
-    const result = await fetchTaskComments(forumTaskId.value, page, 50);
+    const result = await fetchBoardComments(boardId.value, page, 50);
     if (requestId !== forumRequestId) return;
     // API mengembalikan terbaru duluan; urutkan ascending agar chat
     // mengalir dari atas (terlama) ke bawah (terbaru).
@@ -532,21 +536,11 @@ const loadForumComments = async (reset = true) => {
   }
 };
 
-const selectForumTask = (taskId: string | null) => {
-  const next = typeof taskId === 'string' && taskId ? taskId : null;
-  if (next === forumTaskId.value) return;
-  forumTaskId.value = next;
-  forumComments.value = [];
-  forumPage.value = 1;
-  forumLastPage.value = 1;
-  if (next) loadForumComments();
-};
-
-const handleSendComment = async (isi: string) => {
-  if (!forumTaskId.value || isSendingComment.value) return;
+const handleSendComment = async (isi: string, taskId: string | null) => {
+  if (isSendingComment.value) return;
   isSendingComment.value = true;
   try {
-    const res = await addTaskComment(forumTaskId.value, isi);
+    const res = await addBoardComment(boardId.value, isi, taskId);
     const payload = (res as { data?: unknown }).data ?? res;
     const inner = payload as { data?: TugasTaskComment };
     const comment = inner?.data;
@@ -559,13 +553,22 @@ const handleSendComment = async (isi: string) => {
   }
 };
 
-const handleRemoveComment = async (commentId: string) => {
-  if (!forumTaskId.value || removingCommentIds.value.has(commentId)) return;
+const handleRemoveComment = async (
+  commentId: string,
+  scope: 'me' | 'everyone' = 'me'
+) => {
+  if (removingCommentIds.value.has(commentId)) return;
   removingCommentIds.value.add(commentId);
   try {
-    await removeTaskComment(forumTaskId.value, commentId);
+    await removeBoardComment(boardId.value, commentId, scope);
     forumComments.value = forumComments.value.filter((item) => item.id !== commentId);
-    toast.add({ title: t('tugas_forum_berhasil_dihapus'), color: 'success' });
+    toast.add({
+      title:
+        scope === 'everyone'
+          ? t('tugas_forum_berhasil_dihapus_semua')
+          : t('tugas_forum_berhasil_dihapus'),
+      color: 'success',
+    });
   } catch (error) {
     toast.add({ title: mapTugasError(error), color: 'error' });
   } finally {
@@ -575,23 +578,24 @@ const handleRemoveComment = async (commentId: string) => {
 
 const handleLoadMoreComments = () => loadForumComments(false);
 
-// Muat daftar task untuk dropdown forum saat tab dibuka pertama kali.
+// Muat komentar saat tab forum dibuka pertama kali.
 watch(activeTab, (tab) => {
-  if (tab === 'forum' && !forumTaskId.value && tasks.value.length) {
-    selectForumTask(tasks.value[0]!.id);
+  if (tab === 'forum' && !forumLoadedOnce) {
+    forumLoadedOnce = true;
+    loadForumComments();
   }
 });
 
-// Realtime: komentar baru/dihapus anggota lain → refresh task terbuka.
+// Realtime: komentar baru/dihapus anggota lain → refresh forum papan.
 watch(tugasCommentAdded, (event) => {
-  if (!event || event.taskId !== forumTaskId.value) return;
+  if (!event || event.boardId !== boardId.value) return;
   // Komentar sendiri sudah di-append optimistik — hindari duplikat.
   if (forumComments.value.some((item) => item.id === event.commentId)) return;
   loadForumComments();
 });
 
 watch(tugasCommentDeleted, (event) => {
-  if (!event || event.taskId !== forumTaskId.value) return;
+  if (!event || event.boardId !== boardId.value) return;
   forumComments.value = forumComments.value.filter((item) => item.id !== event.commentId);
 });
 
@@ -1236,17 +1240,21 @@ const detailTabs = computed(() => [
                 {{ t('tugas_aktivitas_kosong') }}
               </Paragraph>
             </div>
-            <UButton
+            <button
               v-if="activityPage < activityLastPage"
-              class="mt-3 shrink-0 self-start"
-              size="xs"
-              color="neutral"
-              variant="outline"
-              :loading="isLoadingActivity"
+              type="button"
+              class="mt-3 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-600 transition-all duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300 dark:hover:border-primary-800 dark:hover:bg-primary-900/20 dark:hover:text-primary-300"
+              :disabled="isLoadingActivity"
               @click="loadActivity(false)"
             >
+              <UIcon
+                v-if="isLoadingActivity"
+                name="i-lucide-loader-circle"
+                class="h-4 w-4 animate-spin"
+              />
+              <UIcon v-else name="i-lucide-chevron-down" class="h-4 w-4" />
               {{ t('tugas_muat_aktivitas_lagi') }}
-            </UButton>
+            </button>
           </section>
         </div>
 
@@ -1262,7 +1270,7 @@ const detailTabs = computed(() => [
               </Paragraph>
             </div>
             <UButton
-              v-if="canManageMembers"
+              v-if="canManageMembers && isBoardOwner"
               icon="i-lucide-user-plus"
               color="primary"
               size="sm"
@@ -1328,84 +1336,24 @@ const detailTabs = computed(() => [
           </div>
         </div>
 
-        <!-- Forum: diskusi / berbagi informasi per task. -->
+        <!-- Forum: diskusi umum seluruh anggota papan. -->
         <div v-else-if="activeTab === 'forum'" class="space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <Heading variant="heading9b" as="h2" class="text-gray-900 dark:text-white">
                 {{ t('tugas_forum') }}
               </Heading>
-              <Paragraph variant="body3" class="mt-1 text-gray-500 dark:text-gray-400">
-                {{ t('tugas_forum_desc') }}
-              </Paragraph>
             </div>
           </div>
 
-          <!-- Pemilih task untuk forum. -->
-          <div
-            class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-          >
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('tugas_detail_task') }}
-            </label>
-            <USelectMenu
-              :model-value="forumTaskId ?? ''"
-              :items="
-                tasks.map((task) => ({
-                  label: task.judul,
-                  value: task.id,
-                }))
-              "
-              value-key="value"
-              label-key="label"
-              :search-input="{ placeholder: t('tugas_cari_task') }"
-              :placeholder="t('tugas_pilih_task_forum')"
-              class="w-full"
-              :ui="{
-                base: 'w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
-                content: 'z-[var(--z-toast)]',
-              }"
-              :aria-label="t('tugas_detail_task')"
-              @update:model-value="selectForumTask"
-            />
-            <p v-if="!tasks.length" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {{ t('tugas_task_kosong') }}
-            </p>
-          </div>
-
-          <!-- Area chat. -->
+          <!-- Area chat umum papan. -->
           <section
-            v-if="forumTaskId"
-            class="flex h-[32rem] flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            class="flex h-[36rem] flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
           >
-            <div class="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-700">
-              <div class="flex min-w-0 items-center gap-2">
-                <UIcon
-                  name="i-lucide-message-square"
-                  class="h-4 w-4 shrink-0 text-primary-500"
-                />
-                <p class="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">
-                  {{ forumTask?.judul ?? t('tugas_detail_task') }}
-                </p>
-              </div>
-              <UBadge
-                v-if="forumTask"
-                :color="
-                  forumTask.status === 'done'
-                    ? 'success'
-                    : forumTask.status === 'in_progress'
-                      ? 'primary'
-                      : 'neutral'
-                "
-                variant="subtle"
-                size="sm"
-              >
-                {{ columnTitles[forumTask.status] }}
-              </UBadge>
-            </div>
-
             <TugasTaskForum
-              :task-id="forumTaskId"
+              :board-id="boardId"
+              :tasks="tasks"
+              :members="members"
               :comments="forumComments"
               :loading="isLoadingForum"
               :sending="isSendingComment"
@@ -1418,12 +1366,6 @@ const detailTabs = computed(() => [
               @load-more="handleLoadMoreComments"
             />
           </section>
-
-          <EmptyState
-            v-else-if="tasks.length"
-            :title="t('tugas_forum')"
-            :description="t('tugas_forum_pilih_task')"
-          />
         </div>
       </div>
     </template>
