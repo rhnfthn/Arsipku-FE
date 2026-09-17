@@ -97,14 +97,14 @@ const tugasTaskUpdate = ref<{
 // terkait saat event diterima (komentar tidak menaikkan revision papan).
 const tugasCommentAdded = ref<{
   boardId: string;
-  taskId: string;
+  taskId: string | null;
   commentId: string;
   occurredAt: string;
 } | null>(null);
 
 const tugasCommentDeleted = ref<{
   boardId: string;
-  taskId: string;
+  taskId: string | null;
   commentId: string;
   occurredAt: string;
 } | null>(null);
@@ -373,10 +373,10 @@ const connectSocket = async (): Promise<void> => {
     });
 
     socket.on('tugas:comment-added', (payload: any) => {
-      if (payload?.boardId && payload?.taskId && payload?.commentId) {
+      if (payload?.boardId && payload?.commentId) {
         tugasCommentAdded.value = {
           boardId: String(payload.boardId),
-          taskId: String(payload.taskId),
+          taskId: payload.taskId ? String(payload.taskId) : null,
           commentId: String(payload.commentId),
           occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
         };
@@ -384,10 +384,10 @@ const connectSocket = async (): Promise<void> => {
     });
 
     socket.on('tugas:comment-deleted', (payload: any) => {
-      if (payload?.boardId && payload?.taskId && payload?.commentId) {
+      if (payload?.boardId && payload?.commentId) {
         tugasCommentDeleted.value = {
           boardId: String(payload.boardId),
-          taskId: String(payload.taskId),
+          taskId: payload.taskId ? String(payload.taskId) : null,
           commentId: String(payload.commentId),
           occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
         };
