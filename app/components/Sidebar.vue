@@ -943,12 +943,6 @@ const userMenuUtilitas = computed(() => {
         },
       ],
     },
-    {
-      label: t('template'),
-      to: '/template',
-      icon: 'i-lucide-copy',
-      permission: { resource: 'template', action: 'read' },
-    },
     verifikatorMenu.value,
     {
       label: t('titelatur_inggris'),
@@ -1217,12 +1211,6 @@ const adminMenuUtilitas = computed(() => {
           permission: { resource: 'layanan-email', action: 'read-log' },
         },
       ],
-    },
-    {
-      label: t('template'),
-      to: '/template',
-      icon: 'i-lucide-copy',
-      permission: { resource: 'template', action: 'read' },
     },
     verifikatorMenu.value,
   ];
