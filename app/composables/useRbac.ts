@@ -207,6 +207,22 @@ export const useRbac = () => {
     return res?.data ?? { tree: null, assignedPermissionIds: [] };
   };
 
+  const fetchMatrixKelola = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/kelola?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
+  const fetchMatrixTugas = async (roleId: string): Promise<{
+    tree: any;
+    assignedPermissionIds: string[];
+  }> => {
+    const res: any = await apiGet(`/rbac/matrix/tugas?roleId=${roleId}`, {}, { skipCache: true });
+    return res?.data ?? { tree: null, assignedPermissionIds: [] };
+  };
+
   return {
     roles,
     resources,
@@ -232,5 +248,7 @@ export const useRbac = () => {
     fetchMatrixAdministrasi,
     fetchMatrixLaporan,
     fetchMatrixFaq,
+    fetchMatrixKelola,
+    fetchMatrixTugas,
   };
 };

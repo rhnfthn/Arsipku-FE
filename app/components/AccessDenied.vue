@@ -34,7 +34,7 @@
       </UButton>
     </div>
     <Paragraph
-      v-if="permissionKey"
+      v-if="showPermissionKey && displayKey"
       variant="caption1"
       class="text-gray-400 dark:text-gray-600 mt-4"
     >
@@ -46,8 +46,10 @@
 <script setup lang="ts">
 const props = withDefaults(defineProps<{
   permissionKey?: string;
+  showPermissionKey?: boolean;
 }>(), {
   permissionKey: '',
+  showPermissionKey: true,
 });
 
 const emit = defineEmits<{

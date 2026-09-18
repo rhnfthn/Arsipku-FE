@@ -36,6 +36,18 @@ const canCreateBoard = computed(() => hasPermission('tugas', 'create-board'));
 const canUpdateBoard = computed(() => hasPermission('tugas', 'update-board'));
 const canDeleteBoard = computed(() => hasPermission('tugas', 'delete-board'));
 
+const { user } = useAuth();
+
+/**
+ * Kepemilikan papan: hanya pembuat (owner) yang boleh mengubah/menghapus
+ * papan — backend memvalidasi via assertBoardOwner, jadi tombol edit/hapus
+ * di kartu disembunyikan untuk anggota biasa papan milik orang lain.
+ */
+const isBoardOwner = (board: TugasBoardSummary): boolean => {
+  const myPersnum = Number(user.value?.persnum ?? 0);
+  return Boolean(myPersnum) && board.owner?.persnum === myPersnum;
+};
+
 // ─── Filter (URL query sinkron agar back/forward bekerja) ─────────────────────
 
 const activeFilter = computed<TugasBoardFilter>(() => {
@@ -348,7 +360,9 @@ const breadcrumbs = computed(() => [
             v-for="board in boards"
             :key="board.id"
             :board="board"
-            :can-manage="canUpdateBoard || canDeleteBoard"
+            :can-manage="
+              (canUpdateBoard || canDeleteBoard) && isBoardOwner(board)
+            "
             @edit="openEdit"
             @delete="openDelete"
           />

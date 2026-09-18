@@ -36,12 +36,15 @@
     </div>
 
     <button
+      v-if="showRefresh"
       @click="$emit('refresh')"
       class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition-colors"
       :title="refreshLabel"
     >
       <RotateCcw class="w-4 h-4" />
     </button>
+
+    <slot name="before-search" />
 
     <div class="relative flex-1 min-w-40">
       <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -78,6 +81,7 @@ withDefaults(
     searchPlaceholder?: string;
     rowsChoices?: number[];
     showExport?: boolean;
+    showRefresh?: boolean;
     showRows?: boolean;
     exportLabel?: string;
     refreshLabel?: string;
@@ -85,6 +89,7 @@ withDefaults(
   {
     rowsChoices: () => [5, 10, 25, 50, 100],
     showExport: true,
+    showRefresh: true,
     showRows: true,
     exportLabel: 'Export',
     refreshLabel: 'Refresh',

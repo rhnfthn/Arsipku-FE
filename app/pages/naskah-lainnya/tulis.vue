@@ -469,7 +469,7 @@
           </div>
 
           <!-- Pratinjau docx inline (render langsung di bawah upload) -->
-          <div v-if="previewFile" class="py-4">
+          <div v-if="previewFile && canPreview" class="py-4">
             <div class="flex items-center gap-2 mb-3">
               <UIcon name="i-lucide-eye" class="w-4 h-4 text-gray-400" />
               <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pratinjau</h4>
@@ -648,7 +648,7 @@
             :to="`/naskah-lainnya/${createdId}`"
           />
           <UButton
-            v-if="isPhysicalMetadataMode"
+            v-if="isPhysicalMetadataMode && canSaveDraft"
             label="Simpan Data Sistem"
             color="primary"
             size="lg"
@@ -658,7 +658,7 @@
             @click="handleSaveDraft"
           />
           <UButton
-            v-else
+            v-else-if="canSaveDraft"
             label="Draft"
             color="neutral"
             variant="outline"
@@ -669,7 +669,7 @@
             @click="handleSaveDraft"
           />
           <UButton
-            v-if="!isPhysicalMetadataMode"
+            v-if="!isPhysicalMetadataMode && canSend"
             :label="isPhysicalSigning ? 'Submit' : 'Kirim'"
             color="primary"
             size="lg"
@@ -721,7 +721,7 @@ const { t } = useI18n();
 const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getConfigDigsig } = useDigsig();
-const { user, getProfile } = useAuth();
+const { user, getProfile, hasPermission, refreshPermissions } = useAuth();
 const { apiGet } = useApi();
 const alertState = useAlertState();
 const route = useRoute();
@@ -748,6 +748,15 @@ const { verifikatorList, fetchVerifikator } = useNaskahDinas();
 const isRevisi = computed(() => detail.value?.tahapan === 'perlu_perbaikan');
 const isPhysicalMetadataMode = computed(() => route.query.mode === 'data-sistem');
 const isPhysicalSigning = computed(() => form.value.signOption === 'ttd_basah');
+const canPreview = computed(() =>
+  hasPermission('utama.tulis.naskah-lainnya.button-pratinjau', 'create'),
+);
+const canSaveDraft = computed(() =>
+  hasPermission('utama.tulis.naskah-lainnya.button-simpan-draft', 'create'),
+);
+const canSend = computed(() =>
+  hasPermission('utama.tulis.naskah-lainnya.button-kirim', 'create'),
+);
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -1138,6 +1147,10 @@ const loadingMessage = ref('');
 onMounted(async () => {
   loadingMessage.value = 'Memuat...';
   isLoadingData.value = true;
+
+  // Ambil permission terbaru agar perubahan role langsung memengaruhi tombol
+  // tanpa menunggu token/session lama.
+  await refreshPermissions();
 
   try {
     klasifikasiStatus.value = 'loading';
@@ -1585,6 +1598,7 @@ function validateRequiredFieldsForSend(): boolean {
 const showDraftConfirm = ref(false);
 
 async function handleSaveDraft() {
+  if (!canSaveDraft.value) return;
   showDraftConfirm.value = true;
 }
 
@@ -1640,6 +1654,7 @@ async function confirmSaveDraft() {
 
 // ── Kirim: metode tanda tangan sudah dipilih di toggle atas form ──
 async function handleConfirmKirim() {
+  if (!canSend.value) return;
   if (!validateRequiredFieldsForSend()) return;
   const isPhysical = isPhysicalSigning.value;
   const ok = await Alert.confirm(

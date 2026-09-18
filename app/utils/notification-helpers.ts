@@ -30,6 +30,7 @@ export const resolveNotificationIcon = (type: string, data?: Record<string, any>
     TUGAS_ASSIGNED: 'i-lucide-list-todo',
     TUGAS_DONE: 'i-lucide-circle-check-big',
     TUGAS_DUE: 'i-lucide-alarm-clock',
+    TUGAS_TAGGED: 'i-lucide-at-sign',
   };
 
   return map[type] || 'i-lucide-bell';

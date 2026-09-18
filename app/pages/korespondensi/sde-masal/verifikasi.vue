@@ -189,25 +189,8 @@ const breadcrumbs = [
 
 const filteredRows = computed(() => {
   let result = [...rows.value].sort((a, b) => {
-    // Perubahan yang belum dibuka selalu berada paling atas, termasuk folder
-    // yang baru masuk ke giliran verifikasi berikutnya.
-    const aChanged = isNewVerificationFolder(a);
-    const bChanged = isNewVerificationFolder(b);
-    if (aChanged !== bChanged) return aChanged ? -1 : 1;
-
-    // Folder yang masih membutuhkan tindakan harus selalu didahulukan.
-    // Setelah prioritas workflow sama, gunakan aktivitas terakhir agar
-    // folder yang baru diterima atau baru berpindah giliran berada di atas.
-    const actionableStatuses = new Set([
-      'MENUNGGU_VERIFIKASI',
-      'MENUNGGU_PENGIRIM',
-      'SEBAGIAN_TERKIRIM',
-      'DIKEMBALIKAN',
-    ]);
-    const aActionable = actionableStatuses.has(String(a.status || ''));
-    const bActionable = actionableStatuses.has(String(b.status || ''));
-    if (aActionable !== bActionable) return aActionable ? -1 : 1;
-
+    // Bold/unread dan status workflow hanya untuk tampilan/filter. Posisi
+    // folder selalu ditentukan oleh aktivitas terbaru.
     const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
     const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
     if (bTime !== aTime) return bTime - aTime;
