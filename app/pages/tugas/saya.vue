@@ -23,7 +23,7 @@ const {
   fetchMyTasks,
 } = useTugas();
 
-const canRead = computed(() => hasPermission('tugas', 'read'));
+const canRead = computed(() => hasPermission('tugas', 'read-my-tasks'));
 
 // ─── Filter (URL query sinkron) ───────────────────────────────────────────────
 
