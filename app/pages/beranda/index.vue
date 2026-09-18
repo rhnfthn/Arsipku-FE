@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
     <AccessDenied
       v-if="!canAccessPage()"
-      permission-key="utama.beranda:read"
+      :show-permission-key="false"
     />
     <div v-else class="space-y-6">
       <UAlert
@@ -267,7 +267,8 @@ const { canAccessPage } = useFeatureAccess()
 const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
   useDashboard(t)
 
-const isDark = useDark()
+// Default light mode untuk akun baru (bukan 'auto' yang mengikuti OS).
+const isDark = useDark({ initialValue: 'light' })
 const dashboardImage = computed(() => isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png')
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))

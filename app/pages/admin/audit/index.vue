@@ -62,7 +62,7 @@
 
     <!-- Filter -->
     <div class="mb-4">
-      <AuditLogFilter :model-value="filter" @update:model-value="(v) => Object.assign(filter, v)" @apply="onApplyFilter" @export="onExport" />
+    <AuditLogFilter :model-value="filter" :can-export="canExport" @update:model-value="(v) => Object.assign(filter, v)" @apply="onApplyFilter" @export="onExport" />
     </div>
 
     <!-- Table -->
@@ -158,6 +158,8 @@ import type { AuditTrail, AuditFilter } from '~/types/audit';
 definePageMeta({ middleware: ['auth', 'audit-admin'] });
 
 const { fetchLogs, fetchLogDetail, fetchSummary, exportReport, logs, loading, meta, summary } = useAudit();
+const { hasPermission } = useAuth();
+const canExport = computed(() => hasPermission('audit', 'export'));
 
 const items = [
   { label: 'Beranda', to: '/' },

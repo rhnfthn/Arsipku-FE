@@ -1,68 +1,71 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Header -->
     <div class="mb-5">
-      <PageHeader :title="`${t('rbac_permissions_title')} ${t('rbac_all_label')}`" :items="items" />
-      <p class="text-sm text-gray-500 dark:text-gray-400 -mt-3">
-        {{ t('rbac_permissions_subtitle') }}
-      </p>
+      <PageHeader :title="t('rbac_permissions_title')" :items="items" />
     </div>
 
-    <!-- Card Table -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
-      <DataToolbar
-        v-model="perPage"
-        v-model:search="searchQuery"
-        :search-placeholder="t('rbac_permissions_search')"
-        @refresh="refreshData"
-        @export="onExport"
+    <div v-if="loading" class="space-y-4">
+      <div
+        v-for="item in 3"
+        :key="item"
+        class="h-36 animate-pulse rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
       />
+    </div>
 
-      <DataTable
-        :columns="columns"
-        :rows="paginatedData"
-        :loading="loading"
-        :skeleton-rows="perPage"
-        :empty-message="t('rbac_permissions_empty')"
-        :sort-key="sortKey"
-        :sort-dir="sortDir"
-        @sort="onSort"
+    <div v-else-if="orderedRoles.length" class="mx-auto max-w-6xl space-y-3">
+      <article
+        v-for="role in orderedRoles"
+        :key="role.id"
+        class="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-colors hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
       >
-        <template #cell-name="{ row }">
-          <span class="font-mono text-xs text-gray-800 dark:text-white">{{ row.name }}</span>
-        </template>
-        <template #cell-resource="{ row }">
-          <span class="text-gray-700 dark:text-gray-300">{{ row.resource || '-' }}</span>
-        </template>
-        <template #cell-action="{ row }">
-          <PermissionBadge :action="row.action" />
-        </template>
-        <template #cell-description="{ row }">
-          <span class="text-gray-500 dark:text-gray-400 text-xs">{{ row.description || '-' }}</span>
-        </template>
-      </DataTable>
+        <div class="flex flex-col gap-5 border-l-4 p-5 sm:flex-row sm:items-center sm:gap-6" :class="roleAccent(role.name)">
+          <span
+            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
+            :class="roleIconBackground(role.name)"
+          >
+            <UIcon :name="roleIcon(role.name)" class="h-6 w-6" :class="roleColor(role.name)" />
+          </span>
 
-      <DataPagination
-        v-model:current-page="currentPage"
-        :total-items="filteredData.length"
-        :per-page="perPage"
-      />
+          <div class="min-w-0 flex-1">
+            <h2 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">{{ role.name }}</h2>
+            <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">{{ role.description || '-' }}</p>
+          </div>
+
+          <div class="flex items-center gap-5 border-t border-gray-200 pt-4 sm:border-l sm:border-t-0 sm:py-1 sm:pl-6 dark:border-gray-700">
+            <div class="min-w-[72px] text-left sm:text-right">
+              <p class="text-2xl font-bold leading-none" :class="roleColor(role.name)">
+                {{ role.permissionCount ?? role.permissions?.length ?? 0 }}
+              </p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('rbac_permissions') }}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            @click="goToEditPermission(role)"
+          >
+            <UIcon name="i-lucide-pencil" class="h-4 w-4" />
+            {{ t('rbac_edit_permission') }}
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div v-else class="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-800">
+      {{ t('rbac_permissions_empty') }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRbac } from '~/composables/useRbac';
-import { useToast } from '#imports';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 
 definePageMeta({ middleware: ['auth', 'rbac-admin'] });
 
 const { t } = useI18n();
-const toast = useToast();
-const { permissions, fetchPermissions, loading } = useRbac();
+const { roles, loading, fetchRoles } = useRbac();
 
 const items = computed(() => [
   { label: t('beranda') || 'Beranda', to: '/' },
@@ -70,87 +73,52 @@ const items = computed(() => [
   { label: t('rbac_permissions'), to: '/rbac/permissions' },
 ]);
 
-const columns = computed(() => [
-  { key: 'name', label: t('rbac_permissions_col_name'), sortable: true, class: 'px-7' },
-  { key: 'resource', label: t('rbac_resource'), sortable: true },
-  { key: 'action', label: t('rbac_action'), sortable: true, headerClass: 'text-center', class: 'text-center' },
-  { key: 'description', label: t('rbac_roles_col_description') },
-]);
-
-const searchQuery = ref('');
-const perPage = ref(10);
-const currentPage = ref(1);
-const sortKey = ref('name');
-const sortDir = ref<'asc' | 'desc'>('asc');
-
-const filteredData = computed(() => {
-  const kw = searchQuery.value.trim().toLowerCase();
-  let result = permissions.value;
-  if (kw) {
-    result = result.filter((p) =>
-      [p.name ?? '', p.resource ?? '', p.action ?? '', p.description ?? '']
-        .join(' ')
-        .toLowerCase()
-        .includes(kw)
-    );
-  }
-  const key = sortKey.value;
-  const dir = sortDir.value === 'asc' ? 1 : -1;
-  return [...result].sort((a, b) => {
-    const va = (a as any)[key] ?? '';
-    const vb = (b as any)[key] ?? '';
-    return String(va).localeCompare(String(vb)) * dir;
-  });
+const orderedRoles = computed(() => {
+  const order = new Map([
+    ['SUPERADMIN', 0],
+    ['ADMIN', 1],
+    ['USER', 2],
+  ]);
+  return [...roles.value].sort((a, b) => (order.get(a.name) ?? 99) - (order.get(b.name) ?? 99));
 });
 
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * perPage.value;
-  return filteredData.value.slice(start, start + perPage.value);
-});
-
-const onSort = (key: string) => {
-  if (sortKey.value === key) {
-    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortKey.value = key;
-    sortDir.value = 'asc';
-  }
+const roleIcon = (name?: string) => {
+  const normalized = (name || '').toUpperCase();
+  return normalized === 'SUPERADMIN'
+    ? 'i-lucide-shield-check'
+    : normalized === 'ADMIN'
+      ? 'i-lucide-shield'
+      : 'i-lucide-user';
 };
 
-watch([searchQuery, perPage], () => {
-  currentPage.value = 1;
-});
-
-const refreshData = async () => {
-  await fetchPermissions();
-  currentPage.value = 1;
+const roleColor = (name?: string) => {
+  const normalized = (name || '').toUpperCase();
+  return normalized === 'SUPERADMIN'
+    ? 'text-purple-600 dark:text-purple-400'
+    : normalized === 'ADMIN'
+      ? 'text-blue-600 dark:text-blue-400'
+      : 'text-gray-600 dark:text-gray-300';
 };
 
-const onExport = () => {
-  const data = filteredData.value.map((p, idx) => ({
-    [t('rbac_export_col_no')]: idx + 1,
-    [t('rbac_export_col_permission')]: p.name,
-    [t('rbac_export_col_resource')]: p.resource || '-',
-    [t('rbac_export_col_action')]: p.action,
-    [t('rbac_export_col_desc')]: p.description || '-',
-  }));
-  if (data.length === 0) {
-    toast.add({ title: t('rbac_info'), description: t('rbac_export_no_data'), color: 'warning', icon: 'i-lucide-info' });
-    return;
-  }
-  const ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 40 }];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Permissions');
-  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  saveAs(
-    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-    `rbac_permissions_${new Date().toISOString().slice(0, 10)}.xlsx`
-  );
-  toast.add({ title: t('rbac_success'), description: t('rbac_export_success'), color: 'success', icon: 'i-lucide-check-circle' });
+const roleIconBackground = (name?: string) => {
+  const normalized = (name || '').toUpperCase();
+  return normalized === 'SUPERADMIN'
+    ? 'bg-purple-100 dark:bg-purple-900/30'
+    : normalized === 'ADMIN'
+      ? 'bg-blue-100 dark:bg-blue-900/30'
+      : 'bg-gray-100 dark:bg-gray-700';
 };
 
-onMounted(() => {
-  fetchPermissions();
-});
+const roleAccent = (name?: string) => {
+  const normalized = (name || '').toUpperCase();
+  return normalized === 'SUPERADMIN'
+    ? 'border-l-purple-500'
+    : normalized === 'ADMIN'
+      ? 'border-l-blue-500'
+      : 'border-l-gray-400';
+};
+
+const goToEditPermission = (role: { id: string }) => navigateTo(`/rbac/roles/${role.id}/permissions`);
+
+onMounted(() => fetchRoles());
 </script>

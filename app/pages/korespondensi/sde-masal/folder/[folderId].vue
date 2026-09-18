@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
+  <AccessDenied v-if="!canAccessPage()" />
+  <div v-else class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader :title="folder?.judul || 'Folder SDE Massal'" :items="breadcrumbs" />
@@ -471,11 +472,13 @@ import {
   setInternalPositionLookup,
 } from '~/utils/sde-masal-render';
 import TulisDigsigPassphraseModal from '@/components/Tulis/DigsigPassphraseModal.vue';
+import { useFeatureAccess } from '~/composables/useFeatureAccess';
 
 // Akses detail ditentukan backend berdasarkan creator, verifikator aktif,
 // atau pengirim akhir; staff perlu dapat membuka folder disposisinya.
 definePageMeta({ middleware: ['auth'] });
 const route = useRoute();
+const { canAccessPage } = useFeatureAccess();
 const { api, apiGet } = useApi();
 const {
   findNaskahInFolder,
@@ -1117,5 +1120,7 @@ const naskahStatusBadge = (status: string) => ({
   DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
   GAGAL: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',
 }[status] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap');
-onMounted(loadData);
+onMounted(() => {
+  if (canAccessPage()) loadData();
+});
 </script>
