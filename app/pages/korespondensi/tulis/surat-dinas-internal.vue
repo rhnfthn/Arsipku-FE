@@ -14,6 +14,7 @@ import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModal
 
 import { Alert } from "@/composables/useAlert";
 import { validateSDIPayload, type SDIPayloadInput, type SDIPayload } from "~/types/sdi";
+import { useMandatoryRoutingCc } from "~/composables/useMandatoryRoutingCc";
 
 definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
@@ -84,6 +85,19 @@ const isAiDraftOpen = ref(false);
 const lampiranText = ref("");
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
+
+// ── Tembusan wajib routing persuratan ────────────────────────────────────────
+// Penerima dari section "Tambahan" dipilih → tembusan wajib (GM/DGM PEO)
+// otomatis terisi di field Tembusan.
+const allRecipientItems = computed(() => [
+  ...tertujuItems.value,
+  ...tembusanItems.value,
+]);
+useMandatoryRoutingCc({
+  recipientItems: allRecipientItems,
+  selectedTertuju,
+  selectedTembusan,
+});
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: "/beranda" },
@@ -315,7 +329,7 @@ onMounted(async () => {
     tertujuItems.value = rawRecipients
       .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
       .map((r: any) => ({
-        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}${r.routing_mandatory ? " · Tembusan wajib" : r.routing_source === "configured" ? " · Routing konfigurasi" : ""}`,
+        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
         labelJob: r.position_text || r.positionText,
         organization: r.organization_text,
         value: String(r.position || r.position_id || r.id),
@@ -474,7 +488,7 @@ watch(
 
         <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
-          :disabled-message="$t('sdi_sudah_dipilih')" />
+          :disabled-message="$t('sdi_sudah_dipilih')" lock-mandatory-cc />
 
         <TulisInputSifat v-model="selectedSifat" />
 
