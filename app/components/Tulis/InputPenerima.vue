@@ -50,11 +50,6 @@
               <span class="block text-sm text-left truncate w-full">
                 {{ item.label }}
               </span>
-              <UBadge v-if="item.routing_mandatory === true || item.routing_source === 'configured'"
-                :color="item.routing_mandatory === true ? 'warning' : 'primary'" variant="soft" size="xs" class="mt-1">
-                <UIcon :name="item.routing_mandatory === true ? 'i-lucide-lock-keyhole' : 'i-lucide-git-branch'" class="h-3 w-3" />
-                {{ routingT(item.routing_mandatory === true ? 'cc' : 'configured') }}
-              </UBadge>
               <span v-if="item.disabled" class="text-xs text-red-500 italic block">
                 {{ disabledMessage }}
               </span>
@@ -71,7 +66,7 @@
               <span class="text-xs font-medium text-left truncate">
                 {{ item.label }}
               </span>
-              <UTooltip v-if="item.routing_mandatory === true" :text="routingT('mandatoryHint')">
+              <UTooltip v-if="isMandatoryCc(item)" :text="routingT('mandatoryHint')">
                 <span tabindex="0" :aria-label="routingT('cc')" class="inline-flex items-center gap-1 px-1">
                   <UIcon name="i-lucide-lock-keyhole" class="h-3.5 w-3.5 shrink-0" />
                   <span class="text-xs">{{ routingT('cc') }}</span>
@@ -79,7 +74,6 @@
               </UTooltip>
               <UButton v-else icon="i-lucide-x" size="xs" color="neutral" variant="ghost" :padded="false"
                 class="w-4 h-4 hover:bg-gray-200 dark:hover:bg-gray-700 rounded shrink-0"
-                :disabled="item.routing_mandatory === true"
                 :title="routingT('remove')"
                 @click.stop="removePerson(item)" />
             </UBadge>
@@ -89,7 +83,7 @@
           </div>
         </template>
       </USelectMenu>
-      <Paragraph v-if="model.some(item => item.routing_mandatory === true)" variant="caption1" class="w-full mt-1 text-muted">
+      <Paragraph v-if="model.some(isMandatoryCc)" variant="caption1" class="w-full mt-1 text-muted">
         {{ routingT('mandatoryHint') }}
       </Paragraph>
     </div>
@@ -109,10 +103,22 @@ const props = defineProps<{
   groups?: any[];
   excludeItems?: any[];
   disabledMessage?: string;
+  /** Kunci tembusan wajib — hanya aktif di field Tembusan. Default false. */
+  lockMandatoryCc?: boolean;
 }>();
 
 const model = defineModel<any[]>({ default: [] });
 
+// Metadata routing bisa berada di level atas item ATAU di item.raw (tergantung
+// mapping halaman pemanggil), jadi cek keduanya.
+const routingMeta = (item: any) => ({
+  routing_source: item.routing_source ?? item.raw?.routing_source,
+  routing_mandatory: item.routing_mandatory ?? item.raw?.routing_mandatory,
+});
+// Tembusan wajib hanya terkunci pada field Tembusan (lockMandatoryCc). Di
+// field Tertuju item tersebut tetap bisa dipilih dan dihapus secara normal.
+const isMandatoryCc = (item: any) =>
+  props.lockMandatoryCc === true && routingMeta(item).routing_mandatory === true;
 // 1. Memproses Orang (Person) - Menandai Disabled
 const processedPeople = computed(() => {
   // Ambil ID semua individu yang sudah ter-cover oleh grup yang SEDANG DIPILIH di input ini
@@ -125,13 +131,28 @@ const processedPeople = computed(() => {
     // Disabled jika: Ada di list lawan (excludeItems) ATAU grupnya sudah dipilih di input ini
     const isDisabled = isExcluded || selectedGroupMemberIds.includes(String(item.value));
 
+    // Flatten metadata routing ke level atas agar badge/section Tambahan konsisten
+    // untuk semua halaman (beberapa halaman menyimpan metadata di item.raw).
+    const meta = routingMeta(item);
+
     return {
       ...item,
       type: 'person',
       disabled: isDisabled,
+      ...(meta.routing_source ? { routing_source: meta.routing_source } : {}),
+      ...(meta.routing_mandatory != null ? { routing_mandatory: meta.routing_mandatory } : {}),
     };
   });
 });
+
+// Penerima tambahan hasil konfigurasi routing persuratan (routing_source === 'configured')
+// dipisah ke section "Tambahan" agar mudah dibedakan dari penerima struktural.
+const structuralPeople = computed(() =>
+  processedPeople.value.filter((item) => routingMeta(item).routing_source !== 'configured')
+);
+const configuredPeople = computed(() =>
+  processedPeople.value.filter((item) => routingMeta(item).routing_source === 'configured')
+);
 
 // 2. Memproses Grup - Format Data & Cek Disabled
 const processedGroups = computed(() => {
@@ -200,9 +221,15 @@ const combinedOptions = computed(() => {
     options.push(...processedGroups.value);
   }
 
-  // Bagian Bawah: Orang
+  // Bagian Tengah: Orang struktural (baseline organisasi)
   options.push({ label: props.label, type: 'label', disabled: true });
-  options.push(...processedPeople.value);
+  options.push(...structuralPeople.value);
+
+  // Bagian Bawah: Penerima tambahan dari routing persuratan (jika ada)
+  if (configuredPeople.value.length > 0) {
+    options.push({ label: routingT('additional'), type: 'label', disabled: true });
+    options.push(...configuredPeople.value);
+  }
 
   return options;
 });
@@ -230,7 +257,7 @@ const handlePersonClick = (person: any) => {
 };
 
 const removePerson = (item: any) => {
-  if (item.routing_mandatory === true) return;
+  if (isMandatoryCc(item)) return;
   const index = model.value.findIndex((s) => s.value === item.value);
   if (index > -1) {
     const newModel = [...model.value];
