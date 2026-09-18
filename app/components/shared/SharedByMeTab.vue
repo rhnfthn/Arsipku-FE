@@ -4,6 +4,7 @@ import type { ShareItem } from '~/composables/useNaskahShare';
 import { getCategoryStyle, getCategoryLabel, getCategoryFullName, formatShortDate } from '~/utils/mail-helpers';
 
 const { t } = useI18n();
+const { hasPermission } = useFeatureAccess();
 
 const props = defineProps<{
   shares: ShareItem[];
@@ -43,6 +44,8 @@ const getDisplayStatus = (share: ShareItem): 'AKTIF' | 'BERAKHIR' => {
 
 /** Apakah share masih aktif (bisa dicabut semua aksesnya). */
 const isActive = (share: ShareItem): boolean => share.status === 'AKTIF';
+const canOpenSharedDocument = computed(() => hasPermission('naskah-share', 'open'));
+const canRevokeShare = computed(() => hasPermission('naskah-share', 'delete'));
 
 </script>
 
@@ -141,7 +144,7 @@ const isActive = (share: ShareItem): boolean => share.status === 'AKTIF';
               <UIcon name="i-lucide-eye" class="w-4 h-4" />
             </button>
           </UTooltip>
-          <UTooltip :text="t('share_buka_pdf')">
+          <UTooltip v-if="canOpenSharedDocument" :text="t('share_buka_pdf')">
             <button
               type="button"
               class="text-success dark:text-success-400 hover:opacity-80 transition-opacity"
@@ -151,8 +154,8 @@ const isActive = (share: ShareItem): boolean => share.status === 'AKTIF';
             </button>
           </UTooltip>
           <!-- Divider pemisah aksi cabut semua -->
-          <div class="w-px h-5 bg-gray-200 dark:bg-gray-600" />
-          <UTooltip :text="isActive(row as ShareItem) ? t('share_cabut_semua') : t('share_akses_berakhir')">
+          <div v-if="canRevokeShare" class="w-px h-5 bg-gray-200 dark:bg-gray-600" />
+          <UTooltip v-if="canRevokeShare" :text="isActive(row as ShareItem) ? t('share_cabut_semua') : t('share_akses_berakhir')">
             <button
               type="button"
               :disabled="!isActive(row as ShareItem)"

@@ -1072,8 +1072,9 @@ const doClearAll = () => {
 const verifierRoleRank = (value: unknown): number | null => {
   const text = String(value ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
   if (/\bAVP\b/.test(text)) return 1;
-  if (/\bEVP\b/.test(text)) return 3;
   if (/\bVP\b/.test(text)) return 2;
+  if (/\bEVP\b/.test(text)) return 3;
+  if (/\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(text)) return 4;
   return null;
 };
 const sortSelectedVerifiers = () => {
@@ -1090,6 +1091,82 @@ const openVerificationSelection = async () => {
     const profile = (await getProfile(true)) || user.value;
     let positionId = profile?.position ?? profile?.position_id;
     let verifiersFromDisposition: any[] = [];
+    let conceptSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
+    let conceptSenderName = pengirimNama.value;
+    let conceptSenderJob = pengirimJabatan.value;
+
+    // Folder lama dapat menyimpan ID pengirim di server tetapi tidak pada
+    // snapshot konsep yang dipulihkan oleh wizard.
+    if (props.folderId) {
+      try {
+        const folderResponse: any = await apiGet(
+          `/sde-masal/folder/${encodeURIComponent(props.folderId)}/naskah`,
+          {},
+          { skipCache: true },
+        );
+        const folder = folderResponse?.data?.folder || folderResponse?.folder;
+        const folderSenderPosition = String(folder?.pengirimId ?? '').trim();
+        if (folderSenderPosition) conceptSenderPosition = folderSenderPosition;
+        const senderParts = String(folder?.pengirimName ?? '')
+          .split(' - ')
+          .map((part) => part.trim())
+          .filter(Boolean);
+        conceptSenderName = senderParts[0] || conceptSenderName;
+        conceptSenderJob = senderParts.slice(1).join(' - ') || conceptSenderJob;
+      } catch {
+        // Gunakan snapshot konsep jika detail folder tidak dapat dibaca.
+      }
+    }
+
+    const appendFinalSender = async (chain: any[]) => {
+      let senderPosition = conceptSenderPosition;
+      let senderName = conceptSenderName;
+      let senderJob = conceptSenderJob;
+      let senderPersnum = '';
+      let senderRows: any[] = [];
+
+      // Lengkapi dari master jika state folder hanya membawa nama atau
+      // jabatan pengirim belum berhasil dipulihkan.
+      if (!senderPosition || verifierRoleRank(senderJob) === null) {
+        try {
+          const orgResponse: any = await apiGet(
+            `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`,
+            {},
+            { skipCache: true },
+          );
+          senderRows = orgResponse?.data?.barisData || orgResponse?.barisData || [];
+          const normalizedName = senderName.trim().toLowerCase();
+          const senderOrg = senderRows.find((row: any) => {
+            const samePosition =
+              senderPosition && String(row?.position ?? '').trim() === senderPosition;
+            const rowName = String(row?.persnum_person_text ?? row?.nama ?? '')
+              .trim()
+              .toLowerCase();
+            return samePosition || (normalizedName && rowName === normalizedName);
+          });
+          if (senderOrg) {
+            senderPosition = String(senderOrg.position ?? '').trim();
+            senderPersnum = String(senderOrg.persnum_person ?? '').trim();
+            senderName = senderOrg.persnum_person_text || senderOrg.nama || senderName;
+            senderJob = senderOrg.position_text || senderJob;
+          }
+        } catch {
+          // Validasi di bawah tetap mencegah data pengirim yang tidak valid.
+        }
+      }
+
+      if (!senderPosition || verifierRoleRank(senderJob) === null) return chain;
+      const withoutSender = chain.filter(
+        (person: any) => String(person?.position ?? '').trim() !== senderPosition,
+      );
+      withoutSender.push({
+        persnum: senderPersnum,
+        position: senderPosition,
+        nama: senderName || '-',
+        jabatan: senderJob,
+      });
+      return withoutSender;
+    };
 
     // Resolusi berdasarkan persnum memastikan struktur dihitung dari posisi
     // asli pengguna yang login (misalnya Raihan Fathan), bukan dari pengirim
@@ -1126,7 +1203,10 @@ const openVerificationSelection = async () => {
           : disposisiRes?.data?.flow || disposisiRes?.flow || [];
         const profilePersnum = String(profile?.persnum ?? '').trim();
         const profileName = String(profile?.nama ?? '').trim().toLowerCase();
-        const currentDisposisi = Array.isArray(flow) ? flow[0] : null;
+        // Detail naskah mengembalikan flow kronologis: chain awal berada di
+        // depan dan tindak lanjut berada di belakang. Jangan memakai flow[0]
+        // sebagai node terbaru karena itu membuat posisi penerima bergeser.
+        const currentDisposisi = Array.isArray(flow) ? flow[flow.length - 1] : null;
         const penerimaDisposisiTerbaru = currentDisposisi?.penerima || [];
         const penerimaDisposisi = Array.isArray(flow)
           ? flow.flatMap((node: any) => node?.penerima || [])
@@ -1149,8 +1229,8 @@ const openVerificationSelection = async () => {
             return samePersnum || sameName;
           },
         );
-        // Flow /DI dikembalikan terbaru → awal. Untuk halaman yang dibuka
-        // Raihan, penerima pada node terbaru adalah posisi pelaksana disposisi.
+        // Untuk halaman yang dibuka oleh pelaksana disposisi, penerima pada
+        // node terakhir adalah posisi pelaksana disposisi.
         // Gunakan itu sebagai sumber utama; pencocokan profil menjadi fallback
         // bila node terbaru memiliki beberapa penerima atau data lama.
         const penerimaUtama =
@@ -1162,12 +1242,11 @@ const openVerificationSelection = async () => {
           matchPenerimaLogin?.position;
         if (posisiDisposisi) positionId = posisiDisposisi;
 
-        // Telusuri handoff disposisi dari penerima terakhir ke atas dan
-        // berhenti tepat pada pengirim SDE yang dipilih saat folder dibuat.
-        // Pengirim tersebut tetap menjadi verifikator terakhir, lalu menerima
-        // folder kembali sebagai pengirim/final signer. Pejabat sebelum batas
-        // tersebut (misalnya pengirim Nota Dinas awal) tidak ikut terpilih.
-        const selectedSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
+        // Telusuri handoff dari awal chain ke penerima terakhir. Flow sudah
+        // kronologis, sehingga urutan yang ditemukan adalah urutan verifikasi
+        // sebenarnya. Pengirim yang dipilih saat konsep dibuat selalu menjadi
+        // verifikator terakhir (sekaligus penerima folder untuk finalisasi).
+        const selectedSenderPosition = conceptSenderPosition;
         const flowNodes = (Array.isArray(flow) ? flow : [])
           .map((node: any) => {
             const sender = node?.pengirim
@@ -1187,48 +1266,74 @@ const openVerificationSelection = async () => {
                 String(recipient?.position_id ?? recipient?.position ?? '').trim(),
               )
               .filter(Boolean);
-            return { sender, recipientPositions };
+            return {
+              sender,
+              recipientPositions,
+              // Node ND awal adalah sumber disposisi, bukan bagian dari
+              // chain verifikator SDE Massal.
+              jenis: String(node?.jenis ?? node?.jenis_naskah ?? '').toUpperCase(),
+            };
           })
           .filter((node: any) => node.sender?.position);
 
-        const tracedVerifiers: any[] = [];
+        const tracedBack: any[] = [];
         const visitedPositions = new Set<string>();
         let expectedRecipientPosition = String(positionId ?? '').trim();
-        let reachedSelectedSender = !selectedSenderPosition;
-
-        for (let depth = 0; depth < flowNodes.length; depth += 1) {
-          const handoff = flowNodes.find(
-            (node: any) =>
-              !visitedPositions.has(node.sender.position) &&
-              node.recipientPositions.includes(expectedRecipientPosition),
-          );
-          if (!handoff?.sender) break;
-
+        for (let depth = flowNodes.length - 1; depth >= 0; depth -= 1) {
+          const handoff = flowNodes[depth];
+          if (
+            visitedPositions.has(handoff.sender.position) ||
+            !handoff.recipientPositions.includes(expectedRecipientPosition)
+          ) continue;
           visitedPositions.add(handoff.sender.position);
-          if (handoff.sender.position === selectedSenderPosition) {
-            if (verifierRoleRank(handoff.sender.jabatan) !== null) {
-              tracedVerifiers.push(handoff.sender);
-            }
-            reachedSelectedSender = true;
-            break;
-          }
-
-          if (verifierRoleRank(handoff.sender.jabatan) !== null) {
-            tracedVerifiers.push(handoff.sender);
+          if (
+            handoff.jenis !== 'ND' &&
+            verifierRoleRank(handoff.sender.jabatan) !== null
+          ) {
+            tracedBack.push(handoff.sender);
           }
           expectedRecipientPosition = handoff.sender.position;
+          if (handoff.sender.position === selectedSenderPosition) break;
         }
-
-        const byRank = new Map<number, any>();
-        if (reachedSelectedSender) {
-          tracedVerifiers.forEach((sender: any) => {
-            const rank = verifierRoleRank(sender.jabatan);
-            if (rank !== null && !byRank.has(rank)) byRank.set(rank, sender);
-          });
+        // Penelusuran dilakukan dari penerima aktif ke awal agar cabang yang
+        // tidak tersambung terbuang. Karena verifikasi dimulai dari posisi
+        // Raihan yang paling akhir, hasilnya memang harus Arya → Said → Made.
+        // Pengirim konsep selalu ditaruh di posisi final.
+        const verifierChain = tracedBack;
+        const senderIndex = verifierChain.findIndex(
+          (person: any) => person.position === selectedSenderPosition,
+        );
+        const selectedSender = senderIndex >= 0 ? verifierChain.splice(senderIndex, 1)[0] : null;
+        // Pengirim SDE dapat berada di luar chain DI (contoh: chain DI
+        // berakhir di Raihan, sedangkan pengirim konsep dipilih Zainal).
+        // Tetap tambahkan dia sebagai verifikator/final signer terakhir.
+        if (selectedSender) {
+          verifierChain.push(selectedSender);
+        } else if (selectedSenderPosition) {
+          // State folder lama dapat hanya menyimpan ID pengirim. Resolusi
+          // master memastikan pengirim akhir tetap muncul walau
+          // pengirimName belum terpulihkan ke wizard.
+          const senderMaster = (await apiGet(
+            `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`,
+            {},
+            { skipCache: true },
+          ).catch(() => null)) as any;
+          const senderRows = senderMaster?.data?.barisData || senderMaster?.barisData || [];
+          const senderOrg = senderRows.find(
+            (row: any) => String(row?.position ?? '').trim() === selectedSenderPosition,
+          );
+          const senderName = senderOrg?.persnum_person_text || conceptSenderName;
+          const senderJob = senderOrg?.position_text || conceptSenderJob;
+          if (senderName && verifierRoleRank(senderJob) !== null) {
+            verifierChain.push({
+              persnum: String(senderOrg?.persnum_person ?? '').trim(),
+              position: selectedSenderPosition,
+              nama: senderName,
+              jabatan: senderJob,
+            });
+          }
         }
-        verifiersFromDisposition = [...byRank.entries()]
-          .sort(([rankA], [rankB]) => rankA - rankB)
-          .map(([, sender]) => sender);
+        verifiersFromDisposition = verifierChain;
       } catch {
         // Tetap gunakan posisi profil terbaru bila flow disposisi tidak dapat
         // dibaca, tanpa mengubah alur SDE Massal yang sudah ada.
@@ -1239,9 +1344,9 @@ const openVerificationSelection = async () => {
       // Untuk folder berbasis disposisi, jangan jatuh ke daftar seluruh
       // pejabat satu divisi karena dapat mencampur cabang Communication dan
       // Enterprise. Chain disposisi menjadi sumber tunggal verifikator.
+      verifiersFromDisposition = await appendFinalSender(verifiersFromDisposition);
       verifierList.value = verifiersFromDisposition;
-      selectedVerifiers.value = verifiersFromDisposition.slice(0, 3);
-      sortSelectedVerifiers();
+      selectedVerifiers.value = verifiersFromDisposition.slice(0, 4);
       return;
     }
 
@@ -1254,8 +1359,8 @@ const openVerificationSelection = async () => {
     );
     const rows = Array.isArray(result?.data) ? result.data : [];
     const byRank = new Map<number, any>();
-    const selectedSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
-    const selectedSenderRank = verifierRoleRank(pengirimJabatan.value);
+    const selectedSenderPosition = conceptSenderPosition;
+    const selectedSenderRank = verifierRoleRank(conceptSenderJob);
     rows
       .filter((row: any) => row.persnum_person || row.persnum)
       .map((row: any) => ({
@@ -1281,8 +1386,8 @@ const openVerificationSelection = async () => {
         if (rank !== null && !byRank.has(rank)) byRank.set(rank, person);
       });
 
-    verifierList.value = [...byRank.values()];
-    selectedVerifiers.value = verifierList.value.slice(0, 3);
+    verifierList.value = await appendFinalSender([...byRank.values()]);
+    selectedVerifiers.value = verifierList.value.slice(0, 4);
     sortSelectedVerifiers();
     if (!selectedVerifiers.value.length) {
       throw new Error('Atasan managerial tidak ditemukan');
@@ -1305,6 +1410,14 @@ const saveVerifiers = () => {
   showVerifierModal.value = false;
 };
 const submitVerifiers = () => {
+  const senderPosition = String(props.konsep?.pengirimId ?? '').trim();
+  const senderIndex = selectedVerifiers.value.findIndex(
+    (person) => String(person?.position ?? '').trim() === senderPosition,
+  );
+  if (senderIndex >= 0 && senderIndex < selectedVerifiers.value.length - 1) {
+    const [sender] = selectedVerifiers.value.splice(senderIndex, 1);
+    selectedVerifiers.value.push(sender);
+  }
   const ranks = selectedVerifiers.value
     .map((person) => verifierRoleRank(person.jabatan))
     .filter((rank): rank is number => rank !== null);
@@ -1316,7 +1429,6 @@ const submitVerifiers = () => {
     });
     return;
   }
-  sortSelectedVerifiers();
   saveVerifiers();
   emit('submit-verification', selectedVerifiers.value, 'qr_only');
 };

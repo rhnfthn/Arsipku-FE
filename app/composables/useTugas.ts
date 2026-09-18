@@ -330,11 +330,16 @@ export const useTugas = () => {
     return del(`/tugas/tasks/${taskId}/evidences/${evidenceId}`);
   };
 
-  // ─── Forum diskusi task (komentar) ────────────────────────────────────────
+  // ─── Forum diskusi papan (komentar) ────────────────────────────────────────
 
-  const fetchTaskComments = async (taskId: string, page = 1, limit = 50) => {
-    const res = await getFresh<TugasTaskCommentPage>(`/tugas/tasks/${taskId}/comments`, {
-      params: { page, limit },
+  const fetchBoardComments = async (
+    boardId: string,
+    page = 1,
+    limit = 50,
+    taskId?: string | null
+  ) => {
+    const res = await getFresh<TugasTaskCommentPage>(`/tugas/boards/${boardId}/comments`, {
+      params: { page, limit, taskId: taskId || undefined },
     });
     const payload = res.data ?? res;
     const inner = payload as { data?: TugasTaskComment[]; meta?: TugasTaskCommentPage['meta'] };
@@ -344,12 +349,28 @@ export const useTugas = () => {
     };
   };
 
-  const addTaskComment = async (taskId: string, isi: string) => {
-    return post<{ data: TugasTaskComment }>(`/tugas/tasks/${taskId}/comments`, { isi });
+  const addBoardComment = async (
+    boardId: string,
+    isi: string,
+    taskId?: string | null
+  ) => {
+    return post<{ data: TugasTaskComment }>(`/tugas/boards/${boardId}/comments`, {
+      isi,
+      taskId: taskId || undefined,
+    });
   };
 
-  const removeTaskComment = async (taskId: string, commentId: string) => {
-    return del(`/tugas/tasks/${taskId}/comments/${commentId}`);
+  /**
+   * Hapus komentar dengan scope:
+   * - 'me': sembunyikan hanya untuk membership aktif (kapan saja).
+   * - 'everyone': hapus permanen (penulis, maks 5 menit setelah kirim).
+   */
+  const removeBoardComment = async (
+    boardId: string,
+    commentId: string,
+    scope: 'me' | 'everyone' = 'me'
+  ) => {
+    return del(`/tugas/boards/${boardId}/comments/${commentId}?scope=${scope}`);
   };
 
   return {
@@ -404,9 +425,9 @@ export const useTugas = () => {
     addTaskEvidence,
     removeTaskEvidence,
     // forum diskusi
-    fetchTaskComments,
-    addTaskComment,
-    removeTaskComment,
+    fetchBoardComments,
+    addBoardComment,
+    removeBoardComment,
     // util
     mapTugasError,
   };

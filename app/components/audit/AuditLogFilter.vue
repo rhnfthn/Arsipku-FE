@@ -95,6 +95,7 @@
           Terapkan
         </button>
         <button
+          v-if="canExport"
           @click="$emit('export')"
           class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md bg-primary hover:bg-primary-700 text-white transition-colors inline-flex items-center justify-center gap-1 whitespace-nowrap"
         >
@@ -107,12 +108,15 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import type { AuditFilter, AuditAction, AuditModuleType, AuditStatus } from '~/types/audit';
 
 const props = defineProps<{
   modelValue: AuditFilter;
+  canExport?: boolean;
 }>();
+
+const canExport = computed(() => props.canExport !== false);
 
 const emit = defineEmits<{
   'update:modelValue': [value: AuditFilter];

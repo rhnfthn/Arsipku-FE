@@ -173,7 +173,27 @@ const handleCreated = () => {
 };
 
 const goToDetail = (id: string) => {
-  navigateTo(`/kelola/penggunaan/usulan-akses-berkas/${id}`);
+  const from = activeTab.value === 'verify-me'
+    ? 'verifikasi'
+    : activeTab.value === 'verify-pemberi'
+      ? 'pemberian'
+      : undefined;
+  navigateTo({
+    path: `/kelola/penggunaan/usulan-akses-berkas/${id}`,
+    query: from ? { from } : undefined,
+  });
+};
+
+const detailRoute = (id: string) => {
+  const from = queryTab === 'verify-me'
+    ? 'verifikasi'
+    : queryTab === 'verify-pemberi'
+      ? 'pemberian'
+      : undefined;
+  return {
+    path: `/kelola/penggunaan/usulan-akses-berkas/${id}`,
+    query: from ? { from } : undefined,
+  };
 };
 
 const formatDate = (dateStr: string) => {
@@ -763,7 +783,7 @@ onBeforeUnmount(() => {
         <template #cell-aksi="{ row }">
           <div class="flex items-center justify-center gap-1.5">
             <NuxtLink
-              :to="`/kelola/penggunaan/usulan-akses-berkas/${row.id}`"
+              :to="detailRoute(row.id)"
               class="relative inline-flex rounded-md p-1.5 transition-colors hover:bg-[#457FB6]/10"
               style="color: #457FB6"
               title="Lihat Detail"

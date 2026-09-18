@@ -1,12 +1,10 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
+    <div class="mb-5">
       <PageHeader :title="t('rbac_roles_title')" :items="items" />
     </div>
 
-    <!-- Card Table (tanpa toolbar & pagination) -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+    <div class="rounded-lg border border-gray-200 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
       <DataTable
         :columns="columns"
         :rows="roles"
@@ -15,13 +13,7 @@
         :empty-message="t('rbac_roles_empty')"
       >
         <template #cell-name="{ row }">
-          <NuxtLink
-            :to="`/rbac/roles/${row.id}`"
-            class="inline-flex items-center gap-2 font-semibold text-gray-800 dark:text-white hover:text-primary"
-          >
-            <UIcon :name="roleIcon(row.name)" class="w-4 h-4" :class="roleColor(row.name)" />
-            {{ row.name }}
-          </NuxtLink>
+          <span class="font-semibold text-gray-800 dark:text-white">{{ row.name }}</span>
         </template>
 
         <template #cell-description="{ row }">
@@ -29,26 +21,28 @@
         </template>
 
         <template #cell-permissionCount="{ row }">
-          <span class="px-2.5 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium">
+          <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
             {{ row.permissionCount ?? row.permissions?.length ?? 0 }}
           </span>
         </template>
 
         <template #cell-aksi="{ row }">
-          <div class="flex justify-center gap-2">
+          <div class="flex justify-center">
             <button
-              @click="goToDetail(row)"
-              class="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors group"
+              type="button"
+              class="rounded-lg p-2 transition-colors hover:bg-primary-100 dark:hover:bg-primary-900/30"
               :title="t('rbac_detail')"
+              @click="goToDetail(row)"
             >
-              <UIcon name="i-lucide-eye" class="w-4 h-4 text-primary group-hover:text-primary-700" />
+              <UIcon name="i-lucide-eye" class="h-4 w-4 text-primary" />
             </button>
             <button
+              type="button"
+              class="rounded-lg p-2 transition-colors hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+              :title="t('rbac_edit_permission')"
               @click="goToEditPermission(row)"
-              class="p-2 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors group"
-              :title="t('rbac_edit')"
             >
-              <UIcon name="i-lucide-pencil" class="w-4 h-4 text-yellow-500 group-hover:text-yellow-600" />
+              <UIcon name="i-lucide-pencil" class="h-4 w-4 text-yellow-500" />
             </button>
           </div>
         </template>
@@ -73,7 +67,7 @@ const items = computed(() => [
 ]);
 
 const columns = computed(() => [
-  { key: 'name', label: t('rbac_roles_col_name'), sortable: false, class: 'px-7' },
+  { key: 'name', label: t('rbac_roles_col_name'), class: 'px-7' },
   { key: 'description', label: t('rbac_roles_col_description') },
   {
     key: 'permissionCount',
@@ -84,25 +78,8 @@ const columns = computed(() => [
   { key: 'aksi', label: t('rbac_col_aksi'), headerClass: 'text-center', class: 'text-center' },
 ]);
 
-const roleIcon = (name: string) =>
-  name === 'SUPERADMIN' ? 'i-lucide-shield-check' : name === 'ADMIN' ? 'i-lucide-shield' : 'i-lucide-user';
+const goToDetail = (role: RbacRole) => navigateTo(`/rbac/roles/${role.id}`);
+const goToEditPermission = (role: RbacRole) => navigateTo(`/rbac/roles/${role.id}/permissions`);
 
-const roleColor = (name: string) =>
-  name === 'SUPERADMIN'
-    ? 'text-purple-600'
-    : name === 'ADMIN'
-      ? 'text-blue-600'
-      : 'text-gray-500';
-
-const goToDetail = (role: RbacRole) => {
-  navigateTo(`/rbac/roles/${role.id}`);
-};
-
-const goToEditPermission = (role: RbacRole) => {
-  navigateTo(`/rbac/roles/${role.id}/permissions`);
-};
-
-onMounted(() => {
-  fetchRoles();
-});
+onMounted(() => fetchRoles());
 </script>

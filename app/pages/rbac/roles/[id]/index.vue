@@ -1,27 +1,17 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5">
+    <div class="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <PageHeader :title="detailTitle" :items="items" />
-      <div class="flex items-center gap-2">
-        <NuxtLink
-          to="/rbac/roles"
-          class="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors"
-        >
-          <UIcon name="i-lucide-arrow-left" class="w-4 h-4" />
-          {{  }}
-        </NuxtLink>
-        <NuxtLink
-          :to="`/rbac/roles/${route.params.id}/permissions`"
-          class="flex items-center gap-2 px-4 py-2 text-sm bg-primary hover:bg-primary-800 text-white rounded-lg transition-colors"
-        >
-          <UIcon name="i-lucide-pencil" class="w-4 h-4" />
-          {{ t('rbac_edit_permission') }}
-        </NuxtLink>
-      </div>
+      <NuxtLink
+        to="/rbac/roles"
+        class="inline-flex items-center gap-2 self-start rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 sm:self-auto"
+      >
+        <UIcon name="i-lucide-arrow-left" class="h-4 w-4" />
+        {{ t('rbac_back') }}
+      </NuxtLink>
     </div>
 
-    <div v-if="loading" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8">
+    <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800">
       <div class="space-y-4 animate-pulse">
         <div class="h-6 w-48 rounded bg-gray-200 dark:bg-gray-700" />
         <div class="h-4 w-72 rounded bg-gray-200 dark:bg-gray-700" />
@@ -30,91 +20,75 @@
     </div>
 
     <template v-else-if="role">
-      <!-- Role info card -->
-      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-5 mb-6">
+      <div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="flex flex-wrap items-center gap-4">
           <RoleBadge :role="role.name" />
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{  }}</p>
-            <p class="text-sm text-gray-800 dark:text-white">{{ role.description || '-' }}</p>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('rbac_roles_col_description') }}:</p>
+            <p class="mt-1 text-sm text-gray-800 dark:text-white">{{ role.description || '-' }}</p>
           </div>
-          <div class="ml-auto text-right">
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{  }}</p>
+          <div class="text-right">
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('rbac_roles_col_permission_count') }}</p>
             <p class="text-2xl font-bold text-primary">{{ role.permissions?.length ?? 0 }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Permission Matrix -->
-      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-        <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h3 class="text-sm font-bold text-gray-800 dark:text-white">
-            {{  }}
-          </h3>
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            {{ role.permissions?.length ?? 0 }} / {{ totalPermissions }} {{  }}
-          </span>
+      <section class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+          <div>
+            <h2 class="text-base font-bold text-gray-800 dark:text-white">Permission {{ role.name }}</h2>
+          </div>
         </div>
 
-        <div v-if="resources.length === 0" class="p-10 text-center text-sm text-gray-400">
-          {{  }}
-        </div>
-
-        <div v-else class="overflow-x-auto overflow-y-auto max-h-[60vh]">
-          <table class="min-w-full border-collapse text-sm">
-            <thead class="bg-primary-400 dark:bg-primary-700 text-white sticky top-0 z-30">
-              <tr>
-                <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-primary-400 dark:bg-primary-700 z-30 min-w-[180px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.4)]">
-                  {{  }}
-                </th>
-                <th
-                  v-for="action in allActions"
-                  :key="action"
-                  class="px-4 py-3 text-center font-semibold min-w-[100px] whitespace-nowrap"
-                >
-                  {{ action }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="resource in resources"
-                :key="resource.id"
-                class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700"
-              >
-                <td class="px-4 py-3 font-medium text-gray-800 dark:text-white sticky left-0 bg-white dark:bg-gray-800 z-20 min-w-[180px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.15)]">
-                  <UIcon name="i-lucide-box" class="w-4 h-4 text-primary inline mr-2" />
-                  {{ resource.name }}
-                </td>
-                <td
-                  v-for="action in allActions"
-                  :key="action"
-                  class="px-4 py-3 text-center min-w-[100px]"
-                >
-                  <span v-if="hasPermission(resource, action)" class="inline-flex">
-                    <UIcon name="i-lucide-check" class="w-5 h-5 text-emerald-500" />
+        <div v-if="resourcePermissionGroups.length" class="divide-y divide-gray-200 dark:divide-gray-700">
+          <article
+            v-for="group in resourcePermissionGroups"
+            :key="group.resource.id"
+            class="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/30 md:flex-row md:items-start"
+          >
+            <div class="flex min-w-0 items-center gap-2 md:w-56 md:shrink-0">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <UIcon name="i-lucide-box" class="h-4 w-4 text-primary" />
+              </span>
+              <div class="min-w-0">
+                <h3 class="flex items-center gap-2 truncate text-sm font-semibold text-gray-800 dark:text-white">
+                  <span class="truncate">{{ group.resource.name }}</span>
+                  <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                    {{ group.permissions.length }}
                   </span>
-                  <span v-else class="text-gray-300 dark:text-gray-600">-</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </h3>
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-wrap items-center gap-2">
+              <span
+                v-for="permission in group.permissions"
+                :key="permission.id"
+                class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                :title="permission.name"
+              >
+                <UIcon name="i-lucide-check" class="h-3.5 w-3.5" />
+                {{ permission.action }}
+              </span>
+            </div>
+          </article>
         </div>
-      </div>
+
+        <div v-else class="p-10 text-center text-sm text-gray-400">{{ t('rbac_permissions_empty') }}</div>
+      </section>
     </template>
 
-    <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
-      {{  }}
-      <NuxtLink to="/rbac/roles" class="block mt-4 text-primary hover:underline">
-        {{  }}
-      </NuxtLink>
+    <div v-else class="rounded-lg border border-gray-200 bg-white p-10 text-center text-gray-400 dark:border-gray-700 dark:bg-gray-800">
+      {{ t('rbac_roles_not_found') }}
+      <NuxtLink to="/rbac/roles" class="mt-4 block text-primary hover:underline">{{ t('rbac_back_to_roles') }}</NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRbac, type RbacRole, type RbacResource } from '~/composables/useRbac';
+import { computed, onMounted, ref } from 'vue';
+import { useRbac, type RbacResource, type RbacRole } from '~/composables/useRbac';
 
 definePageMeta({ middleware: ['auth', 'rbac-admin'] });
 
@@ -133,31 +107,22 @@ const items = computed(() => [
 ]);
 
 const detailTitle = computed(() => `${t('rbac_detail_role')}: ${role.value?.name ?? ''}`);
+const assignedPermissionIds = computed(() => new Set((role.value?.permissions ?? []).map((permission) => permission.id)));
 
-const allActions = computed(() => {
-  const actions = new Set<string>();
-  for (const r of resources.value) {
-    for (const p of r.permissions ?? []) actions.add(p.action);
-  }
-  return Array.from(actions).sort();
-});
-
-const totalPermissions = computed(() =>
-  resources.value.reduce((sum, r) => sum + (r.permissions?.length ?? 0), 0)
+const resourcePermissionGroups = computed(() =>
+  resources.value
+    .map((resource: RbacResource) => ({
+      resource,
+      permissions: (resource.permissions ?? []).filter((permission) => assignedPermissionIds.value.has(permission.id)),
+    }))
+    .filter((group) => group.permissions.length > 0),
 );
-
-const assignedPermissionIds = computed(() => new Set((role.value?.permissions ?? []).map((p) => p.id)));
-
-const hasPermission = (resource: RbacResource, action: string) => {
-  const perm = resource.permissions?.find((p) => p.action === action);
-  return perm ? assignedPermissionIds.value.has(perm.id) : false;
-};
 
 onMounted(async () => {
   loading.value = true;
   try {
     await Promise.all([fetchRoles(), fetchResources()]);
-    role.value = roles.value.find((r) => r.id === route.params.id) ?? null;
+    role.value = roles.value.find((item) => item.id === route.params.id) ?? null;
   } finally {
     loading.value = false;
   }
