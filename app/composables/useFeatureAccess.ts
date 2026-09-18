@@ -5,6 +5,18 @@ export interface FeaturePermission {
   action: string;
 }
 
+// Konfigurasi Sistem dibagi per fitur agar akses Read tiap tab dapat diatur
+// secara mandiri di matrix RBAC.
+export const CONFIGURATION_READ_PERMISSIONS = [
+  { resource: 'konfigurasi', action: 'read-digsig' },
+  { resource: 'konfigurasi', action: 'read-pengumuman' },
+  { resource: 'konfigurasi', action: 'read-unit-tu' },
+  { resource: 'konfigurasi', action: 'read-unit-legal' },
+  { resource: 'konfigurasi', action: 'read-naskah-lainnya' },
+  { resource: 'smart-search', action: 'read' },
+  { resource: 'correspondence-routing', action: 'read' },
+] as const;
+
 /**
  * Map route path → required permission (resource:action).
  * Sesuai matrix Utama Super Admin.
@@ -18,13 +30,19 @@ const routePermissions: Record<string, string> = {
   '/korespondensi/tertunda': 'utama.tertunda:read',
   '/korespondensi/tulis/disposisi': 'utama.tulis.disposisi:read',
   '/korespondensi/tulis/kajian': 'utama.tulis.kajian:read',
-  '/naskah-lainnya': 'utama.tulis.naskah-lainnya:read',
-  '/naskah-lainnya/tulis': 'utama.tulis.naskah-lainnya:read',
-  '/naskah-lainnya/persetujuan': 'utama.tulis.naskah-lainnya:read',
+  '/naskah-lainnya': 'utama.tulis.naskah-lainnya.halaman-daftar-naskah:read',
+  '/naskah-lainnya/tulis': 'utama.tulis.naskah-lainnya.halaman-tulis-naskah:read',
+  '/naskah-lainnya/persetujuan': 'utama.tulis.naskah-lainnya.halaman-persetujuan:read',
   '/naskah-lainnya/draf': 'utama.draft:read',
   '/korespondensi/tulis/nota-dinas': 'utama.tulis.nota-dinas:read',
   '/korespondensi/tulis/surat-dinas-eksternal': 'utama.tulis.surat-dinas-eksternal:read',
   '/korespondensi/tulis/surat-dinas-internal': 'utama.tulis.surat-dinas-internal:read',
+  // SDE Massal
+  '/korespondensi/sde-masal': 'sde-masal:read',
+  '/korespondensi/sde-masal/verifikasi': 'sde-masal:read-verification',
+  // Berbagi Naskah
+  '/shared/saya-bagikan': 'naskah-share:read-saya-bagikan',
+  '/shared/dibagikan-kepada-saya': 'naskah-share:read-dibagikan-kepada-saya',
   // Utilitas (resource names sesuai seed-rbac.ts)
   '/digsig/verifikasi-dokumen': 'digsig:read-verifikasi-dokumen',
   '/digsig/penandatanganan': 'digsig:read-penandatanganan',
@@ -58,6 +76,10 @@ const routePermissions: Record<string, string> = {
   '/rbac/permissions': 'role:read',
   '/rbac/resources': 'role:read',
   '/rbac/users': 'user:read',
+  // Audit Trail tetap dibatasi backend untuk SUPERADMIN melalui RolesGuard.
+  '/admin/audit': 'audit:read-log',
+  '/admin/audit/anomaly': 'audit:read-anomaly',
+  '/admin/audit/report': 'audit:read-report',
   // Laporan
   '/laporan/rekap-naskah': 'laporan:read-rekap-naskah',
   '/laporan/detail-naskah': 'laporan:read-detail-naskah',
@@ -67,8 +89,6 @@ const routePermissions: Record<string, string> = {
   '/faq/manajemen': 'faq:read',
   '/pedoman/menu': 'pedoman:read',
   '/pedoman/manajemen': 'pedoman:read',
-  // Konfigurasi
-  '/konfigurasi-sistem': 'konfigurasi:read',
 };
 
 // Regex matchers for dynamic routes (detail pages)
@@ -109,10 +129,22 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
     pattern: /^\/korespondensi\/tulis\/lanjut\/surat-dinas-eksternal/,
     perm: 'utama.tulis.surat-dinas-eksternal:read',
   },
+  { pattern: /^\/korespondensi\/sde-masal\/folder\/[^/]+$/, perm: 'sde-masal:read-detail' },
+  { pattern: /^\/korespondensi\/sde-masal\/[^/]+$/, perm: 'sde-masal:read-detail' },
+  { pattern: /^\/korespondensi\/sde-masal\/verifikasi-detail\/[^/]+$/, perm: 'sde-masal:read-verification' },
+  { pattern: /^\/korespondensi\/tulis\/sde-masal(?:\/|$)/, perm: 'sde-masal:read' },
+  { pattern: /^\/shared\/saya-bagikan\/.+$/, perm: 'naskah-share:read-saya-bagikan' },
+  { pattern: /^\/shared\/dibagikan-kepada-saya\/.+$/, perm: 'naskah-share:read-dibagikan-kepada-saya' },
   // Master data — sub-pages inherit parent permission
   { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
-  { pattern: /^\/naskah-lainnya\/[^/]+(?:\/[^/]+)?$/, perm: 'utama.tulis.naskah-lainnya:read' },
+  { pattern: /^\/naskah-lainnya\/[^/]+(?:\/[^/]+)?$/, perm: 'utama.tulis.naskah-lainnya.halaman-daftar-naskah:read' },
+  // Kelola — detail pages inherit the permission of their list page
+  { pattern: /^\/kelola\/pemeliharaan\/pemberkasan(?:\/|$)/, perm: 'pemeliharaan.pemberkasan:read' },
+  { pattern: /^\/kelola\/pemeliharaan\/persetujuan-pemberkasan(?:\/|$)/, perm: 'pemeliharaan.verifikasi:read' },
+  { pattern: /^\/kelola\/penggunaan\/(?:usulan-akses-berkas|usulan-saya)(?:\/|$)/, perm: 'usulan-akses-berkas:read-usulan' },
+  { pattern: /^\/kelola\/penggunaan\/verifikasi-usulan(?:\/|$)/, perm: 'usulan-akses-berkas:read-verifikasi' },
+  { pattern: /^\/kelola\/penggunaan\/pemberian(?:\/|$)/, perm: 'usulan-akses-berkas:read-pemberian' },
 ];
 
 /**
@@ -142,9 +174,37 @@ export function useFeatureAccess() {
     return hasPermission(resource, action);
   };
 
-  const currentRoutePermission = (path?: string): FeaturePermission | null => {
+  const currentRoutePermission = (
+    path?: string,
+    query?: Record<string, any>,
+  ): FeaturePermission | null => {
     const route = useRoute();
     const key = path ?? route.path;
+    const routeQuery = query ?? route.query;
+
+    // Halaman detail/list lama dipakai oleh tiga submenu Penggunaan. Query
+    // ini menjaga akses tetap mengikuti submenu asalnya, bukan permission
+    // Read Usulan Akses secara otomatis.
+    if (key === '/kelola/penggunaan/usulan-akses-berkas') {
+      if (routeQuery.tab === 'verify-me' || routeQuery.from === 'verifikasi') {
+        return { resource: 'usulan-akses-berkas', action: 'read-verifikasi' };
+      }
+      if (routeQuery.tab === 'verify-pemberi' || routeQuery.from === 'pemberian') {
+        return { resource: 'usulan-akses-berkas', action: 'read-pemberian' };
+      }
+      return { resource: 'usulan-akses-berkas', action: 'read-usulan' };
+    }
+
+    if (/^\/kelola\/penggunaan\/usulan-akses-berkas\/[^/]+$/.test(key)) {
+      if (routeQuery.from === 'verifikasi') {
+        return { resource: 'usulan-akses-berkas', action: 'read-verifikasi' };
+      }
+      if (routeQuery.from === 'pemberian') {
+        return { resource: 'usulan-akses-berkas', action: 'read-pemberian' };
+      }
+      return { resource: 'usulan-akses-berkas', action: 'read-usulan' };
+    }
+
     // Exact match
     const exact = routePermissions[key];
     if (exact) {
@@ -161,7 +221,7 @@ export function useFeatureAccess() {
     return null;
   };
 
-  const canAccessPage = (path?: string): boolean => {
+  const canAccessPage = (path?: string, query?: Record<string, any>): boolean => {
     // Gate position_status untuk Naskah Lainnya (SE/VI/EXT blocked) — sebelum cek permission
     const p = path ?? useRoute().path;
     if (
@@ -170,7 +230,16 @@ export function useFeatureAccess() {
     ) {
       return false;
     }
-    const perm = currentRoutePermission(path);
+
+    // Satu halaman Konfigurasi Sistem berisi beberapa tab. Akses halaman
+    // diberikan jika user memiliki Read pada minimal satu tab.
+    if (p === '/konfigurasi-sistem') {
+      return CONFIGURATION_READ_PERMISSIONS.some(({ resource, action }) =>
+        hasPermission(resource, action),
+      );
+    }
+
+    const perm = currentRoutePermission(path, query);
     if (!perm) return true;
     return hasPermission(perm.resource, perm.action);
   };

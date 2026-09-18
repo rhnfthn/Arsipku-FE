@@ -266,10 +266,9 @@ const isChangedFolder = (folder: SdeMasalFolder) =>
 
 const sortedFolders = computed(() =>
   [...folders.value].sort((a, b) => {
-    const aChanged = isChangedFolder(a);
-    const bChanged = isChangedFolder(b);
-    if (aChanged !== bChanged) return aChanged ? -1 : 1;
-
+    // Bold/unread hanya indikator visual. Posisi daftar selalu ditentukan
+    // oleh waktu perubahan terakhir, sehingga item terbaru tetap teratas
+    // meskipun item lain masih unread/bold.
     const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
     const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
     if (bTime !== aTime) return bTime - aTime;

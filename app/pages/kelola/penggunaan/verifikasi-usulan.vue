@@ -175,7 +175,10 @@ watch(filterStatus, () => { currentPage.value = 1; loadData(); });
 
 const goToDetail = (id: string) => {
   markViewed(id);
-  navigateTo(`/kelola/penggunaan/usulan-akses-berkas/${id}`);
+  navigateTo({
+    path: `/kelola/penggunaan/usulan-akses-berkas/${id}`,
+    query: { from: 'verifikasi' },
+  });
 };
 
 const formatDate = (dateStr: string) => {
@@ -467,7 +470,7 @@ const getProgressLabel = (row: any): string => {
           </template>
           <template #cell-aksi="{ row }">
             <div class="flex items-center justify-center gap-1.5">
-              <NuxtLink :to="`/kelola/penggunaan/usulan-akses-berkas/${row.id}`"
+              <NuxtLink :to="{ path: `/kelola/penggunaan/usulan-akses-berkas/${row.id}`, query: { from: 'verifikasi' } }"
                 :class="['relative inline-flex rounded-md p-1.5 transition-colors', isViewed(row) ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300' : 'hover:bg-[#457FB6]/10']"
                 :style="!isViewed(row) ? { color: '#457FB6' } : {}"
                 :title="isViewed(row) ? 'Sudah dilihat' : 'Lihat Detail'"

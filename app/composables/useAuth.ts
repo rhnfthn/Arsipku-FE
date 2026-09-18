@@ -27,7 +27,10 @@ export const useAuth = () => {
   // di sini melempar "Must be called at the top of a setup function" (500).
   // Ambil instance i18n global secara lazy hanya saat applyLoginDefaults()
   // dijalankan di client (setelah login sukses).
-  const isDark = useDark();
+  // Default light mode untuk pengunjung/akun baru. Tanpa initialValue,
+  // useDark() default 'auto' → mengikuti preferensi OS dan membuat akun
+  // baru di perangkat dark langsung tampil gelap.
+  const isDark = useDark({ initialValue: 'light' });
   const tokenCookie = useCookie<string | null>('token', {
     sameSite: 'lax',
     path: '/',
@@ -259,13 +262,17 @@ export const useAuth = () => {
   // ============================================================
 
   const hasPermission = (resource: string, action: string): boolean => {
-    // Superadmin bypass — punya semua permission
-    const role = (user.value?.activeRole?.name ?? user.value?.role ?? '')
-      .toUpperCase()
-      .replace(/[\s_-]/g, '');
-    if (role === 'SUPERADMIN') return true;
     const perms = user.value?.activePermissions || [];
+
     return perms.some((p: ActivePermission) => {
+      // Resource gabungan lama Naskah Lainnya tidak boleh lagi memberi akses
+      // otomatis ke permission halaman/tombol yang sudah dipisah per fitur.
+      if (
+        p.resource === 'utama.tulis.naskah-lainnya' &&
+        resource.startsWith('utama.tulis.naskah-lainnya.')
+      ) {
+        return false;
+      }
       // Match: exact, parent→child (user punya parent, FE cek child),
       // atau child→parent (user punya child, FE cek parent)
       const resourceMatch =

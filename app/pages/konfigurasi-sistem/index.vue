@@ -521,6 +521,7 @@ import { useI18n } from "vue-i18n";
 import { Megaphone } from "lucide-vue-next";
 import { useKonfigurasi } from "@/composables/useKonfigurasi";
 import { Alert } from "@/composables/useAlert";
+import { CONFIGURATION_READ_PERMISSIONS } from "@/composables/useFeatureAccess";
 import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
 
 definePageMeta({ middleware: "auth" });
@@ -530,7 +531,11 @@ const { t } = useI18n();
 const { hasPermission, isSuperadmin, user } = useAuth();
 const { checkUser } = useOrganizationTu();
 
-const canViewKonfigurasi = computed(() => hasPermission('konfigurasi', 'read'));
+const canViewKonfigurasi = computed(() =>
+  CONFIGURATION_READ_PERMISSIONS.some(({ resource, action }) =>
+    hasPermission(resource, action),
+  ),
+);
 
 // Deteksi delegasi unit_dokumen.
 // Prioritas: dari JWT tuRoles (cepat), fallback: query endpoint check-user (akurat).
@@ -556,9 +561,9 @@ const detectUnitDokumenDelegation = async () => {
 };
 
 onMounted(() => {
-  fetchDigsig();
-  fetchMessages(true);
-  fetchSearchConfig();
+  if (hasPermission("konfigurasi", "read-digsig")) fetchDigsig();
+  if (hasPermission("konfigurasi", "read-pengumuman")) fetchMessages(true);
+  if (hasPermission("smart-search", "read")) fetchSearchConfig();
   detectUnitDokumenDelegation();
 
   // Inisialisasi indikator scroll tab bar.
@@ -602,29 +607,76 @@ interface KonfigTab {
   value: string;
   label: string;
   icon: string;
+  permission: { resource: string; action: string };
 }
 
 // Daftar tab data-driven: mudah ditambah dan otomatis menghormati izin akses.
 const tabs = computed<KonfigTab[]>(() => {
   const list: KonfigTab[] = [
-    { value: "digsig", label: t("konfig_tab_digsig"), icon: "i-lucide-shield-check" },
-    { value: "pengumuman", label: t("konfig_tab_pengumuman"), icon: "i-lucide-megaphone" },
-    { value: "unit-tu", label: "Unit TU", icon: "i-lucide-archive" },
-    { value: "unit-legal", label: "Unit Legal", icon: "i-lucide-scale" },
-    { value: "naskah-lainnya", label: "Naskah Lainnya", icon: "i-lucide-files" },
-    { value: "search", label: t("konfig_tab_search"), icon: "i-lucide-search" },
+    {
+      value: "digsig",
+      label: t("konfig_tab_digsig"),
+      icon: "i-lucide-shield-check",
+      permission: { resource: "konfigurasi", action: "read-digsig" },
+    },
+    {
+      value: "pengumuman",
+      label: t("konfig_tab_pengumuman"),
+      icon: "i-lucide-megaphone",
+      permission: { resource: "konfigurasi", action: "read-pengumuman" },
+    },
+    {
+      value: "unit-tu",
+      label: "Unit TU",
+      icon: "i-lucide-archive",
+      permission: { resource: "konfigurasi", action: "read-unit-tu" },
+    },
+    {
+      value: "unit-legal",
+      label: "Unit Legal",
+      icon: "i-lucide-scale",
+      permission: { resource: "konfigurasi", action: "read-unit-legal" },
+    },
+    {
+      value: "naskah-lainnya",
+      label: "Naskah Lainnya",
+      icon: "i-lucide-files",
+      permission: { resource: "konfigurasi", action: "read-naskah-lainnya" },
+    },
+    {
+      value: "search",
+      label: t("konfig_tab_search"),
+      icon: "i-lucide-search",
+      permission: { resource: "smart-search", action: "read" },
+    },
+    {
+      value: "routing",
+      label: "Routing Persuratan",
+      icon: "i-lucide-route",
+      permission: { resource: "correspondence-routing", action: "read" },
+    },
+    {
+      value: "grup-penerima",
+      label: "Grup Penerima",
+      icon: "i-lucide-users",
+      permission: { resource: "master-data", action: "update-grup-penerima" },
+    },
   ];
 
-  if (isSuperadmin.value || hasPermission("correspondence-routing", "read")) {
-    list.push({ value: "routing", label: "Routing Persuratan", icon: "i-lucide-route" });
-  }
-
-  if (isSuperadmin.value || hasPermission("master-data", "update-grup-penerima")) {
-    list.push({ value: "grup-penerima", label: "Grup Penerima", icon: "i-lucide-users" });
-  }
-
-  return list;
+  return list.filter(({ permission }) =>
+    hasPermission(permission.resource, permission.action),
+  );
 });
+
+watch(
+  tabs,
+  (availableTabs) => {
+    if (!availableTabs.some((tab) => tab.value === activeTab.value)) {
+      activeTab.value = availableTabs[0]?.value ?? "digsig";
+    }
+  },
+  { immediate: true },
+);
 
 // ─── Scroll state untuk tab bar ─────────────────────────────────────────────
 const tabScrollRef = ref<HTMLElement | null>(null);

@@ -4,6 +4,7 @@ import type { ShareItem } from '~/composables/useNaskahShare';
 import { getCategoryStyle, getCategoryLabel, getCategoryFullName, formatShortDate } from '~/utils/mail-helpers';
 
 const { t } = useI18n();
+const { hasPermission } = useFeatureAccess();
 
 const props = defineProps<{
   shares: ShareItem[];
@@ -150,7 +151,7 @@ const canOpenPdf = (share: ShareItem): boolean => {
               <UIcon name="i-lucide-eye" class="w-4 h-4" />
             </button>
           </UTooltip>
-          <UTooltip :text="canOpenPdf(row as ShareItem) ? t('share_buka_pdf') : t('share_akses_berakhir')">
+          <UTooltip v-if="hasPermission('naskah-share', 'open')" :text="canOpenPdf(row as ShareItem) ? t('share_buka_pdf') : t('share_akses_berakhir')">
             <button
               type="button"
               :disabled="!canOpenPdf(row as ShareItem)"
