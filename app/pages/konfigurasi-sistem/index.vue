@@ -350,6 +350,11 @@
           <NaskahLainnyaTab />
         </div>
 
+        <!-- ===================== TAB: GRUP PENERIMA ===================== -->
+        <div v-if="activeTab === 'grup-penerima'">
+          <GrupPenerimaTab />
+        </div>
+
         <!-- ===================== TAB: SEARCH ENGINE ===================== -->
         <div v-if="activeTab === 'search'" class="p-6">
           <Heading variant="heading9sb" class="text-mobile-md">
@@ -612,6 +617,10 @@ const tabs = computed<KonfigTab[]>(() => {
 
   if (isSuperadmin.value || hasPermission("correspondence-routing", "read")) {
     list.push({ value: "routing", label: "Routing Persuratan", icon: "i-lucide-route" });
+  }
+
+  if (isSuperadmin.value || hasPermission("master-data", "update-grup-penerima")) {
+    list.push({ value: "grup-penerima", label: "Grup Penerima", icon: "i-lucide-users" });
   }
 
   return list;
