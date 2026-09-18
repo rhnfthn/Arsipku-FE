@@ -239,6 +239,48 @@ function dedupeTreePermissions(tree: any) {
   };
 }
 
+// Sidebar ADMIN menampilkan Tertuju sebagai menu Administrasi tersendiri,
+// bukan seluruh Data Master. Bentuk matrix mengikuti menu yang benar-benar
+// tersedia pada role tersebut, tanpa menggandakan permission ID.
+function administrasiTreeForRole(tree: any, roleName: string) {
+  if (!tree || tree.key !== 'administrasi' || roleName === 'SUPERADMIN') return tree;
+
+  const dataMaster = (tree.menus ?? []).find((menu: any) => menu.key === 'data-master');
+  let tertujuSubMenu = (dataMaster?.subMenus ?? []).find(
+    (subMenu: any) => subMenu.key === 'tertuju',
+  );
+  const menus = (tree.menus ?? []).filter(
+    (menu: any) => !['data-master', 'konfigurasi', 'audit'].includes(menu.key),
+  );
+
+  if (tertujuSubMenu) {
+    // Admin hanya memiliki akses halaman/read. Action pengelolaan Tertuju
+    // tetap ditampilkan untuk SUPERADMIN, tetapi tidak menjadi opsi Admin.
+    if (roleName === 'ADMIN') {
+      tertujuSubMenu = {
+        ...tertujuSubMenu,
+        fiturs: (tertujuSubMenu.fiturs ?? [])
+          .map((fitur: any) => ({
+            ...fitur,
+            permissions: (fitur.permissions ?? []).filter(
+              (permission: any) =>
+                permission.permissionName === 'master-data.read-tertuju' ||
+                (permission.resource === 'master-data' && permission.action === 'read-tertuju'),
+            ),
+          }))
+          .filter((fitur: any) => fitur.permissions.length > 0),
+      };
+    }
+    menus.push({
+      key: 'tertuju',
+      label: tertujuSubMenu.label || 'Tertuju',
+      subMenus: [tertujuSubMenu],
+    });
+  }
+
+  return { ...tree, menus };
+}
+
 // Matrix lama/cache tertentu bisa mengirim permissionId kosong walaupun
 // permission sudah ada di database. Resolve ulang dari katalog permission
 // agar checkbox tetap dapat dipilih dan disimpan.
@@ -285,10 +327,7 @@ function hydratePermissionIds(tree: any, permissionIdsByName: Map<string, string
       return { ...raw, menus: raw.menus.filter((m: any) => !userHidden.includes(m.key)) };
     }
     if (raw.key === 'administrasi') {
-      if (roleName !== 'SUPERADMIN') {
-        const adminHidden = ['data-master', 'konfigurasi'];
-        return { ...raw, menus: raw.menus.filter((m: any) => !adminHidden.includes(m.key)) };
-      }
+      return administrasiTreeForRole(raw, roleName);
     }
     return raw;
   });
@@ -314,9 +353,8 @@ const allPermissionIds = computed<string[]>(() => {
     if (!tree) continue;
     if (skipKeys.includes(tree.key)) continue;
     let menus = tree.menus ?? [];
-    if (tree.key === 'administrasi' && roleName !== 'SUPERADMIN' && roleName !== 'USER') {
-      const adminHidden = ['data-master', 'konfigurasi'];
-      menus = menus.filter((m: any) => !adminHidden.includes(m.key));
+    if (tree.key === 'administrasi') {
+      menus = administrasiTreeForRole({ ...tree, menus }, roleName)?.menus ?? [];
     }
     // USER: tambah Titelatur & Penomoran dari administrasiTree ke utilitas
     if (tree.key === 'utilitas' && roleName === 'USER' && administrasiTree.value) {

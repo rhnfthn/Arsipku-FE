@@ -31,7 +31,7 @@ const {
 
 // ─── Permission ──────────────────────────────────────────────────────────────
 
-const canRead = computed(() => hasPermission('tugas', 'read'));
+const canRead = computed(() => hasPermission('tugas', 'read-board'));
 const canCreateBoard = computed(() => hasPermission('tugas', 'create-board'));
 const canUpdateBoard = computed(() => hasPermission('tugas', 'update-board'));
 const canDeleteBoard = computed(() => hasPermission('tugas', 'delete-board'));
