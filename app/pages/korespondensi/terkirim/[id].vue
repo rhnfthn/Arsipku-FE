@@ -56,7 +56,6 @@ const isKonsepData = ref(false);
 const isCurrentDetail = (detail: any) =>
   String(detail?.id || '') === String(route.params.id || '');
 
-// --- NAVIGATION (previous/next dari terkirim) ---
 const navPrev = ref<any>(null);
 const navNext = ref<any>(null);
 const isLoadingNav = ref(false);
@@ -408,7 +407,6 @@ const loadData = async () => {
   navNext.value = null;
 
   try {
-    // Fetch navigation (prev/next) untuk pesan terkirim
     isLoadingNav.value = true;
     try {
       const nav = await fetchSentNavigation(id, jenisQuery);
@@ -613,7 +611,6 @@ watch(
   },
 );
 
-// --- NAVIGATION HANDLERS (prev/next pesan terkirim) ---
 const goToNav = (target: any) => {
   if (!target?.id_naskah) return;
   const targetJenis = target.jenis || jenisQuery || 'ND';

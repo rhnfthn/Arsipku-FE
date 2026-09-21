@@ -456,11 +456,20 @@ const activeProfile = computed(() => {
 // Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
 // ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
 const showKelolaMenu = computed(
-  () =>
-    isSuperadmin.value ||
-    !hasDelegationProfile.value ||
-    activeProfile.value === 'sekretaris' ||
-    activeProfile.value === 'unit_dokumen'
+  () => {
+    const profileAccess =
+      isSuperadmin.value ||
+      !hasDelegationProfile.value ||
+      activeProfile.value === 'sekretaris' ||
+      activeProfile.value === 'unit_dokumen';
+    if (!profileAccess) return false;
+    if (isAdminOrSuperadmin.value) return true;
+    return [
+      ['pemeliharaan.pemberkasan', 'read'],
+      ['pemeliharaan.verifikasi', 'read'],
+      ['usulan-akses-berkas', 'read-usulan'],
+    ].some(([resource, action]) => hasPermission(resource, action));
+  }
 );
 
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip

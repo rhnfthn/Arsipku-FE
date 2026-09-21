@@ -248,7 +248,6 @@ export interface CekDokumenData {
   keterangan: string
   signers?: CekDokumenSigner[]
   verificationDetails?: Record<string, any>
-  // Legacy fields (untuk kompatibilitas dengan kode lama)
   document?: DocumentInfo
   signatures?: SignatureInfo[]
 }
