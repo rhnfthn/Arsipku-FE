@@ -43,6 +43,13 @@ const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/draft\/list(?:[/?#]|$)/,
   /^\/labels\/(?:counts|[^/]+\/naskah)(?:[/?#]|$)/,
   /^\/naskah-lainnya(?:[/?#]|$)/,
+  // Seluruh konfigurasi harus selalu mencerminkan perubahan admin terbaru.
+  /^\/config(?:[/?#]|$)/,
+  /^\/admin\/config(?:[/?#]|$)/,
+  /^\/konfigurasi(?:[/?#]|$)/,
+  /^\/organization-tu(?:[/?#]|$)/,
+  /^\/persuratan\/grup-penerima(?:[/?#]|$)/,
+  /^\/correspondence-routing(?:[/?#]|$)/,
   /^\/(?:admin\/)?nomor-request(?:[/?#-]|$)/,
   /^\/digsig(?:[/?#]|$)/,
   /^\/naskah-dinas(?:[/?#]|$)/,

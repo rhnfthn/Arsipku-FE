@@ -114,7 +114,7 @@
       <div
         class="flex flex-col bg-white dark:bg-gray-800 transition-all duration-300 overflow-y-auto overflow-x-hidden flex-1 w-full">
 
-        <!-- Tabs by jenis -->
+        <!-- Filter jenis naskah: pola tab pill seperti /korespondensi/draf -->
         <div
           class="py-2.5 border-b border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 sticky top-0 z-10 w-full overflow-hidden">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide w-full py-1">
@@ -264,6 +264,7 @@ import {
 } from "lucide-vue-next";
 import { useNaskahLainnya } from "~/composables/useNaskahLainnya";
 import { formatNaskahDate } from "~/utils/naskah-lainnya-date";
+import { JENIS_LABELS } from "~/types/naskah-lainnya";
 
 definePageMeta({ layout: "default", middleware: ["auth"] });
 
@@ -293,11 +294,11 @@ const pageOptions = [10, 25, 50];
 
 const tabs = [
   { label: "Semua", value: "ALL", icon: Inbox },
-  { label: "Peraturan", value: "PER", icon: FileText },
-  { label: "Keputusan", value: "KEP", icon: FileText },
-  { label: "Instruksi", value: "INS", icon: FileText },
-  { label: "PKS", value: "PKS", icon: FileText },
-  { label: "Berita Acara", value: "BAC", icon: FileText },
+  ...Object.entries(JENIS_LABELS).map(([value, label]) => ({
+    label,
+    value,
+    icon: FileText,
+  })),
 ];
 
 // ── Computed ───────────────────────────────────────────────────────
