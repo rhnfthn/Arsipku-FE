@@ -199,3 +199,93 @@ svg[aria-describedby]:focus-visible {
 .tox-dialog-wrap {
   z-index: 10501 !important;
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+main,
+main > div,
+main section,
+main article,
+#__nuxt,
+#__layout {
+  min-width: 0;
+}
+
+main .overflow-x-auto {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  .app-sidebar-shell > aside {
+    width: min(320px, 88vw) !important;
+  }
+
+  .app-navbar-shell > nav {
+    height: 4rem !important;
+    min-height: 4rem !important;
+  }
+
+  .app-main-content {
+    margin-inline: 0.75rem !important;
+  }
+
+  main .grid[class*="grid-cols-"]:not([class*="grid-flow-col"]) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  main .flex.items-center.justify-between,
+  main .flex.items-start.justify-between,
+  main .flex.items-end.justify-between,
+  main .flex.justify-end {
+    flex-wrap: wrap;
+  }
+
+  main [class*="w-["] {
+    max-width: 100%;
+  }
+
+  main .overflow-x-auto > table,
+  main .overflow-x-auto table {
+    min-width: 640px;
+  }
+
+  [role="dialog"] {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+  }
+}
