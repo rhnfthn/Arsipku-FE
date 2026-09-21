@@ -45,7 +45,6 @@ export function useInbox() {
   const { apiGet, apiPost, apiPut, apiPatch, clearApiCache } = useApi();
   const { markNaskahNotificationsAsRead } = useNotifications();
 
-  // State dipindahkan ke dalam fungsi agar setiap consumer punya instance sendiri
   const items = ref<any[]>([]);
   const pending = ref(false);
   const error = ref<any>(null);
@@ -375,8 +374,6 @@ export function useInbox() {
         { skipCache: true },
       );
 
-      // Backend mengembalikan { success, message, data: { current, previous, next } }
-      // apiGet sudah me-return res.data (axios), jadi res = { success, data: {...} }
       const navData = res?.data ?? res;
       return {
         current: navData?.current ?? null,

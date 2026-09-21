@@ -126,7 +126,7 @@
           <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
             :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
             :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
-            disabled-message="Sudah dipilih di Tertuju" />
+            disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
         </div>
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -375,6 +375,13 @@ const pdfUrl = ref("");
 const refData = ref<any>(null);
 const isRefExpanded = ref(false);
 const maxPerihal = 200;
+
+const { syncMandatoryCc } = useMandatoryRoutingCc({
+  recipientItems: items,
+  selectedTertuju,
+  selectedTembusan,
+  recipientGroups,
+});
 
 const sifatOptions: SifatOption[] = [
   { label: "Sangat Rahasia", value: "sangat rahasia" },
@@ -625,6 +632,7 @@ const fetchRecipientsBySender = async (senderPositionId: string) => {
         ...(recipientsData.ATASAN || []),
         ...(recipientsData.REKAN || []),
         ...(recipientsData.BAWAHAN || []),
+        ...(recipientsData.TEMBUSAN || []),
       ];
       items.value = combinedArray.map((r: any): RecipientItem => ({
         label: `${r.persnum_person_text || '-'} - ${r.position_text}`,
@@ -632,6 +640,7 @@ const fetchRecipientsBySender = async (senderPositionId: string) => {
         value: String(r.position),
         raw: r,
       }));
+      syncMandatoryCc();
     } else {
       items.value = [];
     }

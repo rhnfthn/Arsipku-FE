@@ -96,7 +96,6 @@ export const useRbac = () => {
     return apiPut(`/rbac/roles/${id}`, data).catch(() => apiPost(`/rbac/roles/${id}`, data));
   };
 
-  // PATCH tidak ada helper; pakai apiPost workaround? Use axios directly via useApi patch
   const patchRole = async (id: string, data: { name?: string; description?: string | null }) => {
     const { apiPatch } = useApi();
     return apiPatch(`/rbac/roles/${id}`, data);
@@ -110,7 +109,6 @@ export const useRbac = () => {
     return apiPut(`/rbac/roles/${roleId}/permissions`, { permissionIds, matrixPermissionIds });
   };
 
-  // User-role
   const fetchUserRoles = async (persnum: number | string) => {
     const res: any = await apiGet(`/rbac/users/${persnum}/roles`, {}, { skipCache: true });
     return (res?.data ?? []) as RbacUserRoleRow[];

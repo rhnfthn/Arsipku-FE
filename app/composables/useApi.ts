@@ -43,6 +43,13 @@ const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/draft\/list(?:[/?#]|$)/,
   /^\/labels\/(?:counts|[^/]+\/naskah)(?:[/?#]|$)/,
   /^\/naskah-lainnya(?:[/?#]|$)/,
+  // Seluruh konfigurasi harus selalu mencerminkan perubahan admin terbaru.
+  /^\/config(?:[/?#]|$)/,
+  /^\/admin\/config(?:[/?#]|$)/,
+  /^\/konfigurasi(?:[/?#]|$)/,
+  /^\/organization-tu(?:[/?#]|$)/,
+  /^\/persuratan\/grup-penerima(?:[/?#]|$)/,
+  /^\/correspondence-routing(?:[/?#]|$)/,
   /^\/(?:admin\/)?nomor-request(?:[/?#-]|$)/,
   /^\/digsig(?:[/?#]|$)/,
   /^\/naskah-dinas(?:[/?#]|$)/,
@@ -233,7 +240,6 @@ export const useApi = () => {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // JIKA FormData → JANGAN SET CONTENT-TYPE
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       delete config.headers?.['Content-Type'];
     }
@@ -280,8 +286,6 @@ export const useApi = () => {
         await clearExpiredSession(currentToken);
       }
 
-      // Silent: tidak ada toast untuk 403 (AccessDenied component handle di page)
-      // dan tidak ada toast untuk 404 (endpoint tidak ditemukan)
       return Promise.reject(error);
     }
   );

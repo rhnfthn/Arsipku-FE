@@ -924,22 +924,13 @@ definePageMeta({
 const { hasPermission } = useAuth();
 
 
-// ─────────────────────────────────────────────
-// i18n — pakai useI18n() yang sudah diatur Navbar
-// ─────────────────────────────────────────────
 const { t, locale } = useI18n();
 
-// ─────────────────────────────────────────────
-// BREADCRUMB (reaktif terhadap bahasa)
-// ─────────────────────────────────────────────
 const items = computed<BreadcrumbItem[]>(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('ka_title'), to: '/master/klasifikasi' }
 ]);
 
-// ─────────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────────
 import { useToast } from '#imports';
 
 const toast = useToast();
@@ -958,9 +949,6 @@ const showToast = (opt: {
   });
 };
 
-// ─────────────────────────────────────────────
-// COMPOSABLE
-// ─────────────────────────────────────────────
 const {
   getKlasifikasi,
   getKlasifikasiDetail,
@@ -971,9 +959,6 @@ const {
 } = useKlasifikasi();
 
 
-// ─────────────────────────────────────────────
-// FETCH
-// ─────────────────────────────────────────────
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const loading = ref(false);
 const search = ref('');
@@ -992,9 +977,6 @@ const fetchKlasifikasi = async () => {
 
 onMounted(fetchKlasifikasi);
 
-// ─────────────────────────────────────────────
-// DETAIL
-// ─────────────────────────────────────────────
 const showDetail = ref(false);
 const detail = ref<Klasifikasi | null>(null);
 
@@ -1009,9 +991,6 @@ const onView = async (row: Klasifikasi) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// ADD
-// ─────────────────────────────────────────────
 const showAddModal = ref(false);
 const savingAdd = ref(false);
 
@@ -1131,9 +1110,6 @@ const submitAddKlasifikasi = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// EDIT
-// ─────────────────────────────────────────────
 const showEditModal = ref(false);
 const savingEdit = ref(false);
 const editId = ref<string | null>(null);
@@ -1250,9 +1226,6 @@ const submitEditKlasifikasi = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────
 const showDeletePopup = ref(false);
 const showBlockedDeletePopup = ref(false);
 const blockedDeleteMessage = ref('');
@@ -1304,9 +1277,6 @@ const deleteMessage = computed(() => {
     : `Are you sure you want to delete classification "${deleteTarget.value.klasifikasi_text}"? ${t('ka_pop_desc')}`;
 });
 
-// ─────────────────────────────────────────────
-// PAGINATION
-// ─────────────────────────────────────────────
 const currentPage = ref(1);
 const perPage = ref(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -1338,9 +1308,6 @@ watch(klasifikasiList, () => {
   currentPage.value = 1;
 });
 
-// ─────────────────────────────────────────────
-// SEARCH & SORT
-// ─────────────────────────────────────────────
 const sortKlasifikasi = ref<'asc' | 'desc' | null>(null);
 
 const filteredKlasifikasi = computed(() => {
@@ -1375,9 +1342,6 @@ const toggleSortKlasifikasi = () => {
   else sortKlasifikasi.value = null;
 };
 
-// ─────────────────────────────────────────────
-// EXPORT
-// ─────────────────────────────────────────────
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -1475,7 +1439,6 @@ const handleExportConfirm = () => {
   showExportModal.value = false;
 };
 
-// Highlight function for search results
 function highlight(text: string, keyword: string): string {
   if (!keyword || !text) return text;
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
