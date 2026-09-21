@@ -22,7 +22,6 @@ export const CONFIGURATION_READ_PERMISSIONS = [
  * Sesuai matrix Utama Super Admin.
  */
 const routePermissions: Record<string, string> = {
-  // Utama
   '/beranda': 'utama.beranda:read',
   '/korespondensi/draf': 'utama.draft:read',
   '/korespondensi/kotak-masuk': 'utama.kotak-masuk:read',
@@ -43,7 +42,6 @@ const routePermissions: Record<string, string> = {
   // Berbagi Naskah
   '/shared/saya-bagikan': 'naskah-share:read-saya-bagikan',
   '/shared/dibagikan-kepada-saya': 'naskah-share:read-dibagikan-kepada-saya',
-  // Utilitas (resource names sesuai seed-rbac.ts)
   '/digsig/verifikasi-dokumen': 'digsig:read-verifikasi-dokumen',
   '/digsig/penandatanganan': 'digsig:read-penandatanganan',
   '/penandatangan': 'digsig:read-penandatanganan',
@@ -53,7 +51,6 @@ const routePermissions: Record<string, string> = {
   '/layanan-email': 'layanan-email:read',
   '/layanan-email/log': 'layanan-email:read-log',
   '/naskah-dinas/verifikator': 'verifikasi-naskah:read',
-  // Administrasi
   '/delegasi': 'delegasi:read',
   '/titelatur': 'titelatur:read',
   '/penomoran/usulan': 'penomoran:read-usulan',
@@ -79,24 +76,20 @@ const routePermissions: Record<string, string> = {
   '/admin/audit': 'audit:read-log',
   '/admin/audit/anomaly': 'audit:read-anomaly',
   '/admin/audit/report': 'audit:read-report',
-  // Laporan
   '/laporan/rekap-naskah': 'laporan:read-rekap-naskah',
   '/laporan/detail-naskah': 'laporan:read-detail-naskah',
   '/laporan/naskah-masuk': 'laporan:read-naskah-masuk',
-  // FAQ & Pedoman
   '/faq/menu': 'faq:read',
   '/faq/manajemen': 'faq:read',
   '/pedoman/menu': 'pedoman:read',
   '/pedoman/manajemen': 'pedoman:read',
 };
 
-// Regex matchers for dynamic routes (detail pages)
 const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   { pattern: /^\/korespondensi\/kotak-masuk\/[^/]+$/, perm: 'utama.kotak-masuk:read-detail' },
   { pattern: /^\/korespondensi\/terkirim\/[^/]+$/, perm: 'utama.terkirim:read-detail' },
   { pattern: /^\/korespondensi\/tertunda\/[^/]+$/, perm: 'utama.tertunda:read-detail' },
   { pattern: /^\/korespondensi\/draf\/[^/]+$/, perm: 'utama.draft:read-detail' },
-  // Konsep & Finalisasi & Lanjut — inherit dari parent tulis permission
   { pattern: /^\/korespondensi\/tulis\/konsep\/nota-dinas/, perm: 'utama.tulis.nota-dinas:read' },
   {
     pattern: /^\/korespondensi\/tulis\/konsep\/surat-dinas-internal/,
@@ -134,7 +127,6 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   { pattern: /^\/korespondensi\/tulis\/sde-masal(?:\/|$)/, perm: 'sde-masal:read' },
   { pattern: /^\/shared\/saya-bagikan\/.+$/, perm: 'naskah-share:read-saya-bagikan' },
   { pattern: /^\/shared\/dibagikan-kepada-saya\/.+$/, perm: 'naskah-share:read-dibagikan-kepada-saya' },
-  // Master data — sub-pages inherit parent permission
   { pattern: /^\/master\/perusahaan\/[^/]+\/area$/, perm: 'master-data:read-perusahaan-area' },
  { pattern: /^\/master\/perusahaan\/[^/]+\/struktur$/, perm: 'master-data:read-perusahaan' },
   { pattern: /^\/naskah-lainnya\/[^/]+(?:\/[^/]+)?$/, perm: 'utama.tulis.naskah-lainnya.halaman-daftar-naskah:read' },
@@ -204,13 +196,11 @@ export function useFeatureAccess() {
       return { resource: 'usulan-akses-berkas', action: 'read-usulan' };
     }
 
-    // Exact match
     const exact = routePermissions[key];
     if (exact) {
       const [resource, action] = exact.split(':');
       return { resource, action };
     }
-    // Pattern match (dynamic routes)
     for (const { pattern, perm } of routePermissionPatterns) {
       if (pattern.test(key)) {
         const [resource, action] = perm.split(':');

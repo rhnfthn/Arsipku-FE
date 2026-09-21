@@ -214,10 +214,8 @@ const availableRoles = computed(() => {
 });
 
 const canRemove = (ur: RbacUserRoleRow) => {
-  // Badge USER adalah role default — tidak bisa dihapus, hanya SUPERADMIN & ADMIN yang bisa dihapus.
   const name = (ur.roleName || '').toUpperCase();
   if (name === 'USER') return false;
-  // Superadmin tidak boleh menghapus role SUPERADMIN milik dirinya sendiri.
   if (name === 'SUPERADMIN' && authUser.value?.persnum === person.value?.persnum) {
     return false;
   }
@@ -285,7 +283,6 @@ const assignRole = async () => {
 
 const removeRole = async (ur: RbacUserRoleRow) => {
   if (!person.value) return;
-  // B9: confirm dialog khusus untuk SUPERADMIN
   const isSuperadmin = ur.roleName === 'SUPERADMIN';
   const title = isSuperadmin
     ? t('rbac_remove_superadmin_title')
@@ -329,7 +326,6 @@ onMounted(async () => {
   const persnum = Number(route.params.persnum);
   try {
     await fetchRoles();
-    // Bug B7 fix: pakai fetchUserProfile (exact match by persnum), bukan searchPersons (LIKE)
     person.value = await fetchUserProfile(persnum);
     if (person.value) {
       await loadUserRoles(persnum);

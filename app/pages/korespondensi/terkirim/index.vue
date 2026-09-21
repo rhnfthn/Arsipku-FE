@@ -356,7 +356,6 @@ const filterLabelMap = computed<Record<string, string>>(() =>
   Object.fromEntries(filterMenuOptions.value.map((f) => [f.value, f.label]))
 );
 
-// ── Helpers ─────────────────────────────────────────────────────────────────--
 import { formatShortDate, getInitials } from '~/utils/mail-helpers';
 
 const jenisAliasMap: Record<string, string[]> = {

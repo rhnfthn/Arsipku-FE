@@ -164,7 +164,6 @@ export const useTerkirimDetail = () => {
       // Pastikan useApi Anda mendukung config axios tambahan (responseType)
       // Jika tidak, fallback ke fetch native seperti kode lama Anda.
 
-      // Gunakan runtime config untuk base URL agar tidak hardcoded
       const config = useRuntimeConfig();
       const BASE_URL = config.public.apiBaseUrl;
 

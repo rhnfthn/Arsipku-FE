@@ -257,9 +257,6 @@ export const useAuth = () => {
     return newAccessToken as string;
   };
 
-  // ============================================================
-  // RBAC helpers (permission-based)
-  // ============================================================
 
   const hasPermission = (resource: string, action: string): boolean => {
     const perms = user.value?.activePermissions || [];

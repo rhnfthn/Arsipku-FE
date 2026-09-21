@@ -309,19 +309,200 @@ function hydratePermissionIds(tree: any, permissionIdsByName: Map<string, string
   };
 }
 
+function utamaTreeForUser(tree: any) {
+  if (!tree || tree.key !== 'utama') return tree;
+  return {
+    ...tree,
+    menus: (tree.menus ?? []).map((menu: any) => {
+      if (menu.key !== 'sde-masal') return menu;
+      return {
+        ...menu,
+        subMenus: (menu.subMenus ?? []).map((subMenu: any) => ({
+          ...subMenu,
+          fiturs: (subMenu.fiturs ?? []).map((fitur: any) => ({
+            ...fitur,
+            permissions: (fitur.permissions ?? []).filter((permission: any) =>
+              (subMenu.key === 'pengajuan' && permission.action === 'read') ||
+              (subMenu.key === 'verifikasi' && permission.action === 'read-verification'),
+            ),
+          })).filter((fitur: any) => fitur.permissions.length > 0),
+        })).filter((subMenu: any) => subMenu.fiturs.length > 0),
+      };
+    }),
+  };
+}
+
+function kelolaTreeForUser(tree: any) {
+  if (!tree || tree.key !== 'kelola') return tree;
+  return {
+    ...tree,
+    menus: (tree.menus ?? []).map((menu: any) => ({
+      ...menu,
+      subMenus: (menu.subMenus ?? [])
+        .filter((subMenu: any) =>
+          menu.key !== 'penggunaan' || !['verifikasi-usulan', 'pemberian'].includes(subMenu.key),
+        )
+        .map((subMenu: any) => ({
+          ...subMenu,
+          fiturs: (subMenu.fiturs ?? [])
+            .map((fitur: any) => ({
+              ...fitur,
+              permissions: (fitur.permissions ?? []).filter(
+                (permission: any) =>
+                  permission.action === 'read' || permission.action.startsWith('read-'),
+              ),
+            }))
+            .filter((fitur: any) => fitur.permissions.length > 0),
+        }))
+        .filter((subMenu: any) => subMenu.fiturs.length > 0),
+    })),
+  };
+}
+
+function readOnlyMenu(menu: any, label?: string) {
+  return {
+    ...menu,
+    ...(label ? { label } : {}),
+    subMenus: (menu.subMenus ?? [])
+      .map((subMenu: any) => ({
+        ...subMenu,
+        fiturs: (subMenu.fiturs ?? [])
+          .map((fitur: any) => ({
+            ...fitur,
+            permissions: (fitur.permissions ?? []).filter(
+              (permission: any) =>
+                permission.action === 'read' || permission.action.startsWith('read-'),
+            ),
+          }))
+          .filter((fitur: any) => fitur.permissions.length > 0),
+      }))
+      .filter((subMenu: any) => subMenu.fiturs.length > 0),
+  };
+}
+
+function utilitasTreeForUser(tree: any, administrasiTree: any) {
+  if (!tree || tree.key !== 'utilitas') return tree;
+
+  const menus = (tree.menus ?? [])
+    .filter((menu: any) => menu.key !== 'template')
+    .map((menu: any) => {
+      if (menu.key !== 'ttd-digital') return menu;
+      return {
+        ...menu,
+        subMenus: (menu.subMenus ?? []).filter((subMenu: any) => subMenu.key !== 'log-disdig'),
+      };
+    });
+
+  const administrasiMenus = administrasiTree?.menus ?? [];
+  const titelatur = administrasiMenus.find((menu: any) => menu.key === 'titelatur');
+  const dataMaster = administrasiMenus.find((menu: any) => menu.key === 'data-master');
+  const tertuju = (dataMaster?.subMenus ?? []).find(
+    (subMenu: any) => subMenu.key === 'tertuju',
+  );
+  const penomoran = administrasiMenus.find((menu: any) => menu.key === 'penomoran');
+
+  if (titelatur) menus.push(titelatur);
+  if (tertuju) {
+    menus.push(
+      readOnlyMenu(
+        {
+          key: 'tertuju',
+          label: 'Tertuju',
+          subMenus: [tertuju],
+        },
+        'Tertuju',
+      ),
+    );
+  }
+  if (penomoran) menus.push(readOnlyMenu(penomoran, 'Usulan Penomoran'));
+
+  return { ...tree, menus };
+}
+
+function tugasTreeForUser(tree: any) {
+  if (!tree || tree.key !== 'tugas') return tree;
+
+  const sourceSubMenus = (tree.menus ?? []).flatMap((menu: any) => menu.subMenus ?? []);
+  const papanSubMenu = sourceSubMenus.find(
+    (subMenu: any) => subMenu.key === 'papan' || subMenu.label === 'Papan',
+  );
+  const tugasSayaSubMenu = sourceSubMenus.find(
+    (subMenu: any) => subMenu.key === 'tugas-saya' || subMenu.label === 'Tugas Saya',
+  );
+  const readOnlySubMenu = (subMenu: any, key: string, label: string) => ({
+    ...(subMenu ?? {}),
+    key,
+    label,
+    fiturs: (subMenu?.fiturs ?? [])
+      .map((fitur: any) => ({
+        ...fitur,
+        key,
+        label,
+        permissions: (fitur.permissions ?? []).filter(
+          (permission: any) =>
+            permission.action === 'read' || permission.action.startsWith('read-'),
+        ),
+      }))
+      .filter((fitur: any) => fitur.permissions.length > 0),
+  });
+
+  const menus = [
+    papanSubMenu
+      ? {
+          key: 'papan',
+          label: 'Papan',
+          subMenus: [readOnlySubMenu(papanSubMenu, 'papan', 'Papan')],
+        }
+      : null,
+    tugasSayaSubMenu
+      ? {
+          key: 'tugas-saya',
+          label: 'Tugas Saya',
+          subMenus: [readOnlySubMenu(tugasSayaSubMenu, 'tugas-saya', 'Tugas Saya')],
+        }
+      : null,
+  ].filter((menu: any) => menu?.subMenus?.some((subMenu: any) => subMenu.fiturs.length > 0));
+
+  return {
+    ...tree,
+    menus,
+  };
+}
+
+function isAllowedUserUtilitasPermission(name?: string) {
+  if (!name) return true;
+  if (
+    name === 'digsig.read-log-disdig' ||
+    name === 'digsig.create-log-disdig-alert' ||
+    name.startsWith('template.')
+  ) {
+    return false;
+  }
+  if (name.startsWith('master-data.')) return name === 'master-data.read-tertuju';
+  if (name.startsWith('penomoran.')) {
+    const action = name.split('.').pop() || '';
+    return action === 'read' || action.startsWith('read-');
+  }
+  return true;
+}
+
   const currentTree = computed(() => {
     const source = treeMap[activeTab.value]?.value ?? null;
-    const raw = source?.key === 'kelola' ? dedupeTreePermissions(source) : source;
-    if (!raw) return null;
     const roleName = (role.value?.name || '').toUpperCase();
-    // USER: gabung Titelatur & Penomoran dari Administrasi ke Utilitas
-    if (roleName === 'USER' && raw.key === 'utilitas' && administrasiTree.value) {
-      const extraMenus = (administrasiTree.value.menus ?? []).filter((m: any) =>
-        ['titelatur', 'penomoran'].includes(m.key)
-      );
-      return { ...raw, menus: [...(raw.menus ?? []), ...extraMenus] };
+    const rawSource = roleName === 'USER'
+      ? (source?.key === 'utama'
+        ? utamaTreeForUser(source)
+        : source?.key === 'kelola'
+          ? kelolaTreeForUser(source)
+          : source?.key === 'tugas'
+            ? tugasTreeForUser(source)
+            : source)
+      : source;
+    const raw = rawSource?.key === 'kelola' ? dedupeTreePermissions(rawSource) : rawSource;
+    if (!raw) return null;
+    if (roleName === 'USER' && raw.key === 'utilitas') {
+      return utilitasTreeForUser(raw, administrasiTree.value);
     }
-    // USER: hide Manajemen FAQ & Manajemen Pedoman di tab FAQ
     if (roleName === 'USER' && raw.key === 'faq') {
       const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
       return { ...raw, menus: raw.menus.filter((m: any) => !userHidden.includes(m.key)) };
@@ -347,7 +528,6 @@ const editTitle = computed(() => `${t('rbac_edit_permission')}: ${role.value?.na
 const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
   const roleName = (role.value?.name || '').toUpperCase();
-  // USER: skip Administrasi & Laporan tree (Titelatur & Penomoran sudah digabung ke Utilitas)
   const skipKeys = roleName === 'USER' ? ['administrasi', 'laporan'] : [];
   for (const tree of [utamaTree.value, kelolaTree.value, utilitasTree.value, tugasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
     if (!tree) continue;
@@ -356,14 +536,21 @@ const allPermissionIds = computed<string[]>(() => {
     if (tree.key === 'administrasi') {
       menus = administrasiTreeForRole({ ...tree, menus }, roleName)?.menus ?? [];
     }
-    // USER: tambah Titelatur & Penomoran dari administrasiTree ke utilitas
     if (tree.key === 'utilitas' && roleName === 'USER' && administrasiTree.value) {
       const extraMenus = (administrasiTree.value.menus ?? []).filter((m: any) =>
         ['titelatur', 'penomoran'].includes(m.key)
       );
+      const dataMaster = (administrasiTree.value.menus ?? []).find(
+        (m: any) => m.key === 'data-master',
+      );
+      const tertuju = (dataMaster?.subMenus ?? []).find(
+        (subMenu: any) => subMenu.key === 'tertuju',
+      );
       menus = [...menus, ...extraMenus];
+      if (tertuju) {
+        menus.push({ key: 'tertuju', label: 'Tertuju', subMenus: [tertuju] });
+      }
     }
-    // USER: hide Manajemen FAQ & Manajemen Pedoman di tab FAQ
     if (tree.key === 'faq' && roleName === 'USER') {
       const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
       menus = menus.filter((m: any) => !userHidden.includes(m.key));
@@ -555,7 +742,6 @@ onMounted(async () => {
       faqTree.value = hydratePermissionIds(faq.tree, permissionIdsByName);
       kelolaTree.value = hydratePermissionIds(kelola.tree, permissionIdsByName);
       tugasTree.value = hydratePermissionIds(tugas.tree, permissionIdsByName);
-      // Merge assigned permission IDs from all (they're the same — role's full set)
       const ids = new Set<string>((utama.assignedPermissionIds ?? []).filter(Boolean));
       (utilitas.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       (administrasi.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
@@ -563,14 +749,50 @@ onMounted(async () => {
       (faq.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       (kelola.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       (tugas.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
-      selectedIds.value = Array.from(ids);
-      initialIds.value = new Set(ids);
+      const permissionNameById = new Map(
+        permissions.value.map((permission) => [permission.id, permission.name]),
+      );
+      selectedIds.value = Array.from(ids).filter((id) => {
+        if ((role.value?.name || '').toUpperCase() !== 'USER') return true;
+        const name = permissionNameById.get(id);
+        if (
+          name?.startsWith('digsig.') ||
+          name?.startsWith('template.') ||
+          name?.startsWith('master-data.') ||
+          name?.startsWith('penomoran.')
+        ) {
+          return isAllowedUserUtilitasPermission(name);
+        }
+        if (name?.startsWith('sde-masal.')) {
+          return name === 'sde-masal.read' || name === 'sde-masal.read-verification';
+        }
+        if (name?.startsWith('tugas.')) {
+          const action = name.split('.').pop() || '';
+          return action === 'read' || action.startsWith('read-');
+        }
+        const isKelolaPermission = [
+          'pemeliharaan.pemberkasan.',
+          'pemeliharaan.verifikasi.',
+          'usulan-akses-berkas.',
+        ].some((prefix) => name?.startsWith(prefix));
+        if (isKelolaPermission) {
+          if ([
+            'usulan-akses-berkas.read-verifikasi',
+            'usulan-akses-berkas.verify-pengusul',
+            'usulan-akses-berkas.read-pemberian',
+            'usulan-akses-berkas.verify-pemberi',
+            'usulan-akses-berkas.approve-pemberi',
+          ].includes(name || '')) return false;
+          const action = name?.split('.').pop() || '';
+          return action === 'read' || action.startsWith('read-');
+        }
+        return true;
+      });
+      initialIds.value = new Set(selectedIds.value);
       // Default: expand tab aktif (Utama) + menu di dalamnya
       expandAll();
     }
   } catch (e: any) {
-    // Silent: jika 403 (no access) jangan tampilkan toast error
-    // User tanpa permission akan melihat AccessDenied component
     const status = e?.response?.status || e?.statusCode;
     if (status !== 403) {
       console.warn('[RBAC permissions] Failed to load:', e?.message || e);

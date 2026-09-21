@@ -310,12 +310,10 @@ const resolveKonsepFlowLabel = (flow: any, jenis: string) => {
   return flow?.jenis_label || jenis;
 };
 
-// --- NAVIGATION (previous/next dari kotak masuk) ---
 const navPrev = ref<any>(null);
 const navNext = ref<any>(null);
 const isLoadingNav = ref(false);
 
-// Collapse management
 const collapsedIndices = ref<Set<number>>(new Set());
 const viewMode = ref<'all' | 'first-only'>('all');
 
