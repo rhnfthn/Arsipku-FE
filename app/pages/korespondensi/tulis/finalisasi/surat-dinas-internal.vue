@@ -37,7 +37,7 @@
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
-          disabled-message="Sudah dipilih di Tertuju" />
+          disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
 
         <TulisInputSifat v-model="selectedSifat" />
 
@@ -232,6 +232,7 @@ import { useDigSign } from "@/composables/useDigSign";
 import { useInbox } from "@/composables/useInbox";
 import { useRecipients } from "@/composables/useRecipients";
 import { useKonsep } from "@/composables/useKonsep";
+import { useMandatoryRoutingCc } from "~/composables/useMandatoryRoutingCc";
 
 definePageMeta({ middleware: "auth" });
 
@@ -281,6 +282,19 @@ const tembusanItems = ref<any[]>([]);
 const recipientGroups = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
+
+// ── Tembusan wajib routing persuratan ────────────────────────────────────────
+// Penerima dari section "Tambahan" dipilih → tembusan wajib (GM/DGM PEO)
+// otomatis terisi di field Tembusan.
+const allRecipientItems = computed(() => [
+  ...tertujuItems.value,
+  ...tembusanItems.value,
+]);
+useMandatoryRoutingCc({
+  recipientItems: allRecipientItems,
+  selectedTertuju,
+  selectedTembusan,
+});
 
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
@@ -562,7 +576,7 @@ onMounted(async () => {
 
     const rawData = recRes.recipients || (recRes as any).data || [];
     tertujuItems.value = rawData.map((r: any) => ({
-      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}${r.routing_mandatory ? " · Tembusan wajib" : r.routing_source === "configured" ? " · Routing konfigurasi" : ""}`,
+      label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: r.position_text || r.positionText,
       organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),

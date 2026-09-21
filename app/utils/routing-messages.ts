@@ -103,6 +103,7 @@ export const routingMessages = {
       'Perubahan ini memengaruhi pengiriman apabila flag runtime aktif dan aturan memenuhi syarat.',
     confirm: 'Lanjutkan',
     configured: 'Penerima tambahan sesuai konfigurasi',
+    additional: 'Tambahan',
     mandatoryHint: 'Tembusan wajib ditentukan otomatis dan tidak dapat dihapus.',
     managerSdiAccess: 'Akses SDI Manager Operasi',
     managerSdiAccessHint:
@@ -216,6 +217,7 @@ export const routingMessages = {
       'This change affects sending when the runtime flag is enabled and the rule applies.',
     confirm: 'Continue',
     configured: 'Additional configured recipient',
+    additional: 'Additional',
     mandatoryHint: 'Required copies are set automatically and cannot be removed.',
     managerSdiAccess: 'Manager Operations SDI access',
     managerSdiAccessHint:

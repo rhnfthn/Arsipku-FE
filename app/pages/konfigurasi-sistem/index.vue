@@ -350,6 +350,11 @@
           <NaskahLainnyaTab />
         </div>
 
+        <!-- ===================== TAB: GRUP PENERIMA ===================== -->
+        <div v-if="activeTab === 'grup-penerima'">
+          <GrupPenerimaTab />
+        </div>
+
         <!-- ===================== TAB: SEARCH ENGINE ===================== -->
         <div v-if="activeTab === 'search'" class="p-6">
           <Heading variant="heading9sb" class="text-mobile-md">
@@ -649,6 +654,12 @@ const tabs = computed<KonfigTab[]>(() => {
       label: "Routing Persuratan",
       icon: "i-lucide-route",
       permission: { resource: "correspondence-routing", action: "read" },
+    },
+    {
+      value: "grup-penerima",
+      label: "Grup Penerima",
+      icon: "i-lucide-users",
+      permission: { resource: "master-data", action: "update-grup-penerima" },
     },
   ];
 
