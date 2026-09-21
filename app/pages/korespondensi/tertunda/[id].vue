@@ -30,7 +30,6 @@ const isLoading = ref(true);
 const isSending = ref(false);
 const naskah = ref<any>(null);
 
-// --- NAVIGATION (previous/next dari tertunda) ---
 const navPrev = ref<any>(null);
 const navNext = ref<any>(null);
 const isLoadingNav = ref(false);
@@ -129,7 +128,6 @@ const loadData = async () => {
   navPrev.value = null;
   navNext.value = null;
 
-  // Fetch navigation (prev/next) untuk daftar tertunda
   isLoadingNav.value = true;
   try {
     const nav = await fetchTertundaNavigation(id, jenisQuery);

@@ -925,7 +925,14 @@ export const useDigsig = () => {
 
   const getConfigDigsig = async (param: string): Promise<DigsigConfigResponse> => {
     try {
-      const response = await apiGet<DigsigConfigResponse>(`/config/digsig/${param}`);
+      // Konfigurasi dapat berubah dari halaman konfigurasi-sistem. Jangan pakai
+      // cache GET umum agar opsi tanda tangan pada form selalu mencerminkan
+      // konfigurasi terbaru.
+      const response = await apiGet<DigsigConfigResponse>(
+        `/config/digsig/${param}`,
+        {},
+        { skipCache: true }
+      );
       return response;
     } catch (error) {
       console.error(`[useDigsig] Gagal mengambil config digsig untuk ${param}:`, error);

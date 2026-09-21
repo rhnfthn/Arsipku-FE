@@ -152,6 +152,8 @@ export interface TugasTaskComment {
   isi: string;
   actorPersnum: number;
   actorPositionId: string;
+  /** Pesan sudah dihapus untuk seluruh anggota dan ditampilkan sebagai tombstone. */
+  isDeletedForEveryone: boolean;
   actor: {
     persnum: number;
     positionId: string;

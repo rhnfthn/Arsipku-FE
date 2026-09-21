@@ -572,7 +572,6 @@ onMounted(async () => {
       }
     }
   } catch (e) {
-    // Silent: toast removed — AccessDenied handles no-access case
   } finally {
     isLoadingData.value = false;
   }

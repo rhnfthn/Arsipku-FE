@@ -1,5 +1,3 @@
-// composables/useMasterCache.ts
-// Shared reactive cache untuk master data yang sering di-fetch.
 import type { Klasifikasi } from "./useKlasifikasi";
 import type { JenisItem } from "./useJenis";
 

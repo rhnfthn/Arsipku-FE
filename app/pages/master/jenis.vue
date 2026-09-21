@@ -1060,25 +1060,16 @@ definePageMeta({
   middleware: 'auth'
 });
 
-// ─────────────────────────────────────────────
-// i18n — pakai useI18n() yang sudah diatur Navbar
-// ─────────────────────────────────────────────
 const { t, locale } = useI18n();
 
 const { hasPermission } = useAuth();
 
 
-// ─────────────────────────────────────────────
-// BREADCRUMB (reaktif terhadap bahasa)
-// ─────────────────────────────────────────────
 const items = computed<BreadcrumbItem[]>(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('je_title'), to: '/master/jenis' }
 ]);
 
-// ─────────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────────
 import { useToast } from '#imports';
 
 const toast = useToast();
@@ -1097,9 +1088,6 @@ const showToast = (opt: {
   });
 };
 
-// ─────────────────────────────────────────────
-// COMPOSABLE
-// ─────────────────────────────────────────────
 const { getJenisList, getJenisDetail, deleteJenis, createJenis, updateJenis, checkJenisUsage } = useJenis();
 
 const loading = ref(false);
@@ -1108,9 +1096,6 @@ const deletingId = ref<string | null>(null);
 const search = ref('');
 const jenisList = ref<JenisItem[]>([]);
 
-// ─────────────────────────────────────────────
-// PAGINATION & SORTING
-// ─────────────────────────────────────────────
 const currentPage = ref(1);
 const perPage = ref(10);
 const rowsChoices = [5, 10, 20, 50];
@@ -1118,9 +1103,6 @@ const openRowsDropdown = ref(false);
 const sortColumn = ref<string>('jenis');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
-// ─────────────────────────────────────────────
-// FETCH
-// ─────────────────────────────────────────────
 const fetchJenis = async () => {
   try {
     loading.value = true;
@@ -1213,9 +1195,6 @@ const getFileName = (url: string) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// DETAIL
-// ─────────────────────────────────────────────
 const showDetailModal = ref(false);
 const detailLoading = ref(false);
 const detailJenis = ref<any>(null);
@@ -1291,9 +1270,6 @@ const openPreview = (url: string | null) => {
   downloadFileDirectly(url);
 };
 
-// ─────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────
 const showDeleteModal = ref(false);
 const showBlockedDeletePopup = ref(false);
 const blockedDeleteMessage = ref('');
@@ -1333,9 +1309,6 @@ const confirmDelete = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// ADD
-// ─────────────────────────────────────────────
 const showAddModal = ref(false);
 const savingAdd = ref(false);
 const addErrors = ref<Record<string, string>>({});
@@ -1453,9 +1426,6 @@ const onPickFileRegexAdd = (e: Event) => {
   addForm.value.file_regex = file;
 };
 
-// ─────────────────────────────────────────────
-// EDIT
-// ─────────────────────────────────────────────
 const showEditModal = ref(false);
 const savingEdit = ref(false);
 const editId = ref<string | null>(null);
@@ -1589,9 +1559,6 @@ const onPickFileRegexEdit = (e: Event) => {
   editForm.value.file_regex = file;
 };
 
-// ─────────────────────────────────────────────
-// EXPORT
-// ─────────────────────────────────────────────
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -1687,7 +1654,6 @@ const handleExportConfirm = () => {
   showExportModal.value = false;
 };
 
-// Highlight function for search results
 function highlight(text: string, keyword: string): string {
   if (!keyword || !text) return text;
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

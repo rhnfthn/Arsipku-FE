@@ -621,17 +621,11 @@ const { t, locale } = useI18n();
 const { hasPermission } = useAuth();
 
 
-// ─────────────────────────────────────────────
-// BREADCRUMB (reaktif terhadap bahasa)
-// ─────────────────────────────────────────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
   { label: t('mp_title'), to: '/master/perusahaan' }
 ]);
 
-// ─────────────────────────────────────────────
-// COMPOSABLE & STATE
-// ─────────────────────────────────────────────
 const { getCompanies, createCompany, updateCompany, deleteCompany, checkCompanyUsage } = useCompany();
 const { clearApiCache } = useApi();
 
@@ -696,9 +690,6 @@ const openAddCompanyModal = () => {
   openAddCompany.value = true;
 };
 
-// ─────────────────────────────────────────────
-// DELETE MESSAGE (reaktif terhadap bahasa)
-// ─────────────────────────────────────────────
 const deleteMessage = computed(() => {
   if (!selectedRow.value) return '';
   return locale.value === 'id'
@@ -706,9 +697,6 @@ const deleteMessage = computed(() => {
     : `Are you sure you want to delete company ${selectedRow.value.namaPendek}?`;
 });
 
-// ─────────────────────────────────────────────
-// FETCH
-// ─────────────────────────────────────────────
 const rows = ref<any[]>([]);
 
 const isExpired = (endDate: string) => {
@@ -747,9 +735,6 @@ const fetchCompanies = async () => {
 
 onMounted(fetchCompanies);
 
-// ─────────────────────────────────────────────
-// FILTER & SORT
-// ─────────────────────────────────────────────
 const sortBy = ref<'asc' | 'desc' | null>(null);
 
 const filteredRows = computed(() => {
@@ -910,9 +895,6 @@ const handleExportConfirm = () => {
   showExportModal.value = false;
 };
 
-// ─────────────────────────────────────────────
-// VALIDATION HELPERS
-// ─────────────────────────────────────────────
 const isEndDateInvalid = (startDate?: string, endDate?: string) => {
   if (!startDate || !endDate) return false;
 
@@ -930,11 +912,7 @@ const formatDateWarningMessage = () => {
     : 'The end date cannot be the same as or earlier than the start date.';
 };
 
-// ─────────────────────────────────────────────
-// ADD
-// ─────────────────────────────────────────────
 const validateAddForm = (): boolean => {
-  // Set error states
   formErrors.value.kode = !formCompany.value.kode.trim();
   formErrors.value.namaPendek = !formCompany.value.namaPendek.trim();
   formErrors.value.namaPanjang = !formCompany.value.namaPanjang.trim();
@@ -971,7 +949,6 @@ const validateAddForm = (): boolean => {
 const handleSaveCompany = async () => {
   if (isSavingAddCompany.value) return;
 
-  // Validate required fields first
   if (!validateAddForm()) return;
   if (isNaN(Number(formCompany.value.kode))) {
     toast.add({
@@ -1033,9 +1010,6 @@ const handleSaveCompany = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// EDIT
-// ─────────────────────────────────────────────
 const editForm = ref({
   id: '',
   tanggalMulai: '',
@@ -1074,7 +1048,6 @@ const openEditModal = (row: any) => {
 };
 
 const validateEditForm = (): boolean => {
-  // Set error states
   editFormErrors.value.namaPendek = !editForm.value.namaPendek.trim();
   editFormErrors.value.namaPanjang = !editForm.value.namaPanjang.trim();
   editFormErrors.value.tanggalMulai = !editForm.value.tanggalMulai;
@@ -1107,7 +1080,6 @@ const validateEditForm = (): boolean => {
 const handleSaveEdit = async () => {
   if (isSavingEditCompany.value) return;
 
-  // Validate required fields first
   if (!validateEditForm()) return;
 
   isSavingEditCompany.value = true;
@@ -1145,9 +1117,6 @@ const handleSaveEdit = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────
 const openDeleteConfirm = (row: any) => {
   selectedRow.value = row;
   showDeleteConfirm.value = true;
@@ -1188,7 +1157,6 @@ const handleDelete = async () => {
 
 
 
-// Highlight function for search results
 function highlight(text: string, keyword: string): string {
   if (!keyword || !text) return text;
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
