@@ -16,7 +16,7 @@ const { t } = useI18n();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
-const { hasPermission } = useAuth();
+const { hasPermission, refreshPermissions, user } = useAuth();
 const {
   boards,
   boardsMeta,
@@ -32,11 +32,9 @@ const {
 // ─── Permission ──────────────────────────────────────────────────────────────
 
 const canRead = computed(() => hasPermission('tugas', 'read-board'));
-const canCreateBoard = computed(() => true);
+const canCreateBoard = computed(() => hasPermission('tugas', 'create-board'));
 const canUpdateBoard = computed(() => hasPermission('tugas', 'update-board'));
 const canDeleteBoard = computed(() => hasPermission('tugas', 'delete-board'));
-
-const { user } = useAuth();
 
 /**
  * Kepemilikan papan: hanya pembuat (owner) yang boleh mengubah/menghapus
@@ -151,7 +149,10 @@ watch([activeFilter, activeSearch, currentPage], () => loadBoards());
 // Limit berubah saat viewport menyeberang breakpoint → muat ulang.
 watch(responsiveLimit, () => loadBoards());
 
-onMounted(() => loadBoards());
+onMounted(async () => {
+  await refreshPermissions();
+  await loadBoards();
+});
 
 // ─── Modal create/edit ────────────────────────────────────────────────────────
 
@@ -308,7 +309,7 @@ const breadcrumbs = computed(() => [
             />
 
             <UButton
-              v-if="canCreateBoard && boards.length > 0"
+              v-if="canCreateBoard"
               icon="i-lucide-plus"
               color="primary"
               size="sm"
