@@ -420,53 +420,7 @@ function utilitasTreeForUser(tree: any, administrasiTree: any) {
 }
 
 function tugasTreeForUser(tree: any) {
-  if (!tree || tree.key !== 'tugas') return tree;
-
-  const sourceSubMenus = (tree.menus ?? []).flatMap((menu: any) => menu.subMenus ?? []);
-  const papanSubMenu = sourceSubMenus.find(
-    (subMenu: any) => subMenu.key === 'papan' || subMenu.label === 'Papan',
-  );
-  const tugasSayaSubMenu = sourceSubMenus.find(
-    (subMenu: any) => subMenu.key === 'tugas-saya' || subMenu.label === 'Tugas Saya',
-  );
-  const readOnlySubMenu = (subMenu: any, key: string, label: string) => ({
-    ...(subMenu ?? {}),
-    key,
-    label,
-    fiturs: (subMenu?.fiturs ?? [])
-      .map((fitur: any) => ({
-        ...fitur,
-        key,
-        label,
-        permissions: (fitur.permissions ?? []).filter(
-          (permission: any) =>
-            permission.action === 'read' || permission.action.startsWith('read-'),
-        ),
-      }))
-      .filter((fitur: any) => fitur.permissions.length > 0),
-  });
-
-  const menus = [
-    papanSubMenu
-      ? {
-          key: 'papan',
-          label: 'Papan',
-          subMenus: [readOnlySubMenu(papanSubMenu, 'papan', 'Papan')],
-        }
-      : null,
-    tugasSayaSubMenu
-      ? {
-          key: 'tugas-saya',
-          label: 'Tugas Saya',
-          subMenus: [readOnlySubMenu(tugasSayaSubMenu, 'tugas-saya', 'Tugas Saya')],
-        }
-      : null,
-  ].filter((menu: any) => menu?.subMenus?.some((subMenu: any) => subMenu.fiturs.length > 0));
-
-  return {
-    ...tree,
-    menus,
-  };
+  return tree;
 }
 
 function isAllowedUserUtilitasPermission(name?: string) {
@@ -767,8 +721,7 @@ onMounted(async () => {
           return name === 'sde-masal.read' || name === 'sde-masal.read-verification';
         }
         if (name?.startsWith('tugas.')) {
-          const action = name.split('.').pop() || '';
-          return action === 'read' || action.startsWith('read-');
+          return true;
         }
         const isKelolaPermission = [
           'pemeliharaan.pemberkasan.',
