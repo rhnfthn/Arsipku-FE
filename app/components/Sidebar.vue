@@ -457,6 +457,7 @@ const activeProfile = computed(() => {
 // ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
 const showKelolaMenu = computed(
   () =>
+    isSuperadmin.value ||
     !hasDelegationProfile.value ||
     activeProfile.value === 'sekretaris' ||
     activeProfile.value === 'unit_dokumen'
@@ -943,12 +944,6 @@ const userMenuUtilitas = computed(() => {
         },
       ],
     },
-    {
-      label: t('template'),
-      to: '/template',
-      icon: 'i-lucide-copy',
-      permission: { resource: 'template', action: 'read' },
-    },
     verifikatorMenu.value,
     {
       label: t('titelatur_inggris'),
@@ -960,6 +955,7 @@ const userMenuUtilitas = computed(() => {
       label: t('tertuju'),
       to: '/utilitas/tertuju',
       icon: 'i-lucide-list',
+      permission: { resource: 'master-data', action: 'read-tertuju' },
     },
   ];
 
@@ -1047,7 +1043,7 @@ const tugasMenu = computed(() => [
     label: t('tugas_papan', 'Papan'),
     to: '/tugas',
     icon: 'i-lucide-kanban',
-    permission: { resource: 'tugas', action: 'read' },
+    permission: { resource: 'tugas', action: 'read-board' },
     // exact: /tugas adalah section-index — tanpa ini, prefix-match membuat
     // menu Papan ikut aktif saat user membuka /tugas/saya.
     exact: true,
@@ -1056,7 +1052,7 @@ const tugasMenu = computed(() => [
     label: t('tugas_saya', 'Tugas Saya'),
     to: '/tugas/saya',
     icon: 'i-lucide-list-todo',
-    permission: { resource: 'tugas', action: 'read' },
+    permission: { resource: 'tugas', action: 'read-my-tasks' },
     // Badge: jumlah task aktif yang ditugaskan ke posisi ini (belum done).
     // Realtime via socket (summary + tugas:assigned-count), konsisten dengan
     // dot merah di ikon app Tugas.
@@ -1218,12 +1214,6 @@ const adminMenuUtilitas = computed(() => {
         },
       ],
     },
-    {
-      label: t('template'),
-      to: '/template',
-      icon: 'i-lucide-copy',
-      permission: { resource: 'template', action: 'read' },
-    },
     verifikatorMenu.value,
   ];
 
@@ -1311,6 +1301,7 @@ const adminMenuAdministrasi = computed(() => {
       label: t('tertuju'),
       to: '/administrasi/tertuju',
       icon: 'i-lucide-list',
+      permission: { resource: 'master-data', action: 'read-tertuju' },
     });
   }
 
@@ -1377,6 +1368,7 @@ const adminMenuAdministrasi = computed(() => {
       {
         label: 'Audit Trail',
         icon: 'i-lucide-file-search-2',
+        roles: ['superadmin'],
         permissionsAny: [
           { resource: 'audit', action: 'read-log' },
           { resource: 'audit', action: 'read-anomaly' },
@@ -1767,7 +1759,9 @@ const profileKelolaMenus = computed(() => {
 // Admin (SUPERADMIN/ADMIN) lihat keduanya, User biasa lihat Pemberkasan saja.
 
 const adminMenuKelola = computed(() => {
-  if (profileKelolaMenus.value) return profileKelolaMenus.value;
+  // Super Admin selalu melihat matriks Kelola lengkap, terlepas dari
+  // profile/delegasi yang tersimpan di browser.
+  if (profileKelolaMenus.value && !isSuperadmin.value) return profileKelolaMenus.value;
 
   const pemeliharaanChildren = [
     {
@@ -2078,15 +2072,17 @@ const filterMenuByPermission = (items) => {
     if (!item) return null;
     const cloned = { ...item };
 
-    // Cek permission item itu sendiri
-    if (cloned.permission) {
+    // Super Admin sudah memiliki seluruh katalog permission. Bypass filter
+    // UI ini agar menu tidak hilang karena JWT/profile lama sebelum refresh;
+    // endpoint backend tetap memvalidasi permission live dari database.
+    if (cloned.permission && !isSuperadmin.value) {
       const hasAccess = hasPermission(cloned.permission.resource, cloned.permission.action);
       if (!hasAccess) return null;
     }
 
     // Beberapa halaman terdiri dari beberapa fitur dengan permission Read
     // terpisah. Menu tampil bila user punya akses ke minimal satu fitur.
-    if (cloned.permissionsAny) {
+    if (cloned.permissionsAny && !isSuperadmin.value) {
       const hasAccess = cloned.permissionsAny.some((permission) =>
         hasPermission(permission.resource, permission.action),
       );

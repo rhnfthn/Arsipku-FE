@@ -99,7 +99,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/korespondensi',
     '/penandatangan',
     '/penyingkat-tautan',
-    '/template',
     '/titelatur',
     '/usulan-penomoran',
     '/profil',

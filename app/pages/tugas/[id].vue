@@ -83,7 +83,7 @@ const handleTabChange = (value: string | number) => {
 
 // ─── Permission ───────────────────────────────────────────────────────────────
 
-const canRead = computed(() => hasPermission('tugas', 'read'));
+const canRead = computed(() => hasPermission('tugas', 'read-board'));
 const canCreateTask = computed(() => hasPermission('tugas', 'create-task'));
 const canUpdateTask = computed(() => hasPermission('tugas', 'update-task'));
 const canMoveTask = computed(() => hasPermission('tugas', 'move-task'));

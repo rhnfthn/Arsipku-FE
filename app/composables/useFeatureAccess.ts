@@ -52,7 +52,6 @@ const routePermissions: Record<string, string> = {
   '/penyingkat-tautan': 'penyingkat-tautan:read',
   '/layanan-email': 'layanan-email:read',
   '/layanan-email/log': 'layanan-email:read-log',
-  '/template': 'template:read',
   '/naskah-dinas/verifikator': 'verifikasi-naskah:read',
   // Administrasi
   '/delegasi': 'delegasi:read',

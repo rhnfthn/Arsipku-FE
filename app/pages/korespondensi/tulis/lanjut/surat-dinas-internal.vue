@@ -15,6 +15,7 @@ import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModal
 import { Alert } from "@/composables/useAlert";
 import { useInbox } from "@/composables/useInbox";
 import { validateSDIPayload, type SDIPayloadInput } from "~/types/sdi";
+import { useMandatoryRoutingCc } from "~/composables/useMandatoryRoutingCc";
 
 definePageMeta({ middleware: ['auth', 'tulis-access'] })
 
@@ -51,6 +52,19 @@ const {
 const lampiranText = ref("");
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
+
+// ── Tembusan wajib routing persuratan ────────────────────────────────────────
+// Penerima dari section "Tambahan" dipilih → tembusan wajib (GM/DGM PEO)
+// otomatis terisi di field Tembusan.
+const allRecipientItems = computed(() => [
+  ...tertujuItems.value,
+  ...tembusanItems.value,
+]);
+useMandatoryRoutingCc({
+  recipientItems: allRecipientItems,
+  selectedTertuju,
+  selectedTembusan,
+});
 
 const selectedSendType = ref("qr_only");
 const refData = ref<any>(null);
@@ -325,7 +339,7 @@ onMounted(async () => {
     const allMapped = rawRec
       .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
       .map((r: any) => ({
-        label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}${r.routing_mandatory ? " · Tembusan wajib" : r.routing_source === "configured" ? " · Routing konfigurasi" : ""}`,
+        label: `${r.persnum_person_text || r.persnum} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
         labelJob: r.position_text || r.positionText,
         organization: r.organization_text,
         value: String(r.position || r.position_id || r.id),
@@ -468,7 +482,7 @@ watch(
 
         <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
-          disabled-message="Sudah dipilih" />
+          disabled-message="Sudah dipilih" lock-mandatory-cc />
 
         <TulisInputSifat v-model="selectedSifat" />
 
