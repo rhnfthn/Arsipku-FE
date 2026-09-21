@@ -308,7 +308,7 @@ const breadcrumbs = computed(() => [
             />
 
             <UButton
-              v-if="canCreateBoard"
+              v-if="canCreateBoard && boards.length > 0"
               icon="i-lucide-plus"
               color="primary"
               size="sm"
@@ -346,10 +346,8 @@ const breadcrumbs = computed(() => [
           :icon="KanbanSquare"
           :title="t('tugas_kosong')"
           :description="t('tugas_kosong_desc')"
-          :action-label="canCreateBoard ? t('tugas_buat_papan') : undefined"
           icon-wrapper-class="bg-primary-50 dark:bg-primary-900/30"
           icon-class="text-primary-500"
-          @action="openCreate"
         />
       </div>
 
