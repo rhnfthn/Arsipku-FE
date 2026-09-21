@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { parseDate, today, type CalendarDate } from '@internationalized/date';
 import { X, Trash2, Link2, TriangleAlert, ListTodo, SquarePlus, Lock } from 'lucide-vue-next';
+import TulisInputTanggal from '~/components/Tulis/InputTanggal.vue';
 import type {
   TugasMember,
   TugasReferenceType,
@@ -77,6 +79,21 @@ const evidenceFiles = ref<File[]>([]);
 const isCreateMode = computed(() => props.mode === 'create');
 const NO_PRIORITY = '__NO_PRIORITY__';
 const NO_PIC = '__NO_PIC__';
+const minimumDeadline = computed(() => today('Asia/Jakarta'));
+
+const deadlineDate = computed<CalendarDate | null>({
+  get: () => {
+    if (!form.value.tenggat) return null;
+    try {
+      return parseDate(form.value.tenggat);
+    } catch {
+      return null;
+    }
+  },
+  set: (value) => {
+    form.value.tenggat = value?.toString() ?? '';
+  },
+});
 
 /** Read-only: task milik orang lain — semua input disabled, tanpa tombol mutasi. */
 const isReadOnly = computed(() => !isCreateMode.value && Boolean(props.readOnly));
@@ -95,7 +112,7 @@ watch(
         judul: '',
         deskripsi: '',
         prioritas: null,
-        tenggat: '',
+        tenggat: minimumDeadline.value.toString(),
         assigneeMemberId: null,
       };
       referenceForm.value.id = '';
@@ -289,17 +306,15 @@ const selectedAssigneeMember = computed(() =>
               />
             </div>
 
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ t('tugas_tenggat') }}
-              </label>
-              <UInput
-                v-model="form.tenggat"
-                type="date"
-                :disabled="isFieldDisabled"
-                class="w-full"
-              />
-            </div>
+            <TulisInputTanggal
+              v-model="deadlineDate"
+              :label="t('tugas_tenggat')"
+              layout="field"
+              display-format="DD MMMM YYYY"
+              :min-value="minimumDeadline"
+              :max-value="null"
+              :disabled="isFieldDisabled"
+            />
           </div>
 
           <div>

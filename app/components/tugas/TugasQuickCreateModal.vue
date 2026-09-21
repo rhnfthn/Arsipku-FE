@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { parseDate, today, type CalendarDate } from '@internationalized/date';
 import { FileText, KanbanSquare } from 'lucide-vue-next';
+import TulisInputTanggal from '~/components/Tulis/InputTanggal.vue';
 import type { TugasReferenceType, TugasTaskPriority } from '~/types/tugas';
 
 /**
@@ -44,6 +46,20 @@ const canCreateTask = computed(() => hasPermission('tugas', 'create-task'));
 const boardMembers = computed(() => boardDetails.value[form.value.boardId]?.members ?? []);
 const NO_PRIORITY = '__NO_PRIORITY__';
 const NO_PIC = '__NO_PIC__';
+const minimumDeadline = computed(() => today('Asia/Jakarta'));
+const deadlineDate = computed<CalendarDate | null>({
+  get: () => {
+    if (!form.value.tenggat) return null;
+    try {
+      return parseDate(form.value.tenggat);
+    } catch {
+      return null;
+    }
+  },
+  set: (value) => {
+    form.value.tenggat = value?.toString() ?? '';
+  },
+});
 
 const boardOptions = computed(() =>
   boards.value.map((board) => ({
@@ -96,7 +112,7 @@ watch(
       boardId: '',
       judul: props.referenceLabel.slice(0, 255),
       prioritas: null,
-      tenggat: '',
+      tenggat: minimumDeadline.value.toString(),
       assigneeMemberId: null,
     };
     if (!boards.value.length) {
@@ -241,9 +257,14 @@ const save = async () => {
           />
         </UFormField>
 
-        <UFormField :label="t('tugas_tenggat')">
-          <UInput v-model="form.tenggat" type="date" class="w-full" />
-        </UFormField>
+        <TulisInputTanggal
+          v-model="deadlineDate"
+          :label="t('tugas_tenggat')"
+          layout="field"
+          display-format="DD MMMM YYYY"
+          :min-value="minimumDeadline"
+          :max-value="null"
+        />
       </div>
 
       <UFormField :label="t('tugas_assignee')">
