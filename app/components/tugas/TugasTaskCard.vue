@@ -17,7 +17,7 @@ const emit = defineEmits<{
   (e: 'drop-before', taskId: string, beforeTaskId: string): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const isOverdue = computed(
   () =>
@@ -25,6 +25,36 @@ const isOverdue = computed(
     props.task.status !== 'done' &&
     (props.task.tenggat ?? '') < props.todayJakarta
 );
+
+const isDueToday = computed(
+  () =>
+    Boolean(props.task.tenggat) &&
+    props.task.status !== 'done' &&
+    props.task.tenggat === props.todayJakarta
+);
+
+const formattedDeadline = computed(() => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(props.task.tenggat ?? '');
+  if (!match) return props.task.tenggat ?? '';
+  const [, year, month, day] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return new Intl.DateTimeFormat(locale.value === 'en' ? 'en-US' : 'id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+});
+
+const deadlineClass = computed(() => {
+  if (isOverdue.value) {
+    return 'border-red-200 bg-red-50 font-semibold text-red-700 dark:border-red-900/60 dark:bg-red-900/30 dark:text-red-300';
+  }
+  if (isDueToday.value) {
+    return 'border-amber-200 bg-amber-50 font-semibold text-amber-700 dark:border-amber-900/60 dark:bg-amber-900/30 dark:text-amber-300';
+  }
+  return 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-600 dark:bg-gray-700/70 dark:text-gray-300';
+});
 
 const prioritasClass = computed(() => {
   switch (props.task.prioritas) {
@@ -107,30 +137,39 @@ const initials = (nama: string) => {
       </UTooltip>
     </div>
 
-    <div class="mt-2 flex flex-wrap items-center gap-1.5">
+    <p
+      v-if="task.deskripsi"
+      class="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400"
+    >
+      {{ task.deskripsi }}
+    </p>
+
+    <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
       <span
         v-if="task.prioritas"
-        class="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+        class="rounded-full px-2 py-1 text-[10px] font-semibold"
         :class="prioritasClass"
       >
         {{ t(`tugas_prioritas_${task.prioritas}`) }}
       </span>
       <span
         v-if="task.tenggat"
-        class="inline-flex items-center gap-1 text-[11px]"
-        :class="
-          isOverdue
-            ? 'font-semibold text-red-600 dark:text-red-400'
-            : 'text-gray-500 dark:text-gray-400'
-        "
+        class="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px]"
+        :class="deadlineClass"
+        :title="`${t('tugas_tenggat')}: ${formattedDeadline}`"
       >
         <CalendarClock class="h-3 w-3" />
-        {{ task.tenggat }}
+        <span v-if="isOverdue">{{ t('tugas_scope_terlambat') }} · </span>
+        <span v-else-if="isDueToday">{{ t('tugas_scope_hari_ini') }} · </span>
+        {{ formattedDeadline }}
       </span>
     </div>
 
     <!-- Assignee -->
-    <div v-if="task.assignee" class="mt-2.5 flex items-center gap-1.5">
+    <div
+      v-if="task.assignee"
+      class="mt-3 flex items-center gap-2 border-t border-gray-100 pt-2.5 dark:border-gray-700"
+    >
       <ProfileAvatar
         size="2xs"
         :persnum="task.assignee.persnum"
@@ -140,9 +179,14 @@ const initials = (nama: string) => {
       >
         {{ initials(task.assignee.nama) }}
       </ProfileAvatar>
-      <span class="max-w-[140px] truncate text-[11px] text-gray-500 dark:text-gray-400">
-        {{ task.assignee.nama }}
-      </span>
+      <div class="min-w-0 flex-1">
+        <span class="block text-[9px] font-semibold uppercase tracking-wide text-gray-400">
+          {{ t('tugas_pic') }}
+        </span>
+        <span class="block truncate text-[11px] font-medium text-gray-600 dark:text-gray-300">
+          {{ task.assignee.nama }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
