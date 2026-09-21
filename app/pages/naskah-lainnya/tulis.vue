@@ -953,7 +953,11 @@ watch(
 async function applyJenisConfigDefault(jenis: string) {
   if (!jenis) return;
   try {
-    const res: any = await apiGet(`/config/naskah-lainnya/${jenis}`);
+    const res: any = await apiGet(
+      `/config/naskah-lainnya/${jenis}`,
+      {},
+      { skipCache: true }
+    );
     const cfg = res?.data ?? res;
     if (!cfg) return;
     if (typeof cfg.butuhLegal === 'boolean') form.value.butuhLegal = cfg.butuhLegal;

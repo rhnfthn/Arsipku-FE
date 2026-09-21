@@ -357,9 +357,13 @@ export interface DigsigLogParams {
 export interface DigsigConfigResponse {
   success: boolean
   data: {
-    enabled: boolean
-    digsig?: boolean
-    ttdQr?: boolean
-    ttdBasah?: boolean
+    id: string
+    jenisNaskah: string
+    digsig: boolean
+    ttdQr: boolean
+    ttdBasah: boolean
+    description?: string | null
+    createdAt?: string
+    updatedAt?: string
   }
 }
