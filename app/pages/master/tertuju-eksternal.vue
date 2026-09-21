@@ -1146,7 +1146,6 @@ watch([internalOrganizationFilter, internalAreaFilter], () => {
   internalPage.value = 1;
 });
 
-// sort
 const handleSort = (column: string) => {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
@@ -1213,7 +1212,6 @@ const formatDate = (value: string) => {
   return `${day} ${month} ${year} pukul ${hour}.${minute}`;
 };
 
-// Pagination
 const rowsPerPage = ref<number>(10);
 const rowsChoices = [5, 10, 20, 50];
 const currentPage = ref<number>(1);
@@ -1266,7 +1264,6 @@ const onPhonePaste = (e: ClipboardEvent) => {
 const handleSave = async () => {
   if (isSavingForm.value) return;
 
-  // Validasi semua field termasuk status
   formErrors.value.nama = !form.value.nama.trim();
   formErrors.value.alamat = !form.value.alamat.trim();
   formErrors.value.telephone = !form.value.telephone.trim();
@@ -1412,7 +1409,6 @@ const openEdit = (item: any) => {
   showModal.value = true;
 };
 
-// Filter state
 const filters = ref({
   jenis: '',
   lokasi: '',
@@ -1421,7 +1417,6 @@ const filters = ref({
   search: ''
 });
 
-// Filtered data
 const filteredData = computed(() => {
   const keyword = filters.value.search.toLowerCase();
   const status = filters.value.status;
@@ -1446,7 +1441,6 @@ const filteredData = computed(() => {
   });
 });
 
-// Sorted data
 const sortedData = computed(() => {
   const sorted = [...filteredData.value];
   // created_at: handle sebagai Date ISO string
@@ -1468,7 +1462,6 @@ const sortedData = computed(() => {
   return sorted;
 });
 
-// Pagination computed
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(sortedData.value.length / rowsPerPage.value))
 );
@@ -1608,7 +1601,6 @@ const handleExportConfirm = () => {
   showExportModal.value = false;
 };
 
-// Highlight function for search results
 function highlight(text: string, keyword: string): string {
   if (!keyword || !text) return text;
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

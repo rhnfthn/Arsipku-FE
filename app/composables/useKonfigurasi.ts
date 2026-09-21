@@ -25,7 +25,6 @@ export const useKonfigurasi = () => {
   const isLoading = ref(false)
   const isToggling = ref<string | null>(null)
 
-  // Message list dipindahkan ke dalam fungsi composable agar tidak terjadi cross-page contamination
   const messageList = ref<KonfigurasiMessageItem[]>([])
 
   const fetchDigsig = async () => {
