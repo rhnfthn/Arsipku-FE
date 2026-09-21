@@ -8,7 +8,7 @@
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu :model-value="model" :items="combinedOptions" multiple :placeholder="placeholder"
         class="w-full p-0 custom-select-menu" variant="none"
-        :content="({ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any)" :filter-fields="['label']" :ui="{
+        :content="selectContentProps" :filter-fields="['label']" :ui="{
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
           wrapper: 'pr-10 w-full',
           input: 'pr-10 w-full',
@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, nextTick, useId } from 'vue';
 import { routingMessages } from '~/utils/routing-messages';
 
 const { t: routingT } = useI18n({ useScope: 'local', messages: routingMessages });
@@ -108,6 +108,33 @@ const props = defineProps<{
 }>();
 
 const model = defineModel<any[]>({ default: [] });
+const contentMarker = `recipient-select-${useId().replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+const selectContentProps = computed(() => ({
+  side: 'bottom' as const,
+  sideOffset: 8,
+  class: `max-h-[380px] ${contentMarker}`,
+}));
+
+/**
+ * Reka UI otomatis menyorot pilihan pertama saat model multiple berubah secara
+ * programatik. Efek sampingnya viewport dropdown kembali ke atas. Simpan posisi
+ * viewport sebelum mutasi dan pulihkan sesudah komponen selesai render.
+ */
+const updateModelPreservingScroll = (update: () => void) => {
+  const selector = `.${contentMarker} [data-slot="viewport"]`;
+  const viewport = document.querySelector<HTMLElement>(selector);
+  const scrollTop = viewport?.scrollTop;
+
+  update();
+
+  if (scrollTop == null) return;
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      const updatedViewport = document.querySelector<HTMLElement>(selector);
+      if (updatedViewport) updatedViewport.scrollTop = scrollTop;
+    });
+  });
+};
 
 // Metadata routing bisa berada di level atas item ATAU di item.raw (tergantung
 // mapping halaman pemanggil), jadi cek keduanya.
@@ -209,10 +236,14 @@ const handleGroupClick = (group: any) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { type, count, disabled, ...groupItem } = group;
 
-    model.value = [...filteredModel, groupItem];
+    updateModelPreservingScroll(() => {
+      model.value = [...filteredModel, groupItem];
+    });
   } else {
     // UN-CHECKLIST: Hapus badge grup dari model
-    model.value = model.value.filter(m => m.value !== group.value);
+    updateModelPreservingScroll(() => {
+      model.value = model.value.filter(m => m.value !== group.value);
+    });
   }
 };
 
@@ -257,7 +288,9 @@ const handlePersonClick = (person: any) => {
   } else {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { type, disabled, ...rest } = person;
-    model.value = [...model.value, rest];
+    updateModelPreservingScroll(() => {
+      model.value = [...model.value, rest];
+    });
   }
 };
 
@@ -267,7 +300,9 @@ const removePerson = (item: any) => {
   if (index > -1) {
     const newModel = [...model.value];
     newModel.splice(index, 1);
-    model.value = newModel;
+    updateModelPreservingScroll(() => {
+      model.value = newModel;
+    });
   }
 };
 </script>
