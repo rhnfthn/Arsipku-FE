@@ -13,7 +13,7 @@
 
     <!-- SIDEBAR - top mengikuti tinggi alert -->
     <div
-      class="fixed left-0 bottom-0 z-[93] transition-all duration-300"
+      class="app-sidebar-shell fixed left-0 bottom-0 z-[93] transition-all duration-300"
       :style="{ top: alertHeight }"
     >
       <Sidebar ref="sidebarRef" v-model:collapsed="collapsed" />
@@ -21,20 +21,20 @@
 
     <!-- MAIN CONTENT AREA -->
     <div
-      class="flex flex-col min-h-dvh transition-all duration-300"
+      class="app-main-shell flex flex-col min-h-dvh transition-all duration-300"
       :class="collapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-74'"
       :style="{ paddingTop: alertHeight }"
     >
       <!-- NAVBAR - Sticky top mengikuti tinggi alert -->
       <div
-        class="sticky px-4 md:px-7 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md z-[92]"
+        class="app-navbar-shell sticky px-4 md:px-7 transition-colors duration-300 bg-[#F6F8FC]/90 dark:bg-gray-900 backdrop-blur-md z-[92]"
         :style="{ top: alertHeight }"
       >
         <Navbar @open-mobile-sidebar="openMobileSidebar" />
       </div>
 
       <!-- MAIN CONTENT -->
-      <main class="flex-1 mx-4 sm:mx-8 z-[91]">
+      <main class="app-main-content flex-1 mx-4 sm:mx-8 z-[91]">
         <div class="mx-auto w-full">
           <NuxtPage />
           <Alert />

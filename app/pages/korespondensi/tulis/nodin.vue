@@ -838,11 +838,9 @@ const formattedDate = computed(() => {
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
 
-// Computed items untuk tertuju & tembusan (dipakai di template)
 const itemsTertuju = computed(() => items.value);
 const itemsTembusan = computed(() => items.value);
 
-// Helpers untuk select list di template
 const isItemSelected = (item: any, list: any[]) => {
   return Array.isArray(list) && list.some((s) => s.value === item.value || s.label === item.label);
 };
