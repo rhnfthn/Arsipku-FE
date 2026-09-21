@@ -1,114 +1,78 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 items-start">
-      <!-- Row 1: Dari Tanggal -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Dari Tanggal</label>
+  <DataToolbar
+      :model-value="local.limit || 20"
+      :search="local.search || ''"
+      search-placeholder="Cari deskripsi, pengguna, atau entitas..."
+      :rows-choices="[10, 20, 25, 50, 100]"
+      :show-export="canExport"
+      export-label="Ekspor"
+      refresh-label="Reset filter"
+      @update:model-value="changeLimit"
+      @update:search="local.search = $event"
+      @refresh="reset"
+      @export="$emit('export')"
+    >
+      <template #actions>
         <input
           v-model="local.startDate"
           type="date"
-          class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+          aria-label="Dari tanggal"
+          class="h-8 w-36 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         />
-      </div>
-      <!-- Row 1: Sampai Tanggal -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Sampai Tanggal</label>
         <input
           v-model="local.endDate"
           type="date"
-          class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+          aria-label="Sampai tanggal"
+          class="h-8 w-36 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         />
-      </div>
-      <!-- Row 1: Aksi -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aksi</label>
         <select
           v-model="local.action"
-          class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+          aria-label="Filter aksi"
+          class="h-8 w-32 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         >
-          <option value="">Semua</option>
+          <option value="">Semua aksi</option>
           <option v-for="a in actions" :key="a" :value="a">{{ actionLabels[a] || a }}</option>
         </select>
-      </div>
-      <!-- Row 1: Modul -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Modul</label>
         <select
           v-model="local.module"
-          class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+          aria-label="Filter modul"
+          class="h-8 w-32 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         >
-          <option value="">Semua</option>
+          <option value="">Semua modul</option>
           <option v-for="m in modules" :key="m" :value="m">{{ moduleLabels[m] || m }}</option>
         </select>
-      </div>
-
-      <!-- Row 2: Status -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
         <select
           v-model="local.status"
-          class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+          aria-label="Filter status"
+          class="h-8 w-28 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         >
-          <option value="">Semua</option>
+          <option value="">Semua status</option>
           <option v-for="s in statuses" :key="s" :value="s">{{ statusLabels[s] || s }}</option>
         </select>
-      </div>
-      <!-- Row 2: Role -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Role</label>
         <select
           v-model="local.userRole"
-          class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+          aria-label="Filter peran"
+          class="h-8 w-28 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         >
-          <option value="">Semua</option>
+          <option value="">Semua peran</option>
           <option value="SUPERADMIN">SUPERADMIN</option>
           <option value="ADMIN">ADMIN</option>
           <option value="USER">USER</option>
         </select>
-      </div>
-      <!-- Row 2: Pencarian -->
-      <div>
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Pencarian</label>
-        <div class="relative">
-          <UIcon name="i-heroicons-magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            v-model="local.search"
-            type="text"
-            placeholder="Cari deskripsi, user, entity..."
-            class="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-            @keydown.enter="apply"
-          />
-        </div>
-      </div>
-      <!-- Row 2: Tombol Aksi -->
-      <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2 h-full">
         <button
-          @click="reset"
-          class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
-        >
-          Reset
-        </button>
-        <button
+          type="button"
           @click="apply"
-          class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md bg-primary hover:bg-primary-700 text-white transition-colors whitespace-nowrap"
+          class="h-8 rounded-lg bg-primary px-3 text-xs font-medium text-white transition hover:bg-primary-700"
         >
           Terapkan
         </button>
-        <button
-          v-if="canExport"
-          @click="$emit('export')"
-          class="w-full sm:w-auto sm:flex-1 px-3 py-2 text-sm rounded-md bg-primary hover:bg-primary-700 text-white transition-colors inline-flex items-center justify-center gap-1 whitespace-nowrap"
-        >
-          <UIcon name="i-lucide-download" class="w-4 h-4" />
-          Export
-        </button>
-      </div>
-    </div>
-  </div>
+      </template>
+  </DataToolbar>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import DataToolbar from '~/components/DataToolbar.vue';
 import type { AuditFilter, AuditAction, AuditModuleType, AuditStatus } from '~/types/audit';
 
 const props = defineProps<{
@@ -139,14 +103,14 @@ const actionLabels: Record<string, string> = {
 
 const modules: AuditModuleType[] = [
   'AUTH', 'USER', 'RBAC', 'NASKAH', 'BERKAS', 'DISPOSISI', 'DELEGASI',
-  'DIGSIG', 'MAIL', 'MASTER_DATA', 'CONFIG', 'USULAN_PINDAH', 'FAQ', 'AUDIT',
+  'DIGSIG', 'MAIL', 'MASTER_DATA', 'CONFIG', 'USULAN_PINDAH', 'FAQ', 'AUDIT', 'TUGAS',
 ];
 
 const moduleLabels: Record<string, string> = {
   AUTH: 'Autentikasi', USER: 'Pengguna', RBAC: 'Hak Akses', NASKAH: 'Naskah',
   BERKAS: 'Berkas', DISPOSISI: 'Disposisi', DELEGASI: 'Delegasi', DIGSIG: 'Tanda Tangan Digital',
   MAIL: 'Email', MASTER_DATA: 'Data Master', CONFIG: 'Konfigurasi',
-  USULAN_PINDAH: 'Usulan Pindah', FAQ: 'FAQ', AUDIT: 'Audit',
+  USULAN_PINDAH: 'Usulan Pindah', FAQ: 'FAQ', AUDIT: 'Audit', TUGAS: 'Tugas',
 };
 
 const statuses: AuditStatus[] = ['SUCCESS', 'FAILED', 'ERROR', 'DENIED'];
@@ -214,6 +178,12 @@ const reset = () => {
   local.limit = 20;
   local.sortBy = 'created_at';
   local.sortOrder = 'DESC';
+  apply();
+};
+
+const changeLimit = (limit: number) => {
+  local.limit = limit;
+  local.page = 1;
   apply();
 };
 </script>

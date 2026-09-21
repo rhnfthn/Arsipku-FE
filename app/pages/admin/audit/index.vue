@@ -60,13 +60,16 @@
       </div>
     </div>
 
-    <!-- Filter -->
-    <div class="mb-4">
-    <AuditLogFilter :model-value="filter" :can-export="canExport" @update:model-value="(v) => Object.assign(filter, v)" @apply="onApplyFilter" @export="onExport" />
-    </div>
-
     <!-- Table -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+    <div class="rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 transition-colors">
+      <AuditLogFilter
+        :model-value="filter"
+        :can-export="canExport"
+        @update:model-value="(v) => Object.assign(filter, v)"
+        @apply="onApplyFilter"
+        @export="onExport"
+      />
+
       <AuditLogTable
         :rows="logs"
         :loading="loading"
@@ -75,74 +78,14 @@
         @view="openDetail"
       />
 
-      <!-- Pagination Bar -->
-      <div
+      <DataPagination
         v-if="meta && meta.total > 0"
-        class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
-      >
-        <!-- Info kiri + Rows per page -->
-        <div class="flex items-center gap-3">
-          <div class="text-sm text-gray-500 dark:text-gray-400">
-            Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }}
-            dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ meta.total }}</span> log
-          </div>
-          <!-- Rows per page selector -->
-          <select
-            v-model="perPage"
-            class="px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-            @change="onPerPageChange"
-          >
-            <option :value="10">10 / halaman</option>
-            <option :value="20">20 / halaman</option>
-            <option :value="25">25 / halaman</option>
-            <option :value="50">50 / halaman</option>
-            <option :value="100">100 / halaman</option>
-          </select>
-        </div>
-
-        <!-- Navigasi kanan -->
-        <div v-if="meta.totalPages > 1" class="flex items-center gap-1">
-          <!-- Previous -->
-          <button
-            :disabled="meta.page <= 1"
-            @click="goPage(meta.page - 1)"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-heroicons-chevron-left" class="w-4 h-4" />
-            Prev
-          </button>
-
-          <!-- Page Numbers -->
-          <template v-for="p in visiblePages" :key="p">
-            <span
-              v-if="p === '...'"
-              class="px-2 py-1.5 text-sm text-gray-400 dark:text-gray-500"
-            >...</span>
-            <button
-              v-else
-              @click="goPage(p as number)"
-              :class="[
-                'min-w-[36px] px-2 py-1.5 text-sm font-medium rounded-md transition-colors',
-                p === meta.page
-                  ? 'bg-[#457fb6] text-white shadow-sm'
-                  : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]"
-            >
-              {{ p }}
-            </button>
-          </template>
-
-          <!-- Next -->
-          <button
-            :disabled="meta.page >= meta.totalPages"
-            @click="goPage(meta.page + 1)"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-            <UIcon name="i-heroicons-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        :current-page="meta.page"
+        :total-items="meta.total"
+        :per-page="meta.limit"
+        data-label="log"
+        @update:current-page="goPage"
+      />
     </div>
 
     <!-- Detail Modal -->
@@ -154,6 +97,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useAudit } from '~/composables/useAudit';
 import type { AuditTrail, AuditFilter } from '~/types/audit';
+import DataPagination from '~/components/DataPagination.vue';
 
 definePageMeta({ middleware: ['auth', 'audit-admin'] });
 
@@ -184,30 +128,6 @@ const showDetail = ref(false);
 const selectedLog = ref<AuditTrail | null>(null);
 const detailLoading = ref(false);
 const exporting = ref(false);
-
-// Rows per page selector (sync dengan filter.limit)
-const perPage = ref(filter.limit || 20);
-
-// Generate visible page numbers with ellipsis
-const visiblePages = computed(() => {
-  if (!meta.value) return [];
-  const total = meta.value.totalPages;
-  const current = meta.value.page;
-  const pages: (number | string)[] = [];
-
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (current > 3) pages.push('...');
-    const start = Math.max(2, current - 1);
-    const end = Math.min(total - 1, current + 1);
-    for (let i = start; i <= end; i++) pages.push(i);
-    if (current < total - 2) pages.push('...');
-    pages.push(total);
-  }
-  return pages;
-});
 
 const loadLogs = async () => {
   try {
@@ -253,16 +173,6 @@ const onExport = async () => {
 
 const goPage = (page: number) => {
   filter.page = page;
-  loadLogs();
-};
-
-/**
- * Handler saat rows-per-page selector berubah.
- * Reset ke halaman 1 dan reload dengan limit baru.
- */
-const onPerPageChange = () => {
-  filter.limit = perPage.value;
-  filter.page = 1;
   loadLogs();
 };
 
