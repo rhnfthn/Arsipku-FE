@@ -1,5 +1,3 @@
-// utils/mail-helpers.ts
-// Shared helpers untuk halaman korespondensi (kotak masuk, terkirim, label, dll)
 
 const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const monthShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
