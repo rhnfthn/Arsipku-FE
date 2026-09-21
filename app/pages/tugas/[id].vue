@@ -600,7 +600,13 @@ const handleRemoveComment = async (
   removingCommentIds.value.add(commentId);
   try {
     await removeBoardComment(boardId.value, commentId, scope);
-    forumComments.value = forumComments.value.filter((item) => item.id !== commentId);
+    if (scope === 'everyone') {
+      // Backend mempertahankan row sebagai tombstone; muat ulang agar pesan
+      // langsung berubah menjadi "pesan telah dihapus" untuk pengirim.
+      await loadForumComments();
+    } else {
+      forumComments.value = forumComments.value.filter((item) => item.id !== commentId);
+    }
     toast.add({
       title:
         scope === 'everyone'
@@ -650,7 +656,8 @@ watch(tugasCommentAdded, (event) => {
 
 watch(tugasCommentDeleted, (event) => {
   if (!event || event.boardId !== boardId.value) return;
-  forumComments.value = forumComments.value.filter((item) => item.id !== event.commentId);
+  // Hapus untuk semua orang mempertahankan row sebagai tombstone.
+  loadForumComments();
 });
 
 // Deep link ?task=:taskId — buka modal hanya setelah task terverifikasi ada.

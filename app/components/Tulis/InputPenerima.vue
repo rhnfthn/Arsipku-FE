@@ -195,6 +195,11 @@ const handleGroupClick = (group: any) => {
 
   const currentlySelected = isGroupSelected(group);
 
+  // Grup tembusan wajib tidak boleh dilepas dari dropdown. Metadata routing
+  // tersimpan pada item model hasil auto-pick, bukan pada master grup.
+  const selectedGroup = model.value.find((item) => item.value === group.value);
+  if (currentlySelected && selectedGroup && isMandatoryCc(selectedGroup)) return;
+
   if (!currentlySelected) {
     // Hapus individu dari badge model jika mereka ada di dalam grup ini
     const groupPosIds = group.raw.details?.map((d: any) => String(d.position)) || [];
