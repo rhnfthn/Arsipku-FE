@@ -181,7 +181,6 @@ export const useTertunda = () => {
     return dataArray[0]?.raw ?? dataArray[0] ?? null;
   };
 
-  // ── NAVIGATION: prev/next di daftar tertunda ─────────────────────────────
   const fetchTertundaNavigation = async (idNaskah: string, jenis?: string) => {
     try {
       const query = new URLSearchParams();

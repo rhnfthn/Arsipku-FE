@@ -80,7 +80,6 @@ export interface UserProfile {
   exp?: number;
   alamatInfo?: AlamatInfo;
 
-  // RBAC v2 (stateless di JWT)
   activeRole?: ActiveRoleInfo | null;
   activePermissions?: ActivePermission[];
   roles?: ActiveRoleInfo[]; // semua role milik user (untuk switcher)

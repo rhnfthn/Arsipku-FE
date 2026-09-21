@@ -40,7 +40,6 @@ export const useKlasifikasi = () => {
       return klasifikasi.value;
     }
     if (isLoadingKlasifikasi.value) {
-      // tunggu jika ada request lain sedang berjalan
       await new Promise((resolve) => {
         const stop = watch(isLoadingKlasifikasi, (v) => {
           if (!v) {
