@@ -453,7 +453,7 @@ onMounted(async () => {
             </div>
             <!-- Chip task yang di-tag — rujukan diskusi. -->
             <span
-              v-if="comment.taskJudul"
+              v-if="comment.taskJudul && !comment.isDeletedForEveryone"
               class="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
             >
               <Hash class="h-3 w-3 shrink-0" />
@@ -462,12 +462,26 @@ onMounted(async () => {
             <div
               class="mt-1 max-w-full whitespace-pre-line break-words rounded-2xl px-3.5 py-2 text-sm"
               :class="
-                isMine(comment)
+                comment.isDeletedForEveryone
+                  ? 'border border-gray-200 bg-gray-50 italic text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400'
+                  : isMine(comment)
                   ? 'rounded-tr-sm bg-primary-500 text-white'
                   : 'rounded-tl-sm bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
               "
             >
-              <template v-for="(segment, i) in renderMentions(comment.isi)" :key="i">
+              <span
+                v-if="comment.isDeletedForEveryone"
+                class="inline-flex items-center gap-1.5"
+              >
+                <UIcon name="i-lucide-ban" class="h-3.5 w-3.5 shrink-0" />
+                {{ t('tugas_forum_pesan_dihapus') }}
+              </span>
+              <template
+                v-for="(segment, i) in comment.isDeletedForEveryone
+                  ? []
+                  : renderMentions(comment.isi)"
+                :key="i"
+              >
                 <span
                   v-if="segment.kind !== 'text'"
                   class="font-semibold"
@@ -485,6 +499,7 @@ onMounted(async () => {
               </template>
             </div>
             <UDropdownMenu
+              v-if="!comment.isDeletedForEveryone"
               :items="deleteMenuItems(comment)"
               :content="{ align: isMine(comment) ? 'end' : 'start' }"
               :ui="{
