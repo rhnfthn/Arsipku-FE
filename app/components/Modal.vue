@@ -113,6 +113,15 @@ const props = defineProps({
   },
 
   /**
+   * Alias loading → saving (kompatibilitas pemanggil lama yang mengirim
+   * prop `loading`; diterima agar tidak memicu Vue warning non-props).
+   */
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+
+  /**
    * size:
    * - sm | md | lg | xl | approval | full
    * - atau custom tailwind class (ex: "w-[900px]")
@@ -121,13 +130,24 @@ const props = defineProps({
     type: String,
     default: 'md',
   },
+
+  /**
+   * Slot UI opsional untuk kompatibilitas pemanggil lama yang mengirim
+   * prop `ui` (mis. panel class). Diterima agar tidak memicu Vue warning
+   * "Extraneous non-props attributes".
+   */
+  ui: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'save']);
+const emit = defineEmits(['update:modelValue', 'save', 'close']);
 
 const handleCancel = () => {
   if (props.saving) return;
   emit('update:modelValue', false);
+  emit('close');
 };
 
 const handleSave = () => {

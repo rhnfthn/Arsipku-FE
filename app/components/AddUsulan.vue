@@ -627,14 +627,14 @@
         class="flex justify-between w-full gap-3 px-5 py-4 border-t border-gray-200 dark:border-gray-700 mt-5"
       >
         <!-- Step 1: Tombol Batal -->
-        <Button
+        <UButton
           v-if="currentStep === 1"
-          variant="secondary"
+          variant="outline"
           @click="handleCloseRequest(false)"
           class="w-full justify-between px-5 py-2 border border-gray-300 text-gray-600 text-sm rounded-md"
         >
           {{ $t('add_usl_btn_batal') }}
-        </Button>
+        </UButton>
 
         <!-- Tombol Selanjutnya step 1 → 2 -->
         <button
@@ -691,14 +691,13 @@
         </button>
 
         <!-- Step 3: Tombol Selesai -->
-        <Button
+        <UButton
           v-if="currentStep === 3"
-          variant="primary"
           @click="finishAndClose"
           class="w-full justify-center px-5 py-2 bg-primary hover:bg-primary-700 text-white text-sm rounded-md"
         >
           {{ $t('add_usl_btn_selesai') }}
-        </Button>
+        </UButton>
       </div>
     </template>
   </Modal>

@@ -60,7 +60,9 @@ export default defineAppConfig({
         heading3b: "text-[42px] font-bold dark:text-white",
         heading4b: "text-[38px] font-bold dark:text-white",
         heading5b: "text-[32px] font-bold dark:text-white",
-        heading6b: "text-[26px] font-bold dark:text-white",
+        // heading6b disamakan dengan H1 PageHeader (text-2xl = 24px) agar
+        // seluruh judul halaman konsisten (audit desain 2026-09-22).
+        heading6b: "text-2xl font-bold tracking-tight dark:text-white",
         heading7b: "text-[24px] font-bold dark:text-white",
         heading8b: "text-[20px] font-bold dark:text-white",
         heading9b: "text-[18px] font-bold dark:text-white",
