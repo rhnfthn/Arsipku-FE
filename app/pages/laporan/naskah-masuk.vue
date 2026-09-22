@@ -974,7 +974,7 @@ const canViewLaporan = computed(() => canAccessPage());
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('naskah_masuk'), to: '/admin/laporan/naskah-masuk' }
+  { label: t('naskah_masuk'), to: '/laporan/naskah-masuk' }
 ]);
 
 const { getRekapNaskahMasuk, getRekapNaskahMasukDetail, getAreaList, getJenisList } = useLaporan();
