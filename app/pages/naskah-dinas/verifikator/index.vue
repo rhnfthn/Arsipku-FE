@@ -99,7 +99,7 @@
 
         <button
           @click="openExportModal"
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
         >
           <FileDown class="w-4 h-4" />
           Export
@@ -247,7 +247,7 @@
         class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-4"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t('menampilkan') }} {{ startRow }} - {{ endRow }} {{ $t('dari') }} {{ totalRows }}
+          {{ $t('menampilkan') }} {{ startRow }}–{{ endRow }} {{ $t('dari') }} {{ totalRows }}
           {{ $t('data') }}
         </div>
         <div class="flex gap-2">

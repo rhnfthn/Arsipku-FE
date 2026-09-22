@@ -310,26 +310,11 @@ function hydratePermissionIds(tree: any, permissionIdsByName: Map<string, string
 }
 
 function utamaTreeForUser(tree: any) {
-  if (!tree || tree.key !== 'utama') return tree;
-  return {
-    ...tree,
-    menus: (tree.menus ?? []).map((menu: any) => {
-      if (menu.key !== 'sde-masal') return menu;
-      return {
-        ...menu,
-        subMenus: (menu.subMenus ?? []).map((subMenu: any) => ({
-          ...subMenu,
-          fiturs: (subMenu.fiturs ?? []).map((fitur: any) => ({
-            ...fitur,
-            permissions: (fitur.permissions ?? []).filter((permission: any) =>
-              (subMenu.key === 'pengajuan' && permission.action === 'read') ||
-              (subMenu.key === 'verifikasi' && permission.action === 'read-verification'),
-            ),
-          })).filter((fitur: any) => fitur.permissions.length > 0),
-        })).filter((subMenu: any) => subMenu.fiturs.length > 0),
-      };
-    }),
-  };
+  // Semua permission SDE Massal (read, read-detail, create, update, finalize,
+  // delete, read-verification, verify, reject) kini tampil utuh untuk role
+  // USER agar superadmin dapat mengatur akses verifikator/konseptor SDE
+  // Massal melalui RBAC matrix (fix: sebelumnya hanya read yang tampil).
+  return tree;
 }
 
 function kelolaTreeForUser(tree: any) {
@@ -718,7 +703,9 @@ onMounted(async () => {
           return isAllowedUserUtilitasPermission(name);
         }
         if (name?.startsWith('sde-masal.')) {
-          return name === 'sde-masal.read' || name === 'sde-masal.read-verification';
+          // Semua permission SDE Massal valid untuk role USER (verifikator/
+          // konseptor). Jangan buang centangan read-detail/verify/reject.
+          return true;
         }
         if (name?.startsWith('tugas.')) {
           return true;
