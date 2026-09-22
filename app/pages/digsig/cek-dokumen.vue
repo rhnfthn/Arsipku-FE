@@ -58,13 +58,13 @@
 
         <!-- SUBMIT BUTTON -->
         <div v-if="selectedFile && !fileUploaded" class="flex justify-end mt-2">
-          <Button
+          <UButton
             @click="submitDocument"
             :disabled="loadingCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ $t('cek_btn_periksa') }}
-          </Button>
+          </UButton>
         </div>
       </div>
 
@@ -259,21 +259,21 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-end items-center gap-3">
-          <Button
+          <UButton
             @click="resetCheck"
             class="bg-primary hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ $t('cek_btn_periksa_lain') }}
-          </Button>
+          </UButton>
 
-          <Button
+          <UButton
             v-if="documentCheck.data.isValid"
             @click="downloadPdf"
             class="border border-primary hover:bg-primary-700 hover:text-white px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2"
           >
             <Download class="w-4 h-4" />
             {{ $t('cek_btn_unduh_pdf') }}
-          </Button>
+          </UButton>
         </div>
       </div>
     </div>

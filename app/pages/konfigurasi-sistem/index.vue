@@ -526,7 +526,7 @@ import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
 
 definePageMeta({ middleware: "auth" });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const { hasPermission, isSuperadmin, user } = useAuth();
 const { checkUser } = useOrganizationTu();
@@ -588,12 +588,12 @@ const breadcrumbs = computed(() => [
 
 // Computed delete message parts for ConfirmPopup interpolation
 const deleteMessagePrefix = computed(() =>
-  t("locale") === "id"
+  locale.value === "id"
     ? "Apakah Anda yakin ingin menghapus pengumuman "
     : "Are you sure you want to delete announcement ",
 );
 const deleteMessageSuffix = computed(() =>
-  t("locale") === "id"
+  locale.value === "id"
     ? "Tindakan ini tidak dapat dibatalkan."
     : "This action cannot be undone.",
 );

@@ -11,7 +11,7 @@
       </div>
       <button
         @click="openAdd = true"
-        class="flex items-center gap-2 bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary-800 text-sm transition"
+        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
       >
         <Plus class="w-4 h-4" />
         {{ $t('usl_btn_tambah') }}

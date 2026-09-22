@@ -232,31 +232,43 @@
 
       <!-- Aksi workflow selalu berada setelah Daftar Naskah. -->
       <div v-if="isVerifierAwaiting || isSignerAwaiting" class="flex flex-wrap justify-start gap-2">
-        <UButton
-          label="Tolak Folder"
-          icon="i-lucide-x-circle"
-          color="error"
-          variant="solid"
-          :loading="workflowLoading"
-          @click="openRejectModal"
-        />
-        <UButton
-          v-if="isVerifierAwaiting"
-          label="Setujui Folder"
-          icon="i-lucide-check-circle"
-          color="primary"
-          :loading="workflowLoading"
-          @click="showApproveConfirm = true"
-        />
-        <UButton
-          v-else-if="isSignerAwaiting"
-          label="Finalisasi"
-          icon="i-lucide-send"
-          color="primary"
-          :disabled="eligibleItems.length === 0"
-          :loading="workflowLoading"
-          @click="openFinalizeAll"
-        />
+        <template v-if="isVerifierAwaiting && !isBodVerifier">
+          <!-- Verifikator non-BOD: read-only, hanya memantau chain -->
+          <div class="flex w-full items-center gap-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+            <UIcon name="i-lucide-eye" class="size-5 shrink-0" />
+            <span>
+              Anda terdaftar dalam chain verifikasi ini, namun hanya BOD (Direksi) yang dapat
+              menyetujui atau menolak. Anda dapat memantau proses verifikasi secara read-only.
+            </span>
+          </div>
+        </template>
+        <template v-else>
+          <UButton
+            label="Tolak Folder"
+            icon="i-lucide-x-circle"
+            color="error"
+            variant="solid"
+            :loading="workflowLoading"
+            @click="openRejectModal"
+          />
+          <UButton
+            v-if="isVerifierAwaiting"
+            label="Setujui Folder"
+            icon="i-lucide-check-circle"
+            color="primary"
+            :loading="workflowLoading"
+            @click="showApproveConfirm = true"
+          />
+          <UButton
+            v-else-if="isSignerAwaiting"
+            label="Finalisasi"
+            icon="i-lucide-send"
+            color="primary"
+            :disabled="eligibleItems.length === 0"
+            :loading="workflowLoading"
+            @click="openFinalizeAll"
+          />
+        </template>
       </div>
 
       </div>
@@ -535,6 +547,14 @@ const isVerifierAwaiting = computed(() => {
           (currentPosition.value && String(verifikator.position) === currentPosition.value)),
     ),
   );
+});
+// Hanya BOD (Direksi) yang dapat menyetujui/menolak verifikasi.
+// Verifikator non-BOD hanya dapat membaca chain (read-only).
+const isBodVerifier = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  if (['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(bodTag)) return true;
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+  return /\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(positionText);
 });
 const isEligibleItem = (item: SdeMasalFolderItem) =>
   ['TERVERIFIKASI', 'GAGAL'].includes(item.statusVerifikasi || '') && !item.naskahId;
