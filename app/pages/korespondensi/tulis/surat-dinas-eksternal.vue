@@ -283,6 +283,7 @@
 
     <TulisDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      :portal-mode="tteMode === 'portal'"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
     <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="SDE" :editor="tinymceEditor" />
@@ -320,6 +321,7 @@ const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getConfigDigsig } = useDigsig();
+const { getTteMode } = useTtePortal();
 const { saveDraft, updateDraft, sendSDE, getSDEDetail, generatePdf, getExternalRecipients, getRecipientInfo } = useSde();
 const { api: apiInstance } = useApi();
 const { t } = useI18n();
@@ -359,6 +361,7 @@ const internalItems = ref<any[]>([]);
 
 const isPassphraseModalOpen = ref(false);
 const selectedSendType = ref('digsig');
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 
 const bsreDisabled = ref(false);
 const qrDisabled = ref(false);
@@ -579,7 +582,7 @@ const handleSaveDraftAction = async () => {
 const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraftAction);
 
 const handleKirimDokumen = async (passphrase = '') => {
-  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+  if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct' && !passphrase.trim()) {
     signMethodModalRef.value?.setPassphraseError(t('sde_passphrase_harus_diisi'));
     return;
   }
@@ -598,7 +601,7 @@ const handleKirimDokumen = async (passphrase = '') => {
     const fdFinal = createFormData(payload, true);
     fdFinal.append('sign_option', selectedSendType.value);
 
-    if (selectedSendType.value === 'digsig') {
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
       fdFinal.append('passphrase', passphrase);
       if (!user.value?.nik) throw new Error(t('sde_nik_tidak_ditemukan'));
       fdFinal.append('nik', user.value.nik);
@@ -607,6 +610,13 @@ const handleKirimDokumen = async (passphrase = '') => {
     const res = editDraftId.value
       ? await sendDraftSDE(fdFinal, editDraftId.value)
       : await sendSDE(fdFinal);
+
+    const redirect = (res as any)?.data?.data?.tte_redirect ?? (res as any)?.data?.tte_redirect ?? (res as any)?.tte_redirect;
+    if (redirect?.signingUrl) {
+      isPassphraseModalOpen.value = false;
+      window.location.href = redirect.signingUrl;
+      return;
+    }
 
     const isSuccess = (res as any)?.data?.success || (res as any)?.success;
     if (isSuccess) {
@@ -621,7 +631,7 @@ const handleKirimDokumen = async (passphrase = '') => {
     Alert.close();
     const errMsg = e.response?.data?.message || e.message || t('sde_gagal_mengirim_dokumen');
 
-    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+    if (tteMode.value === 'bsre_direct' && (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah'))) {
       bsreDisabled.value = false;
       await nextTick();
       isPassphraseModalOpen.value = true;
@@ -654,6 +664,14 @@ const handleConfirmKirim = async () => {
   bsreDisabled.value = !configData.digsig;
   qrDisabled.value = !configData.ttdQr;
   basahDisabled.value = !configData.ttdBasah;
+  if (configData.digsig) {
+    try {
+      tteMode.value = await getTteMode('SDE');
+    } catch {
+      toastError('Konfigurasi TTE tidak dapat dibaca', 'Silakan coba lagi.');
+      return;
+    }
+  }
   isPassphraseModalOpen.value = true;
 };
 

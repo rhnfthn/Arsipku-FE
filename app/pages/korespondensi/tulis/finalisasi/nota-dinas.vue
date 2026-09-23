@@ -1,18 +1,32 @@
 <template>
   <div class="relative">
-    <LoadingOverlay :loading="isLoadingData && loadingMessage !== 'Memuat...'" :message="loadingMessage" />
+    <LoadingOverlay
+      :loading="isLoadingData && loadingMessage !== 'Memuat...'"
+      :message="loadingMessage"
+    />
     <PageHeader title="Finalisasi Nota Dinas" :items="breadcrumbs" />
 
-    <UCard variant="soft"
-      :ui="{ root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm' }">
-
-      <div v-if="isLoadingData && loadingMessage === 'Memuat...'" class="animate-pulse px-2 space-y-3">
-        <div v-for="i in 6" :key="i" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2">
+    <UCard
+      variant="soft"
+      :ui="{
+        root: 'rounded-t-lg ring-0 shadow-none bg-white dark:bg-gray-800 print:hidden transition-colors shadow-sm',
+      }"
+    >
+      <div
+        v-if="isLoadingData && loadingMessage === 'Memuat...'"
+        class="animate-pulse px-2 space-y-3"
+      >
+        <div
+          v-for="i in 6"
+          :key="i"
+          class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-2"
+        >
           <USkeleton class="h-9 w-32 sm:w-40 shrink-0 rounded-md" />
           <USkeleton class="h-9 w-full sm:flex-1 rounded-md" />
         </div>
         <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800">
+          class="border border-gray-200 dark:border-gray-700 rounded-lg h-[400px] p-6 space-y-5 bg-white dark:bg-gray-800"
+        >
           <div class="flex gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <USkeleton class="h-12 w-12 rounded-full" />
             <div class="flex-1 space-y-2 pt-1">
@@ -28,28 +42,55 @@
       </div>
 
       <div v-else class="flex-1 overflow-y-auto space-y-1">
-        <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiList || []"
-          :loading="klasifikasiStatus === 'loading'" />
+        <TulisInputKlasifikasi
+          v-model="selectedKlasifikasiId"
+          :items="klasifikasiList || []"
+          :loading="klasifikasiStatus === 'loading'"
+        />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
-          :groups="recipientGroups" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
+        <TulisInputPenerima
+          v-model="selectedTertuju"
+          label="Tertuju"
+          placeholder="Pilih Tertuju"
+          :items="items"
+          :groups="recipientGroups"
+          :exclude-items="selectedTembusan"
+          disabled-message="Sudah dipilih di Tembusan"
+        />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
-          :groups="recipientGroups" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
+        <TulisInputPenerima
+          v-model="selectedTembusan"
+          label="Tembusan"
+          placeholder="Pilih Tembusan"
+          :items="items"
+          :groups="recipientGroups"
+          :exclude-items="selectedTertuju"
+          disabled-message="Sudah dipilih di Tertuju"
+        />
 
         <TulisInputSifat v-model="selectedSifat" />
 
         <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0"
+        >
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Perihal</span>
+            <span
+              class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0"
+              >Perihal</span
+            >
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="subject" :maxlength="maxPerihal"
+              <input
+                type="text"
+                v-model="subject"
+                :maxlength="maxPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Perihal" />
-              <span class="text-[10px] font-mono shrink-0 transition-colors"
-                :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'">
+                placeholder="Ketik Perihal"
+              />
+              <span
+                class="text-[10px] font-mono shrink-0 transition-colors"
+                :class="subject.length >= maxPerihal ? 'text-red-500 font-bold' : 'text-gray-400'"
+              >
                 {{ subject.length }}/{{ maxPerihal }}
               </span>
             </div>
@@ -61,14 +102,20 @@
 
           <ClientOnly>
             <div
-              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']"
+            >
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <TulisKopSurat :alamat-info="user?.alamatInfo" />
                   <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA
-                      DINAS</h1>
-                    <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
+                    <h1
+                      class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman"
+                    >
+                      NOTA DINAS
+                    </h1>
+                    <p class="text-lg mt-1 text-[14px]">
+                      Nomor : ..............................................
+                    </p>
                   </div>
                   <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
                     <tbody>
@@ -77,14 +124,20 @@
                         <td class="text-[14px] w-[20px] align-top">:</td>
                         <td class="text-[14px] align-top">
                           <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
-                          <span v-else v-html="selectedTertuju.length
-                            ? selectedTertuju.map((s: any, i: number) =>
-                              selectedTertuju.length === 1
-                                ? `<div>${s.labelJob || s.label}</div>`
-                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
-                            ).join('')
-                            : '................................................'
-                            "></span>
+                          <span
+                            v-else
+                            v-html="
+                              selectedTertuju.length
+                                ? selectedTertuju
+                                    .map((s: any, i: number) =>
+                                      selectedTertuju.length === 1
+                                        ? `<div>${s.labelJob || s.label}</div>`
+                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                                    )
+                                    .join('')
+                                : '................................................'
+                            "
+                          ></span>
                         </td>
                       </tr>
                       <tr>
@@ -95,14 +148,20 @@
                       <tr>
                         <td class="text-[14px] font-bold align-top">Perihal</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject ||
-                          "................................................" }}</td>
+                        <td class="text-[14px] align-top">
+                          {{ subject || '................................................' }}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
-                <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
+                <TinymceEditorAsync
+                  api-key="no-api-key"
+                  v-model="editorContent"
+                  :init="tinyMceInit"
+                  class="min-h-[400px]"
+                />
 
                 <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
                   <div class="flex justify-end mb-4 text-black">
@@ -111,23 +170,32 @@
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px]">
+                        {{ toTitleCase(user?.nama) || 'Nama Lengkap' }}
+                      </div>
                     </div>
                   </div>
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
-                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob ||
-                      selectedTembusan[0]?.label }}</div>
+                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">
+                      Periksa Alamat Terlampir
+                    </div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
+                      {{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}
+                    </div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
-                      <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
+                      <li v-for="t in selectedTembusan" :key="t.value">
+                        {{ t.labelJob || t.label }}
+                      </li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
                   </div>
                 </div>
 
-                <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
+                <div
+                  v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page"
+                >
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
@@ -150,13 +218,17 @@
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">
+                        {{ item.labelJob || item.label }}
+                      </li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">
+                        {{ item.labelJob || item.label }}
+                      </li>
                     </ol>
                   </div>
                 </div>
@@ -168,46 +240,66 @@
         </div>
 
         <div
-          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton label="Pratinjau & Finalisasi" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
-            @click="handlePreview" />
+          class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
+        >
+          <UButton
+            label="Pratinjau & Finalisasi"
+            color="primary"
+            size="lg"
+            icon="i-lucide-eye"
+            class="px-8 font-bold"
+            @click="handlePreview"
+          />
         </div>
       </div>
     </UCard>
 
-    <TulisPreviewSlideover v-model:open="isOpenPreview" :pdf-url="pdfUrl" :alert-is-open="alertState.isOpen"
-      :show-save-draft="false" @send="handleConfirmFinalize" />
+    <TulisPreviewSlideover
+      v-model:open="isOpenPreview"
+      :pdf-url="pdfUrl"
+      :alert-is-open="alertState.isOpen"
+      :show-save-draft="false"
+      @send="handleConfirmFinalize"
+    />
 
-    <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
-      :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
-      ref="signMethodModalRef" @submit="handleFinalizeSubmit" />
+    <TulisDigsigPassphraseModal
+      v-model:open="isSignMethodModalOpen"
+      :signer-info="signerInfo"
+      :is-loading="isLoadingData"
+      :hide-bsre="bsreDisabled"
+      :hide-qr="qrDisabled"
+      :hide-basah="basahDisabled"
+      :portal-mode="tteMode === 'portal'"
+      ref="signMethodModalRef"
+      @submit="handleFinalizeSubmit"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { CalendarDate } from "@internationalized/date";
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { CalendarDate } from '@internationalized/date';
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 
-import TulisInputKlasifikasi from "@/components/Tulis/InputKlasifikasi.vue";
-import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
-import TulisInputSifat from "@/components/Tulis/InputSifat.vue";
-import TulisInputPenerima from "@/components/Tulis/InputPenerima.vue";
-import TulisInputTanggal from "@/components/Tulis/InputTanggal.vue";
-import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
-import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModalAsync.vue";
+import TulisInputKlasifikasi from '@/components/Tulis/InputKlasifikasi.vue';
+import TulisInputLampiran from '@/components/Tulis/InputLampiranAsync.vue';
+import TulisInputSifat from '@/components/Tulis/InputSifat.vue';
+import TulisInputPenerima from '@/components/Tulis/InputPenerima.vue';
+import TulisInputTanggal from '@/components/Tulis/InputTanggal.vue';
+import TulisKopSurat from '@/components/Tulis/KopSuratAsync.vue';
+import TulisDigsigPassphraseModal from '@/components/Tulis/DigsigPassphraseModalAsync.vue';
 
-import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
-import { Alert } from "@/composables/useAlert";
+import { validateDraftPayload, type DraftPayload } from '~/types/nota-dinas';
+import { Alert } from '@/composables/useAlert';
 
-import { useDigSign } from "@/composables/useDigSign";
-import { useInbox } from "@/composables/useInbox";
-import { useRecipients } from "@/composables/useRecipients";
-import { useKonsep } from "@/composables/useKonsep";
+import { useDigSign } from '@/composables/useDigSign';
+import { useInbox } from '@/composables/useInbox';
+import { useRecipients } from '@/composables/useRecipients';
+import { useKonsep } from '@/composables/useKonsep';
 
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const router = useRouter();
@@ -222,10 +314,11 @@ const { generatePdf } = useNotaDinas();
 const { getKtp } = useDigSign();
 const { fetchKonsepDetail } = useInbox();
 const { finalizeKonsep } = useKonsep();
+const { getTteMode } = useTtePortal();
 
 /* --- LOCAL STATES --- */
 const isLoadingData = ref(false);
-const loadingMessage = ref("");
+const loadingMessage = ref('');
 const isOpenPreview = ref(false);
 const isSignMethodModalOpen = ref(false);
 const signMethodModalRef = ref<any>(null);
@@ -233,19 +326,22 @@ const signMethodModalRef = ref<any>(null);
 const bsreDisabled = ref(false);
 const qrDisabled = ref(false);
 const basahDisabled = ref(false);
-const selectedSendType = ref("qr_only");
+const selectedSendType = ref('qr_only');
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 
 const editDraftId = ref<string | null>(null);
-const subject = ref("");
-const editorContent = ref("");
+const subject = ref('');
+const editorContent = ref('');
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 
 const today = new Date();
-const date = ref<CalendarDate>(new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()));
+const date = ref<CalendarDate>(
+  new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate())
+);
 
 const klasifikasiList = ref<any[]>([]);
-const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
+const klasifikasiStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<any[]>([]);
 
@@ -256,24 +352,24 @@ const selectedTertuju = ref<any[]>([]);
 const selectedTembusan = ref<any[]>([]);
 
 const pdfBlob = ref<Blob | null>(null);
-const pdfUrl = ref("");
+const pdfUrl = ref('');
 const maxPerihal = 200;
 
 const breadcrumbs = computed(() => {
   const refId = route.query.ref_id as string;
   return [
-    { label: "Beranda", to: "/beranda" },
-    { label: "Kotak Masuk", to: "/korespondensi/kotak-masuk" },
-    { label: "Detail Surat", to: refId ? `/korespondensi/kotak-masuk/${refId}?jenis=K` : '#' },
-    { label: "Finalisasi Nota Dinas", to: "#" },
+    { label: 'Beranda', to: '/beranda' },
+    { label: 'Kotak Masuk', to: '/korespondensi/kotak-masuk' },
+    { label: 'Detail Surat', to: refId ? `/korespondensi/kotak-masuk/${refId}?jenis=K` : '#' },
+    { label: 'Finalisasi Nota Dinas', to: '#' },
   ];
 });
 
 const sifatOptions = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
-  { label: "Rahasia", value: "rahasia" },
-  { label: "Terbatas", value: "terbatas" },
-  { label: "Biasa / Terbuka", value: "biasa" }
+  { label: 'Sangat Rahasia', value: 'sangat rahasia' },
+  { label: 'Rahasia', value: 'rahasia' },
+  { label: 'Terbatas', value: 'terbatas' },
+  { label: 'Biasa / Terbuka', value: 'biasa' },
 ];
 
 const tinyMceInit = {
@@ -285,11 +381,12 @@ const tinyMceInit = {
   branding: false,
   placeholder: 'Ketik konten disini...',
   plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+  toolbar:
+    'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
   setup(editor: TinyMCEEditor) {
     tinymceEditor.value = editor;
-  }
+  },
 };
 
 /* --- COMPUTEDS --- */
@@ -300,15 +397,15 @@ const selectedKlasifikasi = computed(() =>
 );
 
 const formattedDate = computed(() => {
-  if (!date.value) return "-";
+  if (!date.value) return '-';
   const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
-  return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  return jsDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 });
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || "Nama Lengkap",
-  role: user.value?.positionText || "Jabatan",
-  label: "Ditandatangani secara digital oleh",
+  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
+  role: user.value?.positionText || 'Jabatan',
+  label: 'Ditandatangani secara digital oleh',
 }));
 
 /* --- HELPERS & MAPPERS --- */
@@ -328,9 +425,10 @@ const mapApiToUI = (list: any[]) => {
 
     // Fallback if master isn't found
     const posText = item.position_text || item.positionText || item.labelJob || item.label || posId;
-    const nama = item.nama || item.person_name || "";
+    const nama = item.nama || item.person_name || '';
     // Memastikan format: Jabatan(Nama)
-    const dynamicLabelJob = nama && nama !== '-' && nama !== 'empty' ? `${posText}(${nama})` : posText;
+    const dynamicLabelJob =
+      nama && nama !== '-' && nama !== 'empty' ? `${posText}(${nama})` : posText;
 
     if (master) {
       // Jika master ditemukan namun belum ada format namanya (sedangkan API call punya namanya), kita replace
@@ -341,7 +439,10 @@ const mapApiToUI = (list: any[]) => {
     }
 
     return {
-      label: posText !== posId ? `${item.persnum || ""} - (${item.abbreviation || ""}) ${posText}` : posId,
+      label:
+        posText !== posId
+          ? `${item.persnum || ''} - (${item.abbreviation || ''}) ${posText}`
+          : posId,
       labelJob: dynamicLabelJob,
       value: posId,
       raw: item,
@@ -351,58 +452,64 @@ const mapApiToUI = (list: any[]) => {
 
 const mapGroupsToUI = (grupList: any[]) => {
   if (!grupList || !Array.isArray(grupList)) return [];
-  return grupList.map(g => {
-    const groupId = String(g.group_id || g.id || g.value);
-    const master = recipientGroups.value.find(mg => String(mg.id) === groupId);
-    return master ? { label: master.nama, labelJob: master.nama, value: `GROUP_${master.id}`, isGroup: true, raw: master } : null;
-  }).filter(Boolean);
+  return grupList
+    .map((g) => {
+      const groupId = String(g.group_id || g.id || g.value);
+      const master = recipientGroups.value.find((mg) => String(mg.id) === groupId);
+      return master
+        ? {
+            label: master.nama,
+            labelJob: master.nama,
+            value: `GROUP_${master.id}`,
+            isGroup: true,
+            raw: master,
+          }
+        : null;
+    })
+    .filter(Boolean);
 };
 
 // Payload Standard untuk validasi dan Pratinjau
 const getBasePayload = (): DraftPayload => {
   const tglDb = date.value
-    ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}`
-    : "";
+    ? `${date.value.year}-${String(date.value.month).padStart(2, '0')}-${String(date.value.day).padStart(2, '0')}`
+    : '';
   const tglPreview = date.value
-    ? `${String(date.value.day).padStart(2, "0")}/${String(date.value.month).padStart(2, "0")}/${date.value.year}`
-    : "";
+    ? `${String(date.value.day).padStart(2, '0')}/${String(date.value.month).padStart(2, '0')}/${date.value.year}`
+    : '';
   const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
 
   // Pisahkan individu dan grup dari selectedTertuju
-  const tertujuIndividu = selectedTertuju.value
-    .filter(t => !t.isGroup)
-    .map(i => i.value);
+  const tertujuIndividu = selectedTertuju.value.filter((t) => !t.isGroup).map((i) => i.value);
   const tertujuGrup = selectedTertuju.value
-    .filter(t => t.isGroup)
-    .map(i => String(i.value).replace('GROUP_', ''));
+    .filter((t) => t.isGroup)
+    .map((i) => String(i.value).replace('GROUP_', ''));
 
   // Pisahkan individu dan grup dari selectedTembusan
-  const tembusanIndividu = selectedTembusan.value
-    .filter(t => !t.isGroup)
-    .map(i => i.value);
+  const tembusanIndividu = selectedTembusan.value.filter((t) => !t.isGroup).map((i) => i.value);
   const tembusanGrup = selectedTembusan.value
-    .filter(t => t.isGroup)
-    .map(i => String(i.value).replace('GROUP_', ''));
+    .filter((t) => t.isGroup)
+    .map((i) => String(i.value).replace('GROUP_', ''));
 
   return {
     id_naskah: editDraftId.value || null,
     id_referensi_naskah: null,
-    pengirim: user.value?.position || "",
+    pengirim: user.value?.position || '',
     penerima: tertujuIndividu,
     tembusan: tembusanIndividu,
     penerima_grup: tertujuGrup,
     tembusan_grup: tembusanGrup,
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
-    klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
-    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
+    tertuju: selectedTertuju.value.map((i) => i.labelJob || i.label),
+    klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
+    klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || '',
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
     konten: String(editorContent.value || ''),
     htmlContent: String(editorContent.value || ''),
     english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
-    nama_jabatan: user.value?.positionText || "",
-    nama_lengkap: user.value?.nama || "",
+    nama_tempat: user.value?.areaText || 'Kantor Pusat',
+    nama_jabatan: user.value?.positionText || '',
+    nama_lengkap: user.value?.nama || '',
     tgl: tglDb,
     tanggal: tglPreview,
     lampiran_temp_ids: lampiranIds,
@@ -411,33 +518,55 @@ const getBasePayload = (): DraftPayload => {
 
 const createFinalizeFormData = () => {
   const formData = new FormData();
-  const tglDb = date.value ? `${date.value.year}-${String(date.value.month).padStart(2, "0")}-${String(date.value.day).padStart(2, "0")}` : "";
-  const userPosition = user.value?.position || "";
-  const lampiranIds = existingFiles.value.map(f => f.id).filter(Boolean);
+  const tglDb = date.value
+    ? `${date.value.year}-${String(date.value.month).padStart(2, '0')}-${String(date.value.day).padStart(2, '0')}`
+    : '';
+  const userPosition = user.value?.position || '';
+  const lampiranIds = existingFiles.value.map((f) => f.id).filter(Boolean);
 
-  formData.append("jenis", "ND");
-  formData.append("from_position_id", userPosition);
-  formData.append("to_position_id", userPosition);
-  formData.append("pengirim_position_id", userPosition);
+  formData.append('jenis', 'ND');
+  formData.append('from_position_id', userPosition);
+  formData.append('to_position_id', userPosition);
+  formData.append('pengirim_position_id', userPosition);
 
-  formData.append("penerima_position_ids", JSON.stringify(selectedTertuju.value.filter(t => !t.isGroup).map(i => i.value)));
-  formData.append("tembusan_position_ids", JSON.stringify(selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value)));
+  formData.append(
+    'penerima_position_ids',
+    JSON.stringify(selectedTertuju.value.filter((t) => !t.isGroup).map((i) => i.value))
+  );
+  formData.append(
+    'tembusan_position_ids',
+    JSON.stringify(selectedTembusan.value.filter((t) => !t.isGroup).map((i) => i.value))
+  );
 
-  formData.append("tembusan_grup", JSON.stringify(selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
-  formData.append("penerima_grup", JSON.stringify(selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', ''))));
+  formData.append(
+    'tembusan_grup',
+    JSON.stringify(
+      selectedTertuju.value
+        .filter((t) => t.isGroup)
+        .map((i) => String(i.value).replace('GROUP_', ''))
+    )
+  );
+  formData.append(
+    'penerima_grup',
+    JSON.stringify(
+      selectedTembusan.value
+        .filter((t) => t.isGroup)
+        .map((i) => String(i.value).replace('GROUP_', ''))
+    )
+  );
 
-  formData.append("tgl", tglDb);
-  formData.append("klasifikasi", selectedKlasifikasi.value?.klasifikasi || "");
-  formData.append("klasifikasi_text", selectedKlasifikasi.value?.klasifikasi_text || "");
-  formData.append("sifat", selectedSifat.value?.value || "biasa");
-  formData.append("perihal", subject.value);
-  formData.append("konten", String(editorContent.value || ''));
-  formData.append("english", english.value ? "1" : "0");
-  formData.append("nama_tempat", user.value?.areaText || "Kantor Pusat");
-  formData.append("nama_jabatan", user.value?.positionText || "");
-  formData.append("nama_lengkap", user.value?.nama || "");
-  formData.append("lampiran_temp_ids", JSON.stringify(lampiranIds));
-  formData.append("lampiran", lampiranIds.length > 0 ? "1" : "0");
+  formData.append('tgl', tglDb);
+  formData.append('klasifikasi', selectedKlasifikasi.value?.klasifikasi || '');
+  formData.append('klasifikasi_text', selectedKlasifikasi.value?.klasifikasi_text || '');
+  formData.append('sifat', selectedSifat.value?.value || 'biasa');
+  formData.append('perihal', subject.value);
+  formData.append('konten', String(editorContent.value || ''));
+  formData.append('english', english.value ? '1' : '0');
+  formData.append('nama_tempat', user.value?.areaText || 'Kantor Pusat');
+  formData.append('nama_jabatan', user.value?.positionText || '');
+  formData.append('nama_lengkap', user.value?.nama || '');
+  formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
+  formData.append('lampiran', lampiranIds.length > 0 ? '1' : '0');
 
   return formData;
 };
@@ -450,14 +579,14 @@ const handlePreview = async () => {
   if (!validationResult.isValid) {
     const errors = validationResult.errors || {};
     // Skip error tembusan — di finalisasi tembusan opsional
-    const errorKeys = Object.keys(errors).filter(k => k !== 'tembusan');
+    const errorKeys = Object.keys(errors).filter((k) => k !== 'tembusan');
     if (errorKeys.length > 0) {
       toast.add({ title: 'Validasi Gagal', description: errors[errorKeys[0]!], color: 'error' });
       return;
     }
   }
 
-  loadingMessage.value = "Memproses Pratinjau...";
+  loadingMessage.value = 'Memproses Pratinjau...';
   isLoadingData.value = true;
   try {
     const formData = new FormData();
@@ -483,50 +612,76 @@ const handleConfirmFinalize = async () => {
   bsreDisabled.value = false;
   qrDisabled.value = false;
   basahDisabled.value = false;
+  try {
+    tteMode.value = await getTteMode('ND');
+  } catch {
+    toastError(
+      'Konfigurasi TTE tidak dapat dibaca',
+      'Silakan coba lagi. Metode tanda tangan tidak dibuka untuk mencegah passphrase terkirim ke jalur yang salah.'
+    );
+    return;
+  }
   isSignMethodModalOpen.value = true;
 };
 
 const handleFinalizeSubmit = async (data: { method: string; passphrase?: string }) => {
   selectedSendType.value = data.method;
 
-  if (selectedSendType.value === 'digsig' && (!data.passphrase || !data.passphrase.trim())) {
+  if (
+    selectedSendType.value === 'digsig' &&
+    tteMode.value === 'bsre_direct' &&
+    (!data.passphrase || !data.passphrase.trim())
+  ) {
     signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
     return;
   }
 
-  loadingMessage.value = "Memfinalisasi Dokumen...";
+  loadingMessage.value = 'Memfinalisasi Dokumen...';
   isLoadingData.value = true;
 
   try {
     let noktpValue = '';
-    if (selectedSendType.value === 'digsig') {
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
       const ktpRes = await getKtp();
       if (ktpRes?.data?.noktp) noktpValue = ktpRes.data.noktp;
       else if (user.value?.nik) noktpValue = user.value.nik;
     }
 
     const fd = createFinalizeFormData();
-    fd.append("sign_option", selectedSendType.value);
-    if (selectedSendType.value === 'digsig') {
-      fd.append("passphrase", data.passphrase || '');
-      if (noktpValue) fd.append("nik", noktpValue);
+    fd.append('sign_option', selectedSendType.value);
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
+      fd.append('passphrase', data.passphrase || '');
+      if (noktpValue) fd.append('nik', noktpValue);
     }
 
-    if (!editDraftId.value) throw new Error("ID Konsep tidak ditemukan");
+    if (!editDraftId.value) throw new Error('ID Konsep tidak ditemukan');
 
     const result = await finalizeKonsep(editDraftId.value, fd);
+    const redirect =
+      (result as any)?.data?.tte_redirect ??
+      (result as any)?.data?.data?.tte_redirect ??
+      (result as any)?.tte_redirect;
+    if (redirect?.signingUrl) {
+      isSignMethodModalOpen.value = false;
+      window.location.href = redirect.signingUrl;
+      return;
+    }
 
     if (result && (result.success || result.data?.success)) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
-      toast.add({ title: 'Berhasil', description: 'Konsep berhasil difinalisasi', color: 'success' });
+      toast.add({
+        title: 'Berhasil',
+        description: 'Konsep berhasil difinalisasi',
+        color: 'success',
+      });
       Alert.close();
-      router.push("/korespondensi/terkirim");
+      router.push('/korespondensi/terkirim');
     } else {
-      throw new Error(result?.message || result?.data?.message || "Finalisasi gagal");
+      throw new Error(result?.message || result?.data?.message || 'Finalisasi gagal');
     }
   } catch (e: any) {
     Alert.close();
-    const errMsg = e.response?.data?.message || e.message || "Gagal memproses dokumen";
+    const errMsg = e.response?.data?.message || e.message || 'Gagal memproses dokumen';
 
     if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
       bsreDisabled.value = false;
@@ -545,39 +700,41 @@ const handleFinalizeSubmit = async (data: { method: string; passphrase?: string 
 
 /* --- ON MOUNTED --- */
 onMounted(async () => {
-  loadingMessage.value = "Memuat...";
+  loadingMessage.value = 'Memuat...';
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
 
   try {
-    klasifikasiStatus.value = "loading";
+    klasifikasiStatus.value = 'loading';
     const [klasRes, recRes, groupsRes] = await Promise.all([
       getKlasifikasi(),
       getRecipients(),
-      getRecipientGroups().catch(() => [])
+      getRecipientGroups().catch(() => []),
     ]);
 
-    klasifikasiList.value = Array.isArray(klasRes) ? klasRes : ((klasRes as any)?.data || (klasRes as any)?.klasifikasi || []);
+    klasifikasiList.value = Array.isArray(klasRes)
+      ? klasRes
+      : (klasRes as any)?.data || (klasRes as any)?.klasifikasi || [];
     recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
     const rawData = recRes.recipients || (recRes as any).data || [];
     items.value = rawData.map((r: any) => {
       const posText = r.position_text || r.positionText;
-      const nama = r.nama || r.person_name || r.persnum_person_text || "";
+      const nama = r.nama || r.person_name || r.persnum_person_text || '';
       // Tambahkan nama ke belakang jabatan agar muncul saat render UI & Print
       const labelJob = nama && nama !== '-' && nama !== 'empty' ? `${posText}(${nama})` : posText;
 
       return {
-        label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${posText}`,
+        label: `${r.persnum_person_text || r.persnum || 'empty'} - (${r.position_abbreviation || r.abbreviation}) ${posText}`,
         labelJob: labelJob,
         value: String(r.position || r.position_id || r.id),
         raw: r,
       };
     });
-    klasifikasiStatus.value = "success";
+    klasifikasiStatus.value = 'success';
   } catch {
-    klasifikasiStatus.value = "error";
+    klasifikasiStatus.value = 'error';
   }
 
   const refId = route.query.ref_id as string;
@@ -587,12 +744,11 @@ onMounted(async () => {
       editDraftId.value = refId;
       const resKonsep = await fetchKonsepDetail(refId);
 
-      const flowList = resKonsep?.flow || ((resKonsep as any)?.data && (resKonsep as any).data.flow) || [];
+      const flowList =
+        resKonsep?.flow || ((resKonsep as any)?.data && (resKonsep as any).data.flow) || [];
       const rootData = (resKonsep as any)?.data || resKonsep;
 
-      let draftData = Array.isArray(flowList)
-        ? flowList.find((d: any) => d.jenis === 'K')
-        : null;
+      let draftData = Array.isArray(flowList) ? flowList.find((d: any) => d.jenis === 'K') : null;
 
       if (!draftData) {
         draftData = Array.isArray(rootData)
@@ -604,15 +760,15 @@ onMounted(async () => {
         /* log removed */
 
         // --- 1. Populate Text Editor & Basic ---
-        subject.value = draftData.perihal || "";
-        editorContent.value = draftData.konten || "";
+        subject.value = draftData.perihal || '';
+        editorContent.value = draftData.konten || '';
         english.value = Boolean(draftData.english);
 
         // --- 2. Populate Klasifikasi ---
         if (draftData.klasifikasi) {
           const klCode = String(draftData.klasifikasi).trim();
-          const found = klasifikasiList.value.find((k: any) =>
-            k.klasifikasi === klCode || k.kode === klCode || k.id === klCode
+          const found = klasifikasiList.value.find(
+            (k: any) => k.klasifikasi === klCode || k.kode === klCode || k.id === klCode
           );
           if (found) {
             selectedKlasifikasiId.value = found.id;
@@ -623,20 +779,22 @@ onMounted(async () => {
 
         const normalizeRecipients = (arr: any[]) => {
           if (!Array.isArray(arr)) return [];
-          return arr.map(item => ({
+          return arr.map((item) => ({
             ...item,
             positionText: item.position_text || item.positionText || item.nama,
-            position: item.position_id || item.position || item.id
+            position: item.position_id || item.position || item.id,
           }));
         };
 
         // --- 3. Populate Penerima & Tembusan ---
         const detail = draftData.detail || {};
 
-        const rawGrupTertuju = detail.penerima_grup?.length ? detail.penerima_grup
+        const rawGrupTertuju = detail.penerima_grup?.length
+          ? detail.penerima_grup
           : draftData.penerima_grup || [];
 
-        const rawGrupTembusan = detail.tembusan_grup?.length ? detail.tembusan_grup
+        const rawGrupTembusan = detail.tembusan_grup?.length
+          ? detail.tembusan_grup
           : draftData.tembusan_grup || [];
 
         const mapGrupLocal = (arr: any[]) => {
@@ -655,7 +813,8 @@ onMounted(async () => {
                 isGroup: true,
                 raw: master || g,
               };
-            }).filter(Boolean);
+            })
+            .filter(Boolean);
         };
 
         const idDalamGrupTertuju = new Set(
@@ -665,11 +824,13 @@ onMounted(async () => {
           rawGrupTembusan.flatMap((g: any) => (g.position_ids || []).map(String))
         );
 
-        const rawPenerima = (detail.naskah_penerima || draftData.penerima || [])
-          .filter((p: any) => !idDalamGrupTertuju.has(String(p.position_id || p.id || '')));
+        const rawPenerima = (detail.naskah_penerima || draftData.penerima || []).filter(
+          (p: any) => !idDalamGrupTertuju.has(String(p.position_id || p.id || ''))
+        );
 
-        const rawTembusan = (detail.naskah_tembusan || draftData.tembusan || [])
-          .filter((p: any) => !idDalamGrupTembusan.has(String(p.position_id || p.id || '')));
+        const rawTembusan = (detail.naskah_tembusan || draftData.tembusan || []).filter(
+          (p: any) => !idDalamGrupTembusan.has(String(p.position_id || p.id || ''))
+        );
 
         selectedTertuju.value = [
           ...mapGrupLocal(rawGrupTertuju),
@@ -687,11 +848,12 @@ onMounted(async () => {
           id: f.id,
           fileName: f.fileName || f.file_name,
           filePath: f.fileUrl || f.file_path,
-          fileSize: f.fileSize || 0
+          fileSize: f.fileSize || 0,
         }));
 
         const draftSifat = String(draftData.sifat || 'biasa').toLowerCase();
-        selectedSifat.value = sifatOptions.find(opt => opt.value === draftSifat) || sifatOptions[3];
+        selectedSifat.value =
+          sifatOptions.find((opt) => opt.value === draftSifat) || sifatOptions[3];
 
         if (draftData.tanggal) {
           const dateOnly = draftData.tanggal.split('T')[0];
@@ -702,7 +864,7 @@ onMounted(async () => {
         }
       }
     } catch (error) {
-      console.error("Gagal load konsep:", error);
+      console.error('Gagal load konsep:', error);
       toast.add({ title: 'Gagal memuat data konsep', color: 'error' });
     }
   }
