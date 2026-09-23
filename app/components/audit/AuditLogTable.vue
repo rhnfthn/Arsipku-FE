@@ -24,24 +24,39 @@
             </div>
           </td>
         </tr>
-        <tr v-else-if="rows.length === 0">
+        <tr v-else-if="displayRows.length === 0">
           <td :colspan="columns.length" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
             Tidak ada log aktivitas
           </td>
         </tr>
         <tr
           v-else
-          v-for="(row, idx) in rows"
+          v-for="(row, idx) in displayRows"
           :key="row.id ?? idx"
           class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           @click="$emit('view', row)"
         >
-          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ idx + 1 + (page - 1) * limit }}</td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-200 whitespace-nowrap">
             {{ formatDate(row.createdAt) }}
           </td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-200">
-            {{ row.userName || row.persnum || '-' }}
+            <div class="flex items-center gap-2">
+              <span
+                v-if="isAccountActive(row)"
+                class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"
+                title="Akun sedang aktif"
+              />
+              <span>{{ row.userName || row.persnum || '-' }}</span>
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            <span
+              v-if="isAccountActive(row)"
+              class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+            >
+              Aktif
+            </span>
+            <span v-else class="text-xs text-gray-400 dark:text-gray-500">-</span>
           </td>
           <td class="px-4 py-3">
             <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -55,9 +70,6 @@
             <span class="px-2 py-0.5 text-xs rounded-full bg-[#457fb6]/10 dark:bg-[#457fb6]/20 text-[#457fb6] dark:text-[#5a9ad4] font-medium">
               {{ row.module }}
             </span>
-          </td>
-          <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.description ?? ''">
-            {{ row.description || '-' }}
           </td>
           <td class="px-4 py-3">
             <span :class="statusBadge(row.status)">{{ row.status }}</span>
@@ -81,31 +93,46 @@
 </template>
 
 <script setup lang="ts">
-import type { AuditTrail, AuditStatus } from '~/types/audit';
+import { computed } from 'vue';
+import type { ActiveAccount, AuditTrail, AuditStatus } from '~/types/audit';
 
-defineProps<{
+const props = defineProps<{
   rows: AuditTrail[];
   loading: boolean;
-  page: number;
-  limit: number;
+  activeAccounts: ActiveAccount[];
 }>();
+
+// Aktivitas terakhir dari akun aktif ditampilkan di tabel yang sama.
+// Hindari duplikasi jika aktivitas tersebut sudah ada di halaman log.
+const displayRows = computed(() => {
+  const logIds = new Set(props.rows.map((row) => row.id));
+  const activeRows = props.activeAccounts
+    .map((account) => account.latestActivity)
+    .filter((activity): activity is AuditTrail => Boolean(activity && !logIds.has(activity.id)));
+
+  return [...activeRows, ...props.rows];
+});
 
 defineEmits<{
   view: [row: AuditTrail];
 }>();
 
 const columns = [
-  { key: 'no', label: 'No' },
   { key: 'createdAt', label: 'Waktu' },
   { key: 'userName', label: 'User' },
+  { key: 'accountStatus', label: 'Status Akun' },
   { key: 'userRole', label: 'Role' },
   { key: 'action', label: 'Aksi' },
   { key: 'module', label: 'Modul' },
-  { key: 'description', label: 'Deskripsi' },
   { key: 'status', label: 'Status' },
   { key: 'ipAddress', label: 'IP Address' },
   { key: 'detail', label: 'Aksi', headerClass: 'text-center' },
 ];
+
+const isAccountActive = (row: AuditTrail) => {
+  if (row.persnum === null || row.persnum === undefined) return false;
+  return props.activeAccounts.some((account) => account.persnum === row.persnum);
+};
 
 const formatDate = (d: string | Date) => {
   if (!d) return '-';

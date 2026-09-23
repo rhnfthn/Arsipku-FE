@@ -84,10 +84,20 @@
 
       <template v-else>
         <div class="relative w-full h-64 flex items-center transition-all group mb-8">
+          <img
+            v-if="themeConfig.dashboardBackgroundUrl"
+            :src="themeConfig.dashboardBackgroundUrl"
+            class="absolute inset-0 h-full w-full rounded-3xl object-fill"
+            alt="Latar Beranda"
+          />
           <div
+            v-if="!themeConfig.dashboardBackgroundUrl"
             class="absolute inset-0 bg-gradient-to-br from-primary-100 from-45% to-primary dark:from-primary-800 dark:to-primary-600 rounded-3xl shadow-md overflow-hidden dark:border dark:border-primary-800/50"
           ></div>
-          <div class="relative z-10 flex flex-col px-10 max-w-lg">
+          <div
+            v-if="!themeConfig.dashboardBackgroundUrl"
+            class="relative z-10 flex flex-col px-10 max-w-lg"
+          >
             <Heading variant="heading6b" class="text-primary-600 dark:text-white">
               Halo, {{ formatName(user?.nama) }}
             </Heading>
@@ -96,6 +106,7 @@
             </Heading>
           </div>
           <img
+            v-if="!themeConfig.dashboardBackgroundUrl"
             :src="dashboardImage"
             class="absolute -right-6 -bottom-8 h-60 w-auto object-contain opacity-90 animate-float z-20 pointer-events-none"
             alt="Dashboard Decoration"
@@ -264,6 +275,7 @@ definePageMeta({
 const { t } = useI18n()
 const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
 const { canAccessPage } = useFeatureAccess()
+const { themeConfig, fetchThemeConfig } = useTheme()
 const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
   useDashboard(t)
 
@@ -289,7 +301,10 @@ const formatName = (name: string | undefined) => {
 
 onMounted(async () => {
   if (!user.value) await getProfile()
-  await fetchDashboardData()
+  await Promise.all([
+    fetchDashboardData(),
+    fetchThemeConfig().catch(() => undefined)
+  ])
 
   // Ensure notification badge is fetched on first login
   const { init: initNotifications } = useNotifications()
