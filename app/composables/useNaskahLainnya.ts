@@ -35,6 +35,7 @@ export function useNaskahLainnya() {
     try {
       const res = await fn();
       set(res.data);
+      return res.data;
     } catch (e) {
       error.value = e;
       throw e;

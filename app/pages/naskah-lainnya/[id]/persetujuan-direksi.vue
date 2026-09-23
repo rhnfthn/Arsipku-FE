@@ -433,6 +433,7 @@
         :signer-info="finalSignerInfo"
         :is-loading="busy"
         :hide-basah="true"
+        :portal-mode="tteMode === 'portal'"
         @submit="submitFinalSignature"
       />
 
@@ -486,6 +487,8 @@ const id = computed(() => route.params.id as string);
 const { user, isLegalRole } = useAuth();
 const toast = useToast();
 const { t } = useI18n();
+const { getTteMode } = useTtePortal();
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 
 const {
   detail,
@@ -1019,6 +1022,12 @@ function openTolakModal(item: DirectorApprovalItem) {
 async function confirmParaf(note) {
   if (!activeDirector.value) return;
   if (requiresFinalSignatureChoice(activeDirector.value)) {
+    try {
+      tteMode.value = await getTteMode('NL');
+    } catch {
+      toast.add({ title: 'Konfigurasi TTE tidak dapat dibaca', description: 'Silakan coba lagi.', color: 'error' });
+      return;
+    }
     pendingParafNote.value = note ?? '';
     parafModalOpen.value = false;
     signMethodModalOpen.value = true;
@@ -1030,7 +1039,7 @@ async function confirmParaf(note) {
 async function submitFinalSignature(data: { method: string; passphrase?: string }) {
   await persistParaf(pendingParafNote.value, {
     signMethod: data.method as 'qr_only' | 'digsig',
-    passphrase: data.passphrase,
+    passphrase: tteMode.value === 'bsre_direct' ? data.passphrase : undefined,
   });
 }
 
@@ -1042,12 +1051,17 @@ async function persistParaf(
   busy.value = true;
   busyMessage.value = 'Mencatat paraf…';
   try {
-    await parafLembarPersetujuanDireksi(
+    const result: any = await parafLembarPersetujuanDireksi(
       id.value,
       { ...cleanSheetPayload(), ...signing },
       note,
       activeDirector.value.approvalId
     );
+    if (result?.tte_redirect?.signingUrl) {
+      signMethodModalOpen.value = false;
+      window.location.href = result.tte_redirect.signingUrl;
+      return;
+    }
     toast.add({ title: 'Persetujuan tercatat', color: 'success' });
     parafModalOpen.value = false;
     signMethodModalOpen.value = false;
@@ -1061,7 +1075,7 @@ async function persistParaf(
     }
   } catch (e) {
     const message = apiErrorMessage(e);
-    if (signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
+    if (tteMode.value === 'bsre_direct' && signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
       toast.add({ title: 'Gagal mencatat paraf', description: message, color: 'error' });
