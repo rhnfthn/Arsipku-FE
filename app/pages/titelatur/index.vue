@@ -486,7 +486,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
                   <button
                     v-if="!isUser"
                     @click="openEdit(it)"
-                    class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg dark:hover:text-yellow-300 dark:hover:bg-yellow-50 transition"
+                    class="inline-flex h-8 w-8 items-center justify-center p-2 text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 hover:bg-yellow-100 rounded-lg dark:hover:text-yellow-300 dark:hover:bg-yellow-50 transition"
                     :title="$t('tit_tooltip_edit')"
                   >
                     <Pencil class="w-4 h-4" />
@@ -494,7 +494,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
                   <button
                     v-if="!isUser"
                     @click="openDelete(it)"
-                    class="text-red-500 dark:text-red-400 hover:text-red-600 dark:bg-red-100 hover:bg-red-100 p-2 rounded-lg dark:hover:text-red-300 transition"
+                    class="inline-flex h-8 w-8 items-center justify-center p-2 text-red-500 dark:text-red-400 hover:text-red-600 dark:bg-red-100 hover:bg-red-100 rounded-lg dark:hover:text-red-300 transition"
                     :title="$t('tit_tooltip_hapus')"
                   >
                     <Trash2 class="w-4 h-4" />
