@@ -283,7 +283,7 @@ const items = [
   },
   {
     label: 'Berkas',
-    to: '/admin/berkas/'
+    to: '/berkas'
   }
 ] satisfies BreadcrumbItem[];
 

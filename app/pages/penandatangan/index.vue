@@ -351,7 +351,7 @@
           class="flex flex-col md:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-4"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
-            {{ $t('menampilkan') }} {{ startRow }} - {{ endRow }} {{ $t('dari') }} {{ totalRows }}
+            {{ $t('menampilkan') }} {{ startRow }}–{{ endRow }} {{ $t('dari') }} {{ totalRows }}
             {{ $t('data') }}
           </div>
           <div class="flex gap-2">
@@ -874,7 +874,7 @@ const filterStatusRef = ref<HTMLElement | null>(null);
 // ─── Breadcrumbs (reactive to locale) ────────
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('sign_title'), to: '/admin/digsig/penandatanganan' }
+  { label: t('sign_title'), to: '/penandatangan' }
 ]);
 
 // ─── Filter options (reactive to locale) ─────

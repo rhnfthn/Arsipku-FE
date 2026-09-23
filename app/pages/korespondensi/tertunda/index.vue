@@ -409,10 +409,10 @@ const downloadExcel = () => {
 
 const totalPages = computed(() => pagination.value.totalPages);
 const paginationInfo = computed(() => {
-  if (pagination.value.total === 0) return "0-0 Dari 0";
+  if (pagination.value.total === 0) return "Menampilkan 0–0 dari 0 data";
   const start = (pagination.value.page - 1) * pagination.value.limit + 1;
   const end = Math.min(start + pagination.value.limit - 1, pagination.value.total);
-  return `${start}-${end} Dari ${pagination.value.total}`;
+  return `Menampilkan ${start}–${end} dari ${pagination.value.total} data`;
 });
 
 watch([activeTab, itemsPerPage], () => { currentPage.value = 1; refreshData(); });
