@@ -343,6 +343,9 @@
           </div>
         </div>
 
+        <!-- ===================== TAB: TEMA BERANDA ===================== -->
+        <ThemeConfigurationTab v-if="activeTab === 'tema'" />
+
         <!-- ===================== TAB: UNIT TU ===================== -->
         <div v-if="activeTab === 'unit-tu'">
           <!-- Komponen Unit TU (CRUD assignment organization_tu) -->
@@ -644,6 +647,12 @@ const tabs = computed<KonfigTab[]>(() => {
       label: t("konfig_tab_pengumuman"),
       icon: "i-lucide-megaphone",
       permission: { resource: "konfigurasi", action: "read-pengumuman" },
+    },
+    {
+      value: "tema",
+      label: t("theme_tab"),
+      icon: "i-lucide-palette",
+      permission: { resource: "konfigurasi", action: "read-tema" },
     },
     {
       value: "unit-tu",

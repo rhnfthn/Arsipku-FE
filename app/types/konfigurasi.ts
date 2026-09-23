@@ -28,7 +28,7 @@ export interface ToggleKonfigurasiDigsigResponse {
 // ==========================================
 //   PENGUMUMAN / MESSAGE
 // ==========================================
-export type MessageType = "info" | "warning" | "success";
+export type MessageType = 'info' | 'warning' | 'success';
 
 export interface KonfigurasiMessageItem {
   id: string;
@@ -67,7 +67,7 @@ export interface UpdateMessagePayload {
 // ==========================================
 //   SEARCH ENGINE
 // ==========================================
-export type SearchEngineMode = "v3" | "meili";
+export type SearchEngineMode = 'v3' | 'meili';
 
 export interface KonfigurasiSearchItem {
   id: string;
@@ -85,4 +85,46 @@ export interface KonfigurasiSearchResponse {
 export interface UpdateSearchConfigPayload {
   mode?: SearchEngineMode;
   meili_enabled?: boolean;
+}
+
+// ==========================================
+//   TEMA BERANDA
+// ==========================================
+export interface KonfigurasiThemeItem {
+  id: string;
+  name: string;
+  slug: string;
+  imageKey: string;
+  imageUrl: string;
+  description: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  repeatYearly: boolean;
+  isEnabled: boolean;
+  manualOverride: boolean | null;
+  priority: number;
+  source: 'manual' | 'scheduled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KonfigurasiThemePayload {
+  name: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  repeat_yearly: boolean;
+  is_enabled: boolean;
+  priority: number;
+  image?: File;
+}
+
+export interface KonfigurasiThemeListResponse {
+  success: boolean;
+  data: KonfigurasiThemeItem[];
+}
+
+export interface KonfigurasiThemeResponse {
+  success: boolean;
+  data: KonfigurasiThemeItem | null;
 }

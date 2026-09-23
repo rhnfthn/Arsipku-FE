@@ -10,6 +10,7 @@ export interface FeaturePermission {
 export const CONFIGURATION_READ_PERMISSIONS = [
   { resource: 'konfigurasi', action: 'read-digsig' },
   { resource: 'konfigurasi', action: 'read-pengumuman' },
+  { resource: 'konfigurasi', action: 'read-tema' },
   { resource: 'konfigurasi', action: 'read-unit-tu' },
   { resource: 'konfigurasi', action: 'read-unit-legal' },
   { resource: 'konfigurasi', action: 'read-naskah-lainnya' },
