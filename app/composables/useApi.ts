@@ -235,9 +235,14 @@ export const useApi = () => {
 
   api.interceptors.request.use((config) => {
     const token = process.client ? localStorage.getItem('token') : null;
+    const sessionId = process.client ? localStorage.getItem('sessionId') : null;
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (sessionId) {
+      config.headers = config.headers || {};
+      config.headers['X-Session-Id'] = sessionId;
     }
 
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
