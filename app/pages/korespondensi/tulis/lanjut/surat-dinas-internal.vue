@@ -27,6 +27,7 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 const { getConfigDigsig } = useDigsig();
+const { getTteMode } = useTtePortal();
 const { fetchInboxDetail } = useInbox();
 
 // ── Shared composable ────────────────────────────────────────────────────────
@@ -77,6 +78,7 @@ const bsreDisabled = ref(false);
 const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 
 const breadcrumbs = computed(() => {
   const refId = route.query.ref_id as string || "";
@@ -206,7 +208,11 @@ const handleSaveDraftAction = async () => {
 const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraftAction);
 
 const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
-  if (selectedSendType.value === "digsig" && !passphrase.trim()) {
+  if (
+    selectedSendType.value === 'digsig' &&
+    tteMode.value === 'bsre_direct' &&
+    !passphrase.trim()
+  ) {
     signMethodModalRef.value?.setPassphraseError("Harap masukkan passphrase Anda");
     return;
   }
@@ -219,10 +225,10 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
     setPdfBlob(blob);
 
     const fd = createFormData(payload, true);
-    fd.append("passphrase", passphrase);
     fd.append("sign_option", selectedSendType.value);
 
-    if (selectedSendType.value === "digsig") {
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
+      fd.append('passphrase', passphrase);
       if (!user.value?.nik) throw new Error("NIK pengguna tidak ditemukan untuk TTE.");
       fd.append("nik", user.value.nik);
     }
@@ -234,6 +240,13 @@ const handleKirimDokumen = async (passphrase = "", fileBasah?: File) => {
     const res = editDraftId.value
       ? await sendDraft(fd, editDraftId.value)
       : await sendSDI(fd);
+
+    const redirect = res?.data?.data?.tte_redirect ?? res?.data?.tte_redirect;
+    if (redirect?.signingUrl) {
+      isSignMethodModalOpen.value = false;
+      window.location.href = redirect.signingUrl;
+      return;
+    }
 
     if (res?.success || res?.data?.success) {
       revokePdfUrl();
@@ -277,6 +290,17 @@ const handleConfirmKirim = async () => {
   bsreDisabled.value = !configData.digsig;
   qrDisabled.value = !configData.ttdQr;
   basahDisabled.value = !configData.ttdBasah;
+  if (configData.digsig) {
+    try {
+      tteMode.value = await getTteMode('SDI');
+    } catch {
+      toastError(
+        'Konfigurasi TTE tidak dapat dibaca',
+        'Silakan coba lagi. Metode tanda tangan tidak dibuka untuk mencegah passphrase terkirim ke jalur yang salah.'
+      );
+      return;
+    }
+  }
   isSignMethodModalOpen.value = true;
 };
 
@@ -650,7 +674,7 @@ watch(
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
-      ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+      :portal-mode="tteMode === 'portal'" ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
   </div>
 </template>

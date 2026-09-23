@@ -244,6 +244,7 @@
 
     <TulisDigsigPassphraseModal v-model:open="isPassphraseModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      :portal-mode="tteMode === 'portal'"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
     <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="kajian" :editor="tinymceEditor" />
@@ -252,7 +253,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { CalendarDate } from "@internationalized/date";
 import TinymceEditorAsync from '~/components/TinymceEditorAsync.vue';
@@ -288,6 +289,7 @@ const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
 const { getConfigDigsig } = useDigsig();
+const { getTteMode } = useTtePortal();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
@@ -318,6 +320,7 @@ const alertState = useAlertState(); // Initialize alertState
 
 const isPassphraseModalOpen = ref(false)
 const selectedSendType = ref('qr_only') // Default to 'qr_only' as per instructions
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct')
 const passphraseInput = ref('')
 
 const signerInfo = computed(() => ({
@@ -526,7 +529,7 @@ const confirmSaveDraft = async () => {
 };
 
 const handleKirimDokumen = async (passphrase = '') => {
-  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+  if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct' && !passphrase.trim()) {
     signMethodModalRef.value?.setPassphraseError(t('kj_masukkan_passphrase'))
     return
   }
@@ -545,7 +548,7 @@ const handleKirimDokumen = async (passphrase = '') => {
     const fdFinal = createFormData(payload, true);
     fdFinal.append('sign_option', selectedSendType.value);
 
-    if (selectedSendType.value === 'digsig') {
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
       fdFinal.append('passphrase', passphrase);
       if (!user.value?.nik) throw new Error(t('kj_nik_tidak_ditemukan'));
       fdFinal.append('nik', user.value.nik);
@@ -554,6 +557,13 @@ const handleKirimDokumen = async (passphrase = '') => {
     const res = editDraftId.value
       ? await sendDraft(fdFinal, editDraftId.value)
       : await sendKajian(fdFinal);
+
+    const redirect = (res as any)?.data?.data?.tte_redirect ?? (res as any)?.data?.tte_redirect ?? (res as any)?.tte_redirect;
+    if (redirect?.signingUrl) {
+      isPassphraseModalOpen.value = false;
+      window.location.href = redirect.signingUrl;
+      return;
+    }
 
     if ((res as any)?.data?.success || (res as any)?.success) {
       toast.add({ title: t('f_berhasil'), description: t('kj_kajian_terkirim'), color: 'success' });
@@ -566,7 +576,7 @@ const handleKirimDokumen = async (passphrase = '') => {
     Alert.close();
     const errMsg = e.response?.data?.message || e.message || t('kj_gagal_mengirim_dokumen');
 
-    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+    if (tteMode.value === 'bsre_direct' && (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah'))) {
       bsreDisabled.value = false;
       await nextTick();
       isPassphraseModalOpen.value = true;
@@ -599,6 +609,14 @@ const handleConfirmKirim = async () => {
   bsreDisabled.value = !configData.digsig;
   qrDisabled.value = !configData.ttdQr;
   basahDisabled.value = !configData.ttdBasah;
+  if (configData.digsig) {
+    try {
+      tteMode.value = await getTteMode('KA');
+    } catch {
+      toast.add({ title: 'Konfigurasi TTE tidak dapat dibaca', description: 'Silakan coba lagi.', color: 'error' });
+      return;
+    }
+  }
   isPassphraseModalOpen.value = true;
 };
 
@@ -613,7 +631,7 @@ const handlePassphraseSubmit = async () => {
     return;
   }
 
-  if (selectedSendType.value === 'digsig' && !passphraseInput.value) {
+  if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct' && !passphraseInput.value) {
     toast.add({ title: t('kj_wajib_diisi'), description: t('kj_masukkan_passphrase'), color: 'warning' });
     return;
   }
