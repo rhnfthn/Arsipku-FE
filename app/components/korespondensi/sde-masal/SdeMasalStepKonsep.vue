@@ -241,45 +241,45 @@ watch(model, restoreDraftForm, { immediate: true, deep: true });
 const fetchSenderList = async (posId: string | number) => {
   senderLoading.value = true;
   try {
-    // Coba endpoint SDE get-senders (hanya BOD/BOD-1)
     // Gunakan tanggal kemarin sebagai fallback (data org mungkin belum di-generate untuk hari ini)
     const tglParam = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const res = await apiGet<{ success: boolean; data: any[] }>(
-      `/SDE/get-senders?pengirim=${posId}&tgl=${tglParam}`
-    );
-    if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
-      setSenderItems(res.data);
-      return;
+
+    // Ambil kedua sumber secara paralel:
+    // 1. get-senders — chain BOD pengirim yang valid untuk posisi user (prioritas utama)
+    // 2. managerial — seluruh pejabat managerial (chief=1) sebagai opsi tambahan
+    //    agar pengirim tidak terbatas pada chain saja dan tetap bisa dicari.
+    const [sendersRes, mgrRes] = await Promise.all([
+      apiGet<{ success: boolean; data: any[] }>(
+        `/SDE/get-senders?pengirim=${posId}&tgl=${tglParam}`
+      ).catch(() => null),
+      apiGet<{ success: boolean; data: any[] }>(
+        `/org-data/pengirim/managerial?tgl=${tglParam}`
+      ).catch(() => null),
+    ]);
+
+    const chainRows = sendersRes?.success && Array.isArray(sendersRes.data) ? sendersRes.data : [];
+    const managerialRows = mgrRes?.success && Array.isArray(mgrRes.data) ? mgrRes.data : [];
+
+    // Gabungkan: chain BOD user di urutan atas, sisanya pejabat managerial
+    // lain (dedupe by position). Dropdown sudah searchable sehingga user
+    // dapat mencari pengirim mana pun.
+    const seenPositions = new Set<string>();
+    const merged: any[] = [];
+    for (const row of [...chainRows, ...managerialRows]) {
+      const key = String(row?.position ?? '');
+      if (!key || seenPositions.has(key)) continue;
+      seenPositions.add(key);
+      merged.push(row);
     }
 
-    // Fallback: jika get-senders kosong, ambil semua managerial dari org-data
-    // Gunakan tanggal kemarin sebagai fallback (data org mungkin belum di-generate untuk hari ini)
-    const tglFallback = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const mgrRes = await apiGet<{ success: boolean; data: any[] }>(
-      `/org-data/pengirim/managerial?tgl=${tglFallback}`
-    );
-    if (mgrRes?.success && Array.isArray(mgrRes.data)) {
-      setSenderItems(mgrRes.data);
+    if (merged.length > 0) {
+      setSenderItems(merged);
     } else {
       senderItems.value = [];
     }
   } catch (e) {
     console.error('Gagal memuat list pengirim via SDE/get-senders:', e);
-    // Fallback: coba managerial endpoint jika get-senders gagal
-    try {
-      const tglFallback = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      const mgrRes = await apiGet<{ success: boolean; data: any[] }>(
-        `/org-data/pengirim/managerial?tgl=${tglFallback}`
-      );
-      if (mgrRes?.success && Array.isArray(mgrRes.data)) {
-        setSenderItems(mgrRes.data);
-      } else {
-        senderItems.value = [];
-      }
-    } catch (e2) {
-      console.error('Gagal memuat managerial fallback:', e2);
-      senderItems.value = [];
-    }
+    senderItems.value = [];
   } finally {
     senderLoading.value = false;
   }

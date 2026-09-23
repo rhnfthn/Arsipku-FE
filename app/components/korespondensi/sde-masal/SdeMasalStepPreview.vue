@@ -1077,6 +1077,12 @@ const verifierRoleRank = (value: unknown): number | null => {
   if (/\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(text)) return 4;
   return null;
 };
+// Hanya BOD (Direksi) yang boleh menjadi verifikator aktif SDE Massal.
+// Pengirim konsep tetap menjadi langkah terakhir (final sender) meski non-BOD.
+const isBodJabatan = (value: unknown): boolean => {
+  const text = String(value ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  return /\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(text);
+};
 const sortSelectedVerifiers = () => {
   selectedVerifiers.value.sort(
     (a, b) => (verifierRoleRank(a.jabatan) ?? 99) - (verifierRoleRank(b.jabatan) ?? 99),
@@ -1344,6 +1350,14 @@ const openVerificationSelection = async () => {
       // Untuk folder berbasis disposisi, jangan jatuh ke daftar seluruh
       // pejabat satu divisi karena dapat mencampur cabang Communication dan
       // Enterprise. Chain disposisi menjadi sumber tunggal verifikator.
+      // Verifikator aktif harus BOD (Direksi); pengirim konsep tetap
+      // menjadi langkah terakhir (final sender) meski non-BOD.
+      const senderPositionForFilter = String(props.konsep?.pengirimId ?? '').trim();
+      verifiersFromDisposition = verifiersFromDisposition.filter(
+        (person: any) =>
+          String(person?.position ?? '').trim() === senderPositionForFilter ||
+          isBodJabatan(person?.jabatan),
+      );
       verifiersFromDisposition = await appendFinalSender(verifiersFromDisposition);
       verifierList.value = verifiersFromDisposition;
       selectedVerifiers.value = verifiersFromDisposition.slice(0, 4);
@@ -1371,11 +1385,15 @@ const openVerificationSelection = async () => {
       }))
       .filter((person: any) => {
         const rank = verifierRoleRank(person.jabatan);
+        const isSender = person.position === selectedSenderPosition;
+        // Verifikator aktif harus BOD (Direksi); pengirim konsep tetap
+        // diizinkan sebagai langkah terakhir (final sender).
+        if (!isSender && !isBodJabatan(person.jabatan)) return false;
         return (
           person.persnum &&
           person.nama !== '-' &&
           rank !== null &&
-          (person.position === selectedSenderPosition ||
+          (isSender ||
             selectedSenderRank === null ||
             rank < selectedSenderRank)
         );

@@ -108,6 +108,7 @@ export interface AuthComposable {
   verifyToken: (token: string) => Promise<any>;
   logout: () => Promise<boolean>;
   refreshToken: () => Promise<string>;
+  refreshPermissions: () => Promise<void>;
   hasPermission: (resource: string, action: string) => boolean;
   hasAnyPermission: (resource: string, actions: string[]) => boolean;
   hasRole: (roleName: string) => boolean;
