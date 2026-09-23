@@ -5,61 +5,6 @@
       <PageHeader title="Log Aktivitas" subtitle="Pantau seluruh aktivitas pengguna di sistem." :items="items" />
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-      <!-- Total Log Aktivitas -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Total Log Aktivitas</p>
-            <p class="text-2xl font-bold mt-1 text-gray-700 dark:text-white">{{ summary?.total ?? 0 }}</p>
-          </div>
-          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-            <UIcon name="i-lucide-list" class="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Log Hari Ini -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Log Hari Ini</p>
-            <p class="text-2xl font-bold mt-1 text-[#457fb6]">{{ summary?.today ?? 0 }}</p>
-          </div>
-          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#457fb6]/10 dark:bg-[#457fb6]/20">
-            <UIcon name="i-lucide-calendar" class="w-5 h-5 text-[#457fb6]" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Log Status ERROR -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Log Status ERROR</p>
-            <p class="text-2xl font-bold mt-1 text-red-600 dark:text-red-400">{{ summary?.errorCount ?? 0 }}</p>
-          </div>
-          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-red-100 dark:bg-red-900/30">
-            <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-red-600 dark:text-red-400" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Log Terakhir -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Log Terakhir</p>
-            <p class="text-sm font-medium mt-1 text-gray-700 dark:text-white">{{ formatLastLog(summary?.lastLogAt) }}</p>
-          </div>
-          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30">
-            <UIcon name="i-lucide-clock" class="w-5 h-5 text-green-600 dark:text-green-400" />
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Table -->
     <div class="rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 transition-colors">
       <AuditLogFilter
@@ -73,8 +18,7 @@
       <AuditLogTable
         :rows="logs"
         :loading="loading"
-        :page="filter.page || 1"
-        :limit="filter.limit || 20"
+        :active-accounts="activeAccounts"
         @view="openDetail"
       />
 
@@ -94,14 +38,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useAudit } from '~/composables/useAudit';
 import type { AuditTrail, AuditFilter } from '~/types/audit';
 import DataPagination from '~/components/DataPagination.vue';
 
 definePageMeta({ middleware: ['auth', 'audit-admin'] });
 
-const { fetchLogs, fetchLogDetail, fetchSummary, exportReport, logs, loading, meta, summary } = useAudit();
+const {
+  fetchLogs,
+  fetchActiveAccounts,
+  fetchLogDetail,
+  exportReport,
+  logs,
+  activeAccounts,
+  loading,
+  meta,
+} = useAudit();
 const { hasPermission } = useAuth();
 const canExport = computed(() => hasPermission('audit', 'export'));
 
@@ -111,13 +64,16 @@ const items = [
   { label: 'Log Aktivitas', to: '/admin/audit' },
 ];
 
+// Filter default TANPA batas tanggal agar seluruh log dari semua akun
+// dan semua rentang waktu tampil. Superadmin dapat memfilter manual
+// via AuditLogFilter jika diperlukan.
 const filter = reactive<AuditFilter>({
   page: 1,
   limit: 20,
   sortBy: 'created_at',
   sortOrder: 'DESC',
-  startDate: new Date().toISOString().split('T')[0],
-  endDate: new Date().toISOString().split('T')[0],
+  startDate: undefined,
+  endDate: undefined,
   action: '',
   module: '',
   status: '',
@@ -128,21 +84,21 @@ const showDetail = ref(false);
 const selectedLog = ref<AuditTrail | null>(null);
 const detailLoading = ref(false);
 const exporting = ref(false);
+let activeAccountsTimer: ReturnType<typeof setInterval> | undefined;
 
 const loadLogs = async () => {
   try {
     await fetchLogs({ ...filter });
-    // Ambil ringkasan untuk card (total, today, errorCount, lastLogAt)
-    fetchSummary({
-      startDate: filter.startDate,
-      endDate: filter.endDate,
-      action: filter.action || undefined,
-      module: filter.module || undefined,
-      userRole: filter.userRole || undefined,
-      search: filter.search || undefined,
-    }).catch((e) => console.error('Gagal memuat ringkasan:', e));
   } catch (e) {
     console.error('Gagal memuat log:', e);
+  }
+};
+
+const loadActiveAccounts = async () => {
+  try {
+    await fetchActiveAccounts();
+  } catch (e) {
+    console.error('Gagal memuat akun aktif:', e);
   }
 };
 
@@ -176,22 +132,6 @@ const goPage = (page: number) => {
   loadLogs();
 };
 
-/**
- * Format timestamp log terakhir untuk card ringkasan.
- * Tampilkan tanggal + jam, atau '-' jika belum ada log.
- */
-const formatLastLog = (ts: string | null | undefined) => {
-  if (!ts) return '-';
-  const d = typeof ts === 'string' ? new Date(ts) : ts;
-  return d.toLocaleString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
 const openDetail = async (row: AuditTrail) => {
   showDetail.value = true;
   selectedLog.value = row;
@@ -208,5 +148,11 @@ const openDetail = async (row: AuditTrail) => {
 
 onMounted(() => {
   loadLogs();
+  loadActiveAccounts();
+  activeAccountsTimer = setInterval(loadActiveAccounts, 30_000);
+});
+
+onUnmounted(() => {
+  if (activeAccountsTimer) clearInterval(activeAccountsTimer);
 });
 </script>

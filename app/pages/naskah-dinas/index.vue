@@ -263,7 +263,7 @@
                   <button
                     v-if="hasPermission('naskah-masuk', 'read-verifikasi-detail')"
                     type="button"
-                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    class="inline-flex h-8 w-8 items-center justify-center p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat"
                     @click="handleViewNaskah(item)"
                   >
@@ -272,7 +272,7 @@
                   <button
                     v-if="canEditNaskah(item) && hasPermission('naskah-masuk', 'update-verifikasi')"
                     type="button"
-                    class="p-2 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    class="inline-flex h-8 w-8 items-center justify-center p-2 text-primary dark:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Edit"
                     @click="openEditModal(item)"
                   >
