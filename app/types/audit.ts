@@ -35,7 +35,8 @@ export type AuditModuleType =
   | 'CONFIG'
   | 'USULAN_PINDAH'
   | 'FAQ'
-  | 'AUDIT';
+  | 'AUDIT'
+  | 'TUGAS';
 
 export type AuditStatus = 'SUCCESS' | 'FAILED' | 'ERROR' | 'DENIED';
 

@@ -98,16 +98,36 @@
                 </p>
               </div>
 
-              <div class="flex w-full sm:w-[380px] bg-[#f3f4f6] dark:bg-gray-800 rounded-lg p-1 shrink-0 gap-1">
-                <button v-for="opt in getAvailableOptions(doc)" :key="opt.value" type="button"
-                  @click="handleChangeSignType(doc, opt.value)" :disabled="isToggling === doc.jenisNaskah" :class="[
-                    'flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap',
-                    isSelected(doc, opt.value)
-                      ? 'bg-[#457fb6] text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700'
-                  ]">
-                  {{ opt.label }}
-                </button>
+              <div class="flex flex-col gap-2 w-full sm:w-[380px] shrink-0">
+                <div class="flex bg-[#f3f4f6] dark:bg-gray-800 rounded-lg p-1 gap-1">
+                  <button v-for="opt in getAvailableOptions(doc)" :key="opt.value" type="button"
+                    @click="handleChangeSignType(doc, opt.value)" :disabled="isToggling === doc.jenisNaskah" :class="[
+                      'flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap',
+                      isSelected(doc, opt.value)
+                        ? 'bg-[#457fb6] text-white shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700'
+                    ]">
+                    {{ opt.label }}
+                  </button>
+                </div>
+
+                <!-- Mode TTE digsig: BSrE v2 langsung vs Portal TTE (redirect) -->
+                <div v-if="doc.digsig" class="flex items-center gap-2">
+                  <span class="text-[11px] text-gray-500 dark:text-gray-400 shrink-0">Mode TTE:</span>
+                  <USelectMenu
+                    :model-value="doc.tteMode || 'bsre_direct'"
+                    :items="tteModeOptions"
+                    value-key="value"
+                    label-key="label"
+                    :search-input="false"
+                    size="xs"
+                    class="flex-1"
+                    :ui="{ base: 'h-7 w-full bg-white dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-200' }"
+                    aria-label="Mode TTE digsig"
+                    :disabled="isToggling === doc.jenisNaskah"
+                    @update:model-value="(val: any) => handleChangeTteMode(doc, val as 'bsre_direct' | 'portal')"
+                  />
+                </div>
               </div>
 
             </div>
@@ -526,7 +546,7 @@ import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
 
 definePageMeta({ middleware: "auth" });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const { hasPermission, isSuperadmin, user } = useAuth();
 const { checkUser } = useOrganizationTu();
@@ -588,12 +608,12 @@ const breadcrumbs = computed(() => [
 
 // Computed delete message parts for ConfirmPopup interpolation
 const deleteMessagePrefix = computed(() =>
-  t("locale") === "id"
+  locale.value === "id"
     ? "Apakah Anda yakin ingin menghapus pengumuman "
     : "Are you sure you want to delete announcement ",
 );
 const deleteMessageSuffix = computed(() =>
-  t("locale") === "id"
+  locale.value === "id"
     ? "Tindakan ini tidak dapat dibatalkan."
     : "This action cannot be undone.",
 );
@@ -789,6 +809,42 @@ const signOptions = [
   { label: 'TTD Basah', value: 'basah' },
   { label: 'Semua', value: 'semua' },
 ]
+
+// Mode TTE untuk opsi digsig (konfigurasi admin):
+// - bsre_direct: BSrE v2 API langsung — passphrase diinput di aplikasi (modal)
+// - portal: Portal TTE — user di-redirect ke portal, passphrase diinput di sana
+const tteModeOptions = [
+  { label: 'BSrE v2 (Langsung)', value: 'bsre_direct' },
+  { label: 'Portal TTE (Redirect)', value: 'portal' },
+]
+
+const handleChangeTteMode = async (doc: any, mode: 'bsre_direct' | 'portal') => {
+  if (mode !== 'bsre_direct' && mode !== 'portal') return
+  if (isToggling.value === doc.jenisNaskah) return
+  const prev = doc.tteMode || 'bsre_direct'
+  if (prev === mode) return
+  doc.tteMode = mode
+  try {
+    await toggleDigsig(doc.jenisNaskah, {
+      digsig: doc.digsig,
+      ttd_qr: doc.ttdQr,
+      ttd_basah: doc.ttdBasah,
+      tte_mode: mode,
+    })
+    useToast().add({
+      title: 'Berhasil',
+      description: `Mode TTE ${doc.description} diubah ke ${mode === 'portal' ? 'Portal TTE (redirect)' : 'BSrE v2 (langsung)'}.`,
+      color: 'success',
+    })
+  } catch (error) {
+    doc.tteMode = prev
+    useToast().add({
+      title: 'Gagal',
+      description: `Gagal mengubah mode TTE ${doc.description}.`,
+      color: 'error',
+    })
+  }
+}
 
 const getAvailableOptions = (_doc: any) => {
   return signOptions

@@ -6,6 +6,7 @@
     </span>
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu v-model="model" :items="items" :placeholder="placeholder" by="value" option-attribute="label"
+        searchable :search-attributes="['label', 'labelJob']" :search-input="{ placeholder: 'Cari nama atau jabatan...' }"
         class="w-full p-0" variant="none" :ui="{
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
           wrapper: 'w-full',

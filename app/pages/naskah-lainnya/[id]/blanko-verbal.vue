@@ -19,6 +19,8 @@ const { t } = useI18n();
 const toast = useToast();
 const { user, getProfile, isLegalRole } = useAuth();
 const { canAccessPage } = useFeatureAccess();
+const { getTteMode } = useTtePortal();
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 
 const {
   detail,
@@ -608,6 +610,12 @@ function tolak(item: DirectorApprovalItem) {
 async function confirmParaf(note: string) {
   if (!activeDirector.value) return;
   if (requiresFinalSignatureChoice(activeDirector.value)) {
+    try {
+      tteMode.value = await getTteMode('NL');
+    } catch {
+      toast.add({ title: 'Konfigurasi TTE tidak dapat dibaca', description: 'Silakan coba lagi.', color: 'error' });
+      return;
+    }
     pendingParafNote.value = note || '';
     parafModalOpen.value = false;
     signMethodModalOpen.value = true;
@@ -619,7 +627,7 @@ async function confirmParaf(note: string) {
 async function submitFinalSignature(data: { method: string; passphrase?: string }) {
   await persistParaf(pendingParafNote.value, {
     signMethod: data.method as 'qr_only' | 'digsig',
-    passphrase: data.passphrase,
+    passphrase: tteMode.value === 'bsre_direct' ? data.passphrase : undefined,
   });
 }
 
@@ -631,12 +639,17 @@ async function persistParaf(
   busy.value = true;
   loadingMessage.value = 'Menyimpan paraf…';
   try {
-    await parafBlankoVerbal(
+    const result: any = await parafBlankoVerbal(
       id.value,
       { ...cleanFormPayload(), ...signing },
       note || undefined,
       activeDirector.value?.approvalId
     );
+    if (result?.tte_redirect?.signingUrl) {
+      signMethodModalOpen.value = false;
+      window.location.href = result.tte_redirect.signingUrl;
+      return;
+    }
     toast.add({
       title:
         activeDirector.value?.roleLabel === 'Ditetapkan/Disahkan Oleh'
@@ -657,7 +670,7 @@ async function persistParaf(
     }
   } catch (e) {
     const message = apiErrorMessage(e);
-    if (signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
+    if (tteMode.value === 'bsre_direct' && signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
       toast.add({ title: 'Gagal mencatat paraf', description: message, color: 'error' });
@@ -1233,6 +1246,7 @@ onMounted(async () => {
         :signer-info="finalSignerInfo"
         :is-loading="busy"
         :hide-basah="true"
+        :portal-mode="tteMode === 'portal'"
         @submit="submitFinalSignature"
       />
 

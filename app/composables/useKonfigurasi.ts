@@ -52,6 +52,7 @@ export const useKonfigurasi = () => {
       digsig: boolean
       ttd_qr: boolean
       ttd_basah: boolean
+      tte_mode?: 'bsre_direct' | 'portal'
     }
   ) => {
     isToggling.value = jenisNaskah
@@ -60,7 +61,8 @@ export const useKonfigurasi = () => {
         jenis_naskah: jenisNaskah,
         digsig: payload.digsig,
         ttd_qr: payload.ttd_qr,
-        ttd_basah: payload.ttd_basah
+        ttd_basah: payload.ttd_basah,
+        ...(payload.tte_mode ? { tte_mode: payload.tte_mode } : {})
       })
     } finally {
       isToggling.value = null

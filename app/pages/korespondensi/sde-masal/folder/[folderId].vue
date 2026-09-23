@@ -232,31 +232,43 @@
 
       <!-- Aksi workflow selalu berada setelah Daftar Naskah. -->
       <div v-if="isVerifierAwaiting || isSignerAwaiting" class="flex flex-wrap justify-start gap-2">
-        <UButton
-          label="Tolak Folder"
-          icon="i-lucide-x-circle"
-          color="error"
-          variant="solid"
-          :loading="workflowLoading"
-          @click="openRejectModal"
-        />
-        <UButton
-          v-if="isVerifierAwaiting"
-          label="Setujui Folder"
-          icon="i-lucide-check-circle"
-          color="primary"
-          :loading="workflowLoading"
-          @click="showApproveConfirm = true"
-        />
-        <UButton
-          v-else-if="isSignerAwaiting"
-          label="Finalisasi"
-          icon="i-lucide-send"
-          color="primary"
-          :disabled="eligibleItems.length === 0"
-          :loading="workflowLoading"
-          @click="openFinalizeAll"
-        />
+        <template v-if="isVerifierAwaiting && !isBodVerifier">
+          <!-- Verifikator non-BOD: read-only, hanya memantau chain -->
+          <div class="flex w-full items-center gap-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+            <UIcon name="i-lucide-eye" class="size-5 shrink-0" />
+            <span>
+              Anda terdaftar dalam chain verifikasi ini, namun hanya BOD (Direksi) yang dapat
+              menyetujui atau menolak. Anda dapat memantau proses verifikasi secara read-only.
+            </span>
+          </div>
+        </template>
+        <template v-else>
+          <UButton
+            label="Tolak Folder"
+            icon="i-lucide-x-circle"
+            color="error"
+            variant="solid"
+            :loading="workflowLoading"
+            @click="openRejectModal"
+          />
+          <UButton
+            v-if="isVerifierAwaiting"
+            label="Setujui Folder"
+            icon="i-lucide-check-circle"
+            color="primary"
+            :loading="workflowLoading"
+            @click="showApproveConfirm = true"
+          />
+          <UButton
+            v-else-if="isSignerAwaiting"
+            label="Finalisasi"
+            icon="i-lucide-send"
+            color="primary"
+            :disabled="eligibleItems.length === 0"
+            :loading="workflowLoading"
+            @click="openFinalizeAll"
+          />
+        </template>
       </div>
 
       </div>
@@ -331,6 +343,7 @@
       :hide-bsre="bsreDisabled"
       :hide-qr="qrDisabled"
       :hide-basah="basahDisabled"
+      :portal-mode="tteMode === 'portal'"
       ref="signMethodModalRef"
       @submit="handleSignMethodSubmit"
     />
@@ -488,6 +501,7 @@ const {
   rejectFolderVerification,
 } = useSdeMasal();
 const { getConfigDigsig } = useDigsig();
+const { getTteMode } = useTtePortal();
 const { user } = useAuth();
 const { markSdeMasalFolderNotificationsAsRead } = useNotifications();
 const { data: tertujuEksternal, fetchTertujuEksternal } = useTertujuEksternal();
@@ -505,6 +519,7 @@ const bsreDisabled = ref(true);
 const qrDisabled = ref(true);
 const basahDisabled = ref(true);
 const selectedSendType = ref<'digsig' | 'qr_only' | 'ttd_basah'>('qr_only');
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 const isFolderCompleted = computed(
   () =>
     folder.value?.status === 'TERKIRIM' ||
@@ -535,6 +550,14 @@ const isVerifierAwaiting = computed(() => {
           (currentPosition.value && String(verifikator.position) === currentPosition.value)),
     ),
   );
+});
+// Hanya BOD (Direksi) yang dapat menyetujui/menolak verifikasi.
+// Verifikator non-BOD hanya dapat membaca chain (read-only).
+const isBodVerifier = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  if (['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(bodTag)) return true;
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+  return /\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(positionText);
 });
 const isEligibleItem = (item: SdeMasalFolderItem) =>
   ['TERVERIFIKASI', 'GAGAL'].includes(item.statusVerifikasi || '') && !item.naskahId;
@@ -613,22 +636,25 @@ const signerInfo = computed(() => {
 const openSignatureModal = async () => {
   if (!selectedItemIds.value.length) return;
 
-  // Buka popup terlebih dahulu supaya klik Kirim langsung memberi respons.
   showSendConfirm.value = false;
-  isPassphraseModalOpen.value = true;
 
   try {
     const config: any = await getConfigDigsig('SDE');
     bsreDisabled.value = !config?.data?.digsig;
     qrDisabled.value = !config?.data?.ttdQr;
     basahDisabled.value = !config?.data?.ttdBasah;
+    if (config?.data?.digsig) {
+      tteMode.value = await getTteMode('SDE');
+    }
   } catch {
-    // Jika konfigurasi gagal dimuat, modal tetap dapat memilih opsi fisik.
-    bsreDisabled.value = true;
-    qrDisabled.value = true;
-    basahDisabled.value = true;
+    toast.add({
+      title: 'Konfigurasi TTE tidak dapat dibaca',
+      description: 'Silakan coba lagi agar passphrase tidak terkirim ke jalur yang salah.',
+      color: 'error',
+    });
+    return;
   }
-
+  isPassphraseModalOpen.value = true;
 };
 
 const openFinalizeAll = async () => {
@@ -643,7 +669,7 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
   if (!folder.value || !selectedItemIds.value.length || workflowLoading.value) return;
 
   const method = signData.method === 'tanpa_ttd' ? 'ttd_basah' : signData.method;
-  if (method === 'digsig' && !signData.passphrase?.trim()) {
+  if (method === 'digsig' && tteMode.value === 'bsre_direct' && !signData.passphrase?.trim()) {
     signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda');
     return;
   }
@@ -661,8 +687,16 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
         .filter((item) => selectedItemIds.value.includes(item.id))
         .map((item) => (item.recipient || {}) as SdeMasalPenerima),
       signOption: selectedSendType.value,
-      passphrase: signData.passphrase,
+      passphrase: tteMode.value === 'bsre_direct' ? signData.passphrase : undefined,
     });
+
+    const redirect = result?.tte_redirect;
+    if (redirect?.signingUrl) {
+      isPassphraseModalOpen.value = false;
+      closePreview();
+      window.location.href = redirect.signingUrl;
+      return;
+    }
 
     const success = Number(result?.success || 0);
     const failed = Number(result?.failed || 0);
@@ -689,6 +723,7 @@ const sendSelectedItems = async (signData: { method: string; passphrase?: string
   } catch (error: any) {
     const message = error?.response?.data?.message || error?.message || 'Coba lagi.';
     if (
+      tteMode.value === 'bsre_direct' &&
       (message.toLowerCase().includes('passphrase') || message.toLowerCase().includes('salah'))
     ) {
       await nextTick();
@@ -1082,16 +1117,31 @@ const timelineSteps = computed(() => {
 
   const allVerified = verifikatorList.value.length > 0 && verifikatorList.value.every((v) => v.status === 'verified');
   const senderDone = isFolderCompleted.value || ['DIFINALISASI', 'SEBAGIAN_TERKIRIM', 'TERKIRIM'].includes(folderStatus || '');
-  const senderActive = !isFolderCompleted.value && folderStatus === 'MENUNGGU_PENGIRIM';
+  const portalPending = folderStatus === 'MENUNGGU_TTE';
+  const senderActive =
+    !isFolderCompleted.value &&
+    (folderStatus === 'MENUNGGU_PENGIRIM' || portalPending);
   pushStep(senderDone
     ? completedStep('Finalisasi Pengirim', 'Pengirim telah memeriksa dan memfinalisasi surat')
-    : pendingStep('Finalisasi Pengirim', 'Menunggu pengirim memeriksa dan memfinalisasi surat', senderActive || allVerified));
+    : pendingStep(
+        'Finalisasi Pengirim',
+        portalPending
+          ? 'Menunggu penandatanganan di Portal TTE'
+          : 'Menunggu pengirim memeriksa dan memfinalisasi surat',
+        senderActive || allVerified,
+      ));
 
   const sent = isFolderCompleted.value;
   const partiallySent = folderStatus === 'SEBAGIAN_TERKIRIM';
   pushStep(sent
     ? completedStep('Selesai', 'Naskah SDE Massal telah difinalisasi dan masuk ke Terkirim', firstItem?.updatedAt ? formatDate(firstItem.updatedAt) : undefined)
-    : pendingStep('Dikirim ke Penerima', 'Menunggu surat dikirim kepada penerima', partiallySent));
+    : pendingStep(
+        'Dikirim ke Penerima',
+        portalPending
+          ? 'Surat dikirim setelah callback Portal TTE berhasil'
+          : 'Menunggu surat dikirim kepada penerima',
+        partiallySent,
+      ));
 
   return steps;
 });
@@ -1099,10 +1149,12 @@ const naskahStatusLabel = (status: string) =>
   ({
     draf: 'Draft',
     pending: 'Menunggu TTD',
+    pending_tte: 'Menunggu Portal TTE',
     final: 'Final',
     final_tte: 'Final (TTE)',
     MENUNGGU: 'Menunggu',
     MENUNGGU_VERIFIKASI: 'Menunggu Verifikasi',
+    MENUNGGU_TTE: 'Menunggu Portal TTE',
     TERVERIFIKASI: 'Disetujui',
     TERKIRIM: 'Selesai',
     DITOLAK: 'Ditolak',
@@ -1111,10 +1163,12 @@ const naskahStatusLabel = (status: string) =>
 const naskahStatusBadge = (status: string) => ({
   draf: 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium whitespace-nowrap dark:bg-gray-700 dark:text-gray-300',
   pending: 'px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 font-medium whitespace-nowrap dark:bg-yellow-900/40 dark:text-yellow-300',
+  pending_tte: 'px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium whitespace-nowrap dark:bg-amber-900/40 dark:text-amber-300',
   final: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
   final_tte: 'px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-medium whitespace-nowrap dark:bg-blue-900/40 dark:text-blue-300',
   MENUNGGU: 'px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 font-medium whitespace-nowrap dark:bg-yellow-900/40 dark:text-yellow-300',
   MENUNGGU_VERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-medium whitespace-nowrap dark:bg-indigo-900/40 dark:text-indigo-300',
+  MENUNGGU_TTE: 'px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium whitespace-nowrap dark:bg-amber-900/40 dark:text-amber-300',
   TERVERIFIKASI: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
   TERKIRIM: 'px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-medium whitespace-nowrap dark:bg-emerald-900/40 dark:text-emerald-300',
   DITOLAK: 'px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-medium whitespace-nowrap dark:bg-red-900/40 dark:text-red-400',

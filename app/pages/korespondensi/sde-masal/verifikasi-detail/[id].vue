@@ -103,27 +103,42 @@
             </div>
 
             <!-- Card: Aksi Verifikasi -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-              <div class="flex items-center gap-3">
-                <UButton
-                  label="Tolak"
-                  color="error"
-                  variant="outline"
-                  icon="i-lucide-x"
-                  size="lg"
-                  :loading="actionLoading === 'reject'"
-                  :disabled="!!actionLoading"
-                  @click="handleReject"
-                />
-                <UButton
-                  label="Setujui"
-                  color="primary"
-                  icon="i-lucide-check"
-                  size="lg"
-                  :loading="actionLoading === 'approve'"
-                  :disabled="!!actionLoading"
-                  @click="handleApprove"
-                />
+            <div
+              v-if="canVerify"
+              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+            >
+              <template v-if="isBodVerifier">
+                <div class="flex items-center gap-3">
+                  <UButton
+                    label="Tolak"
+                    color="error"
+                    variant="outline"
+                    icon="i-lucide-x"
+                    size="lg"
+                    :loading="actionLoading === 'reject'"
+                    :disabled="!!actionLoading"
+                    @click="handleReject"
+                  />
+                  <UButton
+                    label="Setujui"
+                    color="primary"
+                    icon="i-lucide-check"
+                    size="lg"
+                    :loading="actionLoading === 'approve'"
+                    :disabled="!!actionLoading"
+                    @click="handleApprove"
+                  />
+                </div>
+              </template>
+              <div
+                v-else
+                class="flex items-center gap-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300"
+              >
+                <UIcon name="i-lucide-eye" class="size-5 shrink-0" />
+                <span>
+                  Anda terdaftar dalam chain verifikasi ini, namun hanya BOD (Direksi) yang dapat
+                  menyetujui atau menolak. Anda dapat memantau proses verifikasi secara read-only.
+                </span>
               </div>
             </div>
 
@@ -239,6 +254,15 @@ const isMe = (verifikator?: SdeMasalVerifikator) => {
 const canVerify = computed(() =>
   item.value?.statusVerifikasi === 'MENUNGGU_VERIFIKASI' && isMe(getWaitingVerifier(item.value)),
 );
+
+// Hanya BOD (Direksi) yang dapat menyetujui/menolak verifikasi.
+// Verifikator non-BOD hanya dapat membaca chain (read-only).
+const isBodVerifier = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  if (['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(bodTag)) return true;
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+  return /\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(positionText);
+});
 
 // Semua verifikator sudah setuju (status TERVERIFIKASI)
 const allApproved = computed(() => item.value?.statusVerifikasi === 'TERVERIFIKASI');

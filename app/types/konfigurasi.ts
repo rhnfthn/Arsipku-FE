@@ -3,9 +3,14 @@
 // ==========================================
 export interface KonfigurasiDigsigItem {
   id: string;
-  jenisNaskah: string; // ND, SDI, SDE, DI, KA
+  jenisNaskah: string; // ND, SDI, SDE, DI, KA, NL (naskah umum ikut NL)
   enabled: boolean;
   description: string;
+  /** Jalur TTE digsig: bsre_direct (BSrE v2 langsung) | portal (redirect Portal TTE) */
+  tteMode?: 'bsre_direct' | 'portal';
+  digsig?: boolean;
+  ttdQr?: boolean;
+  ttdBasah?: boolean;
   createdAt: string;
   updatedAt: string;
 }

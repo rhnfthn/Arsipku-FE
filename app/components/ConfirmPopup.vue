@@ -31,7 +31,7 @@
               {{ title }}
             </h3>
             <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-              {{ message }}
+              {{ description || message }}
             </p>
           </div>
 
@@ -179,6 +179,17 @@ const props = defineProps({
   confirmationText: {
     type: String,
     default: "KONFIRMASI HAPUS DATA",
+  },
+  // Alias description → message (kompatibilitas pemanggil lama yang mengirim
+  // prop `description`; diterima agar tidak memicu Vue warning non-props).
+  description: {
+    type: String,
+    default: "",
+  },
+  // Alias loading → isLoading (kompatibilitas pemanggil lama).
+  loading: {
+    type: Boolean,
+    default: false,
   },
 });
 
