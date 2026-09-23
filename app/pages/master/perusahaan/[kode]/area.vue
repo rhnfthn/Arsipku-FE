@@ -233,7 +233,7 @@
                     <div class="flex items-center justify-center gap-2">
                       <button
                         @click="openEditModal(area)"
-                        class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded-lg transition-colors group"
+                        class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded-lg transition-colors group"
                       >
                         <Pencil
                           class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-300"
@@ -241,7 +241,7 @@
                       </button>
                       <button
                         @click="openDeleteConfirm(area)"
-                        class="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors group"
+                        class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors group"
                       >
                         <Trash2
                           class="w-4 h-4 text-red-600 dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300"
@@ -496,7 +496,7 @@
                   <div class="flex items-center justify-center gap-2">
                     <button
                       @click="openEditModal(sub)"
-                      class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded-lg transition-colors group"
+                      class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded-lg transition-colors group"
                     >
                       <Pencil
                         class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-300"
@@ -504,7 +504,7 @@
                     </button>
                     <button
                       @click="openDeleteConfirm(sub)"
-                      class="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors group"
+                      class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors group"
                     >
                       <Trash2
                         class="w-4 h-4 text-red-600 dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300"

@@ -198,7 +198,7 @@
                 <div class="flex justify-center gap-2">
                   <button
                     v-if="hasPermission('master-data', 'read-jenis-detail')"
-                    class="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
+                    class="inline-flex h-8 w-8 items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors group"
                     :title="t('je_modal_detail')"
                     @click="onView(row)"
                   >
@@ -207,7 +207,7 @@
 
                   <button
                     v-if="hasPermission('master-data', 'update-jenis')"
-                    class="text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
+                    class="inline-flex h-8 w-8 items-center justify-center text-yellow-500 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 p-2 rounded-lg transition-colors group"
                     :title="t('je_modal_edit')"
                     @click="onEdit(row)"
                   >
@@ -216,7 +216,7 @@
 
                   <button
                     v-if="hasPermission('master-data', 'delete-jenis')"
-                    class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
+                    class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group text-red-600 dark:text-red-500"
                     :title="t('popup_hapus')"
                     @click="onDelete(row)"
                   >
