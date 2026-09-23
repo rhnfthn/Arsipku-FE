@@ -262,6 +262,7 @@
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen" :signer-info="signerInfo"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
+      :portal-mode="tteMode === 'portal'"
       ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
   </div>
@@ -331,6 +332,7 @@ const tinymceEditor = ref<TinyMCEEditor | null>(null);
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const selectedSendType = ref('qr_only')
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct')
 const isSignMethodModalOpen = ref(false)
 const bsreDisabled = ref(false)
 const qrDisabled = ref(false)
@@ -338,6 +340,7 @@ const basahDisabled = ref(false)
 const signMethodModalRef = ref<any>(null)
 
 const { getConfigDigsig } = useDigsig()
+const { getTteMode } = useTtePortal()
 const alertState = useAlertState();
 
 const signerInfo = computed(() => ({
@@ -545,6 +548,14 @@ const handleConfirmKirim = async () => {
   bsreDisabled.value = !configData.digsig
   qrDisabled.value = !configData.ttdQr
   basahDisabled.value = !configData.ttdBasah
+  if (configData.digsig) {
+    try {
+      tteMode.value = await getTteMode('DI')
+    } catch {
+      toast.add({ title: 'Konfigurasi TTE tidak dapat dibaca', description: 'Silakan coba lagi.', color: 'error' })
+      return
+    }
+  }
   isSignMethodModalOpen.value = true
 }
 
@@ -554,7 +565,7 @@ const handleSignMethodSubmit = async (data: { method: string; passphrase?: strin
 }
 
 const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
-  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+  if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct' && !passphrase.trim()) {
     signMethodModalRef.value?.setPassphraseError('Harap masukkan passphrase Anda')
     return
   }
@@ -571,10 +582,10 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
     const kirimPayload: Record<string, any> = {
       ...payload,
       sign_option: selectedSendType.value,
-      passphrase,
     }
 
-    if (selectedSendType.value === 'digsig') {
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
+      kirimPayload.passphrase = passphrase
       if (!user.value?.nik) throw new Error('NIK pengguna tidak ditemukan untuk TTE.')
       kirimPayload.nik = user.value.nik
     }
@@ -606,6 +617,13 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
       ? await sendDraft(fdFinal, editDraftId.value)
       : await sendDisposisi(fdFinal)
 
+    const redirect = res?.data?.data?.tte_redirect ?? res?.data?.tte_redirect ?? res?.tte_redirect
+    if (redirect?.signingUrl) {
+      isSignMethodModalOpen.value = false
+      window.location.href = redirect.signingUrl
+      return
+    }
+
     if (res?.data?.success || res?.success) {
       if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
       toast.add({ title: 'Berhasil', description: 'Disposisi berhasil dikirim', color: 'success' })
@@ -624,7 +642,7 @@ const handleKirimDokumen = async (passphrase = '', fileBasah?: File) => {
     Alert.close()
     const errMsg = e.response?.data?.message || e.message || 'Gagal mengirim dokumen'
 
-    if (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah')) {
+    if (tteMode.value === 'bsre_direct' && (errMsg.toLowerCase().includes('passphrase') || errMsg.toLowerCase().includes('salah'))) {
       bsreDisabled.value = false
       await nextTick()
       isSignMethodModalOpen.value = true

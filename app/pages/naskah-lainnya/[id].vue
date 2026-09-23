@@ -506,6 +506,8 @@ const pendingAction = ref<JenisAksi | null>(null);
 //    komponen sama dengan naskah umum: Tulis/DigsigPassphraseModal ──
 const showSignMethodModal = ref(false);
 const signingBusy = ref(false);
+const activeTteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
+const { getTteMode } = useTtePortal();
 const signMethodModalRef = ref<{ setPassphraseError: (msg: string) => void } | null>(null);
 // Info penandatangan aktif untuk modal (pola nota-dinas: signerInfo)
 const signerInfo = computed(() => {
@@ -1091,7 +1093,7 @@ function activeApprovalRow() {
     .sort((x, y) => x.urutan - y.urutan)[0];
 }
 
-function openActionModal(a: JenisAksi) {
+async function openActionModal(a: JenisAksi) {
   const meta = ACTION_META[a];
   if (!meta) return;
   if (meta.to) {
@@ -1101,6 +1103,15 @@ function openActionModal(a: JenisAksi) {
   // Signer TERAKHIR dengan opsi digital → langsung modal pilihan metode
   // (komponen sama dengan naskah umum: Tulis/DigsigPassphraseModal).
   if (a === 'tanda-tangan' && isLastSigner.value && !isPhysicalSigning.value) {
+    try {
+      activeTteMode.value = await getTteMode(detail.value?.jenis || 'NL');
+    } catch {
+      toastError(
+        'Konfigurasi TTE tidak dapat dibaca',
+        'Silakan coba lagi. Metode tanda tangan tidak dibuka untuk mencegah passphrase terkirim ke jalur yang salah.'
+      );
+      return;
+    }
     showSignMethodModal.value = true;
     return;
   }
@@ -1208,10 +1219,28 @@ async function handleSignMethodSubmit(data: { method: string; passphrase?: strin
   try {
     const nl = useNaskahLainnya();
     if (data.method === 'digsig') {
-      await nl.tandaTangan(naskahId, {
+      // Cek jalur TTE (konfigurasi admin): portal → BE buat signing request
+      // dan kembalikan signing_url; passphrase diinput di halaman Portal TTE.
+      const tteMode = activeTteMode.value;
+
+      const res = await nl.tandaTangan(naskahId, {
         signMethod: 'digsig',
-        passphrase: data.passphrase || '',
+        passphrase: tteMode === 'portal' ? undefined : data.passphrase || '',
       });
+
+      // Alur Portal TTE: redirect browser ke signing_url
+      const redirect = (res as any)?.tte_redirect ?? (res as any)?.data?.tte_redirect;
+      if (redirect?.signingUrl) {
+        showSignMethodModal.value = false;
+        toast.add({
+          title: 'Lanjut ke Portal TTE',
+          description: 'Selesaikan tanda tangan elektronik di halaman Portal TTE.',
+          color: 'info',
+        });
+        window.location.href = redirect.signingUrl;
+        return;
+      }
+
       toast.add({
         title: 'Berhasil',
         description: 'Naskah ditandatangani dengan TTE BSrE',
@@ -3081,6 +3110,7 @@ const signLabel = computed(() =>
         :signer-info="signerInfo"
         :is-loading="signingBusy"
         :hide-basah="true"
+        :portal-mode="activeTteMode === 'portal'"
         ref="signMethodModalRef"
         @submit="handleSignMethodSubmit"
       />

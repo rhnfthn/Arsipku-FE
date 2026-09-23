@@ -206,7 +206,7 @@
         class="flex items-center justify-between px-4 py-4 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          {{ $t('menampilkan') }} {{ paginationStart }} - {{ paginationEnd }} {{ $t('dari') }}
+          {{ $t('menampilkan') }} {{ paginationStart }}–{{ paginationEnd }} {{ $t('dari') }}
           {{ pagination.total }} {{ $t('data') }}
         </div>
         <div class="flex items-center gap-2">

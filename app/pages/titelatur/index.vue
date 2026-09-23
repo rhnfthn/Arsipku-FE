@@ -20,7 +20,7 @@ const { t } = useI18n()
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
-  { label: t('tit_title'), to: '/admin/titelatur' }
+  { label: t('tit_title'), to: '/titelatur' }
 ])
 
 const {
@@ -427,7 +427,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
         <!-- EXPORT BUTTON -->
         <button
           @click="openExportModal"
-          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition whitespace-nowrap"
         >
           <FileDown class="w-4 h-4" />
           Export

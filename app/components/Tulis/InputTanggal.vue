@@ -22,6 +22,7 @@
           v-model:open="open"
           :disabled="disabled"
           :content="{ align: 'start', side: 'bottom', sideOffset: 8 }"
+          :ui="{ content: 'z-[var(--z-toast)]' }"
         >
           <div
             class="flex w-full items-center gap-2"

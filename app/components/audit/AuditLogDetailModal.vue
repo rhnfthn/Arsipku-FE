@@ -1,22 +1,15 @@
 <template>
-  <div
-    v-if="modelValue"
-    class="fixed inset-0 z-50 flex items-start justify-center bg-black/30 backdrop-blur-sm pt-20"
+  <Modal
+    :model-value="modelValue"
+    :hide-default-footer="true"
+    size="xl"
+    @update:model-value="$emit('update:modelValue', $event)"
   >
-    <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
-      <!-- Header -->
-      <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-5 py-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Log Aktivitas</h3>
-        <button
-          @click="$emit('update:modelValue', false)"
-          class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
-        >
-          <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
-        </button>
-      </div>
+    <template #title>
+      <span class="text-sm font-semibold text-gray-900 dark:text-white">Detail Log Aktivitas</span>
+    </template>
 
-      <!-- Body -->
-      <div class="overflow-y-auto px-5 py-4 space-y-5 flex-1">
+    <div class="space-y-5 pb-1">
         <div v-if="loading" class="flex items-center justify-center py-10">
           <UIcon name="i-lucide-loader-2" class="w-6 h-6 animate-spin text-primary" />
         </div>
@@ -214,14 +207,14 @@
           </div>
         </template>
         <div v-else class="text-center text-gray-400 py-10">Log tidak ditemukan</div>
-      </div>
     </div>
-  </div>
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { AuditTrail, AuditStatus } from '~/types/audit';
+import Modal from '~/components/Modal.vue';
 
 const props = defineProps<{
   modelValue: boolean;
