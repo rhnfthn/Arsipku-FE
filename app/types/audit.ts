@@ -81,6 +81,25 @@ export interface AuditTrail {
   metadata: AuditTrailMetadata | any;
 }
 
+export interface ActiveAccountSession {
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastActivityAt: string;
+  expiresAt: string;
+}
+
+export interface ActiveAccount {
+  persnum: number;
+  name: string | null;
+  username: string | null;
+  sessionCount: number;
+  lastActivityAt: string;
+  expiresAt: string;
+  latestActivity: AuditTrail | null;
+  sessions: ActiveAccountSession[];
+}
+
 /**
  * Metadata audit trail.
  *

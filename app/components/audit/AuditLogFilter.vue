@@ -119,20 +119,12 @@ const statusLabels: Record<string, string> = {
   SUCCESS: 'Berhasil', FAILED: 'Gagal', ERROR: 'Error', DENIED: 'Ditolak',
 };
 
-// Helper: format tanggal lokal ke YYYY-MM-DD untuk input[type=date]
-const todayStr = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
 const local = reactive<AuditFilter>({
   ...props.modelValue,
-  // Default: tanggal dari hari ini sampai hari ini
-  startDate: props.modelValue.startDate || todayStr(),
-  endDate: props.modelValue.endDate || todayStr(),
+  // Default: TANPA batas tanggal agar seluruh log dari semua akun
+  // dan semua rentang waktu tampil. Superadmin dapat memfilter manual.
+  startDate: props.modelValue.startDate || undefined,
+  endDate: props.modelValue.endDate || undefined,
   // Default: semua dropdown kosong = "Semua"
   action: props.modelValue.action || '',
   module: props.modelValue.module || '',
@@ -166,9 +158,9 @@ const apply = () => {
 };
 
 const reset = () => {
-  // Reset ke default: tanggal hari ini, semua aksi/modul/status/role
-  local.startDate = todayStr();
-  local.endDate = todayStr();
+  // Reset ke default: TANPA batas tanggal (semua waktu), semua aksi/modul/status/role
+  local.startDate = undefined;
+  local.endDate = undefined;
   local.action = undefined;
   local.module = undefined;
   local.status = undefined;

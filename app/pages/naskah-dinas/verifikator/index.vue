@@ -203,7 +203,7 @@
                   <button
                     v-if="hasPermission('verifikasi-naskah', 'read-detail')"
                     @click="handleViewDetail(row)"
-                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
+                    class="inline-flex h-8 w-8 items-center justify-center p-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition"
                     title="Lihat Detail"
                   >
                     <Eye class="w-4 h-4" />
@@ -213,7 +213,7 @@
                     @click="row.canVerify ? openVerifyModal(row) : null"
                     :disabled="!row.canVerify"
                     :class="[
-                      'p-2 rounded-lg transition',
+                      'inline-flex h-8 w-8 items-center justify-center p-2 rounded-lg transition',
                       row.canVerify
                         ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-gray-700'
                         : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
@@ -227,7 +227,7 @@
                     @click="row.canReject ? openRejectModal(row) : null"
                     :disabled="!row.canReject"
                     :class="[
-                      'p-2 rounded-lg transition',
+                      'inline-flex h-8 w-8 items-center justify-center p-2 rounded-lg transition',
                       row.canReject
                         ? 'text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-gray-700'
                         : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
