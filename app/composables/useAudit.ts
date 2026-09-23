@@ -9,6 +9,7 @@ import type {
   AnomalySummary,
   PaginatedResponse,
   UpdateAnomalyPayload,
+  ActiveAccount,
 } from '~/types/audit';
 
 /**
@@ -53,6 +54,8 @@ export const useAudit = () => {
   const notifications = ref<AuditAnomaly[]>([]);
   const summary = ref<AuditSummary | null>(null);
   const anomalySummary = ref<AnomalySummary | null>(null);
+  const activeAccounts = ref<ActiveAccount[]>([]);
+  const activeAccountsLoading = ref(false);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const meta = ref<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
@@ -83,6 +86,24 @@ export const useAudit = () => {
       throw e;
     } finally {
       loading.value = false;
+    }
+  };
+
+  /**
+   * Ambil semua akun yang masih memiliki sesi login yang berlaku.
+   */
+  const fetchActiveAccounts = async () => {
+    activeAccountsLoading.value = true;
+    try {
+      const res: any = await apiGet('/audit/active-users', {}, { skipCache: true });
+      activeAccounts.value = res?.data ?? [];
+      return activeAccounts.value;
+    } catch (e: any) {
+      activeAccounts.value = [];
+      captureAuditError(e, { method: 'fetchActiveAccounts' });
+      throw e;
+    } finally {
+      activeAccountsLoading.value = false;
     }
   };
 
@@ -291,10 +312,13 @@ export const useAudit = () => {
     notifications,
     summary,
     anomalySummary,
+    activeAccounts,
+    activeAccountsLoading,
     loading,
     error,
     meta,
     fetchLogs,
+    fetchActiveAccounts,
     fetchLogDetail,
     fetchLogMetadata,
     fetchSummary,
