@@ -227,11 +227,11 @@
                   v-if="item.kode"
                   type="button"
                   @click="copyKode(item.kode)"
-                  class="p-1 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  class="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
                   :title="$t('te_copy_id') || 'Salin ID'"
                 >
-                  <Check v-if="copiedKode === item.kode" class="w-3.5 h-3.5 text-green-500" />
-                  <Copy v-else class="w-3.5 h-3.5" />
+                  <Check v-if="copiedKode === item.kode" class="w-4 h-4 text-green-500" />
+                  <Copy v-else class="w-4 h-4" />
                 </button>
               </div>
             </td>
@@ -278,7 +278,7 @@
               <button
                 v-if="canUpdateTertuju"
                 @click="openEdit(item)"
-                class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
+                class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
               >
                 <Pencil
                   class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600"
@@ -287,7 +287,7 @@
 
               <button
                 v-if="canDeleteTertuju"
-                class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
+                class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                 @click="handleDelete(item.id)"
               >
                 <Trash2 class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600" />
@@ -559,11 +559,11 @@
                   v-if="item.position"
                   type="button"
                   @click="copyKode(String(item.position))"
-                  class="p-1 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  class="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
                   title="Salin Position ID"
                 >
-                  <Check v-if="copiedKode === String(item.position)" class="w-3.5 h-3.5 text-green-500" />
-                  <Copy v-else class="w-3.5 h-3.5" />
+                  <Check v-if="copiedKode === String(item.position)" class="w-4 h-4 text-green-500" />
+                  <Copy v-else class="w-4 h-4" />
                 </button>
               </div>
             </td>
