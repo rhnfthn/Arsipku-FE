@@ -23,6 +23,18 @@ import type {
   DigsigConfigResponse
 } from '~/types/digsig';
 
+type BsreAlertStatus = {
+  isActive: boolean;
+  message: string | null;
+  activatedAt: string | null;
+  activatedByName: string | null;
+};
+
+// Status alert bersifat global untuk seluruh aplikasi. Letakkan di module scope
+// agar halaman log, layout, sidebar, dan banner memakai ref yang sama.
+const bsreAlert = ref<BsreAlertStatus | null>(null);
+const loadingAlert = ref(false);
+
 export const useDigsig = () => {
   const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
 
@@ -32,14 +44,6 @@ export const useDigsig = () => {
   const documentCheck = ref<CekDokumenResponse | null>(null);
   const meta = ref<any>(null);
   const bsreHealth = ref<BsreHealthResponse['data'] | null>(null);
-
-  // BsrE Alert state
-  const bsreAlert = ref<{
-    isActive: boolean;
-    message: string | null;
-    activatedAt: string | null;
-    activatedByName: string | null;
-  } | null>(null);
 
   // --- NEW: Digsig Config State ---
   const digsigConfig = ref<any[]>([]);
@@ -65,7 +69,6 @@ export const useDigsig = () => {
   const loadingVerifikator = ref(false);
   const loadingCheck = ref(false);
   const loadingEnik = ref(false);
-  const loadingAlert = ref(false);
   const loadingDigsigConfig = ref(false); // New Loading State
   const error = ref<string | null>(null);
 
