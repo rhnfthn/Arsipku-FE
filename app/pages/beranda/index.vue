@@ -85,17 +85,32 @@
       <template v-else>
         <div class="relative w-full h-64 flex items-center transition-all group mb-8">
           <div
+            v-if="currentTheme"
+            class="absolute inset-0 rounded-3xl bg-cover bg-center shadow-md overflow-hidden dark:border dark:border-gray-700"
+            :style="{ backgroundImage: `url(${currentTheme.imageUrl})` }"
+          >
+            <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent" />
+          </div>
+          <div
+            v-else
             class="absolute inset-0 bg-gradient-to-br from-primary-100 from-45% to-primary dark:from-primary-800 dark:to-primary-600 rounded-3xl shadow-md overflow-hidden dark:border dark:border-primary-800/50"
           ></div>
           <div class="relative z-10 flex flex-col px-10 max-w-lg">
-            <Heading variant="heading6b" class="text-primary-600 dark:text-white">
+            <Heading
+              variant="heading6b"
+              :class="currentTheme ? 'text-white drop-shadow-md' : 'text-primary-600 dark:text-white'"
+            >
               Halo, {{ formatName(user?.nama) }}
             </Heading>
-            <Heading variant="heading9m" class="mt-1 text-primary-400 dark:text-primary-300">
+            <Heading
+              variant="heading9m"
+              :class="currentTheme ? 'mt-1 text-white/90 drop-shadow' : 'mt-1 text-primary-400 dark:text-primary-300'"
+            >
               {{ $t('hero') }}
             </Heading>
           </div>
           <img
+            v-if="!currentTheme"
             :src="dashboardImage"
             class="absolute -right-6 -bottom-8 h-60 w-auto object-contain opacity-90 animate-float z-20 pointer-events-none"
             alt="Dashboard Decoration"
@@ -270,6 +285,16 @@ const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData 
 // Default light mode untuk akun baru (bukan 'auto' yang mengikuti OS).
 const isDark = useDark({ initialValue: 'light' })
 const dashboardImage = computed(() => isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png')
+const { currentTheme, fetchCurrentTheme } = useThemeConfiguration()
+const { systemTheme, isConnected } = useRealtimeSocket()
+
+watch(systemTheme, (theme) => {
+  currentTheme.value = theme ?? null
+})
+
+watch(isConnected, (connected) => {
+  if (connected) void fetchCurrentTheme().catch(() => null)
+})
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
 
@@ -289,7 +314,7 @@ const formatName = (name: string | undefined) => {
 
 onMounted(async () => {
   if (!user.value) await getProfile()
-  await fetchDashboardData()
+  await Promise.all([fetchDashboardData(), fetchCurrentTheme().catch(() => null)])
 
   // Ensure notification badge is fetched on first login
   const { init: initNotifications } = useNotifications()
