@@ -1079,7 +1079,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
                         @click="openEdit(item)"
                         :disabled="item.status === 'Aktif' || item.status === 'Kedaluwarsa'"
                         :class="[
-                          'p-2 rounded-lg transition-colors',
+                          'inline-flex h-8 w-8 items-center justify-center p-2 rounded-lg transition-colors',
                           item.status === 'Aktif' || item.status === 'Kedaluwarsa'
                             ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                             : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500',
@@ -1095,7 +1095,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
                       <button
                         v-if="hasPermission('delegasi', 'delete')"
                         @click="openDelete(item)"
-                        class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
+                        class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-600 dark:text-red-500 transition-colors"
                         title="Hapus"
                       >
                         <Trash2 class="w-4 h-4" />

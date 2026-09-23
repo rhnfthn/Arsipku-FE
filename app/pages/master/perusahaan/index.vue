@@ -164,7 +164,7 @@
                     <button
                       v-if="hasPermission('master-data', 'update-perusahaan')"
                       @click="openEditModal(row)"
-                      class="p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
+                      class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors group"
                     >
                       <Pencil
                         class="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600"
@@ -173,7 +173,7 @@
                     <button
                       v-if="hasPermission('master-data', 'delete-perusahaan')"
                       @click="openDeleteConfirm(row)"
-                      class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
+                      class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors group"
                     >
                       <Trash2
                         class="w-4 h-4 text-red-600 dark:text-red-500 group-hover:text-red-600"
@@ -182,7 +182,7 @@
                     <NuxtLink
                       v-if="hasPermission('master-data', 'read-perusahaan-area')"
                       :to="`/master/perusahaan/${row.kode}/area`"
-                      class="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors group"
+                      class="inline-flex h-8 w-8 items-center justify-center p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors group"
                     >
                       <MapPin
                         class="w-4 h-4 text-green-600 dark:text-green-500 group-hover:text-green-600"
