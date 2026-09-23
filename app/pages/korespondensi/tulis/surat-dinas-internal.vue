@@ -44,12 +44,14 @@ const { renderedPositionLabel } = useDelegationMode();
 
 
 const { getConfigDigsig } = useDigsig();
+const { getTteMode } = useTtePortal();
 const isSignMethodModalOpen = ref(false);
 const bsreDisabled = ref(false);
 const qrDisabled = ref(false);
 const basahDisabled = ref(false);
 const signMethodModalRef = ref<any>(null);
 const selectedSendType = ref("qr_only");
+const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 
 // ── Shared composable ────────────────────────────────────────────────────────
 const {
@@ -198,7 +200,11 @@ const handleSaveDraft = async () => {
 };
 
 const handleKirimDokumen = async (passphrase = '') => {
-  if (selectedSendType.value === 'digsig' && !passphrase.trim()) {
+  if (
+    selectedSendType.value === 'digsig' &&
+    tteMode.value === 'bsre_direct' &&
+    !passphrase.trim()
+  ) {
     signMethodModalRef.value?.setPassphraseError(t('sdi_harap_passphrase'))
     return
   }
@@ -213,7 +219,7 @@ const handleKirimDokumen = async (passphrase = '') => {
     const fd = createFormData(payload, true);
     fd.append("sign_option", selectedSendType.value);
 
-    if (selectedSendType.value === 'digsig') {
+    if (selectedSendType.value === 'digsig' && tteMode.value === 'bsre_direct') {
       fd.append("passphrase", passphrase);
       if (!user.value?.nik) throw new Error(t('sdi_nik_tidak_ditemukan'));
       fd.append("nik", user.value.nik);
@@ -222,6 +228,13 @@ const handleKirimDokumen = async (passphrase = '') => {
     const res = editDraftId.value
       ? await sendDraft(fd, editDraftId.value)
       : await sendSDI(fd);
+
+    const redirect = res?.data?.data?.tte_redirect ?? res?.data?.tte_redirect;
+    if (redirect?.signingUrl) {
+      isSignMethodModalOpen.value = false;
+      window.location.href = redirect.signingUrl;
+      return;
+    }
 
     if (res?.success || res?.data?.success) {
       revokePdfUrl();
@@ -274,6 +287,17 @@ const handleConfirmKirim = async () => {
   bsreDisabled.value = !configData.digsig
   qrDisabled.value = !configData.ttdQr
   basahDisabled.value = !configData.ttdBasah
+  if (configData.digsig) {
+    try {
+      tteMode.value = await getTteMode('SDI');
+    } catch {
+      toastError(
+        'Konfigurasi TTE tidak dapat dibaca',
+        'Silakan coba lagi. Metode tanda tangan tidak dibuka untuk mencegah passphrase terkirim ke jalur yang salah.'
+      );
+      return;
+    }
+  }
   isSignMethodModalOpen.value = true
 };
 
@@ -662,7 +686,7 @@ watch(
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen"
       :signer-info="{ name: toTitleCase(user?.nama) || $t('sdi_nama_lengkap'), role: renderedPositionLabel || $t('sdi_jabatan'), label: $t('sdi_ditandatangani_digital') }"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
-      ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
+      :portal-mode="tteMode === 'portal'" ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 
     <AiDraftPanel v-model:open="isAiDraftOpen" naskah-type="SDI" :editor="tinymceEditor" />
 
