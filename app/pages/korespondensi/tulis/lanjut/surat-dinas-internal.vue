@@ -65,7 +65,6 @@ useMandatoryRoutingCc({
   recipientItems: allRecipientItems,
   selectedTertuju,
   selectedTembusan,
-  recipientGroups,
 });
 
 const selectedSendType = ref("qr_only");

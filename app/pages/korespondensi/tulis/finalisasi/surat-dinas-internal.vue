@@ -297,7 +297,6 @@ useMandatoryRoutingCc({
   recipientItems: allRecipientItems,
   selectedTertuju,
   selectedTembusan,
-  recipientGroups,
 });
 
 const pdfBlob = ref<Blob | null>(null);
