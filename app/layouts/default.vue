@@ -34,8 +34,8 @@
       </div>
 
       <!-- MAIN CONTENT -->
-      <main class="app-main-content flex-1 mx-4 sm:mx-8 z-[91]">
-        <div class="mx-auto w-full">
+      <main class="app-main-content min-w-0 max-w-full flex-1 mx-4 sm:mx-8 z-[91]">
+        <div class="mx-auto w-full min-w-0 max-w-full">
           <NuxtPage />
           <Alert />
         </div>

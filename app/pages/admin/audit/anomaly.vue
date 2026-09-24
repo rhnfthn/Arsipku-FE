@@ -88,7 +88,7 @@
                 </div>
                 <div>
                   <span class="text-gray-500 dark:text-gray-400">IP Address: </span>
-                  <span class="text-gray-900 dark:text-white font-medium font-mono text-xs">{{ selectedAnomaly.ipAddress || '-' }}</span>
+                  <span class="text-gray-900 dark:text-white font-medium font-mono text-xs">{{ formatIpAddress(selectedAnomaly.ipAddress) }}</span>
                 </div>
               </div>
             </div>
@@ -168,6 +168,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useAudit } from '~/composables/useAudit';
 import type { AuditAnomaly, AnomalyFilter, AnomalySeverity, AnomalyStatus } from '~/types/audit';
 import DataPagination from '~/components/DataPagination.vue';
+import { formatIpAddress } from '~/utils/formatIpAddress';
 
 definePageMeta({ middleware: ['auth', 'audit-admin'] });
 

@@ -6,7 +6,7 @@
     </div>
 
     <!-- Table -->
-    <div class="rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 transition-colors">
+    <div class="min-w-0 max-w-full rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 transition-colors">
       <AuditLogFilter
         :model-value="filter"
         :can-export="canExport"
