@@ -1074,7 +1074,8 @@ const verifierRoleRank = (value: unknown): number | null => {
   if (/\bAVP\b/.test(text)) return 1;
   if (/\bVP\b/.test(text)) return 2;
   if (/\bEVP\b/.test(text)) return 3;
-  if (/\bDIREKTUR\b|\bDIRUT\b|\bDIRECTOR\b/.test(text)) return 4;
+  if (/\bDIREKTUR\s+UTAMA\b|\bDIRUT\b|\bPRESIDENT\s+DIRECTOR\b/.test(text)) return 5;
+  if (/\bDIREKTUR\b|\bDIRECTOR\b/.test(text)) return 4;
   return null;
 };
 // Hanya BOD (Direksi) yang boleh menjadi verifikator aktif SDE Massal.
@@ -1097,6 +1098,7 @@ const openVerificationSelection = async () => {
     const profile = (await getProfile(true)) || user.value;
     let positionId = profile?.position ?? profile?.position_id;
     let verifiersFromDisposition: any[] = [];
+    const parentNaskahId = String(props.konsep?.parentNaskahId ?? '').trim();
     let conceptSenderPosition = String(props.konsep?.pengirimId ?? '').trim();
     let conceptSenderName = pengirimNama.value;
     let conceptSenderJob = pengirimJabatan.value;
@@ -1194,28 +1196,30 @@ const openVerificationSelection = async () => {
     // Jika SDE Massal dibuat dari disposisi, sumber utama posisi pengaju
     // adalah rantai disposisi awal. Ini mencegah posisi pengirim SDE atau
     // posisi aktif lama mengubah daftar atasan Raihan.
-    if (props.konsep?.parentNaskahId) {
+    if (parentNaskahId) {
       try {
         // Gunakan endpoint chain yang sama dengan halaman Kotak Masuk agar
         // daftar verifikator mengikuti rangkaian disposisi yang ditampilkan
         // user pada naskah parent.
         const disposisiRes: any = await apiGet(
-          `/persuratan/naskah/${encodeURIComponent(props.konsep.parentNaskahId)}`,
+          `/persuratan/naskah/${encodeURIComponent(parentNaskahId)}`,
           {},
           { skipCache: true },
         );
         const flow = Array.isArray(disposisiRes?.data)
           ? disposisiRes.data
           : disposisiRes?.data?.flow || disposisiRes?.flow || [];
+        // Endpoint persuratan mengembalikan chain kronologis: disposisi awal
+        // berada di depan dan disposisi yang sedang diterima berada di akhir.
+        const chronologicalFlow = Array.isArray(flow) ? flow : [];
         const profilePersnum = String(profile?.persnum ?? '').trim();
         const profileName = String(profile?.nama ?? '').trim().toLowerCase();
-        // Detail naskah mengembalikan flow kronologis: chain awal berada di
-        // depan dan tindak lanjut berada di belakang. Jangan memakai flow[0]
-        // sebagai node terbaru karena itu membuat posisi penerima bergeser.
-        const currentDisposisi = Array.isArray(flow) ? flow[flow.length - 1] : null;
+        // Node terakhir adalah disposisi yang sedang diterima user dan node
+        // pertama adalah sumber chain disposisi awal.
+        const currentDisposisi = chronologicalFlow[chronologicalFlow.length - 1] || null;
         const penerimaDisposisiTerbaru = currentDisposisi?.penerima || [];
-        const penerimaDisposisi = Array.isArray(flow)
-          ? flow.flatMap((node: any) => node?.penerima || [])
+        const penerimaDisposisi = chronologicalFlow.length
+          ? chronologicalFlow.flatMap((node: any) => node?.penerima || [])
           : [];
         const matchPenerimaLogin = penerimaDisposisi.find((recipient: any) => {
           const samePersnum =
@@ -1253,7 +1257,7 @@ const openVerificationSelection = async () => {
         // sebenarnya. Pengirim yang dipilih saat konsep dibuat selalu menjadi
         // verifikator terakhir (sekaligus penerima folder untuk finalisasi).
         const selectedSenderPosition = conceptSenderPosition;
-        const flowNodes = (Array.isArray(flow) ? flow : [])
+        const flowNodes = chronologicalFlow
           .map((node: any) => {
             const sender = node?.pengirim
               ? {
@@ -1350,18 +1354,27 @@ const openVerificationSelection = async () => {
       // Untuk folder berbasis disposisi, jangan jatuh ke daftar seluruh
       // pejabat satu divisi karena dapat mencampur cabang Communication dan
       // Enterprise. Chain disposisi menjadi sumber tunggal verifikator.
-      // Verifikator aktif harus BOD (Direksi); pengirim konsep tetap
-      // menjadi langkah terakhir (final sender) meski non-BOD.
-      const senderPositionForFilter = String(props.konsep?.pengirimId ?? '').trim();
-      verifiersFromDisposition = verifiersFromDisposition.filter(
-        (person: any) =>
-          String(person?.position ?? '').trim() === senderPositionForFilter ||
-          isBodJabatan(person?.jabatan),
-      );
+      // Jangan menyaring berdasarkan BOD. AVP, VP, EVP, dan jabatan lain
+      // tetap harus ikut selama memang ditemukan pada chain disposisi.
+      // Dedup berdasarkan posisi agar satu orang tidak muncul dua kali bila
+      // ada data sirkulasi lama yang berulang.
+      const seenChainPositions = new Set<string>();
+      verifiersFromDisposition = verifiersFromDisposition.filter((person: any) => {
+        const position = String(person?.position ?? '').trim();
+        if (!position || seenChainPositions.has(position)) return false;
+        seenChainPositions.add(position);
+        return true;
+      });
       verifiersFromDisposition = await appendFinalSender(verifiersFromDisposition);
       verifierList.value = verifiersFromDisposition;
-      selectedVerifiers.value = verifiersFromDisposition.slice(0, 4);
+      selectedVerifiers.value = verifiersFromDisposition;
       return;
+    }
+
+    if (parentNaskahId) {
+      throw new Error(
+        'Verifikator dari chain disposisi tidak ditemukan. Silakan buka ulang disposisi awal.',
+      );
     }
 
     if (positionId == null || String(positionId).trim() === '') {
@@ -1405,7 +1418,7 @@ const openVerificationSelection = async () => {
       });
 
     verifierList.value = await appendFinalSender([...byRank.values()]);
-    selectedVerifiers.value = verifierList.value.slice(0, 4);
+    selectedVerifiers.value = verifierList.value;
     sortSelectedVerifiers();
     if (!selectedVerifiers.value.length) {
       throw new Error('Atasan managerial tidak ditemukan');
@@ -1413,7 +1426,7 @@ const openVerificationSelection = async () => {
   } catch {
     verifierList.value = [];
     selectedVerifiers.value = [];
-    toast.add({ title: 'Gagal memuat atasan managerial', color: 'error' });
+    toast.add({ title: 'Gagal memuat chain verifikasi disposisi', color: 'error' });
   } finally {
     verifierLoading.value = false;
   }

@@ -337,6 +337,23 @@ onMounted(async () => {
       const data = await findNaskahInFolder(props.folderId);
       const f = data?.folder;
       const list = data?.items || [];
+      let savedDraft: any = null;
+      const draftKeys = [
+        draftStorageKey,
+        f?.parentNaskahId ? `sde-masal-wizard:${f.parentNaskahId}` : '',
+        'sde-masal-wizard:new',
+      ].filter((key, index, keys) => key && keys.indexOf(key) === index);
+      for (const key of draftKeys) {
+        try {
+          const rawDraft = localStorage.getItem(key);
+          if (rawDraft) {
+            savedDraft = JSON.parse(rawDraft);
+            break;
+          }
+        } catch {
+          // Coba key draft berikutnya.
+        }
+      }
       if (f) {
         folderId.value = f.id;
         wizardState.konsep = {
@@ -353,13 +370,24 @@ onMounted(async () => {
         };
         wizardState.template = f.kontenTemplate
           ? { skema: 'DINAMIS', versi: 'v1', konten: f.kontenTemplate }
-          : null;
-        wizardState.variables = Array.isArray(f.dynamicVariables) ? f.dynamicVariables : [];
-        wizardState.penerimaList = list.map((item: any) => ({
+          : savedDraft?.template || null;
+        wizardState.variables = Array.isArray(f.dynamicVariables) && f.dynamicVariables.length
+          ? f.dynamicVariables
+          : Array.isArray(savedDraft?.variables)
+            ? savedDraft.variables
+            : [];
+        const serverRecipients = list.map((item: any) => ({
           ...(item.recipient || {}),
           id: item.id,
           isValid: true,
         }));
+        // Folder lama dapat tersimpan sebelum item penerima digenerate.
+        // Pertahankan draft lokal agar item dapat dibuat/dipulihkan kembali.
+        wizardState.penerimaList = serverRecipients.length
+          ? serverRecipients
+          : Array.isArray(savedDraft?.penerimaList)
+            ? savedDraft.penerimaList
+            : [];
         // Folder yang dikembalikan diedit mulai dari halaman awal pembuatan
         // naskah, bukan langsung dibawa ke halaman preview/konfirmasi.
         currentStep.value = 1;
@@ -539,7 +567,9 @@ const buildFolderPayload = (signOption?: 'digsig' | 'qr_only' | 'ttd_basah') => 
   const [klasifikasi, ...klasifikasiText] = (konsep?.klasifikasiName || '').split(' - ');
   return {
     judul: konsep?.judul?.trim() || 'SDE Massal',
-    parentNaskahId: konsep?.parentNaskahId,
+    // URL adalah sumber paling stabil saat wizard baru dibuka dari disposisi.
+    // State konsep dapat belum tersinkron ketika tombol lanjut ditekan cepat.
+    parentNaskahId: props.parentNaskahId || konsep?.parentNaskahId,
     tanggal: konsep?.tanggalKonsep,
     klasifikasi: klasifikasi || konsep?.klasifikasiId,
     klasifikasiText: klasifikasiText.join(' - ') || konsep?.klasifikasiName,
@@ -563,6 +593,40 @@ const persistCompleteFolder = async (signOption?: 'digsig' | 'qr_only' | 'ttd_ba
   }
   if (!folderId.value) throw new Error('Folder SDE Massal gagal disimpan');
   return folderId.value;
+};
+
+const hydrateItemIdsFromServer = async () => {
+  if (!folderId.value) return;
+  const folderData = await findNaskahInFolder(folderId.value);
+  const serverItems = folderData?.items || [];
+  if (!serverItems.length) return;
+
+  if (!wizardState.penerimaList.length) {
+    wizardState.penerimaList = serverItems.map((item: any) => ({
+      ...(item.recipient || {}),
+      id: item.id,
+      isValid: true,
+    }));
+    return;
+  }
+
+  const serverItemsByRow = new Map<string, any>();
+  serverItems.forEach((item: any) => {
+    const rowNo = item?.recipient?.no ?? item?.recipientData?.no;
+    if (rowNo !== undefined && rowNo !== null && String(rowNo).trim()) {
+      serverItemsByRow.set(String(rowNo).trim(), item);
+    }
+  });
+
+  wizardState.penerimaList.forEach((item: any, index) => {
+    if (item.id) return;
+    const rowNo = item?.no;
+    const serverItem =
+      rowNo !== undefined && rowNo !== null
+        ? serverItemsByRow.get(String(rowNo).trim())
+        : serverItems[index];
+    if (serverItem?.id) item.id = serverItem.id;
+  });
 };
 
 /**
@@ -616,25 +680,7 @@ const ensureItemsGenerated = async () => {
       // items kosong. Ambil ulang item folder agar submit verifikasi tetap
       // memiliki ID database yang benar.
       if (folderId.value && missing.some((p) => !p.id)) {
-        const folderData = await findNaskahInFolder(folderId.value);
-        const serverItems = folderData?.items || [];
-        const serverItemsByRow = new Map<string, any>();
-        serverItems.forEach((item: any) => {
-          const rowNo = item?.recipient?.no ?? item?.recipientData?.no;
-          if (rowNo !== undefined && rowNo !== null && String(rowNo).trim()) {
-            serverItemsByRow.set(String(rowNo).trim(), item);
-          }
-        });
-
-        missing.forEach((p: any) => {
-          if (p.id) return;
-          const rowNo = p?.no;
-          const serverItem =
-            rowNo !== undefined && rowNo !== null
-              ? serverItemsByRow.get(String(rowNo).trim())
-              : undefined;
-          if (serverItem?.id) p.id = serverItem.id;
-        });
+        await hydrateItemIdsFromServer();
       }
     } finally {
       itemsGenerationPromise = null;
@@ -752,6 +798,7 @@ const handleSubmitVerification = async (
   try {
     const id = await persistCompleteFolder(signOption);
     await ensureItemsGenerated();
+    await hydrateItemIdsFromServer();
     await ensureMassAttachmentsCommitted();
 
     const ids = wizardState.penerimaList
@@ -775,9 +822,14 @@ const handleSubmitVerification = async (
     router.push('/korespondensi/sde-masal');
   } catch (e: any) {
     console.error('Gagal mengajukan verifikasi SDE Massal:', e);
+    const serverMessage =
+      e?.response?.data?.message ||
+      e?.response?.data?.error ||
+      e?.message ||
+      'Terjadi kesalahan saat mengajukan verifikasi';
     toast.add({
       title: 'Gagal Mengajukan',
-      description: e?.message || 'Terjadi kesalahan saat mengajukan verifikasi',
+      description: Array.isArray(serverMessage) ? serverMessage.join(', ') : serverMessage,
       color: 'error',
     });
   } finally {
