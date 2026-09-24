@@ -1408,16 +1408,19 @@ const adminMenuAdministrasi = computed(() => {
           {
             label: 'Log Aktivitas',
             to: '/admin/audit',
+            exact: true,
             permission: { resource: 'audit', action: 'read-log' },
           },
           {
             label: 'Anomali / Alert',
             to: '/admin/audit/anomaly',
+            exact: true,
             permission: { resource: 'audit', action: 'read-anomaly' },
           },
           {
             label: 'Laporan Audit',
             to: '/admin/audit/report',
+            exact: true,
             permission: { resource: 'audit', action: 'read-report' },
           },
         ],

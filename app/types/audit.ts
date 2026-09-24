@@ -176,6 +176,8 @@ export interface AuditFilter {
 export interface AnomalyFilter {
   page?: number;
   limit?: number;
+  startDate?: string;
+  endDate?: string;
   status?: AnomalyStatus;
   severity?: AnomalySeverity;
   userId?: string;

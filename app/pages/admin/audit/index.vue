@@ -2,7 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-      <PageHeader title="Log Aktivitas" subtitle="Pantau seluruh aktivitas pengguna di sistem." :items="items" />
+      <PageHeader title="Log Aktivitas" />
     </div>
 
     <!-- Table -->
@@ -135,6 +135,10 @@ const goPage = (page: number) => {
 const openDetail = async (row: AuditTrail) => {
   showDetail.value = true;
   selectedLog.value = row;
+  if (row.metadata?.activeSession) {
+    detailLoading.value = false;
+    return;
+  }
   detailLoading.value = true;
   try {
     const detail = await fetchLogDetail(row.id);
