@@ -11,7 +11,7 @@
     </div>
 
     <!-- Filter dan tabel digabung dalam satu card -->
-    <div class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
+    <div class="min-w-0 max-w-full rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
       <AuditLogFilter
         :model-value="f"
         :can-export="canExport"

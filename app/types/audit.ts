@@ -93,6 +93,7 @@ export interface ActiveAccount {
   persnum: number;
   name: string | null;
   username: string | null;
+  userRole: string | null;
   sessionCount: number;
   lastActivityAt: string;
   expiresAt: string;
