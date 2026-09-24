@@ -1,9 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-5">
-    <AccessDenied
-      v-if="!canAccessPage()"
-      :show-permission-key="false"
-    />
+    <AccessDenied v-if="!canAccessPage()" :show-permission-key="false" />
     <div v-else class="space-y-6">
       <UAlert
         v-if="error"
@@ -16,7 +13,7 @@
           icon: 'i-heroicons-x-mark-20-solid',
           color: 'white',
           variant: 'link',
-          padded: false
+          padded: false,
         }"
         @close="error = null"
       />
@@ -83,31 +80,39 @@
       </div>
 
       <template v-else>
-        <div class="relative w-full h-64 flex items-center transition-all group mb-8">
+        <div
+          class="relative mx-auto flex items-center transition-all group mb-8"
+          :style="heroContainerStyle"
+        >
           <div
             v-if="currentTheme"
-            class="absolute inset-0 rounded-3xl bg-cover bg-center shadow-md overflow-hidden dark:border dark:border-gray-700"
-            :style="{ backgroundImage: `url(${currentTheme.imageUrl})` }"
+            class="absolute inset-0 overflow-hidden rounded-3xl bg-gray-100 shadow-md dark:border dark:border-gray-700 dark:bg-gray-900"
           >
-            <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent" />
+            <img
+              :src="currentTheme.imageUrl"
+              :alt="currentTheme.name"
+              class="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2"
+              :style="themeBackgroundImageStyle"
+            />
+            <div class="absolute inset-0" :style="themeOverlayStyle" />
           </div>
           <div
             v-else
             class="absolute inset-0 bg-gradient-to-br from-primary-100 from-45% to-primary dark:from-primary-800 dark:to-primary-600 rounded-3xl shadow-md overflow-hidden dark:border dark:border-primary-800/50"
           ></div>
-          <div class="relative z-10 flex flex-col px-10 max-w-lg">
-            <Heading
-              variant="heading6b"
-              :class="currentTheme ? 'text-white drop-shadow-md' : 'text-primary-600 dark:text-white'"
-            >
-              Halo, {{ formatName(user?.nama) }}
-            </Heading>
-            <Heading
-              variant="heading9m"
-              :class="currentTheme ? 'mt-1 text-white/90 drop-shadow' : 'mt-1 text-primary-400 dark:text-primary-300'"
-            >
-              {{ $t('hero') }}
-            </Heading>
+          <div
+            v-if="!currentTheme || currentTheme.textPosition !== 'hidden'"
+            class="relative z-10 flex h-full w-full p-8 sm:p-10"
+            :class="greetingPositionClass"
+          >
+            <div class="max-w-lg" :class="greetingTextAlignClass">
+              <Heading variant="heading6b" :class="greetingTitleClass">
+                Halo, {{ formatName(user?.nama) }}
+              </Heading>
+              <Heading variant="heading9m" :class="greetingSubtitleClass">
+                {{ $t('hero') }}
+              </Heading>
+            </div>
           </div>
           <img
             v-if="!currentTheme"
@@ -122,7 +127,7 @@
             <UCard
               :ui="{
                 ...cardUI,
-                root: `${cardUI.root} hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer h-full`
+                root: `${cardUI.root} hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer h-full`,
               }"
             >
               <div
@@ -265,61 +270,135 @@
 </template>
 
 <script setup lang="ts">
-import { formatShortDate } from "~/utils/mail-helpers";
-import { onMounted } from 'vue'
-import { AlertTriangle } from 'lucide-vue-next'
-import { useAuth } from '@/composables/useAuth'
-import { useDashboard } from '@/composables/useDashboard'
-import { useDark } from '@vueuse/core'
+import { formatShortDate } from '~/utils/mail-helpers';
+import { onMounted } from 'vue';
+import { AlertTriangle } from 'lucide-vue-next';
+import { useAuth } from '@/composables/useAuth';
+import { useDashboard } from '@/composables/useDashboard';
+import { useDark } from '@vueuse/core';
 
 definePageMeta({
-  middleware: 'auth'
-})
+  middleware: 'auth',
+});
 
-const { t } = useI18n()
-const { user, getProfile, hasPermission, isSuperadmin } = useAuth()
-const { canAccessPage } = useFeatureAccess()
-const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } =
-  useDashboard(t)
+const { t } = useI18n();
+const { user, getProfile, hasPermission, isSuperadmin } = useAuth();
+const { canAccessPage } = useFeatureAccess();
+const { isLoading, error, stats, recentMails, fetchDashboardData, dashboardData } = useDashboard(t);
 
 // Default light mode untuk akun baru (bukan 'auto' yang mengikuti OS).
-const isDark = useDark({ initialValue: 'light' })
-const dashboardImage = computed(() => isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png')
-const { currentTheme, fetchCurrentTheme } = useThemeConfiguration()
-const { systemTheme, isConnected } = useRealtimeSocket()
+const isDark = useDark({ initialValue: 'light' });
+const dashboardImage = computed(() =>
+  isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png'
+);
+const { currentTheme, fetchCurrentTheme } = useThemeConfiguration();
+const { systemTheme, isConnected } = useRealtimeSocket();
+
+const greetingPositionClass = computed(() => {
+  const position = currentTheme.value?.textPosition || 'center-left';
+  const vertical = position.startsWith('top')
+    ? 'items-start'
+    : position.startsWith('bottom')
+      ? 'items-end'
+      : 'items-center';
+  const horizontal = position.endsWith('right')
+    ? 'justify-end'
+    : position.endsWith('center') || position === 'center'
+      ? 'justify-center'
+      : 'justify-start';
+  return `${vertical} ${horizontal}`;
+});
+
+const greetingTextAlignClass = computed(() => {
+  const position = currentTheme.value?.textPosition || 'center-left';
+  return position.endsWith('right')
+    ? 'text-right'
+    : position.endsWith('center') || position === 'center'
+      ? 'text-center'
+      : 'text-left';
+});
+
+const greetingTitleClass = computed(() => {
+  if (!currentTheme.value) return 'text-primary-600 dark:text-white';
+  return currentTheme.value.textTone === 'dark'
+    ? 'text-gray-950 drop-shadow-sm'
+    : 'text-white drop-shadow-md';
+});
+
+const greetingSubtitleClass = computed(() => {
+  if (!currentTheme.value) return 'mt-1 text-primary-400 dark:text-primary-300';
+  return currentTheme.value.textTone === 'dark'
+    ? 'mt-1 text-gray-800 drop-shadow-sm'
+    : 'mt-1 text-white/90 drop-shadow';
+});
+
+const themeOverlayStyle = computed(() => {
+  const theme = currentTheme.value;
+  if (!theme || theme.textPosition === 'hidden' || theme.overlayStrength <= 0) return {};
+  const alpha = Math.min(80, Math.max(0, theme.overlayStrength ?? 45)) / 100;
+  const color = theme.textTone === 'dark' ? '255,255,255' : '0,0,0';
+  const direction = theme.textPosition.endsWith('right')
+    ? 'to left'
+    : theme.textPosition.endsWith('left')
+      ? 'to right'
+      : 'to bottom';
+  return {
+    background: `linear-gradient(${direction}, rgba(${color},${alpha}), rgba(${color},0))`,
+  };
+});
+
+const themeBackgroundImageStyle = computed(() => {
+  const theme = currentTheme.value;
+  const width = Math.min(200, Math.max(50, theme?.backgroundWidth ?? 100));
+  const height = Math.min(200, Math.max(50, theme?.backgroundHeight ?? 100));
+  return {
+    width: `${width}%`,
+    height: `${height}%`,
+  };
+});
+
+const heroContainerStyle = computed(() => {
+  const theme = currentTheme.value;
+  const width = Math.min(100, Math.max(50, theme?.bannerWidth ?? 100));
+  const height = Math.min(500, Math.max(160, theme?.bannerHeight ?? 256));
+  return {
+    width: `${width}%`,
+    height: `${height}px`,
+  };
+});
 
 watch(systemTheme, (theme) => {
-  currentTheme.value = theme ?? null
-})
+  currentTheme.value = theme ?? null;
+});
 
 watch(isConnected, (connected) => {
-  if (connected) void fetchCurrentTheme().catch(() => null)
-})
+  if (connected) void fetchCurrentTheme().catch(() => null);
+});
 
-const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'))
+const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'));
 
 const cardUI: Record<string, any> = {
   root: 'rounded-xl ring-0 shadow-sm bg-white dark:bg-gray-800 print:hidden transition-colors relative overflow-hidden',
   header: { padding: 'px-5 py-4 sm:px-6' },
   body: { padding: 'p-5 sm:p-6' },
-  divide: 'divide-y divide-gray-100 dark:divide-gray-700'
-}
+  divide: 'divide-y divide-gray-100 dark:divide-gray-700',
+};
 
 const formatName = (name: string | undefined) => {
-  if (!name) return t('default_user')
-  return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-}
+  if (!name) return t('default_user');
+  return name.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 /* digantikan formatShortDate dari ~/utils/mail-helpers */
 
 onMounted(async () => {
-  if (!user.value) await getProfile()
-  await Promise.all([fetchDashboardData(), fetchCurrentTheme().catch(() => null)])
+  if (!user.value) await getProfile();
+  await Promise.all([fetchDashboardData(), fetchCurrentTheme().catch(() => null)]);
 
   // Ensure notification badge is fetched on first login
-  const { init: initNotifications } = useNotifications()
-  await initNotifications(true)
-})
+  const { init: initNotifications } = useNotifications();
+  await initNotifications(true);
+});
 </script>
 
 <style scoped>

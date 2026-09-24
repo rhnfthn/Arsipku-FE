@@ -1,7 +1,10 @@
 import { ref } from 'vue';
 import type {
   KonfigurasiThemeItem,
+  KonfigurasiThemeAsset,
+  KonfigurasiThemeAssetResponse,
   KonfigurasiThemeListResponse,
+  KonfigurasiThemeDefaultResponse,
   KonfigurasiThemePayload,
   KonfigurasiThemeResponse,
 } from '~/types/konfigurasi';
@@ -9,6 +12,8 @@ import type {
 // State aktif dibagi oleh Beranda dan halaman Konfigurasi Sistem.
 const currentTheme = ref<KonfigurasiThemeItem | null>(null);
 const themes = ref<KonfigurasiThemeItem[]>([]);
+const availableAssets = ref<KonfigurasiThemeAsset[]>([]);
+const defaultThemeActive = ref(false);
 
 export const useThemeConfiguration = () => {
   const { apiGet, apiPost, apiPut, apiPatch, apiDelete } = useApi();
@@ -17,6 +22,7 @@ export const useThemeConfiguration = () => {
   const isSaving = ref(false);
   const changingManualId = ref<string | null>(null);
   const deletingId = ref<string | null>(null);
+  const isChangingDefault = ref(false);
 
   const fetchCurrentTheme = async () => {
     isLoadingCurrent.value = true;
@@ -48,6 +54,26 @@ export const useThemeConfiguration = () => {
     }
   };
 
+  const fetchThemeAssets = async () => {
+    const response = await apiGet<KonfigurasiThemeAssetResponse>(
+      '/admin/config/theme/assets',
+      {},
+      { skipCache: true }
+    );
+    availableAssets.value = response.data ?? [];
+    return availableAssets.value;
+  };
+
+  const fetchDefaultStatus = async () => {
+    const response = await apiGet<KonfigurasiThemeDefaultResponse>(
+      '/admin/config/theme/default',
+      {},
+      { skipCache: true }
+    );
+    defaultThemeActive.value = response.data?.active ?? false;
+    return defaultThemeActive.value;
+  };
+
   const toFormData = (payload: KonfigurasiThemePayload) => {
     const formData = new FormData();
     formData.append('name', payload.name);
@@ -57,6 +83,15 @@ export const useThemeConfiguration = () => {
     formData.append('repeat_yearly', String(payload.repeat_yearly));
     formData.append('is_enabled', String(payload.is_enabled));
     formData.append('priority', String(payload.priority));
+    formData.append('text_position', payload.text_position);
+    formData.append('text_tone', payload.text_tone);
+    formData.append('overlay_strength', String(payload.overlay_strength));
+    formData.append('background_width', String(payload.background_width));
+    formData.append('background_height', String(payload.background_height));
+    formData.append('banner_width', String(payload.banner_width));
+    formData.append('banner_height', String(payload.banner_height));
+    formData.append('navigation_accent_color', payload.navigation_accent_color);
+    if (payload.image_key) formData.append('image_key', payload.image_key);
     if (payload.image) formData.append('image', payload.image);
     return formData;
   };
@@ -87,9 +122,19 @@ export const useThemeConfiguration = () => {
       await apiPatch<KonfigurasiThemeResponse>(`/admin/config/theme/${id}/manual`, {
         active,
       });
-      await Promise.all([fetchThemes(), fetchCurrentTheme()]);
+      await Promise.all([fetchThemes(), fetchCurrentTheme(), fetchDefaultStatus()]);
     } finally {
       changingManualId.value = null;
+    }
+  };
+
+  const setDefaultTheme = async (active: boolean) => {
+    isChangingDefault.value = true;
+    try {
+      await apiPatch<KonfigurasiThemeDefaultResponse>('/admin/config/theme/default', { active });
+      await Promise.all([fetchThemes(), fetchCurrentTheme(), fetchDefaultStatus()]);
+    } finally {
+      isChangingDefault.value = false;
     }
   };
 
@@ -106,16 +151,22 @@ export const useThemeConfiguration = () => {
   return {
     currentTheme,
     themes,
+    availableAssets,
+    defaultThemeActive,
     isLoadingCurrent,
     isLoadingList,
     isSaving,
     changingManualId,
     deletingId,
+    isChangingDefault,
     fetchCurrentTheme,
     fetchThemes,
+    fetchThemeAssets,
+    fetchDefaultStatus,
     createTheme,
     updateTheme,
     setManualTheme,
+    setDefaultTheme,
     deleteTheme,
   };
 };

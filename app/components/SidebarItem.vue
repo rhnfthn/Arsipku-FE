@@ -1,8 +1,18 @@
 <template>
   <div class="mb-0.5">
-    <div v-if="hasChildren" @click="toggle" :class="containerClasses" :title="item?.label">
+    <div
+      v-if="hasChildren"
+      class="theme-navigation-item"
+      :data-active="isActive"
+      :style="navigationStyle"
+      @click="toggle"
+      :class="containerClasses"
+      :title="item?.label"
+    >
       <UIcon v-if="item?.icon" :key="item.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
+      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{
+        item?.label
+      }}</span>
 
       <span
         v-if="item?.badge && !effectiveBadgeAsDot"
@@ -23,13 +33,26 @@
 
       <UIcon
         name="i-heroicons-chevron-down"
-        :class="['w-3 h-3 transition-transform duration-200 text-gray-500 dark:text-gray-400', isOpen && 'rotate-180']"
+        :class="[
+          'w-3 h-3 transition-transform duration-200 text-gray-500 dark:text-gray-400',
+          isOpen && 'rotate-180',
+        ]"
       />
     </div>
 
-    <NuxtLink v-else-if="item?.to" :to="item.to" :class="containerClasses" :title="item?.label">
+    <NuxtLink
+      v-else-if="item?.to"
+      :to="item.to"
+      class="theme-navigation-item"
+      :data-active="isActive"
+      :style="navigationStyle"
+      :class="containerClasses"
+      :title="item?.label"
+    >
       <UIcon v-if="item?.icon" :name="item.icon" :class="iconClasses" />
-      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{ item?.label }}</span>
+      <span class="flex-1 text-[13px] leading-tight whitespace-pre-line break-words">{{
+        item?.label
+      }}</span>
 
       <span
         v-if="item?.badge"
@@ -46,6 +69,7 @@
           v-if="child && child.children && child.children.length > 0"
           :item="child"
           :collapsed="collapsed"
+          :accent-color="accentColor"
         />
         <!-- Leaf: child langsung ke route -->
         <NuxtLink
@@ -53,11 +77,14 @@
           :to="child.to"
           :title="child.label"
           class="flex items-start px-4 py-2.5 my-1 pl-12 rounded-full text-[13px] leading-tight whitespace-pre-line break-words transition-colors dark:text-gray-400 relative"
-          :class="
+          :class="[
+            'theme-navigation-item',
             isActiveChild(child.to, child.activePaths, child.exact)
-              ? 'bg-[#D3E3FD] font-bold text-gray-900 dark:bg-gray-700 dark:text-white'
-              : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
-          "
+              ? 'font-bold text-gray-900 dark:text-white'
+              : 'text-gray-600 dark:text-gray-300',
+          ]"
+          :data-active="isActiveChild(child.to, child.activePaths, child.exact)"
+          :style="navigationStyle"
         >
           <span class="flex-1">{{ child.label }}</span>
 
@@ -81,6 +108,7 @@ const props = defineProps({
   // Default: otomatis dot jika punya children (parent menu di sidebar utama),
   //          angka jika leaf (submenu di dropdown).
   badgeAsDot: { type: Boolean, default: null },
+  accentColor: { type: String, default: '#D3E3FD' },
 });
 
 const route = useRoute();
@@ -210,19 +238,36 @@ const toggle = () => {
 
 const containerClasses = computed(() => [
   'flex items-center gap-3 my-1.5 px-4 py-2.5 mx-0 rounded-full min-w-[200px] cursor-pointer transition-colors duration-200 select-none',
-  isActive.value
-    ? 'bg-[#D3E3FD] text-gray-900 font-bold dark:bg-gray-700 dark:text-white'
-    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
-  'mx-3'
+  isActive.value ? 'text-gray-900 font-bold dark:text-white' : 'text-gray-700 dark:text-gray-300',
+  'mx-3',
 ]);
+
+const navigationStyle = computed(() => {
+  const hex = /^#[0-9a-f]{6}$/i.test(props.accentColor) ? props.accentColor : '#D3E3FD';
+  const red = Number.parseInt(hex.slice(1, 3), 16);
+  const green = Number.parseInt(hex.slice(3, 5), 16);
+  const blue = Number.parseInt(hex.slice(5, 7), 16);
+  return {
+    '--theme-navigation-active': hex,
+    '--theme-navigation-hover': `rgba(${red}, ${green}, ${blue}, 0.58)`,
+  };
+});
 
 const iconClasses = computed(() => [
   'w-5 h-5',
-  isActive.value ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'
+  isActive.value ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400',
 ]);
 </script>
 
 <style scoped>
+.theme-navigation-item:hover {
+  background-color: var(--theme-navigation-hover);
+}
+
+.theme-navigation-item[data-active='true'] {
+  background-color: var(--theme-navigation-active);
+}
+
 @keyframes pulse {
   0%,
   100% {
