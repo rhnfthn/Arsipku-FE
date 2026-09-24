@@ -481,7 +481,7 @@ const getPayload = () => {
     nama_lengkap: user.value?.nama || "",
     // Garis Kewenangan (a.n.)
     atas_nama: useGarisKewenangan.value ? atasNamaLabel.value : "",
-    atas_nama_position_id: (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || null,
+    atas_nama_position_id: (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || "",
     tgl: tglDb.value,
     tanggal: tglDisplay.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)

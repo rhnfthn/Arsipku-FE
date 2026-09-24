@@ -310,9 +310,9 @@
                 v-model="form.klasifikasi"
                 :items="klasifikasiItems"
                 value-key="klasifikasi"
-                label-key="klasifikasi_text"
+                label-key="searchLabel"
                 searchable
-                :search-attributes="['klasifikasi', 'klasifikasi_text']"
+                :search-attributes="['searchLabel']"
                 placeholder="Pilih klasifikasi arsip"
                 :search-input="{ placeholder: 'Cari klasifikasi…' }"
                 variant="none"
@@ -654,9 +654,11 @@ import ExportColumnModal from '~/components/ExportColumnModal.vue';
 const {
   getBerkasList,
   createBerkas,
-  getKlasifikasiDenganRetensi,
   uploadBerkasFile,
 } = useArsipDinamis();
+// Gunakan sumber klasifikasi yang sama dengan seluruh form pembuatan naskah.
+// Endpoint ini juga memuat metadata retensi/penyusutan untuk autofill berkas.
+const { getKlasifikasi } = useKlasifikasi();
 const { apiPost } = useApi();
 const toast = useToast();
 
@@ -905,7 +907,14 @@ const klasifikasiItems = computed(() =>
     .sort((a: any, b: any) => String(a.klasifikasi).localeCompare(String(b.klasifikasi)))
     .map((item: any) => {
       const isParent = !String(item.klasifikasi).includes('.');
-      return { ...item, isParent, disabled: isParent };
+      return {
+        ...item,
+        // USelectMenu melakukan filtering berdasarkan atribut ini. Gabungkan
+        // kode dan nama agar pencarian konsisten dengan form pembuatan naskah.
+        searchLabel: `${item.klasifikasi} - ${item.klasifikasi_text || ''}`,
+        isParent,
+        disabled: isParent,
+      };
     })
 );
 
@@ -1120,7 +1129,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
 
 const fetchKlasifikasi = async () => {
   try {
-    const data: any = await getKlasifikasiDenganRetensi();
+    const data: any = await getKlasifikasi();
     klasifikasiList.value = Array.isArray(data) ? data : (data?.data ?? []);
   } catch (e) {
     console.error('Gagal memuat klasifikasi:', e);
