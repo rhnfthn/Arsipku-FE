@@ -104,13 +104,59 @@ const props = defineProps<{
 
 // Aktivitas terakhir dari akun aktif ditampilkan di tabel yang sama.
 // Hindari duplikasi jika aktivitas tersebut sudah ada di halaman log.
+// Jika sesi aktif belum memiliki log (misalnya sesi dibuat sebelum perbaikan
+// audit login), tetap tampilkan sesi tersebut agar akun dari perangkat lain
+// tidak hilang dari monitoring.
 const displayRows = computed(() => {
   const logIds = new Set(props.rows.map((row) => row.id));
-  const activeRows = props.activeAccounts
-    .map((account) => account.latestActivity)
-    .filter((activity): activity is AuditTrail => Boolean(activity && !logIds.has(activity.id)));
+  const activeRows = props.activeAccounts.flatMap((account) => {
+    if (account.latestActivity) {
+      return logIds.has(account.latestActivity.id) ? [] : [account.latestActivity];
+    }
 
-  return [...activeRows, ...props.rows];
+    const session = account.sessions[0];
+    return [
+      {
+        id: `active-session-${account.persnum}`,
+        createdAt: account.lastActivityAt,
+        userId: null,
+        persnum: account.persnum,
+        userName: account.name || account.username || null,
+        userEmail: null,
+        userRole: null,
+        idPosition: null,
+        unitKerja: null,
+        action: 'LOGIN',
+        module: 'AUTH',
+        entityType: null,
+        entityId: null,
+        subEntityType: null,
+        subEntityId: null,
+        description: 'Sesi login aktif',
+        oldValue: null,
+        newValue: null,
+        ipAddress: session?.ipAddress || null,
+        userAgent: session?.userAgent || null,
+        requestMethod: 'GET',
+        requestUrl: '/auth/session',
+        status: 'SUCCESS',
+        errorMessage: null,
+        metadata: { activeSession: true },
+      } as AuditTrail,
+    ];
+  });
+
+  return [...activeRows, ...props.rows].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    const validA = Number.isFinite(timeA);
+    const validB = Number.isFinite(timeB);
+
+    if (!validA && !validB) return 0;
+    if (!validA) return 1;
+    if (!validB) return -1;
+    return timeB - timeA;
+  });
 });
 
 defineEmits<{
