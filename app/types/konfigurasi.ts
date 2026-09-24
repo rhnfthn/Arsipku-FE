@@ -88,8 +88,22 @@ export interface UpdateSearchConfigPayload {
 }
 
 // ==========================================
-//   TEMA BERANDA
+//   Tema
 // ==========================================
+export type ThemeTextPosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'center-left'
+  | 'center'
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right'
+  | 'hidden';
+
+export type ThemeTextTone = 'light' | 'dark';
+
 export interface KonfigurasiThemeItem {
   id: string;
   name: string;
@@ -103,6 +117,14 @@ export interface KonfigurasiThemeItem {
   isEnabled: boolean;
   manualOverride: boolean | null;
   priority: number;
+  textPosition: ThemeTextPosition;
+  textTone: ThemeTextTone;
+  overlayStrength: number;
+  backgroundWidth: number;
+  backgroundHeight: number;
+  bannerWidth: number;
+  bannerHeight: number;
+  navigationAccentColor: string;
   source: 'manual' | 'scheduled';
   createdAt: string;
   updatedAt: string;
@@ -116,7 +138,27 @@ export interface KonfigurasiThemePayload {
   repeat_yearly: boolean;
   is_enabled: boolean;
   priority: number;
+  text_position: ThemeTextPosition;
+  text_tone: ThemeTextTone;
+  overlay_strength: number;
+  background_width: number;
+  background_height: number;
+  banner_width: number;
+  banner_height: number;
+  navigation_accent_color: string;
   image?: File;
+  image_key?: string;
+}
+
+export interface KonfigurasiThemeAsset {
+  key: string;
+  name: string;
+  imageUrl: string;
+}
+
+export interface KonfigurasiThemeAssetResponse {
+  success: boolean;
+  data: KonfigurasiThemeAsset[];
 }
 
 export interface KonfigurasiThemeListResponse {
@@ -127,4 +169,9 @@ export interface KonfigurasiThemeListResponse {
 export interface KonfigurasiThemeResponse {
   success: boolean;
   data: KonfigurasiThemeItem | null;
+}
+
+export interface KonfigurasiThemeDefaultResponse {
+  success: boolean;
+  data: { active: boolean };
 }

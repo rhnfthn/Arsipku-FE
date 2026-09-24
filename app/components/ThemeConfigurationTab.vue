@@ -27,11 +27,14 @@
         <USkeleton class="h-28 w-full rounded-lg" />
       </div>
       <div v-else-if="currentTheme" class="grid gap-4 p-4 md:grid-cols-[240px_1fr]">
-        <img
-          :src="currentTheme.imageUrl"
-          :alt="currentTheme.name"
-          class="h-28 w-full rounded-lg object-cover"
-        />
+        <div class="relative h-28 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-900">
+          <img
+            :src="currentTheme.imageUrl"
+            :alt="currentTheme.name"
+            class="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2"
+            :style="getBackgroundImageStyle(currentTheme)"
+          />
+        </div>
         <div class="min-w-0 self-center">
           <div class="flex flex-wrap items-center gap-2">
             <p class="font-semibold text-gray-900 dark:text-white">{{ currentTheme.name }}</p>
@@ -55,20 +58,94 @@
     <div v-if="isLoadingList" class="grid gap-4 md:grid-cols-2">
       <USkeleton v-for="index in 4" :key="index" class="h-64 rounded-xl" />
     </div>
-    <EmptyState
-      v-else-if="themes.length === 0"
-      icon="i-lucide-image-off"
-      :title="t('theme_empty_title')"
-      :description="t('theme_empty_desc')"
-    />
     <div v-else class="grid gap-4 md:grid-cols-2">
+      <article
+        class="overflow-hidden rounded-xl border bg-white dark:bg-gray-800"
+        :class="
+          defaultThemeActive || !currentTheme
+            ? 'border-primary-400 ring-2 ring-primary-100 dark:border-primary-600 dark:ring-primary-900/40'
+            : 'border-gray-200 dark:border-gray-700'
+        "
+      >
+        <div
+          class="relative flex h-40 items-center overflow-hidden bg-gradient-to-br from-primary-100 from-45% to-primary dark:from-primary-800 dark:to-primary-600"
+        >
+          <div class="relative z-10 px-6">
+            <p class="font-bold text-primary-600 dark:text-white">Halo, Pengguna</p>
+            <p class="mt-1 text-xs text-primary-400 dark:text-primary-200">
+              {{ t('theme_default_greeting') }}
+            </p>
+          </div>
+          <img
+            src="/dashboard_light.png"
+            :alt="t('theme_default_name')"
+            class="absolute -bottom-5 -right-3 h-44 object-contain"
+          />
+          <UBadge
+            v-if="defaultThemeActive || !currentTheme"
+            color="primary"
+            variant="solid"
+            class="absolute left-3 top-3"
+          >
+            {{ t('theme_current_badge') }}
+          </UBadge>
+        </div>
+        <div class="p-4">
+          <p class="font-semibold text-gray-900 dark:text-white">{{ t('theme_default_name') }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('theme_default_desc') }}
+          </p>
+          <UButton
+            v-if="canUpdate"
+            class="mt-4"
+            size="xs"
+            color="primary"
+            variant="subtle"
+            icon="i-lucide-rotate-ccw"
+            :loading="isChangingDefault"
+            :disabled="defaultThemeActive"
+            @click="activateDefault"
+          >
+            {{
+              defaultThemeActive ? t('theme_default_active_button') : t('theme_activate_default')
+            }}
+          </UButton>
+        </div>
+      </article>
+
       <article
         v-for="theme in themes"
         :key="theme.id"
         class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
       >
         <div class="relative h-40 bg-gray-100 dark:bg-gray-900">
-          <img :src="theme.imageUrl" :alt="theme.name" class="h-full w-full object-cover" />
+          <img
+            :src="theme.imageUrl"
+            :alt="theme.name"
+            class="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2"
+            :style="getBackgroundImageStyle(theme)"
+          />
+          <div class="absolute inset-0" :style="getOverlayStyle(theme)" />
+          <div
+            v-if="theme.textPosition !== 'hidden'"
+            class="absolute inset-0 flex p-4"
+            :class="getPositionClass(theme.textPosition)"
+          >
+            <div :class="getTextAlignClass(theme.textPosition)">
+              <p
+                class="text-sm font-bold drop-shadow"
+                :class="theme.textTone === 'dark' ? 'text-gray-950' : 'text-white'"
+              >
+                Halo, Pengguna
+              </p>
+              <p
+                class="text-[10px] drop-shadow"
+                :class="theme.textTone === 'dark' ? 'text-gray-800' : 'text-white/90'"
+              >
+                {{ t('theme_default_greeting') }}
+              </p>
+            </div>
+          </div>
           <div class="absolute left-3 top-3 flex flex-wrap gap-2">
             <UBadge v-if="theme.manualOverride" color="warning" variant="solid">
               {{ t('theme_manual_active') }}
@@ -182,6 +259,34 @@
           </div>
         </div>
 
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('theme_navigation_accent') }}
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              v-model="form.navigationAccentColor"
+              type="color"
+              class="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1 dark:border-gray-600 dark:bg-gray-800"
+            />
+            <UInput
+              v-model="form.navigationAccentColor"
+              maxlength="7"
+              placeholder="#D3E3FD"
+              class="w-36"
+            />
+            <div
+              class="flex h-10 flex-1 items-center rounded-full px-4 text-sm font-semibold text-gray-900"
+              :style="{ backgroundColor: form.navigationAccentColor }"
+            >
+              {{ t('theme_navigation_preview') }}
+            </div>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('theme_navigation_accent_desc') }}
+          </p>
+        </div>
+
         <div class="grid gap-3 sm:grid-cols-2">
           <div
             class="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-gray-700"
@@ -219,6 +324,179 @@
           </p>
         </div>
 
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('theme_text_position') }}
+            </label>
+            <USelect
+              v-model="form.textPosition"
+              :items="textPositionOptions"
+              value-key="value"
+              label-key="label"
+              portal="body"
+              :ui="{ content: 'theme-dropdown-content !z-[var(--z-toast)]' }"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('theme_text_tone') }}
+            </label>
+            <USelect
+              v-model="form.textTone"
+              :items="textToneOptions"
+              value-key="value"
+              label-key="label"
+              portal="body"
+              :ui="{ content: 'theme-dropdown-content !z-[var(--z-toast)]' }"
+              class="w-full"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div class="mb-1.5 flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('theme_overlay_strength') }}
+            </label>
+            <span class="text-xs text-gray-500">{{ form.overlayStrength }}%</span>
+          </div>
+          <input
+            v-model.number="form.overlayStrength"
+            type="range"
+            min="0"
+            max="80"
+            step="5"
+            class="w-full accent-primary-600"
+          />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('theme_overlay_desc') }}
+          </p>
+        </div>
+
+        <div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <div class="mb-1.5 flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('theme_background_width') }}
+                </label>
+                <span class="text-xs text-gray-500">{{ form.backgroundWidth }}%</span>
+              </div>
+              <input
+                v-model.number="form.backgroundWidth"
+                type="range"
+                min="50"
+                max="200"
+                step="5"
+                class="w-full accent-primary-600"
+              />
+            </div>
+            <div>
+              <div class="mb-1.5 flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('theme_background_height') }}
+                </label>
+                <span class="text-xs text-gray-500">{{ form.backgroundHeight }}%</span>
+              </div>
+              <input
+                v-model.number="form.backgroundHeight"
+                type="range"
+                min="50"
+                max="200"
+                step="5"
+                class="w-full accent-primary-600"
+              />
+            </div>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('theme_background_size_desc') }}
+          </p>
+        </div>
+
+        <div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <div class="mb-1.5 flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('theme_banner_width') }}
+                </label>
+                <span class="text-xs text-gray-500">{{ form.bannerWidth }}%</span>
+              </div>
+              <input
+                v-model.number="form.bannerWidth"
+                type="range"
+                min="50"
+                max="100"
+                step="5"
+                class="w-full accent-primary-600"
+              />
+            </div>
+            <div>
+              <div class="mb-1.5 flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('theme_banner_height') }}
+                </label>
+                <span class="text-xs text-gray-500">{{ form.bannerHeight }} px</span>
+              </div>
+              <input
+                v-model.number="form.bannerHeight"
+                type="range"
+                min="160"
+                max="500"
+                step="8"
+                class="w-full accent-primary-600"
+              />
+            </div>
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('theme_banner_size_desc') }}
+          </p>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('theme_existing_image') }}
+          </label>
+          <USelect
+            v-model="selectedAssetKey"
+            :items="assetOptions"
+            value-key="value"
+            label-key="label"
+            portal="body"
+            :ui="{ content: 'theme-dropdown-content !z-[var(--z-toast)]' }"
+            class="w-full"
+          >
+            <template #leading>
+              <img
+                v-if="selectedAssetPreviewUrl"
+                :src="selectedAssetPreviewUrl"
+                alt=""
+                class="size-6 rounded object-cover"
+              />
+              <UIcon v-else name="i-lucide-upload" class="size-4 text-gray-400" />
+            </template>
+            <template #item-leading="{ item }">
+              <img
+                v-if="item.imageUrl"
+                :src="item.imageUrl"
+                :alt="item.label"
+                class="size-10 rounded-md border border-gray-200 object-cover dark:border-gray-700"
+              />
+              <div
+                v-else
+                class="flex size-10 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800"
+              >
+                <UIcon name="i-lucide-upload" class="size-4 text-gray-500" />
+              </div>
+            </template>
+          </USelect>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('theme_existing_image_desc') }}
+          </p>
+        </div>
+
         <div>
           <FileUpload
             v-model="files"
@@ -228,12 +506,44 @@
             :description="t('theme_upload_help')"
             @invalid-files="handleInvalidFiles"
           />
-          <img
-            v-if="editingTheme && files.length === 0"
-            :src="editingTheme.imageUrl"
-            :alt="editingTheme.name"
-            class="mt-3 h-28 w-full rounded-lg object-cover"
-          />
+        </div>
+
+        <div v-if="formPreviewUrl">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('theme_final_preview') }}
+          </label>
+          <div
+            class="relative mx-auto overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-900"
+            :style="getBannerPreviewStyle(form)"
+          >
+            <img
+              :src="formPreviewUrl"
+              alt="Preview"
+              class="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2"
+              :style="getBackgroundImageStyle(form)"
+            />
+            <div class="absolute inset-0" :style="getOverlayStyle(form)" />
+            <div
+              v-if="form.textPosition !== 'hidden'"
+              class="absolute inset-0 flex p-5"
+              :class="getPositionClass(form.textPosition)"
+            >
+              <div :class="getTextAlignClass(form.textPosition)">
+                <p
+                  class="font-bold drop-shadow"
+                  :class="form.textTone === 'dark' ? 'text-gray-950' : 'text-white'"
+                >
+                  Halo, Pengguna
+                </p>
+                <p
+                  class="text-xs drop-shadow"
+                  :class="form.textTone === 'dark' ? 'text-gray-800' : 'text-white/90'"
+                >
+                  {{ t('theme_default_greeting') }}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="flex justify-end gap-3 border-t border-gray-200 py-5 dark:border-gray-700">
@@ -250,7 +560,12 @@
 </template>
 
 <script setup lang="ts">
-import type { KonfigurasiThemeItem, KonfigurasiThemePayload } from '~/types/konfigurasi';
+import type {
+  KonfigurasiThemeItem,
+  KonfigurasiThemePayload,
+  ThemeTextPosition,
+  ThemeTextTone,
+} from '~/types/konfigurasi';
 import { Alert } from '~/composables/useAlert';
 
 const { t } = useI18n();
@@ -261,22 +576,31 @@ const canUpdate = computed(() => isSuperadmin.value || hasPermission('konfiguras
 const {
   currentTheme,
   themes,
+  availableAssets,
+  defaultThemeActive,
   isLoadingCurrent,
   isLoadingList,
   isSaving,
   changingManualId,
   deletingId,
+  isChangingDefault,
   fetchCurrentTheme,
   fetchThemes,
+  fetchThemeAssets,
+  fetchDefaultStatus,
   createTheme,
   updateTheme,
   setManualTheme,
+  setDefaultTheme,
   deleteTheme,
 } = useThemeConfiguration();
 
 const showForm = ref(false);
 const editingTheme = ref<KonfigurasiThemeItem | null>(null);
 const files = ref<File[]>([]);
+const selectedFilePreviewUrl = ref<string | null>(null);
+const NEW_IMAGE_OPTION = '__upload_new__';
+const selectedAssetKey = ref(NEW_IMAGE_OPTION);
 const form = reactive({
   name: '',
   description: '',
@@ -285,7 +609,55 @@ const form = reactive({
   repeatYearly: false,
   isEnabled: true,
   priority: 0,
+  textPosition: 'center-left' as ThemeTextPosition,
+  textTone: 'light' as ThemeTextTone,
+  overlayStrength: 45,
+  backgroundWidth: 100,
+  backgroundHeight: 100,
+  bannerWidth: 100,
+  bannerHeight: 256,
+  navigationAccentColor: '#D3E3FD',
 });
+
+const textPositionOptions = computed(() => [
+  { value: 'top-left', label: t('theme_position_top_left') },
+  { value: 'top-center', label: t('theme_position_top_center') },
+  { value: 'top-right', label: t('theme_position_top_right') },
+  { value: 'center-left', label: t('theme_position_center_left') },
+  { value: 'center', label: t('theme_position_center') },
+  { value: 'center-right', label: t('theme_position_center_right') },
+  { value: 'bottom-left', label: t('theme_position_bottom_left') },
+  { value: 'bottom-center', label: t('theme_position_bottom_center') },
+  { value: 'bottom-right', label: t('theme_position_bottom_right') },
+  { value: 'hidden', label: t('theme_position_hidden') },
+]);
+
+const textToneOptions = computed(() => [
+  { value: 'light', label: t('theme_tone_light') },
+  { value: 'dark', label: t('theme_tone_dark') },
+]);
+
+const assetOptions = computed(() => [
+  { value: NEW_IMAGE_OPTION, label: t('theme_upload_new'), imageUrl: null },
+  ...availableAssets.value.map((asset) => ({
+    value: asset.key,
+    label: asset.name,
+    imageUrl: asset.imageUrl,
+  })),
+]);
+
+const selectedAssetPreviewUrl = computed(
+  () =>
+    availableAssets.value.find((asset) => asset.key === selectedAssetKey.value)?.imageUrl || null
+);
+
+const formPreviewUrl = computed(
+  () =>
+    selectedFilePreviewUrl.value ||
+    selectedAssetPreviewUrl.value ||
+    editingTheme.value?.imageUrl ||
+    null
+);
 
 const resetForm = () => {
   Object.assign(form, {
@@ -296,7 +668,16 @@ const resetForm = () => {
     repeatYearly: false,
     isEnabled: true,
     priority: 0,
+    textPosition: 'center-left',
+    textTone: 'light',
+    overlayStrength: 45,
+    backgroundWidth: 100,
+    backgroundHeight: 100,
+    bannerWidth: 100,
+    bannerHeight: 256,
+    navigationAccentColor: '#D3E3FD',
   });
+  selectedAssetKey.value = NEW_IMAGE_OPTION;
   files.value = [];
 };
 
@@ -316,7 +697,16 @@ const openEdit = (theme: KonfigurasiThemeItem) => {
     repeatYearly: theme.repeatYearly,
     isEnabled: theme.isEnabled,
     priority: theme.priority,
+    textPosition: theme.textPosition || 'center-left',
+    textTone: theme.textTone || 'light',
+    overlayStrength: theme.overlayStrength ?? 45,
+    backgroundWidth: theme.backgroundWidth ?? 100,
+    backgroundHeight: theme.backgroundHeight ?? 100,
+    bannerWidth: theme.bannerWidth ?? 100,
+    bannerHeight: theme.bannerHeight ?? 256,
+    navigationAccentColor: theme.navigationAccentColor || '#D3E3FD',
   });
+  selectedAssetKey.value = theme.imageKey;
   files.value = [];
   showForm.value = true;
 };
@@ -330,7 +720,11 @@ const submitForm = async () => {
     });
     return;
   }
-  if (!editingTheme.value && files.value.length === 0) {
+  if (
+    !editingTheme.value &&
+    files.value.length === 0 &&
+    selectedAssetKey.value === NEW_IMAGE_OPTION
+  ) {
     toast.add({
       title: t('theme_validation_title'),
       description: t('theme_image_required'),
@@ -354,6 +748,14 @@ const submitForm = async () => {
     });
     return;
   }
+  if (!/^#[0-9a-f]{6}$/i.test(form.navigationAccentColor)) {
+    toast.add({
+      title: t('theme_validation_title'),
+      description: t('theme_navigation_color_invalid'),
+      color: 'error',
+    });
+    return;
+  }
 
   const payload: KonfigurasiThemePayload = {
     name: form.name.trim(),
@@ -363,6 +765,15 @@ const submitForm = async () => {
     repeat_yearly: form.repeatYearly,
     is_enabled: form.isEnabled,
     priority: Number(form.priority) || 0,
+    text_position: form.textPosition,
+    text_tone: form.textTone,
+    overlay_strength: Number(form.overlayStrength),
+    background_width: Number(form.backgroundWidth),
+    background_height: Number(form.backgroundHeight),
+    banner_width: Number(form.bannerWidth),
+    banner_height: Number(form.bannerHeight),
+    navigation_accent_color: form.navigationAccentColor.toUpperCase(),
+    image_key: selectedAssetKey.value === NEW_IMAGE_OPTION ? undefined : selectedAssetKey.value,
     image: files.value[0],
   };
 
@@ -379,6 +790,85 @@ const submitForm = async () => {
     });
   }
 };
+
+const activateDefault = async () => {
+  try {
+    await setDefaultTheme(true);
+    toast.add({
+      title: t('theme_success'),
+      description: t('theme_default_activated'),
+      color: 'success',
+    });
+  } catch (error: any) {
+    toast.add({
+      title: t('theme_failed'),
+      description: error?.response?.data?.message || t('theme_manual_failed'),
+      color: 'error',
+    });
+  }
+};
+
+const getPositionClass = (position: ThemeTextPosition) => {
+  const vertical = position.startsWith('top')
+    ? 'items-start'
+    : position.startsWith('bottom')
+      ? 'items-end'
+      : 'items-center';
+  const horizontal = position.endsWith('left')
+    ? 'justify-start'
+    : position.endsWith('right')
+      ? 'justify-end'
+      : 'justify-center';
+  return `${vertical} ${horizontal}`;
+};
+
+const getTextAlignClass = (position: ThemeTextPosition) =>
+  position.endsWith('right')
+    ? 'text-right'
+    : position.endsWith('center') || position === 'center'
+      ? 'text-center'
+      : 'text-left';
+
+const getOverlayStyle = (theme: {
+  textPosition: ThemeTextPosition;
+  textTone: ThemeTextTone;
+  overlayStrength: number;
+}) => {
+  if (theme.textPosition === 'hidden' || theme.overlayStrength <= 0) return {};
+  const alpha = Math.min(80, Math.max(0, theme.overlayStrength)) / 100;
+  const color = theme.textTone === 'dark' ? '255,255,255' : '0,0,0';
+  const direction = theme.textPosition.endsWith('right')
+    ? 'to left'
+    : theme.textPosition.endsWith('left')
+      ? 'to right'
+      : 'to bottom';
+  return {
+    background: `linear-gradient(${direction}, rgba(${color},${alpha}), rgba(${color},0))`,
+  };
+};
+
+const getBackgroundImageStyle = (theme: {
+  backgroundWidth?: number;
+  backgroundHeight?: number;
+}) => ({
+  width: `${Math.min(200, Math.max(50, theme.backgroundWidth ?? 100))}%`,
+  height: `${Math.min(200, Math.max(50, theme.backgroundHeight ?? 100))}%`,
+});
+
+const getBannerPreviewStyle = (theme: { bannerWidth?: number; bannerHeight?: number }) => ({
+  width: `${Math.min(100, Math.max(50, theme.bannerWidth ?? 100))}%`,
+  height: `${Math.round(Math.min(500, Math.max(160, theme.bannerHeight ?? 256)) / 2)}px`,
+});
+
+watch(files, (value) => {
+  if (selectedFilePreviewUrl.value) URL.revokeObjectURL(selectedFilePreviewUrl.value);
+  selectedFilePreviewUrl.value = value[0] ? URL.createObjectURL(value[0]) : null;
+  if (value[0]) selectedAssetKey.value = NEW_IMAGE_OPTION;
+});
+
+watch(selectedAssetKey, (value) => {
+  if (value !== NEW_IMAGE_OPTION && files.value.length) files.value = [];
+});
 
 const toggleManual = async (theme: KonfigurasiThemeItem) => {
   try {
@@ -441,5 +931,17 @@ const formatSchedule = (theme: KonfigurasiThemeItem) => {
   return `${start}${end}${theme.repeatYearly ? ` · ${t('theme_every_year')}` : ''}`;
 };
 
-onMounted(() => Promise.all([fetchThemes(), fetchCurrentTheme()]));
+onMounted(() =>
+  Promise.all([fetchThemes(), fetchCurrentTheme(), fetchDefaultStatus(), fetchThemeAssets()])
+);
+
+onBeforeUnmount(() => {
+  if (selectedFilePreviewUrl.value) URL.revokeObjectURL(selectedFilePreviewUrl.value);
+});
 </script>
+
+<style>
+.theme-dropdown-content {
+  z-index: 10002 !important;
+}
+</style>
