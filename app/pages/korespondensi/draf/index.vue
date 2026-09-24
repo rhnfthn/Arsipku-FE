@@ -101,21 +101,24 @@ const formatDateForApi = (date) => {
 const formatShortDate = (dateString, waktu = '') => {
   if (!dateString) return "-";
 
-  const datePart = dateString.substring(0, 10);
-  const [year, month, day] = datePart.split('-').map(Number);
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
+  const timeZone = "Asia/Jakarta";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone,
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const time = waktu || new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone,
+  }).format(date);
 
-  const now = new Date();
-  const isToday = year === now.getFullYear() && month === (now.getMonth() + 1) && day === now.getDate();
-  const isThisYear = year === now.getFullYear();
-
-  const dateForMonth = new Date(year, month - 1, day);
-  const monthName = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(dateForMonth);
-
-  const time = waktu ? waktu.replace(':', '.') : '';
-
-  if (isToday) return time || `${day} ${monthName}`;
-  if (isThisYear) return `${day} ${monthName}${time ? ' ' + time : ''}`;
-  return `${day} ${monthName} ${year}${time ? ' ' + time : ''}`;
+  return `${values.day}/${values.month}/${values.year} ${time}`;
 };
 
 const getTabCount = (tabValue) => {

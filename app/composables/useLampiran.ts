@@ -41,8 +41,16 @@ export const useLampiran = () => {
     }
   };
 
+  const previewLampiran = async (id: string): Promise<Blob> => {
+    const response = await api.get(`/preview-file/${id}`, {
+      responseType: "blob",
+    });
+    return response.data;
+  };
+
   return {
     uploadLampiran,
     deleteLampiran,
+    previewLampiran,
   };
 };

@@ -177,7 +177,7 @@
               <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-0.5 md:gap-3 overflow-hidden">
                 <div class="flex md:hidden w-full mb-0.5">
                   <span class="text-neutral-500 dark:text-gray-400 text-[10px]">
-                    {{ formatShortDate(item.tanggal) }}
+                    {{ formatShortDate(item.terakhirDiubah) }}
                   </span>
                 </div>
 
@@ -198,7 +198,7 @@
               <!-- Date -->
               <div class="hidden md:flex pl-2 shrink-0 justify-end w-[130px]">
                 <span class="text-neutral-500 dark:text-gray-400 text-[12px] truncate">
-                  {{ formatShortDate(item.tanggal) }}
+                  {{ formatShortDate(item.terakhirDiubah) }}
                 </span>
               </div>
 
@@ -263,7 +263,7 @@ import {
   Search, X, AlertTriangle, Loader2,
 } from "lucide-vue-next";
 import { useNaskahLainnya } from "~/composables/useNaskahLainnya";
-import { formatNaskahDate } from "~/utils/naskah-lainnya-date";
+import { formatNaskahDateTime } from "~/utils/naskah-lainnya-date";
 import { JENIS_LABELS } from "~/types/naskah-lainnya";
 
 definePageMeta({ layout: "default", middleware: ["auth"] });
@@ -346,7 +346,7 @@ const getTabCount = (tabValue) => {
 
 // ── Helpers ────────────────────────────────────────────────────────
 const formatShortDate = (dateString) => {
-  return formatNaskahDate(dateString, "-");
+  return formatNaskahDateTime(dateString, "-");
 };
 
 // ── Actions ────────────────────────────────────────────────────────
