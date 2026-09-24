@@ -60,7 +60,7 @@
     </div>
     <div v-else class="grid gap-4 md:grid-cols-2">
       <article
-        class="overflow-hidden rounded-xl border bg-white dark:bg-gray-800"
+        class="flex h-full flex-col overflow-hidden rounded-xl border bg-white dark:bg-gray-800"
         :class="
           defaultThemeActive || !currentTheme
             ? 'border-primary-400 ring-2 ring-primary-100 dark:border-primary-600 dark:ring-primary-900/40'
@@ -90,35 +90,35 @@
             {{ t('theme_current_badge') }}
           </UBadge>
         </div>
-        <div class="p-4">
+        <div class="flex flex-1 flex-col p-4">
           <p class="font-semibold text-gray-900 dark:text-white">{{ t('theme_default_name') }}</p>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p class="mt-1 line-clamp-2 min-h-10 text-xs text-gray-500 dark:text-gray-400">
             {{ t('theme_default_desc') }}
           </p>
-          <UButton
-            v-if="canUpdate"
-            class="mt-4"
-            size="xs"
-            color="primary"
-            variant="subtle"
-            icon="i-lucide-rotate-ccw"
-            :loading="isChangingDefault"
-            :disabled="defaultThemeActive"
-            @click="activateDefault"
-          >
-            {{
-              defaultThemeActive ? t('theme_default_active_button') : t('theme_activate_default')
-            }}
-          </UButton>
+          <div v-if="canUpdate" class="mt-auto pt-4">
+            <UButton
+              size="xs"
+              color="primary"
+              variant="subtle"
+              icon="i-lucide-rotate-ccw"
+              :loading="isChangingDefault"
+              :disabled="defaultThemeActive"
+              @click="activateDefault"
+            >
+              {{
+                defaultThemeActive ? t('theme_default_active_button') : t('theme_activate_default')
+              }}
+            </UButton>
+          </div>
         </div>
       </article>
 
       <article
         v-for="theme in themes"
         :key="theme.id"
-        class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+        class="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
       >
-        <div class="relative h-40 bg-gray-100 dark:bg-gray-900">
+        <div class="relative isolate h-40 shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-900">
           <img
             :src="theme.imageUrl"
             :alt="theme.name"
@@ -156,7 +156,7 @@
           </div>
         </div>
 
-        <div class="p-4">
+        <div class="flex flex-1 flex-col p-4">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <p class="truncate font-semibold text-gray-900 dark:text-white">{{ theme.name }}</p>
@@ -181,7 +181,10 @@
             </div>
           </div>
 
-          <div v-if="canUpdate" class="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div
+            v-if="canUpdate"
+            class="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4"
+          >
             <UButton
               size="xs"
               :color="theme.manualOverride ? 'neutral' : 'warning'"
