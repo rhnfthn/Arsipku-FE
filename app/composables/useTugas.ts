@@ -300,11 +300,11 @@ export const useTugas = () => {
   const addTaskReference = async (
     taskId: string,
     referenceType: TugasReferenceType,
-    referenceId: string
+    referenceNumber: string
   ) => {
     return post(`/tugas/tasks/${taskId}/references`, {
       referenceType,
-      referenceId,
+      referenceNumber,
     });
   };
 

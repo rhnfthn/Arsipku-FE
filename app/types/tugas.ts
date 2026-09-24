@@ -134,7 +134,7 @@ export interface TugasTaskReference {
 export interface TugasTaskEvidence {
   id: string;
   originalName: string;
-  mimeType: 'image/jpeg' | 'image/png';
+  mimeType: 'image/jpeg' | 'image/png' | 'application/pdf';
   fileSize: number;
   uploadedByPersnum: number;
   createdAt: string;
