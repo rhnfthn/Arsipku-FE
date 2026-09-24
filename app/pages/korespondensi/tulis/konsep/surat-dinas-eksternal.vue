@@ -374,6 +374,7 @@ const alertState = useAlertState();
 // --- State ---
 const isLoadingData = ref(false);
 const detail = ref<any>(null);
+const restoredDraftTarget = ref<any>(null);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 // ponytail: flag supaya watch(selectedSender) tidak reset tertuju/tembusan
@@ -567,6 +568,7 @@ const forwardTargetInfo = computed(() => {
       nama: p.nama || p.persnum_person_text || '',
     };
   }
+  if (restoredDraftTarget.value) return restoredDraftTarget.value;
   return atasanLangsungInfo.value;
 });
 const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
@@ -717,7 +719,7 @@ const prepareKonsepFormData = () => {
   formData.append('jenis', 'SDE');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', forwardTargetPositionId.value || String(signerInfo.value || ''));
+  formData.append('to_position_id', forwardTargetPositionId.value);
   formData.append('pengirim_position_id', signerInfo.value || '');
   // SDE: penerima = eksternal (by id), tembusan = internal (by position id)
   formData.append('penerima_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
@@ -736,7 +738,7 @@ const prepareKonsepFormData = () => {
   // Garis Kewenangan (a.n.)
   formData.append('atas_nama', useGarisKewenangan.value ? atasNamaLabel.value : "");
   const atasNamaPosId = (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || null;
-  if (atasNamaPosId) formData.append('atas_nama_position_id', String(atasNamaPosId));
+  formData.append('atas_nama_position_id', atasNamaPosId ? String(atasNamaPosId) : '');
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
   formData.append('catatan', message.value || '-');
   return formData;
@@ -806,7 +808,7 @@ const handleKirimDokumen = async () => {
 
       formData.append('jenis', 'SDE');
       formData.append('from_position_id', user.value?.position || '');
-      formData.append('to_position_id', forwardTargetPositionId.value || String(currentSender.value || ''));
+      formData.append('to_position_id', forwardTargetPositionId.value);
       formData.append('is_turunkan', isTurunkanAction.value ? 'true' : 'false');
       formData.append('pengirim_position_id', currentSender.value || '');
       formData.append('penerima_ids', JSON.stringify(selectedTertuju.value.map(i => i.value)));
@@ -822,6 +824,9 @@ const handleKirimDokumen = async () => {
       formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
       formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
       formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+      formData.append('atas_nama', useGarisKewenangan.value ? atasNamaLabel.value : "");
+      const atasNamaPosId = (useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value) || null;
+      formData.append('atas_nama_position_id', atasNamaPosId ? String(atasNamaPosId) : '');
       formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
       formData.append('catatan', message.value || '-');
       formData.append('lampiran_count', existingFiles.value.length > 0 ? '1' : '0');
@@ -1220,11 +1225,39 @@ onMounted(async () => {
       const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
         const d = resDraft.data;
+        // Menetapkan pengirim memicu watcher yang normalnya mengosongkan
+        // tertuju/tembusan. Tahan reset tersebut selama seluruh data draft
+        // dipulihkan agar pilihan yang baru diisi tidak hilang pada next tick.
+        isPrefillingKonsep.value = true;
         subject.value = d.perihal || "";
         editorContent.value = d.konten || "";
         lampiranText.value = d.lampiran || "";
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
+        if (d.to_position_id) {
+          restoredDraftTarget.value = {
+            position: String(d.to_position_id),
+            positionText: d.to_position_text || '',
+            nama: d.to_nama || '',
+          };
+        }
+
+        // Tampilkan kembali surat asal pada draft konsep dengan kartu referensi
+        // yang sama seperti saat konsep pertama kali dibuat.
+        if (d.disposisi_referensi) {
+          refData.value = {
+            id: d.disposisi_referensi.id,
+            nomor: d.disposisi_referensi.nomor || '-',
+            tanggal: d.disposisi_referensi.tanggal,
+            perihal: d.disposisi_referensi.perihal || '-',
+            jenis: 'DI',
+            jenis_label: 'DISPOSISI',
+            pengirim_nama: d.disposisi_referensi.pengirim || '-',
+            final_pdf_url: d.disposisi_referensi.final_pdf_url || null,
+            lampiran_files: [],
+          };
+          isRefExpanded.value = false;
+        }
 
         if (d.klasifikasi) {
           const klCode = String(d.klasifikasi).trim();
@@ -1238,36 +1271,59 @@ onMounted(async () => {
         if (d.from_position_id || d.pengirim_position_id) {
           const senderId = String(d.pengirim_position_id || d.from_position_id);
           const found = senderItems.value.find(s => s.value === senderId);
-          if (found) selectedSender.value = found;
+          selectedSender.value = found || {
+            label: `${d.pengirim?.nama || d.from_nama || ''} - ${d.pengirim?.position_text || d.from_position_text || ''}`,
+            labelJob: d.pengirim?.position_text || d.from_position_text || '',
+            value: senderId,
+            raw: d.pengirim || d,
+          };
+          // Pastikan opsi tembusan milik pengirim telah tersedia sebelum
+          // memetakan kembali tembusan yang tersimpan.
+          await fetchTembusanBySender(senderId);
         }
 
         // Tertuju: eksternal — dari penerima array
         if (d.penerima && Array.isArray(d.penerima)) {
-          selectedTertuju.value = d.penerima.map((item: any) => ({
-            label: item.nama || item.label || '',
-            labelJob: item.nama || item.label || '',
-            value: String(item.id || item.value || ''),
-            raw: item,
-          }));
+          selectedTertuju.value = d.penerima.map((item: any) => {
+            const externalId = String(item.id || item.id_sirkuler || item.value || '');
+            return externalItems.value.find(
+              option => String(option.value) === externalId,
+            ) || {
+              label: item.nama || item.label || '',
+              labelJob: item.nama || item.label || '',
+              value: externalId,
+              raw: item,
+            };
+          }).filter((item: RecipientItem) => Boolean(item.value));
         }
 
         // Tembusan: internal — dari tembusan array
         if (d.tembusan && Array.isArray(d.tembusan)) {
-          const tembusanIds = d.tembusan.map((t: any) =>
-            typeof t === 'object' ? String(t.position_id || t.position || t.id || t.value) : String(t)
-          );
-          selectedTembusan.value = internalItems.value.filter(item =>
-            tembusanIds.includes(String(item.value))
-          );
-          // Fallback: jika tidak cocok di internalItems, buat manual
-          if (selectedTembusan.value.length === 0 && d.tembusan.length > 0) {
-            selectedTembusan.value = d.tembusan.map((t: any) => ({
-              label: `${t.nama || ''} - ${t.position_text || ''}`,
-              labelJob: t.position_text || '',
-              value: String(t.position_id || t.position || t.id || ''),
-              raw: t,
-            }));
+          // Cocokkan satu per satu agar item lama yang tidak lagi ada dalam
+          // opsi organisasi aktif tidak membuat tembusan lain ikut hilang.
+          selectedTembusan.value = d.tembusan.map((t: any) => {
+            const rawTembusan = typeof t === 'object' && t ? t : {};
+            const positionId = typeof t === 'object'
+              ? String(t.position_id || t.position || t.id || t.value || '')
+              : String(t);
+            return internalItems.value.find(
+              item => String(item.value) === positionId,
+            ) || {
+              label: `${rawTembusan.nama || ''} - ${rawTembusan.position_text || ''}`,
+              labelJob: rawTembusan.position_text || '',
+              value: positionId,
+              raw: rawTembusan,
+            };
+          }).filter((item: RecipientItem) => Boolean(item.value));
+        }
+
+        if (d.atas_nama) {
+          await nextTick();
+          atasNamaManualLabel.value = d.atas_nama;
+          if (d.atas_nama_position_id) {
+            selectedAtasNamaId.value = Number(d.atas_nama_position_id) || null;
           }
+          useGarisKewenangan.value = true;
         }
 
         if (Array.isArray(d.lampiran_files)) {
@@ -1282,8 +1338,16 @@ onMounted(async () => {
           const p = tglStr.split('T')[0].split('-');
           if (p.length === 3) date.value = new CalendarDate(Number(p[0]), Number(p[1]), Number(p[2]));
         }
+
+        // Biarkan watcher terjadwal selesai saat flag masih aktif, baru
+        // kembalikan perilaku reset untuk perubahan pengirim oleh user.
+        await nextTick();
+        isPrefillingKonsep.value = false;
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      isPrefillingKonsep.value = false;
+      console.error(e);
+    }
     isLoadingData.value = false;
   }
 

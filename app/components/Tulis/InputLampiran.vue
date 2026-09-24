@@ -89,7 +89,7 @@ const isLocalPdfLoading = ref(false);
 const previewTitle = ref(t('f_pratinjau'));
 
 // Composables
-const { uploadLampiran, deleteLampiran } = useLampiran();
+const { uploadLampiran, deleteLampiran, previewLampiran } = useLampiran();
 const toast = useToast();
 
 // Computed Status
@@ -110,14 +110,7 @@ const getFileUrlString = (file: any): string => {
     return URL.createObjectURL(file);
   }
 
-  // 2. File dari server (Sudah punya ID) -> Gunakan Link Preview Server
-  if (file.id) {
-    const config = useRuntimeConfig();
-    const previewBase = config.public.previewFileUrl || "http://172.20.16.115:3011";
-    return `${previewBase}/preview-file/${file.id}`;
-  }
-
-  // 3. Fallback (Jika data lama ada filePath tapi tidak ada ID)
+  // 2. Fallback (Jika data lama ada filePath tapi tidak ada ID)
   if (file.filePath) {
     if (file.filePath.startsWith('http')) return file.filePath;
     return `/storage/${file.filePath}`;
@@ -127,10 +120,10 @@ const getFileUrlString = (file: any): string => {
 };
 
 const handlePreview = async (file: any) => {
-  const url = getFileUrlString(file);
+  const directUrl = getFileUrlString(file);
   const title = file.fileName || file.name || t('dokumen');
 
-  if (!url) {
+  if (!file?.id && !directUrl) {
     toast.add({ title: t('f_gagal'), description: t('lamp_gagal_url'), color: 'error' });
     return;
   }
@@ -141,17 +134,23 @@ const handlePreview = async (file: any) => {
   activePdfUrl.value = null;
 
   try {
-    // Jika URL adalah Blob (Local File), langsung pakai
-    if (url.startsWith('blob:')) {
-      activePdfUrl.value = url;
+    if (activePdfUrl.value?.startsWith('blob:')) {
+      URL.revokeObjectURL(activePdfUrl.value);
+    }
+
+    // File server harus diambil lewat API client agar Authorization header ikut.
+    if (file?.id) {
+      const blob = await previewLampiran(String(file.id));
+      activePdfUrl.value = URL.createObjectURL(blob);
+    } else if (directUrl.startsWith('blob:')) {
+      activePdfUrl.value = directUrl;
     } else {
-      // Jika URL adalah Link Server (http...), langsung set ke iframe
-      // Browser akan menangani loadingnya
-      activePdfUrl.value = url;
+      activePdfUrl.value = directUrl;
     }
   } catch (error) {
     console.error("Gagal memuat dokumen:", error);
-    activePdfUrl.value = url;
+    showPdfModal.value = false;
+    toast.add({ title: t('f_gagal'), description: t('lamp_gagal_url'), color: 'error' });
   } finally {
     isLocalPdfLoading.value = false;
   }
