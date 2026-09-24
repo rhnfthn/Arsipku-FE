@@ -35,7 +35,6 @@
             :key="row.id ?? idx"
             class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
           >
-          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ idx + 1 + (page - 1) * limit }}</td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-200 whitespace-nowrap">
             {{ formatDate(row.createdAt) }}
           </td>
@@ -44,13 +43,10 @@
             <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.anomalyType }}</div>
           </td>
           <td class="px-4 py-3">
-            <span :class="severityBadge(row.severity)">{{ row.severity }}</span>
+            <span :class="statusBadge(row.status)">{{ row.status }}</span>
           </td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-200">
             {{ row.userName || row.persnum || '-' }}
-          </td>
-          <td class="px-4 py-3">
-            <span :class="statusBadge(row.status)">{{ row.status }}</span>
           </td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-center gap-1">
@@ -60,30 +56,6 @@
                 title="Tinjau"
               >
                 <UIcon name="i-lucide-eye" class="w-4 h-4 text-primary group-hover:text-primary-700" />
-              </button>
-              <button
-                v-if="row.status === 'NEW' || row.status === 'REVIEWING'"
-                @click="$emit('resolve', row)"
-                class="p-2 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
-                title="Tandai Resolved"
-              >
-                <UIcon name="i-lucide-check" class="w-4 h-4 text-green-600 group-hover:text-green-700" />
-              </button>
-              <button
-                v-if="row.status === 'NEW'"
-                @click="$emit('reviewing', row)"
-                class="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group"
-                title="Tandai Sedang Ditinjau"
-              >
-                <UIcon name="i-lucide-search" class="w-4 h-4 text-blue-600 group-hover:text-blue-700" />
-              </button>
-              <button
-                v-if="row.status === 'NEW' || row.status === 'REVIEWING'"
-                @click="$emit('ignore', row)"
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                title="Abaikan"
-              >
-                <UIcon name="i-lucide-x" class="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
               </button>
             </div>
           </td>
@@ -112,12 +84,10 @@ defineEmits<{
 }>();
 
 const columns = [
-  { key: 'no', label: 'No' },
   { key: 'createdAt', label: 'Waktu' },
   { key: 'title', label: 'Jenis' },
-  { key: 'severity', label: 'Severity' },
-  { key: 'userName', label: 'User' },
   { key: 'status', label: 'Status' },
+  { key: 'userName', label: 'User' },
   { key: 'aksi', label: 'Aksi', headerClass: 'text-center' },
 ];
 

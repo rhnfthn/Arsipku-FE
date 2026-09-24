@@ -146,6 +146,8 @@ export const useAudit = () => {
       module?: string;
       userRole?: string;
       search?: string;
+      page?: number;
+      limit?: number;
     } = {}
   ) => {
     try {
@@ -156,6 +158,8 @@ export const useAudit = () => {
       if (filters.module) params.module = filters.module;
       if (filters.userRole) params.userRole = filters.userRole;
       if (filters.search) params.search = filters.search;
+      if (filters.page) params.page = filters.page;
+      if (filters.limit) params.limit = filters.limit;
       const res: any = await apiGet('/audit/report/summary', { params }, { skipCache: true });
       summary.value = res?.data ?? null;
       return res?.data;
@@ -243,6 +247,51 @@ export const useAudit = () => {
     }
   };
 
+  /** Export data anomali sesuai filter aktif ke CSV. */
+  const exportAnomalies = async (filter: AnomalyFilter = {}) => {
+    try {
+      const params: Record<string, any> = { ...filter, page: 1, limit: 10_000 };
+      Object.keys(params).forEach((key) => {
+        if (params[key] === undefined || params[key] === null || params[key] === '') delete params[key];
+      });
+
+      const res: any = await apiGet('/audit/anomalies', { params }, { skipCache: true });
+      const rows: AuditAnomaly[] = res?.data ?? [];
+      const headers = ['Waktu', 'Judul', 'Jenis', 'Severity', 'User', 'Status', 'IP Address', 'Deskripsi'];
+      const escapeCsv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const csv = [
+        headers,
+        ...rows.map((row) => [
+          row.createdAt,
+          row.title,
+          row.anomalyType,
+          row.severity,
+          row.userName || row.persnum || '',
+          row.status,
+          row.ipAddress || '',
+          row.description || '',
+        ]),
+      ].map((row) => row.map(escapeCsv).join(',')).join('\n');
+
+      if (process.client) {
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = `audit-anomali-${Date.now()}.csv`;
+        window.document.body.appendChild(link);
+        link.click();
+        window.document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+      return true;
+    } catch (e: any) {
+      error.value = e?.message || 'Gagal export anomali';
+      captureAuditError(e, { method: 'exportAnomalies', extra: { filter } });
+      throw e;
+    }
+  };
+
   /**
    * Ambil detail satu anomali.
    */
@@ -324,6 +373,7 @@ export const useAudit = () => {
     fetchSummary,
     exportReport,
     fetchAnomalies,
+    exportAnomalies,
     fetchAnomalyDetail,
     updateAnomalyStatus,
     fetchNotifications,
