@@ -5,79 +5,17 @@
       <PageHeader title="Anomali / Alert" :items="items" />
     </div>
 
-    <!-- Summary Cards -->
-    <div class="mb-4">
-      <AuditAnomalyCard :summary="anomalySummary" />
-    </div>
-
-    <!-- Filter bar -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-        <!-- Status -->
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Status</label>
-          <select
-            v-model="filter.status"
-            class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-            @change="reload"
-          >
-            <option value="">Semua</option>
-            <option value="NEW">Baru</option>
-            <option value="REVIEWING">Sedang Ditinjau</option>
-            <option value="RESOLVED">Selesai</option>
-            <option value="IGNORED">Diabaikan</option>
-          </select>
-        </div>
-        <!-- Severity -->
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Severity</label>
-          <select
-            v-model="filter.severity"
-            class="w-full h-10 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-            @change="reload"
-          >
-            <option value="">Semua</option>
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="CRITICAL">Critical</option>
-          </select>
-        </div>
-        <!-- Pencarian -->
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Pencarian</label>
-          <div class="relative">
-            <UIcon name="i-heroicons-magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              v-model="filter.search"
-              type="text"
-              placeholder="Cari judul, deskripsi, user..."
-              class="w-full h-10 pl-9 pr-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#457fb6] focus:border-[#457fb6] outline-none"
-              @keydown.enter="reload"
-            />
-          </div>
-        </div>
-        <!-- Buttons -->
-        <div class="flex items-end gap-2">
-          <button
-            @click="reload"
-            class="h-10 px-4 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap flex-1"
-          >
-            <UIcon name="i-lucide-eye" class="w-4 h-4 mr-1 inline" />
-            Tampilkan
-          </button>
-          <button
-            @click="resetFilter"
-            class="h-10 px-4 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap flex-1"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 transition-colors">
+    <!-- Filter, tabel, dan pagination digabung dalam satu card seperti Log Aktivitas -->
+    <div class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
+      <AuditLogFilter
+        mode="anomaly"
+        :model-value="filter"
+        :can-export="canExport"
+        :exporting="exporting"
+        @update:model-value="syncFilter"
+        @apply="onApplyFilter"
+        @export="onExport"
+      />
       <AuditAnomalyTable
         :rows="anomalies"
         :loading="loading"
@@ -89,60 +27,14 @@
         @reviewing="onReviewing"
       />
 
-      <!-- Pagination -->
-      <div
+      <DataPagination
         v-if="meta && meta.total > 0"
-        class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 gap-3"
-      >
-        <!-- Info kiri -->
-        <div class="text-sm text-gray-500 dark:text-gray-400">
-          Menampilkan {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }}
-          dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ meta.total }}</span> alert
-        </div>
-
-        <!-- Navigasi kanan -->
-        <div v-if="meta.totalPages > 1" class="flex items-center gap-1">
-          <!-- Previous -->
-          <button
-            :disabled="meta.page <= 1"
-            @click="goPage(meta.page - 1)"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <UIcon name="i-heroicons-chevron-left" class="w-4 h-4" />
-            Prev
-          </button>
-
-          <!-- Page Numbers -->
-          <template v-for="p in visiblePages" :key="p">
-            <span
-              v-if="p === '...'"
-              class="px-2 py-1.5 text-sm text-gray-400 dark:text-gray-500"
-            >...</span>
-            <button
-              v-else
-              @click="goPage(p as number)"
-              :class="[
-                'min-w-[36px] px-2 py-1.5 text-sm font-medium rounded-md transition-colors',
-                p === meta.page
-                  ? 'bg-[#457fb6] text-white shadow-sm'
-                  : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]"
-            >
-              {{ p }}
-            </button>
-          </template>
-
-          <!-- Next -->
-          <button
-            :disabled="meta.page >= meta.totalPages"
-            @click="goPage(meta.page + 1)"
-            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-            <UIcon name="i-heroicons-chevron-right" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        :current-page="meta.page"
+        :total-items="meta.total"
+        :per-page="meta.limit"
+        data-label="log"
+        @update:current-page="goPage"
+      />
     </div>
 
     <!-- Detail Modal -->
@@ -156,12 +48,6 @@
           <!-- Modal Header -->
           <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-5 py-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Anomali</h3>
-            <button
-              @click="showDetail = false"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
-              <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
-            </button>
           </div>
 
           <!-- Modal Body -->
@@ -254,16 +140,14 @@
               :disabled="updatingStatus"
               class="px-4 py-2 text-sm font-medium rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50"
             >
-              <UIcon name="i-lucide-check" class="w-4 h-4 mr-1 inline" />
               Tandai Resolved
             </button>
             <button
               v-if="selectedAnomaly.status === 'NEW' || selectedAnomaly.status === 'REVIEWING'"
               @click="onModalIgnore"
               :disabled="updatingStatus"
-              class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              class="px-4 py-2 text-sm font-medium rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
             >
-              <UIcon name="i-lucide-x" class="w-4 h-4 mr-1 inline" />
               Tandai Ignored
             </button>
             <button
@@ -283,18 +167,20 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useAudit } from '~/composables/useAudit';
 import type { AuditAnomaly, AnomalyFilter, AnomalySeverity, AnomalyStatus } from '~/types/audit';
+import DataPagination from '~/components/DataPagination.vue';
 
 definePageMeta({ middleware: ['auth', 'audit-admin'] });
 
 const {
   fetchAnomalies,
-  fetchAnomalySummary,
+  exportAnomalies,
   updateAnomalyStatus,
   anomalies,
-  anomalySummary,
   loading,
   meta,
 } = useAudit();
+const { hasPermission } = useAuth();
+const canExport = computed(() => hasPermission('audit', 'export'));
 
 const items = [
   { label: 'Beranda', to: '/' },
@@ -313,33 +199,38 @@ const showDetail = ref(false);
 const selectedAnomaly = ref<AuditAnomaly | null>(null);
 const handlingNote = ref('');
 const updatingStatus = ref(false);
-
-// Visible page numbers with ellipsis
-const visiblePages = computed(() => {
-  if (!meta.value) return [];
-  const total = meta.value.totalPages;
-  const current = meta.value.page;
-  const pages: (number | string)[] = [];
-
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (current > 3) pages.push('...');
-    const start = Math.max(2, current - 1);
-    const end = Math.min(total - 1, current + 1);
-    for (let i = start; i <= end; i++) pages.push(i);
-    if (current < total - 2) pages.push('...');
-    pages.push(total);
-  }
-  return pages;
-});
+const exporting = ref(false);
 
 const loadAnomalies = async () => {
   try {
-    await Promise.all([fetchAnomalies({ ...filter }), fetchAnomalySummary()]);
+    await fetchAnomalies({ ...filter });
   } catch (e) {
     console.error('Gagal memuat anomali:', e);
+  }
+};
+
+const syncFilter = (value: any) => {
+  Object.assign(filter, value);
+};
+
+const onApplyFilter = (value: any) => {
+  filter.status = undefined;
+  filter.severity = undefined;
+  filter.search = undefined;
+  Object.assign(filter, value);
+  filter.page = 1;
+  loadAnomalies();
+};
+
+const onExport = async () => {
+  exporting.value = true;
+  try {
+    await exportAnomalies({ ...filter });
+  } catch (e) {
+    console.error('Gagal export anomali:', e);
+    alert('Gagal export anomali');
+  } finally {
+    exporting.value = false;
   }
 };
 
