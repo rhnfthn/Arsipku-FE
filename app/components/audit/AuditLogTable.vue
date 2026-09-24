@@ -75,7 +75,7 @@
             <span :class="statusBadge(row.status)">{{ row.status }}</span>
           </td>
           <td class="px-4 py-3 text-gray-600 dark:text-gray-300 font-mono text-xs whitespace-nowrap">
-            {{ row.ipAddress || '-' }}
+            {{ formatIpAddress(row.ipAddress) }}
           </td>
           <td class="px-4 py-3 text-center" @click.stop>
             <button
@@ -95,6 +95,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { ActiveAccount, AuditTrail, AuditStatus } from '~/types/audit';
+import { formatIpAddress } from '~/utils/formatIpAddress';
 
 const props = defineProps<{
   rows: AuditTrail[];
@@ -109,9 +110,15 @@ const props = defineProps<{
 // tidak hilang dari monitoring.
 const displayRows = computed(() => {
   const logIds = new Set(props.rows.map((row) => row.id));
+  const rolesByPersnum = new Map(
+    props.activeAccounts.map((account) => [account.persnum, account.userRole]),
+  );
   const activeRows = props.activeAccounts.flatMap((account) => {
     if (account.latestActivity) {
-      return logIds.has(account.latestActivity.id) ? [] : [account.latestActivity];
+      const latestActivity = account.latestActivity.userRole
+        ? account.latestActivity
+        : { ...account.latestActivity, userRole: account.userRole || 'USER' };
+      return logIds.has(account.latestActivity.id) ? [] : [latestActivity];
     }
 
     const session = account.sessions[0];
@@ -123,7 +130,7 @@ const displayRows = computed(() => {
         persnum: account.persnum,
         userName: account.name || account.username || null,
         userEmail: null,
-        userRole: null,
+        userRole: account.userRole || 'USER',
         idPosition: null,
         unitKerja: null,
         action: 'LOGIN',
@@ -146,7 +153,13 @@ const displayRows = computed(() => {
     ];
   });
 
-  return [...activeRows, ...props.rows].sort((a, b) => {
+  const rowsWithRole = props.rows.map((row) => {
+    if (row.userRole) return row;
+    const activeRole = row.persnum ? rolesByPersnum.get(row.persnum) : null;
+    return activeRole ? { ...row, userRole: activeRole } : row;
+  });
+
+  return [...activeRows, ...rowsWithRole].sort((a, b) => {
     const timeA = new Date(a.createdAt).getTime();
     const timeB = new Date(b.createdAt).getTime();
     const validA = Number.isFinite(timeA);

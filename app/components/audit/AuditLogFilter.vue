@@ -1,17 +1,17 @@
 <template>
   <div class="overflow-visible border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/70 p-4 dark:border-gray-700 dark:from-gray-800 dark:to-gray-800">
     <div class="flex w-full min-w-0 flex-nowrap items-center gap-1.5">
-      <div class="flex shrink-0 items-center gap-2">
+      <div class="flex shrink-0 items-center gap-1.5">
         <AuditFilterDropdown
           :model-value="String(local.limit || 20)"
           aria-label="Jumlah baris per halaman"
-          class="w-16"
+          class="w-[60px]"
           :options="pageSizeOptions"
           @update:model-value="changeLimit"
         />
         <button
           type="button"
-          class="inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary hover:bg-primary/5 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-primary-400 dark:hover:bg-primary-900/20"
+          class="inline-flex h-10 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary hover:bg-primary/5 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-primary-400 dark:hover:bg-primary-900/20"
           aria-label="Reset filter"
           title="Reset filter"
           @click="reset"
@@ -20,13 +20,13 @@
         </button>
       </div>
 
-      <div class="relative min-w-0 flex-1">
+      <div class="relative min-w-0 flex-1 basis-[180px]">
         <Search class="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         <input
           :value="local.search || ''"
           type="search"
-            :placeholder="mode === 'anomaly' ? 'Cari judul, deskripsi, atau pengguna...' : 'Cari deskripsi, pengguna, atau entitas...'"
-            :aria-label="mode === 'anomaly' ? 'Cari anomali' : 'Cari log aktivitas'"
+          :placeholder="mode === 'anomaly' ? 'Cari judul, deskripsi, atau pengguna...' : 'Cari deskripsi, pengguna, atau entitas...'"
+          :aria-label="mode === 'anomaly' ? 'Cari anomali' : 'Cari log aktivitas'"
           class="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 dark:hover:border-gray-500"
           @input="onSearchInput"
         />
@@ -38,7 +38,7 @@
           type="date"
           :aria-label="mode === 'anomaly' ? 'Tanggal anomali' : 'Tanggal aktivitas'"
           :title="mode === 'anomaly' ? 'Tanggal anomali' : 'Tanggal aktivitas'"
-          class="h-10 w-[124px] rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none transition hover:border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:border-gray-500"
+          class="h-10 w-[110px] rounded-lg border border-gray-200 bg-white px-1.5 text-[11px] text-gray-700 outline-none transition hover:border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:border-gray-500"
           @change="applyDate"
         />
       </div>
@@ -47,7 +47,7 @@
         v-if="mode === 'log'"
         v-model="local.action"
         aria-label="Filter aksi"
-        class="w-[118px] shrink-0"
+        class="w-[105px] shrink-0"
         :options="actionOptions"
         @update:model-value="updateFilter('action', $event)"
       />
@@ -55,7 +55,7 @@
         v-if="mode === 'log'"
         v-model="local.module"
         aria-label="Filter modul"
-        class="w-[128px] shrink-0"
+        class="w-[112px] shrink-0"
         :options="moduleOptions"
         @update:model-value="updateFilter('module', $event)"
       />
@@ -63,7 +63,7 @@
         v-if="mode === 'log'"
         v-model="local.status"
         aria-label="Filter status"
-        class="w-[118px] shrink-0"
+        class="w-[105px] shrink-0"
         :options="statusOptions"
         @update:model-value="updateFilter('status', $event)"
       />
@@ -71,7 +71,7 @@
         v-if="mode === 'log'"
         v-model="local.userRole"
         aria-label="Filter peran"
-        class="w-[118px] shrink-0"
+        class="w-[105px] shrink-0"
         :options="roleOptions"
         @update:model-value="updateFilter('userRole', $event)"
       />
@@ -80,7 +80,7 @@
         v-if="mode === 'anomaly'"
         v-model="local.status"
         aria-label="Filter status anomali"
-        class="w-[128px] shrink-0"
+        class="w-[112px] shrink-0"
         :options="anomalyStatusOptions"
         @update:model-value="updateFilter('status', $event)"
       />
@@ -89,7 +89,7 @@
         v-if="canExport"
         type="button"
         :disabled="exporting"
-        class="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-white shadow-sm shadow-primary/20 transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-wait disabled:opacity-60 lg:min-w-[90px]"
+        class="inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-primary px-2 text-xs font-medium text-white shadow-sm shadow-primary/20 transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-wait disabled:opacity-60 lg:min-w-[82px]"
         @click="$emit('export')"
       >
         <Download class="h-4 w-4" />
