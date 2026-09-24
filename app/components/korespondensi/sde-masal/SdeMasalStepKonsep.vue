@@ -237,43 +237,29 @@ watch(
 
 watch(model, restoreDraftForm, { immediate: true, deep: true });
 
-// --- Fetch pengirim (dengan fallback ke managerial) ---
+// --- Fetch pengirim ---
 const fetchSenderList = async (posId: string | number) => {
   senderLoading.value = true;
   try {
     // Gunakan tanggal kemarin sebagai fallback (data org mungkin belum di-generate untuk hari ini)
     const tglParam = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const parentNaskahId = props.parentNaskahId || model.value?.parentNaskahId;
+    const parentQuery = parentNaskahId
+      ? `&parentNaskahId=${encodeURIComponent(parentNaskahId)}`
+      : '';
 
-    // Ambil kedua sumber secara paralel:
-    // 1. get-senders — chain BOD pengirim yang valid untuk posisi user (prioritas utama)
-    // 2. managerial — seluruh pejabat managerial (chief=1) sebagai opsi tambahan
-    //    agar pengirim tidak terbatas pada chain saja dan tetap bisa dicari.
-    const [sendersRes, mgrRes] = await Promise.all([
-      apiGet<{ success: boolean; data: any[] }>(
-        `/SDE/get-senders?pengirim=${posId}&tgl=${tglParam}`
-      ).catch(() => null),
-      apiGet<{ success: boolean; data: any[] }>(
-        `/org-data/pengirim/managerial?tgl=${tglParam}`
-      ).catch(() => null),
-    ]);
+    const sendersRes = await apiGet<{ success: boolean; data: any[] }>(
+      `/SDE/get-senders?pengirim=${posId}&tgl=${tglParam}${parentQuery}`,
+    ).catch(() => null);
 
-    const chainRows = sendersRes?.success && Array.isArray(sendersRes.data) ? sendersRes.data : [];
-    const managerialRows = mgrRes?.success && Array.isArray(mgrRes.data) ? mgrRes.data : [];
+    const chainRows = Array.isArray(sendersRes)
+      ? sendersRes
+      : Array.isArray((sendersRes as any)?.data)
+        ? (sendersRes as any).data
+        : [];
 
-    // Gabungkan: chain BOD user di urutan atas, sisanya pejabat managerial
-    // lain (dedupe by position). Dropdown sudah searchable sehingga user
-    // dapat mencari pengirim mana pun.
-    const seenPositions = new Set<string>();
-    const merged: any[] = [];
-    for (const row of [...chainRows, ...managerialRows]) {
-      const key = String(row?.position ?? '');
-      if (!key || seenPositions.has(key)) continue;
-      seenPositions.add(key);
-      merged.push(row);
-    }
-
-    if (merged.length > 0) {
-      setSenderItems(merged);
+    if (chainRows.length > 0) {
+      setSenderItems(chainRows);
     } else {
       senderItems.value = [];
     }
