@@ -7,6 +7,7 @@
 
   <aside
     class="h-full z-50 flex transition-all duration-300 bg-[#F6F8FC] dark:bg-gray-900 shadow-xl md:shadow-none"
+    :style="sidebarThemeStyle"
     :class="[
       isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       collapsed && !isMobile ? 'w-[72px]' : 'w-[320px] md:w-[320px]',
@@ -35,12 +36,9 @@
           class="group flex flex-col items-center gap-1 cursor-pointer relative w-full"
         >
           <div
-            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
-            :class="
-              activeApp === app.id
-                ? 'bg-blue-200 dark:bg-gray-800'
-                : 'hover:bg-white/50 bg-transparent'
-            "
+            class="theme-app-pill w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200"
+            :class="activeApp === app.id ? '' : 'bg-transparent'"
+            :data-active="activeApp === app.id"
           >
             <UIcon
               :key="app.icon"
@@ -82,6 +80,7 @@
                 :key="idx"
                 :item="item"
                 :collapsed="false"
+                :accent-color="navigationAccentColor"
               />
             </div>
           </div>
@@ -96,7 +95,7 @@
           title="Helpdesk AirNav"
         >
           <div
-            class="w-14 h-8 rounded-full flex items-center justify-center relative transition-colors duration-200 hover:bg-white/50 bg-transparent"
+            class="theme-app-pill w-14 h-8 rounded-full flex items-center justify-center relative bg-transparent transition-colors duration-200"
           >
             <UIcon
               name="i-lucide-headset"
@@ -130,6 +129,7 @@
           :key="index"
           :item="item"
           :collapsed="false"
+          :accent-color="navigationAccentColor"
         />
 
         <div v-if="activeApp.includes('utama')" class="mt-6 mb-4">
@@ -342,6 +342,7 @@ import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useLabel } from '~/composables/useLabel';
 import { useApi } from '~/composables/useApi';
 import { useRealtimeSocket } from '~/composables/useRealtimeSocket';
+import { useThemeConfiguration } from '~/composables/useThemeConfiguration';
 import { useDigsig } from '~/composables/useDigsig';
 import { usePemeliharaanAccess } from '~/composables/usePemeliharaanAccess';
 import { CONFIGURATION_READ_PERMISSIONS } from '~/composables/useFeatureAccess';
@@ -358,11 +359,7 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
-const {
-  sdeMasalUnreadCount,
-  notifications,
-  fetchNotifications,
-} = useNotifications();
+const { sdeMasalUnreadCount, notifications, fetchNotifications } = useNotifications();
 const { fetchFolders, fetchVerificationFolders } = useSdeMasal();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
@@ -388,9 +385,32 @@ const {
   naskahLainnyaPersetujuanWaitingCount: naskahLainnyaPersetujuanCount,
   naskahLainnyaLegalDraftingWaitingCount: legalDraftingCount,
   correspondenceRoutingUpdate,
+  systemTheme,
   init: rtInit,
   destroy: rtDestroy,
 } = useRealtimeSocket();
+const { currentTheme, fetchCurrentTheme } = useThemeConfiguration();
+
+const navigationAccentColor = computed(() =>
+  /^#[0-9a-f]{6}$/i.test(currentTheme.value?.navigationAccentColor || '')
+    ? currentTheme.value.navigationAccentColor
+    : '#D3E3FD'
+);
+
+const sidebarThemeStyle = computed(() => {
+  const hex = navigationAccentColor.value;
+  const red = Number.parseInt(hex.slice(1, 3), 16);
+  const green = Number.parseInt(hex.slice(3, 5), 16);
+  const blue = Number.parseInt(hex.slice(5, 7), 16);
+  return {
+    '--theme-navigation-active': hex,
+    '--theme-navigation-hover': `rgba(${red}, ${green}, ${blue}, 0.58)`,
+  };
+});
+
+watch(systemTheme, (theme) => {
+  currentTheme.value = theme ?? null;
+});
 
 const labelTree = computed(() => labels.value);
 const route = useRoute();
@@ -455,22 +475,20 @@ const activeProfile = computed(() => {
 
 // Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
 // ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
-const showKelolaMenu = computed(
-  () => {
-    const profileAccess =
-      isSuperadmin.value ||
-      !hasDelegationProfile.value ||
-      activeProfile.value === 'sekretaris' ||
-      activeProfile.value === 'unit_dokumen';
-    if (!profileAccess) return false;
-    if (isAdminOrSuperadmin.value) return true;
-    return [
-      ['pemeliharaan.pemberkasan', 'read'],
-      ['pemeliharaan.verifikasi', 'read'],
-      ['usulan-akses-berkas', 'read-usulan'],
-    ].some(([resource, action]) => hasPermission(resource, action));
-  }
-);
+const showKelolaMenu = computed(() => {
+  const profileAccess =
+    isSuperadmin.value ||
+    !hasDelegationProfile.value ||
+    activeProfile.value === 'sekretaris' ||
+    activeProfile.value === 'unit_dokumen';
+  if (!profileAccess) return false;
+  if (isAdminOrSuperadmin.value) return true;
+  return [
+    ['pemeliharaan.pemberkasan', 'read'],
+    ['pemeliharaan.verifikasi', 'read'],
+    ['usulan-akses-berkas', 'read-usulan'],
+  ].some(([resource, action]) => hasPermission(resource, action));
+});
 
 // Cek apakah user pernah dipilih sebagai atasan managerial di usulan pemindahan arsip
 // Jika ya, user berhak melihat menu "Verifikasi Usulan" meskipun role-nya USER
@@ -603,6 +621,7 @@ watch(
 onMounted(async () => {
   try {
     if (!user.value) await getProfile();
+    await fetchCurrentTheme().catch(() => null);
     await nextTick();
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
@@ -615,7 +634,7 @@ onMounted(async () => {
     // Fetch usulan akses berkas counts untuk badge sidebar
     if (
       ['read', 'read-usulan', 'read-verifikasi', 'read-pemberian'].some((action) =>
-        hasPermission('usulan-akses-berkas', action),
+        hasPermission('usulan-akses-berkas', action)
       )
     ) {
       fetchUsulanCounts().catch(() => {});
@@ -661,11 +680,7 @@ const sdeMasalVerificationCount = ref(0);
 const getUnreadSdeMasalNotifications = () =>
   notifications.value.filter((notification) => {
     const folderId = notification.data?.folderId || notification.data?.folder_id;
-    return Boolean(
-      !notification.isRead &&
-      notification.data?.category === 'SDE_MASAL' &&
-      folderId,
-    );
+    return Boolean(!notification.isRead && notification.data?.category === 'SDE_MASAL' && folderId);
   });
 
 const refreshSdeMasalCounts = async () => {
@@ -675,24 +690,24 @@ const refreshSdeMasalCounts = async () => {
       fetchVerificationFolders(),
     ]);
     const creatorFolderIds = new Set(
-      (creatorResponse?.data || []).map((folder) => String(folder.id)),
+      (creatorResponse?.data || []).map((folder) => String(folder.id))
     );
     const verificationFolderIds = new Set(
       verificationFolders
-        .filter((folder) =>
-          folder?.workflowRole === 'VERIFIKATOR' &&
-          Number(folder?.waitingCount || 0) > 0,
+        .filter(
+          (folder) =>
+            folder?.workflowRole === 'VERIFIKATOR' && Number(folder?.waitingCount || 0) > 0
         )
-        .map((folder) => String(folder.id)),
+        .map((folder) => String(folder.id))
     );
 
     const countUnreadFolders = (folderIds) =>
       new Set(
         getUnreadSdeMasalNotifications()
           .map((notification) =>
-            String(notification.data?.folderId || notification.data?.folder_id),
+            String(notification.data?.folderId || notification.data?.folder_id)
           )
-          .filter((folderId) => folderIds.has(folderId)),
+          .filter((folderId) => folderIds.has(folderId))
       ).size;
 
     // Pengajuan: perubahan yang kembali ke konseptor, termasuk status
@@ -718,7 +733,7 @@ watch(
       await fetchNotifications(1, 100, true);
     }
     await refreshSdeMasalCounts();
-  },
+  }
 );
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
@@ -827,7 +842,10 @@ const userMenuUtama = computed(() => [
         label: 'Daftar Naskah',
         to: '/naskah-lainnya',
         exact: true,
-        permission: { resource: 'utama.tulis.naskah-lainnya.halaman-daftar-naskah', action: 'read' },
+        permission: {
+          resource: 'utama.tulis.naskah-lainnya.halaman-daftar-naskah',
+          action: 'read',
+        },
       },
       {
         label: 'Persetujuan',
@@ -1093,7 +1111,10 @@ const adminMenuUtama = computed(() => [
         label: 'Daftar Naskah',
         to: '/naskah-lainnya',
         exact: true,
-        permission: { resource: 'utama.tulis.naskah-lainnya.halaman-daftar-naskah', action: 'read' },
+        permission: {
+          resource: 'utama.tulis.naskah-lainnya.halaman-daftar-naskah',
+          action: 'read',
+        },
       },
       {
         label: 'Persetujuan',
@@ -1384,9 +1405,21 @@ const adminMenuAdministrasi = computed(() => {
           { resource: 'audit', action: 'read-report' },
         ],
         children: [
-          { label: 'Log Aktivitas', to: '/admin/audit', permission: { resource: 'audit', action: 'read-log' } },
-          { label: 'Anomali / Alert', to: '/admin/audit/anomaly', permission: { resource: 'audit', action: 'read-anomaly' } },
-          { label: 'Laporan Audit', to: '/admin/audit/report', permission: { resource: 'audit', action: 'read-report' } },
+          {
+            label: 'Log Aktivitas',
+            to: '/admin/audit',
+            permission: { resource: 'audit', action: 'read-log' },
+          },
+          {
+            label: 'Anomali / Alert',
+            to: '/admin/audit/anomaly',
+            permission: { resource: 'audit', action: 'read-anomaly' },
+          },
+          {
+            label: 'Laporan Audit',
+            to: '/admin/audit/report',
+            permission: { resource: 'audit', action: 'read-report' },
+          },
         ],
       }
     );
@@ -2093,7 +2126,7 @@ const filterMenuByPermission = (items) => {
     // terpisah. Menu tampil bila user punya akses ke minimal satu fitur.
     if (cloned.permissionsAny && !isSuperadmin.value) {
       const hasAccess = cloned.permissionsAny.some((permission) =>
-        hasPermission(permission.resource, permission.action),
+        hasPermission(permission.resource, permission.action)
       );
       if (!hasAccess) return null;
     }
@@ -2504,6 +2537,14 @@ defineExpose({ openMobile, closeMobile });
 </script>
 
 <style scoped>
+.theme-app-pill:hover {
+  background-color: var(--theme-navigation-hover);
+}
+
+.theme-app-pill[data-active='true'] {
+  background-color: var(--theme-navigation-active);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
