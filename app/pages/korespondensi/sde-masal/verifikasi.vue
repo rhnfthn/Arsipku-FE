@@ -31,6 +31,7 @@
           label-key="label"
           placeholder="Semua Klasifikasi"
           searchable
+          :search-attributes="['searchText']"
           :search-input="{ placeholder: 'Cari klasifikasi...' }"
           :content="({ class: 'max-h-[380px]' } as any)"
           class="w-48 shrink-0"
@@ -160,10 +161,15 @@ const f = reactive({
 });
 
 const klasifikasiFilterOptions = computed(() => [
-  { label: 'Semua Klasifikasi', value: '__ALL__' },
+  { label: 'Semua Klasifikasi', value: '__ALL__', searchText: 'Semua Klasifikasi' },
   ...klasifikasiOptions.value.map((klasifikasi) => ({
     label: `${klasifikasi.klasifikasi} - ${klasifikasi.klasifikasi_text}`,
     value: klasifikasi.id,
+    searchText: klasifikasi.search_text || [
+      klasifikasi.klasifikasi,
+      klasifikasi.klasifikasi_text,
+      klasifikasi.deskripsi,
+    ].filter(Boolean).join(' '),
   })),
 ]);
 
