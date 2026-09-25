@@ -528,13 +528,15 @@ const isCurrentTuTurn = computed(() => {
   return level ? level.persnum === Number(user.value.persnum) : false
 })
 
-/** True jika user login adalah atasan TU level 1 (untuk persetujuan terakhir). */
-const isTuLevel1 = computed(() => {
+/** True jika user login adalah atasan TU level terakhir (untuk persetujuan terakhir). */
+const isTuFinalLevel = computed(() => {
   if (!item.value || !user.value) return false
   const levels = item.value.tuApprovalLevels
   if (!levels || levels.length === 0) return true // Legacy
-  const firstLevel = levels.find((l) => l.urutan === 1)
-  return firstLevel ? firstLevel.persnum === Number(user.value.persnum) : false
+  const finalLevel = levels.reduce((latest, level) =>
+    level.urutan > latest.urutan ? level : latest,
+  )
+  return finalLevel ? Number(finalLevel.persnum) === Number(user.value.persnum) : false
 })
 
 const canAct = computed(() => {
@@ -544,7 +546,7 @@ const canAct = computed(() => {
     return isCurrentTuTurn.value
   }
   if (s === 'DISETUJUI_PERSETUJUAN_TU' || s === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') {
-    return isTuLevel1.value
+    return isTuFinalLevel.value
   }
   return false
 })

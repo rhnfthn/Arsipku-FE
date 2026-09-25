@@ -684,10 +684,24 @@ const getUnreadSdeMasalNotifications = () =>
   });
 
 const refreshSdeMasalCounts = async () => {
+  const canReadSde = hasPermission('sde-masal', 'read');
+  const canReadSdeVerification = hasPermission('sde-masal', 'read-verification');
+
+  // Sidebar dipakai di seluruh halaman. Jangan memanggil endpoint SDE yang
+  // tidak dimiliki user hanya untuk menghitung badge; khususnya sekretaris/TU
+  // tidak perlu permission verifikasi SDE saat membuka Penataan Arsip.
+  if (!canReadSde && !canReadSdeVerification) {
+    sdeMasalPengajuanCount.value = 0;
+    sdeMasalVerificationCount.value = 0;
+    return;
+  }
+
   try {
     const [creatorResponse, verificationFolders] = await Promise.all([
-      fetchFolders({ scope: 'creator', page: 1, limit: 100 }),
-      fetchVerificationFolders(),
+      canReadSde
+        ? fetchFolders({ scope: 'creator', page: 1, limit: 100 })
+        : Promise.resolve({ data: [] }),
+      canReadSdeVerification ? fetchVerificationFolders() : Promise.resolve([]),
     ]);
     const creatorFolderIds = new Set(
       (creatorResponse?.data || []).map((folder) => String(folder.id))
@@ -1574,6 +1588,16 @@ const sekretarisKelolaMenus = computed(() => [
         to: '/maintenance/transfer-active-to-inactive-file',
         icon: 'i-lucide-file-up',
       },
+      {
+        label: 'Penerimaan Usulan',
+        to: '/maintenance/penerimaan-usulan',
+        icon: 'i-lucide-bell',
+      },
+      {
+        label: 'Penataan Arsip Inaktif',
+        to: '/maintenance/penataan-arsip-inaktif',
+        icon: 'i-lucide-archive',
+      },
     ],
   },
   {
@@ -1612,6 +1636,27 @@ const sekretarisKelolaMenus = computed(() => [
           usulanCounts.value.aksesDiterbitkanBaru > 0
             ? usulanCounts.value.aksesDiterbitkanBaru
             : null,
+      },
+    ],
+  },
+  {
+    label: 'Penyusutan',
+    icon: 'i-lucide-file-minus',
+    children: [
+      {
+        label: 'Pengajuan Penyusutan',
+        to: '/maintenance/penyusutan/pengajuan-penyusutan',
+        icon: 'i-lucide-list',
+      },
+      {
+        label: 'Penataan dan Pemusnahan',
+        to: '/maintenance/penyusutan/penataan-pemusnahan',
+        icon: 'i-lucide-archive',
+      },
+      {
+        label: 'Backup Status',
+        to: '/maintenance/penyusutan/backup-status',
+        icon: 'i-lucide-database',
       },
     ],
   },

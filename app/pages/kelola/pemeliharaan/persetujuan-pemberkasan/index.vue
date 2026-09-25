@@ -180,20 +180,20 @@
           <NuxtLink
             v-if="row.status === 'pending'"
             :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review`"
-            class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
+            class="inline-flex items-center justify-center rounded-md p-1.5 text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
             title="Review Pengajuan"
+            aria-label="Review Pengajuan"
           >
             <Eye class="h-4 w-4" />
-            Review
           </NuxtLink>
           <NuxtLink
             v-else
             :to="`/kelola/pemeliharaan/persetujuan-pemberkasan/${row.berkasId || row.berkas?.id}/review?riwayat=1`"
-            class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
+            class="inline-flex items-center justify-center rounded-md p-1.5 text-primary-600 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950/40"
             title="Lihat Keputusan"
+            aria-label="Lihat Keputusan"
           >
             <Eye class="h-4 w-4" />
-            Lihat
           </NuxtLink>
         </template>
       </DataTable>

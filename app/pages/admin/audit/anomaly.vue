@@ -1,11 +1,9 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader title="Anomali / Alert" :items="items" />
     </div>
 
-    <!-- Filter, tabel, dan pagination digabung dalam satu card seperti Log Aktivitas -->
     <div class="rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
       <AuditLogFilter
         mode="anomaly"
@@ -26,7 +24,6 @@
         @ignore="onIgnore"
         @reviewing="onReviewing"
       />
-
       <DataPagination
         v-if="meta && meta.total > 0"
         :current-page="meta.page"
@@ -37,7 +34,6 @@
       />
     </div>
 
-    <!-- Detail Modal -->
     <Teleport to="body">
       <div
         v-if="showDetail && selectedAnomaly"
@@ -45,14 +41,11 @@
         @click.self="showDetail = false"
       >
         <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col">
-          <!-- Modal Header -->
           <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 px-5 py-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Detail Anomali</h3>
           </div>
 
-          <!-- Modal Body -->
           <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-            <!-- Title + Badges -->
             <div>
               <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-2">{{ selectedAnomaly.title }}</h4>
               <div class="flex flex-wrap gap-2">
@@ -64,13 +57,11 @@
               </div>
             </div>
 
-            <!-- Description -->
             <div v-if="selectedAnomaly.description">
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deskripsi</label>
               <p class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">{{ selectedAnomaly.description }}</p>
             </div>
 
-            <!-- User Info -->
             <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Informasi User</label>
               <div class="grid grid-cols-2 gap-2 text-sm">
@@ -93,13 +84,11 @@
               </div>
             </div>
 
-            <!-- Evidence (JSON) -->
             <div v-if="selectedAnomaly.evidence !== null && selectedAnomaly.evidence !== undefined">
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Evidence</label>
               <pre class="mt-1 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg text-xs overflow-x-auto text-gray-700 dark:text-gray-300 font-mono max-h-48">{{ formatJson(selectedAnomaly.evidence) }}</pre>
             </div>
 
-            <!-- Riwayat Waktu -->
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dibuat</label>
@@ -111,7 +100,6 @@
               </div>
             </div>
 
-            <!-- Handling Note -->
             <div>
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Catatan Penanganan</label>
               <textarea
@@ -123,7 +111,6 @@
             </div>
           </div>
 
-          <!-- Modal Footer -->
           <div class="border-t border-gray-200 dark:border-gray-700 px-5 py-4 flex items-center justify-end gap-2">
             <button
               v-if="selectedAnomaly.status === 'NEW'"
