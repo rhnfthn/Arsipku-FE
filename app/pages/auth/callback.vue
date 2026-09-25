@@ -52,8 +52,6 @@ onMounted(async () => {
   const state = queryValue(route.query.state);
   const returnTo = safeReturnTo(queryValue(route.query.redirect));
 
-  // Mendukung redirect_uri yang terdaftar ke frontend. Pertukaran code tetap
-  // dilakukan backend agar client_secret dan PKCE verifier tidak terekspos.
   if (code && state) {
     const baseUrl = String(useRuntimeConfig().public.apiBaseUrl || '').replace(/\/$/, '');
     const callback = new URL(`${baseUrl}/auth/callback`);
@@ -76,7 +74,6 @@ onMounted(async () => {
     return;
   }
 
-  // Login baru selalu mulai dengan light mode + bahasa Indonesia.
   applyLoginDefaults();
 
   await navigateTo(returnTo, { replace: true });

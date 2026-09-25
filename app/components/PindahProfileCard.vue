@@ -97,13 +97,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '~/composables/useAuth';
 
 const props = defineProps<{
-  // Nilai profile delegasi: 'sekretaris' | 'unit_dokumen'
   profileValue: 'sekretaris' | 'unit_dokumen';
-  // Label yang ditampilkan untuk profile delegasi
   profileLabel: string;
-  // Badge yang ditampilkan untuk profile delegasi
   profileBadge: string;
-  // Deskripsi opsional untuk profile delegasi
   profileDescription?: string;
 }>();
 

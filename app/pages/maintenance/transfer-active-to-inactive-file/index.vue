@@ -200,6 +200,11 @@
         </template>
         <template #cell-status="{ row }">
           <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{ statusLabel(row.status as any) }}</span>
+          <span
+            v-if="!row.isUsulan && row.berkasStatus === 'retensi_inaktif'"
+            class="ml-1 px-2 py-0.5 text-[11px] rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
+            title="Berkas sudah masuk fase retensi inaktif"
+          >Retensi Inaktif</span>
         </template>
         <template #cell-aksi="{ row }">
           <div class="text-center" @click.stop>
@@ -309,6 +314,8 @@ interface GabunganRow {
   tanggalRetensiAktifHabis: string | null;
   atasanName: string | null;
   status: string;
+  /** Status asli berkas (untuk baris belum-usulan: closed_retensi_aktif / retensi_inaktif). */
+  berkasStatus?: string | null;
   tanggal: string | null;
 }
 
@@ -506,6 +513,7 @@ const loadGabungan = async () => {
       tanggalRetensiAktifHabis: r.tanggalRetensiAktifHabis ?? null,
       atasanName: r.atasanName ?? null,
       status: r.status ?? '',
+      berkasStatus: r.berkasStatus ?? null,
       tanggal: r.tanggal ?? null,
     }));
   } catch (e) {

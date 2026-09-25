@@ -1,16 +1,13 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader title="Laporan Audit" :items="items" />
     </div>
 
-    <!-- Chart Aktivitas Harian berada paling atas -->
     <div class="mb-4">
       <AuditReportChart :summary="summary" />
     </div>
 
-    <!-- Filter dan tabel digabung dalam satu card -->
     <div class="min-w-0 max-w-full rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
       <AuditLogFilter
         :model-value="f"
@@ -21,13 +18,11 @@
         @export="onExport"
       ></AuditLogFilter>
 
-    <!-- Empty State -->
     <div v-if="!summary?.recentLogs || summary.recentLogs.length === 0" class="text-center py-8">
       <UIcon name="i-lucide-inbox" class="w-8 h-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
       <p class="text-sm text-gray-400">Belum ada data</p>
     </div>
 
-    <!-- Table -->
     <div v-else class="overflow-x-auto">
       <table class="w-full text-sm">
           <thead class="bg-primary-400 dark:bg-primary-700 text-white text-left">
@@ -91,7 +86,6 @@ const items = [
   { label: 'Laporan Audit', to: '/admin/audit/report' },
 ];
 
-// --- Filter State ---
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -108,7 +102,6 @@ const f = reactive<AuditFilter>({
 
 const exporting = ref(false);
 
-// --- Dropdown Options ---
 const actionList = [
   'LOGIN', 'LOGOUT', 'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'LIST',
   'APPROVE', 'REJECT', 'UPLOAD', 'DOWNLOAD', 'SIGN', 'VERIFY',
@@ -132,7 +125,6 @@ const moduleLabels: Record<string, string> = {
   USULAN_PINDAH: 'Usulan Pindah', FAQ: 'FAQ', AUDIT: 'Audit',
 };
 
-// --- Load ---
 const loadSummary = async () => {
   try {
     await fetchSummary({
@@ -194,7 +186,6 @@ const onExport = async () => {
   }
 };
 
-// --- Helpers ---
 const formatDateTime = (dt: string) => {
   try {
     const d = new Date(dt);
@@ -207,7 +198,6 @@ const statusLabel = (s: string) => {
   return m[s] || s;
 };
 
-// Status badge sesuai palette Arsipku:
 // SUCCESS=#1cb854, FAILED=#f42d2d, ERROR=#ffa02e, DENIED=#64748b
 const statusBadge = (s: string) => {
   const m: Record<string, string> = {
@@ -219,7 +209,6 @@ const statusBadge = (s: string) => {
   return m[s] || m.SUCCESS;
 };
 
-// Action badge — primary untuk semua action
 const actionBadge = (a: string) => {
   return 'px-2 py-0.5 text-xs rounded-full bg-[#457fb6]/10 dark:bg-[#457fb6]/20 text-[#457fb6] dark:text-[#5a9ad4] font-medium';
 };

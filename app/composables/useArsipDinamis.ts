@@ -93,13 +93,36 @@ export const useArsipDinamis = () => {
   };
 
   const getBerkasStatusByNaskah = async (naskahIds: string[]) => {
-    return await apiGet(
-      '/arsip-dinamis/berkas-naskah',
-      {
-        params: { naskah_ids: naskahIds.join(',') },
-      },
-      { skipCache: true }
+    const ids = [...new Set(naskahIds.filter(Boolean))];
+    if (ids.length === 0) return { success: true, data: [] };
+
+    // Jangan kirim seluruh daftar UUID dalam satu query string. Daftar kandidat
+    // dapat berisi 100 naskah dan melewati batas request line/proxy (431), yang
+    // kemudian tampak di browser sebagai error CORS karena respons 431 tidak
+    // sempat melewati middleware CORS aplikasi.
+    const MAX_IDS_PER_REQUEST = 25;
+    const batches: string[][] = [];
+    for (let i = 0; i < ids.length; i += MAX_IDS_PER_REQUEST) {
+      batches.push(ids.slice(i, i + MAX_IDS_PER_REQUEST));
+    }
+
+    const responses = await Promise.all(
+      batches.map((batch) =>
+        apiGet<any>(
+          '/arsip-dinamis/berkas-naskah',
+          { params: { naskah_ids: batch.join(',') } },
+          { skipCache: true }
+        )
+      )
     );
+
+    const data = responses.flatMap((response) => {
+      if (Array.isArray(response)) return response;
+      if (Array.isArray(response?.data)) return response.data;
+      return [];
+    });
+
+    return { success: true, data };
   };
 
   // ── Penutupan & Verifikasi ──────────────────────────────────────

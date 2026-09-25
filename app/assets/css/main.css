@@ -4,11 +4,12 @@
 @import '@fontsource/montserrat/500.css';
 @import '@fontsource/montserrat/600.css';
 @import '@fontsource/montserrat/700.css';
-html,
-body,
+/* height:100% pada html/body membuat BODY menjadi scroller utama
+   (documentElement.scrollTop selalu 0). TinyMCE menghitung posisi popup
+   dropdown (Table, dsb.) dari documentElement → menu muncul di posisi
+   acak saat halaman di-scroll. Biarkan html yang scroll (perilaku standar). */
 #__nuxt,
 #__layout {
-  height: 100%;
   min-height: 100%;
 }
 @source "../**/*.{vue,ts,js}";
