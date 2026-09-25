@@ -135,7 +135,9 @@ const getPayload = (): SDIPayloadInput => ({
   tembusan_grup: tembusanGrup.value,
   klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
   klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
-  sifat: selectedSifat.value?.value || "biasa",
+  sifat: typeof selectedSifat.value === "string"
+    ? selectedSifat.value
+    : selectedSifat.value?.value || "biasa",
   perihal: subject.value,
   lampiran: lampiranText.value,
   konten: editorContent.value,
