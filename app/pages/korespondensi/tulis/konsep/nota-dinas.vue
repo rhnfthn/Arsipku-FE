@@ -384,6 +384,7 @@ const refData = ref<any>(null);
 const isRefExpanded = ref(false);
 const maxPerihal = 200;
 const refPengirimPositionId = ref<string>('');
+const restoredDraftTarget = ref<any>(null);
 const isPopulating = ref(false);
 const isReferenceLoading = ref(
   Boolean(route.query.ref_id) && Boolean(route.query.ref_jenis),
@@ -427,8 +428,10 @@ const forwardTargetInfo = computed(() => {
       nama: p.nama || p.persnum_person_text || '',
     };
   }
+  if (restoredDraftTarget.value) return restoredDraftTarget.value;
   return atasanLangsungInfo.value;
 });
+const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
 
 const mapPersonToUI = (person: any): RecipientItem => {
   if (!person) return {} as RecipientItem;
@@ -704,7 +707,7 @@ const prepareKonsepFormData = () => {
   formData.append('jenis', 'ND');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', user.value?.position || '');
-  formData.append('to_position_id', refPengirimPositionId.value || String(signerInfo.raw?.position_id || signerInfo.value || ''));
+  formData.append('to_position_id', forwardTargetPositionId.value);
   formData.append('pengirim_position_id', String(signerInfo.raw?.position_id || signerInfo.value || ''));
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
@@ -736,7 +739,7 @@ const prepareRevisiFormData = () => {
 
   formData.append('jenis', 'ND');
   formData.append('from_position_id', user.value?.position || '');
-  formData.append('to_position_id', refPengirimPositionId.value || String(currentSender.value || ''));
+  formData.append('to_position_id', forwardTargetPositionId.value);
   // Turunkan: flag aksi='turunkan' (delegasi ke bawahan), else aksi='forward' (naik ke atasan)
   formData.append('is_turunkan', isTurunkanAction.value ? 'true' : 'false');
   formData.append('pengirim_position_id', String(currentSender.value || ''));
@@ -1159,6 +1162,14 @@ onMounted(async () => {
         editorContent.value = d.konten || "";
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
+        if (d.to_position_id) {
+          refPengirimPositionId.value = String(d.to_position_id);
+          restoredDraftTarget.value = {
+            position: String(d.to_position_id),
+            positionText: d.to_position_text || '',
+            nama: d.to_nama || '',
+          };
+        }
 
         if (d.disposisi_referensi) {
           refData.value = {

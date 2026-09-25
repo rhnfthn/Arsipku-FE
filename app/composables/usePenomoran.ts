@@ -638,6 +638,10 @@ export const usePenomoran = () => {
         code: item.klasifikasi,
         text: item.klasifikasi_text,
         display: `${item.klasifikasi} - ${item.klasifikasi_text}`,
+        deskripsi: item.deskripsi || '',
+        searchText: [item.klasifikasi, item.klasifikasi_text, item.deskripsi]
+          .filter(Boolean)
+          .join(' '),
         id: item.id
       }));
     } catch (e: any) {

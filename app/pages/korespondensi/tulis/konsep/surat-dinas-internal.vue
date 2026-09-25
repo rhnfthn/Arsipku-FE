@@ -442,6 +442,7 @@ const isSenderSelected = computed(() => !!selectedSender.value);
 // (pengirim disposisi acuan) sebelum ke penandatangan. Saat reject, kembali ke
 // previous konseptor (detail.from_position_id). Fallback atasan langsung.
 const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
+const restoredDraftTarget = ref<any>(null);
 const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
 const isTurunkanAction = computed(() => Boolean(route.query.turunkan_position_id));
 const isNewKonsepFromReference = computed(() =>
@@ -477,6 +478,7 @@ const forwardTargetInfo = computed(() => {
       nama: p.nama || p.persnum_person_text || '',
     };
   }
+  if (restoredDraftTarget.value) return restoredDraftTarget.value;
   return atasanLangsungInfo.value;
 });
 const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
@@ -744,7 +746,7 @@ const prepareKonsepFormData = () => {
   formData.append('jenis', 'SDI');
   formData.append('id_disposisi_referensi', refData.value?.id || '');
   formData.append('from_position_id', creatorId);
-  formData.append('to_position_id', forwardTargetPositionId.value || String(signerInfo.value || ''));
+  formData.append('to_position_id', forwardTargetPositionId.value);
   formData.append('pengirim_position_id', signerInfo.value || '');
   formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
   formData.append('tembusan_position_ids', JSON.stringify(tembusanIndividu.value));
@@ -832,7 +834,7 @@ const handleKirimDokumen = async () => {
 
       formData.append('jenis', 'SDI');
       formData.append('from_position_id', user.value?.position || '');
-      formData.append('to_position_id', forwardTargetPositionId.value || String(currentSender.value || ''));
+      formData.append('to_position_id', forwardTargetPositionId.value);
       formData.append('is_turunkan', isTurunkanAction.value ? 'true' : 'false');
       formData.append('pengirim_position_id', currentSender.value || '');
       formData.append('penerima_position_ids', JSON.stringify(tertujuIndividu.value));
@@ -1197,6 +1199,28 @@ onMounted(async () => {
         lampiranText.value = d.lampiran || "";
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
+        if (d.to_position_id) {
+          restoredDraftTarget.value = {
+            position: String(d.to_position_id),
+            positionText: d.to_position_text || '',
+            nama: d.to_nama || '',
+          };
+        }
+
+        if (d.disposisi_referensi) {
+          refData.value = {
+            id: d.disposisi_referensi.id,
+            nomor: d.disposisi_referensi.nomor || '-',
+            tanggal: d.disposisi_referensi.tanggal,
+            perihal: d.disposisi_referensi.perihal || '-',
+            jenis: 'DI',
+            jenis_label: 'DISPOSISI',
+            pengirim_nama: d.disposisi_referensi.pengirim || '-',
+            final_pdf_url: d.disposisi_referensi.final_pdf_url || null,
+            lampiran_files: [],
+          };
+          isRefExpanded.value = false;
+        }
 
         if (d.klasifikasi) {
           const klCode = String(d.klasifikasi).trim();
