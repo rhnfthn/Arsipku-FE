@@ -1394,7 +1394,10 @@ const filteredKlasifikasiList = computed(() => {
   const q = klasifikasiSearchQuery.value.toLowerCase();
 
   return klasifikasiList.value.filter(
-    (k) => k.klasifikasi?.toLowerCase().includes(q) || k.klasifikasi_text?.toLowerCase().includes(q)
+    (k) =>
+      k.klasifikasi?.toLowerCase().includes(q) ||
+      k.klasifikasi_text?.toLowerCase().includes(q) ||
+      k.deskripsi?.toLowerCase().includes(q)
   );
 });
 

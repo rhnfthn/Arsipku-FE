@@ -197,7 +197,11 @@ const klasifikasiOptions = computed(() => {
         ...k,
         label: `${k.klasifikasi} - ${k.klasifikasi_text}`,
         value: k.klasifikasi,
-        searchLabel: `${k.klasifikasi} - ${k.klasifikasi_text}`,
+        searchLabel: k.search_text || [
+          k.klasifikasi,
+          k.klasifikasi_text,
+          k.deskripsi,
+        ].filter(Boolean).join(' '),
         isParent,
         disabled: isParent,
       };

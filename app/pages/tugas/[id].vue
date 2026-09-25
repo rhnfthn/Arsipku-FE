@@ -365,7 +365,11 @@ const handleRemoveReference = async (referenceId: string) => {
   }
 };
 
-const handleAddReference = async (referenceType: TugasReferenceType, referenceId: string) => {
+const handleAddReference = async (
+  referenceType: TugasReferenceType,
+  referenceNumber: string,
+  onAdded?: () => void
+) => {
   if (
     !activeTask.value ||
     !canUpdateTask.value ||
@@ -375,8 +379,9 @@ const handleAddReference = async (referenceType: TugasReferenceType, referenceId
     return;
   isAddingReference.value = true;
   try {
-    await addTaskReference(activeTask.value.id, referenceType, referenceId);
+    await addTaskReference(activeTask.value.id, referenceType, referenceNumber);
     taskReferences.value = await fetchTaskReferences(activeTask.value.id);
+    onAdded?.();
     toast.add({ title: t('tugas_referensi_berhasil_ditambahkan'), color: 'success' });
   } catch (error) {
     toast.add({ title: mapTugasError(error), color: 'error' });

@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
-import { X, Trash2, Link2, TriangleAlert, ListTodo, SquarePlus, Lock } from 'lucide-vue-next';
+import {
+  X,
+  Trash2,
+  Link2,
+  TriangleAlert,
+  ListTodo,
+  SquarePlus,
+  Lock,
+  FileText,
+} from 'lucide-vue-next';
 import TulisInputTanggal from '~/components/Tulis/InputTanggal.vue';
 import type {
   TugasMember,
@@ -55,7 +64,12 @@ const emit = defineEmits<{
   (e: 'unarchive'): void;
   (e: 'delete'): void;
   (e: 'remove-reference', referenceId: string): void;
-  (e: 'add-reference', referenceType: TugasReferenceType, referenceId: string): void;
+  (
+    e: 'add-reference',
+    referenceType: TugasReferenceType,
+    referenceNumber: string,
+    onAdded: () => void
+  ): void;
   (e: 'add-evidence', file: File, onSettled: () => void): void;
   (e: 'remove-evidence', evidenceId: string): void;
   (e: 'invalid-evidence'): void;
@@ -72,7 +86,7 @@ const form = ref({
 });
 const referenceForm = ref({
   type: 'naskah_masuk' as TugasReferenceType,
-  id: '',
+  number: '',
 });
 const evidenceFiles = ref<File[]>([]);
 
@@ -115,7 +129,7 @@ watch(
         tenggat: minimumDeadline.value.toString(),
         assigneeMemberId: null,
       };
-      referenceForm.value.id = '';
+      referenceForm.value.number = '';
       evidenceFiles.value = [];
       return;
     }
@@ -127,7 +141,7 @@ watch(
       tenggat: props.task.tenggat ?? '',
       assigneeMemberId: props.task.assignee?.id ?? null,
     };
-    referenceForm.value.id = '';
+    referenceForm.value.number = '';
     evidenceFiles.value = [];
   }
 );
@@ -152,9 +166,11 @@ const save = () => {
 };
 
 const addReference = () => {
-  const referenceId = referenceForm.value.id.trim();
-  if (!referenceId) return;
-  emit('add-reference', referenceForm.value.type, referenceId);
+  const referenceNumber = referenceForm.value.number.trim();
+  if (!referenceNumber) return;
+  emit('add-reference', referenceForm.value.type, referenceNumber, () => {
+    referenceForm.value.number = '';
+  });
 };
 
 const handleEvidenceSelection = (files: File[]) => {
@@ -170,6 +186,8 @@ const formatFileSize = (bytes: number) =>
   bytes >= 1024 * 1024
     ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
     : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+const isPdfEvidence = (evidence: TugasTaskEvidence) => evidence.mimeType === 'application/pdf';
 
 const prioritasSelectOptions = computed(() => [
   { label: t('tugas_tanpa_prioritas'), value: NO_PRIORITY },
@@ -367,7 +385,7 @@ const selectedAssigneeMember = computed(() =>
             </div>
           </div>
 
-          <!-- Evidence pekerjaan (JPG/PNG) -->
+          <!-- Evidence pekerjaan (JPG/PNG/PDF) -->
           <div v-if="!isCreateMode">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ t('tugas_evidence') }}
@@ -385,7 +403,15 @@ const selectedAssigneeMember = computed(() =>
                   class="block aspect-square"
                   :title="evidence.originalName"
                 >
+                  <div
+                    v-if="isPdfEvidence(evidence)"
+                    class="flex h-full w-full flex-col items-center justify-center gap-2 bg-red-50 text-red-600 transition-colors group-hover:bg-red-100 dark:bg-red-950/30 dark:text-red-300 dark:group-hover:bg-red-950/50"
+                  >
+                    <FileText class="h-10 w-10" />
+                    <span class="text-[10px] font-bold tracking-wider">PDF</span>
+                  </div>
                   <img
+                    v-else
                     :src="evidence.url"
                     :alt="evidence.originalName"
                     class="h-full w-full object-cover transition-transform group-hover:scale-105"
@@ -420,7 +446,7 @@ const selectedAssigneeMember = computed(() =>
             <div v-if="!isReadOnly && canUpdateTask" class="space-y-2">
               <FileUpload
                 :model-value="evidenceFiles"
-                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
                 :multiple="false"
                 :max-size="10 * 1024 * 1024"
                 :label="t('tugas_pilih_evidence')"
@@ -495,7 +521,7 @@ const selectedAssigneeMember = computed(() =>
                 <option value="naskah_lainnya">{{ t('tugas_ref_naskah_lainnya') }}</option>
               </select>
               <input
-                v-model="referenceForm.id"
+                v-model="referenceForm.number"
                 type="text"
                 :placeholder="t('tugas_referensi_id_placeholder')"
                 :disabled="addingReference"
@@ -508,7 +534,7 @@ const selectedAssigneeMember = computed(() =>
                 color="primary"
                 variant="soft"
                 :loading="addingReference"
-                :disabled="!referenceForm.id.trim()"
+                :disabled="!referenceForm.number.trim()"
                 @click="addReference"
               >
                 {{ t('tugas_tambah_referensi') }}

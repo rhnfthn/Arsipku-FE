@@ -45,9 +45,8 @@
           <div ref="tabScrollRef" role="tablist" @scroll.passive="updateScrollState" @keydown="handleTabKeydown"
             class="flex items-center gap-2 overflow-x-auto scrollbar-hide px-5 py-4">
             <button v-for="tab in tabs" :key="tab.value" type="button" role="tab" :data-tab="tab.value"
-              :aria-selected="tab.to ? undefined : activeTab === tab.value"
-              :tabindex="tab.to || activeTab === tab.value ? 0 : -1"
-              @click="tab.to ? navigateTo(tab.to) : (activeTab = tab.value)" :class="[
+              :aria-selected="activeTab === tab.value" :tabindex="activeTab === tab.value ? 0 : -1"
+              @click="activeTab = tab.value" :class="[
                 'group flex items-center gap-2.5 pl-2 pr-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shrink-0 border transition-all duration-200',
                 activeTab === tab.value
                   ? 'bg-primary text-white border-primary shadow-md shadow-primary-500/25'
@@ -344,6 +343,9 @@
           </div>
         </div>
 
+        <!-- ===================== TAB: Tema ===================== -->
+        <ThemeConfigurationTab v-if="activeTab === 'tema'" />
+
         <!-- ===================== TAB: UNIT TU ===================== -->
         <div v-if="activeTab === 'unit-tu'">
           <!-- Komponen Unit TU (CRUD assignment organization_tu) -->
@@ -629,8 +631,6 @@ interface KonfigTab {
   label: string;
   icon: string;
   permission: { resource: string; action: string };
-  to?: string;
-  visible?: boolean;
 }
 
 // Daftar tab data-driven: mudah ditambah dan otomatis menghormati izin akses.
@@ -647,6 +647,12 @@ const tabs = computed<KonfigTab[]>(() => {
       label: t("konfig_tab_pengumuman"),
       icon: "i-lucide-megaphone",
       permission: { resource: "konfigurasi", action: "read-pengumuman" },
+    },
+    {
+      value: "tema",
+      label: t("theme_tab"),
+      icon: "i-lucide-palette",
+      permission: { resource: "konfigurasi", action: "read-tema" },
     },
     {
       value: "unit-tu",
@@ -684,18 +690,10 @@ const tabs = computed<KonfigTab[]>(() => {
       icon: "i-lucide-users",
       permission: { resource: "master-data", action: "update-grup-penerima" },
     },
-    {
-      value: "tema",
-      label: "Tema",
-      icon: "i-lucide-palette",
-      to: "/administrasi/tema",
-      visible: isSuperadmin.value,
-      permission: { resource: "konfigurasi", action: "read-digsig" },
-    },
   ];
 
-  return list.filter(({ permission, visible = true }) =>
-    visible && hasPermission(permission.resource, permission.action),
+  return list.filter(({ permission }) =>
+    hasPermission(permission.resource, permission.action),
   );
 });
 

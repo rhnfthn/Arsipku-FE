@@ -202,6 +202,8 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
+    const currentSessionId = process.client ? localStorage.getItem('sessionId') : null;
+
     // Bersihkan JWT aplikasi lebih dulu; backend tetap menerima cookie sesi
     // HttpOnly untuk merevoke token provider secara server-to-server.
     if (process.client) {
@@ -223,6 +225,7 @@ export const useAuth = () => {
       // Kirim origin frontend saat ini agar backend redirect balik ke sini
       // setelah logout (mis. QA 172.x), bukan ke AUTH_FRONTEND_URL default.
       const logoutUrl = new URL(`${baseUrl}/auth/logout`);
+      if (currentSessionId) logoutUrl.searchParams.set('sessionId', currentSessionId);
       logoutUrl.searchParams.set('origin', window.location.origin);
       window.location.href = logoutUrl.toString();
     }

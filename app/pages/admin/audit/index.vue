@@ -2,11 +2,11 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-      <PageHeader title="Log Aktivitas" subtitle="Pantau seluruh aktivitas pengguna di sistem." :items="items" />
+      <PageHeader title="Log Aktivitas" />
     </div>
 
     <!-- Table -->
-    <div class="rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 transition-colors">
+    <div class="min-w-0 max-w-full rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 transition-colors">
       <AuditLogFilter
         :model-value="filter"
         :can-export="canExport"
@@ -135,6 +135,10 @@ const goPage = (page: number) => {
 const openDetail = async (row: AuditTrail) => {
   showDetail.value = true;
   selectedLog.value = row;
+  if (row.metadata?.activeSession) {
+    detailLoading.value = false;
+    return;
+  }
   detailLoading.value = true;
   try {
     const detail = await fetchLogDetail(row.id);

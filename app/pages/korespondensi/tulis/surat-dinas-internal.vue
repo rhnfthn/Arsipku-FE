@@ -99,7 +99,6 @@ useMandatoryRoutingCc({
   recipientItems: allRecipientItems,
   selectedTertuju,
   selectedTembusan,
-  recipientGroups,
 });
 
 const breadcrumbs = computed(() => [
