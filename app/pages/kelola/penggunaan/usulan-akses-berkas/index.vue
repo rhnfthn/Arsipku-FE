@@ -28,17 +28,7 @@ const exportColumns = ref([
   { key: 'created_at', label: 'Dibuat', desc: 'Tanggal usulan dibuat' }
 ]);
 
-// ── Route & query param (deklarasi awal agar bisa dipakai di useHead/breadcrumb) ──
-const route = useRoute();
-const queryTab = route.query.tab as string | undefined;
-
-useHead({
-  title:
-    queryTab === 'mine' ? 'Permintaan Usulan Akses Berkas'
-    : queryTab === 'verify-pemberi' ? 'Usulan Masuk Divisi Pemberi'
-    : queryTab === 'verify-me' ? 'Verifikasi Usulan Akses Berkas'
-    : 'Usulan Akses Berkas',
-});
+useHead({ title: 'Usulan Akses Berkas' });
 
 const { t } = useI18n();
 const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifikasiPemberi, persetujuanPemberi } = useUsulanAksesBerkas();
@@ -60,36 +50,18 @@ const filterStatus = ref<string>(USULAN_SAYA);
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 
-// ── Tab navigasi ─────────────────────────────────
-// SE pengusul: default "Usulan Saya" (usulan yang dia buat)
-// SE pemberi: default "Perlu Verifikasi Pemberi" (usulan masuk ke divisinya)
-// Managerial: default "Perlu Verifikasi Saya" (usulan yang harus diverifikasi)
-type TabValue = 'all' | 'mine' | 'verify-pemberi' | 'verify-me';
-// Default: 'mine' — halaman ini adalah "Usulan Saya" (hanya usulan yang dibuat user login)
-const activeTab = ref<TabValue>(
-  queryTab === 'mine' || queryTab === 'verify-pemberi' || queryTab === 'verify-me' || queryTab === 'all'
-    ? queryTab as TabValue
-    : 'mine',
-);
+
 
 const breadcrumbs = computed(() => {
-  const label =
-    queryTab === 'verify-me' ? 'Verifikasi Usulan'
-    : queryTab === 'verify-pemberi' ? 'Pemberian'
-    : 'Usulan Saya';
   return [
     { label: 'Kelola', to: '#' },
     { label: 'Penggunaan', to: '#' },
-    { label, to: '#' },
+    { label: 'Usulan Akses', to: '#' },
   ];
 });
 
-// Opsi status. Default adalah 'Usulan Saya' (semua usulan tanpa filter status)
-// 'Akses Diberikan' disembunyikan di scope=mine karena BE mengecualikannya.
-// (USULAN_SAYA sudah dideklarasikan di atas)
 const statusOptions = computed(() => {
-  const isMine = activeTab.value === 'mine';
-  const base = [
+  return [
     { label: 'Usulan Saya', value: USULAN_SAYA },
     { label: 'Menunggu Verifikasi Pengusul', value: StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL },
     { label: 'Ditolak Verifikasi Pengusul', value: StatusUsulan.REVISI_PENGUSUL },
@@ -98,10 +70,6 @@ const statusOptions = computed(() => {
     { label: 'Menunggu Persetujuan Pemberi', value: StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI },
     { label: 'Ditolak Persetujuan Pemberi', value: StatusUsulan.DITOLAK_PEMBERI },
   ];
-  if (!isMine) {
-    base.push({ label: 'Akses Diberikan', value: StatusUsulan.AKSES_DITERBITKAN });
-  }
-  return base;
 });
 
 const totalPages = computed(() =>
@@ -111,17 +79,11 @@ const totalPages = computed(() =>
 const loadData = async () => {
   try {
     // Status filter selalu dikirim dari dropdown (kosong = semua)
-    // Scope BE menambahkan filter tambahan berdasarkan tab aktif
-    const scopeMap: Record<string, string> = {
-      mine: 'mine',
-      'verify-pemberi': 'verify-pemberi',
-      'verify-me': 'verify-me',
-    };
     await fetchList({
       status: filterStatus.value && filterStatus.value !== USULAN_SAYA
         ? filterStatus.value
         : undefined,
-      scope: scopeMap[activeTab.value],
+      scope: 'mine',
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value || undefined,
@@ -151,15 +113,7 @@ watch(filterStatus, () => {
   currentPage.value = 1;
   loadData();
 });
-watch(activeTab, () => {
-  // Reset status filter jika nilai tidak valid di tab baru
-  // (mis. "Akses Diberikan" tidak tersedia di tab "Usulan Saya")
-  if (filterStatus.value && !statusOptions.value.some((s) => s.value === filterStatus.value)) {
-    filterStatus.value = '';
-  }
-  currentPage.value = 1;
-  loadData();
-});
+
 
 const handleCreated = () => {
   openAdd.value = false;
@@ -173,26 +127,14 @@ const handleCreated = () => {
 };
 
 const goToDetail = (id: string) => {
-  const from = activeTab.value === 'verify-me'
-    ? 'verifikasi'
-    : activeTab.value === 'verify-pemberi'
-      ? 'pemberian'
-      : undefined;
   navigateTo({
     path: `/kelola/penggunaan/usulan-akses-berkas/${id}`,
-    query: from ? { from } : undefined,
   });
 };
 
 const detailRoute = (id: string) => {
-  const from = queryTab === 'verify-me'
-    ? 'verifikasi'
-    : queryTab === 'verify-pemberi'
-      ? 'pemberian'
-      : undefined;
   return {
     path: `/kelola/penggunaan/usulan-akses-berkas/${id}`,
-    query: from ? { from } : undefined,
   };
 };
 
@@ -245,7 +187,6 @@ const statusLabel = computed(() => {
 function resetFilters() {
   filterStatus.value = USULAN_SAYA;
   searchQuery.value = '';
-  activeTab.value = 'mine';
   currentPage.value = 1;
   loadData();
 }
@@ -348,11 +289,7 @@ const canRejectRow = (row: any): boolean => {
   return canVerifyRow(row);
 };
 
-// Filter list: saat tab verify-me, hanya tampilkan usulan yang sudah giliran user untuk approve
 const displayList = computed(() => {
-  if (activeTab.value === 'verify-me') {
-    return usulanList.value.filter((row: any) => canVerifyRow(row));
-  }
   return usulanList.value;
 });
 
@@ -519,14 +456,11 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
   if ((pagination.total === 0 && usulanList.value.length === 0) || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    const scopeMap: Record<string, string> = {
-      mine: 'mine',
-      'verify-pemberi': 'verify-pemberi',
-      'verify-me': 'verify-me',
-    };
     await fetchList({
-      status: filterStatus.value || undefined,
-      scope: scopeMap[activeTab.value],
+      status: filterStatus.value && filterStatus.value !== USULAN_SAYA
+        ? filterStatus.value
+        : undefined,
+      scope: 'mine',
       page: 1,
       limit: pagination.total || 9999,
       search: searchQuery.value || undefined,
