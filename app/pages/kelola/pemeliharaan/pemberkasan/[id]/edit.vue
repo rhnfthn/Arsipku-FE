@@ -72,9 +72,9 @@
                     v-model="form.klasifikasi"
                     :items="klasifikasiItems"
                     value-key="klasifikasi"
-                    label-key="klasifikasi_text"
+                    label-key="searchLabel"
                     searchable
-                    :search-attributes="['klasifikasi', 'klasifikasi_text']"
+                    :search-attributes="['searchLabel']"
                     placeholder="Pilih klasifikasi arsip"
                     :search-input="{ placeholder: 'Cari klasifikasi…' }"
                     variant="none"
@@ -460,7 +460,16 @@ const klasifikasiItems = computed(() =>
     .sort((a: any, b: any) => String(a.klasifikasi).localeCompare(String(b.klasifikasi)))
     .map((item: any) => {
       const isParent = !String(item.klasifikasi).includes('.');
-      return { ...item, isParent, disabled: isParent };
+      return {
+        ...item,
+        searchLabel: item.search_text || [
+          item.klasifikasi,
+          item.klasifikasi_text,
+          item.deskripsi,
+        ].filter(Boolean).join(' '),
+        isParent,
+        disabled: isParent,
+      };
     })
 );
 const retensiLabel = computed(() =>

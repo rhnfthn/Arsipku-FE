@@ -735,7 +735,8 @@ const filteredKlasifikasiList = computed(() => {
   return klasifikasiList.value.filter(
     (k: any) =>
       String(k.klasifikasi).toLowerCase().includes(q) ||
-      String(k.klasifikasi_text || '').toLowerCase().includes(q)
+      String(k.klasifikasi_text || '').toLowerCase().includes(q) ||
+      String(k.deskripsi || '').toLowerCase().includes(q)
   );
 });
 
@@ -910,8 +911,12 @@ const klasifikasiItems = computed(() =>
       return {
         ...item,
         // USelectMenu melakukan filtering berdasarkan atribut ini. Gabungkan
-        // kode dan nama agar pencarian konsisten dengan form pembuatan naskah.
-        searchLabel: `${item.klasifikasi} - ${item.klasifikasi_text || ''}`,
+        // kode, nama, dan deskripsi agar konsisten dengan form pembuatan naskah.
+        searchLabel: item.search_text || [
+          item.klasifikasi,
+          item.klasifikasi_text,
+          item.deskripsi,
+        ].filter(Boolean).join(' '),
         isParent,
         disabled: isParent,
       };
