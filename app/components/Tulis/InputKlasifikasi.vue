@@ -73,7 +73,11 @@ const computedItems = computed(() => {
     const isParent = !item.klasifikasi.includes('.');
     return {
       ...item,
-      searchLabel: `${item.klasifikasi} - ${item.klasifikasi_text}`,
+      searchLabel: item.search_text || [
+        item.klasifikasi,
+        item.klasifikasi_text,
+        item.deskripsi,
+      ].filter(Boolean).join(' '),
       disabled: isParent, // Bawaan USelectMenu/Headless UI: Cegah item agar tidak bisa diklik
       isParent: isParent  // Custom flag untuk membedakan UI di slot #item
     };
