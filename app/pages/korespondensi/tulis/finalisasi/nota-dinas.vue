@@ -366,7 +366,7 @@ const breadcrumbs = computed(() => {
 });
 
 const sifatOptions = [
-  { label: 'Sangat Rahasia', value: 'sangat rahasia' },
+  { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
   { label: 'Rahasia', value: 'rahasia' },
   { label: 'Terbatas', value: 'terbatas' },
   { label: 'Biasa / Terbuka', value: 'biasa' },

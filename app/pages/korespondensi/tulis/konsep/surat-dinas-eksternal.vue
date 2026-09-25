@@ -411,7 +411,7 @@ const isRefExpanded = ref(false);
 const maxPerihal = 200;
 
 const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
+  { label: "Sangat Rahasia", value: "sangat_rahasia" },
   { label: "Rahasia", value: "rahasia" },
   { label: "Terbatas", value: "terbatas" },
   { label: "Biasa / Terbuka", value: "biasa" },
