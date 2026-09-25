@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { io, Socket } from 'socket.io-client';
+import type { KonfigurasiThemeItem } from '~/types/konfigurasi';
 import { useAuth } from '~/composables/useAuth';
 
 /**
@@ -36,6 +37,7 @@ const bsreAlert = ref<{
   activatedAt: string | null;
   activatedByName: string | null;
 } | null>(null);
+const systemTheme = ref<KonfigurasiThemeItem | null>(null);
 const nomorCounts = ref<{
   admin?: any;
   user?: Record<string, any>;
@@ -272,6 +274,10 @@ const connectSocket = async (): Promise<void> => {
       if (payload) {
         bsreAlert.value = payload;
       }
+    });
+
+    socket.on('theme:changed', (payload: KonfigurasiThemeItem | null) => {
+      systemTheme.value = payload ?? null;
     });
 
     socket.on('nomor:count', (payload: any) => {
@@ -519,6 +525,7 @@ export function useRealtimeSocket() {
     inboxCount,
     labelCounts,
     bsreAlert,
+    systemTheme,
     nomorCounts,
     naskahDinasVerifikatorWaitingCount,
     arsipPersetujuanWaitingCount,

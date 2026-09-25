@@ -40,7 +40,7 @@
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">IP Address</span>
-                <p class="text-gray-900 dark:text-white font-mono text-xs">{{ log.ipAddress || '-' }}</p>
+                <p class="text-gray-900 dark:text-white font-mono text-xs">{{ formatIpAddress(log.ipAddress) }}</p>
               </div>
               <div class="col-span-2">
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Browser / Device</span>
@@ -215,6 +215,7 @@
 import { computed } from 'vue';
 import type { AuditTrail, AuditStatus } from '~/types/audit';
 import Modal from '~/components/Modal.vue';
+import { formatIpAddress } from '~/utils/formatIpAddress';
 
 const props = defineProps<{
   modelValue: boolean;

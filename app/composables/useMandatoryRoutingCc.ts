@@ -17,10 +17,8 @@ export const useMandatoryRoutingCc = (options: {
   recipientItems: Ref<any[]>;
   selectedTertuju: Ref<any[]>;
   selectedTembusan: Ref<any[]>;
-  /** Grup penerima aktif. Dipakai untuk mewakili tembusan GM sebagai "Para GM". */
-  recipientGroups?: Ref<any[]>;
 }) => {
-  const { recipientItems, selectedTertuju, selectedTembusan, recipientGroups } = options;
+  const { recipientItems, selectedTertuju, selectedTembusan } = options;
 
   // Metadata routing bisa berada di level atas item atau di item.raw
   // (mengikuti pola mapping halaman pemanggil).
@@ -32,17 +30,10 @@ export const useMandatoryRoutingCc = (options: {
   const positionId = (item: any) =>
     String(item?.raw?.position ?? item?.position ?? item?.position_id ?? item?.value ?? '');
 
-  const isParaGmGroup = (group: any) => {
-    const name = String(group?.nama ?? group?.label ?? '')
-      .trim()
-      .toLowerCase();
-    return name === 'para gm' || name === '(gm) general manager';
-  };
-
   /**
-   * Routing menyimpan kewajiban pada position_id agar tetap dapat divalidasi
-   * backend. Di form, position GM tersebut diwakili satu chip grup "Para GM".
-   * Mandatory CC lain (contoh: Deputi GM PEO pada butir f) tetap individual.
+   * Routing menyimpan kewajiban pada position_id. Pertahankan setiap pejabat
+   * sebagai item individual supaya GM/DGM hasil scope SAME_AREA tidak berubah
+   * menjadi grup penerima yang memperluas tembusan ke seluruh area.
    */
   const resolveMandatoryCcItems = (items: any[]) => {
     // Beberapa halaman memasukkan daftar yang sama untuk dropdown Tertuju dan
@@ -55,46 +46,7 @@ export const useMandatoryRoutingCc = (options: {
         const id = positionId(item);
         if (id && !mandatoryByPosition.has(id)) mandatoryByPosition.set(id, item);
       });
-    const mandatoryIndividuals = [...mandatoryByPosition.values()];
-    const paraGm = (recipientGroups?.value ?? []).find(isParaGmGroup);
-    if (!paraGm) {
-      return { items: mandatoryIndividuals, replacedIds: new Set<string>() };
-    }
-
-    const gmMemberIds = new Set(
-      (paraGm.details ?? []).map((detail: any) =>
-        String(detail?.position ?? detail?.position_id ?? '')
-      )
-    );
-    const replacedIds = new Set(
-      mandatoryIndividuals.map(positionId).filter((id: string) => id && gmMemberIds.has(id))
-    );
-    if (!replacedIds.size) {
-      return { items: mandatoryIndividuals, replacedIds };
-    }
-
-    const groupItem = {
-      label: 'Para GM',
-      labelJob: 'Para GM',
-      value: `GROUP_${paraGm.id}`,
-      isGroup: true,
-      routing_source: 'configured',
-      routing_mandatory: true,
-      raw: {
-        ...paraGm,
-        nama: 'Para GM',
-        routing_source: 'configured',
-        routing_mandatory: true,
-      },
-    };
-
-    return {
-      items: [
-        ...mandatoryIndividuals.filter((item: any) => !replacedIds.has(positionId(item))),
-        groupItem,
-      ],
-      replacedIds,
-    };
+    return [...mandatoryByPosition.values()];
   };
 
   const syncMandatoryCc = () => {
@@ -115,14 +67,11 @@ export const useMandatoryRoutingCc = (options: {
     });
 
     // Tembusan wajib hasil routing persuratan
-    const { items: mandatoryCcItems, replacedIds } = resolveMandatoryCcItems(items);
+    const mandatoryCcItems = resolveMandatoryCcItems(items);
     if (!mandatoryCcItems.length) return;
 
-    // Begitu master grup tersedia, hilangkan chip GM individual yang sebelumnya
-    // sempat terisi saat request grup belum selesai.
     const seenTembusanIds = new Set<string>();
     const normalizedTembusan = tembusan.filter((item: any) => {
-      if (replacedIds.has(positionId(item))) return false;
       const id = String(item?.value ?? positionId(item));
       if (seenTembusanIds.has(id)) return false;
       seenTembusanIds.add(id);
@@ -155,7 +104,6 @@ export const useMandatoryRoutingCc = (options: {
   watch(selectedTertuju, syncMandatoryCc, { deep: true });
   // Sinkronkan ulang bila daftar item berganti (mis. setelah muat penerima)
   watch(recipientItems, syncMandatoryCc);
-  if (recipientGroups) watch(recipientGroups, syncMandatoryCc, { deep: true });
 
   return { syncMandatoryCc };
 };

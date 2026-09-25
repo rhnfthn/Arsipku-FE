@@ -93,6 +93,7 @@ export interface ActiveAccount {
   persnum: number;
   name: string | null;
   username: string | null;
+  userRole: string | null;
   sessionCount: number;
   lastActivityAt: string;
   expiresAt: string;
@@ -176,6 +177,8 @@ export interface AuditFilter {
 export interface AnomalyFilter {
   page?: number;
   limit?: number;
+  startDate?: string;
+  endDate?: string;
   status?: AnomalyStatus;
   severity?: AnomalySeverity;
   userId?: string;

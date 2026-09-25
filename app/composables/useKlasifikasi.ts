@@ -16,6 +16,30 @@ export interface KlasifikasiPayload {
   hak_akses?: string | null;
 }
 
+const normalizeKlasifikasi = (item: any): Klasifikasi => {
+  const kode = String(item?.klasifikasi ?? item?.code ?? '').trim();
+  const nama = String(
+    item?.klasifikasi_text ?? item?.nama ?? item?.text ?? ''
+  ).trim();
+  const deskripsi = String(item?.deskripsi ?? item?.description ?? '').trim();
+
+  return {
+    ...item,
+    klasifikasi: kode,
+    klasifikasi_text: nama,
+    nama: item?.nama ?? nama,
+    deskripsi: deskripsi || null,
+    code: kode,
+    display: item?.display || [kode, nama].filter(Boolean).join(' - '),
+    search_text: [kode, nama, deskripsi].filter(Boolean).join(' '),
+  } as Klasifikasi;
+};
+
+const normalizeKlasifikasiList = (data: any): Klasifikasi[] => {
+  const list = Array.isArray(data) ? data : (data?.data ?? []);
+  return Array.isArray(list) ? list.map(normalizeKlasifikasi) : [];
+};
+
 export const useKlasifikasi = () => {
   const { apiGet, apiPost, apiPut, apiDelete, api } = useApi();
   const { klasifikasi, isLoadingKlasifikasi } = useMasterCache();
@@ -23,8 +47,7 @@ export const useKlasifikasi = () => {
   const getKlasifikasi = async (): Promise<Klasifikasi[]> => {
     try {
       const res: any = await apiGet('/persuratan/klasifikasi', {}, { skipCache: true });
-      const data = Array.isArray(res) ? res : (res?.data ?? []);
-      return data;
+      return normalizeKlasifikasiList(res);
     } catch (error) {
       console.error('Gagal mengambil data klasifikasi:', error);
       throw error;
@@ -37,7 +60,9 @@ export const useKlasifikasi = () => {
 
   const getKlasifikasiList = async (): Promise<Klasifikasi[]> => {
     if (klasifikasi.value && klasifikasi.value.length > 0) {
-      return klasifikasi.value;
+      const data = normalizeKlasifikasiList(klasifikasi.value);
+      klasifikasi.value = data;
+      return data;
     }
     if (isLoadingKlasifikasi.value) {
       await new Promise((resolve) => {
@@ -48,13 +73,15 @@ export const useKlasifikasi = () => {
           }
         });
       });
-      return klasifikasi.value ?? [];
+      const data = normalizeKlasifikasiList(klasifikasi.value ?? []);
+      klasifikasi.value = data;
+      return data;
     }
 
     isLoadingKlasifikasi.value = true;
     try {
       const res: any = await apiGet('/persuratan/klasifikasi', {}, { skipCache: true });
-      const data = Array.isArray(res) ? res : (res?.data ?? []);
+      const data = normalizeKlasifikasiList(res);
       klasifikasi.value = data;
       return data;
     } catch (error) {
@@ -89,7 +116,7 @@ export const useKlasifikasi = () => {
     isLoadingKlasifikasi.value = true;
     try {
       const res: any = await apiGet('/persuratan/klasifikasi', {}, { skipCache: true });
-      const data = Array.isArray(res) ? res : (res?.data ?? []);
+      const data = normalizeKlasifikasiList(res);
       klasifikasi.value = data;
       return data;
     } finally {
