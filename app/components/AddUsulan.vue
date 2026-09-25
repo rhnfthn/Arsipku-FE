@@ -794,8 +794,11 @@ const hasLoadedKlasifikasi = ref(false);
 
 const filteredKlasifikasi = computed(() => {
   if (!klasifikasiSearch.value) return klasifikasiOptions.value;
+  const query = klasifikasiSearch.value.trim().toLowerCase();
   return klasifikasiOptions.value.filter((i) =>
-    i.display.toLowerCase().includes(klasifikasiSearch.value.toLowerCase())
+    String(i.searchText || [i.code, i.text, i.deskripsi].filter(Boolean).join(' '))
+      .toLowerCase()
+      .includes(query)
   );
 });
 
