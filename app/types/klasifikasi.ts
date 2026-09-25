@@ -13,6 +13,11 @@ export interface Klasifikasi {
   penyusutan: string | null;
   keamanan: string | null;
   hak_akses: string | null;
+  // Alias/indeks pencarian yang ditambahkan di frontend agar seluruh pemakai
+  // GET klasifikasi memakai kontrak pencarian yang konsisten.
+  code?: string;
+  display?: string;
+  search_text?: string;
 }
 
 export interface KlasifikasiResponse {
