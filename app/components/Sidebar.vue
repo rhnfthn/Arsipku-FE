@@ -1563,11 +1563,6 @@ const unitDokumenKelolaMenus = computed(() => [
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
       },
-      {
-        label: 'Backup Status',
-        to: '/maintenance/penyusutan/backup-status',
-        icon: 'i-lucide-database',
-      },
     ],
   },
 ]);
@@ -1652,11 +1647,6 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Penataan dan Pemusnahan',
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
-      },
-      {
-        label: 'Backup Status',
-        to: '/maintenance/penyusutan/backup-status',
-        icon: 'i-lucide-database',
       },
     ],
   },
@@ -1983,12 +1973,6 @@ const adminMenuKelola = computed(() => {
       to: '/maintenance/penyusutan/verifikasi-penyusutan',
       icon: 'i-lucide-file-check',
       showIfAtasanPenyusutan: true,
-    },
-    {
-      label: 'Backup Status',
-      to: '/maintenance/penyusutan/backup-status',
-      icon: 'i-lucide-database',
-      showIfTuRole: true,
     },
   ];
 
