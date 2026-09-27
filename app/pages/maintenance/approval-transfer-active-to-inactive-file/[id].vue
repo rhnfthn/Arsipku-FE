@@ -38,7 +38,7 @@
 
           <!-- Final Verify Card -->
           <FinalVerifyCard
-            v-if="item.status === 'MENUNGGU_VERIFIKASI_TERAKHIR'"
+            v-if="item.status === 'MENUNGGU_VERIFIKASI_TERAKHIR' && isFinalVerifier"
             :submitting="actionLoading"
             @approve="onFinalVerify"
             @reject="openRejectModal"
@@ -97,7 +97,7 @@
               <div>
                 <h3 class="text-base font-semibold text-green-700 dark:text-green-300 mb-1">Verifikasi Selesai</h3>
                 <p class="text-sm text-green-600 dark:text-green-400">
-                  Usulan telah lolos verifikasi terakhir. Sekretaris dapat melanjutkan pengiriman ke Unit Tata Naskah.
+                  Usulan telah lolos verifikasi terakhir. Verifikator terakhir dapat melanjutkan pengiriman ke Unit Tata Naskah.
                 </p>
               </div>
             </div>
@@ -119,12 +119,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferApproval } from '~/composables/useTransferApproval';
+import { useAuth } from '~/composables/useAuth';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 
 definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
+const { user } = useAuth();
 const {
   fetchApprovalDetail,
   verifyTransfer,
@@ -137,6 +139,19 @@ const item = ref<TransferActiveToInactive | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
 const isRejectModalOpen = ref(false);
+
+const isFinalVerifier = computed(() => {
+  if (!item.value || !user.value) return false;
+  if (Number(item.value.sekretarisPersnum) === Number(user.value.persnum)) return false;
+  const levels = item.value.approvalLevels ?? [];
+  if (levels.length > 0) {
+    const finalLevel = levels.reduce((latest, level) =>
+      level.urutan > latest.urutan ? level : latest,
+    );
+    return Number(finalLevel.atasanPersnum) === Number(user.value.persnum);
+  }
+  return Number(item.value.atasanPersnum) === Number(user.value.persnum);
+});
 
 const items = computed(() => [
   { label: 'Beranda', to: '/' },

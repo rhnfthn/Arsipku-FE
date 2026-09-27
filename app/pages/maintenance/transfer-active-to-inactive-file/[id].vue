@@ -47,6 +47,28 @@
 
           <!-- ─── Button Action (di bawah detail) ─── -->
 
+          <!-- Sekretaris TU melanjutkan usulan yang sudah dikirim oleh atasan -->
+          <div
+            v-if="isSekretarisTu && tuIntakeStatus.includes(item.status)"
+            class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-send" class="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
+              <div class="flex-1">
+                <h3 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">Usulan Siap Diproses TU</h3>
+                <p class="text-sm text-purple-600 dark:text-purple-400 mb-3">
+                  Usulan sudah dikirim ke Unit Tata Naskah. Lanjutkan verifikasi berkas dan pengajuan ke Atasan Managerial TU.
+                </p>
+                <NuxtLink
+                  :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
+                  class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white transition-colors"
+                >
+                  <UIcon name="i-lucide-file-check" class="w-4 h-4" /> Buka Penerimaan Usulan
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+
           <!-- Aksi Sekretaris (DRAFT/DITOLAK) dihapus -->
 
             <!-- MENUNGGU_VERIFIKASI_ATASAN -->
@@ -81,9 +103,9 @@
               </div>
             </div>
 
-            <!-- DISETUJUI_VERIFIKASI_TERAKHIR: Menunggu atasan kirim ke TU (bukan sekretaris) -->
+            <!-- DISETUJUI_VERIFIKASI_TERAKHIR: hanya verifikator terakhir yang kirim ke TU -->
             <div
-              v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' && !isSekretarisPengusul"
+              v-if="item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' && isFinalVerifier"
               class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
             >
               <div class="flex items-start gap-3">
@@ -274,7 +296,7 @@
 
       <!-- Card Persetujuan Terakhir Atasan TU (untuk atasan managerial TU) -->
       <div
-        v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuLevel1"
+        v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
         class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
       >
         <div class="flex items-start gap-3">
@@ -474,13 +496,15 @@ const isAtasanTu = computed(() => {
     hasBod || isAdmin.value || isSuperadmin.value;
 });
 
-/** True jika user login adalah atasan TU level 1 (untuk persetujuan terakhir). */
-const isAtasanTuLevel1 = computed(() => {
+/** True jika user login adalah atasan TU level terakhir (untuk persetujuan terakhir). */
+const isAtasanTuFinal = computed(() => {
   if (!item.value || !user.value) return false
   const levels = (item.value as any).tuApprovalLevels
   if (!levels || levels.length === 0) return isAtasanTu.value // Legacy: single atasan
-  const firstLevel = levels.find((l: any) => l.urutan === 1)
-  return firstLevel ? firstLevel.persnum === Number(user.value.persnum) : false
+  const finalLevel = levels.reduce((latest: any, level: any) =>
+    level.urutan > latest.urutan ? level : latest,
+  )
+  return finalLevel ? Number(finalLevel.persnum) === Number(user.value.persnum) : false
 });
 
 /** True jika user login adalah sekretaris pengusul (pembuat usulan ini). */
@@ -488,6 +512,24 @@ const isSekretarisPengusul = computed(() => {
   if (!item.value || !user.value) return false;
   return Number(item.value.sekretarisPersnum) === Number(user.value.persnum);
 });
+
+/** True jika user login adalah verifikator terakhir pada alur berjenjang. */
+const isFinalVerifier = computed(() => {
+  if (!item.value || !user.value || isSekretarisPengusul.value) return false;
+  const levels = item.value.approvalLevels ?? [];
+  if (levels.length > 0) {
+    const finalLevel = levels.reduce((latest, level) =>
+      level.urutan > latest.urutan ? level : latest,
+    );
+    return Number(finalLevel.atasanPersnum) === Number(user.value.persnum);
+  }
+  // Fallback untuk usulan lama yang belum memiliki tabel level approval.
+  return Number(item.value.atasanPersnum) === Number(user.value.persnum);
+});
+
+/** Sekretaris TU dapat meneruskan usulan pada tahap penerimaan TU. */
+const isSekretarisTu = computed(() => user.value?.tuRoles?.includes('sekretaris') ?? false);
+const tuIntakeStatus = ['DIKIRIM', 'MENUNGGU_VERIFIKASI_BERKAS_FISIK'];
 
 const item = ref<TransferActiveToInactive | null>(null);
 const loading = ref(true);

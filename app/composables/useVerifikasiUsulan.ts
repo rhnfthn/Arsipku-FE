@@ -154,6 +154,27 @@ export const useVerifikasiUsulan = () => {
           // Sembunyikan usulan yang dibuat oleh user sendiri sebagai Sekretaris
           // (halaman verifikasi hanya untuk usulan di mana user adalah atasan)
           if (userPersnum && Number(item.sekretarisPersnum) === Number(userPersnum)) continue;
+
+          // Verifikasi atasan berjalan berurutan. Hanya verifikator yang sedang
+          // aktif yang boleh melihat berkas pada dashboard verifikasi.
+          const currentVerifierStatuses: string[] = [
+            'MENUNGGU_VERIFIKASI_ATASAN',
+            'DISETUJUI_ATASAN',
+            'MENUNGGU_VERIFIKASI_TERAKHIR',
+            'DISETUJUI_VERIFIKASI_TERAKHIR',
+          ];
+          const isSequentialVerification =
+            item.jenis === 'aktif_ke_inaktif' &&
+            currentVerifierStatuses.includes(item.status);
+
+          if (
+            isSequentialVerification &&
+            userPersnum &&
+            Number(item.atasanPersnum) !== Number(userPersnum)
+          ) {
+            continue;
+          }
+
           // Filter status (client-side) — pseudo-status
           if (statusFilter) {
             if (statusFilter === 'MENUNGGU_PERSETUJUAN') {

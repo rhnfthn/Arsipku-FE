@@ -7,7 +7,7 @@ export const KajianSchema = z.object({
 
   penerima: z.array(z.number()).min(1, 'Pilih minimal satu penerima'),
 
-  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
+  tgl: z.string().min(1, 'Tanggal wajib diisi'),
 
   klasifikasi: z.string().min(1, 'Klasifikasi wajib dipilih'),
   klasifikasi_text: z.string().optional(),
@@ -23,7 +23,7 @@ export const KajianSchema = z.object({
   ),
 
   lampiran_temp_ids: z.array(z.string()).optional(),
-  lampiran_text: z.string().optional()
+  lampiran: z.string().optional()
 })
 
 export type KajianPayload = z.infer<typeof KajianSchema> & {
@@ -74,8 +74,11 @@ export interface KajianDetail {
   }>
   lampiran_files?: Array<{
     id: string
-    file_name: string
-    file_path: string
+    file_name?: string
+    file_path?: string
+    fileName?: string
+    filePath?: string
+    fileUrl?: string
     file_size?: number
   }>
 }
