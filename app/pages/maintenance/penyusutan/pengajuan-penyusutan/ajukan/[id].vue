@@ -501,12 +501,18 @@ const loadAtasanManagerial = async () => {
     const res: any = await apiGet(`/org-data/pengirim/managerial?tgl=${tgl}`, {}, { skipCache: true })
     const data = res?.data?.data ?? res?.data ?? []
     if (Array.isArray(data)) {
-      atasanOptions.value = data.map((r: any) => ({
-        position: Number(r.position ?? r.position_id ?? 0),
-        persnum: Number(r.persnum ?? r.persnum_person ?? r.relation_persnum ?? 0),
-        name: r.persnum_person_text ?? r.name ?? r.label ?? '-',
-        positionText: r.position_text ?? r.positionText ?? r.labelJob ?? '-',
-      }))
+      atasanOptions.value = data
+        .map((r: any) => ({
+          position: Number(r.position ?? r.position_id ?? 0),
+          persnum: Number(r.persnum ?? r.persnum_person ?? r.relation_persnum ?? 0),
+          name: r.persnum_person_text ?? r.name ?? r.label ?? '-',
+          positionText: r.position_text ?? r.positionText ?? r.labelJob ?? '-',
+        }))
+        // Buang entri tanpa nama (fallback "-") — hanya tampilkan atasan yang punya nama
+        .filter((a: { name: string }) => {
+          const n = (a.name ?? '').trim()
+          return n !== '' && n !== '-'
+        })
     }
   } catch (e) {
     console.error('Gagal memuat atasan managerial:', e)

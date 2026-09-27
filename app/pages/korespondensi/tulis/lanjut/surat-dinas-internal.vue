@@ -26,6 +26,7 @@ const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
+const { getGenericDraftDetail } = useDraft();
 const { getConfigDigsig } = useDigsig();
 const { getTteMode } = useTtePortal();
 const { fetchInboxDetail } = useInbox();
@@ -146,7 +147,9 @@ const getPayload = (): SDIPayloadInput => ({
   tembusan_grup: tembusanGrup.value,
   klasifikasi: selectedKlasifikasi.value?.klasifikasi || "",
   klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || "",
-  sifat: selectedSifat.value?.value || "biasa",
+  sifat: typeof selectedSifat.value === "string"
+    ? selectedSifat.value
+    : selectedSifat.value?.value || "biasa",
   perihal: subject.value,
   lampiran: lampiranText.value,
   konten: editorContent.value,
@@ -411,6 +414,18 @@ onMounted(async () => {
         existingFiles.value = mapLampiranFiles(d.lampiran_files || []);
         setSifatFromString(d.sifat);
         if (d.tgl) setDateFromString(d.tgl);
+      }
+
+      const genericDraft = await getGenericDraftDetail(draftId).catch(() => null);
+      const reference = genericDraft?.data?.referensi;
+      if (reference) {
+        refData.value = [{
+          jenis: reference.ref_jenis,
+          pengirim: reference.ref_pengirim,
+          tanggal: reference.ref_tanggal,
+          nomor: reference.ref_nomor,
+          perihal: reference.ref_perihal
+        }];
       }
     } catch {
 

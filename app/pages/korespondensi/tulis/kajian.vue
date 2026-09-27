@@ -397,14 +397,16 @@ const getPayload = (): KajianPayload => {
     id_naskah: editDraftId.value || null,
     pengirim: isNaN(positionId) ? 0 : positionId,
     penerima: selectedPenerima.value.map(i => Number(i.value)),
-    tanggal: tglDb,
+    tgl: tglDb,
     klasifikasi: selectedKlasifikasi.value?.klasifikasi ?? "",
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text ?? "",
-    sifat: selectedSifat.value?.value || "biasa",
+    sifat: typeof selectedSifat.value === "string"
+      ? selectedSifat.value
+      : selectedSifat.value?.value || "biasa",
     perihal: subject.value,
     konten: editorContent.value,
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean) as string[],
-    lampiran_text: lampiranText.value,
+    lampiran: lampiranText.value,
     positionText: renderedPositionLabel.value || "",
     namaLengkap: user.value?.nama || ""
   }
@@ -447,13 +449,6 @@ const validateInput = (payload: KajianPayload) => {
 
 const handlePreview = async () => {
   const payload = getPayload();
-
-  // DEBUG SEMENTARA - hapus setelah fix
-  console.log('=== PAYLOAD DEBUG ===', JSON.stringify(payload, null, 2));
-  console.log('user.value:', user.value);
-  console.log('selectedKlasifikasiId:', selectedKlasifikasiId.value);
-  console.log('selectedKlasifikasi:', selectedKlasifikasi.value);
-  console.log('editorContent:', editorContent.value);
 
   if (!validateInput(payload)) return;
 
@@ -735,15 +730,26 @@ onMounted(async () => {
         }
 
         if (d.sifat) {
-          selectedSifat.value = { value: d.sifat, label: d.sifat.toUpperCase() };
+          const normalizedSifat = String(d.sifat).trim().toLowerCase().replace(/[\s-]+/g, "_");
+          const sifatLabels: Record<string, string> = {
+            biasa: "Biasa / Terbuka",
+            terbuka: "Biasa / Terbuka",
+            terbatas: "Terbatas",
+            rahasia: "Rahasia",
+            sangat_rahasia: "Sangat Rahasia"
+          };
+          selectedSifat.value = {
+            value: normalizedSifat === "terbuka" ? "biasa" : normalizedSifat,
+            label: sifatLabels[normalizedSifat] || "Biasa / Terbuka"
+          };
         }
 
         if (d.lampiran_files) {
           existingFiles.value = d.lampiran_files.map((f: any) => ({
             id: f.id,
-            fileName: f.file_name || f.nama_file,
-            filePath: f.file_path || f.url,
-            fileSize: f.file_size || 0
+            fileName: f.fileName || f.file_name || f.nama_file,
+            filePath: f.fileUrl || f.filePath || f.file_path || f.url,
+            fileSize: f.fileSize || f.file_size || 0
           }));
         }
 
