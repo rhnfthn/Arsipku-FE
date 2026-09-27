@@ -372,13 +372,19 @@ const fetchAtasanManagerial = async () => {
     const tgl = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     const res: any = await apiGet(`/org-data/pengirim/managerial?tgl=${tgl}`, {}, { skipCache: true });
     if (res?.success && Array.isArray(res.data)) {
-      atasanOptions.value = res.data.map((r: any) => ({
-        position: Number(r.position),
-        persnum: Number(r.persnum ?? r.persnum_person ?? 0),
-        label: `${r.persnum_person_text ?? r.name ?? '-'} — ${r.position_text ?? '-'}`,
-        name: r.persnum_person_text ?? r.name ?? '-',
-        positionText: r.position_text ?? '-',
-      }));
+      atasanOptions.value = res.data
+        .map((r: any) => ({
+          position: Number(r.position),
+          persnum: Number(r.persnum ?? r.persnum_person ?? 0),
+          label: `${r.persnum_person_text ?? r.name ?? '-'} — ${r.position_text ?? '-'}`,
+          name: r.persnum_person_text ?? r.name ?? '-',
+          positionText: r.position_text ?? '-',
+        }))
+        // Buang entri tanpa nama (fallback "-") — hanya tampilkan atasan yang punya nama
+        .filter((a: { name: string }) => {
+          const n = (a.name ?? '').trim();
+          return n !== '' && n !== '-';
+        });
     } else {
       atasanOptions.value = [];
     }
