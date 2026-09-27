@@ -472,6 +472,9 @@
           </div>
         </div>
         <div v-if="activeTab === 'routing'"><CorrespondenceRoutingTab /></div>
+
+        <!-- ===================== TAB: RESET DATABASE (Superadmin) ===================== -->
+        <DbResetTab v-if="activeTab === 'db-reset'" />
       </div>
     </div>
 
@@ -546,6 +549,7 @@ import { useKonfigurasi } from "@/composables/useKonfigurasi";
 import { Alert } from "@/composables/useAlert";
 import { CONFIGURATION_READ_PERMISSIONS } from "@/composables/useFeatureAccess";
 import type { KonfigurasiMessageItem } from "@/types/konfigurasi";
+import DbResetTab from "@/components/DbResetTab.vue";
 
 definePageMeta({ middleware: "auth" });
 
@@ -689,6 +693,12 @@ const tabs = computed<KonfigTab[]>(() => {
       label: "Grup Penerima",
       icon: "i-lucide-users",
       permission: { resource: "master-data", action: "update-grup-penerima" },
+    },
+    {
+      value: "db-reset",
+      label: "Reset Database",
+      icon: "i-lucide-database-backup",
+      permission: { resource: "konfigurasi", action: "update" },
     },
   ];
 
