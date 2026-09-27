@@ -352,7 +352,7 @@ const toast = useToast();
 const alertState = useAlertState();
 
 const sifatOptions: SifatOption[] = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
+  { label: "Sangat Rahasia", value: "sangat_rahasia" },
   { label: "Rahasia", value: "rahasia" },
   { label: "Terbatas", value: "terbatas" },
   { label: "Biasa / Terbuka", value: "biasa" },

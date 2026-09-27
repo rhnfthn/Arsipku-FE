@@ -225,6 +225,18 @@ export const useDraft = () => {
     }
   };
 
+  const getGenericDraftDetail = async (idNaskah: string) => {
+    isLoadingDraft.value = true;
+    try {
+      return await get(`/draft/detail/${idNaskah}`);
+    } catch (error: any) {
+      console.error('Gagal ambil metadata draft:', error);
+      throw error;
+    } finally {
+      isLoadingDraft.value = false;
+    }
+  };
+
   const generatePdf = async (payload: any) => {
     try {
       const config = useRuntimeConfig();
@@ -296,6 +308,7 @@ export const useDraft = () => {
     deleteDraft,
     bulkDeleteDrafts,
     getDraftDetail,
+    getGenericDraftDetail,
     generatePdf,
     sendMessage,
     saveDraft,

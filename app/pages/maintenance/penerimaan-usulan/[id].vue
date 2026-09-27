@@ -110,39 +110,6 @@
             </div>
           </div>
 
-          <!-- Card: Atasan Managerial Pengusul (Berjenjang) -->
-          <div
-            v-if="item.approvalLevels && item.approvalLevels.length > 0"
-            class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div class="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-700">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
-                <UIcon name="i-lucide-users" class="size-5 text-primary-600 dark:text-primary-400" />
-              </span>
-              <div>
-                <h2 class="font-semibold text-gray-900 dark:text-white">Atasan Managerial <span class="text-red-500">*</span></h2>
-                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih atasan. Urutan pemilihan = urutan verifikasi .</p>
-              </div>
-            </div>
-            <div class="space-y-3 px-5 py-5">
-              <div
-                v-for="(level, idx) in item.approvalLevels"
-                :key="level.id"
-                class="relative"
-              >
-                <div class="mb-1.5 flex items-center justify-between">
-                  <label class="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Atasan Managerial{{ idx === 0 ? ' *' : ` ${idx + 1}` }}
-                  </label>
-                </div>
-                <div class="flex min-h-[48px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                  <span class="font-medium">{{ level.atasanName }}</span>
-                  <UIcon name="i-lucide-chevron-down" class="h-4 w-4 shrink-0 text-gray-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Card: Daftar Isi -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-3">
