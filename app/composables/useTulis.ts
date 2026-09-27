@@ -74,7 +74,7 @@ export function useTulis() {
   const maxPerihal = 200;
 
   const sifatOptions: SifatOption[] = [
-    { label: 'Sangat Rahasia', value: 'sangat rahasia' },
+    { label: 'Sangat Rahasia', value: 'sangat_rahasia' },
     { label: 'Rahasia', value: 'rahasia' },
     { label: 'Terbatas', value: 'terbatas' },
     { label: 'Biasa / Terbuka', value: 'biasa' }
@@ -315,7 +315,7 @@ export function useTulis() {
 
   /** Set sifat dari string, fallback ke 'biasa' */
   const setSifatFromString = (sifat: string) => {
-    const val = String(sifat || 'biasa').toLowerCase();
+    const val = String(sifat || 'biasa').trim().toLowerCase().replace(/[\s-]+/g, '_');
     selectedSifat.value = sifatOptions.find((opt) => opt.value === val) ?? sifatOptions[3] ?? null;
   };
 

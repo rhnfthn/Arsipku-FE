@@ -586,17 +586,15 @@ const canVerify = computed(() => {
 });
 
 /** Verifikasi terakhir: atasan managerial saat status MENUNGGU_VERIFIKASI_TERAKHIR.
- * Hanya atasan LEVEL 1 (urutan=1) yang bisa final verify — bukan level terakhir.
- * Setelah semua level approve, usulan kembali ke level 1 untuk verifikasi final. */
+ * Aksi ini hanya boleh dilakukan oleh verifikator terakhir. */
 const canFinalVerify = computed(() => {
   if (!usulan.value || isOwnUsulan.value) return false;
   if (usulan.value.status !== 'MENUNGGU_VERIFIKASI_TERAKHIR') return false;
-  // Cek apakah user login adalah atasan level 1 (urutan=1)
+  // Cek apakah user login adalah verifikator terakhir.
   const levels = usulan.value.approvalLevels;
   if (levels && levels.length > 0 && user.value) {
-    const firstLevel = levels.find((l) => l.urutan === 1);
-    if (!firstLevel) return false;
-    return Number(firstLevel.atasanPersnum) === Number(user.value.persnum);
+    const finalLevel = levels[levels.length - 1];
+    return Number(finalLevel.atasanPersnum) === Number(user.value.persnum);
   }
   // Fallback: single-atasan — cek atasanPersnum langsung
   if (usulan.value.atasanPersnum) {
@@ -616,18 +614,17 @@ const canApproveReceipt = computed(() => {
 });
 
 /** Atasan Managerial bisa kirim ke TU saat verifikasi terakhir selesai (DISETUJUI_VERIFIKASI_TERAKHIR).
- * HANYA atasan LEVEL 1 (urutan=1) yang bisa kirim ke TU — bukan level 2/3. */
+ * Hanya verifikator terakhir yang bisa meneruskan usulan ke TU. */
 const canKirimTU = computed(() => {
   if (!usulan.value || !user.value) return false;
   if (usulan.value.status !== 'DISETUJUI_VERIFIKASI_TERAKHIR') return false;
   // Sekretaris tidak boleh kirim ke TU
   if (isOwnUsulan.value) return false;
-  // Cek apakah user login adalah atasan LEVEL 1 (urutan=1)
+  // Cek apakah user login adalah verifikator terakhir.
   const levels = usulan.value.approvalLevels;
   if (levels && levels.length > 0) {
-    const firstLevel = levels.find((l) => l.urutan === 1);
-    if (!firstLevel) return false;
-    return Number(firstLevel.atasanPersnum) === Number(user.value.persnum);
+    const finalLevel = levels[levels.length - 1];
+    return Number(finalLevel.atasanPersnum) === Number(user.value.persnum);
   }
   // Fallback: single-atasan tanpa approvalLevels — cek atasanPersnum langsung
   if (usulan.value.atasanPersnum) {

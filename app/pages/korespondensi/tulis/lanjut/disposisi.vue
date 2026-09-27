@@ -290,6 +290,7 @@ const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getRecipients, sendDisposisi, saveDraft, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
+const { getGenericDraftDetail } = useDraft();
 const { fetchDetail, detail: refDetail } = useTerkirimDetail();
 
 const breadcrumbs = computed(() => {
@@ -357,7 +358,7 @@ const checklistOptions = [
 ];
 
 const sifatOptions = [
-  { label: "Sangat Rahasia", value: "sangat rahasia" },
+  { label: "Sangat Rahasia", value: "sangat_rahasia" },
   { label: "Rahasia", value: "rahasia" },
   { label: "Terbatas", value: "terbatas" },
   { label: "Biasa", value: "biasa" }
@@ -739,6 +740,20 @@ onMounted(async () => {
     if (draftId) {
       editDraftId.value = draftId;
       const resDraft = await getDraftDetail(draftId);
+
+      const genericDraft = await getGenericDraftDetail(draftId).catch(() => null);
+      const reference = genericDraft?.data?.referensi;
+      if (reference) {
+        refData.value = [{
+          jenis: reference.ref_jenis,
+          pengirim: reference.ref_pengirim,
+          tanggal: reference.ref_tanggal,
+          nomor: reference.ref_nomor,
+          perihal: reference.ref_perihal
+        }];
+        refNumber.value = reference.ref_nomor || refNumber.value;
+        refPerihal.value = reference.ref_perihal || refPerihal.value;
+      }
 
       if (resDraft.data && resDraft.data.flow && resDraft.data.flow.length > 0) {
         const d = resDraft.data.flow[0];
