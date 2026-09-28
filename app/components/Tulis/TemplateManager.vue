@@ -82,7 +82,7 @@
         </div>
         <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 rounded-b-lg">
           <UButton :label="$t('batal')" variant="ghost" color="neutral" @click="isAddTemplateOpen = false" />
-          <UButton :label="isEditMode ? $t('tmpl_simpan_perubahan') : $t('f_simpan')" color="primary" icon="i-heroicons-check-circle"
+          <UButton :label="isEditMode ? $t('tmpl_simpan_perubahan') : $t('f_simpan')" color="primary"
             :loading="isLoadingAction" :disabled="!newTemplateName.trim()" @click="submitTemplate" />
         </div>
       </div>

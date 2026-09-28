@@ -227,7 +227,7 @@
                   v-if="item.kode"
                   type="button"
                   @click="copyKode(item.kode)"
-                  class="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  class="shrink-0 p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
                   :title="$t('te_copy_id') || 'Salin ID'"
                 >
                   <Check v-if="copiedKode === item.kode" class="w-4 h-4 text-green-500" />
@@ -253,8 +253,21 @@
 
             <td
               class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300"
-              v-html="highlight(item.email || '-', filters.search)"
-            ></td>
+            >
+              <div class="flex items-center gap-2">
+                <span v-html="highlight(item.email || '-', filters.search)"></span>
+                <button
+                  v-if="item.email"
+                  type="button"
+                  @click="copyEmail(item.email)"
+                  class="shrink-0 p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  :title="$t('te_copy_email') || 'Salin Email'"
+                >
+                  <Check v-if="copiedEmail === item.email" class="w-4 h-4 text-green-500" />
+                  <Copy v-else class="w-4 h-4" />
+                </button>
+              </div>
+            </td>
 
             <td class="px-4 py-3">
               <span
@@ -559,7 +572,7 @@
                   v-if="item.position"
                   type="button"
                   @click="copyKode(String(item.position))"
-                  class="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  class="shrink-0 p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
                   title="Salin Position ID"
                 >
                   <Check v-if="copiedKode === String(item.position)" class="w-4 h-4 text-green-500" />
@@ -628,7 +641,7 @@
                 v-if="form.kode"
                 type="button"
                 @click="copyKode(form.kode)"
-                class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-400 transition-colors shrink-0 flex items-center justify-center"
+                class="shrink-0 p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-400 transition-colors flex items-center justify-center"
                 :title="$t('te_copy_id') || 'Salin ID'"
               >
                 <Check v-if="copiedKode === form.kode" class="w-4 h-4 text-green-500" />
@@ -1196,6 +1209,21 @@ const copyKode = async (kode: string) => {
     }, 2000);
   } catch {
     showToast('Gagal', 'Gagal menyalin ID.', 'error');
+  }
+};
+
+// Copy Email
+const copiedEmail = ref<string | null>(null);
+const copyEmail = async (email: string) => {
+  try {
+    await navigator.clipboard.writeText(email);
+    copiedEmail.value = email;
+    showToast('Berhasil', `Email ${email} disalin.`, 'success');
+    setTimeout(() => {
+      if (copiedEmail.value === email) copiedEmail.value = null;
+    }, 2000);
+  } catch {
+    showToast('Gagal', 'Gagal menyalin email.', 'error');
   }
 };
 

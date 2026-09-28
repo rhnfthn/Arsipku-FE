@@ -1,101 +1,109 @@
 <template>
   <div class="mt-4">
-    <h4 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-      Preview Data Penerima
-    </h4>
-    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-      <table class="w-full min-w-max text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th
-              v-for="column in columns"
-              :key="column"
-              class="whitespace-nowrap border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
-              {{ column }}
-            </th>
-            <th
-              class="border-b border-gray-200 px-3 py-2 text-center font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
-              Status
-            </th>
-            <th
-              class="border-b border-gray-200 px-3 py-2 text-center font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
-              Aksi
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(item, idx) in paginatedItems"
-            :key="item.no"
-            class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-            :class="{ 'bg-red-50 dark:bg-red-950/20': !item.isValid }"
-          >
-            <td
-              v-for="column in columns"
-              :key="`${item.no}-${column}`"
-              class="max-w-64 break-all whitespace-normal align-top border-b border-gray-100 px-3 py-2 text-gray-700 dark:border-gray-700 dark:text-gray-300"
-              :class="{ 'font-medium text-gray-900 dark:text-white': column === 'perihal' }"
-            >
-              {{ getValue(item, column) || '-' }}
-            </td>
-            <td class="border-b border-gray-100 px-3 py-2 text-center dark:border-gray-700">
-              <span
-                v-if="item.isValid"
-                class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                ><UIcon name="i-lucide-check-circle" class="size-3" />Valid</span
+    <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50 overflow-hidden">
+      <!-- Header card -->
+      <div class="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+        <UIcon name="i-lucide-users" class="h-4 w-4 text-[#457fb6]" />
+        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Preview Data Penerima</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-max text-sm">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th
+                v-for="column in columns"
+                :key="column"
+                class="whitespace-nowrap border border-gray-200 px-3 py-2 text-left font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
               >
-              <span
-                v-else
-                class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                :title="item.validationMessage"
-                ><UIcon name="i-lucide-x-circle" class="size-3" />Invalid</span
+                {{ column }}
+              </th>
+              <th
+                class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
               >
-            </td>
-            <td class="border-b border-gray-100 px-3 py-2 text-center dark:border-gray-700">
-              <UButton
-                icon="i-lucide-file-text"
-                color="primary"
-                variant="soft"
-                size="xs"
-                label="Preview"
-                :loading="isLoadingPdf && previewIdx === paginatedOffset + idx"
-                @click="openPreview(paginatedOffset + idx)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+                Status
+              </th>
+              <th
+                class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
+              >
+                Aksi
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(item, idx) in paginatedItems"
+              :key="item.no"
+              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              :class="{ 'bg-red-50 dark:bg-red-950/20': !item.isValid }"
+            >
+              <td
+                v-for="column in columns"
+                :key="`${item.no}-${column}`"
+                class="max-w-64 break-all whitespace-normal align-top border border-gray-100 px-3 py-2 text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                :class="{ 'font-medium text-gray-900 dark:text-white': column === 'perihal' }"
+              >
+                {{ getValue(item, column) || '-' }}
+              </td>
+              <td class="border border-gray-100 px-3 py-2 text-center dark:border-gray-700">
+                <span
+                  v-if="item.isValid"
+                  class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                  ><UIcon name="i-lucide-check-circle" class="size-3" />Valid</span
+                >
+                <span
+                  v-else
+                  class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                  :title="item.validationMessage"
+                  ><UIcon name="i-lucide-x-circle" class="size-3" />Invalid</span
+                >
+              </td>
+              <td class="border border-gray-100 px-3 py-2 text-center dark:border-gray-700">
+                <UButton
+                  icon="i-lucide-file-text"
+                  color="primary"
+                  variant="soft"
+                  size="xs"
+                  label="Preview"
+                  :loading="isLoadingPdf && previewIdx === paginatedOffset + idx"
+                  @click="openPreview(paginatedOffset + idx)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Pagination (badge Total/Valid/Invalid di samping info "Menampilkan ...") -->
-    <Pagination
-      v-if="items.length > 0"
-      class="-ml-4"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total-items="items.length"
-      :rows-per-page="perPage"
-      :rows-options="[10, 25, 50, 100]"
-      @update:page="currentPage = $event"
-      @update:rows-per-page="perPage = $event"
-    >
-      <template #info>
-        <span class="ml-2 flex items-center gap-3">
-          <span>
-            Total: <span class="font-semibold text-gray-900 dark:text-white">{{ items.length }}</span>
-          </span>
-          <span class="text-green-600 dark:text-green-400">
-            Valid: <span class="font-semibold">{{ validCount }}</span>
-          </span>
-          <span v-if="invalidCount > 0" class="text-red-600 dark:text-red-400">
-            Invalid: <span class="font-semibold">{{ invalidCount }}</span>
-          </span>
-        </span>
-      </template>
-    </Pagination>
+      <!-- Pagination (badge Total/Valid/Invalid di samping info "Menampilkan ...") -->
+      <div
+        v-if="items.length > 0"
+        class="border-t border-gray-200 px-4 py-3 dark:border-gray-700"
+      >
+        <Pagination
+          class="-ml-4"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :total-items="items.length"
+          :rows-per-page="perPage"
+          :rows-options="[10, 25, 50, 100]"
+          @update:page="currentPage = $event"
+          @update:rows-per-page="perPage = $event"
+        >
+          <template #info>
+            <span class="ml-2 flex items-center gap-3">
+              <span>
+                Total: <span class="font-semibold text-gray-900 dark:text-white">{{ items.length }}</span>
+              </span>
+              <span class="text-green-600 dark:text-green-400">
+                Valid: <span class="font-semibold">{{ validCount }}</span>
+              </span>
+              <span v-if="invalidCount > 0" class="text-red-600 dark:text-red-400">
+                Invalid: <span class="font-semibold">{{ invalidCount }}</span>
+              </span>
+            </span>
+          </template>
+        </Pagination>
+      </div>
+    </div>
 
     <!-- Full-screen Preview PDF (native PDF viewer browser, seragam dengan preview-berkas) -->
     <Teleport to="body">
