@@ -835,6 +835,10 @@ const handleKirimDokumen = async () => {
         /* log removed */
       }
       result = await forwardKonsep(editDraftId.value, revisiFormData);
+    } else if (isExistingDraft.value && editDraftId.value) {
+      const draftFormData = prepareKonsepFormData();
+      draftFormData.append('action', 'kirim');
+      result = await updateDraft(editDraftId.value, draftFormData);
     } else {
       result = await createKonsep(prepareKonsepFormData());
     }

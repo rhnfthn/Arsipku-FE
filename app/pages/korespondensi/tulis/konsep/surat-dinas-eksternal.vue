@@ -840,6 +840,10 @@ const handleKirimDokumen = async () => {
       if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
 
       result = await forwardKonsep(konsepId, formData);
+    } else if (isExistingDraft.value && editDraftId.value) {
+      const draftFormData = prepareKonsepFormData();
+      draftFormData.append('action', 'kirim');
+      result = await updateDraft(editDraftId.value, draftFormData);
     } else {
       const formData = prepareKonsepFormData();
       result = await createKonsep(formData);
