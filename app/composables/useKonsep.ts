@@ -6,7 +6,7 @@ import type {
 } from "~/types/konsep";
 
 export const useKonsep = () => {
-  const { apiGet, apiPost, apiPut, api } = useApi();
+  const { apiGet, apiGetFresh, apiPost, apiPut, api } = useApi();
 
   const multipartConfig = {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -61,7 +61,7 @@ export const useKonsep = () => {
   };
 
   const getKonsepDraftDetail = async (id: string) => {
-    return await apiGet<{ success: boolean; data: any }>(`/KONSEP/draft/detail/${id}`);
+    return await apiGetFresh<{ success: boolean; data: any }>(`/KONSEP/draft/detail/${id}`);
   };
 
   // Actions
