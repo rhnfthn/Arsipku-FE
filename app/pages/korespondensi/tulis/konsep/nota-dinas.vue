@@ -1137,6 +1137,26 @@ onMounted(async () => {
           jenis: rawFlow.jenis,
           pengirim: rawFlow.pengirim || null,
         };
+
+        // Lampiran dari konsep/surat referensi ikut menjadi lampiran konsep
+        // baru. ID ini akan diproses backend sebagai copy, bukan dipindahkan,
+        // sehingga lampiran pada konsep asal tetap aman.
+        const referenceLampiran = (rawFlow.lampiran_files || [])
+          .map((f: any) => ({
+            id: f.id,
+            fileName: f.file_name || f.fileName || f.filename || 'File',
+            filePath: f.file_url || f.fileUrl || f.file_path || f.file_pdf || '',
+            fileSize: f.size || f.fileSize || 0,
+          }))
+          .filter((f: UploadedFile) => Boolean(f.id));
+        if (referenceLampiran.length > 0) {
+          const existingIds = new Set(existingFiles.value.map((f) => String(f.id)));
+          existingFiles.value = [
+            ...existingFiles.value,
+            ...referenceLampiran.filter((f: UploadedFile) => !existingIds.has(String(f.id))),
+          ];
+        }
+
         refPengirimPositionId.value = isTurunkanAction.value && route.query.turunkan_position_id
           ? String(route.query.turunkan_position_id)
           : (isNewKonsepFromReference.value
