@@ -1375,7 +1375,7 @@ const konsepOptions = computed(() => [
   },
   {
     type: 'SDE_MASAL',
-    label: 'SDE Massal (Surat Dinas Eksternal Massal)',
+    label: 'SDE Massal',
     path: '/korespondensi/tulis/sde-masal',
     icon: Layers,
     colorClass: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
