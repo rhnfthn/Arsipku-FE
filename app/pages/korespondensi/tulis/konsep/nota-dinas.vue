@@ -363,6 +363,7 @@ const detail = ref<any>(null);
 const loadingMessage = ref("");
 const isOpenPreview = ref(false);
 const editDraftId = ref<string | null>(null);
+const isExistingDraft = ref(false);
 const message = ref("");
 const subject = ref("");
 const editorContent = ref("");
@@ -869,7 +870,7 @@ const handleSaveDraft = async () => {
   isLoadingData.value = true;
   try {
     const fd = prepareKonsepFormData();
-    if (editDraftId.value) {
+    if (editDraftId.value && isExistingDraft.value) {
       await updateDraft(editDraftId.value, fd);
     } else {
       await createDraft(fd);
@@ -1157,6 +1158,7 @@ onMounted(async () => {
       editDraftId.value = draftId;
       const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
+        isExistingDraft.value = true;
         const d = resDraft.data;
         subject.value = d.perihal || "";
         editorContent.value = d.konten || "";
