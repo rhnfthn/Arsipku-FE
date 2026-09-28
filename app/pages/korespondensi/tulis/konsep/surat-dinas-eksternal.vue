@@ -382,6 +382,7 @@ const isOpenPreview = ref(false);
 // di branch A → watch fires (microtask) → wipe tertuju/tembusan yang baru di-fill.
 const isPrefillingKonsep = ref(false);
 const editDraftId = ref<string | null>(null);
+const isExistingDraft = ref(false);
 const message = ref("");
 const subject = ref("");
 const editorContent = ref("");
@@ -873,7 +874,7 @@ const handleSaveDraft = async () => {
   isLoadingData.value = true;
   try {
     const formData = prepareKonsepFormData();
-    if (editDraftId.value) {
+    if (editDraftId.value && isExistingDraft.value) {
       await updateDraft(editDraftId.value, formData);
     } else {
       await createDraft(formData);
@@ -1224,6 +1225,7 @@ onMounted(async () => {
       editDraftId.value = draftId;
       const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
+        isExistingDraft.value = true;
         const d = resDraft.data;
         // Menetapkan pengirim memicu watcher yang normalnya mengosongkan
         // tertuju/tembusan. Tahan reset tersebut selama seluruh data draft
