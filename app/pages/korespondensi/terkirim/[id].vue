@@ -945,7 +945,38 @@ const openDetailPreview = async (detail: any, url: string, title = "Dokumen") =>
   }
   await openDocumentPreview(url, title);
 };
-const openPreviewFile = (file: any) => openDocumentPreview(file.file_url || file.fileUrl || file.file_path, file.file_name || file.fileName);
+const openPreviewFile = async (file: any) => {
+  const title = file?.file_name || file?.fileName || 'Lampiran';
+
+  // file_path/file_pdf adalah key internal storage, bukan URL publik. Gunakan
+  // endpoint preview dengan API client agar Authorization ikut terkirim.
+  if (file?.id) {
+    previewTitle.value = title;
+    isPreviewOpen.value = true;
+    isLocalPdfLoading.value = true;
+    activePdfUrl.value = null;
+
+    try {
+      const response = await api.get(`/preview-file/${encodeURIComponent(file.id)}`, {
+        responseType: 'blob',
+      });
+      activePdfUrl.value = URL.createObjectURL(
+        new Blob([response.data], { type: response.data?.type || 'application/pdf' }),
+      );
+      return;
+    } catch (error) {
+      console.error('Gagal memuat lampiran:', error);
+      isPreviewOpen.value = false;
+    } finally {
+      isLocalPdfLoading.value = false;
+    }
+  }
+
+  await openDocumentPreview(
+    file?.file_url || file?.fileUrl || file?.file_path || file?.file_pdf,
+    title,
+  );
+};
 const konsepOptions = [
   { type: 'ND', label: 'Nota Dinas', desc: 'Komunikasi internal', path: '/korespondensi/tulis/konsep/nota-dinas', icon: FileText, colorClass: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
   { type: 'SDI', label: 'Surat Internal', desc: 'Resmi internal', path: '/korespondensi/tulis/konsep/surat-dinas-internal', icon: Users, colorClass: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' },
