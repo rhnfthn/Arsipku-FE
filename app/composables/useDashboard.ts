@@ -1,10 +1,10 @@
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 import type {
   DashboardData,
   DashboardResponse,
   StatCard,
   SuratMasukTerbaru,
-} from "@/types/dashboard";
+} from '@/types/dashboard';
 
 type Translate = (key: string, ...args: any[]) => string;
 
@@ -22,22 +22,19 @@ export const useDashboard = (t: Translate) => {
     error.value = null;
 
     try {
-      console.log("🔍 Fetching dashboard data from /dashboard/");
+      console.log('🔍 Fetching dashboard data from /dashboard/');
 
-      const response = await apiGet<DashboardResponse>("/dashboard/", {}, { skipCache: true });
+      const response = await apiGet<DashboardResponse>('/dashboard/', {}, { skipCache: true });
 
-      console.log("📦 Raw API Response:", response);
+      console.log('📦 Raw API Response:', response);
 
       if (response.success && response.data) {
         dashboardData.value = response.data;
-        console.log(
-          "✅ Dashboard data loaded successfully:",
-          dashboardData.value,
-        );
+        console.log('✅ Dashboard data loaded successfully:', dashboardData.value);
       } else {
-        const errorMsg = response.message || "Failed to load dashboard data";
+        const errorMsg = response.message || 'Failed to load dashboard data';
         error.value = errorMsg;
-        console.error("❌ API returned error:", errorMsg);
+        console.error('❌ API returned error:', errorMsg);
       }
     } catch (err: any) {
       // Handle different error types
@@ -46,30 +43,29 @@ export const useDashboard = (t: Translate) => {
         const status = err.response.status;
         const data = err.response.data;
 
-        console.error("❌ Server Error:", {
+        console.error('❌ Server Error:', {
           status,
           data,
           url: err.config?.url,
         });
 
         if (status === 404) {
-          error.value = "Endpoint tidak ditemukan. Pastikan API valid.";
+          error.value = 'Endpoint tidak ditemukan. Pastikan API valid.';
         } else if (status === 401) {
-          error.value = "Tidak terautentikasi. Silakan login kembali.";
+          error.value = 'Tidak terautentikasi. Silakan login kembali.';
         } else if (status === 403) {
-          error.value = "Akses ditolak. Anda tidak memiliki izin.";
+          error.value = 'Akses ditolak. Anda tidak memiliki izin.';
         } else {
           error.value = data?.message || `Server error: ${status}`;
         }
       } else if (err.request) {
         // Request made but no response
-        console.error("❌ No response from server:", err.request);
-        error.value =
-          "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.";
+        console.error('❌ No response from server:', err.request);
+        error.value = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
       } else {
         // Something else happened
-        console.error("❌ Error:", err.message);
-        error.value = err.message || "Terjadi kesalahan yang tidak diketahui";
+        console.error('❌ Error:', err.message);
+        error.value = err.message || 'Terjadi kesalahan yang tidak diketahui';
       }
     } finally {
       isLoading.value = false;
@@ -84,43 +80,43 @@ export const useDashboard = (t: Translate) => {
       return [
         {
           label: t('stat_perlu_tindak_lanjut'),
-          value: "0",
-          subtitle: "",
-          icon: "i-heroicons-clock",
-          bgSolid: "bg-orange-100 dark:bg-orange-900/30",
-          borderColor: "bg-orange-500",
-          iconColor: "text-orange-600 dark:text-orange-400",
-          link: "/korespondensi/kotak-masuk",
+          value: '0',
+          subtitle: '',
+          icon: 'i-heroicons-clock',
+          bgSolid: 'bg-orange-100 dark:bg-orange-900/30',
+          borderColor: 'bg-orange-500',
+          iconColor: 'text-orange-600 dark:text-orange-400',
+          link: '/korespondensi/kotak-masuk',
         },
         {
           label: t('stat_disposisi_belum_dibaca'),
-          value: "0",
-          subtitle: "",
-          icon: "i-heroicons-eye-slash",
-          bgSolid: "bg-purple-100 dark:bg-purple-900/30",
-          borderColor: "bg-purple-500",
-          iconColor: "text-purple-600 dark:text-purple-400",
-          link: "/korespondensi/kotak-masuk",
+          value: '0',
+          subtitle: '',
+          icon: 'i-heroicons-eye-slash',
+          bgSolid: 'bg-purple-100 dark:bg-purple-900/30',
+          borderColor: 'bg-purple-500',
+          iconColor: 'text-purple-600 dark:text-purple-400',
+          link: '/korespondensi/kotak-masuk',
         },
         {
           label: t('stat_disposisi_belum_tinjut'),
-          value: "0",
-          subtitle: "",
-          icon: "i-lucide-signature",
-          bgSolid: "bg-blue-100 dark:bg-blue-900/30",
-          borderColor: "bg-blue-500",
-          iconColor: "text-blue-600 dark:text-blue-400",
-          link: "/korespondensi/kotak-masuk",
+          value: '0',
+          subtitle: '',
+          icon: 'i-lucide-signature',
+          bgSolid: 'bg-blue-100 dark:bg-blue-900/30',
+          borderColor: 'bg-blue-500',
+          iconColor: 'text-blue-600 dark:text-blue-400',
+          link: '/korespondensi/kotak-masuk',
         },
         {
           label: t('stat_menunggu_ttd'),
-          value: "0",
-          subtitle: "",
-          icon: "i-heroicons-document-check",
-          bgSolid: "bg-green-100 dark:bg-green-900/30",
-          borderColor: "bg-green-500",
-          iconColor: "text-green-600 dark:text-green-400",
-          link: "/digsig/penandatanganan",
+          value: '0',
+          subtitle: '',
+          icon: 'i-heroicons-document-check',
+          bgSolid: 'bg-green-100 dark:bg-green-900/30',
+          borderColor: 'bg-green-500',
+          iconColor: 'text-green-600 dark:text-green-400',
+          link: '/digsig/penandatanganan',
         },
       ];
     }
@@ -130,42 +126,42 @@ export const useDashboard = (t: Translate) => {
       {
         label: t('stat_perlu_tindak_lanjut'),
         value: summary.perlu_tindak_lanjut || 0,
-        subtitle: "",
-        icon: "i-heroicons-clock",
-        bgSolid: "bg-orange-100 dark:bg-orange-900/30",
-        borderColor: "bg-orange-500",
-        iconColor: "text-orange-600 dark:text-orange-400",
-        link: "/korespondensi/kotak-masuk?filter=Belum+Tinjut",
+        subtitle: '',
+        icon: 'i-heroicons-clock',
+        bgSolid: 'bg-orange-100 dark:bg-orange-900/30',
+        borderColor: 'bg-orange-500',
+        iconColor: 'text-orange-600 dark:text-orange-400',
+        link: '/korespondensi/kotak-masuk?filter=Belum+Tinjut',
       },
       {
         label: t('stat_disposisi_belum_dibaca'),
         value: summary.disposisi_belum_dibaca || 0,
-        subtitle: t('stat_dari_total', { total: summary.disposisi_masuk || 0 }),
-        icon: "i-heroicons-eye-slash",
-        bgSolid: "bg-purple-100 dark:bg-purple-900/30",
-        borderColor: "bg-purple-500",
-        iconColor: "text-purple-600 dark:text-purple-400",
-        link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Dibaca",
+        subtitle: '',
+        icon: 'i-heroicons-eye-slash',
+        bgSolid: 'bg-purple-100 dark:bg-purple-900/30',
+        borderColor: 'bg-purple-500',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+        link: '/korespondensi/kotak-masuk?tab=DI&filter=Belum+Dibaca',
       },
       {
         label: t('stat_disposisi_belum_tinjut'),
         value: summary.disposisi_belum_tinjut || 0,
-        subtitle: "",
-        icon: "i-heroicons-document-check",
-        bgSolid: "bg-blue-100 dark:bg-blue-900/30",
-        borderColor: "bg-blue-500",
-        iconColor: "text-blue-600 dark:text-blue-400",
-        link: "/korespondensi/kotak-masuk?tab=DI&filter=Belum+Tinjut",
+        subtitle: '',
+        icon: 'i-heroicons-document-check',
+        bgSolid: 'bg-blue-100 dark:bg-blue-900/30',
+        borderColor: 'bg-blue-500',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        link: '/korespondensi/kotak-masuk?tab=DI&filter=Belum+Tinjut',
       },
       {
         label: t('stat_menunggu_ttd'),
         value: summary.digsig_menunggu_ttd || 0,
-        subtitle: "",
-        icon: "i-lucide-signature",
-        bgSolid: "bg-green-100 dark:bg-green-900/30",
-        borderColor: "bg-green-500",
-        iconColor: "text-green-600 dark:text-green-400",
-        link: "/digsig/penandatanganan",
+        subtitle: '',
+        icon: 'i-lucide-signature',
+        bgSolid: 'bg-green-100 dark:bg-green-900/30',
+        borderColor: 'bg-green-500',
+        iconColor: 'text-green-600 dark:text-green-400',
+        link: '/digsig/penandatanganan',
       },
     ];
   });
@@ -178,21 +174,20 @@ export const useDashboard = (t: Translate) => {
     return dashboardData.value.surat_masuk_terbaru.slice(0, 10);
   });
 
-
   /**
    * Get accent color based on mail type
    */
   const getAccentColor = (jenis: string): string => {
     const colors: Record<string, string> = {
-      ND: "bg-blue-500", // Naskah Dinas
-      DI: "bg-orange-500", // Disposisi
-      SK: "bg-purple-500", // Surat Keputusan
-      SDE: "bg-green-500", // Surat Dinas Eksternal
-      SDI: "bg-indigo-500", // Surat Dinas Internal
-      KA: "bg-pink-500", // Kajian
-      default: "bg-gray-400",
+      ND: 'bg-blue-500', // Naskah Dinas
+      DI: 'bg-orange-500', // Disposisi
+      SK: 'bg-purple-500', // Surat Keputusan
+      SDE: 'bg-green-500', // Surat Dinas Eksternal
+      SDI: 'bg-indigo-500', // Surat Dinas Internal
+      KA: 'bg-pink-500', // Kajian
+      default: 'bg-gray-400',
     };
-    return colors[jenis] || colors.default || "";
+    return colors[jenis] || colors.default || '';
   };
 
   /**
