@@ -111,7 +111,7 @@ const loadData = async () => {
       limit: itemsPerPage.value,
       search: searchQuery.value || undefined,
       status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
-      sort: activeSortLabel.value === 'Terlama' ? 'ASC' : 'DESC',
+      sort: activeSortLabel.value === t('share_terlama') ? 'ASC' : 'DESC',
     });
   } finally {
     isRefreshing.value = false;
