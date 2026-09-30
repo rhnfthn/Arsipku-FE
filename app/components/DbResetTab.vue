@@ -213,7 +213,8 @@ const loadStats = async () => {
     stats.value = res?.data ?? res
   } catch (e: any) {
     stats.value = null
-    result.value = { success: false, message: e?.data?.message || e?.message || 'Gagal memuat statistik.' }
+    const errorData = e?.response?.data ?? e?.data
+    result.value = { success: false, message: errorData?.message || e?.message || 'Gagal memuat statistik.' }
   } finally {
     statsLoading.value = false
   }
@@ -232,7 +233,8 @@ const executeReset = async () => {
     confirmText.value = ''
     await loadStats()
   } catch (e: any) {
-    result.value = { success: false, message: e?.data?.message || e?.message || 'Reset gagal, transaksi di-rollback.' }
+    const errorData = e?.response?.data ?? e?.data
+    result.value = { success: false, message: errorData?.message || e?.message || 'Reset gagal, transaksi di-rollback.' }
     showConfirm.value = false
   } finally {
     resetLoading.value = false
