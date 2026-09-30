@@ -370,14 +370,14 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
   try {
     let allRows = list.value;
     if (total.value > limit.value) {
-      const res = await apiGet('/usulan-pindah/notifikasi-tu', {
-        params: {
-          search: searchInput.value || undefined,
-          status: filterStatus.value || undefined,
-          klasifikasi: filterKlasifikasi.value || undefined,
-          page: 1,
-          limit: total.value
-        }
+      // Ambil semua baris untuk export. Endpoint sama dengan fetchData
+      // (/tu/notifikasi-usulan) — /usulan-pindah/notifikasi-tu tidak ada di BE.
+      const res = await fetchNotifikasiList({
+        search: searchInput.value || undefined,
+        status: filterStatus.value || undefined,
+        klasifikasi: filterKlasifikasi.value || undefined,
+        page: 1,
+        limit: total.value,
       });
       const payload = res?.data ?? res;
       if (payload?.data && Array.isArray(payload.data)) {
