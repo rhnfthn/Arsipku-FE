@@ -101,6 +101,7 @@ export function useNaskahShare() {
     durationDays?: number,
     naskahIds?: string[],
     distributionScope: 'SELECTED' | 'ALL_EMPLOYEES' = 'SELECTED',
+    customTanggalSelesai?: string,
   ) => {
     try {
       const payload: any = {
@@ -116,6 +117,7 @@ export function useNaskahShare() {
       }
       if (accessType) payload.accessType = accessType;
       if (accessType === 'RENTANG_WAKTU' && durationDays) payload.durationDays = durationDays;
+      if (accessType === 'RENTANG_WAKTU' && customTanggalSelesai) payload.customTanggalSelesai = customTanggalSelesai;
       const res = await apiPost<{
         success: boolean;
         data: any;
