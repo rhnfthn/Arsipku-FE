@@ -1526,14 +1526,11 @@ const unitDokumenKelolaMenus = computed(() => [
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
         permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
-        badge:
-          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
       {
         label: 'Verifikasi Usulan',
         to: '/kelola/penggunaan/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-verifikasi' },
         badge:
           usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
@@ -1541,7 +1538,6 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-pemberian' },
         badge:
           usulanCounts.value.aksesDiterbitkanBaru > 0
             ? usulanCounts.value.aksesDiterbitkanBaru
@@ -1604,21 +1600,12 @@ const sekretarisKelolaMenus = computed(() => [
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
         permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
-        badge:
-          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-      },
-      {
-        label: 'Usulan Saya',
-        to: '/kelola/penggunaan/usulan-saya',
-        icon: 'i-lucide-file-plus',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
         badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       },
       {
         label: 'Verifikasi Usulan',
         to: '/kelola/penggunaan/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-verifikasi' },
         badge:
           usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
@@ -1626,7 +1613,6 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-pemberian' },
         badge:
           usulanCounts.value.aksesDiterbitkanBaru > 0
             ? usulanCounts.value.aksesDiterbitkanBaru
@@ -1686,14 +1672,12 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
         permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
-        badge:
-          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+        badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       },
       {
         label: 'Verifikasi Usulan',
         to: '/kelola/penggunaan/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-verifikasi' },
         badge:
           usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
@@ -1701,7 +1685,6 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-pemberian' },
         badge:
           usulanCounts.value.aksesDiterbitkanBaru > 0
             ? usulanCounts.value.aksesDiterbitkanBaru
@@ -1761,14 +1744,11 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         to: '/kelola/penggunaan/usulan-akses-berkas',
         icon: 'i-lucide-folder-key',
         permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
-        badge:
-          usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
       {
         label: 'Verifikasi Usulan',
         to: '/kelola/penggunaan/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-verifikasi' },
         badge:
           usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
       },
@@ -1776,7 +1756,6 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         label: 'Pemberian',
         to: '/kelola/penggunaan/pemberian',
         icon: 'i-lucide-folder-check',
-        permission: { resource: 'usulan-akses-berkas', action: 'read-pemberian' },
         badge:
           usulanCounts.value.aksesDiterbitkanBaru > 0
             ? usulanCounts.value.aksesDiterbitkanBaru
@@ -1910,28 +1889,28 @@ const adminMenuKelola = computed(() => {
 
   if (isSekretarisActor.value) {
     penggunaanChildren.push({
-      label: 'Usulan Saya',
-      to: '/kelola/penggunaan/usulan-saya',
-      icon: 'i-lucide-file-plus',
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
       permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
       badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
       activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
     });
+  } else {
+    penggunaanChildren.push({
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
+    });
   }
 
-  penggunaanChildren.push({
-    label: 'Usulan Akses',
-    to: '/kelola/penggunaan/usulan-akses-berkas',
-    icon: 'i-lucide-folder-key',
-    permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
-    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
-  });
+
 
   penggunaanChildren.push({
     label: 'Verifikasi Usulan',
     to: '/kelola/penggunaan/verifikasi-usulan',
     icon: 'i-lucide-file-check-2',
-    permission: { resource: 'usulan-akses-berkas', action: 'read-verifikasi' },
     badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
   });
 
@@ -1939,7 +1918,6 @@ const adminMenuKelola = computed(() => {
     label: 'Pemberian',
     to: '/kelola/penggunaan/pemberian',
     icon: 'i-lucide-folder-check',
-    permission: { resource: 'usulan-akses-berkas', action: 'read-pemberian' },
     badge:
       usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
   });
@@ -2059,6 +2037,51 @@ const userMenuKelola = computed(() => {
       children: pemeliharaanChildren,
     },
   ];
+  // ── Menu Penggunaan ──
+  const penggunaanChildrenUser = [];
+
+  if (isSekretarisActor.value) {
+    penggunaanChildrenUser.push({
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
+      badge: usulanCounts.value.pilihBerkas > 0 ? usulanCounts.value.pilihBerkas : null,
+      activePaths: ['/kelola/penggunaan/usulan-akses-berkas'],
+    });
+  } else {
+    penggunaanChildrenUser.push({
+      label: 'Usulan Akses',
+      to: '/kelola/penggunaan/usulan-akses-berkas',
+      icon: 'i-lucide-folder-key',
+      permission: { resource: 'usulan-akses-berkas', action: 'read-usulan' },
+    });
+  }
+
+  penggunaanChildrenUser.push({
+    label: 'Verifikasi Usulan',
+    to: '/kelola/penggunaan/verifikasi-usulan',
+    icon: 'i-lucide-file-check-2',
+    badge: usulanCounts.value.menungguVerifikasi > 0 ? usulanCounts.value.menungguVerifikasi : null,
+  });
+
+  penggunaanChildrenUser.push({
+    label: 'Pemberian',
+    to: '/kelola/penggunaan/pemberian',
+    icon: 'i-lucide-folder-check',
+    badge:
+      usulanCounts.value.aksesDiterbitkanBaru > 0 ? usulanCounts.value.aksesDiterbitkanBaru : null,
+  });
+
+  if (penggunaanChildrenUser.length > 0) {
+    const penggunaanBadge = penggunaanChildrenUser.reduce((sum, c) => sum + (c.badge || 0), 0);
+    menus.push({
+      label: 'Penggunaan',
+      icon: 'i-lucide-folder-open',
+      badge: penggunaanBadge > 0 ? penggunaanBadge : null,
+      children: penggunaanChildrenUser,
+    });
+  }
 
   // ── Menu Penyusutan ──
   const penyusutanChildrenKelola = [

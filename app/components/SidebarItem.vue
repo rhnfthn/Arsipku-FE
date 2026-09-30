@@ -158,9 +158,20 @@ const isActivePath = (path) => {
 // exact=true membatasi ke match persis (+ activePaths).
 const isActiveChild = (path, activePaths, exact = false) => {
   if (route.path === path) return true;
+
+  // Custom logic for verifikasi-usulan detail
+  if (path === '/kelola/penggunaan/verifikasi-usulan' && route.path.includes('usulan-akses-berkas') && route.query.from === 'verifikasi') {
+    return true;
+  }
+
   // Untuk nested child route (path dengan children), pakai startsWith.
   // Dilewati untuk child bertanda exact (section-index).
-  if (!exact && path && route.path.startsWith(path + '/')) return true;
+  if (!exact && path && route.path.startsWith(path + '/')) {
+    if (path.includes('usulan-akses-berkas') && route.query.from === 'verifikasi') {
+      return false;
+    }
+    return true;
+  }
   if (activePaths && Array.isArray(activePaths)) {
     return activePaths.some((p) => {
       // Hanya match jika path yang active berbeda dari path utama
