@@ -7,7 +7,7 @@ import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useAuth } from '~/composables/useAuth';
 import { useUsulanAksesBerkasViewed } from '~/composables/useUsulanAksesBerkasViewed';
-import { StatusUsulan } from '~/types/usulan-akses-berkas';
+import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import { extractErrorMessage } from '~/utils/error-helper';
 import * as XLSX from 'xlsx';
@@ -30,7 +30,7 @@ const exportColumns = ref([
 ]);
 
 const { t } = useI18n();
-const { usulanList, pending, pagination, fetchList, verifikasiPemberi } = useUsulanAksesBerkas();
+const { usulanList, pending, pagination, fetchList, verifikasiPengusul, verifikasiPemberi, persetujuanPemberi } = useUsulanAksesBerkas();
 const { clearVerifikasiBadge, fetchCounts } = useUsulanAksesBerkasCounts();
 const { user } = useAuth();
 const toast = useToast();
@@ -207,7 +207,7 @@ function selectFilterStatus(value: string) { filterStatus.value = value; openFil
 const statusLabel = computed(() => statusOptions.value.find((s) => s.value === filterStatus.value)?.label || 'Semua');
 
 function resetFilters() {
-  filterStatus.value = scope.value === 'verify-pemberi' ? StatusUsulan.TERKIRIM_KE_PEMBERI : '';
+  filterStatus.value = '';
   searchQuery.value = '';
   currentPage.value = 1;
   loadData();
@@ -223,8 +223,7 @@ function handleDocumentClick(e: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick);
-  // Set default filter sesuai scope (mirror mobile)
-  filterStatus.value = scope.value === 'verify-pemberi' ? StatusUsulan.TERKIRIM_KE_PEMBERI : '';
+  filterStatus.value = '';
   loadData();
   fetchCounts();
 });
@@ -248,27 +247,86 @@ const selectedUsulan = ref<any>(null);
 
 const canVerifyRow = (row: any): boolean => {
   const userPersnum = Number(user.value?.persnum);
-  let expectedUrutan: number | null = null;
+  let expectedUrutanPengusul: number | null = null;
+  let expectedUrutanPemberi: number | null = null;
   switch (row.status) {
-    case StatusUsulan.TERKIRIM_KE_PEMBERI: expectedUrutan = 0; break;
-    case StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI: expectedUrutan = 1; break;
-    case StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI: expectedUrutan = 2; break;
-    case StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI: expectedUrutan = 3; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL: expectedUrutanPengusul = 1; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL: expectedUrutanPengusul = 2; break;
+    case StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL: expectedUrutanPengusul = 3; break;
+    case StatusUsulan.TERKIRIM_KE_PEMBERI: expectedUrutanPemberi = 0; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI: expectedUrutanPemberi = 1; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI: expectedUrutanPemberi = 2; break;
+    case StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI: expectedUrutanPemberi = 3; break;
     default: return false;
   }
-  return row.verifikator_pemberi?.some((v: any) => v.persnum === userPersnum && v.urutan === expectedUrutan) ?? false;
+  if (expectedUrutanPengusul !== null) {
+    return row.verifikator_pengusul?.some((v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPengusul) ?? false;
+  }
+  if (expectedUrutanPemberi !== null) {
+    return row.verifikator_pemberi?.some((v: any) => v.persnum === userPersnum && v.urutan === expectedUrutanPemberi) ?? false;
+  }
+  return false;
+};
+
+const getVerificationType = (row: any): 'pengusul' | 'pemberi' | 'persetujuan-pemberi' | null => {
+  const userPersnum = Number(user.value?.persnum);
+  const isPengusulVerifier = row.verifikator_pengusul?.some((v: any) => v.persnum === userPersnum);
+  const isPemberiVerifier = row.verifikator_pemberi?.some((v: any) => v.persnum === userPersnum);
+
+  if (isPengusulVerifier) {
+    if ([StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL, StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL].includes(row.status)) {
+      return 'pengusul';
+    }
+  }
+  if (isPemberiVerifier) {
+    if (row.status === StatusUsulan.TERKIRIM_KE_PEMBERI) return 'pemberi';
+    if ([StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI].includes(row.status)) {
+      return 'persetujuan-pemberi';
+    }
+  }
+  return null;
 };
 
 const handleApprove = async (note: string) => {
   if (!selectedUsulan.value) return;
   savingAction.value = true;
   try {
-    await verifikasiPemberi(selectedUsulan.value.id, { keputusan: 'DISETUJUI', catatan: note || undefined });
+    const row = selectedUsulan.value;
+    const userPersnum = Number(user.value?.persnum);
+    const type = getVerificationType(row);
+
+    if (type === 'pengusul') {
+      const verifikator = row.verifikator_pengusul.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await verifikasiPengusul(row.id, jenjang, {
+        catatan: note,
+        catatan_revisi: '',
+        keputusan: Keputusan.SETUJU,
+      });
+    } else if (type === 'pemberi') {
+      await verifikasiPemberi(row.id, {
+        durasi_akses_disetujui: row.durasi_akses,
+        catatan_perubahan_durasi: '',
+        catatan: note,
+        keputusan: Keputusan.LANJUT,
+      });
+    } else if (type === 'persetujuan-pemberi') {
+      const verifikator = row.verifikator_pemberi.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await persetujuanPemberi(row.id, jenjang, {
+        catatan: note,
+        catatan_revisi: '',
+        keputusan: Keputusan.SETUJU,
+        durasi_akses_disetujui: undefined,
+        catatan_perubahan_durasi: '',
+      });
+    }
+
     toast.add({ title: 'Berhasil', description: 'Usulan disetujui', color: 'success' });
     showApproveModal.value = false;
     clearVerifikasiBadge();
     loadData();
-    fetchCounts();
+    fetchCounts(true);
   } catch (err: any) {
     toast.add({ title: 'Gagal', description: extractErrorMessage(err), color: 'error' });
   } finally {
@@ -278,14 +336,48 @@ const handleApprove = async (note: string) => {
 
 const handleReject = async (note: string) => {
   if (!selectedUsulan.value) return;
+  if (!note.trim() || note.trim().length < 5) {
+    toast.add({ title: 'Alasan penolakan wajib diisi (minimal 5 karakter)', color: 'error' });
+    return;
+  }
   savingAction.value = true;
   try {
-    await verifikasiPemberi(selectedUsulan.value.id, { keputusan: 'DITOLAK', catatan: note });
+    const row = selectedUsulan.value;
+    const userPersnum = Number(user.value?.persnum);
+    const type = getVerificationType(row);
+
+    if (type === 'pengusul') {
+      const verifikator = row.verifikator_pengusul.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await verifikasiPengusul(row.id, jenjang, {
+        catatan: note,
+        catatan_revisi: '',
+        keputusan: Keputusan.TOLAK,
+      });
+    } else if (type === 'pemberi') {
+      await verifikasiPemberi(row.id, {
+        durasi_akses_disetujui: row.durasi_akses,
+        catatan_perubahan_durasi: '',
+        catatan: note,
+        keputusan: Keputusan.TOLAK,
+      });
+    } else if (type === 'persetujuan-pemberi') {
+      const verifikator = row.verifikator_pemberi.find((v: any) => v.persnum === userPersnum);
+      const jenjang = verifikator?.urutan as 1 | 2 | 3;
+      await persetujuanPemberi(row.id, jenjang, {
+        catatan: note,
+        catatan_revisi: '',
+        keputusan: Keputusan.TOLAK,
+        durasi_akses_disetujui: undefined,
+        catatan_perubahan_durasi: '',
+      });
+    }
+
     toast.add({ title: 'Berhasil', description: 'Usulan ditolak', color: 'success' });
     showRejectModal.value = false;
     clearVerifikasiBadge();
     loadData();
-    fetchCounts();
+    fetchCounts(true);
   } catch (err: any) {
     toast.add({ title: 'Gagal', description: extractErrorMessage(err), color: 'error' });
   } finally {

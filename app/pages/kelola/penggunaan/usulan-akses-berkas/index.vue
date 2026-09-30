@@ -249,7 +249,7 @@ const menungguStatuses = [
   StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL,
   StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL,
   StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL,
-  StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI,
+  StatusUsulan.TERKIRIM_KE_PEMBERI,
   StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI,
   StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI,
   StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI,
@@ -264,7 +264,7 @@ const canVerifyRow = (row: any): boolean => {
     case StatusUsulan.MENUNGGU_VERIFIKASI_PENGUSUL: expectedUrutanPengusul = 1; break;
     case StatusUsulan.MENUNGGU_VERIFIKASI_AKHIR_PENGUSUL: expectedUrutanPengusul = 2; break;
     case StatusUsulan.MENUNGGU_VERIFIKASI_EVP_PENGUSUL: expectedUrutanPengusul = 3; break;
-    case StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI: expectedUrutanPemberi = 0; break;
+    case StatusUsulan.TERKIRIM_KE_PEMBERI: expectedUrutanPemberi = 0; break;
     case StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI: expectedUrutanPemberi = 1; break;
     case StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI: expectedUrutanPemberi = 2; break;
     case StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI: expectedUrutanPemberi = 3; break;
@@ -324,7 +324,7 @@ const getVerificationType = (row: any): 'pengusul' | 'pemberi' | 'persetujuan-pe
     }
   }
   if (isPemberiVerifier) {
-    if (row.status === StatusUsulan.MENUNGGU_VERIFIKASI_PEMBERI) return 'pemberi';
+    if (row.status === StatusUsulan.TERKIRIM_KE_PEMBERI) return 'pemberi';
     if ([StatusUsulan.MENUNGGU_PERSETUJUAN_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_AKHIR_PEMBERI, StatusUsulan.MENUNGGU_PERSETUJUAN_EVP_PEMBERI].includes(row.status)) {
       return 'persetujuan-pemberi';
     }
