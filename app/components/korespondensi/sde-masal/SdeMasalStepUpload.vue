@@ -182,15 +182,7 @@
                 · {{ invalidAttachmentCount }} PDF <span class="font-semibold text-red-700 dark:text-red-300">invalid</span>
               </span>
             </span>
-            <UButton
-              v-if="!attachmentPreview.missing.length && !attachmentConfirmed"
-              label="Konfirmasi"
-              color="primary"
-              size="sm"
-              icon="i-lucide-check"
-              @click="confirmAttachments"
-            />
-            <span v-else-if="!attachmentPreview.missing.length" class="text-green-700 dark:text-green-300">Semua nama file berhasil ditempatkan.</span>
+            <span v-if="!attachmentPreview.missing.length" class="text-green-700 dark:text-green-300">Semua nama file berhasil ditempatkan.</span>
           </div>
         </div>
       </div>
@@ -509,7 +501,12 @@ const prepareAttachments = async () => {
       missing: result?.missing || [],
       totalRequested: requestedAttachmentNames.value.length,
     };
-    updateAttachmentReadiness();
+    if (attachmentPreview.value.missing.length === 0) {
+      // Semua file ditemukan: langsung approve tanpa tombol Konfirmasi terpisah.
+      confirmAttachments();
+    } else {
+      updateAttachmentReadiness();
+    }
   } catch (error: any) {
     attachmentError.value = error?.response?.data?.message || error?.message || 'Gagal memproses ZIP lampiran';
     attachmentPreview.value = null;

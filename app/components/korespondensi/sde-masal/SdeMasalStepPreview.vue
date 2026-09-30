@@ -278,9 +278,6 @@
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                       Atasan Managerial Berjenjang <span class="text-red-500">*</span>
                     </h2>
-                    <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                      Atasan diambil otomatis dari chain disposisi. Urutan mengikuti jenjang jabatan yang tersedia.
-                    </p>
                   </div>
                 </div>
               </div>

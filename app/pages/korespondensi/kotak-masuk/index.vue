@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { parseDate, today, getLocalTimeZone } from '@internationalized/date';
 import {
@@ -781,7 +781,11 @@ const isUnarchiveMode = computed(() => activeFilterType.value === 'Arsip');
 
 // ── Watchers ──────────────────────────────────────────────────────────────────
 // Tab / limit / filter berubah → reset ke halaman 1
+let applyingRouteQuery = false;
 watch([activeTab, itemsPerPage, activeFilterType], () => {
+  // applyKorespondensiListQuery() mengubah beberapa ref sekaligus saat masuk
+  // dari card dashboard. Tunggu init selesai agar tidak double-fetch.
+  if (applyingRouteQuery) return;
   currentPage.value = 1;
   refreshData();
 });
@@ -867,6 +871,7 @@ onMounted(async () => {
 
   if (!user.value) await getProfile();
   await Promise.all([initRealtimeSocket(), initNotifications()]);
+  applyingRouteQuery = true;
   applyKorespondensiListQuery(
     route.query,
     {
@@ -888,6 +893,10 @@ onMounted(async () => {
       pageSizes: pageOptions,
     }
   );
+  // Biarkan watcher ref selesai tanpa melakukan fetch, lalu lakukan tepat satu
+  // fetch memakai seluruh parameter dari URL.
+  await nextTick();
+  applyingRouteQuery = false;
   refreshData();
 });
 

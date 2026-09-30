@@ -382,6 +382,7 @@ const isOpenPreview = ref(false);
 // di branch A → watch fires (microtask) → wipe tertuju/tembusan yang baru di-fill.
 const isPrefillingKonsep = ref(false);
 const editDraftId = ref<string | null>(null);
+const isExistingDraft = ref(false);
 const message = ref("");
 const subject = ref("");
 const editorContent = ref("");
@@ -839,6 +840,10 @@ const handleKirimDokumen = async () => {
       if (!konsepId) throw new Error("ID Konsep tidak ditemukan untuk proses perbaikan (forward)");
 
       result = await forwardKonsep(konsepId, formData);
+    } else if (isExistingDraft.value && editDraftId.value) {
+      const draftFormData = prepareKonsepFormData();
+      draftFormData.append('action', 'kirim');
+      result = await updateDraft(editDraftId.value, draftFormData);
     } else {
       const formData = prepareKonsepFormData();
       result = await createKonsep(formData);
@@ -873,7 +878,7 @@ const handleSaveDraft = async () => {
   isLoadingData.value = true;
   try {
     const formData = prepareKonsepFormData();
-    if (editDraftId.value) {
+    if (editDraftId.value && isExistingDraft.value) {
       await updateDraft(editDraftId.value, formData);
     } else {
       await createDraft(formData);
@@ -1224,6 +1229,7 @@ onMounted(async () => {
       editDraftId.value = draftId;
       const resDraft = await getKonsepDraftDetail(draftId);
       if (resDraft.success && resDraft.data) {
+        isExistingDraft.value = true;
         const d = resDraft.data;
         // Menetapkan pengirim memicu watcher yang normalnya mengosongkan
         // tertuju/tembusan. Tahan reset tersebut selama seluruh data draft
