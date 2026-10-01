@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue';
 import {
-  Hash,
   Calendar,
   Clock,
   Paperclip,
@@ -27,6 +26,7 @@ import {
   Tag,
   Loader2,
   ArrowDownCircle,
+  Archive,
 } from 'lucide-vue-next';
 
 // Tambah prop
@@ -48,6 +48,7 @@ const props = defineProps<{
   isTinjut?: boolean;
   isLocked?: boolean;
   isNote?: boolean;
+  isArchived?: boolean;
   // Mode read-only (mis. dilihat sebagai anggota berkas): sembunyikan navigasi
   // pesan & flag pribadi (favorit/tindak lanjut/kunci/catatan). Back & pratinjau
   // dokumen tetap aktif.
@@ -77,6 +78,7 @@ const emit = defineEmits<{
   (e: 'tindak-lanjut'): void;
   (e: 'lock'): void;
   (e: 'catatan', text: string): void;
+  (e: 'archive'): void;
 }>();
 
 const shouldShowFinalize = computed(() => {
@@ -442,6 +444,19 @@ const removeNote = () => {
           </button>
         </UTooltip>
 
+        <UTooltip v-if="isHead" :text="isArchived ? 'Kembalikan dari arsip' : 'Arsipkan'">
+          <button
+            @click="emit('archive')"
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            :aria-label="isArchived ? 'Kembalikan dari arsip' : 'Arsipkan naskah'"
+          >
+            <Archive
+              class="w-4 h-4 transition-colors cursor-pointer"
+              :class="isArchived ? 'text-primary-600 fill-primary-100' : 'text-gray-400 dark:text-gray-500 hover:text-primary-500'"
+            />
+          </button>
+        </UTooltip>
+
         <!-- Tindak Lanjut (display only, tidak bisa di-toggle manual) -->
         <UTooltip
           v-if="context !== 'sent'"
@@ -537,9 +552,9 @@ const removeNote = () => {
         >
           <div class="flex items-center gap-3 min-w-0 flex-wrap">
             <div
+              v-if="!isKonsepJenis"
               class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0"
             >
-              <Hash class="w-3 h-3" />
               <span class="font-mono font-semibold">{{
                 data.nomor || data.naskah?.nomor || '-'
               }}</span>
@@ -552,7 +567,7 @@ const removeNote = () => {
             <span class="opacity-30">•</span>
             <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 shrink-0">
               <Clock class="w-3 h-3" />
-              <span>{{ formatTime(data.created_at || data.createdAt || data.tanggal) }}</span>
+              <span>{{ formatTime(data.created_at || data.createdAt) }}</span>
             </div>
             <span class="opacity-30">•</span>
             <span
@@ -604,17 +619,15 @@ const removeNote = () => {
       <div
         class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600 dark:text-gray-400"
       >
-        <div v-if="data.naskah?.nomor || data.nomor" class="flex items-center gap-1">
-          <Hash class="w-3.5 h-3.5" /><span
-            class="font-mono font-semibold text-gray-700 dark:text-gray-300"
-            >{{ data.naskah?.nomor || data.nomor }}</span
-          >
+        <div v-if="!isKonsepJenis && (data.naskah?.nomor || data.nomor)" class="flex items-center gap-1">
+          <span class="font-mono font-semibold text-gray-700 dark:text-gray-300"
+            >{{ data.naskah?.nomor || data.nomor }}</span>
         </div>
         <span class="opacity-40">•</span>
         <div
           class="flex items-center gap-1 cursor-help"
           :title="
-            'Waktu Kirim: ' + formatFullDateTime(data.created_at || data.createdAt || data.tanggal)
+            'Waktu Kirim: ' + formatFullDateTime(data.created_at || data.createdAt)
           "
         >
           <Calendar class="w-3.5 h-3.5" /><span>{{
@@ -622,7 +635,7 @@ const removeNote = () => {
           }}</span>
           <span class="opacity-40">•</span>
           <Clock class="w-3.5 h-3.5" /><span>{{
-            formatTime(data.created_at || data.createdAt || data.tanggal)
+            formatTime(data.created_at || data.createdAt)
           }}</span>
         </div>
         <span class="opacity-40">•</span>
@@ -764,48 +777,42 @@ const removeNote = () => {
             </span>
           </div>
 
-          <div class="space-y-2 text-sm">
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">Nomor:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{
-                konsepNaskahInfo.nomor || '-'
-              }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">Tanggal:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{
-                formatDate(konsepNaskahInfo.tanggal || konsepNaskahInfo.created_at)
-              }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">Pengirim:</span>
-              <span class="font-medium text-gray-900 dark:text-white"
-                >{{ konsepNaskahInfo.pengirim?.position_text || '-' }}
-                <span class="text-gray-500 dark:text-gray-400"
-                  >({{ konsepNaskahInfo.pengirim?.nama || '-' }})</span
-                ></span
-              >
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">Tertuju:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{
-                Array.isArray(konsepNaskahInfo.to)
-                  ? konsepNaskahInfo.to
-                      .map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`)
-                      .join(', ')
-                  : '-'
-              }}</span>
-            </div>
-            <div>
-              <span class="text-gray-500 dark:text-gray-400">Tembusan:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{
-                Array.isArray(konsepNaskahInfo.cc) && konsepNaskahInfo.cc.length > 0
-                  ? konsepNaskahInfo.cc
-                      .map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`)
-                      .join(', ')
-                  : '-'
-              }}</span>
-            </div>
+          <div class="grid grid-cols-[6rem_minmax(0,1fr)] sm:grid-cols-[7rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+            <span class="text-gray-500 dark:text-gray-400">Nomor:</span>
+            <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
+              konsepNaskahInfo.nomor || '-'
+            }}</span>
+
+            <span class="text-gray-500 dark:text-gray-400">Tanggal:</span>
+            <span class="min-w-0 font-medium text-gray-900 dark:text-white">{{
+              formatDate(konsepNaskahInfo.tanggal || konsepNaskahInfo.created_at)
+            }}</span>
+
+            <span class="text-gray-500 dark:text-gray-400">Pengirim:</span>
+            <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">
+              {{ konsepNaskahInfo.pengirim?.position_text || '-' }}
+              <span class="font-normal text-gray-500 dark:text-gray-400">
+                ({{ konsepNaskahInfo.pengirim?.nama || '-' }})
+              </span>
+            </span>
+
+            <span class="text-gray-500 dark:text-gray-400">Tertuju:</span>
+            <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
+              Array.isArray(konsepNaskahInfo.to)
+                ? konsepNaskahInfo.to
+                    .map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`)
+                    .join(', ')
+                : '-'
+            }}</span>
+
+            <span class="text-gray-500 dark:text-gray-400">Tembusan:</span>
+            <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
+              Array.isArray(konsepNaskahInfo.cc) && konsepNaskahInfo.cc.length > 0
+                ? konsepNaskahInfo.cc
+                    .map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`)
+                    .join(', ')
+                : '-'
+            }}</span>
           </div>
         </div>
 
@@ -850,6 +857,7 @@ const removeNote = () => {
                 class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 min-w-0"
               >
                 <span
+                  v-if="(data.to || data.kepada).length > 1"
                   class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0"
                   >{{ Number(ti) + 1 }}.</span
                 >
@@ -920,6 +928,7 @@ const removeNote = () => {
               class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 min-w-0"
             >
               <span
+                v-if="(data.cc || data.tembusan).length > 1"
                 class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0"
                 >{{ Number(ti) + 1 }}.</span
               >
@@ -954,7 +963,7 @@ const removeNote = () => {
           <div
             class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest min-w-[110px] mt-0.5"
           >
-            Instruksi
+            {{ String(data.jenis || '').toUpperCase() === 'DI' ? 'Disposisi' : 'Instruksi' }}
           </div>
           <div class="flex flex-col gap-1 w-full min-w-0">
             <p

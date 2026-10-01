@@ -135,6 +135,7 @@
 
         <TulisInputPenerima
           v-model="selectedTembusan"
+          recipient-type="TEMBUSAN"
           label="Tembusan"
           placeholder="Pilih Tembusan"
           :items="items"
@@ -263,7 +264,7 @@
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
                       <div class="font-bold text-[14px]">
-                        {{ toTitleCase(user?.nama) || 'Nama Lengkap' }}
+                        {{ toTitleCase(formatDelegatedActorName(user?.nama, user?.position_status)) || 'Nama Lengkap' }}
                       </div>
                     </div>
                   </div>
@@ -339,7 +340,7 @@ import TulisKopSurat from '@/components/Tulis/KopSuratAsync.vue';
 import TulisDigsigPassphraseModal from '@/components/Tulis/DigsigPassphraseModalAsync.vue';
 import { useInbox } from '@/composables/useInbox';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'tulis-access'] });
 
 const route = useRoute();
 const toast = useToast();
@@ -428,7 +429,7 @@ const breadcrumbs = computed(() => {
 });
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
+  name: toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || 'Nama Lengkap',
   role: user.value?.positionText || 'Jabatan',
   label: 'Ditandatangani secara digital oleh',
 }));
@@ -492,7 +493,7 @@ const getBasePayload = (): DraftPayload => ({
   english: false,
   nama_tempat: user.value?.areaText || 'Kantor Pusat',
   nama_jabatan: user.value?.positionText || '',
-  nama_lengkap: user.value?.nama || '',
+  nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
   tgl: tglDb.value,
   tanggal: tglDisplay.value,
   lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],

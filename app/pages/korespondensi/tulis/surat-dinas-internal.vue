@@ -40,7 +40,7 @@ const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, updateDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
-const { renderedPositionLabel } = useDelegationMode();
+const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 
 
 const { getConfigDigsig } = useDigsig();
@@ -144,7 +144,7 @@ const getPayload = (): SDIPayloadInput => ({
   english: false,
   nama_tempat: user.value?.areaText || "",
   nama_jabatan: renderedPositionLabel.value || "",
-  nama_lengkap: user.value?.nama || "",
+  nama_lengkap: renderedActorName.value || "",
   tgl: tglDb.value,
   tanggal: tglDisplay.value,
   lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],
@@ -512,7 +512,7 @@ watch(
         <TulisInputPenerima v-model="selectedTertuju" :label="$t('tertuju')" :placeholder="$t('sdi_pilih_tertuju')" :items="tertujuItems"
           :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled-message="$t('sdi_sudah_dipilih')" />
 
-        <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
+        <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
           :disabled-message="$t('sdi_sudah_dipilih')" lock-mandatory-cc />
 
@@ -614,7 +614,7 @@ watch(
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ renderedPositionLabel || $t('sdi_nama_jabatan') }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || $t('sdi_nama_lengkap') }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(renderedActorName) || $t('sdi_nama_lengkap') }}</div>
                   </div>
                 </div>
 
@@ -685,7 +685,7 @@ watch(
       @save-draft="handleConfirmSaveDraft" @send="handleConfirmKirim" />
 
     <TulisDigsigPassphraseModal v-model:open="isSignMethodModalOpen"
-      :signer-info="{ name: toTitleCase(user?.nama) || $t('sdi_nama_lengkap'), role: renderedPositionLabel || $t('sdi_jabatan'), label: $t('sdi_ditandatangani_digital') }"
+      :signer-info="{ name: toTitleCase(renderedActorName) || $t('sdi_nama_lengkap'), role: renderedPositionLabel || $t('sdi_jabatan'), label: $t('sdi_ditandatangani_digital') }"
       :is-loading="isLoadingData" :hide-bsre="bsreDisabled" :hide-qr="qrDisabled" :hide-basah="basahDisabled"
       :portal-mode="tteMode === 'portal'" ref="signMethodModalRef" @submit="handleSignMethodSubmit" />
 

@@ -169,7 +169,7 @@
                         <div>{{ user?.alamatInfo?.kota }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ renderedPositionLabel || $t('kj_nama_jabatan') }}</div>
                       </div>
-                      <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || $t('kj_nama_lengkap') }}</div>
+                      <div class="font-bold text-[14px] underline">{{ toTitleCase(renderedActorName) || $t('kj_nama_lengkap') }}</div>
                     </div>
                   </div>
                 </div>
@@ -293,7 +293,7 @@ const { getTteMode } = useTtePortal();
 
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
-const { renderedPositionLabel } = useDelegationMode();
+const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 const { getKlasifikasi } = useKlasifikasi();
 const {
   getRecipients,
@@ -324,7 +324,7 @@ const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct')
 const passphraseInput = ref('')
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || t('kj_nama_lengkap'),
+  name: toTitleCase(renderedActorName.value) || t('kj_nama_lengkap'),
   role: renderedPositionLabel.value || t('jabatan'),
   label: t('kj_ditandatangani_digital')
 }))
@@ -408,7 +408,7 @@ const getPayload = (): KajianPayload => {
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(Boolean) as string[],
     lampiran: lampiranText.value,
     positionText: renderedPositionLabel.value || "",
-    namaLengkap: user.value?.nama || ""
+    namaLengkap: renderedActorName.value || ""
   }
 }
 

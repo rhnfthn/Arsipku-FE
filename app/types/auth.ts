@@ -68,7 +68,7 @@ export interface UserProfile {
   position_id?: string | number;
 
   // --- Field Baru ---
-  position_status?: string; // contoh: "PT", "Definitif"
+  position_status?: string; // "YBS" untuk jabatan sendiri; PT/PH/PS/VI/SE untuk delegasi
   position_status_label?: string; // contoh: "Pelaksana Tugas"
   nik?: string;
   atasan_langsung?: any;
