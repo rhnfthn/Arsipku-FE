@@ -259,6 +259,7 @@ const connectSocket = async (): Promise<void> => {
     });
 
     socket.on('inbox:count', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload && typeof payload.count === 'number') {
         inboxCount.value = payload.count;
       }
@@ -290,30 +291,35 @@ const connectSocket = async (): Promise<void> => {
     });
 
     socket.on('naskah-dinas:verifikator-count', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload && typeof payload.waiting === 'number') {
         naskahDinasVerifikatorWaitingCount.value = payload.waiting;
       }
     });
 
     socket.on('arsip:persetujuan-count', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload && typeof payload.waiting === 'number') {
         arsipPersetujuanWaitingCount.value = payload.waiting;
       }
     });
 
     socket.on('naskah-lainnya:persetujuan-count', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload && typeof payload.waiting === 'number') {
         naskahLainnyaPersetujuanWaitingCount.value = payload.waiting;
       }
     });
 
     socket.on('naskah-lainnya:legal-drafting-count', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload && typeof payload.waiting === 'number') {
         naskahLainnyaLegalDraftingWaitingCount.value = payload.waiting;
       }
     });
 
     socket.on('naskah-lainnya:updated', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload?.naskahId) {
         naskahLainnyaUpdate.value = {
           naskahId: String(payload.naskahId),
@@ -323,12 +329,14 @@ const connectSocket = async (): Promise<void> => {
     });
 
     socket.on('flag:update', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload && payload.id_sirkulasi && payload.flag_type) {
         flagUpdate.value = payload;
       }
     });
 
     socket.on('correspondence-routing:updated', (payload: any) => {
+      lastSummaryAt.value = Date.now();
       if (payload?.mutationId) correspondenceRoutingUpdate.value = payload;
     });
 
@@ -541,6 +549,7 @@ export function useRealtimeSocket() {
     correspondenceRoutingUpdate,
     naskahLainnyaUpdate,
     isConnected,
+    lastSummaryAt,
     hasBsreAlert,
     // Socket reference (for custom event listeners)
     socket: computed(() => socket),

@@ -1,8 +1,18 @@
+export type CorrespondenceDocumentType = 'ND' | 'SDI' | 'SDE' | 'DI' | 'KA';
+
 export interface CorrespondenceRoutingCapabilities {
   feature_enabled: boolean;
   can_create_sdi: boolean;
   matched_role_codes: string[];
   matched_rule_ids: string[];
+  access: Record<CorrespondenceDocumentType, boolean>;
+  configured_document_types: CorrespondenceDocumentType[];
+  profile: {
+    bod_tag: string;
+    chief: number;
+    area: string;
+    area_text: string;
+  } | null;
 }
 
 const defaultCapabilities = (): CorrespondenceRoutingCapabilities => ({
@@ -10,6 +20,9 @@ const defaultCapabilities = (): CorrespondenceRoutingCapabilities => ({
   can_create_sdi: false,
   matched_role_codes: [],
   matched_rule_ids: [],
+  access: { ND: false, SDI: false, SDE: false, DI: false, KA: false },
+  configured_document_types: [],
+  profile: null,
 });
 
 const CAPABILITY_CACHE_MS = 30_000;
@@ -70,6 +83,17 @@ export const useCorrespondenceRoutingAccess = () => {
             ? data.matched_role_codes
             : [],
           matched_rule_ids: Array.isArray(data?.matched_rule_ids) ? data.matched_rule_ids : [],
+          access: {
+            ND: data?.access?.ND === true,
+            SDI: data?.access?.SDI === true,
+            SDE: data?.access?.SDE === true,
+            DI: data?.access?.DI === true,
+            KA: data?.access?.KA === true,
+          },
+          configured_document_types: Array.isArray(data?.configured_document_types)
+            ? data.configured_document_types
+            : [],
+          profile: data?.profile ?? null,
         };
         loadedForPosition.value = cacheKey;
         loadedAt.value = Date.now();
@@ -96,6 +120,8 @@ export const useCorrespondenceRoutingAccess = () => {
   return {
     capabilities: readonly(capabilities),
     canCreateSdi: computed(() => capabilities.value.can_create_sdi),
+    canCreateCorrespondence: (documentType: CorrespondenceDocumentType) =>
+      capabilities.value.access[documentType] === true,
     fetchCapabilities,
     invalidateCapabilities,
   };

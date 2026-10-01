@@ -95,12 +95,22 @@ const ppForm = ref<PersetujuanPemberiPayload>({
   catatan_perubahan_durasi: '',
 });
 
-const breadcrumbs = computed(() => [
-  { label: 'Kelola', to: '#' },
-  { label: 'Penggunaan', to: '#' },
-  { label: 'Usulan Saya', to: '/kelola/penggunaan/usulan-akses-berkas' },
-  { label: usulanDetail.value?.nomor_usulan || 'Detail', to: '#' },
-]);
+const breadcrumbs = computed(() => {
+  if (route.query.from === 'verifikasi') {
+    return [
+      { label: 'Kelola', to: '#' },
+      { label: 'Penggunaan', to: '#' },
+      { label: 'Verifikasi Usulan', to: '/kelola/penggunaan/verifikasi-usulan' },
+      { label: usulanDetail.value?.nomor_usulan || 'Detail Verifikasi Usulan', to: '#' },
+    ];
+  }
+  return [
+    { label: 'Kelola', to: '#' },
+    { label: 'Penggunaan', to: '#' },
+    { label: 'Usulan Saya', to: '/kelola/penggunaan/usulan-akses-berkas' },
+    { label: usulanDetail.value?.nomor_usulan || 'Detail', to: '#' },
+  ];
+});
 
 const durasiOptions = [
   { label: '7 Hari', value: DurasiPreset.TUJUH_HARI },
@@ -318,7 +328,7 @@ watch(showPilihBerkas, async (newVal) => {
     // Pre-fill berkas yang sudah dipilih sebelumnya (jika ada — revisi case)
     const prevBerkas = (usulanDetail.value?.selected_berkas || []).map((b: any) => b.berkas_id);
     const prevVerifikator = (usulanDetail.value?.verifikator_pemberi || []).map((v: any) => ({
-      persnum: v.persnum,
+      persnum: Number(v.persnum),
       level_jabatan: v.level_jabatan,
       catatan: v.catatan || '',
     }));
@@ -1306,7 +1316,8 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="min-w-0">
                   <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Periode Akses</dt>
-                  <dd class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(usulanDetail.tanggal_mulai) }} <UIcon name="i-lucide-arrow-right" class="mx-1 inline-block h-4 w-4 align-middle text-primary-500" /> {{ formatDateOnly(usulanDetail.tanggal_selesai) }}</dd>
+                  <dd v-if="usulanDetail.tanggal_mulai" class="mt-0.5 break-words text-sm font-semibold text-gray-900 dark:text-white">{{ formatDateOnly(usulanDetail.tanggal_mulai) }} <UIcon name="i-lucide-arrow-right" class="mx-1 inline-block h-4 w-4 align-middle text-primary-500" /> {{ formatDateOnly(usulanDetail.tanggal_selesai) }}</dd>
+                  <dd v-else class="mt-0.5 break-words text-sm italic text-gray-500 dark:text-gray-400">Menunggu Persetujuan</dd>
                 </div>
               </div>
             </dl>

@@ -13,7 +13,7 @@
       class="mb-2 transition-all duration-300" />
 
     <FileUpload v-model="selectedFiles" accept="application/pdf" :multiple="true" :disabled="isProcessing"
-      :description="$t('lamp_description')" />
+      :description="$t('lamp_description')" @invalid-files="handleInvalidPdfFiles" />
 
     <div v-if="existingFiles && existingFiles.length > 0" class="mt-3 space-y-2">
       <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $t('lamp_tersimpan') }}</p>
@@ -91,6 +91,14 @@ const previewTitle = ref(t('f_pratinjau'));
 // Composables
 const { uploadLampiran, deleteLampiran, previewLampiran } = useLampiran();
 const toast = useToast();
+
+const handleInvalidPdfFiles = (fileNames: string[]) => {
+  toast.add({
+    title: 'Format lampiran tidak didukung',
+    description: `Lampiran harus berformat PDF. File ditolak: ${fileNames.join(', ')}`,
+    color: 'warning',
+  });
+};
 
 // Computed Status
 const isProcessing = computed(() => isUploading.value || isDeleting.value);

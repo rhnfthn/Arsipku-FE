@@ -11,7 +11,7 @@ const toast = useToast();
 const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
-const { renderedPositionLabel } = useDelegationMode();
+const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 const { canAccessPage } = useFeatureAccess();
 const { getJenisList } = useJenis();
 const { apiGet, apiPost, api } = useApi();
@@ -235,7 +235,7 @@ const buildFieldPayload = (): Record<string, string | string[]> => {
   fields.tanggal = tglDb.value;
   fields.tglsurat = tglDb.value;
   fields.dari = renderedPositionLabel.value || user.value?.positionText || '';
-  fields.namapengirim = user.value?.nama || '';
+  fields.namapengirim = renderedActorName.value || '';
   fields.tujuan = recipientNames.length ? recipientNames.join('\n') : '';
   fields.klasifikasi = selectedKlasifikasi.value?.klasifikasi || '';
   fields.sifat = selectedSifat.value?.value || '';
@@ -647,6 +647,7 @@ onUnmounted(() => {
 
         <TulisInputPenerima
           v-model="selectedTembusan"
+          recipient-type="TEMBUSAN"
           :label="$t('f_tembusan')"
           :placeholder="$t('nu_pilih_tembusan')"
           :items="recipientItems"
@@ -725,7 +726,7 @@ onUnmounted(() => {
                         </div>
                       </div>
                       <div class="font-bold text-[14px]">
-                        {{ toTitleCase(user?.nama) || $t('nu_nama_lengkap') }}
+                        {{ toTitleCase(renderedActorName) || $t('nu_nama_lengkap') }}
                       </div>
                     </div>
                   </div>

@@ -802,10 +802,16 @@ const getHierarchyRank = (jabatan: string): number => {
 };
 const penandatanganItems = computed(() =>
   [...verifikatorList.value]
+    .filter((v) => !String(v.jabatan || '').toLocaleLowerCase('id-ID').includes('dewan pengawas'))
     .sort((a, b) => getHierarchyRank(a.jabatan) - getHierarchyRank(b.jabatan))
     .map((v) => ({
-      label: v.nama,
-      labelJob: v.jabatan,
+      label: [
+        toTitleCase(v.nama),
+        '-',
+        v.abbreviation ? `(${String(v.abbreviation).toUpperCase()})` : '',
+        toTitleCase(v.jabatan),
+      ].filter(Boolean).join(' '),
+      labelJob: toTitleCase(v.jabatan),
       value: String(v.persnum),
       raw: v,
     }))
