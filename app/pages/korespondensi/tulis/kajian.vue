@@ -686,7 +686,14 @@ onMounted(async () => {
     const mapRec = (arr: any[], group: string) => {
       if (!Array.isArray(arr)) return [];
 
-      return arr.map(r => {
+      return arr.filter(r => {
+        // Kajian hanya boleh ditujukan kepada managerial di atas pengirim.
+        // Tetap filter di FE sebagai guard tambahan jika API yang sedang
+        // berjalan masih mengembalikan seluruh posisi ATASAN.
+        const chief = Number(r.chief ?? (r.isChief ? 1 : 0));
+        const jabatan = String(r.positionName ?? r.position_text ?? r.positionText ?? '').toUpperCase();
+        return chief === 1 && !/DEWAN\s+PENGAWAS/.test(jabatan);
+      }).map(r => {
         // Nama field sesuai JSON: "nama", "positionName", "position" (id)
         // Fallback ke snake_case jika camelCase tidak ada
         const nama = r.nama || r.persnum_person_text || '';

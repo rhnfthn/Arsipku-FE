@@ -153,7 +153,7 @@
             <div v-else class="space-y-2">
               <p class="text-sm text-gray-700 dark:text-gray-300">{{ usulan.beritaAcaraNomor }}</p>
               <a :href="usulan.beritaAcaraUrl" target="_blank" class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors">
-                <UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF
+                <UIcon name="i-lucide-download" class="w-4 h-4" /> Unduh PDF
               </a>
             </div>
           </div>

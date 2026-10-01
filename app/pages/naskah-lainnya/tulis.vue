@@ -435,7 +435,7 @@
               class="shrink-0"
               @click="downloadTemplate"
             >
-              Download Template
+              Unduh Template
             </UButton>
           </div>
 

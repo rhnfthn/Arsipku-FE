@@ -752,6 +752,17 @@ watch(
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
 
+// Kajian hanya untuk posisi fungsional/staf. Jangan hanya mengandalkan
+// bodTag karena sebagian snapshot organisasi menandai EVP/VP/AVP melalui
+// nama jabatan saja.
+const canWriteKajian = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '').trim();
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+
+  if (bodTag) return false;
+  return !/\b(EVP|AVP|VP)\b/.test(positionText);
+});
+
 const tulisChildrenByBod = computed(() => {
   const tag = user.value?.bodTag ?? '';
   const all = [
@@ -781,15 +792,17 @@ const tulisChildrenByBod = computed(() => {
       permission: { resource: 'utama.tulis.kajian', action: 'read' },
     },
   ];
-  if (tag === 'BOD' || tag === 'BOD-1') return all;
+  const withoutKajian = all.filter((i) => i.label !== t('kajian'));
+
+  if (tag === 'BOD' || tag === 'BOD-1') return withoutKajian;
   if (tag === 'BOD-2' || tag === 'BOD-3') {
-    return all.filter(
+    return withoutKajian.filter(
       (i) =>
-        ![t('surat_dinas_eksternal'), t('kajian')].includes(i.label) &&
+        i.label !== t('surat_dinas_eksternal') &&
         (i.label !== t('surat_dinas_internal') || canCreateSdi.value)
     );
   }
-  return all.filter((i) => i.label === t('kajian'));
+  return canWriteKajian.value ? all.filter((i) => i.label === t('kajian')) : withoutKajian;
 });
 
 const tulisMenu = computed(() => ({

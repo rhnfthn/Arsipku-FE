@@ -59,7 +59,7 @@
         :detail="detail"
         :dokumen-pendukung="dokumenPendukung"
         area-title="Legal Drafting"
-        area-description="Revisi naskah di luar aplikasi: download draf, lengkapi di Microsoft Word, lalu upload kembali. Noted: Jangan menghapus parameter dikarenakan sistem membaca isi dan parameter di dalamnya."
+        area-description="Revisi naskah di luar aplikasi: unduh draf, lengkapi di Microsoft Word, lalu unggah kembali. Noted: Jangan menghapus parameter dikarenakan sistem membaca isi dan parameter di dalamnya."
         :show-catatan="false"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
