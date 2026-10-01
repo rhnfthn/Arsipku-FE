@@ -185,7 +185,7 @@
           <div class="flex items-center gap-1 shrink-0">
             <UButton
               v-if="naskah.final_pdf"
-              label="Download"
+              label="Unduh"
               color="neutral"
               variant="ghost"
               size="xs"

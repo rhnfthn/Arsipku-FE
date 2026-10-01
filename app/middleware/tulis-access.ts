@@ -8,6 +8,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const bodTag = user.value?.bodTag ?? ''
   const path = to.path
 
+  // Kajian hanya untuk fungsional/staf (chief=0). Pada snapshot org-data,
+  // posisi managerial ditandai dengan bodTag (BOD/BOD-1/BOD-2/BOD-3).
+  if (path === '/korespondensi/tulis/kajian' && bodTag !== '') {
+    return navigateTo('/beranda')
+  }
+
   if (bodTag === 'BOD' || bodTag === 'BOD-1') return
 
   if (bodTag === 'BOD-2' || bodTag === 'BOD-3') {
