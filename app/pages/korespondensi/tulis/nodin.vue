@@ -896,7 +896,7 @@ async function openPreview() {
     payload.htmlContent = content.value; // Kirim konten HTML
 
     // Ambil Info Pengirim dari User Login
-    payload.penandatangan = toTitleCase(user.value?.nama) || "Nama Tidak Diketahui";
+    payload.penandatangan = toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || "Nama Tidak Diketahui";
 
     // FETCH PDF
     // Pastikan endpoint ini benar dan backend mengembalikan BLOB
@@ -957,7 +957,7 @@ const handleSaveDraft = async () => {
   formData.append("nama_tempat", user.value?.areaText || "Tangerang");
   formData.append("nama_jabatan", user.value?.positionText || "Jabatan Tidak Diketahui");
   formData.append("tanda_tangan", "vsydc526d728g29uwedhwidciwdcbhbddy2"); // Hardcode/Generated ID
-  formData.append("nama_lengkap", toTitleCase(user.value?.nama) || "Nama Tidak Diketahui");
+  formData.append("nama_lengkap", toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || "Nama Tidak Diketahui");
 
   // 5. TANGGAL
   const tglStr = date.value

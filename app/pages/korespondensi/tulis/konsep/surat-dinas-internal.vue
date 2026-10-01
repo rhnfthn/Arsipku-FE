@@ -123,7 +123,7 @@
 
         <!-- Tembusan: exclude tertuju + anggota grup tertuju -->
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
+          <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan"
             :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
             :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
             disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
@@ -222,10 +222,10 @@
                 <div class="flex mt-12 text-black px-10">
                   <div class="text-center min-w-[250px]">
                     <div class="mb-24 text-[14px]">
-                      <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}
+                      <div class="font-bold">{{ senderPositionLabel(selectedSender?.raw) || 'Nama Jabatan' }}
                       </div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ toTitleCase(selectedSender?.raw?.persnum_person_text ||
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(senderActorName(selectedSender?.raw) ||
                       user?.nama) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
@@ -307,9 +307,10 @@ import type { Klasifikasi } from "~/types/klasifikasi";
 import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
+import { stripKonsepPerihalPrefix } from '~/utils/konsep-perihal';
 import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
 
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: ["auth", "tulis-access"] });
 
 // --- Interfaces ---
 interface RecipientItem {
@@ -368,6 +369,22 @@ const selectedSifat = ref<SifatOption | null>(null);
 const items = ref<RecipientItem[]>([]);
 const senderItems = ref<RecipientItem[]>([]);
 const selectedSender = ref<RecipientItem | undefined>();
+const senderActorName = (source?: any) => {
+  const raw = source?.raw || source || {};
+  return (
+    formatDelegatedActorName(
+      raw.persnum_person_text || raw.nama,
+      raw.position_status || raw.positionStatus,
+    ) || user.value?.nama || ''
+  );
+};
+const senderPositionLabel = (source?: any) => {
+  const raw = source?.raw || source || {};
+  return formatDelegatedPosition(
+    raw.position_text || raw.positionText || selectedSender.value?.labelJob || user.value?.positionText,
+    raw.position_status || raw.positionStatus || user.value?.position_status,
+  );
+};
 const selectedTertuju = ref<RecipientItem[]>([]);
 const selectedTembusan = ref<RecipientItem[]>([]);
 const recipientGroups = ref<any[]>([]);
@@ -444,6 +461,30 @@ const isSenderSelected = computed(() => !!selectedSender.value);
 // previous konseptor (detail.from_position_id). Fallback atasan langsung.
 const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
 const restoredDraftTarget = ref<any>(null);
+const selectedSenderManager = computed(() => {
+  const raw = selectedSender.value?.raw || {};
+  if (Number(selectedSender.value?.value) !== Number(user.value?.position)) {
+    return null;
+  }
+  const managerPosition = raw.direct_manager ?? raw.directManager;
+  const managerId = Number(managerPosition);
+  if (!Number.isInteger(managerId) || managerId <= 0) return null;
+
+  const manager = senderItems.value.find(
+    (item) => Number(item.value) === managerId,
+  );
+  return manager
+    ? {
+        position: manager.value,
+        positionText: manager.labelJob,
+        nama: manager.raw?.persnum_person_text || '',
+      }
+    : {
+        position: String(managerId),
+        positionText: raw.direct_manager_text || '',
+        nama: '',
+      };
+});
 const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
 const isTurunkanAction = computed(() => Boolean(route.query.turunkan_position_id));
 const isNewKonsepFromReference = computed(() =>
@@ -479,10 +520,22 @@ const forwardTargetInfo = computed(() => {
       nama: p.nama || p.persnum_person_text || '',
     };
   }
+  if (detail.value?.forward_to) {
+    const target = detail.value.forward_to;
+    return {
+      position: target.position_id || target.position || '',
+      positionText: target.position_text || target.positionText || '',
+      nama: target.nama || target.persnum_person_text || '',
+    };
+  }
   if (restoredDraftTarget.value) return restoredDraftTarget.value;
-  return atasanLangsungInfo.value;
+  return selectedSenderManager.value || atasanLangsungInfo.value;
 });
 const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
+const hasValidForwardTarget = computed(() => {
+  const id = Number(forwardTargetPositionId.value);
+  return Number.isInteger(id) && id > 0;
+});
 
 // excludeTertujuList = yang sudah dipilih di TEMBUSAN → di-disable di Tertuju
 const excludeTertujuList = computed(() => selectedTembusan.value);
@@ -712,8 +765,8 @@ const getBasePayload = (): DraftPayload => {
     htmlContent: String(editorContent.value || ''),
     english: english.value,
     nama_tempat: senderRaw.area_text || senderRaw.areaText || user.value?.areaText || "Kantor Pusat",
-    nama_jabatan: senderRaw.position_text || senderRaw.positionText || (currentSender as any).labelJob || "",
-    nama_lengkap: senderRaw.persnum_person_text || senderRaw.nama || user.value?.nama || "",
+    nama_jabatan: senderPositionLabel(senderRaw),
+    nama_lengkap: senderActorName(senderRaw),
     tgl: tglDb,
     tanggal: formattedDate.value,
     lampiran_temp_ids: lampiranIds,
@@ -762,8 +815,8 @@ const prepareKonsepFormData = () => {
   formData.append('konten', editorContent.value);
   formData.append('english', String(english.value));
   formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Jakarta");
-  formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
-  formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+  formData.append('nama_jabatan', senderPositionLabel(signerRaw) || signerInfo.labelJob || "");
+  formData.append('nama_lengkap', senderActorName(signerRaw));
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
   formData.append('catatan', message.value || '-');
   return formData;
@@ -808,6 +861,14 @@ const handleKirimDokumen = async () => {
   if (!validateAndToast(payload)) return;
 
   const isRevision = route.query.action === 'edit';
+  if (isRevision && !hasValidForwardTarget.value) {
+    toast.add({
+      title: 'Tujuan konsep belum tersedia',
+      description: 'Atasan tujuan untuk meneruskan konsep tidak ditemukan.',
+      color: 'error',
+    });
+    return;
+  }
 
   const isConfirmed = await Alert.confirm(
     isRevision ? (isTurunkanAction.value ? 'Turunkan Konsep?' : 'Kirim Perbaikan?') : 'Kirim Konsep?',
@@ -851,8 +912,8 @@ const handleKirimDokumen = async () => {
       formData.append('konten', editorContent.value);
       formData.append('english', String(english.value));
       formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
-      formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
-      formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+      formData.append('nama_jabatan', senderPositionLabel(signerRaw) || currentSender.labelJob || "");
+      formData.append('nama_lengkap', senderActorName(signerRaw));
       formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
       formData.append('catatan', message.value || '-');
       formData.append('lampiran_count', existingFiles.value.length > 0 ? '1' : '0');
@@ -1007,6 +1068,7 @@ onMounted(async () => {
 
         detail.value = {
           ...latestKonsep,
+          forward_to: result.forward_to || null,
           aksi: latestKonsep.detail?.aksi || latestKonsep.aksi || '',
           from_position_id: latestKonsep?.from_position_id || latestKonsep?.detail?.from_position_id || latestKonsep?.pengirim?.position_id || '',
           from_position_text: latestKonsep?.from_position_text || latestKonsep?.detail?.from_position_text || latestKonsep?.pengirim?.position_text || '',
@@ -1015,7 +1077,7 @@ onMounted(async () => {
           data: { catatan_reject: latestKonsep.detail?.catatan || result.catatan_reject || '' },
         };
         editDraftId.value = latestKonsep.id;
-        subject.value = latestKonsep.perihal || "";
+        subject.value = stripKonsepPerihalPrefix(latestKonsep.perihal, 'SDI');
         editorContent.value = latestKonsep.konten || "";
         message.value = latestKonsep.detail?.catatan || "";
 

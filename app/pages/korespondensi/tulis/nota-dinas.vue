@@ -22,7 +22,7 @@ const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
 const { getDraftDetail } = useDraft();
 const { generatePdf, sendNotaDinas, saveDraft: saveND, sendDraft } = useNotaDinas();
-const { renderedPositionLabel } = useDelegationMode();
+const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 const { getConfigDigsig } = useDigsig();
 const { getTteMode } = useTtePortal();
 
@@ -97,7 +97,7 @@ const breadcrumbs = computed(() => [
 ]);
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || t('nd_nama_lengkap'),
+  name: toTitleCase(renderedActorName.value) || t('nd_nama_lengkap'),
   role: renderedPositionLabel.value || t('nd_jabatan'),
   label: t('nd_ditandatangani_digital'),
 }));
@@ -136,7 +136,7 @@ const getBasePayload = (): DraftPayload => ({
 
   nama_tempat: user.value?.areaText || 'Kantor Pusat',
   nama_jabatan: renderedPositionLabel.value || '',
-  nama_lengkap: user.value?.nama || '',
+  nama_lengkap: renderedActorName.value || '',
 
   tgl: tglDb.value || '',
   tanggal: tglDisplay.value || '',
@@ -495,6 +495,7 @@ onMounted(async () => {
 
         <TulisInputPenerima
           v-model="selectedTembusan"
+          recipient-type="TEMBUSAN"
           :label="$t('f_tembusan')"
           :placeholder="$t('nd_pilih_tembusan')"
           :items="items"
@@ -620,7 +621,7 @@ onMounted(async () => {
                         </div>
                       </div>
                       <div class="font-bold text-[14px]">
-                        {{ toTitleCase(user?.nama) || $t('nd_nama_lengkap') }}
+                        {{ toTitleCase(renderedActorName) || $t('nd_nama_lengkap') }}
                       </div>
                     </div>
                   </div>
