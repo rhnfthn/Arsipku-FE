@@ -160,6 +160,9 @@ const handleSubmit = async () => {
         : undefined,
       items.length > 1 ? items.map((i) => i.naskahId) : undefined,
       props.distributionScope ?? 'SELECTED',
+      accessType.value === 'RENTANG_WAKTU' && durationDays.value === 'CUSTOM'
+        ? customTanggalSelesai.value || undefined
+        : undefined,
     );
     const recipientCount = response?.data?.recipientCount ?? selectedRecipients.value.length;
     useToast().add({
