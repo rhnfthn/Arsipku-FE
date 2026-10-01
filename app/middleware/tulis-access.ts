@@ -31,6 +31,20 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { canCreateCorrespondence, fetchCapabilities } = useCorrespondenceRoutingAccess();
   if (!user.value) await getProfile();
 
+  const path = to.path;
+  const bodTag = String(user.value?.bodTag ?? '').trim();
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+
+  // Kajian hanya untuk fungsional/staf (chief=0). bodTag maupun nama jabatan
+  // dipakai sebagai guard tambahan karena snapshot organisasi tidak selalu
+  // mengisi bodTag secara konsisten.
+  if (
+    path === '/korespondensi/tulis/kajian' &&
+    (bodTag !== '' || /\b(EVP|AVP|VP)\b/.test(positionText))
+  ) {
+    return navigateTo('/beranda');
+  }
+
   const documentType = documentTypeFromPath(to.path);
   if (!documentType) return;
 

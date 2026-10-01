@@ -283,7 +283,7 @@ const diffSectionTitle = computed(() => {
     VIEW: 'Data yang Dilihat',
     LIST: 'Daftar yang Diakses',
     UPLOAD: 'File yang Diupload',
-    DOWNLOAD: 'File yang Didownload',
+    DOWNLOAD: 'File yang Diunduh',
     APPROVE: 'Status Disetujui',
     REJECT: 'Status Ditolak',
     SIGN: 'Informasi Tanda Tangan',
