@@ -6,7 +6,7 @@
         <div>
           <p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Kolom Template dari Konten Surat</p>
         </div>
-        <UButton label="Download Template Excel" color="primary" icon="i-lucide-download" size="sm" @click="handleDownloadDynamicTemplate" />
+        <UButton label="Unduh Template Excel" color="primary" icon="i-lucide-download" size="sm" @click="handleDownloadDynamicTemplate" />
       </div>
       <div class="overflow-x-auto rounded-lg border border-blue-200 dark:border-blue-900/60">
         <table class="min-w-full border-collapse text-sm">

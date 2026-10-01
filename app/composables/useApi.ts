@@ -43,6 +43,7 @@ const FRESH_GET_URL_PATTERNS: RegExp[] = [
   /^\/draft\/list(?:[/?#]|$)/,
   /^\/labels\/(?:counts|[^/]+\/naskah)(?:[/?#]|$)/,
   /^\/naskah-lainnya(?:[/?#]|$)/,
+  /^\/naskah-share(?:[/?#]|$)/,
   // Seluruh konfigurasi harus selalu mencerminkan perubahan admin terbaru.
   /^\/config(?:[/?#]|$)/,
   /^\/admin\/config(?:[/?#]|$)/,

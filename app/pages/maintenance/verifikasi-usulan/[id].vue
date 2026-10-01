@@ -102,7 +102,7 @@
                   <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
                 </button>
                 <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
-                  <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Download PDF
+                  <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Unduh PDF
                 </button>
               </div>
             </div>

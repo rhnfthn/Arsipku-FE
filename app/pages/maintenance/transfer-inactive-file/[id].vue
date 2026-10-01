@@ -152,7 +152,7 @@
             <button v-if="!item.beritaAcaraUrl" @click="onGenerateBA" :disabled="actionLoading" class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 mb-2"><UIcon name="i-lucide-file-text" class="w-4 h-4 mr-1 inline" /> Generate</button>
             <div v-else>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">{{ item.beritaAcaraNomor }}</p>
-              <a :href="item.beritaAcaraUrl" target="_blank" class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors"><UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF</a>
+              <a :href="item.beritaAcaraUrl" target="_blank" class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors"><UIcon name="i-lucide-download" class="w-4 h-4" /> Unduh PDF</a>
             </div>
           </div>
         </div>

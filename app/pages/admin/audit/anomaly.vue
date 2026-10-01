@@ -361,7 +361,7 @@ const anomalyTypeLabel = (t: string) => {
     ACCESS_DENIED_REPEATED: 'Akses Ditolak Berulang',
     SENSITIVE_DELETE: 'Hapus Data Sensitif',
     RBAC_CHANGE: 'Perubahan Hak Akses',
-    MASS_DOWNLOAD: 'Download Massal',
+    MASS_DOWNLOAD: 'Unduh Massal',
     OFF_HOURS_ACCESS: 'Akses Di Luar Jam Kerja',
     UNAUTHORIZED_STATUS_CHANGE: 'Perubahan Status Tanpa Otorisasi',
   };
