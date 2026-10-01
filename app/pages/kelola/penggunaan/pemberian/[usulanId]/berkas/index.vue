@@ -2,9 +2,9 @@
 // Detail berkas yang diberikan — style seperti pemberkasan detail
 // Fetch usulan detail untuk dapat selectedBerkas, lalu fetch berkas detail + naskah
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User, Key, RotateCw } from 'lucide-vue-next';
+import { ChevronDown, ChevronLeft, Eye, FileText, Folder, Clock, Building2, User, RotateCw } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { extractErrorMessage } from '~/utils/error-helper';
@@ -16,11 +16,15 @@ definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Berkas yang Diberikan' });
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { usulanDetail, pending, fetchDetail, fetchBerkasDetail, fetchNaskahByBerkas } = useUsulanAksesBerkas();
 const toast = useToast();
 
 const usulanId = computed(() => route.params.usulanId as string);
+const queryBerkasId = computed(() => (route.query.berkas_id as string) || null);
+// `usulanId` di route param selalu tersedia; ini adalah acuan untuk resolve
+// entitlement/usulan yang benar di BE (lihat getBerkasDetailForEntitlement).
 
 const berkasDetail = ref<any>(null);
 const naskahList = ref<any[]>([]);
@@ -111,12 +115,25 @@ const handleExportConfirm = (selectedKeys: string[]) => {
   }
 };
 
-const breadcrumbs = computed(() => [
-  { label: 'Kelola', to: '#' },
-  { label: 'Penggunaan', to: '#' },
-  { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
-  { label: berkasDetail.value?.judul_berkas || berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
-]);
+const breadcrumbs = computed(() => {
+  // from=verifikasi: halaman ini dibuka dari detail usulan di Verifikasi
+  // Usulan — breadcrumb menunjuk ke sana, bukan ke list Pemberian.
+  if (route.query.from === 'verifikasi') {
+    return [
+      { label: 'Kelola', to: '#' },
+      { label: 'Penggunaan', to: '#' },
+      { label: 'Verifikasi Usulan', to: '/kelola/penggunaan/verifikasi-usulan' },
+      { label: usulanDetail.value?.nomor_usulan || 'Detail', to: `/kelola/penggunaan/usulan-akses-berkas/${usulanId.value}?from=verifikasi` },
+      { label: berkasDetail.value?.judul_berkas || berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
+    ];
+  }
+  return [
+    { label: 'Kelola', to: '#' },
+    { label: 'Penggunaan', to: '#' },
+    { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
+    { label: berkasDetail.value?.judul_berkas || berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
+  ];
+});
 
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '-';
@@ -143,13 +160,26 @@ const loadAll = async () => {
 
     // 2. Simpan semua berkas items untuk selector
     berkasItems.value = items;
-    activeBerkasId.value = items[0].berkas_id;
+    // Prioritaskan berkas_id dari query (link dari halaman lain), fallback ke items[0]
+    let targetId = items[0].berkas_id;
+    if (queryBerkasId.value) {
+      if (items.some((b: any) => b.berkas_id === queryBerkasId.value)) {
+        targetId = queryBerkasId.value;
+      } else {
+        toast.add({
+          title: 'Berkas Tidak Ditemukan',
+          description: 'Membuka berkas pertama pada usulan ini sebagai fallback.',
+          color: 'warning',
+        });
+      }
+    }
+    activeBerkasId.value = targetId;
 
-    // 3. Fetch detail berkas pertama
-    berkasDetail.value = await fetchBerkasDetail(items[0].berkas_id);
+    // 3. Fetch detail berkas target — lewatkan usulanId agar BE resolve yang benar
+    berkasDetail.value = await fetchBerkasDetail(targetId, usulanId.value);
 
     // 4. Load naskah di dalam berkas
-    await loadNaskah(items[0].berkas_id);
+    await loadNaskah(targetId);
   } catch (err: any) {
     toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
   }
@@ -159,9 +189,11 @@ const switchBerkas = async (berkasId: string) => {
   activeBerkasId.value = berkasId;
   currentPage.value = 1;
   search.value = '';
+  // Sync URL query supaya refresh / share link tetap mengarah ke berkas yang sama
+  router.replace({ query: { ...route.query, berkas_id: berkasId } });
   naskahLoading.value = true;
   try {
-    berkasDetail.value = await fetchBerkasDetail(berkasId);
+    berkasDetail.value = await fetchBerkasDetail(berkasId, usulanId.value);
     await loadNaskah(berkasId);
   } catch (err: any) {
     toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
@@ -175,7 +207,7 @@ const loadNaskah = async (berkasId?: string) => {
   if (!bid) return;
   naskahLoading.value = true;
   try {
-    naskahList.value = await fetchNaskahByBerkas(bid);
+    naskahList.value = await fetchNaskahByBerkas(bid, usulanId.value);
     total.value = naskahList.value.length;
   } catch (err: any) {
     toast.add({ title: 'Error', description: extractErrorMessage(err), color: 'error' });
@@ -337,10 +369,6 @@ onBeforeUnmount(() => {
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <User class="mt-0.5 h-4 w-4 text-gray-500" />
             <div><dt class="text-xs font-medium uppercase text-gray-500">EVP Pemberi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.evp_pemberi_nama }}</dd></div>
-          </div>
-          <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
-            <Key class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.permissions?.join(', ') }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Clock class="mt-0.5 h-4 w-4 text-gray-500" />
