@@ -180,6 +180,12 @@ const klasifikasiOptions = computed(() => {
   const sorted = klasifikasiList.value
     .filter((k) => k.klasifikasi && String(k.klasifikasi).trim())
     .sort((a, b) => a.klasifikasi.localeCompare(b.klasifikasi));
+
+  // Deteksi parent via relasi id_parent (akurat), bukan heuristik titik.
+  const childIds = new Set(
+    sorted.map((k) => k.id_parent).filter((pid): pid is string => !!pid)
+  );
+
   return [
     {
       label: '— Tidak ada default —',
@@ -189,7 +195,8 @@ const klasifikasiOptions = computed(() => {
       disabled: false,
     },
     ...sorted.map((k) => {
-      const isParent = !k.klasifikasi.includes('.');
+      const isParent = childIds.has(k.id);
+      const selectable = !isParent && Number(k.is_select ?? 1) === 1;
       return {
         ...k,
         label: `${k.klasifikasi} - ${k.klasifikasi_text}`,
@@ -200,7 +207,7 @@ const klasifikasiOptions = computed(() => {
           k.deskripsi,
         ].filter(Boolean).join(' '),
         isParent,
-        disabled: isParent,
+        disabled: !selectable,
       };
     }),
   ];

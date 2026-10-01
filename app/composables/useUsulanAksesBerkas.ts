@@ -119,11 +119,14 @@ export function useUsulanAksesBerkas() {
 
   // ── GET /usulan-akses-berkas/berkas/:berkasId ──
   // Detail berkas untuk SE pengusul (cek entitlement)
-  const fetchBerkasDetail = async (berkasId: string) => {
+  // Optional `usulanIdHint` diteruskan ke BE sebagai ?usulan_id=... agar resolve
+  // entitlement & usulan yang benar (user bisa punya beberapa entitlement aktif
+  // untuk berkas yang sama dari usulan berbeda).
+  const fetchBerkasDetail = async (berkasId: string, usulanIdHint?: string) => {
     try {
       const res = await apiGet<any>(
         `/usulan-akses-berkas/berkas/${berkasId}`,
-        undefined,
+        usulanIdHint ? { params: { usulan_id: usulanIdHint } } : undefined,
         { skipCache: true },
       );
       return (res as any)?.data ?? res;
@@ -135,11 +138,11 @@ export function useUsulanAksesBerkas() {
 
   // ── GET /usulan-akses-berkas/berkas/:berkasId/naskah ──
   // List naskah di dalam berkas (cek entitlement, bukan permission pemeliharaan)
-  const fetchNaskahByBerkas = async (berkasId: string) => {
+  const fetchNaskahByBerkas = async (berkasId: string, usulanIdHint?: string) => {
     try {
       const res = await apiGet<any>(
         `/usulan-akses-berkas/berkas/${berkasId}/naskah`,
-        undefined,
+        usulanIdHint ? { params: { usulan_id: usulanIdHint } } : undefined,
         { skipCache: true },
       );
       const payload = (res as any)?.data ?? res;

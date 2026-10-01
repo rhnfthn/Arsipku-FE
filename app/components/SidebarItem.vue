@@ -159,15 +159,31 @@ const isActivePath = (path) => {
 const isActiveChild = (path, activePaths, exact = false) => {
   if (route.path === path) return true;
 
-  // Custom logic for verifikasi-usulan detail
-  if (path === '/kelola/penggunaan/verifikasi-usulan' && route.path.includes('usulan-akses-berkas') && route.query.from === 'verifikasi') {
+  // Custom logic for verifikasi-usulan detail — termasuk halaman berkas
+  // pemberian yang dibuka dari detail usulan (SE pemberi klik "Buka Berkas").
+  const fromVerifikasi = route.query.from === 'verifikasi';
+  if (
+    path === '/kelola/penggunaan/verifikasi-usulan' &&
+    fromVerifikasi &&
+    (route.path.includes('usulan-akses-berkas') ||
+      route.path.includes('/kelola/penggunaan/pemberian/'))
+  ) {
     return true;
   }
 
   // Untuk nested child route (path dengan children), pakai startsWith.
   // Dilewati untuk child bertanda exact (section-index).
   if (!exact && path && route.path.startsWith(path + '/')) {
-    if (path.includes('usulan-akses-berkas') && route.query.from === 'verifikasi') {
+    // from=verifikasi: halaman berkas pemberian dibuka dari detail usulan
+    // (Verifikasi Usulan) — menu Pemberian TIDAK boleh ikut aktif.
+    if (
+      fromVerifikasi &&
+      path === '/kelola/penggunaan/pemberian' &&
+      route.path.includes('/kelola/penggunaan/pemberian/')
+    ) {
+      return false;
+    }
+    if (path.includes('usulan-akses-berkas') && fromVerifikasi) {
       return false;
     }
     return true;

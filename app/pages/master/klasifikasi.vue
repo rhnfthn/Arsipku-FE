@@ -591,6 +591,23 @@
               </select>
             </div>
 
+            <!-- BISA DIPILIH (is_select) -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_is_select') }}
+              </Heading>
+              <select
+                v-model="addForm.is_select"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option :value="1">{{ t('ka_is_select_yes') }}</option>
+                <option :value="0">{{ t('ka_is_select_no') }}</option>
+              </select>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ t('ka_is_select_hint') }}
+              </p>
+            </div>
+
             <!-- LOADING INFO -->
             <p v-if="savingAdd" class="text-xs text-gray-500 dark:text-gray-400">
               {{ t('ka_saving') }}
@@ -749,6 +766,23 @@
                 <option value="Pengawas Internal">Pengawas Internal</option>
                 <option value="Karyawan, Publik, Pengawas Eksternal dan Aparat Penegak Hukum">Karyawan, Publik, Pengawas Eksternal dan Aparat Penegak Hukum</option>
               </select>
+            </div>
+
+            <!-- BISA DIPILIH (is_select) -->
+            <div class="flex flex-col gap-1">
+              <Heading variant="heading11m" class="text-xs dark:text-gray-200">
+                {{ t('ka_is_select') }}
+              </Heading>
+              <select
+                v-model="editForm.is_select"
+                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              >
+                <option :value="1">{{ t('ka_is_select_yes') }}</option>
+                <option :value="0">{{ t('ka_is_select_no') }}</option>
+              </select>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ t('ka_is_select_hint') }}
+              </p>
             </div>
           </div>
           <p v-if="savingEdit" class="text-xs text-gray-500 dark:text-gray-400">
@@ -1002,7 +1036,8 @@ const addForm = ref({
   retensi_inaktif_tahun: 1 as number | null,
   penyusutan: 'Permanen',
   keamanan: '',
-  hak_akses: ''
+  hak_akses: '',
+  is_select: 1
 });
 
 const addErrors = ref<Record<string, string>>({});
@@ -1030,7 +1065,8 @@ const resetAddForm = () => {
     retensi_inaktif_tahun: 1,
     penyusutan: 'Permanen',
     keamanan: '',
-    hak_akses: ''
+    hak_akses: '',
+    is_select: 1
   };
   addFormErrors.value = {
     klasifikasi: false,
@@ -1087,7 +1123,8 @@ const submitAddKlasifikasi = async () => {
       retensi_inaktif_tahun: addForm.value.retensi_inaktif_tahun,
       penyusutan: addForm.value.penyusutan || 'Permanen',
       keamanan: addForm.value.keamanan || null,
-      hak_akses: addForm.value.hak_akses || null
+      hak_akses: addForm.value.hak_akses || null,
+      is_select: addForm.value.is_select
     });
     showAddModal.value = false;
     await fetchKlasifikasi();
@@ -1122,7 +1159,8 @@ const editForm = ref({
   retensi_inaktif_tahun: null as number | null,
   penyusutan: 'Permanen',
   keamanan: '',
-  hak_akses: ''
+  hak_akses: '',
+  is_select: 1
 });
 
 const editErrors = ref<Record<string, string>>({});
@@ -1167,7 +1205,8 @@ const onEdit = async (row: Klasifikasi) => {
       retensi_inaktif_tahun: null,
       penyusutan: 'Permanen',
       keamanan: '',
-      hak_akses: ''
+      hak_akses: '',
+      is_select: 1
     };
 
     const res = await getKlasifikasiDetail(row.id);
@@ -1180,6 +1219,7 @@ const onEdit = async (row: Klasifikasi) => {
     editForm.value.penyusutan = data.penyusutan || 'Permanen';
     editForm.value.keamanan = data.keamanan || '';
     editForm.value.hak_akses = data.hak_akses || '';
+    editForm.value.is_select = data.is_select ?? 1;
   } catch (e) {
     console.error('Gagal ambil data edit klasifikasi:', e);
     alert('Gagal memuat data edit');
@@ -1202,7 +1242,8 @@ const submitEditKlasifikasi = async () => {
       retensi_inaktif_tahun: editForm.value.retensi_inaktif_tahun,
       penyusutan: editForm.value.penyusutan || 'Permanen',
       keamanan: editForm.value.keamanan || null,
-      hak_akses: editForm.value.hak_akses || null
+      hak_akses: editForm.value.hak_akses || null,
+      is_select: editForm.value.is_select
     });
     showEditModal.value = false;
     editId.value = null;

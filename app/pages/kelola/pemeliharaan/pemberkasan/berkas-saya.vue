@@ -911,27 +911,32 @@ const klasifikasiSelected = computed(() =>
   klasifikasiList.value.find((k: any) => k.klasifikasi === form.klasifikasi)
 );
 
-// Parent klasifikasi (kode tanpa ".") di-disable & ditampilkan sebagai group header,
+// Parent klasifikasi (punya child) di-disable & ditampilkan sebagai group header,
 // menyamakan perilaku dengan form klasifikasi di halaman tulis naskah.
-const klasifikasiItems = computed(() =>
-  [...klasifikasiList.value]
-    .sort((a: any, b: any) => String(a.klasifikasi).localeCompare(String(b.klasifikasi)))
-    .map((item: any) => {
-      const isParent = !String(item.klasifikasi).includes('.');
-      return {
-        ...item,
-        // USelectMenu melakukan filtering berdasarkan atribut ini. Gabungkan
-        // kode, nama, dan deskripsi agar konsisten dengan form pembuatan naskah.
-        searchLabel: item.search_text || [
-          item.klasifikasi,
-          item.klasifikasi_text,
-          item.deskripsi,
-        ].filter(Boolean).join(' '),
-        isParent,
-        disabled: isParent,
-      };
-    })
-);
+const klasifikasiItems = computed(() => {
+  const sorted = [...klasifikasiList.value].sort((a: any, b: any) =>
+    String(a.klasifikasi).localeCompare(String(b.klasifikasi))
+  );
+  const childIds = new Set(
+    sorted.map((item: any) => item.id_parent).filter((pid: any) => !!pid)
+  );
+  return sorted.map((item: any) => {
+    const isParent = childIds.has(item.id);
+    const selectable = !isParent && Number(item.is_select ?? 1) === 1;
+    return {
+      ...item,
+      // USelectMenu melakukan filtering berdasarkan atribut ini. Gabungkan
+      // kode, nama, dan deskripsi agar konsisten dengan form pembuatan naskah.
+      searchLabel: item.search_text || [
+        item.klasifikasi,
+        item.klasifikasi_text,
+        item.deskripsi,
+      ].filter(Boolean).join(' '),
+      isParent,
+      disabled: !selectable,
+    };
+  });
+});
 
 const onKlasifikasiChange = () => {
   const k = klasifikasiList.value.find((item: any) => item.klasifikasi === form.klasifikasi);
