@@ -92,7 +92,7 @@ const breadcrumbs = computed(() => {
 });
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || "Nama Lengkap",
+  name: toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || "Nama Lengkap",
   role: user.value?.positionText || "Jabatan",
   label: "Ditandatangani secara digital oleh",
 }));
@@ -156,7 +156,7 @@ const getPayload = (): SDIPayloadInput => ({
   english: false,
   nama_tempat: user.value?.areaText || "",
   nama_jabatan: user.value?.positionText || "",
-  nama_lengkap: user.value?.nama || "",
+  nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
   tgl: tglDb.value,
   tanggal: tglDisplay.value,
   lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean) as string[],
@@ -519,7 +519,7 @@ watch(
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
           :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan"
+        <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan" placeholder="Pilih Tembusan"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
           disabled-message="Sudah dipilih" lock-mandatory-cc />
 
@@ -616,7 +616,7 @@ watch(
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(formatDelegatedActorName(user?.nama, user?.position_status)) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 

@@ -26,13 +26,24 @@ export const useDelegationMode = () => {
     return s ? LABELS[s] ?? s : null;
   });
 
-  // Jabatan ber-prefix actor saat delegated; mis. "PT. EVP of PMO - Interim Officer".
-  // YBS (position_status null) -> positionText tanpa prefix (perilaku lama).
   const renderedPositionLabel = computed(() => {
-    const s = user.value?.position_status;
-    const pos = user.value?.positionText ?? "";
-    return s ? `${s}. ${pos}` : pos;
+    const positionText = user.value?.positionText ?? "";
+    const status = String(activePositionStatus.value ?? "").toUpperCase();
+    if (!["PT", "PH", "PS"].includes(status)) return positionText;
+    return new RegExp(`^${status}\\.\\s*`, "i").test(positionText)
+      ? positionText
+      : `${status}. ${positionText}`;
   });
 
-  return { activePositionStatus, isReadOnly, isViewer, activePositionStatusLabel, renderedPositionLabel };
+  // Nama orang tetap ditampilkan tanpa prefix; prefix delegasi melekat pada jabatan.
+  const renderedActorName = computed(() => user.value?.nama ?? "");
+
+  return {
+    activePositionStatus,
+    isReadOnly,
+    isViewer,
+    activePositionStatusLabel,
+    renderedPositionLabel,
+    renderedActorName,
+  };
 };

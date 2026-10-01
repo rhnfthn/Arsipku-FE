@@ -1,20 +1,15 @@
 // composables/useRecipients.ts
-import { useApi } from "~/composables/useApi";
-import type {
-  RecipientItem,
-  RecipientApiResponse,
-  RecipientApiData,
-} from "~/types/recipient";
+import { useApi } from '~/composables/useApi';
+import type { RecipientItem, RecipientApiResponse, RecipientApiData } from '~/types/recipient';
 
 export const useRecipients = () => {
   const { apiGet } = useApi();
+  const { user } = useAuth();
 
   /**
    * Normalize recipients → menjadi array flat + group
    */
-  const normalizeRecipients = (
-    raw: RecipientApiData | undefined,
-  ): RecipientItem[] => {
+  const normalizeRecipients = (raw: RecipientApiData | undefined): RecipientItem[] => {
     if (!raw || !raw.recipients) return [];
 
     const groups = raw.recipients;
@@ -36,14 +31,12 @@ export const useRecipients = () => {
    * GET /ND/get-recipient/{positionId}
    */
   const getRecipients = async (
-    positionId?: string | number,
+    positionId?: string | number
   ): Promise<{
-    sender: RecipientApiData["sender"] | null;
+    sender: RecipientApiData['sender'] | null;
     recipients: RecipientItem[];
   }> => {
-    const url = positionId
-      ? `/ND/get-recipient/${positionId}`
-      : `/ND/get-recipient/`;
+    const url = positionId ? `/ND/get-recipient/${positionId}` : `/ND/get-recipient/`;
 
     const res = await apiGet<RecipientApiResponse>(url);
 
@@ -54,9 +47,12 @@ export const useRecipients = () => {
   };
 
   const getRecipientGroups = async (jenis?: string) => {
-    const endpoint = jenis
-      ? `/persuratan/grup-penerima?jenis=${jenis}`
-      : "/persuratan/grup-penerima";
+    const params = new URLSearchParams();
+    if (jenis) params.set('jenis', jenis);
+    const area = user.value?.area;
+    if (area) params.set('area', String(area));
+    const query = params.toString();
+    const endpoint = `/persuratan/grup-penerima${query ? `?${query}` : ''}`;
     const res = await apiGet<{ success: boolean; data: any[] }>(endpoint);
     return res?.data || [];
   };

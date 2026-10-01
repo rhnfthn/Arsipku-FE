@@ -473,6 +473,8 @@
         </div>
         <div v-if="activeTab === 'routing'"><CorrespondenceRoutingTab /></div>
 
+        <CorrespondenceAccessTab v-if="activeTab === 'correspondence-access'" />
+
         <!-- ===================== TAB: RESET DATABASE (Superadmin) ===================== -->
         <DbResetTab v-if="activeTab === 'db-reset'" />
       </div>
@@ -686,6 +688,12 @@ const tabs = computed<KonfigTab[]>(() => {
       value: "routing",
       label: "Routing Persuratan",
       icon: "i-lucide-route",
+      permission: { resource: "correspondence-routing", action: "read" },
+    },
+    {
+      value: "correspondence-access",
+      label: "Hak Akses Korespondensi",
+      icon: "i-lucide-shield-ellipsis",
       permission: { resource: "correspondence-routing", action: "read" },
     },
     {

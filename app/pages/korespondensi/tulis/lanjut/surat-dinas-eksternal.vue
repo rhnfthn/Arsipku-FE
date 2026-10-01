@@ -199,7 +199,7 @@
                     <div class="mb-24 text-[14px]">
                       <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                     </div>
-                    <div class="font-bold text-[14px] underline">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(formatDelegatedActorName(user?.nama, user?.position_status)) || 'Nama Lengkap' }}</div>
                   </div>
                 </div>
 
@@ -367,7 +367,7 @@ const breadcrumbs = computed(() => {
 });
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
+  name: toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || 'Nama Lengkap',
   role: user.value?.positionText || 'Jabatan',
   label: 'Ditandatangani secara digital oleh'
 }));
@@ -412,7 +412,7 @@ const getPayload = () => {
     english: isEnglish.value,
     nama_tempat: user.value?.areaText || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
-    nama_lengkap: user.value?.nama || "",
+    nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
     tgl: tglDb.value || "",
     tanggal: tglDisplay.value || "",
     lampiran_temp_ids: existingFiles.value.map(f => f.id).filter(id => !!id)

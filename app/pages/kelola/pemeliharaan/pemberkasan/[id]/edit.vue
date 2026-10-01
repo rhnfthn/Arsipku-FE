@@ -101,6 +101,16 @@
                         >
                           {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
                         </span>
+                        <UTooltip v-if="item.deskripsi" :delay-duration="500" :popper="{ placement: 'right-start' }">
+                          <span class="text-xs text-gray-500 block w-full truncate mt-0.5 cursor-help">
+                            {{ item.deskripsi }}
+                          </span>
+                          <template #text>
+                            <span class="block max-w-[min(32rem,calc(100vw-2rem))] whitespace-normal break-words leading-relaxed">
+                              {{ item.deskripsi }}
+                            </span>
+                          </template>
+                        </UTooltip>
                       </div>
                     </template>
                     <template #default>
