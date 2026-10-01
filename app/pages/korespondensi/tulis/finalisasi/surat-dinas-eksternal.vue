@@ -34,7 +34,7 @@
         <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="items"
           :groups="recipientGroups" :exclude-items="selectedTembusan" disabled-message="Sudah dipilih di Tembusan" />
 
-        <TulisInputPenerima v-model="selectedTembusan" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
+        <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan" placeholder="Pilih Tembusan" :items="items"
           :groups="recipientGroups" :exclude-items="selectedTertuju" disabled-message="Sudah dipilih di Tertuju" />
 
         <TulisInputSifat v-model="selectedSifat" />
@@ -106,7 +106,7 @@
                         <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                         <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ toTitleCase(user?.nama) || 'Nama Lengkap' }}</div>
+                      <div class="font-bold text-[14px]">{{ toTitleCase(formatDelegatedActorName(user?.nama, user?.position_status)) || 'Nama Lengkap' }}</div>
                     </div>
                   </div>
                   <div class="text-[12px] mt-2 w-full text-left text-black">
@@ -193,7 +193,7 @@ import { useInbox } from "@/composables/useInbox";
 import { useRecipients } from "@/composables/useRecipients";
 import { useKonsep } from "@/composables/useKonsep";
 
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: ["auth", "tulis-access"] });
 
 const route = useRoute();
 const router = useRouter();
@@ -292,7 +292,7 @@ const excludeTertujuList = computed(() => selectedTembusan.value || []);
 const excludeTembusanList = computed(() => selectedTertuju.value || []);
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || "Nama Lengkap",
+  name: toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || "Nama Lengkap",
   role: user.value?.positionText || "Jabatan",
   label: "Ditandatangani secara digital oleh",
 }));
@@ -355,7 +355,7 @@ const getBasePayload = (): DraftPayload => {
     english: english.value,
     nama_tempat: user.value?.areaText || "Kantor Pusat",
     nama_jabatan: user.value?.positionText || "",
-    nama_lengkap: user.value?.nama || "",
+    nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
     tgl: tglDb,
     tanggal: tglPreview,
     lampiran_temp_ids: lampiranIds,
@@ -388,7 +388,7 @@ const createFinalizeFormData = () => {
   formData.append("english", english.value ? "1" : "0");
   formData.append("nama_tempat", user.value?.areaText || "Kantor Pusat");
   formData.append("nama_jabatan", user.value?.positionText || "");
-  formData.append("nama_lengkap", user.value?.nama || "");
+  formData.append("nama_lengkap", formatDelegatedActorName(user.value?.nama, user.value?.position_status));
   formData.append("lampiran_temp_ids", JSON.stringify(lampiranIds));
   formData.append("lampiran", lampiranIds.length > 0 ? "1" : "0");
 

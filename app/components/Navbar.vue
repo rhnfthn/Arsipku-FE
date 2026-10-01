@@ -176,14 +176,13 @@
                   color="primary"
                   class="rounded px-1.5 py-0.5 text-[10px] shrink-0 font-medium capitalize leading-none"
                 >
-                  <span v-if="positionStatusLabel">{{ positionStatusLabel }} /</span>
                   {{ user?.role }}
                 </UBadge>
 
                 <span
                   class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate max-w-[150px]"
                 >
-                  {{ user?.positionText }}
+                  {{ formatDelegatedPosition(user?.positionText, user?.position_status) }}
                 </span>
               </div>
             </UTooltip>
@@ -1624,7 +1623,13 @@ const highlightText = (text: string, query: string) => {
 };
 
 // --- USER / DELEGATION ---
-const isCurrentlyDelegated = computed(() => !!activeDelegationId.value);
+const DELEGATED_POSITION_STATUSES = new Set(['PT', 'PH', 'PS', 'VI', 'SE']);
+const hasDelegatedPositionStatus = (status?: string | null) =>
+  DELEGATED_POSITION_STATUSES.has(String(status ?? '').toUpperCase());
+
+const isCurrentlyDelegated = computed(() =>
+  hasDelegatedPositionStatus(user.value?.position_status)
+);
 
 const positionStatusLabel = computed(() => {
   const u = user.value;
@@ -1750,7 +1755,11 @@ const handleSwitchProfile = (profile: 'akun_asli' | 'unit_dokumen' | 'sekretaris
   // PT/PH/PS memakai bucket active_profile='akun_asli'. Karena itu cek reset
   // harus dilakukan sebelum early-return profile yang sama; jika tidak, klik
   // Akun Utama saat sedang menjadi aktor delegasi tidak pernah mengembalikan JWT.
-  if (process.client && profile === 'akun_asli' && user.value?.position_status) {
+  if (
+    process.client &&
+    profile === 'akun_asli' &&
+    hasDelegatedPositionStatus(user.value?.position_status)
+  ) {
     handleSwitchRole({ type: 'reset' });
     return;
   }
@@ -1791,7 +1800,7 @@ watch(
     // localStorage proxy (racy: initActiveState runs in onMounted, which may
     // fire after the watch resolves on profile-populate). When delegated,
     // keep the stored original so it never becomes the delegated position.
-    if (!newUser.position_status) {
+    if (!hasDelegatedPositionStatus(newUser.position_status)) {
       originalRoleLabel.value = newUser.positionText;
       if (process.client) localStorage.setItem('arsipku_original_position', newUser.positionText);
     } else if (process.client) {
@@ -1991,9 +2000,8 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   const delegasiItems = (delegationRoles.value || []).map((role) => {
     const details = role.delegated_role || {};
     const from = role.delegated_from || {};
-    // Untuk delegasi SE (Sekretaris), tampilkan jabatan delegator + "Sekretaris".
-    // Contoh: "EVP of Air Navigation Services - Sekretaris".
-    // Untuk delegasi lain, tampilkan position_text delegasi seperti biasa.
+    // Prefix status delegasi melekat pada jabatan, bukan pada nama orang.
+    // Contoh: nama "Hermana", jabatan "PT. EVP of Legal ...".
     let uiPosition = details.position_text || 'Jabatan Tidak Tersedia';
     if (details.position_status === 'SE') {
       const delegatorPosition = from.position_text;
@@ -2002,11 +2010,14 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       } else {
         uiPosition = 'Sekretaris';
       }
+    } else if (details.position_status) {
+      const status = String(details.position_status).toUpperCase();
+      if (!new RegExp(`^${status}\\.\\s*`, 'i').test(uiPosition)) {
+        uiPosition = `${status}. ${uiPosition}`;
+      }
     }
     return {
-      uiName: details.position_status
-        ? `${details.position_status}. ${details.name || 'Nama Tidak Tersedia'}`
-        : details.name || 'Nama Tidak Tersedia',
+      uiName: details.name || 'Nama Tidak Tersedia',
       uiBadge: details.position_status_label || 'Delegasi',
       uiPosition,
       uiArea: details.area_text || details.company_text || '',

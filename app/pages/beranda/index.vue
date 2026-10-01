@@ -292,7 +292,8 @@ const dashboardImage = computed(() =>
   isDark.value ? '/dashboard_dark.png' : '/dashboard_light.png'
 );
 const { currentTheme, fetchCurrentTheme } = useThemeConfiguration();
-const { systemTheme, isConnected } = useRealtimeSocket();
+const { systemTheme, isConnected, lastSummaryAt } = useRealtimeSocket();
+let dashboardRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const greetingPositionClass = computed(() => {
   const position = currentTheme.value?.textPosition || 'center-left';
@@ -373,6 +374,18 @@ watch(systemTheme, (theme) => {
 
 watch(isConnected, (connected) => {
   if (connected) void fetchCurrentTheme().catch(() => null);
+});
+
+watch(lastSummaryAt, (timestamp, previousTimestamp) => {
+  if (!timestamp || timestamp === previousTimestamp) return;
+  if (dashboardRefreshTimer) clearTimeout(dashboardRefreshTimer);
+  dashboardRefreshTimer = setTimeout(() => {
+    void fetchDashboardData();
+  }, 350);
+});
+
+onBeforeUnmount(() => {
+  if (dashboardRefreshTimer) clearTimeout(dashboardRefreshTimer);
 });
 
 const canViewDashboard = computed(() => hasPermission('utama.beranda', 'read'));

@@ -80,7 +80,7 @@
             :search-attributes="['searchLabel']"
             placeholder="Pilih klasifikasi…"
             :search-input="{ placeholder: 'Cari klasifikasi…' }"
-            :content="({ class: 'max-h-[380px]' } as any)"
+            :content="({ class: 'max-h-[380px] w-[min(32rem,calc(100vw-2rem))]' } as any)"
             class="w-full sm:w-56"
             :disabled="isSaving === row.jenisNaskah"
             :loading="klasifikasiLoading"
@@ -94,17 +94,14 @@
                   {{ item.klasifikasi }} - {{ item.klasifikasi_text }}
                 </span>
               </div>
-              <div v-else class="flex flex-col min-w-0 w-full overflow-hidden">
+              <div v-else class="flex flex-col min-w-0 w-full">
                 <span
                   class="text-sm font-medium text-gray-900 dark:text-white block w-full truncate"
                   :class="{ 'italic text-gray-400 dark:text-gray-500': item.value === NO_DEFAULT }"
                 >
                   {{ item.value === NO_DEFAULT ? item.label : `${item.klasifikasi} - ${item.klasifikasi_text}` }}
                 </span>
-                <span
-                  v-if="item.deskripsi"
-                  class="text-xs text-gray-500 block w-full truncate mt-0.5"
-                >
+                <span v-if="item.deskripsi" class="text-xs text-gray-500 dark:text-gray-400 block w-full mt-0.5 whitespace-normal break-words [overflow-wrap:anywhere] leading-relaxed">
                   {{ item.deskripsi }}
                 </span>
               </div>

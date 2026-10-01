@@ -353,6 +353,7 @@ export function useInbox() {
         tembusan:       lastFlow?.detail?.naskah_tembusan || lastFlow?.tembusan || [],
         final_pdf_url:  lastFlowWithPdf?.final_pdf_url ?? null,
         catatan_reject: catatanReject,
+        forward_to: res.forward_to || null,
         flow:           sortedFlows,
       };
     } catch (err: any) {

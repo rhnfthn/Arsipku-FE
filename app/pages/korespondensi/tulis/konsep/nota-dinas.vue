@@ -144,7 +144,7 @@
         </div>
 
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTembusan" label="Tembusan"
+          <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan"
             :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
             :groups="recipientGroups" :exclude-items="excludeTembusanList" :disabled="!isSenderSelected"
             disabled-message="Sudah dipilih" />
@@ -201,7 +201,7 @@
                       <tr>
                         <td class="text-[14px] font-bold align-top">Dari</td>
                         <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ selectedSender?.labelJob || user?.positionText || 'Posisi'
+                        <td class="text-[14px] align-top">{{ senderPositionLabel(selectedSender?.raw) || 'Posisi'
                         }}</td>
                       </tr>
                       <tr>
@@ -221,11 +221,11 @@
                   <div class="flex justify-end mb-4 text-black">
                     <div class="text-center min-w-[250px]">
                       <div class="mb-24 text-[14px]">
-                        <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ selectedSender?.labelJob || user?.positionText || 'Nama Jabatan' }}
+                        <div>{{ signatureCity }}, {{ formattedDate }}</div>
+                        <div class="font-bold">{{ senderPositionLabel(selectedSender?.raw) || 'Nama Jabatan' }}
                         </div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ toTitleCase(selectedSender?.raw?.persnum_person_text || user?.nama) ||
+                      <div class="font-bold text-[14px]">{{ toTitleCase(senderActorName(selectedSender?.raw)) ||
                         'Nama Lengkap' }}</div>
                     </div>
                   </div>
@@ -309,8 +309,9 @@ import { validateDraftPayload, type DraftPayload } from "~/types/nota-dinas";
 import { Alert } from "@/composables/useAlert";
 import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
 import TulisKopSurat from "@/components/Tulis/KopSuratAsync.vue";
+import { stripKonsepPerihalPrefix } from '~/utils/konsep-perihal';
 
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: ["auth", "tulis-access"] });
 
 interface RecipientItem {
   label: string;
@@ -339,7 +340,7 @@ const {
   recipientGroups
 } = useTulis();
 
-const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail } = useKonsep();
+const { createKonsep, getSendersById, previewPdf, getRecipientsBySender, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail, getForwardTargetByPosition } = useKonsep();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
@@ -379,6 +380,22 @@ const selectedSifat = ref<any>(sifatOptions[3]);
 const items = ref<RecipientItem[]>([]);
 const senderItems = ref<RecipientItem[]>([]);
 const selectedSender = ref<RecipientItem | undefined>();
+const senderActorName = (source?: any) => {
+  const raw = source?.raw || source || {};
+  return (
+    formatDelegatedActorName(
+      raw.persnum_person_text || raw.nama,
+      raw.position_status || raw.positionStatus,
+    ) || user.value?.nama || ''
+  );
+};
+const senderPositionLabel = (source?: any) => {
+  const raw = source?.raw || source || {};
+  return formatDelegatedPosition(
+    raw.position_text || raw.positionText || selectedSender.value?.labelJob || user.value?.positionText,
+    raw.position_status || raw.positionStatus || user.value?.position_status,
+  );
+};
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const refData = ref<any>(null);
@@ -386,12 +403,49 @@ const isRefExpanded = ref(false);
 const maxPerihal = 200;
 const refPengirimPositionId = ref<string>('');
 const restoredDraftTarget = ref<any>(null);
+const resolvedForwardTarget = ref<any>(null);
 const isPopulating = ref(false);
 const isReferenceLoading = ref(
   Boolean(route.query.ref_id) && Boolean(route.query.ref_jenis),
 );
+const signatureCity = computed(() => {
+  const raw = selectedSender.value?.raw?.raw || selectedSender.value?.raw || {};
+  return (
+    raw.sub_area_text ||
+    raw.subAreaText ||
+    raw.area_text ||
+    raw.areaText ||
+    user.value?.subAreaText ||
+    user.value?.areaText ||
+    'Tangerang'
+  );
+});
 
 const atasanLangsungInfo = computed(() => user.value?.atasan_langsung || null);
+const selectedSenderManager = computed(() => {
+  const raw = selectedSender.value?.raw || {};
+  if (Number(selectedSender.value?.value) !== Number(user.value?.position)) {
+    return null;
+  }
+  const managerPosition = raw.direct_manager ?? raw.directManager;
+  const managerId = Number(managerPosition);
+  if (!Number.isInteger(managerId) || managerId <= 0) return null;
+
+  const manager = senderItems.value.find(
+    (item) => Number(item.value) === managerId,
+  );
+  return manager
+    ? {
+        position: manager.value,
+        positionText: manager.labelJob,
+        nama: manager.raw?.persnum_person_text || '',
+      }
+    : {
+        position: String(managerId),
+        positionText: raw.direct_manager_text || '',
+        nama: '',
+      };
+});
 const isRejectAction = computed(() => String(detail.value?.aksi || '').toLowerCase() === 'reject');
 const isTurunkanAction = computed(() => Boolean(route.query.turunkan_position_id));
 const isNewKonsepFromReference = computed(() =>
@@ -429,10 +483,23 @@ const forwardTargetInfo = computed(() => {
       nama: p.nama || p.persnum_person_text || '',
     };
   }
+  if (detail.value?.forward_to) {
+    const target = detail.value.forward_to;
+    return {
+      position: target.position_id || target.position || '',
+      positionText: target.position_text || target.positionText || '',
+      nama: target.nama || target.persnum_person_text || '',
+    };
+  }
+  if (resolvedForwardTarget.value) return resolvedForwardTarget.value;
   if (restoredDraftTarget.value) return restoredDraftTarget.value;
-  return atasanLangsungInfo.value;
+  return selectedSenderManager.value || atasanLangsungInfo.value;
 });
 const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
+const hasValidForwardTarget = computed(() => {
+  const id = Number(forwardTargetPositionId.value);
+  return Number.isInteger(id) && id > 0;
+});
 
 const mapPersonToUI = (person: any): RecipientItem => {
   if (!person) return {} as RecipientItem;
@@ -623,6 +690,29 @@ const fetchSenderList = async (posId: string | number) => {
   }
 };
 
+const resolveForwardTarget = async (fallbackPositionId?: string | number) => {
+  if (detail.value?.forward_to || resolvedForwardTarget.value) return;
+
+  const profilePositionId = Number(user.value?.position);
+  const sourcePositionId =
+    Number.isInteger(profilePositionId) && profilePositionId > 0
+      ? profilePositionId
+      : fallbackPositionId;
+  if (!sourcePositionId) return;
+
+  try {
+    const target = await getForwardTargetByPosition(sourcePositionId);
+    if (!target?.position_id) return;
+    resolvedForwardTarget.value = {
+      position: String(target.position_id),
+      positionText: target.position_text || '',
+      nama: target.nama || '',
+    };
+  } catch (error) {
+    console.error('Gagal menentukan tujuan forward konsep', error);
+  }
+};
+
 const validateAndToast = (payload: DraftPayload) => {
   // 1. Validasi Manual Paling Awal untuk Pesan
   if (!message.value || message.value.trim() === '') {
@@ -678,9 +768,9 @@ const getBasePayload = (): DraftPayload => {
     konten: String(editorContent.value || ''),
     htmlContent: strippedContent ? String(editorContent.value) : "", // Dikembalikan empty jika text-only nya kosong
     english: english.value,
-    nama_tempat: senderRaw.area_text || senderRaw.areaText || user.value?.areaText || "Kantor Pusat",
-    nama_jabatan: senderRaw.position_text || senderRaw.positionText || (currentSender as any).labelJob || "",
-    nama_lengkap: senderRaw.persnum_person_text || senderRaw.nama || user.value?.nama || "",
+    nama_tempat: signatureCity.value,
+    nama_jabatan: senderPositionLabel(senderRaw),
+    nama_lengkap: senderActorName(senderRaw),
     tgl: tglDb,
     tanggal: formattedDate.value !== "-" ? formattedDate.value : "",
     lampiran_temp_ids: existingFiles.value.map((f) => f.id).filter(Boolean),
@@ -721,9 +811,9 @@ const prepareKonsepFormData = () => {
   formData.append('perihal', subject.value);
   formData.append('konten', editorContent.value);
   formData.append('english', String(english.value));
-  formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Jakarta");
-  formData.append('nama_jabatan', signerRaw.position_text || signerInfo.labelJob || "");
-  formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+  formData.append('nama_tempat', signatureCity.value);
+  formData.append('nama_jabatan', senderPositionLabel(signerRaw) || signerInfo.labelJob || "");
+  formData.append('nama_lengkap', senderActorName(signerRaw));
   formData.append('lampiran_temp_ids', JSON.stringify(existingFiles.value.map((f) => f.id).filter(Boolean)));
   formData.append('catatan', message.value.trim());
   // formData.append('catatan', message.value || '-');
@@ -755,9 +845,9 @@ const prepareRevisiFormData = () => {
   formData.append('perihal', subject.value);
   formData.append('konten', editorContent.value);
   formData.append('english', String(english.value));
-  formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
-  formData.append('nama_jabatan', signerRaw.position_text || currentSender.labelJob || "");
-  formData.append('nama_lengkap', signerRaw.persnum_person_text || user.value?.nama || "");
+  formData.append('nama_tempat', signatureCity.value);
+  formData.append('nama_jabatan', senderPositionLabel(signerRaw) || currentSender.labelJob || "");
+  formData.append('nama_lengkap', senderActorName(signerRaw));
   formData.append('lampiran_temp_ids', JSON.stringify(existingFiles.value.map((f) => f.id).filter(Boolean)));
   // formData.append('catatan', message.value || '-');
   formData.append('catatan', message.value.trim());
@@ -805,6 +895,14 @@ const handleKirimDokumen = async () => {
   if (!validateAndToast(payload)) return;
 
   const isRevision = route.query.action === 'edit';
+  if (isRevision && !hasValidForwardTarget.value) {
+    toast.add({
+      title: 'Tujuan konsep belum tersedia',
+      description: 'Atasan tujuan untuk meneruskan konsep tidak ditemukan.',
+      color: 'error',
+    });
+    return;
+  }
 
   const confirmTitle = isRevision
     ? (isRejectAction.value ? 'Kirim Perbaikan?' : isTurunkanAction.value ? 'Turunkan Konsep?' : 'Teruskan Konsep?')
@@ -1002,15 +1100,19 @@ onMounted(async () => {
 
       detail.value = {
         aksi: draftData.detail?.aksi || '',
+        forward_to: result?.forward_to || null,
         from_position_id: draftData?.from_position_id || draftData?.detail?.from_position_id || draftData?.pengirim?.position_id || '',
         from_position_text: draftData?.from_position_text || draftData?.detail?.from_position_text || draftData?.pengirim?.position_text || '',
         from_nama: draftData?.from_nama || draftData?.detail?.from_nama || draftData?.pengirim?.nama || '',
         catatan_reject: draftData.detail?.catatan || '',
         data: { catatan_reject: draftData.detail?.catatan || '' },
       };
+      await resolveForwardTarget(
+        draftData?.penerima?.[0]?.position_id || draftData?.penerima?.[0]?.position,
+      );
 
       editDraftId.value = draftData.id;
-      subject.value = draftData.perihal || "";
+      subject.value = stripKonsepPerihalPrefix(draftData.perihal, 'ND');
       editorContent.value = draftData.konten || "";
       english.value = Boolean(draftData.english);
 
