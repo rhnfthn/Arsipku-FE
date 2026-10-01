@@ -108,6 +108,7 @@ export interface UsulanBerkasItem {
 export interface UsulanAksesBerkas {
   id: string;
   nomor_usulan: string;
+  judul_usulan?: string | null; // judul usulan (opsional, dikirim BE di findOne)
   jenis_berkas: JenisBerkas;
   pengusul_persnum: number;
   pengusul_info?: { nama?: string; jabatan?: string };

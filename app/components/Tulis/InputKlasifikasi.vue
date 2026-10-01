@@ -24,8 +24,13 @@
             </span>
           </div>
 
-          <div v-else class="flex flex-col min-w-0 w-full">
-            <span class="text-sm font-medium text-gray-900 dark:text-white block w-full truncate">
+          <div v-else class="flex flex-col min-w-0 w-full overflow-hidden">
+            <span
+              class="text-sm block w-full truncate"
+              :class="item.disabled
+                ? 'text-gray-400 dark:text-gray-500 line-through'
+                : 'font-medium text-gray-900 dark:text-white'"
+            >
               {{ item.klasifikasi }} - {{ item.klasifikasi_text }}
             </span>
             <span v-if="item.deskripsi" class="text-xs text-gray-500 dark:text-gray-400 block w-full mt-0.5 whitespace-normal break-words [overflow-wrap:anywhere] leading-relaxed">
@@ -68,9 +73,19 @@ const computedItems = computed(() => {
   const sortedItems = [...props.items].sort((a, b) =>
     a.klasifikasi.localeCompare(b.klasifikasi)
   );
+
+  // Deteksi parent via relasi id_parent (akurat), bukan heuristik titik.
+  // Contoh: "AUD.02" punya titik tapi tetap parent karena punya child.
+  const childIds = new Set(
+    sortedItems
+      .map((item) => item.id_parent)
+      .filter((pid): pid is string => !!pid)
+  );
+
   return sortedItems.map(item => {
-    // Deteksi Parent: Jika klasifikasi tidak mengandung titik "."
-    const isParent = !item.klasifikasi.includes('.');
+    const isParent = childIds.has(item.id);
+    // Tidak bisa dipilih jika: parent (punya child) ATAU is_select = 0.
+    const selectable = !isParent && Number(item.is_select ?? 1) === 1;
     return {
       ...item,
       searchLabel: item.search_text || [
@@ -78,7 +93,7 @@ const computedItems = computed(() => {
         item.klasifikasi_text,
         item.deskripsi,
       ].filter(Boolean).join(' '),
-      disabled: isParent, // Bawaan USelectMenu/Headless UI: Cegah item agar tidak bisa diklik
+      disabled: !selectable, // Bawaan USelectMenu/Headless UI: Cegah item agar tidak bisa diklik
       isParent: isParent  // Custom flag untuk membedakan UI di slot #item
     };
   });
