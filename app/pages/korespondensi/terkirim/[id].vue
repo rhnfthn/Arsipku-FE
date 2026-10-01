@@ -570,7 +570,7 @@ const loadData = async () => {
             perihal: item.perihal || inboxData.perihal,
             nomor: item.nomor || inboxData.nomor || '-',
             tanggal: item.tanggal || inboxData.tanggal,
-            created_at: item.created_at || item.createdAt || item.detail?.created_at || item.detail?.createdAt || item.raw?.created_at || item.raw?.createdAt || inboxData.created_at || inboxData.createdAt || item.tanggal,
+            created_at: item.created_at || item.createdAt || item.detail?.created_at || item.detail?.createdAt || item.raw?.created_at || item.raw?.createdAt || inboxData.created_at || inboxData.createdAt || null,
             pengirim: item.pengirim || item.from || inboxData.pengirim,
             to: listPenerima,
             cc: listTembusan,
@@ -635,6 +635,7 @@ const flagState = ref({
   isTinjut: false,
   isLocked: false,
   isNote: false,
+  isArchived: false,
   noteText: '' as string,
 });
 
@@ -645,12 +646,13 @@ const initFlagState = () => {
     isTinjut: s?.isTinjut ?? s?.user_sirkulasi?.is_tindak_lanjut ?? false,
     isLocked: s?.isLocked ?? s?.user_sirkulasi?.is_locked ?? false,
     isNote: s?.isNote ?? s?.user_sirkulasi?.is_note ?? false,
+    isArchived: s?.isArchived ?? s?.isArsip ?? s?.user_sirkulasi?.is_arsip ?? false,
     noteText: s?.noteText ?? s?.user_sirkulasi?.note_text ?? '',
   };
 };
 
 const handleToggleFlag = async (
-  type: "favorit" | "tindak_lanjut" | "lock" | "note",
+  type: "favorit" | "tindak_lanjut" | "lock" | "note" | "arsip",
   noteText?: string,
 ) => {
   const s = selected.value;
@@ -666,6 +668,7 @@ const handleToggleFlag = async (
     tindak_lanjut: 'isTinjut',
     lock: 'isLocked',
     note: 'isNote',
+    arsip: 'isArchived',
   };
   const flagKey = flagKeyMap[type];
 
@@ -700,6 +703,7 @@ const handleToggleFlag = async (
     tindak_lanjut: ['Ditandai tindak lanjut', 'Tindak lanjut selesai'],
     lock: ['Pesan dikunci', 'Kunci pesan dibuka'],
     note: ['Note ditandai', 'Tanda note dihapus'],
+    arsip: ['Naskah diarsipkan', 'Naskah dikembalikan dari arsip'],
   };
   useToast().add({ title: 'Berhasil', description: descMap[type][isNowActive ? 0 : 1], color: 'success' });
 
@@ -886,12 +890,12 @@ const submitKirimEmail = async (mode: 'send' | 'draft' = 'send') => {
     kirimEmailLoading.value = false;
   }
 };
-const openDocumentPreview = async (url: string, title = "Dokumen") => {
+const openDocumentPreview = (url: string, title = "Dokumen") => {
   if (!url) { alert("URL tidak valid."); return; }
-  previewTitle.value = title; isPreviewOpen.value = true; isLocalPdfLoading.value = true; activePdfUrl.value = null;
-  try {
-    const response = await fetch(url); const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' }); activePdfUrl.value = URL.createObjectURL(blob);
-  } catch (error) { activePdfUrl.value = url; } finally { isLocalPdfLoading.value = false; }
+  previewTitle.value = title;
+  isPreviewOpen.value = true;
+  isLocalPdfLoading.value = true;
+  activePdfUrl.value = url;
 };
 
 /**
@@ -943,7 +947,7 @@ const openDetailPreview = async (detail: any, url: string, title = "Dokumen") =>
       if (opened) return;
     }
   }
-  await openDocumentPreview(url, title);
+  openDocumentPreview(url, title);
 };
 const openPreviewFile = async (file: any) => {
   const title = file?.file_name || file?.fileName || 'Lampiran';
@@ -972,7 +976,7 @@ const openPreviewFile = async (file: any) => {
     }
   }
 
-  await openDocumentPreview(
+  openDocumentPreview(
     file?.file_url || file?.fileUrl || file?.file_path || file?.file_pdf,
     title,
   );
@@ -1016,6 +1020,7 @@ const konsepOptions = [
         <div>
           <DetailNaskah context="sent" :data="detail" :is-head="isCurrentDetail(detail)"
             :is-starred="flagState.isStarred" :is-tinjut="flagState.isTinjut" :is-locked="flagState.isLocked" :is-note="flagState.isNote"
+            :is-archived="flagState.isArchived"
             :collapsed="isCardCollapsed(index)"
             :show-finalize="isKonsepData && isCurrentDetail(detail) && showFinalizeActions"
             :show-edit="isKonsepData && isCurrentDetail(detail) && showEditAction"
@@ -1032,6 +1037,7 @@ const konsepOptions = [
             @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
             @lock="handleToggleFlag('lock')"
             @catatan="(text) => handleToggleFlag('note', text)"
+            @archive="handleToggleFlag('arsip')"
             @toggle-collapse="toggleCardCollapse(index)" />
         </div>
       </div>
@@ -1068,6 +1074,9 @@ const konsepOptions = [
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 PDF final + lampiran akan dikirim sebagai attachment.
               </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                To, CC, dan BCC dapat diisi lebih dari satu email dengan dipisahkan koma (,).
+              </p>
             </div>
 
             <!-- To -->
@@ -1092,7 +1101,7 @@ const konsepOptions = [
               <input
                 v-model="kirimEmailForm.cc"
                 type="text"
-                placeholder="cc@example.com"
+                placeholder="cc@example.com (pisahkan koma untuk multiple)"
                 class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -1103,7 +1112,7 @@ const konsepOptions = [
               <input
                 v-model="kirimEmailForm.bcc"
                 type="text"
-                placeholder="bcc@example.com"
+                placeholder="bcc@example.com (pisahkan koma untuk multiple)"
                 class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -1368,7 +1377,7 @@ const konsepOptions = [
     </UModal>
 
     <USlideover v-model:open="isPreviewOpen" :title="previewTitle" :description="previewTitle" side="bottom"
-      :ui="{ content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none', body: 'p-0', footer: 'p-4 border-t border-gray-200 dark:border-gray-800' }">
+      :ui="{ content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none', body: 'p-0' }">
       <template #body>
         <div class="w-full h-full relative bg-gray-100 dark:bg-gray-900 flex flex-col">
           <div v-if="isLocalPdfLoading"
@@ -1376,7 +1385,8 @@ const konsepOptions = [
             <Loader2 class="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400 mb-2" /><span class="text-xs text-gray-500 dark:text-gray-400">Memuat
               Dokumen...</span>
           </div>
-          <iframe v-if="activePdfUrl" :src="activePdfUrl" class="w-full h-full border-none flex-1" />
+          <iframe v-if="activePdfUrl" :src="activePdfUrl" class="w-full h-full border-none flex-1"
+            @load="isLocalPdfLoading = false" />
           <div v-else-if="!isLocalPdfLoading"
             class="flex items-center justify-center h-full text-gray-500 flex-col gap-2">
             <FileText class="w-12 h-12l opacity-30" /><span class="text-sm">Dokumen tidak dapat ditampilkan.</span>

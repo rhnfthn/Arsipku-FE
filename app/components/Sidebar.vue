@@ -421,7 +421,7 @@ const { t } = useI18n();
 const isAdminOrSuperadmin = computed(() => hasRole('SUPERADMIN') || hasRole('ADMIN'));
 const { canPemberkasan, canPersetujuan } = usePemeliharaanAccess();
 const {
-  canCreateSdi,
+  canCreateCorrespondence,
   fetchCapabilities: fetchRoutingCapabilities,
   invalidateCapabilities: invalidateRoutingCapabilities,
 } = useCorrespondenceRoutingAccess();
@@ -581,7 +581,6 @@ watch(
 
 watch(correspondenceRoutingUpdate, () => {
   invalidateRoutingCapabilities();
-  if (!['BOD-2', 'BOD-3'].includes(String(user.value?.bodTag ?? ''))) return;
   fetchRoutingCapabilities(true).catch(() => {});
 });
 
@@ -603,8 +602,7 @@ watch(
       checkAtasanManagerialTuUsulan();
       // Cek apakah user adalah atasan managerial di penyusutan
       checkAtasanManagerialPenyusutan();
-      if (['BOD-2', 'BOD-3'].includes(String(newUser.bodTag ?? '')))
-        fetchRoutingCapabilities().catch(() => {});
+      fetchRoutingCapabilities().catch(() => {});
     }
   },
   { immediate: true }
@@ -752,44 +750,55 @@ watch(
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
 
+// Kajian hanya untuk posisi fungsional/staf. Jangan hanya mengandalkan
+// bodTag karena sebagian snapshot organisasi menandai EVP/VP/AVP melalui
+// nama jabatan saja.
+const canWriteKajian = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '').trim();
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+
+  if (bodTag) return false;
+  return !/\b(EVP|AVP|VP)\b/.test(positionText);
+});
+
 const tulisChildrenByBod = computed(() => {
-  const tag = user.value?.bodTag ?? '';
   const all = [
     {
       label: t('nota_dinas'),
       to: '/korespondensi/tulis/nota-dinas',
+      documentType: 'ND',
       permission: { resource: 'utama.tulis.nota-dinas', action: 'read' },
     },
     {
       label: t('disposisi'),
       to: '/korespondensi/tulis/disposisi',
+      documentType: 'DI',
       permission: { resource: 'utama.tulis.disposisi', action: 'read' },
     },
     {
       label: t('surat_dinas_internal'),
       to: '/korespondensi/tulis/surat-dinas-internal',
+      documentType: 'SDI',
       permission: { resource: 'utama.tulis.surat-dinas-internal', action: 'read' },
     },
     {
       label: t('surat_dinas_eksternal'),
       to: '/korespondensi/tulis/surat-dinas-eksternal',
+      documentType: 'SDE',
       permission: { resource: 'utama.tulis.surat-dinas-eksternal', action: 'read' },
     },
     {
       label: t('kajian'),
       to: '/korespondensi/tulis/kajian',
+      documentType: 'KA',
       permission: { resource: 'utama.tulis.kajian', action: 'read' },
     },
   ];
-  if (tag === 'BOD' || tag === 'BOD-1') return all;
-  if (tag === 'BOD-2' || tag === 'BOD-3') {
-    return all.filter(
-      (i) =>
-        ![t('surat_dinas_eksternal'), t('kajian')].includes(i.label) &&
-        (i.label !== t('surat_dinas_internal') || canCreateSdi.value)
-    );
-  }
-  return all.filter((i) => i.label === t('kajian'));
+  return all.filter(
+    (item) =>
+      canCreateCorrespondence(item.documentType) &&
+      (item.documentType !== 'KA' || canWriteKajian.value)
+  );
 });
 
 const tulisMenu = computed(() => ({

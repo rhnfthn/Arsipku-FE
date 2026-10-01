@@ -213,9 +213,6 @@ const getPermissions = (
 
 const allowedActions = computed(() => {
   if (isTerkirim.value) return [];
-  // Disable all lanjut actions if the user already did a tindak lanjut from this
-  // naskah (prevents double-send / creating a second follow-up naskah).
-  if (hasTindakLanjut.value) return [];
   const tag = user.value?.bodTag;
   const surat = selected.value?.jenis;
   if (!isKonsepData.value) {
@@ -692,7 +689,7 @@ const loadData = async () => {
             perihal: item.perihal || inboxData.perihal,
             nomor: item.nomor || inboxData.nomor || '-',
             tanggal: item.tanggal || inboxData.tanggal,
-            created_at: item.created_at || inboxData.created_at || item.tanggal,
+            created_at: item.created_at || item.createdAt || inboxData.created_at || inboxData.createdAt || null,
             sirkulasiId:
               item.sirkulasiId ||
               item.id_sirkulasi ||
@@ -785,6 +782,7 @@ const flagState = ref({
   isTinjut: false,
   isLocked: false,
   isNote: false,
+  isArchived: false,
   noteText: '' as string,
 });
 
@@ -795,44 +793,17 @@ const initFlagState = () => {
     isTinjut: s?.isTinjut ?? s?.user_sirkulasi?.is_tindak_lanjut ?? false,
     isLocked: s?.isLocked ?? s?.user_sirkulasi?.is_locked ?? false,
     isNote: s?.isNote ?? s?.user_sirkulasi?.is_note ?? false,
+    isArchived: s?.isArsip ?? s?.isArchived ?? s?.user_sirkulasi?.is_arsip ?? false,
     noteText: s?.noteText ?? s?.user_sirkulasi?.note_text ?? '',
   };
 };
 
-const isTruthyFollowUpFlag = (value: any) =>
-  value === true || value === 1 || value === '1' || String(value || '').toLowerCase() === 'true';
-
-const hasTindakLanjutFlag = (entry: any) =>
-  isTruthyFollowUpFlag(entry?.isTinjut) ||
-  isTruthyFollowUpFlag(entry?.is_tindak_lanjut) ||
-  isTruthyFollowUpFlag(entry?.tindak_lanjut) ||
-  isTruthyFollowUpFlag(entry?.user_sirkulasi?.is_tindak_lanjut) ||
-  isTruthyFollowUpFlag(entry?.user_sirkulasi?.tindak_lanjut) ||
-  isTruthyFollowUpFlag(entry?.raw?.user_sirkulasi?.is_tindak_lanjut) ||
-  isTruthyFollowUpFlag(entry?.raw?.user_sirkulasi?.tindak_lanjut);
-
-const hasTindakLanjut = computed(() => {
-  if (isKonsepData.value) {
-    // Setiap forward/revisi membuat K + sirkulasi penerima baru. Flag pada
-    // riwayat lama (mis. reject User A sebelumnya) tidak boleh memblokir aksi
-    // pada node terbaru yang kembali dikirim ke User A.
-    return hasTindakLanjutFlag(selected.value ?? details.value[0]);
-  }
-
-  return [selected.value, ...details.value].some((entry) => hasTindakLanjutFlag(entry));
-});
-
-const canCreateFollowUpAction = computed(() => !hasTindakLanjut.value);
+// Flag tindak lanjut adalah indikator. Satu naskah, terutama disposisi, dapat
+// digunakan sebagai referensi untuk lebih dari satu naskah lanjutan.
+const canCreateFollowUpAction = computed(() => true);
 
 const ensureCanCreateFollowUpAction = () => {
-  if (isKonsepData.value || canCreateFollowUpAction.value) return true;
-
-  useToast().add({
-    title: 'Tidak bisa membuat tindak lanjut',
-    description: 'Naskah ini sudah ditindaklanjuti.',
-    color: 'warning',
-  });
-  return false;
+  return true;
 };
 
 const getDetailFlagState = (detail: any, index: number) => {
@@ -846,12 +817,13 @@ const getDetailFlagState = (detail: any, index: number) => {
     isTinjut: detail?.isTinjut ?? detail?.is_tindak_lanjut ?? sirkulasi?.is_tindak_lanjut ?? false,
     isLocked: detail?.isLocked ?? detail?.is_locked ?? sirkulasi?.is_locked ?? false,
     isNote: detail?.isNote ?? detail?.is_note ?? sirkulasi?.is_note ?? false,
+    isArchived: detail?.isArsip ?? detail?.isArchived ?? detail?.is_arsip ?? sirkulasi?.is_arsip ?? false,
     noteText: detail?.noteText ?? detail?.note_text ?? sirkulasi?.note_text ?? '',
   };
 };
 
 const handleToggleFlag = async (
-  type: 'favorit' | 'tindak_lanjut' | 'lock' | 'note',
+  type: 'favorit' | 'tindak_lanjut' | 'lock' | 'note' | 'arsip',
   noteText?: string
 ) => {
   const s = selected.value;
@@ -872,6 +844,7 @@ const handleToggleFlag = async (
     tindak_lanjut: 'isTinjut',
     lock: 'isLocked',
     note: 'isNote',
+    arsip: 'isArchived',
   };
   const flagKey = flagKeyMap[type];
 
@@ -910,6 +883,7 @@ const handleToggleFlag = async (
     tindak_lanjut: ['Ditandai tindak lanjut', 'Tindak lanjut selesai'],
     lock: ['Pesan dikunci', 'Kunci pesan dibuka'],
     note: ['Note ditandai', 'Tanda note dihapus'],
+    arsip: ['Naskah diarsipkan', 'Naskah dikembalikan dari arsip'],
   };
   useToast().add({
     title: 'Berhasil',
@@ -918,7 +892,7 @@ const handleToggleFlag = async (
   });
 
   try {
-    const mailObj = { sirkulasiId: idSirkulasi, ...flagState.value };
+    const mailObj = { sirkulasiId: idSirkulasi, ...flagState.value, isArsip: flagState.value.isArchived };
     await toggleFlag(mailObj, type);
   } catch {
     (flagState.value as any)[flagKey] = !(flagState.value as any)[flagKey];
@@ -1326,7 +1300,7 @@ const selectKonsep = (opt: any) => {
   });
 };
 
-const openDocumentPreview = async (url: string, title = 'Dokumen') => {
+const openDocumentPreview = (url: string, title = 'Dokumen') => {
   if (!url) {
     alert('URL tidak valid.');
     return;
@@ -1334,21 +1308,12 @@ const openDocumentPreview = async (url: string, title = 'Dokumen') => {
   previewTitle.value = title;
   isPreviewOpen.value = true;
   isLocalPdfLoading.value = true;
-  activePdfUrl.value = null;
-  try {
-    const response = await fetch(url);
-    const blob = new Blob([await response.arrayBuffer()], { type: 'application/pdf' });
-    activePdfUrl.value = URL.createObjectURL(blob);
-  } catch {
-    activePdfUrl.value = url;
-  } finally {
-    isLocalPdfLoading.value = false;
-  }
+  activePdfUrl.value = url;
 };
 const openPreviewFile = (file: any) =>
   openDocumentPreview(
     file.file_url || file.fileUrl || file.file_path,
-    file.file_name || file.fileName
+    file.file_name || file.fileName,
   );
 
 const konsepOptions = computed(() => [
@@ -1438,6 +1403,7 @@ const konsepOptions = computed(() => [
                 :is-tinjut="getDetailFlagState(detail, index).isTinjut"
                 :is-locked="getDetailFlagState(detail, index).isLocked"
                 :is-note="getDetailFlagState(detail, index).isNote"
+                :is-archived="getDetailFlagState(detail, index).isArchived"
                 :collapsed="isCardCollapsed(index)"
                 :show-finalize="isKonsepData && index === 0 && showFinalizeActions"
                 :show-edit="isKonsepData && index === 0 && showEditAction"
@@ -1471,6 +1437,7 @@ const konsepOptions = computed(() => [
                 @tindak-lanjut="handleToggleFlag('tindak_lanjut')"
                 @lock="handleToggleFlag('lock')"
                 @catatan="(text) => handleToggleFlag('note', text)"
+                @archive="handleToggleFlag('arsip')"
                 @toggle-collapse="toggleCardCollapse(index)"
               />
             </div>
@@ -1788,7 +1755,6 @@ const konsepOptions = computed(() => [
         :ui="{
           content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
           body: 'p-0',
-          footer: 'p-4 border-t border-gray-200 dark:border-gray-800',
         }"
       >
         <template #body>
@@ -1806,6 +1772,7 @@ const konsepOptions = computed(() => [
               v-if="activePdfUrl"
               :src="activePdfUrl"
               class="w-full h-full border-none flex-1"
+              @load="isLocalPdfLoading = false"
             />
             <div
               v-else-if="!isLocalPdfLoading"

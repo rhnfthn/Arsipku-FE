@@ -94,18 +94,17 @@
             <div class="bg-white p-10 border-b border-gray-100 select-none text-black">
               <div class="border-2 border-black mb-0">
                 <div class="flex border-b-2 border-black">
-                  <div class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black">
+                  <div class="w-2/3 p-4 flex items-center gap-4">
                     <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
                     <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
                   <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
-                    <div class="uppercase">{{ $t('dp_lembar_disposisi') }}</div>
-                    <div class="uppercase">{{ user?.positionText || $t('dp_nama_jabatan') }}</div>
+                    <div class="uppercase">DISPOSISI</div>
                   </div>
                 </div>
 
                 <div class="flex border-b-2 border-black">
-                  <div class="w-[15%] border-r-2 border-black p-2 flex flex-col justify-between">
+                  <div class="w-[20%] border-r-2 border-black p-2 flex flex-col justify-between">
                     <div class="font-bold underline mb-4 uppercase">{{ $t('f_agenda') }}</div>
                     <div class="text-xs font-bold space-y-2">
                       <div>{{ $t('dp_no') }}: ........</div>
@@ -113,7 +112,7 @@
                     </div>
                   </div>
 
-                  <div class="w-[55%] border-r-2 border-black p-2 text-xs">
+                  <div class="w-[50%] border-r-2 border-black p-2 text-xs">
                     <table class="w-full">
                       <tbody>
                         <tr>
@@ -151,9 +150,11 @@
 
                 <div class="border-b-2 border-black p-2 text-xs">
                   <div class="font-bold underline mb-1">{{ $t('f_kepada_yth') }} :</div>
-                  <div v-if="selectedTertuju.length > 0" class="pl-4">
-                    <ol class="list-decimal ml-4">
-                      <li v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</li>
+                  <div v-if="previewDispositionRecipients.length > 0" class="pl-4">
+                    <ol :class="previewDispositionRecipients.length > 1 ? 'list-decimal ml-4' : 'list-none'">
+                      <li v-for="(recipient, index) in previewDispositionRecipients" :key="`${index}-${recipient}`">
+                        {{ recipient }}
+                      </li>
                     </ol>
                   </div>
                   <div v-else class="pl-4 italic text-gray-500">
@@ -182,14 +183,14 @@
                     </div>
                     <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
-                  <div class="absolute bottom-4 left-4 z-10 pointer-events-none">
+                  <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
                       {{ $t('dp_paraf') }}
                     </div>
                   </div>
                 </div>
-                <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
+                <div class="border-t-2 border-black p-1 text-[10px] font-bold text-left bg-gray-50">
                   {{ $t('dp_footer_disposisi') }}
                 </div>
               </div>
@@ -248,7 +249,7 @@ const { t } = useI18n();
 const { user, getProfile, hasPermission } = useAuth();
 const { canAccessPage } = useFeatureAccess();
 const { getRecipients, sendDisposisi, saveDraft: saveDI, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
-const { renderedPositionLabel } = useDelegationMode();
+const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 
 const { getConfigDigsig } = useDigsig();
 const { getTteMode } = useTtePortal();
@@ -275,6 +276,7 @@ const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
 const isPriority = ref(false);
 const refNumber = ref("-");
 const refPerihal = ref("-");
+const dispositionUnit = ref("");
 const recipientList = ref<any[]>([]);
 const selectedChecklist = ref<string[]>([]);
 
@@ -308,10 +310,45 @@ const checklistOptions = [
 ];
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || t('dp_nama_lengkap'),
+  name: toTitleCase(renderedActorName.value) || t('dp_nama_lengkap'),
   role: renderedPositionLabel.value || t('dp_jabatan'),
   label: t('dp_ditandatangani_digital')
 }));
+
+const defaultDisposisiPerihal = () => {
+  const unit = String(
+    dispositionUnit.value || user.value?.abbreviation || user.value?.subAreaText || user.value?.organizationText || ''
+  ).trim();
+  return unit ? `Disposisi ${unit}` : 'Disposisi';
+};
+
+const normalizeRefPerihal = (value: unknown) => {
+  const text = String(value ?? '').trim();
+  return text && text !== '-' ? text : defaultDisposisiPerihal();
+};
+
+const disposisiRecipientDisplay = (item: any) => {
+  const raw = item?.raw?.raw ?? item?.raw ?? item;
+  if (Number(raw?.chief) === 0) {
+    return raw?.persnum_person_text || raw?.nama || item?.label || '-';
+  }
+  const position = raw?.position_text || raw?.positionText || item?.labelJob || item?.label || '-';
+  const abbreviation = String(
+    raw?.position_abbreviation || raw?.abbreviation || raw?.abbrivation || '',
+  ).trim().toUpperCase();
+  const isGeneralManager = abbreviation === 'GM' || /\bgeneral manager\b/i.test(position);
+  if (!isGeneralManager) return position;
+
+  const name = raw?.persnum_person_text || raw?.nama || '';
+  const location = raw?.sub_area_text || raw?.subAreaText || raw?.area_text || raw?.areaText || '';
+  return [name, position, location].filter(Boolean).join(' - ');
+};
+
+const previewDispositionRecipients = computed(() =>
+  selectedTertuju.value
+    .map(disposisiRecipientDisplay)
+    .sort((a, b) => a.localeCompare(b, 'id')),
+);
 
 const showEditor = computed(() => selectedChecklist.value.includes("Lainnya"));
 
@@ -353,7 +390,7 @@ const validateAndToast = (payload: DisposisiPayload) => {
 const getBasePayload = (): DisposisiPayload => ({
   id_naskah: editDraftId.value || null,
   pengirim: renderedPositionLabel.value || user.value?.positionText || "",
-  penandatangan: user.value?.nama || "",
+  penandatangan: renderedActorName.value || "",
   tertuju: selectedTertuju.value.map(i => i.value),
   tanggal_disposisi: tglDb.value,
   tanggal_ui: tglDisplay.value,
@@ -557,9 +594,17 @@ onMounted(async () => {
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
+  refPerihal.value = normalizeRefPerihal(refPerihal.value);
 
   try {
     const res = await getRecipients(user.value?.position);
+    dispositionUnit.value = String(
+      res?.sender?.organization_abbreviation ||
+      res?.sender?.sub_area_abbreviation ||
+      res?.sender?.position_abbreviation ||
+      ''
+    ).trim();
+    refPerihal.value = normalizeRefPerihal(refPerihal.value);
     recipientList.value = (res.recipients || []).map((r: any) => ({
       label: r.label || r.nama,
       labelJob: r.labelJob || r.positionText || r.position_text,
@@ -575,7 +620,7 @@ onMounted(async () => {
       if (resDraft.data?.flow?.[0]) {
         const d = resDraft.data.flow[0];
         refNumber.value = d.ref_nomor || d.nomor || "-";
-        refPerihal.value = d.ref_perihal || d.perihal || "-";
+        refPerihal.value = normalizeRefPerihal(d.ref_perihal || d.perihal);
         isPriority.value = d.is_priority === true || d.is_priority === 1 || String(d.is_priority) === "1";
 
         if (d.tanggal) setDateFromString(d.tanggal);

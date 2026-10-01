@@ -7,7 +7,7 @@
 
     <div class="flex flex-wrap gap-1 w-full items-center min-w-0">
       <USelectMenu v-model="model" :items="computedItems" value-key="id" label-key="searchLabel" variant="none"
-        class="w-full" searchable :content="({ class: 'max-h-[380px]' } as any)"
+        class="w-full" searchable :content="({ class: 'max-h-[380px] w-[min(60vw,64rem)] max-w-[calc(100vw-2rem)]' } as any)"
         :search-attributes="['searchLabel']" :placeholder="$t('f_pilih_klasifikasi')"
         :search-input="{ placeholder: $t('f_cari_klasifikasi') }" :ui="{
           base: '!px-0 !bg-transparent w-full dark:text-white',
@@ -33,7 +33,7 @@
             >
               {{ item.klasifikasi }} - {{ item.klasifikasi_text }}
             </span>
-            <span v-if="item.deskripsi" class="text-xs text-gray-500 block w-full truncate mt-0.5">
+            <span v-if="item.deskripsi" class="text-xs text-gray-500 dark:text-gray-400 block w-full mt-0.5 whitespace-normal break-words [overflow-wrap:anywhere] leading-relaxed">
               {{ item.deskripsi }}
             </span>
           </div>
