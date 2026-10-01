@@ -68,5 +68,4 @@ export function useNaskahShareCounts() {
     totalBadge,
     fetchCounts,
     clearUnreadBadge,
-  };
-}
+  };}

@@ -115,7 +115,7 @@ const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '#' },
   { label: 'Penggunaan', to: '#' },
   { label: 'Pemberian', to: '/kelola/penggunaan/pemberian' },
-  { label: berkasDetail.value?.judul_berkas || 'Berkas', to: '#' },
+  { label: berkasDetail.value?.judul_berkas || berkasDetail.value?.judulBerkas || 'Berkas', to: '#' },
 ]);
 
 const formatDate = (dateStr: string | null) => {
@@ -133,9 +133,9 @@ const columns = [
 
 const loadAll = async () => {
   try {
-    // 1. Fetch usulan detail untuk dapat selectedBerkas
+    // 1. Fetch usulan detail untuk dapat selected_berkas
     await fetchDetail(usulanId.value);
-    const items = (usulanDetail.value as any)?.selectedBerkas || [];
+    const items = (usulanDetail.value as any)?.selected_berkas || [];
     if (items.length === 0) {
       toast.add({ title: 'Tidak Ada Berkas', description: 'Usulan ini belum memiliki berkas.', color: 'error' });
       return;
@@ -246,7 +246,7 @@ onBeforeUnmount(() => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader
-        :title="berkasDetail?.judul_berkas || 'Berkas yang Diberikan'"
+        :title="berkasDetail?.judul_berkas || berkasDetail?.judulBerkas || 'Berkas yang Diberikan'"
         :items="breadcrumbs"
       />
       <button
@@ -324,11 +324,11 @@ onBeforeUnmount(() => {
         <dl class="grid grid-cols-1 gap-x-8 px-5 sm:grid-cols-2">
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <FileText class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judul_berkas }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Berkas</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.judul_berkas || berkasDetail.judulBerkas || '-' }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Folder class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Kode/Klasifikasi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasi }} — {{ berkasDetail.klasifikasi_teks }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Kode/Klasifikasi</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ berkasDetail.klasifikasi }} — {{ berkasDetail.klasifikasi_teks || berkasDetail.klasifikasiTeks || '-' }}</dd></div>
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Building2 class="mt-0.5 h-4 w-4 text-gray-500" />
@@ -344,7 +344,10 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex items-start gap-3 border-b border-gray-100 py-4 dark:border-gray-700">
             <Clock class="mt-0.5 h-4 w-4 text-gray-500" />
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(berkasDetail.tanggal_mulai) }} — {{ formatDate(berkasDetail.tanggal_selesai) }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
+              <span v-if="berkasDetail.tanggal_mulai">{{ formatDate(berkasDetail.tanggal_mulai) }} — {{ formatDate(berkasDetail.tanggal_selesai) }}</span>
+              <span v-else class="italic text-gray-500">Menunggu Persetujuan</span>
+            </dd></div>
           </div>
         </dl>
         <div v-if="berkasDetail.tujuan_akses" class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
@@ -447,7 +450,12 @@ onBeforeUnmount(() => {
         />
       </div>
     </template>
-
+    
+    <div v-else-if="!pending" class="mt-5 flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-12 px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 text-center">
+      <Folder class="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white">Tidak Ada Berkas</h3>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Usulan ini belum memiliki berkas yang diberikan atau belum disetujui.</p>
+    </div>
     <!-- Export Column Modal -->
     <ExportColumnModal
       v-model="showExportModal"

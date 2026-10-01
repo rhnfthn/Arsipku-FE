@@ -108,7 +108,7 @@
             <div class="flex items-center flex-1 w-full gap-2">
               <input type="text" v-model="refPerihal"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
-                placeholder="Ketik Ref. Perihal" readonly />
+                placeholder="Ketik Ref. Perihal" />
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@
           :items="recipientList" />
 
         <div class="flex flex-col py-3 gap-3 mb-6">
-          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Instruksi / Disposisi</span>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Disposisi</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div v-for="opt in checklistOptions" :key="opt" class="flex gap-2 items-start group">
               <input type="checkbox" :id="opt" :value="opt" v-model="selectedChecklist"
@@ -136,18 +136,17 @@
             <div class="bg-white p-10 border-b border-gray-100 select-none text-black">
               <div class="border-2 border-black mb-0">
                 <div class="flex border-b-2 border-black">
-                  <div class="w-2/3 p-4 flex items-center gap-4 border-r-2 border-black">
+                  <div class="w-2/3 p-4 flex items-center gap-4">
                     <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
                     <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
                   <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
-                    <div>LEMBAR DISPOSISI</div>
-                    <div class="uppercase">{{ user?.positionText || "NAMA JABATAN" }}</div>
+                    <div>DISPOSISI</div>
                   </div>
                 </div>
 
                 <div class="flex border-b-2 border-black">
-                  <div class="w-[15%] border-r-2 border-black p-2 flex flex-col justify-between">
+                  <div class="w-[20%] border-r-2 border-black p-2 flex flex-col justify-between">
                     <div class="font-bold underline mb-4">AGENDA</div>
                     <div class="text-xs font-bold space-y-2">
                       <div>No: ........</div>
@@ -155,7 +154,7 @@
                     </div>
                   </div>
 
-                  <div class="w-[55%] border-r-2 border-black p-2 text-xs">
+                  <div class="w-[50%] border-r-2 border-black p-2 text-xs">
                     <table class="w-full">
                       <tbody>
                         <tr>
@@ -194,8 +193,8 @@
                 <div class="border-b-2 border-black p-2 text-xs">
                   <div class="font-bold underline mb-1">Kepada Yth. :</div>
                   <div v-if="selectedTertuju.length > 0" class="pl-4">
-                    <ol class="list-decimal ml-4">
-                      <li v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</li>
+                    <ol :class="selectedTertuju.length > 1 ? 'list-decimal ml-4' : 'list-none'">
+                      <li v-for="t in selectedTertuju" :key="t.value">{{ disposisiRecipientDisplay(t) }}</li>
                     </ol>
                   </div>
                   <div v-else class="pl-4 italic text-gray-500">
@@ -221,14 +220,14 @@
                   <div class="relative" v-if="showEditor" ref="editorContainerRef">
                     <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
                   </div>
-                  <div class="absolute bottom-4 left-4 z-10 pointer-events-none">
+                  <div class="absolute bottom-4 right-4 z-10 pointer-events-none">
                     <div
                       class="border-2 border-black w-24 h-16 flex items-center justify-center font-bold text-xs bg-white/50">
                       Paraf
                     </div>
                   </div>
                 </div>
-                <div class="border-t-2 border-black p-1 text-[10px] font-bold text-center bg-gray-50">
+                <div class="border-t-2 border-black p-1 text-[10px] font-bold text-left bg-gray-50">
                   Lembar disposisi ini menjadi bagian yang tidak terpisahkan dari nomor dan tanggal surat pada agenda
                   ini.
                 </div>
@@ -280,7 +279,7 @@ import { Alert } from "@/composables/useAlert";
 import TulisInputLampiran from "@/components/Tulis/InputLampiranAsync.vue";
 import TulisDigsigPassphraseModal from "@/components/Tulis/DigsigPassphraseModalAsync.vue";
 
-definePageMeta({ middleware: "auth" });
+definePageMeta({ middleware: ["auth", "tulis-access"] });
 
 const editorContainerRef = ref<HTMLElement | null>(null);
 const route = useRoute();
@@ -321,6 +320,7 @@ const selectedSifat = ref<any>(null);
 const isPriority = ref(false);
 const refNumber = ref("-");
 const refPerihal = ref("-");
+const dispositionUnit = ref("");
 
 const recipientList = ref<any[]>([]);
 const selectedTertuju = ref<any[]>([]);
@@ -345,7 +345,7 @@ const { getTteMode } = useTtePortal()
 const alertState = useAlertState();
 
 const signerInfo = computed(() => ({
-  name: toTitleCase(user.value?.nama) || 'Nama Lengkap',
+  name: toTitleCase(formatDelegatedActorName(user.value?.nama, user.value?.position_status)) || 'Nama Lengkap',
   role: user.value?.positionText || 'Jabatan',
   label: 'Ditandatangani secara digital oleh'
 }));
@@ -385,6 +385,33 @@ const formattedDate = computed(() => {
   const jsDate = new Date(date.value.year, date.value.month - 1, date.value.day);
   return jsDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 });
+
+const defaultDisposisiPerihal = () => {
+  const unit = String(
+    dispositionUnit.value || user.value?.abbreviation || user.value?.subAreaText || user.value?.organizationText || ''
+  ).trim();
+  return unit ? `Disposisi ${unit}` : 'Disposisi';
+};
+
+const normalizeRefPerihal = (value: unknown) => {
+  const text = String(value ?? '').trim();
+  return text && text !== '-' ? text : defaultDisposisiPerihal();
+};
+
+const disposisiRecipientDisplay = (item: any) => {
+  const raw = item?.raw?.raw ?? item?.raw ?? item;
+  if (Number(raw?.chief) === 0) {
+    return raw?.persnum_person_text || raw?.nama || item?.label || '-';
+  }
+  const position = raw?.position_text || raw?.positionText || item?.labelJob || item?.label || '-';
+  const abbreviation = String(raw?.abbreviation || raw?.abbrivation || '').trim().toUpperCase();
+  const isGeneralManager = abbreviation === 'GM' || /\bgeneral manager\b/i.test(position);
+  if (!isGeneralManager) return position;
+
+  const name = raw?.persnum_person_text || raw?.nama || '';
+  const location = raw?.sub_area_text || raw?.subAreaText || raw?.area_text || raw?.areaText || '';
+  return [name, position, location].filter(Boolean).join(' - ');
+};
 
 const formatDateRef = (v: string) => {
   if (!v) return "-";
@@ -706,9 +733,17 @@ onMounted(async () => {
   isLoadingData.value = true;
 
   if (!user.value) await getProfile();
+  refPerihal.value = normalizeRefPerihal(refPerihal.value);
 
   try {
     const res = await getRecipients(user.value?.position);
+    dispositionUnit.value = String(
+      res?.sender?.organization_abbreviation ||
+      res?.sender?.sub_area_abbreviation ||
+      res?.sender?.position_abbreviation ||
+      ''
+    ).trim();
+    refPerihal.value = normalizeRefPerihal(refPerihal.value);
     recipientList.value = res.recipients;
 
     // Load referensi dari ref_id di URL
@@ -726,7 +761,7 @@ onMounted(async () => {
           const firstRef = refDetail.value;
           // Auto-fill ref nomor dan perihal dari data referensi
           refNumber.value = firstRef?.nomor || "-";
-          refPerihal.value = firstRef?.perihal || firstRef?.ref_perihal || "-";
+          refPerihal.value = normalizeRefPerihal(firstRef?.perihal || firstRef?.ref_perihal);
           refPdfUrl.value = firstRef?.final_pdf_url || "";
         }
       } catch (refErr) {
@@ -752,14 +787,14 @@ onMounted(async () => {
           perihal: reference.ref_perihal
         }];
         refNumber.value = reference.ref_nomor || refNumber.value;
-        refPerihal.value = reference.ref_perihal || refPerihal.value;
+        refPerihal.value = normalizeRefPerihal(reference.ref_perihal || refPerihal.value);
       }
 
       if (resDraft.data && resDraft.data.flow && resDraft.data.flow.length > 0) {
         const d = resDraft.data.flow[0];
 
         refNumber.value = d.ref_nomor || d.nomor || refNumber.value;
-        refPerihal.value = d.ref_perihal || d.perihal || refPerihal.value;
+        refPerihal.value = normalizeRefPerihal(d.ref_perihal || d.perihal || refPerihal.value);
         isPriority.value = d.is_priority === true || d.is_priority === 1 || String(d.is_priority) === "1";
 
         if (d.tanggal) {

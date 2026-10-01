@@ -1527,7 +1527,7 @@ onUnmounted(() => {
                       <div
                         class="text-[11px] text-neutral-400 dark:text-gray-500 flex items-center gap-2 mt-0.5"
                       >
-                        <span class="font-mono truncate">{{ mail.nomor }}</span>
+                        <span v-if="mail.category !== 'K'" class="font-mono truncate">{{ mail.nomor }}</span>
                         <span
                           v-if="mail.is_priority"
                           class="flex items-center gap-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 dark:border-red-800 transition-colors"
