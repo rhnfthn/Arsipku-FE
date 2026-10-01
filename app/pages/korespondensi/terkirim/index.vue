@@ -1670,7 +1670,7 @@ onUnmounted(() => {
                       <div
                         class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 flex items-center gap-2 truncate"
                       >
-                        <span class="truncate">{{ mail.body }}</span>
+                        <span v-if="mail.category !== 'K'" class="truncate">{{ mail.body }}</span>
                         <span
                           v-if="mail.is_priority"
                           class="flex items-center gap-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-sm text-[9px] font-bold border border-red-200 dark:border-red-800 shrink-0"

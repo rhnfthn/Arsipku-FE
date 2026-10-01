@@ -20,7 +20,7 @@
         target="_blank"
         class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors"
       >
-        <UIcon name="i-lucide-download" class="w-4 h-4" /> Download PDF
+        <UIcon name="i-lucide-download" class="w-4 h-4" /> Unduh PDF
       </a>
     </div>
     <p v-if="usulan.beritaAcaraNomor" class="text-sm text-gray-700 dark:text-gray-300 mt-3">

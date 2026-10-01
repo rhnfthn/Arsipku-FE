@@ -48,7 +48,7 @@
               class="w-7 h-7 rounded-full object-cover shrink-0" />
             <div class="flex-1 min-w-0">
               <span class="block text-sm text-left truncate w-full">
-                {{ item.label }}
+                {{ formatInternalRecipientLabel(item) }}
               </span>
               <span v-if="item.disabled" class="text-xs text-red-500 italic block">
                 {{ disabledMessage }}
@@ -64,7 +64,7 @@
               <img v-if="item.image" :src="item.image" :alt="item.label"
                 class="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
               <span class="text-xs font-medium text-left truncate">
-                {{ item.label }}
+                {{ formatInternalRecipientLabel(item) }}
               </span>
               <UTooltip v-if="isMandatoryCc(item)" :text="routingT('mandatoryHint')">
                 <span tabindex="0" :aria-label="routingT('cc')" class="inline-flex items-center gap-1 px-1">
@@ -105,6 +105,8 @@ const props = defineProps<{
   disabledMessage?: string;
   /** Kunci tembusan wajib — hanya aktif di field Tembusan. Default false. */
   lockMandatoryCc?: boolean;
+  /** Tujuan pemakaian grup. Jika kosong, diturunkan dari label field. */
+  recipientType?: 'PENERIMA' | 'TEMBUSAN';
 }>();
 
 const model = defineModel<any[]>({ default: [] });
@@ -142,6 +144,53 @@ const routingMeta = (item: any) => ({
   routing_source: item.routing_source ?? item.raw?.routing_source,
   routing_mandatory: item.routing_mandatory ?? item.raw?.routing_mandatory,
 });
+
+const capitalizeWords = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('id-ID')
+    .replace(/(^|[\s/.-])\p{L}/gu, (letter) => letter.toLocaleUpperCase('id-ID'));
+
+const isSupervisoryBoard = (item: any) => {
+  const raw = item?.raw?.raw ?? item?.raw ?? item;
+  const identity = [
+    raw?.position_text,
+    raw?.positionText,
+    raw?.jabatan,
+    raw?.organization_text,
+    item?.labelJob,
+    item?.label,
+  ].filter(Boolean).join(' ').toLocaleLowerCase('id-ID');
+  return identity.includes('dewan pengawas');
+};
+
+const formatInternalRecipientLabel = (item: any) => {
+  const raw = item?.raw?.raw ?? item?.raw ?? item;
+  const positionText = formatDelegatedPosition(
+    raw?.position_text ?? raw?.positionText ?? item?.labelJob,
+    raw?.position_status ?? raw?.positionStatus,
+  );
+  if (!positionText) return item.label;
+
+  const name = raw?.persnum_person_text ?? raw?.nama ?? raw?.name;
+  const abbreviation = raw?.position_abbreviation ?? raw?.abbreviation ?? raw?.abbrivation;
+  if (!name) return capitalizeWords(positionText);
+
+  const isGeneralManager =
+    String(abbreviation || '').trim().toUpperCase() === 'GM' ||
+    /\bgeneral manager\b/i.test(String(positionText));
+  const location = isGeneralManager
+    ? raw?.sub_area_text ?? raw?.subAreaText ?? raw?.area_text ?? raw?.areaText
+    : null;
+
+  return [
+    capitalizeWords(name),
+    '-',
+    abbreviation ? `(${String(abbreviation).toUpperCase()})` : '',
+    capitalizeWords(positionText),
+    location ? `- ${capitalizeWords(location)}` : '',
+  ].filter(Boolean).join(' ');
+};
 // Tembusan wajib hanya terkunci pada field Tembusan (lockMandatoryCc). Di
 // field Tertuju item tersebut tetap bisa dipilih dan dihapus secara normal.
 const isMandatoryCc = (item: any) =>
@@ -153,7 +202,7 @@ const processedPeople = computed(() => {
     .filter(m => m.isGroup)
     .flatMap(g => g.raw.details?.map((d: any) => String(d.position)) || []);
 
-  return props.items.map((item) => {
+  return props.items.filter((item) => !isSupervisoryBoard(item)).map((item) => {
     const isExcluded = props.excludeItems?.some((ex) => ex.value === item.value);
     // Disabled jika: Ada di list lawan (excludeItems) ATAU grupnya sudah dipilih di input ini
     const isDisabled = isExcluded || selectedGroupMemberIds.includes(String(item.value));
@@ -164,6 +213,7 @@ const processedPeople = computed(() => {
 
     return {
       ...item,
+      label: formatInternalRecipientLabel(item),
       type: 'person',
       disabled: isDisabled,
       ...(meta.routing_source ? { routing_source: meta.routing_source } : {}),
@@ -185,12 +235,23 @@ const configuredPeople = computed(() =>
 const processedGroups = computed(() => {
   if (!props.groups) return [];
 
+  const recipientType =
+    props.recipientType ??
+    (/tembusan/i.test(props.label) ? 'TEMBUSAN' : 'PENERIMA');
+
   // Ambil ID semua individu yang sudah dipilih secara manual di input ini
   const selectedIndividualIds = model.value
     .filter(m => !m.isGroup)
     .map(m => String(m.value));
 
-  return props.groups.map(g => {
+  return props.groups
+    .filter(
+      (g) =>
+        !Array.isArray(g.tujuan) ||
+        g.tujuan.length === 0 ||
+        g.tujuan.includes(recipientType),
+    )
+    .map(g => {
     const groupValue = `GROUP_${g.id}`;
     const groupMemberIds = g.details?.map((d: any) => String(d.position)) || [];
 
@@ -212,7 +273,7 @@ const processedGroups = computed(() => {
       raw: g,
       disabled: isExcluded || hasSelectedMemberInSelf // Tambahkan pengecekan mandiri
     };
-  });
+    });
 });
 
 // Handle Klik Grup
