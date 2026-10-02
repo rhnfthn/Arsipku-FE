@@ -2,6 +2,7 @@ export type CorrespondenceDocumentType = 'ND' | 'SDI' | 'SDE' | 'DI' | 'KA';
 
 export interface CorrespondenceRoutingCapabilities {
   feature_enabled: boolean;
+  access_feature_enabled: boolean;
   can_create_sdi: boolean;
   matched_role_codes: string[];
   matched_rule_ids: string[];
@@ -17,6 +18,7 @@ export interface CorrespondenceRoutingCapabilities {
 
 const defaultCapabilities = (): CorrespondenceRoutingCapabilities => ({
   feature_enabled: false,
+  access_feature_enabled: false,
   can_create_sdi: false,
   matched_role_codes: [],
   matched_rule_ids: [],
@@ -78,6 +80,7 @@ export const useCorrespondenceRoutingAccess = () => {
         if (`${latestCompany}:${latestPosition}` !== cacheKey) return capabilities.value;
         capabilities.value = {
           feature_enabled: data?.feature_enabled === true,
+          access_feature_enabled: data?.access_feature_enabled === true,
           can_create_sdi: data?.can_create_sdi === true,
           matched_role_codes: Array.isArray(data?.matched_role_codes)
             ? data.matched_role_codes
