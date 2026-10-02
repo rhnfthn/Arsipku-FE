@@ -204,7 +204,7 @@
                     <button
                       v-if="item.finalPdf"
                       class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
-                      title="Download PDF"
+                      title="Unduh PDF"
                       @click="downloadPdf(item)"
                     >
                       <UIcon name="i-lucide-download" class="size-4" />

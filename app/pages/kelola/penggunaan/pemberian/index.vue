@@ -10,6 +10,7 @@ import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAkses
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { extractErrorMessage } from '~/utils/error-helper';
+import { getAksesProgressPercent, getAksesProgressBarClass, getAksesProgressLabel } from '~/utils/akses-progress';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
@@ -79,7 +80,9 @@ const filteredEntitlements = computed(() => {
         (e.judul_usulan || '').toLowerCase().includes(q) ||
         (e.nomor_usulan_terbaru || '').toLowerCase().includes(q) ||
         (e.divisi_pemberi_nama || '').toLowerCase().includes(q) ||
-        (e.judul_berkas || '').toLowerCase().includes(q),
+        (e.berkas_list || []).some((b: any) =>
+          (b.judul_berkas || '').toLowerCase().includes(q),
+        ),
     );
   }
   // Sort
@@ -208,20 +211,26 @@ watch(filterStatus, () => { currentPage.value = 1; });
 watch(itemsPerPage, () => { currentPage.value = 1; });
 
 const goToDetail = (row: any) => {
-  // Ambil usulanId pertama dari daftar usulan yang terkait berkas ini
-  const usulanId = row?.usulan_ids?.[0];
+  // Kontrak baru: 1 baris = 1 usulan (berkas_list berisi semua berkas).
+  // Masuk ke halaman detail usulan — pemilihan berkas ada di dalamnya.
+  const usulanId = row?.usulan_id;
   if (!usulanId) {
-    toast.add({ title: 'Error', description: 'Usulan tidak ditemukan untuk berkas ini', color: 'error' });
+    toast.add({ title: 'Error', description: 'Usulan tidak ditemukan', color: 'error' });
     return;
   }
-  // Tandai berkas sebagai sudah dibaca (isRead=true) + update badge sidebar
-  if (row?.berkas_id && !row?.is_read) {
+  // Tandai semua berkas dalam usulan sebagai sudah dibaca + update badge sidebar
+  if (row?.berkas_ids?.length && !row?.is_read) {
     row.is_read = true; // optimistic UI
-    markBerkasRead(row.berkas_id);
+    row.berkas_ids.forEach((berkasId: string) => markBerkasRead(berkasId));
     fetchCounts(true);
   }
-  // Langsung ke halaman berkas (table naskah), bukan usulan detail
-  navigateTo(`/kelola/penggunaan/pemberian/${usulanId}/berkas`);
+  // Buka berkas pertama sebagai default — selector berkas ada di halaman detail
+  const firstBerkasId = row?.berkas_ids?.[0];
+  navigateTo(
+    firstBerkasId
+      ? `/kelola/penggunaan/pemberian/${usulanId}/berkas?berkas_id=${firstBerkasId}`
+      : `/kelola/penggunaan/pemberian/${usulanId}`,
+  );
 };
 
 const formatDate = (dateStr: string) => {
@@ -266,28 +275,12 @@ function handleDocumentClick(e: MouseEvent) {
 }
 
 // ── Progress bar ──
-const getProgressPercent = (row: any): number => {
-  if (!row.tanggal_mulai || !row.tanggal_selesai) return 0;
-  const mulai = new Date(row.tanggal_mulai).getTime();
-  const selesai = new Date(row.tanggal_selesai).getTime();
-  const now = Date.now();
-  if (now <= mulai) return 0;
-  if (now >= selesai) return 100;
-  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
-};
+// Logika bersama di utils/akses-progress.ts (basis hari kalender).
+const getProgressPercent = (row: any): number => getAksesProgressPercent(row);
 
-const getProgressBarClass = (percent: number): string => {
-  if (percent < 50) return 'bg-green-500';
-  if (percent < 80) return 'bg-yellow-500';
-  return 'bg-red-500';
-};
+const getProgressBarClass = (percent: number): string => getAksesProgressBarClass(percent);
 
-const getProgressLabel = (row: any): string => {
-  if (!row.tanggal_selesai) return '-';
-  const sisa = Math.ceil((new Date(row.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (sisa <= 0) return 'Habis';
-  return `${sisa} hari`;
-};
+const getProgressLabel = (row: any): string => getAksesProgressLabel(row);
 
 // ── Columns ──
 // Urutan: Tanggal, Nomor Usulan, Divisi Pemberi, Jenis Berkas, Judul Usulan, Progress, Aksi

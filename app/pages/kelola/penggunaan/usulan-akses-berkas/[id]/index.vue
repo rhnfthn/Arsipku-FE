@@ -272,10 +272,13 @@ const onSelectVerifikatorPemberi = (value: any) => {
 const loadBerkasEligible = async () => {
   berkasLoading.value = true;
   try {
-    // Tampilkan berkas berstatus closed_retensi_aktif (tertutup).
-    // Untuk jenisBerkas AKTIF: BE filter hanya berkas milik divisi pemberi.
-    // Untuk jenisBerkas INAKTIF: semua berkas tertutup (tidak filter unit).
-    const status = 'closed_retensi_aktif';
+    // Status per jenis + scope per-user (mirror halaman Pemberkasan, di-filter BE):
+    // - AKTIF → closed_retensi_aktif (Tertutup)
+    // - INAKTIF → retensi_inaktif (arsip inaktif milik SE TU yang login)
+    const status =
+      usulanDetail.value?.jenis_berkas === 'INAKTIF'
+        ? 'retensi_inaktif'
+        : 'closed_retensi_aktif';
     const jenisBerkas = usulanDetail.value?.jenis_berkas;
     const divisiPemberiId = Number(usulanDetail.value?.divisi_pemberi_id);
     berkasEligibleList.value = await fetchBerkasEligible(
@@ -1391,17 +1394,20 @@ onBeforeUnmount(() => {
                     <span>{{ b.klasifikasi_teks || '-' }}</span>
                   </p>
                 </div>
-                <!-- Tombol buka naskah — tampil jika berkas sudah dipilih
-                 (status selain sebelum pemilihan berkas) -->
+                <!-- Tombol buka berkas — tampil jika berkas sudah dipilih
+                 (status selain sebelum pemilihan berkas).
+                 Masuk ke halaman detail berkas (sama seperti alur penerima).
+                 Pertahankan query from=verifikasi agar menu drawer tetap
+                 menandai "Verifikasi Usulan" (bukan Pemberian). -->
                 <button
                   v-if="isBerkasViewable"
                   type="button"
-                  @click="navigateTo(`/kelola/penggunaan/pemberian/${usulanDetail.id}/berkas`)"
-                  class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30"
-                  title="Lihat naskah di berkas ini"
+                  @click="navigateTo(`/kelola/penggunaan/pemberian/${usulanDetail.id}/berkas?berkas_id=${b.berkas_id}${route.query.from === 'verifikasi' ? '&from=verifikasi' : ''}`)"
+                  class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md border border-primary-200 bg-primary-50 px-2.5 py-1.5 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+                  title="Buka berkas ini"
                 >
-                  <UIcon name="i-lucide-file-text" class="size-4" />
-                  <span class="hidden sm:inline">Naskah</span>
+                  <UIcon name="i-lucide-folder-open" class="size-4" />
+                  <span class="hidden sm:inline">Buka Berkas</span>
                 </button>
               </div>
             </div>

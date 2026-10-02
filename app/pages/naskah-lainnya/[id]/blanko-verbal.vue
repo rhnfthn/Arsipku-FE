@@ -1086,10 +1086,6 @@ onMounted(async () => {
                   >
                     Ditetapkan/Disahkan Oleh
                   </h4>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Aktif setelah seluruh Diketahui Oleh menyetujui. Persetujuan sekaligus
-                    menandatangani blanko verbal dan naskah final.
-                  </p>
                   <DireksiApprovalProgress
                     :directors="bvDitetapkanDirectors"
                     :is-current-user-approver="isCurrentUserApprover"

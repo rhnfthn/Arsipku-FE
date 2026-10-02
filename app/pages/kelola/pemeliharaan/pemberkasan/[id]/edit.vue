@@ -463,25 +463,30 @@ const statusBadgeColor = computed(() => {
 const klasifikasiSelected = computed(() =>
   klasifikasiList.value.find((k: any) => k.klasifikasi === form.klasifikasi)
 );
-// Parent klasifikasi (kode tanpa ".") di-disable & ditampilkan sebagai group header,
-// menyamankan perilaku dengan form klasifikasi di halaman tulis & tambah berkas.
-const klasifikasiItems = computed(() =>
-  [...klasifikasiList.value]
-    .sort((a: any, b: any) => String(a.klasifikasi).localeCompare(String(b.klasifikasi)))
-    .map((item: any) => {
-      const isParent = !String(item.klasifikasi).includes('.');
-      return {
-        ...item,
-        searchLabel: item.search_text || [
-          item.klasifikasi,
-          item.klasifikasi_text,
-          item.deskripsi,
-        ].filter(Boolean).join(' '),
-        isParent,
-        disabled: isParent,
-      };
-    })
-);
+// Parent klasifikasi (punya child) di-disable & ditampilkan sebagai group header,
+// menyamakan perilaku dengan form klasifikasi di halaman tulis & tambah berkas.
+const klasifikasiItems = computed(() => {
+  const sorted = [...klasifikasiList.value].sort((a: any, b: any) =>
+    String(a.klasifikasi).localeCompare(String(b.klasifikasi))
+  );
+  const childIds = new Set(
+    sorted.map((item: any) => item.id_parent).filter((pid: any) => !!pid)
+  );
+  return sorted.map((item: any) => {
+    const isParent = childIds.has(item.id);
+    const selectable = !isParent && Number(item.is_select ?? 1) === 1;
+    return {
+      ...item,
+      searchLabel: item.search_text || [
+        item.klasifikasi,
+        item.klasifikasi_text,
+        item.deskripsi,
+      ].filter(Boolean).join(' '),
+      isParent,
+      disabled: !selectable,
+    };
+  });
+});
 const retensiLabel = computed(() =>
   selectedRetensiAktif.value || selectedRetensiInaktif.value
     ? `${selectedRetensiAktif.value}A / ${selectedRetensiInaktif.value}I`
