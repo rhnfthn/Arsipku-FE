@@ -11,6 +11,7 @@ import { useAuth } from '~/composables/useAuth';
 import { StatusUsulan, Keputusan } from '~/types/usulan-akses-berkas';
 import VerifyActionModal from '~/components/usulan-akses-berkas/VerifyActionModal.vue';
 import { extractErrorMessage } from '~/utils/error-helper';
+import { getAksesProgressPercent, getAksesProgressBarClass, getAksesProgressLabel } from '~/utils/akses-progress';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
@@ -214,35 +215,12 @@ const columns = [
 ];
 
 // ── Progress bar: durasi akses yang sudah diterbitkan ────────────
-// Bar merepresentasikan waktu yang sudah berlalu dari tanggalMulai ke tanggalSelesai.
-// 0% = baru mulai, 100% = sudah habis.
-// Warna: hijau (0-50%), kuning (50-80%), merah (80-100%)
-const getProgressPercent = (row: any): number => {
-  if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return 0;
-  if (!row.tanggal_mulai || !row.tanggal_selesai) return 0;
-  const mulai = new Date(row.tanggal_mulai).getTime();
-  const selesai = new Date(row.tanggal_selesai).getTime();
-  const now = Date.now();
-  if (now <= mulai) return 0;
-  if (now >= selesai) return 100;
-  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
-};
+// Logika bersama di utils/akses-progress.ts (basis hari kalender).
+const getProgressPercent = (row: any): number => getAksesProgressPercent(row);
 
-const getProgressBarClass = (percent: number): string => {
-  if (percent < 50) return 'bg-green-500';
-  if (percent < 80) return 'bg-yellow-500';
-  return 'bg-red-500';
-};
+const getProgressBarClass = (percent: number): string => getAksesProgressBarClass(percent);
 
-const getProgressLabel = (row: any): string => {
-  if (row.status !== StatusUsulan.AKSES_DITERBITKAN && row.status !== StatusUsulan.SELESAI) return '-';
-  const percent = getProgressPercent(row);
-  if (percent >= 100) return 'Habis';
-  if (!row.tanggal_selesai) return '-';
-  const sisa = Math.ceil((new Date(row.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (sisa <= 0) return 'Habis';
-  return `${sisa} hari lagi`;
-};
+const getProgressLabel = (row: any): string => getAksesProgressLabel(row);
 
 // ── Cek apakah user bisa verifikasi usulan ini ──
 const menungguStatuses = [

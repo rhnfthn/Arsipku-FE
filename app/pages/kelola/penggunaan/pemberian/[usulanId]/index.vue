@@ -3,12 +3,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ChevronLeft, FileText, Building2, User, Clock, Key, CheckCircle2, XCircle, AlertTriangle, Users, Paperclip } from 'lucide-vue-next';
+import { ChevronLeft, FileText, Building2, User, Clock, CheckCircle2, XCircle, AlertTriangle, Users, Paperclip } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import UsulanAksesBerkasBadge from '~/components/usulan-akses-berkas/UsulanAksesBerkasBadge.vue';
 import { useUsulanAksesBerkas } from '~/composables/useUsulanAksesBerkas';
 import { Keputusan } from '~/types/usulan-akses-berkas';
 import { extractErrorMessage } from '~/utils/error-helper';
+import { getAksesProgressPercent, getAksesProgressBarClass, getAksesProgressLabel } from '~/utils/akses-progress';
 
 definePageMeta({ middleware: 'auth' });
 useHead({ title: 'Detail Pemberian Akses Berkas' });
@@ -43,28 +44,12 @@ const loadDetail = async () => {
 onMounted(() => { loadDetail(); });
 
 // ── Progress & Status helpers (sinkron dengan tabel pemberian) ──
-const getProgressPercent = (detail: any): number => {
-  if (!detail?.tanggal_mulai || !detail?.tanggal_selesai) return 0;
-  const mulai = new Date(detail.tanggal_mulai).getTime();
-  const selesai = new Date(detail.tanggal_selesai).getTime();
-  const now = Date.now();
-  if (now <= mulai) return 0;
-  if (now >= selesai) return 100;
-  return Math.round(((now - mulai) / (selesai - mulai)) * 100);
-};
+// Logika bersama di utils/akses-progress.ts (basis hari kalender).
+const getProgressPercent = (detail: any): number => getAksesProgressPercent(detail);
 
-const getProgressBarClass = (percent: number): string => {
-  if (percent < 50) return 'bg-green-500';
-  if (percent < 80) return 'bg-yellow-500';
-  return 'bg-red-500';
-};
+const getProgressBarClass = (percent: number): string => getAksesProgressBarClass(percent);
 
-const getProgressLabel = (detail: any): string => {
-  if (!detail?.tanggal_selesai) return '-';
-  const sisa = Math.ceil((new Date(detail.tanggal_selesai).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (sisa <= 0) return 'Habis';
-  return `${sisa} hari`;
-};
+const getProgressLabel = (detail: any): string => getAksesProgressLabel(detail);
 </script>
 
 <template>
@@ -115,10 +100,6 @@ const getProgressLabel = (detail: any): string => {
             <div><dt class="text-xs font-medium uppercase text-gray-500">Divisi Pengusul</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.divisi_pengusul_nama || usulanDetail.divisi_pengusul_id }}</dd></div>
           </div>
           <div class="flex items-start gap-3">
-            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Key class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Jenis Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.jenis_akses?.join(', ') }}</dd></div>
-          </div>
-          <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><FileText class="size-4 text-gray-500" /></span>
             <div><dt class="text-xs font-medium uppercase text-gray-500">Judul Usulan</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ usulanDetail.judul_usulan || '-' }}</dd></div>
           </div>
@@ -128,7 +109,10 @@ const getProgressLabel = (detail: any): string => {
           </div>
           <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700/50"><Clock class="size-4 text-gray-500" /></span>
-            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(usulanDetail.tanggal_mulai) }} — {{ formatDate(usulanDetail.tanggal_selesai) }}</dd></div>
+            <div><dt class="text-xs font-medium uppercase text-gray-500">Periode Akses</dt><dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
+              <span v-if="usulanDetail.tanggal_mulai">{{ formatDate(usulanDetail.tanggal_mulai) }} — {{ formatDate(usulanDetail.tanggal_selesai) }}</span>
+              <span v-else class="italic text-gray-500 dark:text-gray-400">Menunggu Persetujuan</span>
+            </dd></div>
           </div>
         </dl>
         <div class="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
@@ -245,7 +229,12 @@ const getProgressLabel = (detail: any): string => {
           <span class="ml-auto text-xs text-gray-400">{{ usulanDetail.selected_berkas.length }} berkas</span>
         </div>
         <div class="divide-y divide-gray-100 dark:divide-gray-700">
-          <div v-for="b in usulanDetail.selected_berkas" :key="b.id" class="flex items-start gap-3 px-4 py-2.5">
+          <NuxtLink
+            v-for="b in usulanDetail.selected_berkas"
+            :key="b.id"
+            :to="`/kelola/penggunaan/pemberian/${usulanId}/berkas?berkas_id=${b.berkas_id}`"
+            class="flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40"
+          >
             <UIcon name="i-lucide-file" class="mt-0.5 size-4 shrink-0 text-gray-400" />
             <div class="min-w-0 flex-1">
               <p class="text-sm font-medium text-gray-900 dark:text-white">{{ b.judul_berkas || b.berkas_id }}</p>
@@ -255,7 +244,8 @@ const getProgressLabel = (detail: any): string => {
                 <span v-if="b.berkas_status"> · {{ b.berkas_status }}</span>
               </p>
             </div>
-          </div>
+            <UIcon name="i-lucide-chevron-right" class="mt-1 size-4 shrink-0 text-gray-400" />
+          </NuxtLink>
         </div>
       </section>
 
@@ -299,8 +289,9 @@ const getProgressLabel = (detail: any): string => {
       </section>
 
       <!-- CTA: Lihat Berkas -->
-      <div class="flex justify-center">
-        <NuxtLink :to="`/kelola/penggunaan/pemberian/${usulanId}/berkas`"
+      <div v-if="usulanDetail.selected_berkas?.length" class="flex justify-center">
+        <NuxtLink
+          :to="`/kelola/penggunaan/pemberian/${usulanId}/berkas?berkas_id=${usulanDetail.selected_berkas[0].berkas_id}`"
           class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700">
           <FileText class="size-4" /> Lihat Berkas yang Diberikan
         </NuxtLink>

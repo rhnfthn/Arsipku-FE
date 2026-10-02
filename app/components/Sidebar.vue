@@ -750,6 +750,17 @@ watch(
 
 // ─── Menus ────────────────────────────────────────────────────────────────────
 
+// Kajian hanya untuk posisi fungsional/staf. Jangan hanya mengandalkan
+// bodTag karena sebagian snapshot organisasi menandai EVP/VP/AVP melalui
+// nama jabatan saja.
+const canWriteKajian = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '').trim();
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+
+  if (bodTag) return false;
+  return !/\b(EVP|AVP|VP)\b/.test(positionText);
+});
+
 const tulisChildrenByBod = computed(() => {
   const all = [
     {
@@ -783,7 +794,11 @@ const tulisChildrenByBod = computed(() => {
       permission: { resource: 'utama.tulis.kajian', action: 'read' },
     },
   ];
-  return all.filter((item) => canCreateCorrespondence(item.documentType));
+  return all.filter(
+    (item) =>
+      canCreateCorrespondence(item.documentType) &&
+      (item.documentType !== 'KA' || canWriteKajian.value)
+  );
 });
 
 const tulisMenu = computed(() => ({

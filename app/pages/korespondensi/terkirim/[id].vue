@@ -1074,6 +1074,9 @@ const konsepOptions = [
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 PDF final + lampiran akan dikirim sebagai attachment.
               </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                To, CC, dan BCC dapat diisi lebih dari satu email dengan dipisahkan koma (,).
+              </p>
             </div>
 
             <!-- To -->
@@ -1098,7 +1101,7 @@ const konsepOptions = [
               <input
                 v-model="kirimEmailForm.cc"
                 type="text"
-                placeholder="cc@example.com"
+                placeholder="cc@example.com (pisahkan koma untuk multiple)"
                 class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -1109,7 +1112,7 @@ const konsepOptions = [
               <input
                 v-model="kirimEmailForm.bcc"
                 type="text"
-                placeholder="bcc@example.com"
+                placeholder="bcc@example.com (pisahkan koma untuk multiple)"
                 class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>

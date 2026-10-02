@@ -8,6 +8,7 @@ export interface Klasifikasi {
   deskripsi: string | null; // Deskripsi tambahan
   id_parent: string;
   active: number;
+  is_select: number;
   retensi_aktif_tahun: number | null;
   retensi_inaktif_tahun: number | null;
   penyusutan: string | null;
