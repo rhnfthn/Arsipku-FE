@@ -10,7 +10,22 @@
       <USkeleton v-for="item in 5" :key="item" class="h-44 w-full rounded-xl" />
     </div>
 
-    <div v-else class="space-y-4">
+    <div
+      v-else-if="!accessFeatureEnabled"
+      class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+    >
+      <UIcon name="i-lucide-info" class="mt-0.5 size-5 shrink-0" />
+      <p>
+        Fitur hak akses korespondensi sedang dinonaktifkan. Sistem memakai aturan akses lama
+        berdasarkan BOD tag.
+      </p>
+    </div>
+
+    <fieldset
+      v-if="!loading"
+      :disabled="!accessFeatureEnabled"
+      :class="['space-y-4', !accessFeatureEnabled && 'pointer-events-none opacity-60']"
+    >
       <section
         v-for="documentType in documentTypes"
         :key="documentType"
@@ -31,7 +46,11 @@
             </p>
           </div>
           <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <UCheckbox v-model="forms[documentType].is_active" color="primary" />
+            <UCheckbox
+              v-model="forms[documentType].is_active"
+              color="primary"
+              :disabled="!accessFeatureEnabled"
+            />
             Aktif
           </label>
         </div>
@@ -137,21 +156,25 @@
             label="Simpan"
             color="primary"
             :loading="saving === documentType"
-            :disabled="Boolean(saving)"
+            :disabled="!accessFeatureEnabled || Boolean(saving)"
             @click="save(documentType)"
           />
         </div>
       </section>
-    </div>
+    </fieldset>
 
     <div
       class="mt-6 flex items-start gap-3 rounded-xl border border-primary-100 bg-primary-50 p-4 text-sm text-primary-800 dark:border-primary-900 dark:bg-primary-950/40 dark:text-primary-200"
     >
       <UIcon name="i-lucide-info" class="mt-0.5 size-5 shrink-0" />
-      <p>
+      <p v-if="accessFeatureEnabled">
         Sebelum sebuah jenis naskah disimpan di sini, sistem tetap memakai aturan akses lama.
         Setelah disimpan, konfigurasi ini menjadi sumber akses untuk menu dan halaman tulis
         korespondensi.
+      </p>
+      <p v-else>
+        Konfigurasi tersimpan tetap dipertahankan, tetapi tidak diterapkan selama fitur ini
+        dinonaktifkan.
       </p>
     </div>
   </div>
@@ -206,6 +229,7 @@ const toast = useToast();
 const { invalidateCapabilities } = useCorrespondenceRoutingAccess();
 const loading = ref(false);
 const saving = ref<DocumentType | null>(null);
+const accessFeatureEnabled = ref(false);
 const bodTags = ref<string[]>([]);
 const areas = ref<Array<{ id: string; name: string }>>([]);
 const configured = ref(new Set<DocumentType>());
@@ -225,6 +249,7 @@ const fetchPolicies = async () => {
       { skipCache: true }
     );
     const data = response?.data?.data ?? response?.data ?? response;
+    accessFeatureEnabled.value = data?.feature_enabled === true;
     bodTags.value = Array.isArray(data?.bod_tags) ? data.bod_tags : [];
     areas.value = Array.isArray(data?.areas) ? data.areas : [];
     const policies: AccessPolicy[] = Array.isArray(data?.policies) ? data.policies : [];
@@ -248,6 +273,7 @@ const fetchPolicies = async () => {
 };
 
 const save = async (documentType: DocumentType) => {
+  if (!accessFeatureEnabled.value) return;
   const form = forms[documentType];
   if (form.area_mode === 'SELECTED' && form.area_ids.length === 0) {
     toast.add({ title: 'Pilih minimal satu area', color: 'warning' });
