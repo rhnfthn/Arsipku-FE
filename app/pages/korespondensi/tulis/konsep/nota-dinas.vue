@@ -71,7 +71,7 @@
           <div class="min-w-0">
             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Konsep Akan Diteruskan Ke</p>
             <div class="text-xs text-gray-600 dark:text-gray-300 mt-0.5 break-words leading-5">
-              <div class="font-semibold text-primary-600 dark:text-primary-400">{{ forwardTargetInfo.positionText || '-' }}</div>
+              <div class="font-semibold text-primary-600 dark:text-primary-400">{{ forwardTargetPositionText || '-' }}</div>
               <div>{{ forwardTargetInfo.nama || '-' }}</div>
             </div>
           </div>
@@ -495,6 +495,24 @@ const forwardTargetInfo = computed(() => {
   if (restoredDraftTarget.value) return restoredDraftTarget.value;
   return selectedSenderManager.value || atasanLangsungInfo.value;
 });
+const forwardTargetPositionText = computed(() => {
+  const target = forwardTargetInfo.value;
+  if (!target) return '';
+
+  const targetPositionId = String(target.position || target.position_id || '');
+  const senderMatch = senderItems.value.find(
+    (item) => String(item.value) === targetPositionId,
+  );
+  const senderRaw = senderMatch?.raw || {};
+
+  return formatDelegatedPosition(
+    senderMatch?.labelJob || target.positionText || target.position_text || '',
+    target.positionStatus ||
+      target.position_status ||
+      senderRaw.position_status ||
+      senderRaw.positionStatus,
+  );
+});
 const forwardTargetPositionId = computed(() => String(forwardTargetInfo.value?.position || ''));
 const hasValidForwardTarget = computed(() => {
   const id = Number(forwardTargetPositionId.value);
@@ -504,7 +522,10 @@ const hasValidForwardTarget = computed(() => {
 const mapPersonToUI = (person: any): RecipientItem => {
   if (!person) return {} as RecipientItem;
   const nama = person.nama || person.persnum_person_text || person.name || person.persnum || '';
-  const posisi = person.position_text || person.positionText || '';
+  const posisi = formatDelegatedPosition(
+    person.position_text || person.positionText || '',
+    person.position_status || person.positionStatus,
+  );
 
   return {
     label: `${nama} - ${posisi}`,
@@ -674,13 +695,19 @@ const fetchSenderList = async (posId: string | number) => {
   try {
     const res = await getSendersById(posId);
     if (res.success && Array.isArray(res.data)) {
-      senderItems.value = res.data.map((r: any) => ({
-        label: `${r.persnum_person_text} - ${r.position_text}`,
-        labelJob: r.position_text,
-        value: String(r.position),
-        isGroup: false,
-        raw: r,
-      }));
+      senderItems.value = res.data.map((r: any) => {
+        const positionText = formatDelegatedPosition(
+          r.position_text || r.positionText || '',
+          r.position_status || r.positionStatus,
+        );
+        return {
+          label: `${r.persnum_person_text} - ${positionText}`,
+          labelJob: positionText,
+          value: String(r.position),
+          isGroup: false,
+          raw: r,
+        };
+      });
       if (senderItems.value.length === 1 && !selectedSender.value) {
         selectedSender.value = senderItems.value[0];
       }

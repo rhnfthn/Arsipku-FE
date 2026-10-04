@@ -67,7 +67,7 @@
                 >
                   <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
                   <div class="truncate min-w-0">
-                    <span class="font-medium">{{ t.position_text || t.positionText || '-' }}</span>
+                    <span class="font-medium">{{ recipientPositionText(t) || '-' }}</span>
                     <span v-if="t.nama || t.name" class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ t.nama || t.name }})</span>
                   </div>
                 </div>
@@ -87,7 +87,7 @@
                 >
                   <span class="text-gray-400 dark:text-gray-500 font-mono text-[10px] pt-0.5 w-3 shrink-0">{{ idx + 1 }}.</span>
                   <div class="truncate min-w-0">
-                    <span class="font-medium">{{ t.position_text || t.positionText || '-' }}</span>
+                    <span class="font-medium">{{ recipientPositionText(t) || '-' }}</span>
                     <span v-if="t.nama || t.name" class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ t.nama || t.name }})</span>
                   </div>
                 </div>
@@ -125,6 +125,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { formatDelegatedPosition } from '@/utils/delegation-display';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -155,6 +156,12 @@ const JENIS_MAP: Record<string, string> = {
 };
 
 const detailData = computed(() => props.detail || {});
+
+const recipientPositionText = (recipient: any) =>
+  formatDelegatedPosition(
+    recipient?.position_text || recipient?.positionText || '',
+    recipient?.position_status || recipient?.positionStatus,
+  );
 
 const jenisLabel = computed(() => {
   const j = (props.jenis || detailData.value?.jenis || '').toUpperCase();

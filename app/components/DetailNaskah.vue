@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue';
+import { formatDelegatedPosition } from '@/utils/delegation-display';
 import {
   Calendar,
   Clock,
@@ -129,6 +130,12 @@ const isPenerimaKonsepAktif = computed(() => {
 // --- CONSTANTS ---
 const LIMIT_DISPLAY = 2;
 const MAX_FLOW_HEIGHT = 200;
+
+const recipientPositionText = (recipient: any) =>
+  formatDelegatedPosition(
+    recipient?.position_text || recipient?.positionText || '',
+    recipient?.position_status || recipient?.positionStatus,
+  );
 
 // --- HELPERS ---
 const parseWibDate = (v: string): Date | null => {
@@ -754,7 +761,7 @@ const removeNote = () => {
                 {{ konsepRecipientLabel }}
               </span>
               <span class="text-sm font-semibold block text-gray-900 dark:text-white">
-                {{ data.to_konsep.position_text || data.to_konsep.positionText || '-' }}
+                {{ recipientPositionText(data.to_konsep) || '-' }}
               </span>
               <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
                 {{ data.to_konsep.nama || '-' }}
@@ -800,7 +807,7 @@ const removeNote = () => {
             <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
               Array.isArray(konsepNaskahInfo.to)
                 ? konsepNaskahInfo.to
-                    .map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`)
+                    .map((t: any) => `${recipientPositionText(t) || '-'} (${t.nama || '-'})`)
                     .join(', ')
                 : '-'
             }}</span>
@@ -809,7 +816,7 @@ const removeNote = () => {
             <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
               Array.isArray(konsepNaskahInfo.cc) && konsepNaskahInfo.cc.length > 0
                 ? konsepNaskahInfo.cc
-                    .map((t: any) => `${t.position_text || '-'} (${t.nama || '-'})`)
+                    .map((t: any) => `${recipientPositionText(t) || '-'} (${t.nama || '-'})`)
                     .join(', ')
                 : '-'
             }}</span>
@@ -867,7 +874,7 @@ const removeNote = () => {
                     <span class="font-medium">{{ t.nama }}</span>
                   </template>
                   <template v-else>
-                    <span class="font-medium">{{ t.position_text }}</span>
+                    <span class="font-medium">{{ recipientPositionText(t) }}</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400 ml-1"
                       >({{ t.nama }})</span
                     >
@@ -897,7 +904,7 @@ const removeNote = () => {
                   <span class="font-medium">{{ data.to?.nama || data.kepada?.nama }}</span>
                 </template>
                 <template v-else>
-                  <span class="font-medium">{{ data.to?.position_text }}</span>
+                  <span class="font-medium">{{ recipientPositionText(data.to) }}</span>
                   <span class="text-xs text-gray-500 dark:text-gray-400 ml-1"
                     >({{ data.to?.nama }})</span
                   >
@@ -933,7 +940,7 @@ const removeNote = () => {
                 >{{ Number(ti) + 1 }}.</span
               >
               <div class="truncate min-w-0">
-                <span class="font-medium">{{ t.position_text }}</span>
+                <span class="font-medium">{{ recipientPositionText(t) }}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ t.nama }})</span>
               </div>
             </div>
