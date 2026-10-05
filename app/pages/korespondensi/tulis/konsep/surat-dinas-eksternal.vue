@@ -548,7 +548,7 @@ watch(selectedAtasNamaId, (newId) => {
   if (selectedTembusan.value.some((t: any) => Number(t.value) === Number(newId))) return;
   selectedTembusan.value.push({
     label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text}`,
-    labelJob: r.position_text,
+    labelJob: formatDelegatedPositionText(r.position_text, r),
     value: String(r.position),
     raw: r,
   } as any);
@@ -1012,7 +1012,7 @@ const fetchTembusanBySender = async (senderPositionId: string) => {
     if (Array.isArray(tembusanData)) {
       internalItems.value = tembusanData.map((r: any) => ({
         label: `${r.persnum_person_text || r.persnum || '-'} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
-        labelJob: r.position_text || r.positionText,
+        labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
         value: String(r.position || r.position_id || r.id),
         raw: r,
       }));

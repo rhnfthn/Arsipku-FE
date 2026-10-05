@@ -140,8 +140,9 @@
                     <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
                     <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
-                  <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
-                    <div>DISPOSISI</div>
+                  <div class="w-1/3 p-2 flex flex-col justify-start items-end text-right font-bold text-sm">
+                    <div>Lembar Disposisi</div>
+                    <div class="text-[10px] mt-0.5 uppercase">{{ user?.positionText || '' }}</div>
                   </div>
                 </div>
 
@@ -823,7 +824,7 @@ onMounted(async () => {
           return found || {
             value: val,
             label: item.nama || item.label,
-            labelJob: item.position_text || item.positionText || item.labelJob
+            labelJob: formatDelegatedPositionText(item.position_text || item.positionText || item.labelJob || '', item)
           };
         });
 
