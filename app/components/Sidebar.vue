@@ -337,6 +337,7 @@ import { usePenomoran } from '~/composables/usePenomoran';
 import { useUsulanAksesBerkasCounts } from '~/composables/useUsulanAksesBerkasCounts';
 import { useNaskahShareCounts } from '~/composables/useNaskahShareCounts';
 import { useInboxCount } from '~/composables/useInboxCount';
+import { useKelolaCounts } from '~/composables/useKelolaCounts';
 import { useNotifications } from '~/composables/useNotifications';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useLabel } from '~/composables/useLabel';
@@ -359,6 +360,20 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+// ── Kelola counts (badge notifikasi menu Kelola) ──
+const { counts: kelolaCounts, fetchCounts: fetchKelolaCounts } = useKelolaCounts();
+const kelolaTotalBadge = computed(() => {
+  const c = kelolaCounts.value;
+  return (
+    c.penerimaanUsulan +
+    c.penataanArsipInaktif +
+    c.verifikasiPersetujuanTu +
+    c.verifikasiUsulan +
+    c.pengajuanPenyusutan +
+    c.verifikasiPenyusutan +
+    c.penataanPemusnahan
+  );
+});
 const { sdeMasalUnreadCount, notifications, fetchNotifications } = useNotifications();
 const { fetchFolders, fetchVerificationFolders } = useSdeMasal();
 const { apiGet } = useApi();
@@ -639,6 +654,8 @@ onMounted(async () => {
     }
     // Fetch share diterima counts untuk badge sidebar
     if (hasPermission('naskah-share', 'read')) fetchShareCounts().catch(() => {});
+    // Fetch Kelola counts untuk badge menu Kelola
+    fetchKelolaCounts().catch(() => {});
     // Sinkronkan badge SDE Massal dengan folder yang benar-benar menunggu aksi.
     await fetchNotifications(1, 100, true);
     await refreshSdeMasalCounts();
@@ -745,6 +762,11 @@ watch(
       await fetchNotifications(1, 100, true);
     }
     await refreshSdeMasalCounts();
+    // Refresh badge Kelola saat user membuka halaman di bawah /kelola atau
+    // /maintenance (menu Kelola) agar angka selalu sinkron dengan data terbaru.
+    if (path.startsWith('/kelola') || path.startsWith('/maintenance')) {
+      fetchKelolaCounts(true).catch(() => {});
+    }
   }
 );
 
@@ -1518,11 +1540,17 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Penerimaan Usulan',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
+        badge:
+          kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
         to: '/maintenance/penataan-arsip-inaktif',
         icon: 'i-lucide-archive',
+        badge:
+          kelolaCounts.value.penataanArsipInaktif > 0
+            ? kelolaCounts.value.penataanArsipInaktif
+            : null,
       },
     ],
   },
@@ -1562,11 +1590,19 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Pengajuan Penyusutan',
         to: '/maintenance/penyusutan/pengajuan-penyusutan',
         icon: 'i-lucide-list',
+        badge:
+          kelolaCounts.value.pengajuanPenyusutan > 0
+            ? kelolaCounts.value.pengajuanPenyusutan
+            : null,
       },
       {
         label: 'Penataan dan Pemusnahan',
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
+        badge:
+          kelolaCounts.value.penataanPemusnahan > 0
+            ? kelolaCounts.value.penataanPemusnahan
+            : null,
       },
     ],
   },
@@ -1592,11 +1628,17 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Penerimaan Usulan',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
+        badge:
+          kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
         to: '/maintenance/penataan-arsip-inaktif',
         icon: 'i-lucide-archive',
+        badge:
+          kelolaCounts.value.penataanArsipInaktif > 0
+            ? kelolaCounts.value.penataanArsipInaktif
+            : null,
       },
     ],
   },
@@ -1637,11 +1679,19 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Pengajuan Penyusutan',
         to: '/maintenance/penyusutan/pengajuan-penyusutan',
         icon: 'i-lucide-list',
+        badge:
+          kelolaCounts.value.pengajuanPenyusutan > 0
+            ? kelolaCounts.value.pengajuanPenyusutan
+            : null,
       },
       {
         label: 'Penataan dan Pemusnahan',
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
+        badge:
+          kelolaCounts.value.penataanPemusnahan > 0
+            ? kelolaCounts.value.penataanPemusnahan
+            : null,
       },
     ],
   },
@@ -1709,6 +1759,10 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         label: 'Verifikasi Penyusutan',
         to: '/maintenance/penyusutan/verifikasi-penyusutan',
         icon: 'i-lucide-file-check',
+        badge:
+          kelolaCounts.value.verifikasiPenyusutan > 0
+            ? kelolaCounts.value.verifikasiPenyusutan
+            : null,
       },
     ],
   },
@@ -1736,11 +1790,17 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         label: 'Verifikasi Persetujuan',
         to: '/maintenance/verifikasi-persetujuan-tu',
         icon: 'i-lucide-file-check-2',
+        badge:
+          kelolaCounts.value.verifikasiPersetujuanTu > 0
+            ? kelolaCounts.value.verifikasiPersetujuanTu
+            : null,
       },
       {
         label: 'Verifikasi Usulan',
         to: '/maintenance/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
+        badge:
+          kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
       },
     ],
   },
@@ -1780,6 +1840,10 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         label: 'Verifikasi Penyusutan',
         to: '/maintenance/penyusutan/verifikasi-penyusutan',
         icon: 'i-lucide-file-check',
+        badge:
+          kelolaCounts.value.verifikasiPenyusutan > 0
+            ? kelolaCounts.value.verifikasiPenyusutan
+            : null,
       },
     ],
   },
@@ -1857,24 +1921,36 @@ const adminMenuKelola = computed(() => {
       to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
     },
     {
       label: 'Penataan Arsip Inaktif',
       to: '/maintenance/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.penataanArsipInaktif > 0
+          ? kelolaCounts.value.penataanArsipInaktif
+          : null,
     },
     {
       label: 'Verifikasi Persetujuan',
       to: '/maintenance/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
       showIfAtasanTu: true,
+      badge:
+        kelolaCounts.value.verifikasiPersetujuanTu > 0
+          ? kelolaCounts.value.verifikasiPersetujuanTu
+          : null,
     },
     {
       label: 'Verifikasi Usulan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
       showIfAtasan: true,
+      badge:
+        kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
     },
   ];
 
@@ -1948,18 +2024,30 @@ const adminMenuKelola = computed(() => {
       to: '/maintenance/penyusutan/pengajuan-penyusutan',
       icon: 'i-lucide-list',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.pengajuanPenyusutan > 0
+          ? kelolaCounts.value.pengajuanPenyusutan
+          : null,
     },
     {
       label: 'Penataan & Pemusnahan',
       to: '/maintenance/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.penataanPemusnahan > 0
+          ? kelolaCounts.value.penataanPemusnahan
+          : null,
     },
     {
       label: 'Verifikasi Penyusutan',
       to: '/maintenance/penyusutan/verifikasi-penyusutan',
       icon: 'i-lucide-file-check',
       showIfAtasanPenyusutan: true,
+      badge:
+        kelolaCounts.value.verifikasiPenyusutan > 0
+          ? kelolaCounts.value.verifikasiPenyusutan
+          : null,
     },
   ];
 
@@ -2009,24 +2097,36 @@ const userMenuKelola = computed(() => {
       to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
     },
     {
       label: 'Penataan Arsip Inaktif',
       to: '/maintenance/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.penataanArsipInaktif > 0
+          ? kelolaCounts.value.penataanArsipInaktif
+          : null,
     },
     {
       label: 'Verifikasi Persetujuan',
       to: '/maintenance/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
       showIfAtasanTu: true,
+      badge:
+        kelolaCounts.value.verifikasiPersetujuanTu > 0
+          ? kelolaCounts.value.verifikasiPersetujuanTu
+          : null,
     },
     {
       label: 'Verifikasi Usulan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
       showIfAtasan: true,
+      badge:
+        kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
     },
   ];
 
@@ -2099,18 +2199,30 @@ const userMenuKelola = computed(() => {
       to: '/maintenance/penyusutan/pengajuan-penyusutan',
       icon: 'i-lucide-list',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.pengajuanPenyusutan > 0
+          ? kelolaCounts.value.pengajuanPenyusutan
+          : null,
     },
     {
       label: 'Penataan & Pemusnahan',
       to: '/maintenance/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive',
       showIfTuRole: true,
+      badge:
+        kelolaCounts.value.penataanPemusnahan > 0
+          ? kelolaCounts.value.penataanPemusnahan
+          : null,
     },
     {
       label: 'Verifikasi Penyusutan',
       to: '/maintenance/penyusutan/verifikasi-penyusutan',
       icon: 'i-lucide-file-check',
       showIfAtasanPenyusutan: true,
+      badge:
+        kelolaCounts.value.verifikasiPenyusutan > 0
+          ? kelolaCounts.value.verifikasiPenyusutan
+          : null,
     },
   ];
 
@@ -2301,7 +2413,7 @@ const apps = computed(() => {
               label: 'Kelola',
               icon: 'i-lucide-archive',
               menus: filterMenuByPermission(adminMenuKelola.value),
-              hasNotification: rtArsipPersetujuanCount.value > 0,
+              hasNotification: kelolaTotalBadge.value > 0 || rtArsipPersetujuanCount.value > 0,
             },
           ]
         : []),
@@ -2361,7 +2473,7 @@ const apps = computed(() => {
             label: 'Kelola',
             icon: 'i-lucide-archive',
             menus: filterMenuByPermission(userMenuKelola.value),
-            hasNotification: rtArsipPersetujuanCount.value > 0,
+            hasNotification: kelolaTotalBadge.value > 0 || rtArsipPersetujuanCount.value > 0,
           },
         ]
       : []),

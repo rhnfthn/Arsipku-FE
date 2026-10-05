@@ -310,7 +310,7 @@
                 v-model="form.klasifikasi"
                 :items="klasifikasiItems"
                 value-key="klasifikasi"
-                label-key="searchLabel"
+                label-key="displayLabel"
                 searchable
                 :search-attributes="['searchLabel']"
                 placeholder="Pilih klasifikasi arsip"
@@ -322,34 +322,30 @@
                   ring: 'ring-0',
                   shadow: 'shadow-none',
                   width: 'w-full max-w-[calc(100vw-2rem)]',
-                  content: 'z-[10000]',
+                  content: 'z-[10000] min-w-[min(36rem,calc(100vw-2rem))]',
                 } as any"
                 @update:model-value="onKlasifikasiChange"
               >
                 <template #item="{ item }">
-                  <div v-if="item.isParent" class="w-full py-1 overflow-hidden">
+                  <div v-if="item.isParent" class="w-full py-1">
                     <span
-                      class="text-xs font-bold text-primary-500 dark:text-primary-400 uppercase tracking-widest block w-full truncate"
+                      class="text-xs font-bold text-primary-500 dark:text-primary-400 uppercase tracking-widest block w-full whitespace-normal break-words"
                     >
                       {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
                     </span>
                   </div>
-                  <div v-else class="flex flex-col min-w-0 w-full overflow-hidden py-1">
+                  <div v-else class="flex flex-col min-w-0 w-full py-1">
                     <span
-                      class="text-sm font-medium text-gray-900 dark:text-white block w-full truncate"
+                      class="text-sm font-medium text-gray-900 dark:text-white block w-full whitespace-normal break-words"
                     >
                       {{ item.klasifikasi }} — {{ item.klasifikasi_text || '' }}
                     </span>
-                    <UTooltip v-if="item.deskripsi" :delay-duration="500" :popper="{ placement: 'right-start' }">
-                      <span class="text-xs text-gray-500 block w-full truncate mt-0.5 cursor-help">
-                        {{ item.deskripsi }}
-                      </span>
-                      <template #text>
-                        <span class="block max-w-[min(32rem,calc(100vw-2rem))] whitespace-normal break-words leading-relaxed">
-                          {{ item.deskripsi }}
-                        </span>
-                      </template>
-                    </UTooltip>
+                    <span
+                      v-if="item.deskripsi"
+                      class="text-xs text-gray-500 dark:text-gray-400 block w-full whitespace-normal break-words mt-0.5 leading-relaxed text-left"
+                    >
+                      {{ item.deskripsi }}
+                    </span>
                   </div>
                 </template>
                 <template #default>
@@ -472,7 +468,7 @@
               <input
                 v-model="form.lokasi"
                 type="text"
-                placeholder="Contoh: Rak A, Baris 2"
+                placeholder="Format: A1 Ruangan · 01 Rak · 0001 Box · contoh A1.01.001"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 @input="modalErrors.lokasi = false"
               />
@@ -925,6 +921,10 @@ const klasifikasiItems = computed(() => {
     const selectable = !isParent && Number(item.is_select ?? 1) === 1;
     return {
       ...item,
+      // Label yang tampil di form setelah dipilih: kode — judul (tanpa deskripsi).
+      displayLabel: [item.klasifikasi, item.klasifikasi_text]
+        .filter(Boolean)
+        .join(' — '),
       // USelectMenu melakukan filtering berdasarkan atribut ini. Gabungkan
       // kode, nama, dan deskripsi agar konsisten dengan form pembuatan naskah.
       searchLabel: item.search_text || [

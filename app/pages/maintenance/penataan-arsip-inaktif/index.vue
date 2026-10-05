@@ -105,7 +105,7 @@
                   Belum ada arsip untuk ditata.
                 </td>
               </tr>
-              <tr v-for="item in list" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <tr v-for="item in list" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors" :class="newRowClass(item)">
                 <td class="px-3 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="item.arsipPerihal">{{ item.arsipPerihal }}</td>
                 <td class="px-3 py-3 whitespace-nowrap">
                   <div class="font-medium text-gray-800 dark:text-white">{{ item.arsipKode ?? '-' }}</div>

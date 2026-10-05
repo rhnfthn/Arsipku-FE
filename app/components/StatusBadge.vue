@@ -62,6 +62,18 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     text: 'text-blue-600 dark:text-blue-400',
     dot: 'bg-blue-600',
   },
+  retensi_habis: {
+    label: 'Retensi Habis',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    text: 'text-orange-700 dark:text-orange-400',
+    dot: 'bg-orange-600',
+  },
+  retensi_inaktif: {
+    label: 'Retensi Inaktif',
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-700 dark:text-indigo-400',
+    dot: 'bg-indigo-600',
+  },
   // ——— Naskah Lainnya: badge tahapan (prototype: abu/amber/biru/oranye/ungu/hijau) ———
   konsep: {
     label: 'Konsep',

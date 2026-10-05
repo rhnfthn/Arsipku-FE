@@ -182,6 +182,7 @@
         header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+        :row-classes-fn="(row: any) => newRowClass(row)"
         empty-message="Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini."
         @sort="handleSort"
       >
@@ -208,23 +209,23 @@
         </template>
         <template #cell-aksi="{ row }">
           <div class="text-center" @click.stop>
-            <!-- Arsip belum jadi usulan → tombol Pindahkan -->
+            <!-- Arsip belum jadi usulan → halaman Usul Pindah Arsip -->
             <button
-              v-if="!row.isUsulan && isSekretaris"
-              @click="openCreateModalWithArsip(row)"
-              title="Pindahkan"
+              v-if="!row.isUsulan"
+              @click="navigateTo(`/maintenance/transfer-active-to-inactive-file/usul/${row.id}`)"
+              title="Usul Pindah Arsip"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
               <UIcon name="i-lucide-file-up" class="w-4 h-4" />
             </button>
-            <!-- Usulan DRAFT → tombol Kirim Usulan -->
+            <!-- Usulan DRAFT → halaman Usul Pindah Arsip (detail + pilih atasan) -->
             <button
-              v-else-if="row.isUsulan && row.status === 'DRAFT' && isSekretaris"
-              @click="onSendUsulan(row)"
-              title="Kirim ke Atasan Managerial"
+              v-else-if="row.isUsulan && row.status === 'DRAFT'"
+              @click="navigateTo(`/maintenance/transfer-active-to-inactive-file/usul/${row.id}`)"
+              title="Usul Pindah Arsip"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
-              <UIcon name="i-lucide-send" class="w-4 h-4" />
+              <UIcon name="i-lucide-file-up" class="w-4 h-4" />
             </button>
             <!-- Usulan sudah dibuat → tombol Detail -->
             <button
@@ -234,6 +235,15 @@
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
               <UIcon name="i-heroicons-eye" class="w-4 h-4" />
+            </button>
+            <!-- EVP pihak pertama BAC → tombol Tanda Tangan (TTE) -->
+            <button
+              v-if="canSignBac(row)"
+              @click="openSignBac(row)"
+              title="Tanda Tangan Berita Acara (TTE)"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white transition-colors ml-1"
+            >
+              <UIcon name="i-lucide-pen-tool" class="w-4 h-4" />
             </button>
           </div>
         </template>
@@ -267,6 +277,17 @@
       :is-exporting="isExporting"
       @confirm="handleExportConfirm"
     />
+
+    <!-- Modal Passphrase TTE BAC (EVP pihak pertama) -->
+    <DigsigPassphraseModal
+      :open="isSignBacModalOpen"
+      :signer-info="signBacSignerInfo"
+      :is-loading="signBacLoading"
+      :hide-qr="true"
+      :hide-basah="true"
+      @update:open="(v: boolean) => (isSignBacModalOpen = v)"
+      @submit="onSignBacSubmit"
+    />
   </div>
 </template>
 
@@ -280,6 +301,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
+import DigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModal.vue';
 import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
@@ -298,7 +320,7 @@ const exportColumns = ref([
   { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' }
 ]);
 
-const { apiGet } = useApi();
+const { apiGet, apiPost } = useApi();
 const { send, fetchDetail } = useTransferActiveToInactive();
 const { user, isSuperadmin, isAdmin } = useAuth();
 
@@ -317,6 +339,11 @@ interface GabunganRow {
   /** Status asli berkas (untuk baris belum-usulan: closed_retensi_aktif / retensi_inaktif). */
   berkasStatus?: string | null;
   tanggal: string | null;
+  /** Pejabat pihak pertama BAC — untuk tombol Tanda Tangan (EVP). */
+  bacPihakPertamaPersnum?: number | null;
+  bacPihakPertamaName?: string | null;
+  bacSignedAt?: string | null;
+  beritaAcaraUrl?: string | null;
 }
 
 const gabunganList = ref<GabunganRow[]>([]);
@@ -366,6 +393,57 @@ const onSendUsulan = async (row: GabunganRow) => {
 };
 
 const isCreateModalOpen = ref(false);
+
+// ── TTE BAC (EVP pihak pertama) ──
+const isSignBacModalOpen = ref(false);
+const signBacLoading = ref(false);
+const signBacTarget = ref<GabunganRow | null>(null);
+const signBacSignerInfo = computed(() => ({
+  name: user.value?.nama ?? '-',
+  role: user.value?.positionText ?? '-',
+  label: 'Berita Acara Serah Terima',
+}));
+
+/** Tombol Tanda Tangan tampil jika: user = pihak pertama BAC, BAC sudah di-generate, belum TTE. */
+const canSignBac = (row: GabunganRow): boolean => {
+  if (!row.isUsulan) return false;
+  if (!row.bacPihakPertamaPersnum) return false;
+  if (Number(row.bacPihakPertamaPersnum) !== Number(user.value?.persnum)) return false;
+  if (!row.beritaAcaraUrl) return false;
+  if (row.bacSignedAt) return false;
+  return true;
+};
+
+const openSignBac = (row: GabunganRow) => {
+  signBacTarget.value = row;
+  isSignBacModalOpen.value = true;
+};
+
+const onSignBacSubmit = async (payload: { method: string; passphrase?: string }) => {
+  if (!signBacTarget.value || !payload.passphrase) return;
+  signBacLoading.value = true;
+  try {
+    await apiPost(`/digsig/bac/${signBacTarget.value.id}/sign`, {
+      passphrase: payload.passphrase,
+    });
+    useToast().add({
+      title: 'Berita Acara berhasil ditandatangani',
+      description: 'BAC telah ditandatangani dengan TTE (BSrE).',
+      color: 'success',
+    });
+    isSignBacModalOpen.value = false;
+    await loadGabungan();
+  } catch (e: any) {
+    console.error('Gagal TTE BAC:', e);
+    useToast().add({
+      title: 'Gagal menandatangani Berita Acara',
+      description: e?.response?.data?.message || e?.message || 'Periksa passphrase Anda dan coba kembali.',
+      color: 'error',
+    });
+  } finally {
+    signBacLoading.value = false;
+  }
+};
 const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 
 const filter = reactive({
@@ -515,6 +593,14 @@ const loadGabungan = async () => {
       status: r.status ?? '',
       berkasStatus: r.berkasStatus ?? null,
       tanggal: r.tanggal ?? null,
+      // Timestamp untuk deteksi baris terbaru (bold)
+      createdAt: r.createdAt ?? null,
+      updatedAt: r.updatedAt ?? null,
+      // Pejabat BAC — untuk tombol Tanda Tangan (EVP pihak pertama)
+      bacPihakPertamaPersnum: r.bacPihakPertamaPersnum ?? null,
+      bacPihakPertamaName: r.bacPihakPertamaName ?? null,
+      bacSignedAt: r.bacSignedAt ?? null,
+      beritaAcaraUrl: r.beritaAcaraUrl ?? null,
     }));
   } catch (e) {
     console.error('Gagal memuat data gabungan:', e);
