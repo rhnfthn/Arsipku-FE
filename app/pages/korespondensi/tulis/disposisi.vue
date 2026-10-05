@@ -98,8 +98,9 @@
                     <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
                     <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
-                  <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
-                    <div class="uppercase">DISPOSISI</div>
+                  <div class="w-1/3 p-2 flex flex-col justify-start items-end text-right font-bold text-sm">
+                    <div>Lembar Disposisi</div>
+                    <div class="text-[10px] mt-0.5 uppercase">{{ user?.positionText || '' }}</div>
                   </div>
                 </div>
 
@@ -607,7 +608,7 @@ onMounted(async () => {
     refPerihal.value = normalizeRefPerihal(refPerihal.value);
     recipientList.value = (res.recipients || []).map((r: any) => ({
       label: r.label || r.nama,
-      labelJob: r.labelJob || r.positionText || r.position_text,
+      labelJob: formatDelegatedPositionText(r.labelJob || r.positionText || r.position_text || '', r),
       value: String(r.value || r.id || r.position_id),
       raw: r
     }));
