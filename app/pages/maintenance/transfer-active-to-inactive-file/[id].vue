@@ -201,6 +201,15 @@
             <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
               <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Unduh PDF
             </button>
+            <button
+              @click="generateBacPdf"
+              :disabled="bacGenerating"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors"
+              title="Generate PDF BAC lengkap (BAC + Daftar Berkas + Daftar Isi + lampiran naskah) di-merge jadi satu file"
+            >
+              <UIcon :name="bacGenerating ? 'i-lucide-loader-2' : 'i-lucide-file-check-2'" class="w-3.5 h-3.5" :class="bacGenerating ? 'animate-spin' : ''" />
+              {{ bacGenerating ? 'Membuat...' : 'Generate BAC' }}
+            </button>
           </div>
         </div>
 
@@ -473,7 +482,7 @@ import type { TransferActiveToInactive } from '~/types/transfer-active-to-inacti
 definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
-const { apiGet } = useApi();
+const { apiGet, apiPost } = useApi();
 const { user } = useAuth();
 const { setujuiTerakhir: tuSetujuiTerakhir } = useTuVerifikasi();
 const {
@@ -710,6 +719,34 @@ const printBeritaAcara = () => {
 const downloadBeritaAcara = () => {
   // Trigger PDF download via backend (placeholder — generate PDF di backend)
   window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
+};
+
+// ─── Generate BAC PDF (BAC + Daftar Berkas + Daftar Isi + merge naskah) ───
+const bacGenerating = ref(false);
+
+const generateBacPdf = async () => {
+  bacGenerating.value = true;
+  try {
+    const res: any = await apiPost(`/transfer-active-to-inactive/${route.params.id}/berita-acara-pdf`, {});
+    const url = res?.data?.url;
+    if (url) {
+      window.open(url, '_blank');
+      useToast().add({
+        title: 'Berita Acara berhasil dibuat',
+        description: 'PDF BAC lengkap (BAC + daftar berkas + daftar isi + lampiran naskah) telah digenerate.',
+        color: 'success',
+      });
+    }
+  } catch (e: any) {
+    console.error('Gagal generate BAC:', e);
+    useToast().add({
+      title: 'Gagal membuat Berita Acara',
+      description: e?.response?.data?.message || e?.message || 'Silakan coba kembali.',
+      color: 'error',
+    });
+  } finally {
+    bacGenerating.value = false;
+  }
 };
 
 const hariIni = computed(() => {

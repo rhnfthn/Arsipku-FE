@@ -143,6 +143,9 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SYSTEM_ANNOUNCEMENT: '/pengumuman',
     OPEN_SDE_MASAL_FOLDER: '/korespondensi/sde-masal/folder',
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
+    // Menu Kelola (Pemindahan Arsip / Penyusutan)
+    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/maintenance/penerimaan-usulan',
+    OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',
   };
 
   const base = action ? baseRoutes[action] : null;
@@ -153,6 +156,12 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     return folderId
       ? { path: `${base}/${encodeURIComponent(folderId)}` }
       : { path: '/korespondensi/sde-masal' };
+  }
+
+  // Notifikasi Kelola: bawa id usulan agar halaman tujuan bisa auto-buka detail
+  if (action === 'OPEN_TRANSFER_ACTIVE_TO_INACTIVE' || action === 'OPEN_PENYUSUTAN') {
+    const id = getString('id', 'idUsulan', 'id_usulan');
+    return id ? { path: `${base}/${encodeURIComponent(id)}` } : { path: base };
   }
 
   // Bawa query payload agar halaman tujuan bisa auto-buka detail
