@@ -404,6 +404,15 @@
                 class="sm:w-72"
               />
               <UButton
+                color="primary"
+                icon="i-lucide-download"
+                :loading="isExporting"
+                class="shadow-sm"
+                :ui="{ label: 'font-semibold' }"
+                @click="openExport('daftar')"
+                >Export</UButton
+              >
+              <UButton
                 v-if="canAddNaskah"
                 color="primary"
                 icon="i-lucide-file-plus-2"
@@ -771,7 +780,12 @@
     <UModal
       v-model:open="showAddNaskahModal"
       fullscreen
-      :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }"
+      :ui="{
+        overlay: 'bg-black/50 backdrop-blur-sm',
+        content: 'flex flex-col',
+        body: 'p-0 flex-1 min-h-0 overflow-hidden',
+        footer: 'shrink-0',
+      }"
     >
       <template #header
         ><div>
@@ -784,9 +798,9 @@
         </div></template
       >
       <template #body>
-        <div class="p-4">
+        <div class="flex h-full min-h-0 flex-col p-4">
           <div
-            class="mb-4 overflow-x-auto rounded-lg border border-gray-200 bg-white p-1.5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            class="mb-4 shrink-0 overflow-x-auto rounded-lg border border-gray-200 bg-white p-1.5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
           >
             <nav class="flex gap-1" aria-label="Sumber naskah">
               <button
@@ -809,7 +823,7 @@
 
           <!-- Filter toolbar -->
           <div
-            class="mb-3 rounded-lg border border-primary-100 bg-primary-50/60 p-3 dark:border-primary-900/40 dark:bg-primary-900/10"
+            class="mb-3 shrink-0 rounded-lg border border-primary-100 bg-primary-50/60 p-3 dark:border-primary-900/40 dark:bg-primary-900/10"
           >
             <div class="flex flex-wrap items-center gap-2">
               <div class="relative min-w-50 flex-1">
@@ -863,6 +877,16 @@
               <span class="text-xs text-gray-400">—</span>
               <UInput v-model="candidateDateTo" type="date" color="primary" class="w-40" />
               <UButton
+                color="primary"
+                size="sm"
+                icon="i-lucide-download"
+                :loading="isExporting"
+                class="shadow-sm"
+                :ui="{ label: 'font-semibold' }"
+                @click="openExport('kandidat')"
+                >Export</UButton
+              >
+              <UButton
                 variant="ghost"
                 color="primary"
                 size="xs"
@@ -874,7 +898,7 @@
           </div>
 
           <!-- Selection actions -->
-          <div class="mb-2 flex items-center justify-between gap-2 text-xs">
+          <div class="mb-2 flex shrink-0 items-center justify-between gap-2 text-xs">
             <div class="flex items-center gap-3">
               <button
                 type="button"
@@ -892,14 +916,16 @@
                 Bersihkan pilihan
               </button>
             </div>
-            <span class="text-gray-500 dark:text-gray-400"
-              >Menampilkan {{ filteredCandidates.length }} dari
-              {{ candidateList.length }} naskah</span
-            >
+            <div class="flex items-center gap-3">
+              <span class="text-gray-500 dark:text-gray-400"
+                >Menampilkan {{ filteredCandidates.length }} dari
+                {{ candidateList.length }} naskah</span
+              >
+            </div>
           </div>
 
           <div
-            class="max-h-[68vh] overflow-auto rounded-lg border border-gray-200 dark:border-gray-700"
+            class="custom-scrollbar min-h-0 flex-1 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700"
           >
             <DataTable
               :columns="candidateColumns"
@@ -915,8 +941,8 @@
                 />
               </template>
               <template #cell-nomor_surat="{ row }">
-                <div class="min-w-40">
-                  <p class="font-mono text-xs font-semibold">
+                <div class="min-w-36 max-w-44">
+                  <p class="truncate font-mono text-xs font-semibold" :title="row.nomor_surat || row.nomorSurat || ''">
                     {{ row.nomor_surat || row.nomorSurat || '-' }}
                   </p>
                   <p class="mt-1 text-xs text-gray-500">
@@ -925,7 +951,7 @@
                 </div>
               </template>
               <template #cell-perihal="{ row }">
-                <p class="min-w-64 max-w-lg text-sm font-medium">
+                <p class="min-w-32 max-w-xs text-sm font-medium">
                   {{ row.perihal || 'Tanpa perihal' }}
                 </p>
               </template>
@@ -946,17 +972,17 @@
                 </span>
               </template>
               <template #cell-divisi="{ row }">
-                <span class="block min-w-32 max-w-48 text-xs text-gray-600 dark:text-gray-300">
+                <span class="block min-w-28 max-w-40 text-xs text-gray-600 dark:text-gray-300">
                   {{ row.divisi || '—' }}
                 </span>
               </template>
               <template #cell-jabatan="{ row }">
-                <span class="block min-w-32 max-w-48 text-xs text-gray-600 dark:text-gray-300">
+                <span class="block min-w-28 max-w-40 text-xs text-gray-600 dark:text-gray-300">
                   {{ row.jabatan || '—' }}
                 </span>
               </template>
               <template #cell-nama="{ row }">
-                <span class="block min-w-28 text-xs font-medium text-gray-800 dark:text-gray-200">
+                <span class="block min-w-24 text-xs font-medium text-gray-800 dark:text-gray-200">
                   {{ row.nama || '—' }}
                 </span>
               </template>
@@ -969,9 +995,19 @@
                 </span>
                 <span v-else class="text-xs text-gray-400">Belum</span>
               </template>
+              <template #cell-aksi="{ row }">
+                <UButton
+                  color="primary"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-eye"
+                  title="Lihat PDF naskah"
+                  @click="openCandidatePdf(row)"
+                />
+              </template>
             </DataTable>
           </div>
-          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          <p class="mt-3 shrink-0 text-xs text-gray-500 dark:text-gray-400">
             {{ selectionCount }} naskah dipilih untuk ditambahkan.
           </p>
         </div>
@@ -1112,12 +1148,78 @@
         </div>
       </template>
     </UModal>
+
+    <!-- Popup PDF naskah kandidat (dibuka dari modal Tambah Naskah) -->
+    <UModal
+      v-model:open="showCandidatePdfModal"
+      fullscreen
+      :ui="{
+        overlay: 'bg-black/80 backdrop-blur-sm',
+        body: 'p-0',
+      }"
+    >
+      <template #header>
+        <div class="flex w-full items-center justify-between gap-3 pr-2">
+          <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+            {{ candidatePdfTitle }}
+          </p>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            size="sm"
+            :padded="false"
+            @click="closeCandidatePdfModal"
+          />
+        </div>
+      </template>
+      <template #body>
+        <div class="relative flex h-full min-h-0 w-full flex-col bg-gray-100 dark:bg-gray-900">
+          <div
+            v-if="candidatePdfLoading"
+            class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90"
+          >
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="mb-2 size-10 animate-spin text-primary-500"
+            />
+            <span class="text-xs text-gray-500 dark:text-gray-400">Memuat Dokumen...</span>
+          </div>
+          <iframe
+            v-if="candidatePdfUrl"
+            :src="candidatePdfUrl"
+            class="h-full w-full flex-1 border-none"
+            title="Preview dokumen"
+          />
+          <div
+            v-else-if="!candidatePdfLoading"
+            class="flex h-full flex-col items-center justify-center gap-2 text-gray-500"
+          >
+            <UIcon name="i-lucide-file-text" class="size-12 opacity-30" />
+            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Export Column Modal (Daftar Naskah / Kandidat Tambah Naskah) -->
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="exportScope === 'daftar' ? naskahList.length : filteredCandidates.length"
+      :title="exportScope === 'daftar' ? 'Pilih Kolom Export Daftar Naskah' : 'Pilih Kolom Export Kandidat Naskah'"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import {
   AlignLeft,
   AlertTriangle,
@@ -1162,6 +1264,7 @@ const {
   getBerkasStatusByNaskah,
   getDaftarNaskah,
   getNaskahDetailInBerkas,
+  getNaskahPdfUrl,
   getNaskahSaya,
   getNaskahSiapArsip,
   getVerifikasiDetail,
@@ -1170,6 +1273,24 @@ const {
 } = useArsipDinamis();
 const toast = useToast();
 const backPath = '/kelola/pemeliharaan/pemberkasan/berkas-saya';
+
+// ── Export (Daftar Naskah & Kandidat Tambah Naskah) ──────────────
+const showExportModal = ref(false);
+const isExporting = ref(false);
+// 'daftar' = tab Daftar Naskah; 'kandidat' = modal Tambah Naskah
+const exportScope = ref<'daftar' | 'kandidat'>('daftar');
+const exportColumns = ref([
+  { key: 'No', label: 'No', desc: 'Nomor urut data' },
+  { key: 'nomor', label: 'Nomor Surat', desc: 'Nomor naskah' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal naskah' },
+  { key: 'perihal', label: 'Perihal', desc: 'Perihal naskah' },
+  { key: 'jenis', label: 'Jenis', desc: 'Jenis naskah (ND/SDI/SDE/DI/KA)' },
+  { key: 'divisi', label: 'Divisi', desc: 'Divisi pengirim/penerima' },
+  { key: 'jabatan', label: 'Jabatan', desc: 'Jabatan pengirim/penerima' },
+  { key: 'nama', label: 'Nama', desc: 'Nama pengirim/penerima' },
+  { key: 'sumber', label: 'Sumber', desc: 'Sumber naskah (Kotak Masuk/Terkirim/Siap Arsip)' },
+  { key: 'status', label: 'Status', desc: 'Status naskah' },
+]);
 const berkasId = computed(() => String(route.params.id || ''));
 const detailPath = computed(() => `/kelola/pemeliharaan/pemberkasan/${berkasId.value}`);
 const berkas = ref<Record<string, any> | null>(null);
@@ -1186,6 +1307,11 @@ const naskahTotal = ref(0);
 const showPdfModal = ref(false);
 const pdfLoading = ref(false);
 const pdfUrl = ref<string | null>(null);
+// Popup PDF naskah kandidat (modal Tambah Naskah — preview sebelum diberkaskan)
+const showCandidatePdfModal = ref(false);
+const candidatePdfLoading = ref(false);
+const candidatePdfUrl = ref<string | null>(null);
+const candidatePdfTitle = ref('');
 const verifikasiList = ref<Record<string, any>[]>([]);
 const showAddNaskahModal = ref(false);
 const candidateList = ref<Record<string, any>[]>([]);
@@ -1211,7 +1337,6 @@ const jenisFilterOptions = [
   { value: 'DI', label: 'Disposisi' },
   { value: 'KA', label: 'Korespondensi Aktif' },
   { value: 'UND', label: 'Surat Undangan' },
-  { value: 'K', label: 'Konsep' },
 ];
 const statusFilterOptions = [
   { value: '', label: 'Semua Status' },
@@ -1258,6 +1383,7 @@ const candidateColumns = [
   { key: 'nama', label: 'Nama' },
   { key: 'sumber', label: 'Sumber' },
   { key: 'berkas', label: 'Status Berkas' },
+  { key: 'aksi', label: 'Aksi', class: 'w-20' },
 ];
 // Opsi filter divisi: semua org scope (dari BE) + divisi unik dari daftar kandidat.
 const candidateDivisiOptions = computed(() => [
@@ -1660,6 +1786,117 @@ async function openNaskahPdf(row: Record<string, any>) {
     showPdfModal.value = false;
   } finally {
     pdfLoading.value = false;
+  }
+}
+
+// Preview PDF naskah kandidat (belum masuk berkas) — ambil presigned URL dari
+// endpoint /arsip-dinamis/naskah/:id/pdf, render langsung di iframe (inline).
+// Presigned URL sudah ResponseContentDisposition: inline → viewer PDF tampil.
+function closeCandidatePdfModal() {
+  showCandidatePdfModal.value = false;
+  candidatePdfUrl.value = null;
+}
+
+async function openCandidatePdf(row: Record<string, any>) {
+  const naskahId = row.id || row.naskahId;
+  if (!naskahId) return;
+  showCandidatePdfModal.value = true;
+  candidatePdfLoading.value = true;
+  candidatePdfUrl.value = null;
+  candidatePdfTitle.value = row.perihal || row.nomor_surat || 'Naskah';
+  try {
+    const response = await getNaskahPdfUrl(naskahId);
+    const payload: any = response?.data ?? response;
+    const url = payload?.url || payload?.data?.url || '';
+    if (!url) throw new Error('Naskah tidak memiliki PDF final');
+    candidatePdfUrl.value = url;
+  } catch (e: any) {
+    toast.add({
+      title: 'Gagal memuat PDF',
+      description: e?.message || 'Silakan coba kembali.',
+      color: 'error',
+    });
+    showCandidatePdfModal.value = false;
+  } finally {
+    candidatePdfLoading.value = false;
+  }
+}
+
+// ── Export Excel (Daftar Naskah & Kandidat Tambah Naskah) ────────
+
+function openExport(scope: 'daftar' | 'kandidat') {
+  const rows = scope === 'daftar' ? naskahList.value : filteredCandidates.value;
+  if (rows.length === 0) {
+    toast.add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
+    return;
+  }
+  exportScope.value = scope;
+  showExportModal.value = true;
+}
+
+function handleExportConfirm(selectedKeys: string[]) {
+  const rows = exportScope.value === 'daftar' ? naskahList.value : filteredCandidates.value;
+  if (rows.length === 0 || selectedKeys.length === 0) return;
+  isExporting.value = true;
+  try {
+    const data = rows.map((r: any, idx: number) => {
+      const row: Record<string, any> = {};
+      const nomor = r.nomor_surat || r.nomorSurat || r.nomor || '-';
+      const tanggal = formatDate(r.tanggal_naskah || r.tanggalNaskah || r.tanggal);
+      const perihal = r.perihal || 'Tanpa perihal';
+      const jenis = getNaskahTypeLabel(r.naskah_tipe || r.naskahTipe || r.naskahTipe || r.jenis);
+      const divisi = r.divisi || '-';
+      const jabatan = r.jabatan || '-';
+      const nama = r.nama || '-';
+      const sumber = getSourceLabel(r.sumber || (exportScope.value === 'daftar' ? '' : ''));
+      const status = r.status || '-';
+      if (selectedKeys.includes('No')) row['No'] = idx + 1;
+      if (selectedKeys.includes('nomor')) row['Nomor Surat'] = nomor;
+      if (selectedKeys.includes('tanggal')) row['Tanggal'] = tanggal;
+      if (selectedKeys.includes('perihal')) row['Perihal'] = perihal;
+      if (selectedKeys.includes('jenis')) row['Jenis'] = jenis;
+      if (selectedKeys.includes('divisi')) row['Divisi'] = divisi;
+      if (selectedKeys.includes('jabatan')) row['Jabatan'] = jabatan;
+      if (selectedKeys.includes('nama')) row['Nama'] = nama;
+      if (selectedKeys.includes('sumber')) row['Sumber'] = sumber;
+      if (selectedKeys.includes('status')) row['Status'] = status;
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    const sheetName = exportScope.value === 'daftar' ? 'Daftar Naskah' : 'Kandidat Naskah';
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const fileName =
+      exportScope.value === 'daftar'
+        ? `daftar_naskah_${berkas.value?.kodeBerkas || berkasId.value}_${new Date().toISOString().slice(0, 10)}.xlsx`
+        : `kandidat_naskah_${berkas.value?.kodeBerkas || berkasId.value}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    saveAs(blob, fileName);
+
+    showExportModal.value = false;
+    toast.add({
+      title: 'Berhasil',
+      description: `${data.length} data berhasil diexport`,
+      color: 'success',
+    });
+  } catch (e) {
+    console.error('Gagal export naskah:', e);
+    toast.add({ title: 'Gagal export', description: 'Silakan coba kembali.', color: 'error' });
+  } finally {
+    isExporting.value = false;
   }
 }
 
