@@ -143,6 +143,7 @@
                 v-for="item in list"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                :class="newRowClass(item)"
               >
                 <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.arsipPerihal }}</td>
                 <td class="px-3 py-3">

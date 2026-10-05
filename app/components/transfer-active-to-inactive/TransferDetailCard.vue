@@ -95,6 +95,33 @@
       </div>
     </div>
 
+    <!-- Card 3: Daftar Atasan Verifikasi (Berjenjang) -->
+    <div
+      v-if="transfer.approvalLevels && transfer.approvalLevels.length > 0"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+    >
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi</h3>
+      <div class="space-y-2">
+        <div
+          v-for="level in transfer.approvalLevels"
+          :key="level.id"
+          class="flex items-center gap-3 p-3 rounded-lg border"
+          :class="levelStatusClass(level.status)"
+        >
+          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 shrink-0">
+            {{ level.urutan }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.atasanName }}</p>
+            <p v-if="level.atasanPositionText" class="text-xs text-gray-500 dark:text-gray-400">{{ level.atasanPositionText }}</p>
+          </div>
+          <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
+            {{ levelStatusLabel(level.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Card 4: Daftar Atasan TU Verifikasi (Berjenjang) -->
     <div
       v-if="transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"

@@ -73,6 +73,12 @@ export const useArsipDinamis = () => {
     );
   };
 
+  // Presigned URL PDF final naskah (untuk preview di modal Tambah Naskah,
+  // sebelum naskah masuk berkas). Return envelope { data: { url } }.
+  const getNaskahPdfUrl = async (naskahId: string) => {
+    return await apiGet(`/arsip-dinamis/naskah/${naskahId}/pdf`, {}, { skipCache: true });
+  };
+
   const addNaskahToBerkas = async (
     berkasId: string,
     data: { naskah_ids: string[]; sumber: string }
@@ -191,6 +197,7 @@ export const useArsipDinamis = () => {
     // Naskah
     getDaftarNaskah,
     getNaskahDetailInBerkas,
+    getNaskahPdfUrl,
     addNaskahToBerkas,
     removeNaskahFromBerkas,
     getNaskahSiapArsip,
