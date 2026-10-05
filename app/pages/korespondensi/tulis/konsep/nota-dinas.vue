@@ -588,7 +588,7 @@ const mapApiToUI = (list: any[]): RecipientItem[] => list?.map(item => {
 
   return master || {
     label: `${item.persnum_person_text || item.nama || item.persnum || ''} - ${item.position_text || item.positionText || item.labelJob || ''}`,
-    labelJob: item.position_text || item.positionText || item.labelJob || '',
+    labelJob: formatDelegatedPositionText(item.position_text || item.positionText || item.labelJob || '', item),
     value: posId,
     isGroup: false,
     raw: item,
@@ -676,7 +676,7 @@ const fetchRecipientsBySender = async (senderPositionId: string) => {
       ];
       items.value = combinedArray.map((r: any): RecipientItem => ({
         label: `${r.persnum_person_text || '-'} - ${r.position_text}`,
-        labelJob: r.position_text,
+        labelJob: formatDelegatedPositionText(r.position_text, r),
         value: String(r.position),
         isGroup: false,
         raw: r,
@@ -1390,7 +1390,7 @@ onMounted(async () => {
           const master = items.value.find((m: any) => m.value === posId);
           return master || {
             label: `${item.nama || item.persnum_person_text || ''} - ${item.position_text || item.positionText || ''}`,
-            labelJob: item.position_text || item.positionText || '',
+            labelJob: formatDelegatedPositionText(item.position_text || item.positionText || '', item),
             value: posId,
             isGroup: false,
             raw: item,

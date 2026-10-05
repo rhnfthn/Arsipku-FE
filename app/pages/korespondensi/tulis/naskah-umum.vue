@@ -449,7 +449,7 @@ onMounted(async () => {
       const rawRecipients = resRec.recipients || (resRec as any).data || [];
       recipientItems.value = rawRecipients.map((r: any) => ({
         label: `${r.persnum_person_text || r.persnum || 'empty'} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-        labelJob: r.position_text || r.positionText,
+        labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
         value: String(r.position || r.position_id || r.id),
         raw: r,
       }));
