@@ -32,10 +32,10 @@
           :loading="klasifikasiStatus === 'loading'" />
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
-        <TulisInputPenerima v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
+        <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
           :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih di Tembusan" />
 
-        <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan" placeholder="Pilih Tembusan"
+        <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan" placeholder="Pilih Tembusan"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
           disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
 
@@ -118,7 +118,7 @@
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
-                          {{ correspondenceRecipientLabel(p, 'organization') }}
+                          {{ sdiRecipientLabel(p, 'organization') }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -145,7 +145,7 @@
                   <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ correspondenceRecipientLabel(t, 'organization') }}
+                      {{ sdiRecipientLabel(t, 'organization') }}
                     </li>
                   </ol>
                   <div v-else class="text-gray-400 italic">...</div>
@@ -175,13 +175,13 @@
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ sdiRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ sdiRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                 </div>
@@ -412,7 +412,7 @@ const getBasePayload = (): DraftPayload => {
     tembusan: selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value),
     penerima_grup: selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', '')),
     tembusan_grup: selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', '')),
-    tertuju: selectedTertuju.value.map(i => correspondenceRecipientLabel(i)),
+    tertuju: selectedTertuju.value.map(i => sdiRecipientLabel(i)),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',

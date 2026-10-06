@@ -108,8 +108,8 @@
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_lampiran') }}</span>
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="lampiranText" readonly tabindex="-1"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+              <input type="text" v-model="lampiranText"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 :placeholder="$t('sde_lampiran_otomatis')" />
             </div>
           </div>
@@ -123,22 +123,12 @@
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <div class="flex items-center pb-4 mb-6 px-10">
-                  <div class="flex items-end gap-4">
-                    <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
-                    <div class="flex flex-col mb-1">
-                      <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
-                    </div>
-                  </div>
-                  <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
-                    <div class="font-bold uppercase">{{ user?.alamatInfo?.kantor }}</div>
-                    <div>{{ user?.alamatInfo?.gedung }} {{ user?.alamatInfo?.kota }}</div>
-                    <div v-html="user?.alamatInfo?.alamat"></div>
-                  </div>
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
                 </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText?.replace('Kantor', '') || "Tangerang" }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -174,7 +164,7 @@
                     <div class="font-bold mb-1">
                       <div v-if="selectedTertuju.length > 5">{{ $t('sde_periksa_alamat_terlampir') }}</div>
                       <div v-else-if="selectedTertuju.length > 0">
-                        <div v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</div>
+                        <div v-for="(t, idx) in selectedTertuju" :key="t.value" class="leading-relaxed"><span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>{{ t.label }}</div>
                       </div>
                       <div v-else>
                         <div>................................................</div>
@@ -208,12 +198,12 @@
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">{{ $t('f_tembusan') }} :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ $t('sde_periksa_alamat_terlampir') }}</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="ml-0 pl-0">{{ $t('sde_periksa_alamat_terlampir') }}</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">{{ correspondenceRecipientLabel(t, 'area') }}</li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -354,7 +344,7 @@ const isAiDraftOpen = ref(false);
 const alertState = useAlertState();
 
 // --- SDE SPECIFIC STATE ---
-const lampiranText = ref("");
+const lampiranText = useEditableLampiranText(existingFiles);
 const isEnglish = ref(false);
 
 const externalItems = ref<any[]>([]);
@@ -812,10 +802,6 @@ onMounted(async () => {
   }
 });
 
-watch(existingFiles, (newFiles) => {
-  const jumlah = newFiles ? newFiles.length : 0;
-  lampiranText.value = jumlah > 0 ? `${jumlah} ${t('f_lampiran')}` : `0 ${t('f_lampiran')}`;
-}, { deep: true, immediate: true });
 </script>
 
 <style scoped>
