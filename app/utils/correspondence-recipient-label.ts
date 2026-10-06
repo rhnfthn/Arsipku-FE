@@ -9,7 +9,11 @@ export function correspondenceRecipientLabel(item: any, suffix: 'organization' |
   if (!item.isGroup && !item.is_group &&
       (/^GM(?:[-_\s]|$)/i.test(abbreviation) || /^(?:general\s+manager|GM)\b/i.test(position.replace(/^(?:PT|PH|PS)\.\s*/i, '')))) {
     const name = String(raw.persnum_person_text || raw.nama_sirkuler || raw.namaSirkuler || raw.nama || '').trim();
-    return [toTitleCase(name), abbreviation || 'GM', formatDelegatedPosition(position, raw.position_status || raw.positionStatus)]
+    const branch = [raw.area_text, raw.areaText, raw.sub_area_text, raw.subAreaText, item.area_text, item.sub_area_text]
+      .map(value => String(value ?? '').trim()).find(Boolean) || '';
+    const positionWithBranch = branch && !position.toLocaleLowerCase('id-ID').endsWith(branch.toLocaleLowerCase('id-ID'))
+      ? `${position} - ${branch}` : position;
+    return [toTitleCase(name), abbreviation || 'GM', formatDelegatedPosition(positionWithBranch, raw.position_status || raw.positionStatus)]
       .filter(Boolean).join(' - ');
   }
   const label = item.labelJob || item.label || position;
