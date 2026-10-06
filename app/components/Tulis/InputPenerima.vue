@@ -181,7 +181,7 @@ const formatInternalRecipientLabel = (item: any) => {
     String(abbreviation || '').trim().toUpperCase() === 'GM' ||
     /\bgeneral manager\b/i.test(String(positionText));
   const location = isGeneralManager
-    ? raw?.sub_area_text ?? raw?.subAreaText ?? raw?.area_text ?? raw?.areaText
+    ? raw?.area_text || raw?.areaText || raw?.sub_area_text || raw?.subAreaText
     : null;
 
   return [
@@ -189,7 +189,7 @@ const formatInternalRecipientLabel = (item: any) => {
     '-',
     abbreviation ? `(${String(abbreviation).toUpperCase()})` : '',
     capitalizeWords(positionText),
-    location ? `- ${capitalizeWords(location)}` : '',
+    location && !String(positionText).toLocaleLowerCase('id-ID').endsWith(String(location).toLocaleLowerCase('id-ID')) ? `- ${location}` : '',
   ].filter(Boolean).join(' ');
 };
 // Tembusan wajib hanya terkunci pada field Tembusan (lockMandatoryCc). Di
