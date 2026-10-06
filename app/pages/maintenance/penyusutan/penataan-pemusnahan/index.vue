@@ -121,6 +121,7 @@
                 v-for="item in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                :class="newRowClass(item)"
               >
                 <td class="px-3 py-3">{{ item.nama_berkas }}</td>
                 <td class="px-3 py-3">

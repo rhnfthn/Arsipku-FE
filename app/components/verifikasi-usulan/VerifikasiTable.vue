@@ -35,6 +35,7 @@
               v-for="row in data"
               :key="row.id"
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              :class="newRowClass(row)"
             >
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.arsipPerihal">{{ row.arsipPerihal }}</td>
               <td class="px-4 py-3 text-gray-700 dark:text-gray-200 whitespace-nowrap">

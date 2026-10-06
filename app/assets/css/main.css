@@ -122,51 +122,57 @@
   --color-warning-900: #602706;
 }
 
-/* Styling Scrollbar Modern */
+/* Styling Scrollbar Modern — selalu terlihat (track permanen, bukan overlay) */
 .custom-scrollbar {
-  scrollbar-width: thin;
-  /* Firefox */
-  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-  /* Firefox */
+  scrollbar-width: auto;
+  /* Firefox — track & thumb selalu tampil */
+  scrollbar-color: rgba(100, 116, 139, 0.5) rgba(241, 245, 249, 0.8);
 }
 
 /* Webkit (Chrome, Safari, Edge) */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
   /* Lebar scrollbar */
-  height: 5px;
+  height: 12px;
   /* Tinggi scrollbar horizontal */
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-  /* Track transparan agar menyatu */
+  background: rgba(226, 232, 240, 0.7);
+  /* Track abu muda permanen — terlihat walau belum di-scroll */
+  border-radius: 20px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  /* Warna abu-abu transparan */
+  background-color: rgba(100, 116, 139, 0.55);
+  /* Abu-abu slate terlihat jelas */
   border-radius: 20px;
   /* Membuat sudut bulat */
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   /* Padding trick agar terlihat lebih kecil */
   background-clip: content-box;
 }
 
 /* Hover effect */
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
+  background-color: rgba(71, 85, 105, 0.75);
   /* Lebih gelap saat di-hover */
 }
 
 /* Dark Mode Adjustment */
+:is(.dark .custom-scrollbar)::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.8);
+}
+
 :is(.dark .custom-scrollbar)::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(148, 163, 184, 0.5);
   /* Putih transparan di dark mode */
 }
 
 :is(.dark .custom-scrollbar):hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(148, 163, 184, 0.7);
 }
 
 /* Hilangkan focus ring biru pada icon (svg) yang jadi tooltip trigger / flag */

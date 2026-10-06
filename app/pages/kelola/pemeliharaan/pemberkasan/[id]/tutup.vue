@@ -427,9 +427,22 @@ const statusLabel = computed(() => {
 const display = (value: any) =>
   value === null || value === undefined || value === '' ? '-' : String(value);
 
+// Label klasifikasi: kode — teks (mis. "AUD.01 — Program Kerja Audit Tahunan")
+const klasifikasiLabel = computed(() => {
+  const kode = berkas.value?.klasifikasi;
+  const teks = berkas.value?.klasifikasiTeks || berkas.value?.klasifikasi_text;
+  if (!kode && !teks) return '-';
+  return [kode, teks].filter(Boolean).join(' — ');
+});
+
 const metadata = computed(() => [
   { label: 'Nama Berkas', value: display(berkas.value?.judulBerkas), icon: 'i-lucide-folder-open' },
   { label: 'Kode Berkas', value: display(berkas.value?.kodeBerkas), icon: 'i-lucide-hash' },
+  {
+    label: 'Klasifikasi',
+    value: klasifikasiLabel.value,
+    icon: 'i-lucide-tags',
+  },
   {
     label: 'Retensi Aktif',
     value: `${berkas.value?.retensiAktifTahun || 0} Tahun`,

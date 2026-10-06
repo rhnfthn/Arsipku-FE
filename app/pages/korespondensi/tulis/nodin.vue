@@ -1029,7 +1029,7 @@ onMounted(async () => {
 
       return {
         label: formattedLabel, // Ini yang akan muncul di Dropdown & Badge (jika default USelectMenu)
-        labelJob: r.position_text, // Simpan nama jabatan saja jika butuh
+        labelJob: formatDelegatedPositionText(r.position_text, r), // Simpan nama jabatan saja jika butuh
         value: safeValue ? String(safeValue) : "0", // Pastikan string ID
         raw: r,
       };
