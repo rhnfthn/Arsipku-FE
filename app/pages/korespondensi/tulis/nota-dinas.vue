@@ -571,8 +571,8 @@ onMounted(async () => {
                                 ? selectedTertuju
                                     .map((s: any, i: number) =>
                                       selectedTertuju.length === 1
-                                        ? `<div>${s.labelJob || s.label}</div>`
-                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                                        ? `<div>${correspondenceRecipientLabel(s)}</div>`
+                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${correspondenceRecipientLabel(s)}</div>`
                                     )
                                     .join('')
                                 : '................................................'
@@ -631,11 +631,11 @@ onMounted(async () => {
                       {{ $t('nd_periksa_alamat_terlampir') }}
                     </div>
                     <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
-                      {{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}
+                      {{ correspondenceRecipientLabel(selectedTembusan[0]) }}
                     </div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">
-                        {{ t.labelJob || t.label }}
+                        {{ correspondenceRecipientLabel(t) }}
                       </li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
@@ -671,7 +671,7 @@ onMounted(async () => {
                     </div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTertuju" :key="item.value">
-                        {{ item.labelJob || item.label }}
+                        {{ correspondenceRecipientLabel(item) }}
                       </li>
                     </ol>
                   </div>
@@ -679,7 +679,7 @@ onMounted(async () => {
                     <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_tembusan') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}
+                        {{ correspondenceRecipientLabel(item) }}
                       </li>
                     </ol>
                   </div>
@@ -694,6 +694,16 @@ onMounted(async () => {
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
         >
+          <UButton
+            v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
+            :label="$t('draft')"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-heroicons-document-text"
+            class="px-8"
+            @click="handleConfirmSaveDraft"
+          />
           <UButton
             v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
             :label="$t('f_pratinjau')"

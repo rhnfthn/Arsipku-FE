@@ -46,6 +46,37 @@ export function naskahPersonaLabel(persona?: {
   return [person.nama, position].filter(Boolean).join(' - ') || '-';
 }
 
+/**
+ * Nama persona saja (tanpa jabatan) — dipakai sel tabel yang menampilkan
+ * nama dan jabatan di baris terpisah.
+ */
+export function naskahPersonaName(persona?: {
+  nama?: string;
+  jabatan?: string;
+}): string {
+  if (!persona) return '-';
+  return normalizeNaskahPersona(persona).nama || '-';
+}
+
+/**
+ * Jabatan persona saja (dengan prefix delegasi + abbreviation) — dipakai sel
+ * tabel yang menampilkan nama dan jabatan di baris terpisah.
+ */
+export function naskahPersonaPosition(persona?: {
+  nama?: string;
+  jabatan?: string;
+  abbreviation?: string | null;
+}): string {
+  if (!persona) return '';
+  const person = normalizeNaskahPersona(persona);
+  return [
+    persona.abbreviation ? `(${persona.abbreviation.toUpperCase()})` : '',
+    person.jabatan,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
 /** Default paraf: semua direktur selain penandatangan, dengan pemrakarsa wajib disertakan. */
 export function defaultNaskahDiketahuiDirectors<
   T extends { positionId?: string; persnum?: number; nama: string },

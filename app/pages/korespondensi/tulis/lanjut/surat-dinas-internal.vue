@@ -594,7 +594,7 @@ onMounted(async () => {
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
-                          {{ p.labelJob || p.label }}{{ p.organization ? ' - ' + p.organization : '' }}
+                          {{ correspondenceRecipientLabel(p, 'organization') }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -621,7 +621,7 @@ onMounted(async () => {
                   <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
+                      {{ correspondenceRecipientLabel(t, 'organization') }}
                     </li>
                   </ol>
                   <div v-else class="text-gray-400 italic">...</div>
@@ -651,15 +651,13 @@ onMounted(async () => {
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                 </div>
@@ -673,6 +671,8 @@ onMounted(async () => {
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="handleConfirmSaveDraft" />
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>

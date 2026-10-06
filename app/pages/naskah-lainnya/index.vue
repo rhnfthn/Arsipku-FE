@@ -236,10 +236,32 @@
           </div>
         </template>
         <template #cell-pemrakarsa="{ row }">
-          <span class="block truncate text-xs" :title="row.pemrakarsa">{{ row.pemrakarsa }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-gray-800 dark:text-gray-100" :title="row.pemrakarsa">
+              {{ row.pemrakarsa }}
+            </p>
+            <p
+              v-if="row.pemrakarsaJabatan"
+              class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+              :title="row.pemrakarsaJabatan"
+            >
+              {{ row.pemrakarsaJabatan }}
+            </p>
+          </div>
         </template>
         <template #cell-konseptor="{ row }">
-          <span class="block truncate text-xs" :title="row.konseptor">{{ row.konseptor }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-gray-800 dark:text-gray-100" :title="row.konseptor">
+              {{ row.konseptor }}
+            </p>
+            <p
+              v-if="row.konseptorJabatan"
+              class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+              :title="row.konseptorJabatan"
+            >
+              {{ row.konseptorJabatan }}
+            </p>
+          </div>
         </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge
@@ -499,21 +521,26 @@ function handleDocumentClick(e: MouseEvent) {
 // ── Sort + Pagination (client-side; API mengembalikan list penuh) ─
 
 const displayRows = computed(() =>
-  items.value.map((r) => ({
-    id: r.id,
-    nomor: r.nomor ?? '<draft>',
-    jenis: r.jenis,
-    perihal: r.perihal,
-    pemrakarsa: naskahPersonaLabel(r.pemrakarsaPejabat ?? r.pemrakarsa),
-    konseptor: naskahPersonaLabel(r.pemrakarsa),
-    tahapan:
-      r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
-        ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
-          ? 'selesai_final'
-          : 'selesai_belum_final'
-        : r.tahapan,
-    terakhirDiubah: r.terakhirDiubah,
-  }))
+  items.value.map((r) => {
+    const pemrakarsaPersona = r.pemrakarsaPejabat ?? r.pemrakarsa;
+    return {
+      id: r.id,
+      nomor: r.nomor ?? '<draft>',
+      jenis: r.jenis,
+      perihal: r.perihal,
+      pemrakarsa: naskahPersonaName(pemrakarsaPersona),
+      pemrakarsaJabatan: naskahPersonaPosition(pemrakarsaPersona),
+      konseptor: naskahPersonaName(r.pemrakarsa),
+      konseptorJabatan: naskahPersonaPosition(r.pemrakarsa),
+      tahapan:
+        r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
+          ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
+            ? 'selesai_final'
+            : 'selesai_belum_final'
+          : r.tahapan,
+      terakhirDiubah: r.terakhirDiubah,
+    };
+  })
 );
 
 const sortedRows = computed(() => {
