@@ -35,6 +35,7 @@ export interface TransferActiveToInactive {
   atasanPersnum: number;
   atasanName: string;
   atasanPositionId: number | null;
+  atasanPositionText?: string | null;
   currentApprovalLevel: number;
   totalApprovalLevels: number;
   tuPersnum: number | null;
@@ -64,6 +65,17 @@ export interface TransferActiveToInactive {
   finalVerifyNote: string | null;
   beritaAcaraUrl: string | null;
   beritaAcaraNomor: string | null;
+  bacPihakPertamaPersnum?: number | null;
+  bacPihakPertamaName?: string | null;
+  bacPihakPertamaJabatan?: string | null;
+  bacTembusan?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+  }> | null;
+  bacSignedAt?: string | null;
+  bacSignedBy?: number | null;
+  bacSignatureQr?: string | null;
   tanggalDikirim: string | null;
   physicalChecklist: Record<string, boolean> | null;
   physicalVerifiedBy: number | null;

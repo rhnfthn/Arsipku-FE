@@ -2,11 +2,28 @@
   <div class="space-y-5">
     <!-- Card 1: Informasi Usulan + Keterangan + Total Arsip + File Rincian -->
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-      <div class="flex items-center justify-between mb-4">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        :class="collapsible ? 'cursor-pointer' : 'cursor-default'"
+        :aria-expanded="collapsible ? infoOpen : undefined"
+        @click="collapsible && (infoOpen = !infoOpen)"
+      >
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
-        <span :class="statusBadgeClass(transfer.status)">{{ statusLabel(transfer.status) }}</span>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div class="flex items-center gap-3">
+          <span
+            v-if="showHeaderStatus"
+            :class="statusBadgeClass(transfer.status)"
+          >{{ statusLabel(transfer.status) }}</span>
+          <UIcon
+            v-if="collapsible"
+            :name="infoOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+            class="h-4 w-4 text-gray-400"
+          />
+        </div>
+      </button>
+      <div v-show="!collapsible || infoOpen">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.nomorUsulan }}</p>
@@ -14,6 +31,18 @@
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Usulan</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(transfer.tanggalUsulan) }}</p>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
+          <div class="mt-1">
+            <span :class="statusBadgeClass(transfer.status)">{{ statusLabel(transfer.status) }}</span>
+          </div>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Status BAC</span>
+          <p class="text-gray-900 dark:text-white font-medium">
+            {{ transfer.bacSignedAt ? 'Ditandatangani' : transfer.bacPihakPertamaPersnum ? 'Menunggu Tanda Tangan' : 'Belum Ditandatangani' }}
+          </p>
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
@@ -29,7 +58,9 @@
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-          <p class="text-gray-900 dark:text-white font-medium">{{ transfer.atasanName }}</p>
+          <p class="text-gray-900 dark:text-white font-medium">
+            {{ transfer.atasanName }}<span v-if="transfer.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.atasanPositionText }}</span>
+          </p>
           <p v-if="transfer.totalApprovalLevels && transfer.totalApprovalLevels > 1" class="text-xs text-gray-400 mt-0.5">
             Tahap {{ transfer.currentApprovalLevel }} dari {{ transfer.totalApprovalLevels }}
           </p>
@@ -46,31 +77,32 @@
           <span class="text-gray-500 dark:text-gray-400 text-xs">Perihal Arsip</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.arsipPerihal }}</p>
         </div>
-      </div>
-      <div v-if="transfer.rejectedNote" class="mt-4">
-        <span class="text-gray-500 dark:text-gray-400 text-xs">Catatan Penolakan</span>
-        <p class="text-red-600 dark:text-red-400 text-sm mt-1 bg-red-50 dark:bg-red-900/20 p-2 rounded">{{ transfer.rejectedNote }}</p>
-      </div>
-      <div v-if="transfer.verifyNote" class="mt-2">
-        <span class="text-gray-500 dark:text-gray-400 text-xs">Catatan Verifikasi</span>
-        <p class="text-gray-700 dark:text-gray-300 text-sm mt-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">{{ transfer.verifyNote }}</p>
-      </div>
+        </div>
+        <div v-if="transfer.rejectedNote" class="mt-4">
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Catatan Penolakan</span>
+          <p class="text-red-600 dark:text-red-400 text-sm mt-1 bg-red-50 dark:bg-red-900/20 p-2 rounded">{{ transfer.rejectedNote }}</p>
+        </div>
+        <div v-if="transfer.verifyNote" class="mt-2">
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Catatan Verifikasi</span>
+          <p class="text-gray-700 dark:text-gray-300 text-sm mt-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">{{ transfer.verifyNote }}</p>
+        </div>
 
-      <!-- Keterangan -->
-      <div v-if="transfer.keterangan" class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Keterangan</h4>
-        <p class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg italic">
-          {{ transfer.keterangan }}
-        </p>
+        <!-- Keterangan -->
+        <div v-if="transfer.keterangan" class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Keterangan</h4>
+          <p class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg italic">
+            {{ transfer.keterangan }}
+          </p>
+        </div>
       </div>
     </div>
 
-    <!-- Card 2: Daftar Berkas (format ringkasan untuk Sekretaris Divisi) -->
+    <!-- Card 2: Daftar Berkas (format item-level, seragam dengan halaman atasan managerial) -->
     <div
       v-if="berkasRows.length > 0"
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+      class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
     >
-      <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-3 px-5 pb-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">
           Daftar Berkas ({{ berkasRows.length }})
         </h3>
@@ -78,7 +110,7 @@
           <button
             type="button"
             @click="printDaftarBerkas"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            class="inline-flex h-8 w-8 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300 dark:hover:text-blue-300"
             title="Print Daftar Berkas"
             aria-label="Print Daftar Berkas"
           >
@@ -87,7 +119,7 @@
           <button
             type="button"
             @click="berkasOpen = !berkasOpen"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            class="inline-flex h-8 w-8 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300 dark:hover:text-blue-300"
             :title="berkasOpen ? 'Lipat Daftar Berkas' : 'Buka Daftar Berkas'"
             :aria-expanded="berkasOpen"
           >
@@ -95,20 +127,18 @@
           </button>
         </div>
       </div>
-      <div v-show="berkasOpen" id="daftar-berkas-print" class="overflow-x-auto">
-        <table class="w-full min-w-[1280px] border-collapse rounded-xl border border-gray-200 text-xs dark:border-gray-700">
+      <div v-show="!collapsible || berkasOpen" id="daftar-berkas-print" class="overflow-x-auto">
+        <table class="w-full min-w-[1120px] border-collapse text-xs">
           <thead>
             <tr class="bg-[#457fb6] text-white">
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">No</span><span class="block">Berkas</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
               <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]">Uraian Informasi Berkas</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kurun</span><span class="block">Waktu</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Jumlah</span><span class="block">Berkas</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Tingkat</span><span class="block">Perkembangan</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
               <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
               <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Retensi Arsip</span><span class="block">Aktif</span></th>
-              <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold">Aksi</th>
+              <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -116,18 +146,16 @@
               <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
               <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
               <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.kurunWaktu ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlahBerkas ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.tingkatPerkembangan ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggal) }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
               <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
               <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.retensiArsipAktif ?? '-' }}</td>
               <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
                 <NuxtLink
                   v-if="row.id"
                   :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=transfer`"
-                  class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
-                  title="Lihat detail berkas"
+                  class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+                  title="Buka detail berkas"
                 >
                   <UIcon name="i-lucide-eye" class="w-4 h-4" />
                 </NuxtLink>
@@ -143,20 +171,37 @@
       v-if="transfer.approvalLevels && transfer.approvalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi</h3>
-      <div class="space-y-2">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        :class="collapsible ? 'cursor-pointer' : 'cursor-default'"
+        :aria-expanded="collapsible ? approvalOpen : undefined"
+        @click="collapsible && (approvalOpen = !approvalOpen)"
+      >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Atasan Verifikasi</h3>
+        <UIcon
+          v-if="collapsible"
+          :name="approvalOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="h-4 w-4 text-gray-400"
+        />
+      </button>
+      <div v-show="!collapsible || approvalOpen" class="space-y-2">
         <div
           v-for="level in transfer.approvalLevels"
           :key="level.id"
           class="flex items-center gap-3 p-3 rounded-lg border"
           :class="levelStatusClass(level.status)"
         >
-          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 shrink-0">
+          <div
+            v-if="(transfer.approvalLevels?.length ?? 0) > 1"
+            class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 shrink-0"
+          >
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.atasanName }}</p>
-            <p v-if="level.atasanPositionText" class="text-xs text-gray-500 dark:text-gray-400">{{ level.atasanPositionText }}</p>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ level.atasanName }}<span v-if="level.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.atasanPositionText }}</span>
+            </p>
           </div>
           <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
             {{ levelStatusLabel(level.status) }}
@@ -165,13 +210,92 @@
       </div>
     </div>
 
-    <!-- Card 4: Daftar Atasan TU Verifikasi (Berjenjang) -->
+    <!-- Card 4: Pejabat Penandatangan BAC -->
+    <div
+      v-if="hasBacSigner"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+    >
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        aria-expanded="bacSignerOpen"
+        @click="bacSignerOpen = !bacSignerOpen"
+      >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Pejabat Penandatangan</h3>
+        <UIcon
+          :name="bacSignerOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="h-4 w-4 text-gray-400"
+        />
+      </button>
+      <div v-show="bacSignerOpen" class="space-y-2">
+        <div class="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+            Penandatangan
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5: Tembusan BAC -->
+    <div
+      v-if="hasBacTembusan"
+      class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+    >
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        aria-expanded="bacTembusanOpen"
+        @click="bacTembusanOpen = !bacTembusanOpen"
+      >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Tembusan BAC</h3>
+        <UIcon
+          :name="bacTembusanOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="h-4 w-4 text-gray-400"
+        />
+      </button>
+      <div v-show="bacTembusanOpen" class="space-y-2">
+        <div
+          v-for="(copy, index) in bacTembusan"
+          :key="`bac-copy-${copy.persnum}-${index}`"
+          class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ copy.name || '-' }}<span v-if="copy.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ copy.jabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+            Tembusan
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 6: Daftar Atasan TU Verifikasi (Berjenjang) -->
     <div
       v-if="transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
-      <div class="space-y-2">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        :class="collapsible ? 'cursor-pointer' : 'cursor-default'"
+        :aria-expanded="collapsible ? tuApprovalOpen : undefined"
+        @click="collapsible && (tuApprovalOpen = !tuApprovalOpen)"
+      >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
+        <UIcon
+          v-if="collapsible"
+          :name="tuApprovalOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="h-4 w-4 text-gray-400"
+        />
+      </button>
+      <div v-show="!collapsible || tuApprovalOpen" class="space-y-2">
         <div
           v-for="level in transfer.tuApprovalLevels"
           :key="level.urutan"
@@ -182,8 +306,9 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.name }}</p>
-            <p v-if="level.jabatan" class="text-xs text-gray-500 dark:text-gray-400">{{ level.jabatan }}</p>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ level.name }}<span v-if="level.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.jabatan }}</span>
+            </p>
           </div>
           <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
             {{ levelStatusLabel(level.status) }}
@@ -202,9 +327,26 @@ import { statusBadgeClass, statusLabel, formatDate } from '~/utils/transfer-stat
 const props = defineProps<{
   transfer: TransferActiveToInactive;
   daftarBerkas?: any[];
+  collapsible?: boolean;
+  showHeaderStatus?: boolean;
 }>();
 
+const collapsible = computed(() => props.collapsible === true);
+const showHeaderStatus = computed(() => props.showHeaderStatus !== false);
+const infoOpen = ref(true);
 const berkasOpen = ref(true);
+const approvalOpen = ref(true);
+const tuApprovalOpen = ref(true);
+const bacSignerOpen = ref(true);
+const bacTembusanOpen = ref(true);
+
+const bacTembusan = computed(() =>
+  Array.isArray(props.transfer.bacTembusan) ? props.transfer.bacTembusan : [],
+);
+const hasBacSigner = computed(
+  () => Boolean(props.transfer.bacPihakPertamaPersnum || props.transfer.bacPihakPertamaName),
+);
+const hasBacTembusan = computed(() => bacTembusan.value.length > 0);
 
 const printDaftarBerkas = () => {
   const el = document.getElementById('daftar-berkas-print');
@@ -230,12 +372,11 @@ const berkasRows = computed(() => {
     namaBerkas: a.perihal,
     uraianInformasi: a.perihal,
     kodeKlasifikasi: '-',
-    kurunWaktu: '-',
-    jumlahBerkas: '-',
-    tingkatPerkembangan: '-',
+    nomorItem: idx + 1,
+    tanggal: null,
+    jumlah: 1,
     lokasiSimpan: '-',
     klasifikasiKeamanan: '-',
-    retensiArsipAktif: a.tanggalRetensiHabis ? `Habis: ${a.tanggalRetensiHabis}` : '-',
   }));
 });
 

@@ -282,6 +282,24 @@
               </div>
             </div>
           </div>
+          <div v-if="selectedMethod === 'ttd_basah' && allowBasahUpload" class="mx-4 mb-4">
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5">
+              Unggah PDF BAC yang sudah ditandatangani
+            </label>
+            <input
+              ref="manualFileInput"
+              type="file"
+              accept="application/pdf,.pdf"
+              class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:file:bg-primary-900/30 dark:file:text-primary-300"
+              @change="handleManualFileChange"
+            />
+            <p v-if="manualFileError" class="mt-1.5 text-xs text-red-500">
+              {{ manualFileError }}
+            </p>
+            <p v-else-if="manualFile" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ manualFile.name }}
+            </p>
+          </div>
         </div>
       </div>
     </template>
@@ -323,11 +341,13 @@ const props = defineProps<{
   hideBasah?: boolean;
   /** Hanya menyembunyikan input passphrase untuk jalur Portal TTE. */
   portalMode?: boolean;
+  /** Meminta PDF scan saat metode tanda tangan basah dipilih. */
+  allowBasahUpload?: boolean;
 }>();
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
-  submit: [payload: { method: string; passphrase?: string }];
+  submit: [payload: { method: string; passphrase?: string; file?: File }];
 }>();
 
 const isOpen = computed({
@@ -346,6 +366,9 @@ const localPassphrase = ref('');
 const passphraseError = ref('');
 const showPassword = ref(false);
 const showLupaPassphrase = ref(false);
+const manualFileInput = ref<HTMLInputElement | null>(null);
+const manualFile = ref<File | null>(null);
+const manualFileError = ref('');
 
 watch(
   () => props.open,
@@ -356,6 +379,9 @@ watch(
       showPassword.value = false;
       showLupaPassphrase.value = false;
       showAllOptions.value = false;
+      manualFile.value = null;
+      manualFileError.value = '';
+      if (manualFileInput.value) manualFileInput.value.value = '';
 
       if (!props.hideBsre) selectedMethod.value = 'digsig';
       else if (!props.hideQr) selectedMethod.value = 'qr_only';
@@ -367,6 +393,26 @@ watch(
 const selectMethod = (method: 'digsig' | 'qr_only' | 'ttd_basah') => {
   selectedMethod.value = method;
   passphraseError.value = '';
+  manualFileError.value = '';
+};
+
+const handleManualFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0] ?? null;
+  manualFileError.value = '';
+  manualFile.value = null;
+  if (!file) return;
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    manualFileError.value = 'File harus berformat PDF.';
+    input.value = '';
+    return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    manualFileError.value = 'Ukuran PDF maksimal 20 MB.';
+    input.value = '';
+    return;
+  }
+  manualFile.value = file;
 };
 
 const handleSubmit = async () => {
@@ -382,8 +428,11 @@ const handleSubmit = async () => {
   } else if (selectedMethod.value === 'qr_only') {
     emit('submit', { method: 'qr_only' });
   } else if (selectedMethod.value === 'ttd_basah') {
-    // Langsung emit tanpa validasi file — dokumen masuk tertunda, upload dilakukan di halaman tertunda
-    emit('submit', { method: 'ttd_basah' });
+    if (props.allowBasahUpload && !manualFile.value) {
+      manualFileError.value = 'Unggah PDF BAC yang sudah ditandatangani terlebih dahulu.';
+      return;
+    }
+    emit('submit', { method: 'ttd_basah', file: manualFile.value ?? undefined });
   }
 };
 

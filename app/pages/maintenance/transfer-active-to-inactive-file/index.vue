@@ -207,9 +207,9 @@
           <span class="whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</span>
         </template>
         <template #cell-status="{ row }">
-          <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{
-            statusLabel(row.status as any)
-          }}</span>
+          <span :class="displayStatusClass(row)" class="text-[11px]">
+            {{ displayStatusLabel(row) }}
+          </span>
           <span
             v-if="!row.isUsulan && row.berkasStatus === 'retensi_inaktif'"
             class="ml-1 px-2 py-0.5 text-[11px] rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
@@ -246,15 +246,6 @@
             >
               <UIcon name="i-heroicons-eye" class="w-4 h-4" />
             </button>
-            <!-- EVP pihak pertama BAC → tombol Tanda Tangan (TTE) -->
-            <button
-              v-if="canSignBac(row)"
-              @click="openSignBac(row)"
-              title="Tanda Tangan Berita Acara (TTE)"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white transition-colors ml-1"
-            >
-              <UIcon name="i-lucide-pen-tool" class="w-4 h-4" />
-            </button>
           </div>
         </template>
       </DataTable>
@@ -288,16 +279,6 @@
       @confirm="handleExportConfirm"
     />
 
-    <!-- Modal Passphrase TTE BAC (EVP pihak pertama) -->
-    <DigsigPassphraseModal
-      :open="isSignBacModalOpen"
-      :signer-info="signBacSignerInfo"
-      :is-loading="signBacLoading"
-      :hide-qr="true"
-      :hide-basah="true"
-      @update:open="(v: boolean) => (isSignBacModalOpen = v)"
-      @submit="onSignBacSubmit"
-    />
   </div>
 </template>
 
@@ -311,7 +292,6 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
-import DigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModal.vue';
 import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
@@ -334,7 +314,7 @@ const exportColumns = ref([
   { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' },
 ]);
 
-const { apiGet, apiPost } = useApi();
+const { apiGet } = useApi();
 const { send, fetchDetail } = useTransferActiveToInactive();
 const { user, isSuperadmin, isAdmin } = useAuth();
 
@@ -352,9 +332,8 @@ interface GabunganRow {
   /** Status asli berkas (untuk baris belum-usulan: closed_retensi_aktif / retensi_inaktif). */
   berkasStatus?: string | null;
   tanggal: string | null;
-  /** Pejabat pihak pertama BAC — untuk tombol Tanda Tangan (EVP). */
-  bacPihakPertamaPersnum?: number | null;
-  bacPihakPertamaName?: string | null;
+  /** Status BAC presentasi, tanpa mengubah status workflow utama. */
+  bacStatus?: 'MENUNGGU_TTD' | 'SUDAH_DITANDATANGANI' | null;
   bacSignedAt?: string | null;
   beritaAcaraUrl?: string | null;
 }
@@ -407,57 +386,19 @@ const onSendUsulan = async (row: GabunganRow) => {
 
 const isCreateModalOpen = ref(false);
 
-// ── TTE BAC (EVP pihak pertama) ──
-const isSignBacModalOpen = ref(false);
-const signBacLoading = ref(false);
-const signBacTarget = ref<GabunganRow | null>(null);
-const signBacSignerInfo = computed(() => ({
-  name: user.value?.nama ?? '-',
-  role: user.value?.positionText ?? '-',
-  label: 'Berita Acara Serah Terima',
-}));
+const displayStatusLabel = (row: GabunganRow): string =>
+  row.bacStatus === 'MENUNGGU_TTD'
+    ? 'Menunggu TTD'
+    : row.bacStatus === 'SUDAH_DITANDATANGANI'
+      ? 'BAC Ditandatangani'
+      : statusLabel(row.status as any);
 
-/** Tombol Tanda Tangan tampil jika: user = pihak pertama BAC, BAC sudah di-generate, belum TTE. */
-const canSignBac = (row: GabunganRow): boolean => {
-  if (!row.isUsulan) return false;
-  if (!row.bacPihakPertamaPersnum) return false;
-  if (Number(row.bacPihakPertamaPersnum) !== Number(user.value?.persnum)) return false;
-  if (!row.beritaAcaraUrl) return false;
-  if (row.bacSignedAt) return false;
-  return true;
-};
-
-const openSignBac = (row: GabunganRow) => {
-  signBacTarget.value = row;
-  isSignBacModalOpen.value = true;
-};
-
-const onSignBacSubmit = async (payload: { method: string; passphrase?: string }) => {
-  if (!signBacTarget.value || !payload.passphrase) return;
-  signBacLoading.value = true;
-  try {
-    await apiPost(`/digsig/bac/${signBacTarget.value.id}/sign`, {
-      passphrase: payload.passphrase,
-    });
-    useToast().add({
-      title: 'Berita Acara berhasil ditandatangani',
-      description: 'BAC telah ditandatangani dengan TTE (BSrE).',
-      color: 'success',
-    });
-    isSignBacModalOpen.value = false;
-    await loadGabungan();
-  } catch (e: any) {
-    console.error('Gagal TTE BAC:', e);
-    useToast().add({
-      title: 'Gagal menandatangani Berita Acara',
-      description:
-        e?.response?.data?.message || e?.message || 'Periksa passphrase Anda dan coba kembali.',
-      color: 'error',
-    });
-  } finally {
-    signBacLoading.value = false;
-  }
-};
+const displayStatusClass = (row: GabunganRow): string =>
+  row.bacStatus === 'MENUNGGU_TTD'
+    ? 'px-2 py-0.5 text-xs rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+    : row.bacStatus === 'SUDAH_DITANDATANGANI'
+      ? 'px-2 py-0.5 text-xs rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+    : statusBadgeClass(row.status as any);
 const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 
 const filter = reactive({
@@ -616,9 +557,7 @@ const loadGabungan = async () => {
       // Timestamp untuk deteksi baris terbaru (bold)
       createdAt: r.createdAt ?? null,
       updatedAt: r.updatedAt ?? null,
-      // Pejabat BAC — untuk tombol Tanda Tangan (EVP pihak pertama)
-      bacPihakPertamaPersnum: r.bacPihakPertamaPersnum ?? null,
-      bacPihakPertamaName: r.bacPihakPertamaName ?? null,
+      bacStatus: r.bacStatus ?? null,
       bacSignedAt: r.bacSignedAt ?? null,
       beritaAcaraUrl: r.beritaAcaraUrl ?? null,
     }));

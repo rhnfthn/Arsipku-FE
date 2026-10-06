@@ -66,6 +66,24 @@ export const useVerifikasiUsulan = () => {
     finalVerifyNote: raw.finalVerifyNote ?? raw.final_verify_note ?? null,
     beritaAcaraUrl: raw.beritaAcaraUrl ?? raw.berita_acara_url ?? null,
     beritaAcaraNomor: raw.beritaAcaraNomor ?? raw.berita_acara_nomor ?? null,
+    // Pejabat pihak pertama BAC dipilih Sekretaris Divisi dan disimpan pada
+    // usulan. Jangan mengambilnya dari atasan verifikasi atau metadata naskah.
+    bacPihakPertamaPersnum:
+      raw.bacPihakPertamaPersnum ?? raw.bac_pihak_pertama_persnum ?? null,
+    bacPihakPertamaName:
+      raw.bacPihakPertamaName ?? raw.bac_pihak_pertama_name ?? null,
+    bacPihakPertamaJabatan:
+      raw.bacPihakPertamaJabatan ?? raw.bac_pihak_pertama_jabatan ?? null,
+    bacTembusan: Array.isArray(raw.bacTembusan ?? raw.bac_tembusan)
+      ? (raw.bacTembusan ?? raw.bac_tembusan).map((copy: any) => ({
+          persnum: Number(copy?.persnum ?? copy?.personum ?? 0),
+          name: copy?.name ?? copy?.nama ?? '-',
+          jabatan: copy?.jabatan ?? copy?.positionText ?? copy?.position_text ?? '-',
+        }))
+      : null,
+    bacSignedAt: raw.bacSignedAt ?? raw.bac_signed_at ?? null,
+    bacSignedBy: raw.bacSignedBy ?? raw.bac_signed_by ?? null,
+    bacSignatureQr: raw.bacSignatureQr ?? raw.bac_signature_qr ?? null,
     approvedAt: raw.approvedAt ?? raw.approved_at ?? null,
     finalVerifiedAt: raw.finalVerifiedAt ?? raw.final_verified_at ?? null,
     createdAt: raw.createdAt ?? raw.created_at,

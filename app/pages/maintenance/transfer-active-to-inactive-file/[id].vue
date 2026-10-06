@@ -3,11 +3,19 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader
-        :title="`Detail Usulan ${item?.nomorUsulan ?? ''}`"
+        :title="isBacSignerView ? 'Preview Berita Acara' : `Detail Usulan ${item?.nomorUsulan ?? ''}`"
         :items="items"
       />
       <NuxtLink
+        v-if="!isBacSignerView"
         to="/maintenance/transfer-active-to-inactive-file"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
+      >
+        <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
+      </NuxtLink>
+      <NuxtLink
+        v-else
+        to="/maintenance/penandatanganan"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
       >
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
@@ -24,8 +32,12 @@
 
     <!-- Content -->
     <template v-else-if="item">
-      <div class="mx-auto w-full max-w-none space-y-5">
-          <TransferDetailCard :transfer="item" :daftar-berkas="daftarBerkas" />
+      <div v-if="!isBacSignerView" class="mx-auto w-full max-w-none space-y-5">
+          <TransferDetailCard
+            :transfer="item"
+            :daftar-berkas="daftarIsi"
+            :collapsible="true"
+          />
 
           <!-- Catatan Penolakan (hanya jika DITOLAK_ATASAN) -->
           <div
@@ -47,7 +59,7 @@
 
           <!-- Sekretaris TU melanjutkan usulan yang sudah dikirim oleh atasan -->
           <div
-            v-if="isSekretarisTu && tuIntakeStatus.includes(item.status)"
+            v-if="isSekretarisTu && !isSekretarisPengusul && tuIntakeStatus.includes(item.status)"
             class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5"
           >
             <div class="flex items-start gap-3">
@@ -68,22 +80,6 @@
           </div>
 
           <!-- Aksi Sekretaris (DRAFT/DITOLAK) dihapus -->
-
-            <!-- MENUNGGU_VERIFIKASI_ATASAN -->
-            <div
-              v-if="item.status === 'MENUNGGU_VERIFIKASI_ATASAN'"
-              class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
-            >
-              <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                <div>
-                  <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Verifikasi Atasan</h3>
-                  <p class="text-sm text-blue-600 dark:text-blue-400">
-                    Usulan dikirim ke {{ item.atasanName }}. Menunggu verifikasi.
-                  </p>
-                </div>
-              </div>
-            </div>
 
             <!-- DISETUJUI_ATASAN / MENUNGGU_VERIFIKASI_TERAKHIR -->
             <div
@@ -126,42 +122,6 @@
 
             <!-- Berita Acara (Generate) dihapus — BA format resmi ada di card bawah -->
 
-            <!-- USUL_PINDAH_DIKIRIM: Sekretaris siapkan berkas fisik -->
-            <div
-              v-if="item.status === 'USUL_PINDAH_DIKIRIM'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Siapkan Berkas Fisik</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Atasan telah mengirim usul pindah. Silakan siapkan berkas fisik dan Berita Acara Serah Terima.
-              </p>
-              <button
-                @click="onSiapkanBerkasFisik"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-file-check" class="w-4 h-4 mr-1 inline" /> Siapkan Berkas Fisik
-              </button>
-            </div>
-
-            <!-- SIAPKAN_BERKAS_FISIK: Upload file + Kirim ke TU -->
-            <div
-              v-if="item.status === 'SIAPKAN_BERKAS_FISIK'"
-              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Upload Berkas Fisik</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Upload berkas fisik dan Berita Acara Serah Terima, lalu kirim ke Unit Tata Naskah.
-              </p>
-              <button
-                @click="onSelesai"
-                :disabled="actionLoading"
-                class="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50"
-              >
-                <UIcon name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim ke TU
-              </button>
-            </div>
-
             <!-- SELESAI -->
             <div
               v-if="item.status === 'SELESAI'"
@@ -179,108 +139,181 @@
             </div>
 
           <TimelineRiwayat :item="item" />
+
+          <!-- Status verifikasi ditempatkan setelah timeline agar riwayat menjadi konteks utama. -->
+          <div
+            v-if="item.status === 'MENUNGGU_VERIFIKASI_ATASAN'"
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Verifikasi Atasan</h3>
+                <p class="text-sm text-blue-600 dark:text-blue-400">
+                  Usulan dikirim ke {{ item.atasanName }}. Menunggu verifikasi.
+                </p>
+              </div>
+            </div>
+          </div>
       </div>
 
       <!-- Berita Acara Serah Terima (di bawah grid, lebar sama dengan kolom kiri) -->
-      <div v-if="showBeritaAcara" class="mx-auto w-full max-w-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5 mt-5">
+      <div v-if="showBeritaAcara || isBacSignerView" class="mx-auto w-full max-w-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5 mt-5">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
-          <div class="flex gap-2">
-            <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-              <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
-            </button>
-            <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
-              <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Unduh PDF
-            </button>
-            <button
-              @click="generateBacPdf"
-              :disabled="bacGenerating"
-              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors"
-              title="Generate PDF BAC lengkap (BAC + Daftar Berkas + Daftar Isi + lampiran naskah) di-merge jadi satu file"
+          <div class="flex items-center gap-3">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
+            <span
+              v-if="item.bacSignedAt"
+              class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
             >
-              <UIcon :name="bacGenerating ? 'i-lucide-loader-2' : 'i-lucide-file-check-2'" class="w-3.5 h-3.5" :class="bacGenerating ? 'animate-spin' : ''" />
-              {{ bacGenerating ? 'Membuat...' : 'Generate BAC' }}
+              <UIcon name="i-lucide-badge-check" class="h-3.5 w-3.5" /> Ditandatangani
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+          <div v-if="!isBacSignerView" class="flex gap-2">
+            <button
+              type="button"
+              @click="printBeritaAcara"
+              title="Cetak Berita Acara"
+              aria-label="Cetak Berita Acara"
+              class="inline-flex h-9 w-9 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+            >
+              <UIcon name="i-lucide-printer" class="h-5 w-5" />
             </button>
+          </div>
           </div>
         </div>
 
-        <!-- Berita Acara Content -->
-        <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
-          <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
-          <p class="text-center text-xs text-gray-500 mb-1">Pemindahan Arsip Aktif ke Inaktif</p>
-          <p class="text-center text-xs mb-3">Nomor: {{ beritaAcaraData?.nomorUsulan ?? item.nomorUsulan }}</p>
-          <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatBaDate(item.tanggalUsulan) }}</p>
-
-          <p class="text-xs leading-relaxed mb-4">
-            Pada hari ini {{ formatBaDay(item.tanggalUsulan) }} tanggal {{ formatBaDate(item.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
-          </p>
-
-          <div class="space-y-3 mb-4 text-xs">
-            <div>
-              <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData?.atasan?.nama ?? item.atasanName ?? '-' }}</p>
-              <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
-              <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
+        <!-- BAC ditampilkan sebagai gambar dokumen A4, bukan PDF viewer. -->
+        <div v-if="isBacSignerView && (bacImageUrl || bacImageLoading)" class="flex justify-center overflow-auto rounded-xl bg-transparent p-0">
+          <div class="relative w-full max-w-[794px] overflow-hidden bg-white shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+            <div v-if="bacImageLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 dark:bg-gray-800/90">
+              <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary" />
             </div>
-            <div>
-              <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; :</p>
-              <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> :</p>
-              <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
-            </div>
+            <img
+              v-if="bacImageUrl"
+              :key="bacImageUrl"
+              :src="bacImageUrl"
+              alt="Berita Acara Serah Terima"
+              class="block h-auto w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Jika rasterisasi gambar gagal, template BAC tetap ditampilkan langsung sebagai dokumen A4. -->
+        <div
+          id="berita-acara-print"
+          ref="bacImageSourceRef"
+          v-show="!isBacSignerView || !bacImageUrl"
+          class="text-sm"
+          :style="isBacSignerView && (bacImageUrl || bacImageLoading)
+            ? { position: 'absolute', left: '-10000px', top: '0', width: '794px', minHeight: '1123px', padding: '48px 56px', backgroundColor: '#ffffff', color: '#111111', fontFamily: '\'Times New Roman\', serif', fontSize: '16px', lineHeight: '1.55' }
+            : { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', padding: '48px 56px', backgroundColor: '#ffffff', color: '#111111', fontFamily: '\'Times New Roman\', serif', fontSize: '16px', lineHeight: '1.55', boxShadow: '0 1px 3px rgba(0,0,0,.12)', border: '1px solid #e5e7eb' }"
+        >
+          <div style="text-align:center;margin:0 0 24px;">
+            <p style="text-decoration:underline;margin:0;">BERITA ACARA</p>
+            <p style="margin:0;">TENTANG</p>
+            <p style="margin:0;text-transform:uppercase;">PEMINDAHAN ARSIP INAKTIF TAHUN {{ item.tanggalUsulan ? new Date(item.tanggalUsulan).getFullYear() : new Date().getFullYear() }} - UNIT KERJA {{ bacUnitKerjaPengusul }}</p>
+            <p style="margin:8px 0 0;">Nomor : {{ item.beritaAcaraNomor ?? `BA/${item.nomorUsulan}` }}</p>
           </div>
 
-          <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
-          <p class="text-xs leading-relaxed mb-3">
-            Pihak pertama telah menyerahkan kepada pihak kedua berupa:
+          <p style="margin:0 0 22px;text-align:justify;">
+            Pada hari ini {{ formatBaDay(item.tanggalUsulan) }} tanggal {{ formatBaDate(item.tanggalUsulan) }}, dilaksanakan pemindahan arsip inaktif dari Unit Kerja {{ bacUnitKerjaPengusul }} ke Unit Kerja {{ bacUnitKerjaTu }} yang melibatkan:
           </p>
-          <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
-            <li v-for="(arsip, idx) in (beritaAcaraData?.daftarArsip ?? [])" :key="idx">
-              {{ arsip.kode ?? '-' }} — {{ arsip.perihal }}
-            </li>
-            <li v-if="beritaAcaraData?.keterangan || item.keterangan">
-              {{ beritaAcaraData?.keterangan ?? item.keterangan }}
-            </li>
+
+          <table style="width:calc(100% - 42px);margin:0 0 12px 42px;border:0;border-collapse:collapse;">
+            <tbody>
+              <tr>
+                <td style="width:42px;padding:0;vertical-align:top;">1.</td>
+                <td style="width:92px;padding:0;vertical-align:top;">Nama</td>
+                <td style="width:22px;padding:0;vertical-align:top;">:</td>
+                <td style="padding:0;vertical-align:top;">{{ item.bacPihakPertamaName ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td style="padding:0;"></td>
+                <td style="padding:0;vertical-align:top;">e-NIK</td>
+                <td style="padding:0;vertical-align:top;">:</td>
+                <td style="padding:0;vertical-align:top;">{{ item.bacPihakPertamaPersnum ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td style="padding:0;"></td>
+                <td style="padding:0;vertical-align:top;">Jabatan</td>
+                <td style="padding:0;vertical-align:top;">:</td>
+                <td style="padding:0;vertical-align:top;">{{ item.bacPihakPertamaJabatan ?? '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:18px 0 22px;padding-left:42px;text-align:justify;">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ bacUnitKerjaPihakPertama }} yang selanjutnya disebut PIHAK PERTAMA.</p>
+
+          <table style="width:calc(100% - 42px);margin:0 0 12px 42px;border:0;border-collapse:collapse;">
+            <tbody>
+              <tr>
+                <td style="width:42px;padding:0;vertical-align:top;">2.</td>
+                <td style="width:92px;padding:0;vertical-align:top;">Nama</td>
+                <td style="width:22px;padding:0;vertical-align:top;">:</td>
+                <td style="padding:0;vertical-align:top;"></td>
+              </tr>
+              <tr>
+                <td style="padding:0;"></td>
+                <td style="padding:0;vertical-align:top;">e-NIK</td>
+                <td style="padding:0;vertical-align:top;">:</td>
+                <td style="padding:0;vertical-align:top;"></td>
+              </tr>
+              <tr>
+                <td style="padding:0;"></td>
+                <td style="padding:0;vertical-align:top;">Jabatan</td>
+                <td style="padding:0;vertical-align:top;">:</td>
+                <td style="padding:0;vertical-align:top;"></td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:18px 0 26px;padding-left:42px;text-align:justify;">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ bacUnitKerjaPihakKedua }} yang selanjutnya disebut PIHAK KEDUA.</p>
+
+          <p style="margin:0 0 22px;text-align:justify;">Menyatakan telah melaksanakan serah terima pemindahan arsip inaktif seperti tercantum pada daftar arsip terlampir.</p>
+          <p style="margin:0 0 4px;">Daftar arsip:</p>
+          <p v-if="bacArsip.length === 1" style="margin:0 0 22px;padding-left:18px;">{{ bacArsip[0].kode ?? '-' }} — {{ bacArsip[0].perihal ?? '-' }}</p>
+          <ol v-else style="margin:0 0 22px;padding-left:38px;">
+            <li v-for="(arsip, idx) in bacArsip" :key="idx">{{ arsip.kode ?? '-' }} — {{ arsip.perihal ?? '-' }}</li>
           </ol>
 
-          <p class="text-xs leading-relaxed mb-6">
-            Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
-          </p>
-
-          <p class="text-xs text-right mb-6">Jakarta, {{ formatBaDate(item.tanggalUsulan) }}</p>
-
-          <div class="grid grid-cols-2 gap-8 text-xs">
-            <div class="text-center">
-              <p class="font-semibold mb-16">Pihak Pertama</p>
-              <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData?.atasan?.nama ?? item.atasanName ?? '-' }}</p>
-              <p class="text-gray-500">{{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
-            </div>
-            <div class="text-center">
-              <p class="font-semibold mb-16">Pihak Kedua</p>
-              <p class="border-t border-gray-400 pt-1 font-semibold">&nbsp;</p>
-              <p class="text-gray-500">&nbsp;</p>
-            </div>
-          </div>
+          <p style="margin:0 0 58px;text-align:justify;">Demikian Berita Acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+          <table style="width:100%;border:0;margin:0;">
+            <tbody>
+              <tr>
+                <td style="width:50%;text-align:left;vertical-align:top;">
+                  <p style="margin:0 0 20px;">Pihak Pertama</p>
+                  <div v-if="item.bacSignedAt && item.bacSignatureQr" style="height:92px;margin:0 0 10px;">
+                    <img :src="item.bacSignatureQr" alt="QR tanda tangan Pihak Pertama" style="display:block;width:82px;height:82px;object-fit:contain;">
+                  </div>
+                  <p v-else style="margin:0 0 78px;">Ttd</p>
+                  <p style="margin:0;">({{ item.bacPihakPertamaJabatan ?? 'Jabatan' }})</p>
+                </td>
+                <td style="width:50%;text-align:left;vertical-align:top;">
+                  <p style="margin:0 0 20px;">Pihak Kedua</p>
+                  <p style="margin:0 0 78px;">Ttd</p>
+                  <p style="margin:0;">(Jabatan)</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
 
-      <!-- Pengingat Persiapan Berkas (di bawah Berita Acara) -->
-      <div
-        v-if="item && (item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' || item.status === 'DIKIRIM')"
-        class="mx-auto w-full max-w-none bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5 mt-5"
-      >
-        <div class="flex items-start gap-3">
-          <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-          <div>
-            <h3 class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1">Pengingat Persiapan Berkas</h3>
-            <p class="text-sm text-amber-600 dark:text-amber-400 leading-relaxed">
-              Harap siapkan berkas fisik dan berita acara serah terima yang akan dibawa dan diserahkan ke pihak Unit Dokumen.
-            </p>
-          </div>
+        <div v-if="isBacSignerView && !item.bacSignedAt" class="mx-auto mt-4 flex w-full max-w-[794px] justify-start">
+          <button
+            type="button"
+            @click="openBacSign"
+            :disabled="bacSigning"
+            class="inline-flex items-center gap-2 rounded-lg bg-[#457fb6] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3a6d9c] disabled:cursor-wait disabled:opacity-50"
+          >
+            <UIcon :name="bacSigning ? 'i-lucide-loader-2' : 'i-lucide-pen-tool'" class="h-4 w-4" :class="bacSigning ? 'animate-spin' : ''" />
+            Tanda Tangan
+          </button>
         </div>
       </div>
 
       <!-- Menunggu Penerimaan (di bawah Pengingat) -->
       <div
-        v-if="item && item.status === 'DIKIRIM'"
+        v-if="!isBacSignerView && !isSekretarisPengusul && item && item.status === 'DIKIRIM'"
         class="mx-auto w-full max-w-none bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
@@ -296,7 +329,7 @@
 
       <!-- Card Persetujuan Terakhir Atasan TU (untuk atasan managerial TU) -->
       <div
-        v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
+        v-if="!isBacSignerView && item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
         class="mx-auto w-full max-w-none bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
@@ -320,7 +353,7 @@
 
       <!-- Tombol Lanjutkan Penataan (untuk ARSIP_INAKTIF_DITERIMA — kirim ke TU untuk penataan) -->
       <div
-        v-if="item && item.status === 'ARSIP_INAKTIF_DITERIMA' && !isAtasanTu"
+        v-if="!isBacSignerView && item && item.status === 'ARSIP_INAKTIF_DITERIMA' && !isAtasanTu"
         class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
@@ -433,6 +466,19 @@
         </div>
       </div>
     </Teleport>
+
+    <DigsigPassphraseModal
+      :open="isBacSignModalOpen"
+      :signer-info="bacSignerInfo"
+      :is-loading="bacSigning"
+      :bsre-disabled="bacSignConfig.bsreDisabled"
+      :hide-qr="bacSignConfig.hideQr"
+      :hide-basah="bacSignConfig.hideBasah"
+      :allow-basah-upload="true"
+      @update:open="(value: boolean) => (isBacSignModalOpen = value)"
+      @submit="submitBacSign"
+    />
+
   </div>
 </template>
 
@@ -459,7 +505,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi';
@@ -468,22 +514,23 @@ import { useAuth } from '~/composables/useAuth';
 import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
+import DigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModal.vue';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
+import { useDigsig } from '~/composables/useDigsig';
 
 definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const { apiGet, apiPost } = useApi();
 const { user } = useAuth();
+const { getConfigDigsig } = useDigsig();
 const { setujuiTerakhir: tuSetujuiTerakhir } = useTuVerifikasi();
 const {
   fetchDetail,
   send,
   resubmit,
   dispatch,
-  generateBeritaAcara,
-  siapkanBerkasFisik,
-  selesaikanUsulan,
+  dispatchSignedBacToTu,
 } = useTransferActiveToInactive();
 
 // Atasan Managerial TU: cek berdasarkan posisi managerial (EVP/VP/AVP/bodTag),
@@ -538,11 +585,33 @@ const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
 const isSetujuiTerakhirModalOpen = ref(false);
 const catatanSetujuiTerakhir = ref('');
+const isBacSignModalOpen = ref(false);
+const bacSigning = ref(false);
+const bacSignConfig = reactive({
+  bsreDisabled: false,
+  hideQr: true,
+  hideBasah: true,
+});
+const bacImageSourceRef = ref<HTMLElement | null>(null);
+const bacImageUrl = ref<string | null>(null);
+const bacImageLoading = ref(false);
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
 const daftarIsi = ref<any[]>([]);
-const daftarBerkas = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
+
+const isBacSignerView = computed(() => {
+  if (route.query.from === 'penandatanganan') return true;
+  if (!item.value || !user.value) return false;
+  return item.value.status === 'USUL_PINDAH_DIKIRIM'
+    && Number(item.value.bacPihakPertamaPersnum) === Number(user.value.persnum);
+});
+
+const bacSignerInfo = computed(() => ({
+  name: user.value?.nama ?? item.value?.bacPihakPertamaName ?? '-',
+  role: user.value?.positionText ?? item.value?.bacPihakPertamaJabatan ?? '-',
+  label: 'Berita Acara Serah Terima',
+}));
 
 const items = computed(() => [
   { label: 'Beranda', to: '/' },
@@ -556,6 +625,8 @@ const showBeritaAcara = computed(() => {
   return [
     'DISETUJUI_ATASAN',
     'DISETUJUI_VERIFIKASI_TERAKHIR',
+    'USUL_PINDAH_DIKIRIM',
+    'SIAPKAN_BERKAS_FISIK',
     'DIKIRIM',
     'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
     'BERKAS_FISIK_SESUAI',
@@ -568,6 +639,21 @@ const showBeritaAcara = computed(() => {
     'SELESAI',
   ].includes(item.value.status);
 });
+
+const bacArsip = computed(() => beritaAcaraData.value?.daftarArsip ?? []);
+const bacUnitKerjaPengusul = computed(
+  () => beritaAcaraData.value?.unitKerjaPengusul || item.value?.divisiName || '.........',
+);
+const bacUnitKerjaTu = computed(
+  () => beritaAcaraData.value?.unitKerjaTu || 'UC',
+);
+const bacUnitKerjaPihakPertama = computed(
+  () => beritaAcaraData.value?.pihakPertama?.unitKerja || bacUnitKerjaPengusul.value,
+);
+// Pihak Kedua baru dipilih Unit Dokumen. Biarkan kosong sampai tahap tersebut.
+const bacUnitKerjaPihakKedua = computed(
+  () => beritaAcaraData.value?.pihakKedua?.unitKerja || '',
+);
 
 /** Format tanggal untuk Berita Acara: "31 Juli 2026" */
 const formatBaDate = (dateStr: string | null) => {
@@ -589,7 +675,26 @@ const loadDetail = async () => {
   loading.value = true;
   try {
     item.value = await fetchDetail(route.params.id as string);
+    // BAC lama yang sudah ditandatangani sebelum alur otomatis aktif harus
+    // tetap diteruskan ke TU saat sekretaris membuka detail.
+    if (
+      ['USUL_PINDAH_DIKIRIM', 'SIAPKAN_BERKAS_FISIK'].includes(item.value?.status ?? '') &&
+      item.value.bacSignedAt &&
+      Number(item.value.sekretarisPersnum) === Number(user.value?.persnum)
+    ) {
+      try {
+        await dispatchSignedBacToTu(item.value.id);
+        item.value = await fetchDetail(route.params.id as string);
+      } catch (dispatchError: any) {
+        useToast().add({
+          title: 'Usulan belum terkirim ke TU',
+          description: dispatchError?.data?.message ?? 'Gagal meneruskan usulan setelah BAC ditandatangani.',
+          color: 'error',
+        });
+      }
+    }
     await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
+    await renderBacImage();
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -600,16 +705,15 @@ const loadDetail = async () => {
 const refresh = async () => {
   item.value = await fetchDetail(route.params.id as string);
   await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
+  await renderBacImage();
 };
 
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
     daftarIsi.value = res?.data?.daftarIsi ?? [];
-    daftarBerkas.value = res?.data?.daftarBerkas ?? [];
   } catch (e) {
     daftarIsi.value = [];
-    daftarBerkas.value = [];
   }
 };
 
@@ -619,6 +723,128 @@ const loadBeritaAcaraData = async () => {
     beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] };
   } catch (e) {
     beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] };
+  }
+};
+
+const renderBacImage = async () => {
+  if (!isBacSignerView.value || !item.value) {
+    if (bacImageUrl.value) URL.revokeObjectURL(bacImageUrl.value);
+    bacImageUrl.value = null;
+    return;
+  }
+
+  bacImageLoading.value = true;
+  try {
+    bacImageUrl.value = null;
+    await nextTick();
+    if (!bacImageSourceRef.value) throw new Error('Sumber BAC belum tersedia');
+    const { default: html2canvas } = await import('html2canvas');
+    const canvas = await html2canvas(bacImageSourceRef.value, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 794,
+      windowWidth: 794,
+    });
+    if (bacImageUrl.value) URL.revokeObjectURL(bacImageUrl.value);
+    bacImageUrl.value = canvas.toDataURL('image/png');
+  } catch (e) {
+    console.error('Gagal merender gambar BAC:', e);
+    bacImageUrl.value = null;
+  } finally {
+    bacImageLoading.value = false;
+  }
+};
+
+const loadBacSignConfig = async () => {
+  try {
+    const response: any = await getConfigDigsig('BAC');
+    const config = response?.data ?? response ?? {};
+    bacSignConfig.bsreDisabled = !Boolean(config.digsig);
+    bacSignConfig.hideQr = !Boolean(config.ttdQr);
+    bacSignConfig.hideBasah = !Boolean(config.ttdBasah);
+  } catch (e) {
+    // Jika konfigurasi tidak dapat diambil, pertahankan jalur BSrE sebagai
+    // fallback aman dan jangan membuka opsi yang statusnya tidak diketahui.
+    bacSignConfig.bsreDisabled = false;
+    bacSignConfig.hideQr = true;
+    bacSignConfig.hideBasah = true;
+    console.error('Gagal memuat konfigurasi tanda tangan BAC:', e);
+  }
+};
+
+const cancelBacSigning = () => {
+  navigateTo('/maintenance/penandatanganan');
+};
+
+const openBacSign = async () => {
+  if (!item.value) return;
+
+  const needsBacPreparation =
+    !item.value.beritaAcaraUrl || item.value.beritaAcaraUrl.endsWith('/berita-acara.pdf');
+
+  if (needsBacPreparation) {
+    bacSigning.value = true;
+    try {
+      await apiPost(`/transfer-active-to-inactive/${item.value.id}/berita-acara-pdf`, {});
+      await loadDetail();
+    } catch (e: any) {
+      console.error('Gagal menyiapkan BAC untuk TTE:', e);
+      useToast().add({
+        title: 'BAC belum siap ditandatangani',
+        description: e?.response?.data?.message || e?.message || 'PDF BAC tidak dapat dibuat.',
+        color: 'error',
+      });
+      bacSigning.value = false;
+      return;
+    } finally {
+      bacSigning.value = false;
+    }
+  }
+
+  await loadBacSignConfig();
+  isBacSignModalOpen.value = true;
+};
+
+const submitBacSign = async (payload: { method: string; passphrase?: string; file?: File }) => {
+  if (!item.value) return;
+
+  bacSigning.value = true;
+  try {
+    if (payload.method === 'digsig') {
+      if (!payload.passphrase) return;
+      await apiPost(`/digsig/bac/${item.value.id}/sign`, {
+        passphrase: payload.passphrase,
+      });
+    } else if (payload.method === 'qr_only') {
+      await apiPost(`/digsig/bac/${item.value.id}/sign-qr`, {});
+    } else if (payload.method === 'ttd_basah') {
+      if (!payload.file) {
+        throw new Error('PDF hasil tanda tangan basah wajib diunggah.');
+      }
+      const formData = new FormData();
+      formData.append('file', payload.file);
+      await apiPost(`/digsig/bac/${item.value.id}/sign-physical`, formData);
+    } else {
+      throw new Error('Metode tanda tangan BAC tidak dikenali.');
+    }
+    isBacSignModalOpen.value = false;
+    useToast().add({
+      title: 'BAC berhasil ditandatangani',
+      description: 'Tanda tangan BAC berhasil diproses.',
+      color: 'success',
+    });
+    await navigateTo('/maintenance/penandatanganan');
+  } catch (e: any) {
+    console.error('Gagal menandatangani BAC:', e);
+    useToast().add({
+      title: 'Gagal menandatangani BAC',
+      description: e?.response?.data?.message || e?.message || 'Periksa passphrase Anda.',
+      color: 'error',
+    });
+  } finally {
+    bacSigning.value = false;
   }
 };
 
@@ -710,39 +936,6 @@ const printBeritaAcara = () => {
   setTimeout(() => { w.print(); w.close(); }, 250);
 };
 
-const downloadBeritaAcara = () => {
-  // Trigger PDF download via backend (placeholder — generate PDF di backend)
-  window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
-};
-
-// ─── Generate BAC PDF (BAC + Daftar Berkas + Daftar Isi + merge naskah) ───
-const bacGenerating = ref(false);
-
-const generateBacPdf = async () => {
-  bacGenerating.value = true;
-  try {
-    const res: any = await apiPost(`/transfer-active-to-inactive/${route.params.id}/berita-acara-pdf`, {});
-    const url = res?.data?.url;
-    if (url) {
-      window.open(url, '_blank');
-      useToast().add({
-        title: 'Berita Acara berhasil dibuat',
-        description: 'PDF BAC lengkap (BAC + daftar berkas + daftar isi + lampiran naskah) telah digenerate.',
-        color: 'success',
-      });
-    }
-  } catch (e: any) {
-    console.error('Gagal generate BAC:', e);
-    useToast().add({
-      title: 'Gagal membuat Berita Acara',
-      description: e?.response?.data?.message || e?.message || 'Silakan coba kembali.',
-      color: 'error',
-    });
-  } finally {
-    bacGenerating.value = false;
-  }
-};
-
 const hariIni = computed(() => {
   const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   return hari[new Date().getDay()];
@@ -802,18 +995,6 @@ const onDispatch = () => {
   act(() => dispatch(item.value!.id));
 };
 
-const onGenerateBA = () => act(() => generateBeritaAcara(item.value!.id));
-
-const onSiapkanBerkasFisik = () => {
-  if (!confirm('Siapkan berkas fisik untuk usulan ini?')) return;
-  act(() => siapkanBerkasFisik(item.value!.id));
-};
-
-const onSelesai = () => {
-  if (!confirm('Selesaikan usulan? Pastikan berkas fisik sudah disiapkan.')) return;
-  act(() => selesaikanUsulan(item.value!.id));
-};
-
 /** Setujui Persetujuan Terakhir oleh Atasan TU → ARSIP_INAKTIF_DITERIMA. */
 const onSetujuiTerakhir = () => {
   catatanSetujuiTerakhir.value = '';
@@ -851,4 +1032,8 @@ watch([isResubmitModalOpen, isSetujuiTerakhirModalOpen, isEditModalOpen], ([a, b
 });
 
 onMounted(() => loadDetail());
+
+onBeforeUnmount(() => {
+  if (bacImageUrl.value?.startsWith('blob:')) URL.revokeObjectURL(bacImageUrl.value);
+});
 </script>

@@ -120,11 +120,10 @@
                 <button
                   type="button"
                   class="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                  :disabled="!row.beritaAcaraUrl"
                   @click="openBac(row)"
                 >
                   <UIcon name="i-lucide-eye" class="h-3.5 w-3.5" />
-                  {{ row.beritaAcaraUrl ? 'Lihat BAC' : 'Menunggu TTE' }}
+                  {{ row.beritaAcaraUrl ? 'Lihat BAC' : 'Lihat Detail' }}
                 </button>
               </td>
             </tr>
@@ -259,7 +258,7 @@ const loadRows = async () => {
 };
 
 const openBac = (row: BacTembusanListItem) => {
-  if (row.beritaAcaraUrl) selectedRow.value = row;
+  selectedRow.value = row;
 };
 
 onMounted(loadRows);

@@ -348,6 +348,7 @@ import { useDigsig } from '~/composables/useDigsig';
 import { usePemeliharaanAccess } from '~/composables/usePemeliharaanAccess';
 import { CONFIGURATION_READ_PERMISSIONS } from '~/composables/useFeatureAccess';
 import { buildLabelTree } from '~/utils/treeHelper';
+import { isEvpOrAbovePosition as hasEvpOrAboveAccess } from '~/utils/evp-access';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
 const { user, getProfile, hasRole, hasPermission, isSuperadmin, isLegalRole } = useAuth();
@@ -491,12 +492,17 @@ const activeProfile = computed(() => {
 // Menu "Kelola" tampil jika user TIDAK punya delegasi profile (perilaku normal),
 // ATAU jika punya delegasi dan profile aktif = 'sekretaris' / 'unit_dokumen'.
 const showKelolaMenu = computed(() => {
+  // Menu BAC harus tetap tersedia untuk EVP ke atas meskipun belum ada
+  // usulan/data masuk. Halaman akan menampilkan state kosong, bukan
+  // menghilangkan menu dari sidebar.
+  const hasBacAccess = hasEvpOrAboveAccess(user.value);
   const profileAccess =
     isSuperadmin.value ||
     !hasDelegationProfile.value ||
     activeProfile.value === 'sekretaris' ||
     activeProfile.value === 'unit_dokumen';
-  if (!profileAccess) return false;
+  if (!profileAccess && !hasBacAccess) return false;
+  if (hasBacAccess) return true;
   if (isAdminOrSuperadmin.value) return true;
   return [
     ['pemeliharaan.pemberkasan', 'read'],
@@ -1518,15 +1524,7 @@ const isManagerialPosition = computed(() => {
 
 /** Penandatangan BAC hanya untuk pejabat EVP dan jenjang di atasnya. */
 const isEvpOrAbovePosition = computed(() => {
-  const bodTag = String(user.value?.bodTag ?? '')
-    .trim()
-    .toUpperCase();
-  const posText = String(user.value?.positionText ?? '').toUpperCase();
-  return (
-    bodTag === 'BOD' ||
-    bodTag === 'BOD-1' ||
-    /\b(EVP|DIREKTUR|DIRUT|DIRECTOR|CEO|PRESIDEN|PRESIDENT|BOD)\b/.test(posText)
-  );
+  return hasEvpOrAboveAccess(user.value);
 });
 
 // Cek apakah user adalah SE/PS (Sekretaris yang didelegasikan via switch role)
@@ -1541,8 +1539,8 @@ const isSekretarisActor = computed(
 const isDivisionSecretaryPosition = computed(
   () =>
     activePositionStatus.value === 'SE' ||
-    isSekretarisRole.value ||
-    /^\s*SE(?:\.|\s|$)/i.test(String(user.value?.positionText ?? ''))
+    /^\s*SE(?:\.|\s|$)/i.test(String(user.value?.positionText ?? '')) ||
+    (activeProfile.value === 'sekretaris' && isSekretarisRole.value)
 );
 
 const unitDokumenKelolaMenus = computed(() => [

@@ -79,6 +79,14 @@ export const useArsipDinamis = () => {
     return await apiGet(`/arsip-dinamis/naskah/${naskahId}/pdf`, {}, { skipCache: true });
   };
 
+  const getNaskahPdfBlob = async (naskahId: string): Promise<Blob> => {
+    return await apiGet(
+      `/arsip-dinamis/naskah/${naskahId}/pdf/file`,
+      { responseType: 'blob' },
+      { skipCache: true },
+    );
+  };
+
   const addNaskahToBerkas = async (
     berkasId: string,
     data: { naskah_ids: string[]; sumber: string }
@@ -205,6 +213,7 @@ export const useArsipDinamis = () => {
     // Naskah
     getDaftarNaskah,
     getNaskahDetailInBerkas,
+    getNaskahPdfBlob,
     getNaskahPdfUrl,
     addNaskahToBerkas,
     removeNaskahFromBerkas,
