@@ -12,6 +12,7 @@ const props = defineProps<{
   total: number;
   page: number;
   limit: number;
+  searchQuery?: string;
 }>();
 
 const emit = defineEmits<{
@@ -47,6 +48,23 @@ const isActive = (share: ShareItem): boolean => share.status === 'AKTIF';
 const canOpenSharedDocument = computed(() => hasPermission('naskah-share', 'open'));
 const canRevokeShare = computed(() => hasPermission('naskah-share', 'delete'));
 
+const escapeHtml = (text: string): string =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const highlightText = (text: string, query?: string) => {
+  // Escape dulu agar perihal/nomor (data user) tidak dirender sebagai HTML
+  // (mencegah XSS via v-html).
+  const safeText = escapeHtml(text || '');
+  if (!query || !safeText) return safeText;
+  const safeQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${safeQuery})`, 'gi');
+  return safeText.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-500/50 text-inherit px-0.5 rounded">$1</mark>');
+};
 </script>
 
 <template>
@@ -59,9 +77,10 @@ const canRevokeShare = computed(() => hasPermission('naskah-share', 'delete'));
     >
       <template #cell-naskahPerihal="{ row }">
         <div class="max-w-[260px]">
-          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {{ row.naskahPerihal || t('share_tanpa_perihal') }}
-          </p>
+          <p
+            class="text-sm font-medium text-gray-900 dark:text-white truncate"
+            v-html="highlightText(row.naskahPerihal || t('share_tanpa_perihal'), searchQuery)"
+          ></p>
         </div>
       </template>
 
@@ -79,9 +98,10 @@ const canRevokeShare = computed(() => hasPermission('naskah-share', 'delete'));
       </template>
 
       <template #cell-naskahNomor="{ row }">
-        <span class="text-xs text-gray-600 dark:text-gray-400 font-mono">
-          {{ row.naskahNomor || '-' }}
-        </span>
+        <span
+          class="text-xs text-gray-600 dark:text-gray-400 font-mono"
+          v-html="highlightText(row.naskahNomor || '-', searchQuery)"
+        ></span>
       </template>
 
       <template #cell-penerima="{ row }">

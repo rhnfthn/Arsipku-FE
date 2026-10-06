@@ -414,6 +414,7 @@
       :naskah-id="String(id)"
       :naskah-perihal="detail.perihal"
       :naskah-nomor="detail.nomor || undefined"
+      :naskah-jenis="detail.jenis"
       :distribution-scope="shareDistributionScope"
       :recipient-hint="shareRecipientHint"
       @close="showShareModal = false"
