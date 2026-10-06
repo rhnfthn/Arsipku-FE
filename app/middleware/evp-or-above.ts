@@ -1,5 +1,6 @@
 export default defineNuxtRouteMiddleware(async () => {
   const { user, getProfile } = useAuth();
+  const { isEvpOrAbovePosition } = await import('~/utils/evp-access');
   if (!user.value) {
     try {
       await getProfile();
@@ -8,16 +9,7 @@ export default defineNuxtRouteMiddleware(async () => {
     }
   }
 
-  const bodTag = String(user.value?.bodTag ?? '')
-    .trim()
-    .toUpperCase();
-  const positionText = String(user.value?.positionText ?? '').toUpperCase();
-  const isAllowed =
-    bodTag === 'BOD' ||
-    bodTag === 'BOD-1' ||
-    /\b(EVP|DIREKTUR|DIRUT|DIRECTOR|CEO|PRESIDEN|PRESIDENT|BOD)\b/.test(positionText);
-
-  if (!isAllowed) {
+  if (!isEvpOrAbovePosition(user.value)) {
     return navigateTo('/beranda', { replace: true });
   }
 });

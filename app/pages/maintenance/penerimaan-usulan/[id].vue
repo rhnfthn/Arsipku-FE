@@ -564,7 +564,7 @@ const statusLabel = (s: string) => {
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
     BERKAS_FISIK_SESUAI: 'Menunggu Verifikasi',
-    USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
+    USUL_PINDAH_DIKIRIM: 'Menunggu TTD',
     SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
     // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen)
     MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
@@ -589,7 +589,7 @@ const statusBadgeClass = (s: string) => {
     DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     BERKAS_FISIK_SESUAI: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    USUL_PINDAH_DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    USUL_PINDAH_DIKIRIM: 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     SIAPKAN_BERKAS_FISIK: 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     // Menunggu Penerimaan = ungu
     MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',

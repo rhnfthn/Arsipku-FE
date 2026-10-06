@@ -1101,7 +1101,7 @@
       </template>
     </UModal>
 
-    <SharedSharePdfViewer
+    <SharePdfViewer
       v-model="showNaskahPreview"
       :url="naskahPreviewUrl || ''"
       :title="naskahPreviewTitle"
@@ -1180,7 +1180,6 @@ import { useRoute } from 'vue-router';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
-import SharedSharePdfViewer from '~/components/shared/SharePdfViewer.vue';
 import {
   AlignLeft,
   AlertTriangle,
@@ -1225,6 +1224,7 @@ const {
   getBerkasStatusByNaskah,
   getDaftarNaskah,
   getNaskahDetailInBerkas,
+  getNaskahPdfBlob,
   getNaskahPdfUrl,
   getNaskahSaya,
   getNaskahSiapArsip,
@@ -1738,8 +1738,8 @@ function clearNaskahPreview() {
   naskahPreviewUrl.value = null;
 }
 
-// Gunakan alur preview yang sama dengan halaman detail naskah: ambil URL
-// presigned dari detail, fetch dari MinIO, lalu render sebagai Blob URL.
+// Gunakan viewer preview yang sudah tersedia. Detail naskah dicari berdasarkan
+// ID baris agar PDF yang tampil sesuai dengan naskah yang diklik.
 async function openNaskahPreview(row: Record<string, any>) {
   const naskahId = row.naskahId || row.id;
   if (!naskahId || !berkasId.value) return;
@@ -1751,38 +1751,27 @@ async function openNaskahPreview(row: Record<string, any>) {
 
   try {
     const response = await getNaskahDetailInBerkas(berkasId.value, String(naskahId));
-    const rawData: any = response?.data ?? response;
-    const flow: any[] = Array.isArray(rawData)
-      ? rawData
-      : Array.isArray(rawData?.flow)
-        ? rawData.flow
-        : rawData
-          ? [rawData]
-          : [];
+    const payload: any = response?.data ?? response;
+    const flow: any[] = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.flow)
+        ? payload.flow
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : payload
+            ? [payload]
+            : [];
     const detail =
       flow.find((item) => String(item?.id || '') === String(naskahId)) || flow[0];
-    const directPdfUrl = detail?.final_pdf_url || detail?.final_pdf || '';
-    if (!directPdfUrl) throw new Error('Naskah tidak memiliki PDF final');
-
-    try {
-      const pdfResponse = await fetch(directPdfUrl);
-      if (!pdfResponse.ok) {
-        throw new Error(`Gagal mengambil PDF dari penyimpanan (${pdfResponse.status})`);
-      }
-      const pdfBlob = new Blob([await pdfResponse.arrayBuffer()], {
-        type: 'application/pdf',
-      });
-      if (!pdfBlob.size) throw new Error('PDF kosong');
-      naskahPreviewUrl.value = URL.createObjectURL(pdfBlob);
-    } catch (error: any) {
-      // Presigned MinIO URL tetap dapat dimuat oleh iframe meskipun fetch
-      // diblokir CORS pada browser.
-      if (error instanceof TypeError) {
-        naskahPreviewUrl.value = directPdfUrl;
-      } else {
-        throw error;
-      }
+    if (!detail?.final_pdf_url && !detail?.final_pdf) {
+      throw new Error('Naskah tidak memiliki PDF final');
     }
+
+    const blob = await getNaskahPdfBlob(String(naskahId));
+    if (!blob?.size) throw new Error('PDF kosong');
+    naskahPreviewUrl.value = URL.createObjectURL(
+      new Blob([blob], { type: 'application/pdf' }),
+    );
   } catch (error: any) {
     showNaskahPreview.value = false;
     toast.add({

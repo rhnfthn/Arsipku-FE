@@ -13,9 +13,10 @@ export const statusBadgeClass = (s: TransferActiveToInactiveStatus): string => {
     MENUNGGU_VERIFIKASI_TERAKHIR:
       'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     DITOLAK_VERIFIKASI_TERAKHIR: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-    // Menunggu Verifikasi (Atasan Sekretaris approve → dikirim ke Unit Dokumen) = biru
+    // Menunggu TTD pejabat BAC — belum masuk Unit Dokumen.
+    USUL_PINDAH_DIKIRIM: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+    // Menunggu Verifikasi (BAC sudah TTD → dikirim ke Unit Dokumen) = biru
     DISETUJUI_VERIFIKASI_TERAKHIR: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    USUL_PINDAH_DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     SIAPKAN_BERKAS_FISIK: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK:
@@ -53,9 +54,10 @@ export const statusLabel = (s: TransferActiveToInactiveStatus): string => {
     DISETUJUI_ATASAN: 'Menunggu Persetujuan',
     MENUNGGU_VERIFIKASI_TERAKHIR: 'Menunggu Persetujuan',
     DITOLAK_VERIFIKASI_TERAKHIR: 'Ditolak',
-    // Atasan Sekretaris approve → dikirim ke Unit Dokumen = Menunggu Verifikasi
+    // Atasan terakhir menekan Pindah Usulan → menunggu TTD pejabat BAC.
+    USUL_PINDAH_DIKIRIM: 'Menunggu TTD',
+    // BAC sudah ditandatangani → masuk Unit Dokumen = Menunggu Verifikasi
     DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
-    USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
     SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',

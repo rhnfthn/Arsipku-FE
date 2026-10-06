@@ -26,64 +26,72 @@
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Left (8/12) -->
-        <div class="lg:col-span-8 space-y-5">
-          <!-- Mode usulan: pakai TransferDetailCard (Informasi Usulan + Daftar Arsip + Daftar Atasan Verifikasi) -->
-          <TransferDetailCard v-if="item" :transfer="item" />
+      <div class="space-y-5">
+        <!-- Semua bagian ditampilkan vertikal dan dapat dilipat. -->
+        <TransferDetailCard
+          v-if="item"
+          :transfer="item"
+          :daftar-berkas="daftarIsi"
+          :collapsible="true"
+          :show-header-status="false"
+        />
 
-          <!-- Mode berkas (belum jadi usulan): card Informasi Berkas -->
-          <div
-            v-else-if="berkas"
-            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-                Informasi Berkas
-              </h3>
-              <StatusBadge v-if="berkas.status" :status="berkas.status" />
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div v-for="m in berkasMetadata" :key="m.label">
-                <span class="text-gray-500 dark:text-gray-400 text-xs">{{ m.label }}</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ m.value }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Button: Ajukan ke Atasan (hanya DRAFT / berkas belum-usulan) — di bawah Daftar Atasan Verifikasi -->
+        <!-- Mode berkas (belum jadi usulan): card Informasi Berkas -->
+        <div
+          v-else-if="berkas"
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+        >
           <button
-            v-if="showForm"
-            @click="isAjukanModalOpen = true"
-            class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center gap-2"
+            type="button"
+            class="flex w-full items-center justify-between gap-3 text-left"
+            :aria-expanded="berkasInfoOpen"
+            @click="berkasInfoOpen = !berkasInfoOpen"
           >
-            <UIcon name="i-lucide-send" class="w-4 h-4" />
-            Ajukan ke Atasan
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Berkas</h3>
+            <div class="flex items-center gap-3">
+              <StatusBadge v-if="berkas.status" :status="berkas.status" />
+              <UIcon
+                :name="berkasInfoOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                class="h-4 w-4 text-gray-400"
+              />
+            </div>
           </button>
-
-          <!-- Info: usulan sudah diajukan (bukan DRAFT) -->
-          <div
-            v-else-if="item && item.status === 'MENUNGGU_VERIFIKASI_ATASAN'"
-            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
-          >
-            <div class="flex items-start gap-3">
-              <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-              <div>
-                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">
-                  Menunggu Verifikasi Atasan
-                </h3>
-                <p class="text-sm text-blue-600 dark:text-blue-400">
-                  Usulan dikirim ke {{ item.atasanName }}. Menunggu verifikasi.
-                </p>
-              </div>
+          <div v-show="berkasInfoOpen" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-4">
+            <div v-for="m in berkasMetadata" :key="m.label">
+              <span class="text-gray-500 dark:text-gray-400 text-xs">{{ m.label }}</span>
+              <p class="text-gray-900 dark:text-white font-medium">{{ m.value }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Right: Timeline Riwayat (4/12, sticky) -->
-        <div v-if="item" class="lg:col-span-4">
-          <div class="lg:sticky lg:top-4 space-y-5">
-            <TimelineRiwayat :item="item" />
+        <!-- Timeline ditaruh di bawah seluruh detail, tidak lagi sticky di samping. -->
+        <TimelineRiwayat v-if="item" :item="item" />
+
+        <!-- Button: Ajukan ke Atasan -->
+        <button
+          v-if="showForm"
+          @click="isAjukanModalOpen = true"
+          class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center gap-2"
+        >
+          <UIcon name="i-lucide-send" class="w-4 h-4" />
+          Ajukan ke Atasan
+        </button>
+
+        <!-- Info: usulan sudah diajukan (bukan DRAFT) -->
+        <div
+          v-else-if="item && item.status === 'MENUNGGU_VERIFIKASI_ATASAN'"
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm p-5"
+        >
+          <div class="flex items-start gap-3">
+            <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+            <div>
+              <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">
+                Menunggu Verifikasi Atasan
+              </h3>
+              <p class="text-sm text-blue-600 dark:text-blue-400">
+                Usulan dikirim ke {{ item.atasanName }}. Menunggu verifikasi.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -122,6 +130,7 @@ definePageMeta({ middleware: ['auth', 'division-secretary-only'] });
 const route = useRoute();
 const { getBerkasById } = useArsipDinamis();
 const { fetchDetail } = useTransferActiveToInactive();
+const { apiGet } = useApi();
 const toast = useToast();
 
 const loading = ref(true);
@@ -129,8 +138,10 @@ const loading = ref(true);
 const item = ref<TransferActiveToInactive | null>(null);
 /** Mode berkas: id = berkas ID (belum jadi usulan) → tampilkan info berkas. */
 const berkas = ref<any | null>(null);
+const daftarIsi = ref<any[]>([]);
 
 const isAjukanModalOpen = ref(false);
+const berkasInfoOpen = ref(true);
 
 const breadcrumbItems = computed(() => [
   { label: 'Beranda', to: '/' },
@@ -185,6 +196,7 @@ const load = async () => {
       const usulan = await fetchDetail(id);
       if (usulan?.arsipId) {
         item.value = usulan;
+        await loadDaftarIsi(id);
         return;
       }
     } catch {
@@ -198,6 +210,20 @@ const load = async () => {
     console.error('Gagal memuat data:', e);
   } finally {
     loading.value = false;
+  }
+};
+
+const loadDaftarIsi = async (id: string) => {
+  try {
+    const res: any = await apiGet(
+      `/transfer-active-to-inactive/${id}/daftar-isi`,
+      {},
+      { skipCache: true },
+    );
+    daftarIsi.value = res?.data?.daftarIsi ?? [];
+  } catch (e) {
+    console.error('Gagal memuat daftar isi berkas:', e);
+    daftarIsi.value = [];
   }
 };
 

@@ -40,156 +40,69 @@
 
       <!-- Alur detail satu kolom agar urutan verifikasi mudah diikuti. -->
       <div class="mx-auto w-full max-w-none space-y-5">
-          <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarBerkas" />
-
-          <!-- ─── Card: Daftar Isi Berkas ─── -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <div class="flex flex-col gap-3 mb-3 sm:flex-row sm:items-center sm:justify-between">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Isi Berkas ({{ daftarIsi.length }})</h3>
-              <div class="flex items-center gap-1 self-end sm:self-auto">
-                <button
-                  type="button"
-                  @click="printDaftarIsi"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                  title="Print Daftar Isi Berkas"
-                  aria-label="Print Daftar Isi Berkas"
-                >
-                  <UIcon name="i-lucide-printer" class="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  @click="daftarIsiOpen = !daftarIsiOpen"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                  :title="daftarIsiOpen ? 'Lipat Daftar Isi Berkas' : 'Buka Daftar Isi Berkas'"
-                  :aria-expanded="daftarIsiOpen"
-                >
-                  <UIcon :name="daftarIsiOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div v-show="daftarIsiOpen" id="daftar-isi-print" class="text-sm overflow-x-auto">
-                <table class="w-full min-w-[1280px] border-collapse rounded-xl border border-gray-200 text-xs dark:border-gray-700">
-                  <thead>
-                    <tr class="bg-[#457fb6] text-white">
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Nomor</span><span class="block">Berkas</span></th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Nomor</span><span class="block">Item</span></th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Tingkat</span><span class="block">Perkembangan</span></th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
-                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
-                      <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(d, idx) in daftarIsi" :key="idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-                      <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ d.kode ?? '-' }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ d.kodeKlasifikasi ?? '-' }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ d.nomorItem ?? idx + 1 }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ d.uraianInformasi ?? d.namaBerkas ?? '-' }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatTanggalTabel(d.tanggal) }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.jumlah ?? d.jumlahBerkas ?? '-' }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.tingkatPerkembangan ?? '-' }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.lokasiSimpan ?? '-' }}</td>
-                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.klasifikasiKeamanan ?? '-' }}</td>
-                      <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
-                        <NuxtLink
-                          v-if="d.id"
-                          :to="`/maintenance/preview-berkas/${d.id}?nomor_usulan=${usulan?.nomorUsulan ?? ''}&usulan_id=${usulan?.id ?? ''}`"
-                          class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
-                          title="Lihat detail berkas"
-                        >
-                          <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                        </NuxtLink>
-                      </td>
-                    </tr>
-                    <tr v-if="daftarIsi.length === 0">
-                      <td colspan="10" class="border-b border-gray-200 px-3 py-8 text-center italic text-gray-400 dark:border-gray-700">Tidak ada isi berkas</td>
-                    </tr>
-                  </tbody>
-                </table>
-            </div>
-          </div>
+          <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarIsi" />
 
           <!-- Berita Acara Serah Terima (hanya tampil setelah verifikasi disetujui) -->
           <div
             v-if="showBeritaAcara"
-            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+            class="overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
           >
-            <div class="flex flex-col gap-3 mb-3 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" class="flex min-w-0 flex-1 items-center gap-2 text-left" @click="beritaAcaraOpen = !beritaAcaraOpen">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
-                <UIcon :name="beritaAcaraOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 text-gray-400" />
+            <div class="flex w-full items-center justify-between gap-3 px-5 pb-4 pt-5 sm:px-6">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
+              <button
+                type="button"
+                @click="bacCardOpen = !bacCardOpen"
+                :aria-expanded="bacCardOpen"
+                aria-label="Lipat atau buka Berita Acara Serah Terima"
+                class="inline-flex items-center justify-center p-1.5 text-gray-500 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+              >
+                <UIcon
+                  :name="bacCardOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="h-5 w-5"
+                />
               </button>
-              <div class="flex flex-wrap gap-2">
-                <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
-                </button>
-                <button @click="downloadBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors">
-                  <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Unduh PDF
-                </button>
-              </div>
             </div>
-            <div v-show="beritaAcaraOpen" id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
-              <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
-              <p class="text-center text-xs mb-3">Nomor: {{ usulan.nomorUsulan }}</p>
-              <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(usulan.tanggalUsulan) }}</p>
 
-              <p class="text-xs leading-relaxed mb-4">
-                Pada hari ini {{ hariIni }} tanggal {{ formatTanggalLengkap(usulan.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
-              </p>
-
-              <div class="space-y-3 mb-4 text-xs">
-                <div>
-                  <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
-                  <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
-                </div>
-                <div>
-                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; :</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> :</p>
-                  <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
-                </div>
-              </div>
-
-              <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
-              <p class="text-xs leading-relaxed mb-3">
-                Pihak pertama telah menyerahkan kepada pihak kedua berupa:
-              </p>
-              <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
-                <li v-for="(a, idx) in beritaAcaraData.daftarArsip" :key="idx">
-                  {{ a.kode ?? '-' }} — {{ a.perihal }}
-                </li>
-                <li v-if="beritaAcaraData.keterangan">{{ beritaAcaraData.keterangan }}</li>
-              </ol>
-
-              <p class="text-xs leading-relaxed mb-6">
-                Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.
-              </p>
-
-              <p class="text-xs text-right mb-6">{{ kotaIni }}, {{ formatTanggalLengkap(usulan.tanggalUsulan) }}</p>
-
-              <div class="grid grid-cols-2 gap-8 text-xs">
-                <div class="text-center">
-                  <p class="font-semibold mb-16">Pihak Pertama</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData.atasan?.nama ?? usulan.atasanName ?? '-' }}</p>
-                  <p class="text-gray-500">{{ beritaAcaraData.atasan?.jabatan ?? '-' }}</p>
-                </div>
-                <div class="text-center">
-                  <p class="font-semibold mb-16">Pihak Kedua</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">&nbsp;</p>
-                  <p class="text-gray-500">&nbsp;</p>
-                </div>
-              </div>
+            <div v-show="bacCardOpen" class="overflow-x-auto">
+              <table class="w-full min-w-[960px] border-collapse text-sm">
+                <thead>
+                  <tr class="bg-[#457fb6] text-white">
+                    <th class="border border-[#457fb6] px-5 py-3 text-left font-semibold">Pihak</th>
+                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">Nama</th>
+                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">e-NIK</th>
+                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">Jabatan</th>
+                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
+                    <td class="border-b border-gray-200 px-5 py-4 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">Pihak Pertama</td>
+                    <td class="border-b border-gray-200 px-5 py-4 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ usulan.bacPihakPertamaName || '-' }}</td>
+                    <td class="border-b border-gray-200 px-5 py-4 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ usulan.bacPihakPertamaPersnum || '-' }}</td>
+                    <td class="border-b border-gray-200 px-5 py-4 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ usulan.bacPihakPertamaJabatan || '-' }}</td>
+                    <td class="border-b border-gray-200 px-5 py-4 text-center dark:border-gray-700">
+                      <button
+                        type="button"
+                        @click.stop="openBacPreview"
+                        :disabled="bacPreviewLoading"
+                        :aria-expanded="showBacPdfViewer"
+                        aria-label="Buka preview Berita Acara Serah Terima"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#457fb6] text-white transition-colors hover:bg-[#3a6d9c] disabled:cursor-wait disabled:opacity-60"
+                      >
+                        <UIcon v-if="bacPreviewLoading" name="i-lucide-loader-2" class="h-4 w-4 animate-spin" />
+                        <UIcon v-else name="i-lucide-eye" class="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
           <TimelineRiwayat :item="usulanToTransfer" />
 
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canFinalVerify || canKirimTU" class="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:flex-wrap sm:items-center">
+          <div v-if="canVerify || canFinalVerify || canKirimTU" class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -301,18 +214,60 @@
       :loading="actionLoading"
       @confirm="onConfirmKirimTU"
     />
+
+    <!-- PDF Viewer Full Page, sama seperti preview naskah. -->
+    <Teleport to="body">
+      <div
+        v-if="showBacPdfViewer"
+        class="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-gray-950"
+      >
+        <div class="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-900">
+          <div class="flex min-w-0 items-center gap-2">
+            <UIcon name="i-lucide-file-text" class="h-4 w-4 shrink-0 text-primary-500" />
+            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">Berita Acara Serah Terima</p>
+          </div>
+          <button
+            type="button"
+            @click="closeBacPreview"
+            class="shrink-0 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+            title="Tutup preview"
+            aria-label="Tutup preview Berita Acara Serah Terima"
+          >
+            <UIcon name="i-lucide-x" class="h-5 w-5" />
+          </button>
+        </div>
+        <div class="relative min-h-0 flex-1 bg-gray-100 dark:bg-gray-900">
+          <div v-if="bacPreviewLoading" class="absolute inset-0 z-10 flex items-center justify-center">
+            <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 px-8 py-6 shadow-lg backdrop-blur-sm dark:bg-gray-900/80">
+              <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary-500" />
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen...</p>
+            </div>
+          </div>
+          <iframe
+            v-if="bacPdfViewerUrl"
+            :key="bacPdfViewerUrl"
+            :src="bacPdfViewerUrl"
+            title="Preview Berita Acara Serah Terima"
+            class="h-full w-full border-none"
+          />
+          <div v-else-if="!bacPreviewLoading" class="flex h-full flex-col items-center justify-center gap-2 text-gray-500">
+            <UIcon name="i-lucide-file-text" class="h-12 w-12 opacity-30" />
+            <span class="text-sm">PDF BAC tidak tersedia.</span>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
 import { useApi } from '~/composables/useApi';
 import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
-import BeritaAcaraCard from '~/components/verifikasi-usulan/BeritaAcaraCard.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
 import ApproveUsulanModal from '~/components/verifikasi-usulan/ApproveUsulanModal.vue';
 import SendToTUModal from '~/components/verifikasi-usulan/SendToTUModal.vue';
@@ -329,7 +284,6 @@ const {
   verify,
   finalVerify,
   reject: rejectUsulan,
-  generateBeritaAcara,
   kirimUsulPindah,
   siapkanBerkasFisik,
   uploadBerkas,
@@ -350,98 +304,79 @@ const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
 const daftarIsi = ref<any[]>([]);
-const daftarBerkas = ref<any[]>([]);
-const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 const checklistBerkasFisik = ref(false);
 const checklistBeritaAcara = ref(false);
-const daftarIsiOpen = ref(true);
-const beritaAcaraOpen = ref(true);
 
 const canSendToTU = computed(() => checklistBerkasFisik.value && checklistBeritaAcara.value);
 
-const { apiGet } = useApi();
-
-const hariIni = computed(() => {
-  const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  return hari[new Date().getDay()];
-});
-const kotaIni = 'Jakarta';
-const formatTanggalLengkap = (d: string | Date | null): string => {
-  if (!d) return '-';
-  const date = typeof d === 'string' ? new Date(d) : d;
-  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-  return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
-};
-const formatTanggalTabel = (d: string | Date | null | undefined): string => {
-  if (!d) return '-';
-  const date = typeof d === 'string' ? new Date(d) : d;
-  if (Number.isNaN(date.getTime())) return String(d);
-  return date.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
-
+const { apiGet, apiPost } = useApi();
+const bacCardOpen = ref(true);
+const bacPreviewLoading = ref(false);
+const showBacPdfViewer = ref(false);
+const bacPdfViewerUrl = ref<string | null>(null);
+const bacPreviewError = ref('');
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
     daftarIsi.value = res?.data?.daftarIsi ?? [];
-    daftarBerkas.value = res?.data?.daftarBerkas ?? [];
   } catch {
     daftarIsi.value = [];
-    daftarBerkas.value = [];
   }
 };
-const loadBeritaAcaraData = async () => {
-  try {
-    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true });
-    beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] };
-  } catch { beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] }; }
+const closeBacPreview = () => {
+  showBacPdfViewer.value = false;
+  if (bacPdfViewerUrl.value) URL.revokeObjectURL(bacPdfViewerUrl.value);
+  bacPdfViewerUrl.value = null;
+  bacPreviewLoading.value = false;
 };
 
-const printDaftarIsi = () => {
-  const el = document.getElementById('daftar-isi-print');
-  if (!el) return;
-  const w = window.open('', '_blank');
-  if (!w) return;
-  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi Berkas</title><style>
-    body{font-family:Arial,sans-serif;padding:30px;color:#111}
-    .text-sm{font-size:13px}.text-xs{font-size:12px}.font-semibold{font-weight:600}
-    .mb-3{margin-bottom:12px}.text-gray-500{color:#6b7280}.text-gray-600{color:#4b5563}
-    .text-gray-700{color:#374151}.text-gray-400{color:#9ca3af}.text-center{text-align:center}
-    .italic{font-style:italic}.w-full{width:100%}.w-8{width:32px}.w-10{width:40px}
-    table{width:100%;border-collapse:collapse}
-    th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}.print-action{display:none}
-    td{border-bottom:1px solid #f3f4f6;padding:8px}
-    .px-2{padding-left:8px;padding-right:8px}.py-2{padding-top:8px;padding-bottom:8px}
-    .py-4{padding-top:16px;padding-bottom:16px}input[type=checkbox]{width:16px;height:16px}p{margin:0}
-  </style></head><body>${el.innerHTML}</body></html>`);
-  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250);
+const openBacPreview = async () => {
+  if (bacPreviewLoading.value) return;
+  bacPreviewError.value = '';
+  bacPreviewLoading.value = true;
+  try {
+    // Regenerate BAC yang belum bertanda tangan agar data lama yang masih
+    // menyimpan PDF gabungan lampiran berubah menjadi BAC-only. Untuk QR
+    // bertanda tangan, migrasikan hanya PDF QR layout lama ke template terbaru.
+    if (!usulan.value?.bacSignedAt) {
+      await apiPost(
+        `/transfer-active-to-inactive/${route.params.id}/berita-acara-pdf`,
+        {},
+      );
+    } else if (
+      usulan.value.beritaAcaraUrl &&
+      /qr-signed/i.test(usulan.value.beritaAcaraUrl) &&
+      (!/qr-signed-layout-v6\.pdf$/i.test(usulan.value.beritaAcaraUrl) || !usulan.value.bacSignatureQr)
+    ) {
+      // Jangan jatuh diam-diam ke PDF lama: file lama bisa masih bold dan
+      // kehilangan QR. Tampilkan error akses/perbaikan supaya penandatangan
+      // yang ditugaskan dapat membuka BAC dan melakukan normalisasi.
+      await apiPost(`/digsig/bac/${route.params.id}/repair-qr-layout`, {});
+    }
+
+    const file = await apiGet<any>(
+      `/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`,
+      { responseType: 'blob' },
+      { skipCache: true },
+    );
+    const blob = file instanceof Blob ? file : file?.data instanceof Blob ? file.data : null;
+    if (!blob) throw new Error('Respons PDF tidak valid');
+    bacPdfViewerUrl.value = URL.createObjectURL(blob);
+    showBacPdfViewer.value = true;
+  } catch (error) {
+    console.error('Gagal memuat preview BAC:', error);
+    bacPreviewError.value = error instanceof Error && error.message
+      ? `Preview BAC gagal dimuat: ${error.message}`
+      : 'Preview PDF BAC tidak dapat dimuat.';
+    alert(bacPreviewError.value);
+  } finally {
+    bacPreviewLoading.value = false;
+  }
 };
-const printBeritaAcara = () => {
-  const el = document.getElementById('berita-acara-print');
-  if (!el) return;
-  const w = window.open('', '_blank');
-  if (!w) return;
-  w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title><style>
-    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:40px;max-width:800px;margin:0 auto;color:#111}
-    .text-sm{font-size:13px}.text-xs{font-size:12px}.text-base{font-size:16px}
-    .text-center{text-align:center}.text-right{text-align:right}
-    .font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}
-    .mb-1{margin-bottom:4px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
-    .mb-6{margin-bottom:24px}.mb-16{margin-bottom:64px}.space-y-3>*+*{margin-top:12px}
-    .space-y-1>*+*{margin-top:4px}.leading-relaxed{line-height:1.625}
-    .text-gray-500{color:#6b7280}.ml-2{margin-left:8px}
-    .grid{display:grid}.grid-cols-2{grid-template-columns:1fr 1fr}
-    .gap-8{gap:32px}.border-t{border-top:1px solid #9ca3af}.pt-1{padding-top:4px}
-    ol{padding-left:20px;margin:0}li{margin-bottom:4px}p{margin:0}
-  </style></head><body>${el.innerHTML}</body></html>`);
-  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250);
-};
-const downloadBeritaAcara = () => {
-  window.open(`/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`, '_blank');
-};
+
+onBeforeUnmount(() => {
+  closeBacPreview();
+});
 
 /** Mapping usulan ke format TransferActiveToInactive untuk TimelineRiwayat. */
 const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
@@ -477,6 +412,12 @@ const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
   finalVerifyNote: null,
   beritaAcaraUrl: usulan.value?.beritaAcaraUrl ?? null,
   beritaAcaraNomor: usulan.value?.beritaAcaraNomor ?? null,
+  bacPihakPertamaPersnum: usulan.value?.bacPihakPertamaPersnum ?? null,
+  bacPihakPertamaName: usulan.value?.bacPihakPertamaName ?? null,
+  bacPihakPertamaJabatan: usulan.value?.bacPihakPertamaJabatan ?? null,
+  bacSignedAt: usulan.value?.bacSignedAt ?? null,
+  bacSignedBy: usulan.value?.bacSignedBy ?? null,
+  bacSignatureQr: usulan.value?.bacSignatureQr ?? null,
   tanggalDikirim: null,
   physicalChecklist: null,
   physicalVerifiedBy: null,
@@ -505,7 +446,23 @@ const items = computed(() => [
 
 const showBeritaAcara = computed(() => {
   if (!usulan.value) return false;
-  return ['MENUNGGU_VERIFIKASI_TERAKHIR', 'DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(usulan.value.status);
+  return [
+    'MENUNGGU_VERIFIKASI_TERAKHIR',
+    'DISETUJUI_ATASAN',
+    'DISETUJUI_VERIFIKASI_TERAKHIR',
+    'USUL_PINDAH_DIKIRIM',
+    'SIAPKAN_BERKAS_FISIK',
+    'DIKIRIM',
+    'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
+    'BERKAS_FISIK_SESUAI',
+    'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
+    'DISETUJUI_PERSETUJUAN_TU',
+    'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
+    'DISETUJUI_PERSETUJUAN_TERAKHIR_TU',
+    'ARSIP_INAKTIF_DITERIMA',
+    'PENATAAN_ARSIP_INAKTIF',
+    'SELESAI',
+  ].includes(usulan.value.status);
 });
 
 /** Riwayat aktor yang terlibat dalam usulan. */
@@ -699,7 +656,7 @@ const loadDetail = async () => {
     } else {
       isCurrentTurn.value = false;
     }
-    await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
+    await loadDaftarIsi();
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -733,7 +690,7 @@ const refresh = async () => {
   } else {
     isCurrentTurn.value = false;
   }
-  await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
+  await loadDaftarIsi();
 };
 
 const act = async (fn: () => Promise<any>) => {
@@ -774,8 +731,6 @@ const openRejectModal = () => {
 const onReject = (alasan: string) => {
   act(() => rejectUsulan(usulan.value!.id, jenis.value, { alasanPenolakan: alasan }));
 };
-
-const onGenerateBA = () => act(() => generateBeritaAcara(usulan.value!.id, jenis.value));
 
 const onKirimUsulPindah = () => {
   if (!confirm('Kirim usul pindah arsip inaktif ke Unit Tata Naskah?')) return;
@@ -826,3 +781,110 @@ const onApproveReceipt = () => {
 
 onMounted(() => loadDetail());
 </script>
+
+<style scoped>
+.ba-title {
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.ba-title p {
+  margin: 0;
+}
+
+.ba-number {
+  margin-top: 0.9rem !important;
+  font-size: 0.95rem;
+  text-transform: none;
+}
+
+.ba-intro {
+  margin: 1.5rem 0 1.1rem;
+  text-align: justify;
+}
+
+.ba-party {
+  margin-bottom: 1.35rem;
+}
+
+.ba-party p {
+  margin: 0;
+}
+
+.ba-party p strong {
+  display: inline-block;
+  width: 7.25rem;
+}
+
+.ba-party-note {
+  margin: 0.75rem 0 0 7.25rem !important;
+  text-align: justify;
+}
+
+.ba-body {
+  margin: 1.75rem 0 1.25rem;
+  text-align: justify;
+}
+
+.ba-archive-list {
+  margin-bottom: 1.8rem;
+}
+
+.ba-archive-list p {
+  margin: 0 0 0.35rem;
+}
+
+.ba-archive-list ol {
+  margin: 0;
+  padding-left: 1.75rem;
+}
+
+.ba-archive-list li {
+  margin-bottom: 0.25rem;
+}
+
+.ba-signature-date {
+  margin-bottom: 2rem;
+  text-align: right;
+}
+
+.ba-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  text-align: center;
+}
+
+.ba-signatures p {
+  margin: 0;
+}
+
+.ba-signature-role {
+  min-height: 1.4rem;
+}
+
+.ba-signature-space {
+  height: 3.4rem;
+}
+
+@media (max-width: 640px) {
+  .berita-acara-a4 {
+    min-height: auto;
+    padding: 1.25rem;
+  }
+
+  .ba-party p strong {
+    width: 6.5rem;
+  }
+
+  .ba-party-note {
+    margin-left: 0 !important;
+  }
+
+  .ba-signatures {
+    gap: 1rem;
+  }
+}
+</style>

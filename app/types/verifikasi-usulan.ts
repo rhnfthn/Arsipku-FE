@@ -50,6 +50,17 @@ export interface VerifikasiUsulanItem {
   finalVerifyNote?: string | null;
   beritaAcaraUrl?: string | null;
   beritaAcaraNomor?: string | null;
+  bacPihakPertamaPersnum?: number | null;
+  bacPihakPertamaName?: string | null;
+  bacPihakPertamaJabatan?: string | null;
+  bacTembusan?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+  }> | null;
+  bacSignedAt?: string | null;
+  bacSignedBy?: number | null;
+  bacSignatureQr?: string | null;
   approvedAt?: string | null;
   finalVerifiedAt?: string | null;
   createdAt: string;
