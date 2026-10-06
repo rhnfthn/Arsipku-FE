@@ -170,7 +170,12 @@ export const useSirkulasi = () => {
         mail.id_sirkulasi || mail.originalData?.id_sirkulasi || mail.naskahId || mail.id;
       if (!idToSend) throw new Error('ID tidak ditemukan');
       const payload: any = { id_sirkulasi: idToSend, flag_type: flagType };
-      if (flagType === 'note' && noteText !== undefined) payload.note_text = noteText;
+      if (flagType === 'note' && noteText !== undefined) {
+        payload.note_text = noteText;
+        // Set nilai flag secara eksplisit agar update catatan tidak men-toggle
+        // flagNote jadi 0 (catatan hilang).
+        payload.new_value = !!(noteText && noteText.trim().length > 0);
+      }
       await apiPatch('/naskah_sirkulasi/toggle-flag', payload);
     } catch (err) {
       console.error('Gagal toggle flag:', flagType, err);
