@@ -145,6 +145,8 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
     // Menu Kelola (Pemindahan Arsip / Penyusutan)
     OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/maintenance/penerimaan-usulan',
+    OPEN_TRANSFER_BAC_SIGNING: '/maintenance/penandatanganan',
+    OPEN_TRANSFER_BAC_COPY: '/maintenance/transfer-active-to-inactive-file',
     OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',
   };
 
@@ -159,7 +161,11 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
   }
 
   // Notifikasi Kelola: bawa id usulan agar halaman tujuan bisa auto-buka detail
-  if (action === 'OPEN_TRANSFER_ACTIVE_TO_INACTIVE' || action === 'OPEN_PENYUSUTAN') {
+  if (
+    action === 'OPEN_TRANSFER_ACTIVE_TO_INACTIVE' ||
+    action === 'OPEN_TRANSFER_BAC_COPY' ||
+    action === 'OPEN_PENYUSUTAN'
+  ) {
     const id = getString('id', 'idUsulan', 'id_usulan');
     return id ? { path: `${base}/${encodeURIComponent(id)}` } : { path: base };
   }

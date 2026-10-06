@@ -1516,6 +1516,15 @@ const isManagerialPosition = computed(() => {
   return false;
 });
 
+/** Penandatangan BAC hanya untuk pejabat EVP dan jenjang di atasnya. */
+const isEvpOrAbovePosition = computed(() => {
+  const posText = String(user.value?.positionText ?? '').toUpperCase();
+  return (
+    hasBodTag.value ||
+    /\b(EVP|DIREKTUR|CEO|PRESIDEN|BOD)\b/.test(posText)
+  );
+});
+
 // Cek apakah user adalah SE/PS (Sekretaris yang didelegasikan via switch role)
 // ATAU punya role 'sekretaris' dari organization_tu (Unit TU)
 const isSekretarisActor = computed(
@@ -1716,6 +1725,12 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
+        label: 'Penandatanganan',
+        to: '/maintenance/penandatanganan',
+        icon: 'i-lucide-pen-tool',
+        showIfEvpOrAbove: true,
+      },
+      {
         label: 'Verifikasi Usulan',
         to: '/maintenance/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
@@ -1785,6 +1800,12 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         icon: 'i-lucide-file-check',
         permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+      },
+      {
+        label: 'Penandatanganan',
+        to: '/maintenance/penandatanganan',
+        icon: 'i-lucide-pen-tool',
+        showIfEvpOrAbove: true,
       },
       {
         label: 'Verifikasi Persetujuan',
@@ -1909,6 +1930,12 @@ const adminMenuKelola = computed(() => {
       permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
       showIfCanPersetujuan: true,
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+    },
+    {
+      label: 'Penandatanganan',
+      to: '/maintenance/penandatanganan',
+      icon: 'i-lucide-pen-tool',
+      showIfEvpOrAbove: true,
     },
     {
       label: 'Pemindahan Arsip',
@@ -2085,6 +2112,12 @@ const userMenuKelola = computed(() => {
       permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
       showIfCanPersetujuan: true,
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
+    },
+    {
+      label: 'Penandatanganan',
+      to: '/maintenance/penandatanganan',
+      icon: 'i-lucide-pen-tool',
+      showIfEvpOrAbove: true,
     },
     {
       label: 'Pemindahan Arsip',
@@ -2326,6 +2359,11 @@ const filterMenuByPermission = (items) => {
     // Cek showIfAtasanPenyusutan — tampilkan HANYA jika user adalah Atasan
     // Managerial di penyusutan (terdaftar di penyusutan_verifikator).
     if (cloned.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) {
+      return null;
+    }
+
+    // Penandatangan BAC hanya tampil untuk EVP atau pejabat yang lebih tinggi.
+    if (cloned.showIfEvpOrAbove && !isEvpOrAbovePosition.value) {
       return null;
     }
 

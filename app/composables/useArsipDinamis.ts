@@ -178,6 +178,14 @@ export const useArsipDinamis = () => {
     );
   };
 
+  const getNaskahLainnyaKandidat = async (berkasId: string, params?: Record<string, any>) => {
+    return await apiGet(
+      `/arsip-dinamis/berkas/${berkasId}/naskah-lainnya-kandidat`,
+      { params },
+      { skipCache: true }
+    );
+  };
+
   const getStatistikPersetujuan = async () => {
     return await apiGet('/arsip-dinamis/persetujuan/statistik');
   };
@@ -212,6 +220,7 @@ export const useArsipDinamis = () => {
     getPersetujuanSaya,
     getRiwayatRetensi,
     getNaskahSaya,
+    getNaskahLainnyaKandidat,
     getStatistikPersetujuan,
     // Status Berkas by Naskah
     getBerkasStatusByNaskah,

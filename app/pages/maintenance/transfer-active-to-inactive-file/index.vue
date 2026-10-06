@@ -6,14 +6,17 @@
         title="Pemindahan Arsip Aktif ke Inaktif"
         :items="items"
       />
+      <!-- Tombol Usul Pindah Arsip disembunyikan sementara. -->
+      <!--
       <button
-        v-if="isSekretaris"
-        @click="openCreateModal"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
-      >
-        <Plus class="w-4 h-4" />
-        Usul Pindah Arsip
-      </button>
+          v-if="isSekretaris"
+          @click="openCreateModal"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
+        >
+          <Plus class="w-4 h-4" />
+          Usul Pindah Arsip
+        </button>
+      -->
     </div>
 
     <!-- Table Card -->
