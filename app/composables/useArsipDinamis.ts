@@ -83,7 +83,7 @@ export const useArsipDinamis = () => {
     return await apiGet(
       `/arsip-dinamis/naskah/${naskahId}/pdf/file`,
       { responseType: 'blob' },
-      { skipCache: true },
+      { skipCache: true }
     );
   };
 
