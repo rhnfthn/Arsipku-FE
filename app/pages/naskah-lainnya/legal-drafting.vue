@@ -210,7 +210,7 @@
             <input
               v-model="search"
               type="text"
-              placeholder="Cari perihal, nomor, atau pemrakarsa…"
+              placeholder="Cari nomor, perihal, nama, atau jabatan…"
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -269,10 +269,32 @@
           </div>
         </template>
         <template #cell-pemrakarsa="{ row }">
-          <span class="block truncate text-xs" :title="row.pemrakarsa">{{ row.pemrakarsa }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-gray-800 dark:text-gray-100" :title="row.pemrakarsa">
+              {{ row.pemrakarsa }}
+            </p>
+            <p
+              v-if="row.pemrakarsaJabatan"
+              class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+              :title="row.pemrakarsaJabatan"
+            >
+              {{ row.pemrakarsaJabatan }}
+            </p>
+          </div>
         </template>
         <template #cell-konseptor="{ row }">
-          <span class="block truncate text-xs" :title="row.konseptor">{{ row.konseptor }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-gray-800 dark:text-gray-100" :title="row.konseptor">
+              {{ row.konseptor }}
+            </p>
+            <p
+              v-if="row.konseptorJabatan"
+              class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+              :title="row.konseptorJabatan"
+            >
+              {{ row.konseptorJabatan }}
+            </p>
+          </div>
         </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge
@@ -296,9 +318,7 @@
           </span>
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)"
-            >Detail</UButton
-          >
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)">Detail</UButton>
         </template>
       </DataTable>
 
@@ -330,6 +350,7 @@
 </template>
 
 <script setup lang="ts">
+import { matchesNaskahSearch } from '~/utils/naskah-lainnya-search';
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
@@ -593,28 +614,29 @@ const filteredRows = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return rows;
   return rows.filter((r) =>
-    [r.nomor, r.perihal, r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama].some((v) =>
-      String(v ?? '')
-        .toLowerCase()
-        .includes(q)
-    )
+    matchesNaskahSearch(r, q, [STATUS_LEGAL_LABEL[r.statusLegal ?? '']])
   );
 });
 
 const displayRows = computed(() =>
-  filteredRows.value.map((r) => ({
-    id: r.id,
-    nomor: r.nomor ?? '<draft>',
-    jenis: r.jenis,
-    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
-    konseptor: r.pemrakarsa.nama,
-    perihal: r.perihal,
-    tahapan: r.tahapan.replace(/_/g, ' '),
-    statusLegal: r.statusLegal ?? '',
-    status: STATUS_LEGAL_LABEL[r.statusLegal ?? ''] ?? r.statusLegal ?? '',
-    waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
-    waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
-  }))
+  filteredRows.value.map((r) => {
+    const pemrakarsaPersona = r.pemrakarsaPejabat ?? r.pemrakarsa;
+    return {
+      id: r.id,
+      nomor: r.nomor ?? '<draft>',
+      jenis: r.jenis,
+      pemrakarsa: naskahPersonaName(pemrakarsaPersona),
+      pemrakarsaJabatan: naskahPersonaPosition(pemrakarsaPersona),
+      konseptor: naskahPersonaName(r.pemrakarsa),
+      konseptorJabatan: naskahPersonaPosition(r.pemrakarsa),
+      perihal: r.perihal,
+      tahapan: r.tahapan.replace(/_/g, ' '),
+      statusLegal: r.statusLegal ?? '',
+      status: STATUS_LEGAL_LABEL[r.statusLegal ?? ''] ?? r.statusLegal ?? '',
+      waktu: r.terakhirDiubah ? new Date(r.terakhirDiubah).getTime() : null,
+      waktuLabel: formatNaskahDateTime(r.terakhirDiubah),
+    };
+  })
 );
 
 const sortedRows = computed(() => {

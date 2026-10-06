@@ -228,26 +228,22 @@
               class="w-full justify-center font-semibold sm:w-auto"
               :disabled="sendingApproval"
               @click="showRejectModal = true"
-              >Tolak</UButton
-            >
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-forward"
-              size="lg"
-              class="w-full justify-center font-semibold sm:w-auto"
-              :disabled="!canContinueLegalDrafting"
-              @click="showTeruskanModal = true"
-              >Teruskan</UButton
+              >Batal</UButton
             >
             <UButton
               color="primary"
-              icon="i-lucide-send"
+              :icon="selectedForwardRecipient ? 'i-lucide-forward' : 'i-lucide-send'"
               size="lg"
-              class="w-full justify-center font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
-              :disabled="!canSendLegalDrafting"
-              @click="showKirimModal = true"
-              >Kirim</UButton
+              class="w-full justify-center font-semibold sm:w-auto"
+              :loading="sendingApproval"
+              :disabled="
+                sendingApproval ||
+                !(selectedForwardRecipient ? canContinueLegalDrafting : canSendLegalDrafting)
+              "
+              @click="
+                selectedForwardRecipient ? (showTeruskanModal = true) : (showKirimModal = true)
+              "
+              >{{ selectedForwardRecipient ? 'Teruskan' : 'Kirim' }}</UButton
             >
           </div>
         </div>
@@ -310,12 +306,12 @@
     <ApprovalNoteEditor
       v-model="showRejectModal"
       variant="reject"
-      title="Tolak Legal Drafting"
+      title="Batal Legal Drafting"
       description="Legal Drafting akan dikembalikan kepada drafter legal untuk diperbaiki sesuai alasan penolakan."
       :require-note="true"
       :min-note-length="5"
       note-placeholder="Tuliskan alasan penolakan (minimal 5 karakter)…"
-      confirm-label="Tolak Legal Drafting"
+      confirm-label="Batal Legal Drafting"
       :saving="sendingApproval"
       @confirm="(note) => rejectLegalDrafting(note)"
     />
@@ -471,10 +467,12 @@ const ldBanner = computed(() => {
   };
 });
 
-const legalRecipientName = (recipient) =>
-  recipient.isDelegasi && recipient.positionStatus
-    ? `${recipient.positionStatus}. ${recipient.nama}`
-    : recipient.nama;
+const legalRecipientName = (recipient) => recipient.nama;
+const legalRecipientPosition = (recipient) =>
+  normalizeNaskahPersona({
+    ...recipient,
+    jabatan: recipient.jabatan || recipient.unitName || '',
+  }).jabatan;
 
 const certifierOptions = computed(() =>
   legalRecipients.value
@@ -482,7 +480,7 @@ const certifierOptions = computed(() =>
     .map((v) => ({
       value: v.positionId,
       label: legalRecipientName(v),
-      labelJob: v.jabatan || v.unitName || '',
+      labelJob: legalRecipientPosition(v),
     }))
 );
 const selectedCertifierFromChain = computed(() =>
@@ -512,7 +510,7 @@ const forwardOptions = computed(() =>
     .map((v) => ({
       value: v.positionId,
       label: legalRecipientName(v),
-      labelJob: v.jabatan || v.unitName || '',
+      labelJob: legalRecipientPosition(v),
     }))
 );
 const selectedForwardRecipient = computed(() =>
@@ -557,7 +555,7 @@ const canRejectLegalDrafting = computed(
 const legalActionDescription = computed(() => {
   if (!canActLegalDrafting.value) return 'Menunggu penerima aktif menyelesaikan Legal Drafting.';
   if (selectedForwardRecipient.value)
-    return `Naskah akan diteruskan kepada ${selectedForwardRecipient.value.nama}. Aksi Kirim dinonaktifkan agar tujuan tidak ambigu.`;
+    return `Naskah akan diteruskan kepada ${selectedForwardRecipient.value.nama}. Tombol Teruskan akan mengirim ke penerima yang dipilih.`;
   if (currentIsCertifier.value)
     return 'Kirim akan memfinalkan Legal Drafting dan melanjutkan ke tahap Evaluasi.';
   if (nextUpwardRecipient.value)

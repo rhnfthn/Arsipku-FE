@@ -29,6 +29,7 @@ export const NotaDinasSchema = z
     tanggal: z.string().min(1, 'Tanggal wajib diisi'),
 
     lampiran: z.string().optional(),
+    lampiran_text: z.string().optional(),
     catatan: z.string().optional(),
     lampiran_temp_ids: z.array(z.string().uuid()).default([])
   })

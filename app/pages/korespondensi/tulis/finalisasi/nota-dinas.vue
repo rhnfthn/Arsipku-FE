@@ -132,8 +132,8 @@
                                 ? selectedTertuju
                                     .map((s: any, i: number) =>
                                       selectedTertuju.length === 1
-                                        ? `<div>${s.labelJob || s.label}</div>`
-                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                                        ? `<div>${correspondenceRecipientLabel(s)}</div>`
+                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${correspondenceRecipientLabel(s)}</div>`
                                     )
                                     .join('')
                                 : '................................................'
@@ -182,11 +182,11 @@
                       Periksa Alamat Terlampir
                     </div>
                     <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
-                      {{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}
+                      {{ correspondenceRecipientLabel(selectedTembusan[0]) }}
                     </div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">
-                        {{ t.labelJob || t.label }}
+                        {{ correspondenceRecipientLabel(t) }}
                       </li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
@@ -220,7 +220,7 @@
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTertuju" :key="item.value">
-                        {{ item.labelJob || item.label }}
+                        {{ correspondenceRecipientLabel(item) }}
                       </li>
                     </ol>
                   </div>
@@ -228,7 +228,7 @@
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}
+                        {{ correspondenceRecipientLabel(item) }}
                       </li>
                     </ol>
                   </div>
@@ -500,7 +500,7 @@ const getBasePayload = (): DraftPayload => {
     tembusan: tembusanIndividu,
     penerima_grup: tertujuGrup,
     tembusan_grup: tembusanGrup,
-    tertuju: selectedTertuju.value.map((i) => i.labelJob || i.label),
+    tertuju: selectedTertuju.value.map((i) => correspondenceRecipientLabel(i)),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || '',
     sifat: selectedSifat.value?.value || 'biasa',

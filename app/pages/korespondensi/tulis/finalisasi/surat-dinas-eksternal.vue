@@ -76,8 +76,8 @@
                           <span v-else v-html="selectedTertuju.length
                             ? selectedTertuju.map((s: any, i: number) =>
                               selectedTertuju.length === 1
-                                ? `<div>${s.labelJob || s.label}</div>`
-                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                                ? `<div>${correspondenceRecipientLabel(s)}</div>`
+                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${correspondenceRecipientLabel(s)}</div>`
                             ).join('')
                             : '................................................'
                             "></span>
@@ -112,9 +112,9 @@
                   <div class="text-[12px] mt-2 w-full text-left text-black">
                     <div class="font-bold underline mb-1">Tembusan :</div>
                     <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}</div>
+                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ correspondenceRecipientLabel(selectedTembusan[0]) }}</div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
-                      <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
+                      <li v-for="t in selectedTembusan" :key="t.value">{{ correspondenceRecipientLabel(t) }}</li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
                   </div>
@@ -136,13 +136,13 @@
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item) }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item) }}</li>
                     </ol>
                   </div>
                 </div>
@@ -345,7 +345,7 @@ const getBasePayload = (): DraftPayload => {
     tembusan: selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value),
     penerima_grup: selectedTertuju.value.filter(t => t.isGroup).map(i => i.value),
     tembusan_grup: selectedTembusan.value.filter(t => t.isGroup).map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
+    tertuju: selectedTertuju.value.map(i => correspondenceRecipientLabel(i)),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',

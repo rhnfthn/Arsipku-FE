@@ -7,6 +7,7 @@ import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalP
 import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
 import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
 import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
+import { defaultNaskahDiketahuiDirectors } from '~/utils/naskah-lainnya-persona';
 
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
@@ -247,7 +248,7 @@ const aksiBlanko = computed(() => {
   if (isEditable.value) {
     return {
       icon: 'i-lucide-send',
-      title: 'Kirim Blanko Verbal',
+      title: 'Proses Blanko Verbal',
       desc: 'Tinjau blanko, lalu kirim ke Direktur Pemrakarsa.',
     };
   }
@@ -452,10 +453,12 @@ function initDirectorSelection() {
     form.value.direkturPemrakarsa = [];
   }
   if (!Array.isArray(form.value.diketahuiOleh)) {
-    const nonDirut = selectableDirectors.value.filter((d) => !isDirut(d));
-    form.value.diketahuiOleh = (nonDirut.length ? nonDirut : selectableDirectors.value).map(
-      compactDirector
-    );
+    const signers = detail.value.penandatangan;
+    form.value.diketahuiOleh = defaultNaskahDiketahuiDirectors(
+      selectableDirectors.value,
+      Array.isArray(signers) ? signers : signers ? [signers] : [],
+      form.value.direkturPemrakarsa
+    ).map(compactDirector);
   }
 }
 
@@ -553,7 +556,18 @@ function apiErrorMessage(e) {
   return Array.isArray(raw) ? raw[0] : raw || '';
 }
 
+function validateDirectorSelection() {
+  const signers = detail.value?.penandatangan;
+  const message = validateNaskahSheetDirectors(
+    form.value,
+    Array.isArray(signers) ? signers : signers ? [signers] : []
+  );
+  if (message) toast.add({ title: message, color: 'warning' });
+  return !message;
+}
+
 function openKirim() {
+  if (!validateDirectorSelection()) return;
   if (!form.value.direkturPemrakarsa?.length) {
     toast.add({ title: 'Direktur Pemrakarsa belum tersedia', color: 'warning' });
     return;
@@ -576,6 +590,7 @@ function openKirim() {
 }
 
 async function kirim() {
+  if (!validateDirectorSelection()) return;
   busy.value = true;
   loadingMessage.value = 'Mengirim blanko verbal…';
   try {
@@ -613,7 +628,11 @@ async function confirmParaf(note: string) {
     try {
       tteMode.value = await getTteMode('NL');
     } catch {
-      toast.add({ title: 'Konfigurasi TTE tidak dapat dibaca', description: 'Silakan coba lagi.', color: 'error' });
+      toast.add({
+        title: 'Konfigurasi TTE tidak dapat dibaca',
+        description: 'Silakan coba lagi.',
+        color: 'error',
+      });
       return;
     }
     pendingParafNote.value = note || '';
@@ -670,7 +689,11 @@ async function persistParaf(
     }
   } catch (e) {
     const message = apiErrorMessage(e);
-    if (tteMode.value === 'bsre_direct' && signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
+    if (
+      tteMode.value === 'bsre_direct' &&
+      signing?.signMethod === 'digsig' &&
+      /passphrase|bsre/i.test(message)
+    ) {
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
       toast.add({ title: 'Gagal mencatat paraf', description: message, color: 'error' });
@@ -681,7 +704,7 @@ async function persistParaf(
   }
 }
 
-async function confirmTolak(note: string) {
+async function confirmBatal(note: string) {
   if (!note.trim()) {
     toast.add({ title: 'Alasan penolakan wajib diisi', color: 'warning' });
     return;
@@ -880,7 +903,8 @@ onMounted(async () => {
               <DirectorOrderSelector
                 v-model="form.diketahuiOleh"
                 label="Diketahui Oleh"
-                hint="urutan paraf direksi"
+                hint="direktur pemrakarsa wajib disertakan dan tidak dapat dihapus"
+                :required-directors="form.diketahuiOleh ? form.direkturPemrakarsa || [] : []"
                 placeholder="Pilih direksi paraf"
                 :recipients="selectableDirectors"
               />
@@ -1092,7 +1116,7 @@ onMounted(async () => {
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
-                    paraf-label="Setuju"
+                    paraf-label="Proses"
                     :is-legal="isLegalRole"
                     @paraf="paraf"
                     @tolak="tolak"
@@ -1113,7 +1137,7 @@ onMounted(async () => {
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
-                    paraf-label="Setuju"
+                    paraf-label="Proses"
                     :is-legal="isLegalRole"
                     @paraf="paraf"
                     @tolak="tolak"
@@ -1134,7 +1158,7 @@ onMounted(async () => {
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
-                    paraf-label="Setuju"
+                    paraf-label="Proses"
                     :is-legal="isLegalRole"
                     @paraf="paraf"
                     @tolak="tolak"
@@ -1173,23 +1197,23 @@ onMounted(async () => {
                 class="w-full font-semibold shadow-lg shadow-primary-500/20 sm:w-auto"
                 :loading="busy"
                 @click="openKirim"
-                >Kirim Blanko Verbal</UButton
+                >Proses Blanko Verbal</UButton
               >
             </div>
           </div>
         </div>
       </UCard>
 
-      <!-- Kirim Blanko Verbal Modal (selaras dgn modal Kirim Approval Legal) -->
+      <!-- Proses Blanko Verbal Modal (selaras dgn modal Kirim Approval Legal) -->
       <ApprovalNoteEditor
         v-model="showKirimModal"
         variant="approve"
-        title="Kirim Blanko Verbal"
+        title="Proses Blanko Verbal"
         description="Blanko akan dikirim ke Direktur Pemrakarsa, lalu seluruh Diketahui Oleh, dan terakhir Ditetapkan/Disahkan Oleh."
         :require-note="false"
         note-label="Catatan"
         note-placeholder="Catatan opsional…"
-        confirm-label="Kirim Blanko Verbal"
+        confirm-label="Proses Blanko Verbal"
         :saving="busy"
         @confirm="kirim"
       />
@@ -1198,7 +1222,7 @@ onMounted(async () => {
       <ApprovalNoteEditor
         v-model="parafModalOpen"
         variant="approve"
-        title="Setuju"
+        title="Proses"
         :description="
           activeDirector?.roleLabel === 'Ditetapkan/Disahkan Oleh'
             ? 'Persetujuan Anda sekaligus menandatangani blanko verbal dan naskah final.'
@@ -1206,7 +1230,7 @@ onMounted(async () => {
         "
         note-label="Catatan"
         note-placeholder="Catatan opsional — dapat memuat pasal-pasal atau batang tubuh…"
-        confirm-label="Setuju"
+        confirm-label="Proses"
         :saving="busy"
         @confirm="confirmParaf"
       >
@@ -1246,20 +1270,20 @@ onMounted(async () => {
         @submit="submitFinalSignature"
       />
 
-      <!-- Tolak Modal -->
+      <!-- Batal Modal -->
       <ApprovalNoteEditor
         v-model="tolakModalOpen"
         variant="reject"
-        title="Tolak"
+        title="Batal"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
         note-label="Alasan Penolakan"
         note-placeholder="Alasan penolakan (minimal 5 karakter) — dapat memuat pasal-pasal atau batang tubuh…"
-        confirm-label="Tolak"
+        confirm-label="Batal"
         :saving="busy"
         :require-note="true"
         :min-note-length="5"
-        @confirm="confirmTolak"
+        @confirm="confirmBatal"
       />
     </template>
 

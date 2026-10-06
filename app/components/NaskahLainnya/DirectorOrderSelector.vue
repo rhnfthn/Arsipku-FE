@@ -104,6 +104,7 @@
               </label>
             </div>
             <button
+              v-if="!isRequiredDirector(director)"
               type="button"
               class="mt-8 shrink-0 text-gray-400 hover:text-red-500"
               :aria-label="`Hapus ${label}`"
@@ -167,7 +168,7 @@
       <p v-else class="text-xs text-gray-400">
         {{
           maxSelections && model.length >= maxSelections
-            ? 'Batas pilihan sudah terpenuhi.'
+            ? ''
             : 'Semua direksi tersedia sudah dipilih.'
         }}
       </p>
@@ -191,6 +192,7 @@ const props = withDefaults(
     emptyText?: string;
     maxSelections?: number;
     syncPositionOnNameChange?: boolean;
+    requiredDirectors?: DirectorApprovalItem[];
   }>(),
   {
     hint: '',
@@ -198,6 +200,7 @@ const props = withDefaults(
     emptyText: 'Tidak ada data direksi.',
     maxSelections: 0,
     syncPositionOnNameChange: false,
+    requiredDirectors: () => [],
   }
 );
 
@@ -325,6 +328,29 @@ function compactDirector(director: DirectorApprovalItem): DirectorApprovalItem {
 
 const selectedKeys = computed(() => new Set(model.value.map(keyOf)));
 
+function isRequiredDirector(director: DirectorApprovalItem) {
+  return props.requiredDirectors.some((required) => keyOf(required) === keyOf(director));
+}
+
+watch(
+  [() => props.requiredDirectors, () => model.value],
+  () => {
+    const missing = props.requiredDirectors.filter(
+      (director) => !selectedKeys.value.has(keyOf(director))
+    );
+    if (missing.length) {
+      model.value = [
+        ...model.value,
+        ...missing.map((director) => ({
+          ...director,
+          delegator: director.delegator?.trim() || 'ybs',
+        })),
+      ].map((item, index) => ({ ...item, index: index + 1 }));
+    }
+  },
+  { immediate: true, deep: true }
+);
+
 const availableOptions = computed(() =>
   props.recipients
     .filter((director) => !selectedKeys.value.has(keyOf(director)))
@@ -338,6 +364,7 @@ const availableOptions = computed(() =>
 );
 
 function removeDirector(idx: number) {
+  if (model.value[idx] && isRequiredDirector(model.value[idx])) return;
   model.value = model.value
     .filter((_, i) => i !== idx)
     .map((item, i) => ({ ...item, index: i + 1 }));
