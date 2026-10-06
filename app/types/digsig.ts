@@ -188,6 +188,7 @@ export interface JenisNaskahResponse {
 
 // Verifikator
 export interface Verifikator {
+  positionStatus?: string
   persnum: number
   nama: string
   positionId: number | string

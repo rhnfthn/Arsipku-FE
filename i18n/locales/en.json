@@ -1,4 +1,5 @@
 {
+  "skipAnimation": "Skip Animation",
   "Selamat Datang": "Welcome",
   "Arsipku": "ARSIPKU",
   "title": "Your Central Hub for Managing Internal Documents at AirNav Indonesia",
@@ -1803,6 +1804,7 @@
   "sdi_pilih_tembusan": "Select CC",
   "sdi_sudah_dipilih": "Already selected",
   "sdi_ketik_perihal": "Type Subject",
+  "sdi_lampiran_keterangan": "Attachment description, e.g. 1 document",
   "sdi_lampiran_otomatis": "Auto-filled on file upload...",
   "sdi_periksa_alamat_terlampir": "See Attached Address",
   "sdi_di_tempat": "In Place",

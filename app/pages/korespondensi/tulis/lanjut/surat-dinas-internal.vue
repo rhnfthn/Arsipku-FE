@@ -51,7 +51,7 @@ const {
 } = useTulis();
 
 // ── SDI & Ref specific state ──────────────────────────────────────────────────
-const lampiranText = ref("");
+const lampiranText = useEditableLampiranText(existingFiles);
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
 
@@ -154,7 +154,7 @@ const getPayload = (): SDIPayloadInput => ({
   lampiran: lampiranText.value,
   konten: editorContent.value,
   english: false,
-  nama_tempat: user.value?.areaText || "",
+  nama_tempat: user.value?.alamatInfo?.kota || "Tangerang",
   nama_jabatan: user.value?.positionText || "",
   nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
   tgl: tglDb.value,
@@ -435,13 +435,7 @@ onMounted(async () => {
   isLoadingData.value = false;
 });
 
-watch(
-  existingFiles,
-  (files) => {
-    lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
-  },
-  { deep: true, immediate: true }
-);
+
 </script>
 
 <template>
@@ -545,9 +539,9 @@ watch(
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              placeholder="Otomatis terisi saat upload file..." />
+            <input type="text" v-model="lampiranText"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+              :placeholder="$t('sdi_lampiran_keterangan')" />
           </div>
         </div>
 
@@ -559,10 +553,12 @@ watch(
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
+                </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText || "Tangerang" }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -593,12 +589,12 @@ watch(
                       </tbody>
                     </table>
                     <div class="mt-5">Kepada Yth.</div>
-                    <div class="font-bold mb-1">
+                    <div class="font-bold mb-1 ml-0 pl-0">
                       <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
-                          {{ p.labelJob || p.label }}{{ p.organization ? ' - ' + p.organization : '' }}
+                          {{ correspondenceRecipientLabel(p, 'organization') }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -621,14 +617,14 @@ watch(
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">Tembusan :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
+                      {{ correspondenceRecipientLabel(t, 'organization') }}
                     </li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -655,15 +651,13 @@ watch(
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                 </div>
@@ -677,6 +671,8 @@ watch(
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="handleConfirmSaveDraft" />
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
