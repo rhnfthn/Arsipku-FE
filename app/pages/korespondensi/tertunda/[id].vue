@@ -3,8 +3,8 @@ import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   ArrowLeft, Printer, Hash, Calendar, Paperclip,
-  FileText, Upload, X, Loader2, Send, CheckCircle,
-  ChevronLeft, ChevronRight,
+  FileText, Upload, X, Loader2, Send,
+  ChevronLeft, ChevronRight, Eye, Trash2,
 } from "lucide-vue-next";
 import { useTertunda } from "~/composables/useTertunda";
 import { formatShortDate, getInitials } from "~/utils/mail-helpers";
@@ -74,6 +74,26 @@ const showAllCc = ref(false);
 const penerimaList = computed(() => naskah.value?.penerima || []);
 const tembusanList = computed(() => naskah.value?.tembusan || []);
 const lampiranList = computed(() => naskah.value?.lampiran_files || naskah.value?.attachments || []);
+
+// URL untuk pratinjau PDF (tombol printer di header).
+// Fallback ke beberapa field agar konsisten lintas jenis naskah (ND/SDI/SDE/DI/KA).
+const previewUrl = computed(() => {
+  const n = naskah.value;
+  if (!n) return null;
+  return (
+    n.final_pdf_url ||
+    n.file_url ||
+    n.fileUrl ||
+    // 'detail' adalah response buildChainFlow (level-level); untuk single-node
+    // naskah yang dimaksud, array [0] berisi data lengkap.
+    n.detail?.final_pdf_url ||
+    n.detail?.file_url ||
+    // Fallback: lampiran pertama (jika naskah belum punya final PDF).
+    (Array.isArray(n.lampiran_files) && n.lampiran_files[0]
+      ? (n.lampiran_files[0].file_url || n.lampiran_files[0].fileUrl)
+      : null)
+  );
+});
 
 const getSifatStyle = (sifat: string) => {
   const s = (sifat || "").toLowerCase();
@@ -190,6 +210,16 @@ const openPreview = async (url: string) => {
   }
 };
 
+// Preview file yang baru di-upload (scan TTD basah) — buat object URL lokal.
+const previewUploadedFile = () => {
+  if (!uploadedFile.value) return;
+  isPreviewOpen.value = true;
+  isPreviewLoading.value = true;
+  activePdfUrl.value = null;
+  activePdfUrl.value = URL.createObjectURL(uploadedFile.value);
+  isPreviewLoading.value = false;
+};
+
 onMounted(loadData);
 </script>
 
@@ -254,8 +284,8 @@ onMounted(loadData);
 
           <div class="w-px h-5 bg-gray-200 dark:border-gray-600 mx-1" />
 
-          <button v-if="naskah?.final_pdf_url || naskah?.file_url"
-            @click="openPreview(naskah.final_pdf_url || naskah.file_url)"
+          <button v-if="previewUrl"
+            @click="openPreview(previewUrl)"
             class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 transition-colors">
             <Printer class="w-4 h-4" />
           </button>
@@ -400,23 +430,25 @@ onMounted(loadData);
 
           <!-- File terpilih -->
           <div v-if="uploadedFile"
-            class="w-full rounded-xl border-2 border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 p-4 flex items-center gap-4">
+            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 flex items-center gap-4">
             <div
-              class="w-12 h-12 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 shadow-sm">
-              <FileText class="w-6 h-6 text-red-500" stroke-width="1.5" />
+              class="w-10 h-10 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 shadow-sm">
+              <FileText class="w-5 h-5 text-red-500" stroke-width="1.5" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ uploadedFile.name }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ formatFileSize(uploadedFile.size) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatFileSize(uploadedFile.size) }}</p>
             </div>
-            <div class="flex items-center gap-3 shrink-0">
-              <div class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
-                <CheckCircle class="w-4 h-4" />
-                <span class="hidden sm:inline">Siap dikirim</span>
-              </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button @click="previewUploadedFile"
+                class="p-1.5 rounded-lg text-blue-600 dark:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                title="Pratinjau">
+                <Eye class="w-4 h-4" />
+              </button>
               <button @click="removeFile"
-                class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-                <X class="w-4 h-4" />
+                class="p-1.5 rounded-lg text-red-600 dark:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                title="Hapus">
+                <Trash2 class="w-4 h-4" />
               </button>
             </div>
           </div>
