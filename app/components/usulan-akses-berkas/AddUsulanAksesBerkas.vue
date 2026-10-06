@@ -702,7 +702,7 @@ onMounted(() => {
                 </span>
                 <div class="flex-1 min-w-0">
                   <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
-                    {{ getVerifikator(item.persnum)?.nama || `Persnum ${item.persnum}` }}
+                    {{ getVerifikator(item.persnum)?.nama || `e-NIK ${item.persnum}` }}
                   </div>
                   <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">
                     {{ getVerifikator(item.persnum)?.jabatan || getVerifikator(item.persnum)?.level_jabatan || '' }}
@@ -766,7 +766,7 @@ onMounted(() => {
                   @click="onVerifikatorSelect(v.persnum); showVerifikatorDropdown = false"
                   class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 >
-                  <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
+                  <span class="font-medium">{{ v.nama || `e-NIK ${v.persnum}` }}</span>
                   <span class="text-xs text-gray-400">{{ v.jabatan || v.level_jabatan || '' }}</span>
                 </button>
                 <div v-if="filteredAvailableVerifikator.length === 0" class="px-3 py-4 text-center text-sm text-gray-400">
@@ -808,7 +808,7 @@ onMounted(() => {
                 :key="persnum"
                 class="inline-flex items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
               >
-                {{ eligiblePenerimaTambahan.find(p => p.persnum === persnum)?.nama || `Persnum ${persnum}` }}
+                {{ eligiblePenerimaTambahan.find(p => p.persnum === persnum)?.nama || `e-NIK ${persnum}` }}
                 <button
                   type="button"
                   @click="togglePenerimaTambahan(persnum)"
@@ -861,7 +861,7 @@ onMounted(() => {
                       :class="selectedPenerimaTambahan.includes(p.persnum) ? 'text-primary-500' : 'text-gray-300'"
                     />
                     <div class="min-w-0 flex-1">
-                      <div class="truncate text-sm font-medium">{{ p.nama || `Persnum ${p.persnum}` }}</div>
+                      <div class="truncate text-sm font-medium">{{ p.nama || `e-NIK ${p.persnum}` }}</div>
                       <div class="truncate text-xs text-gray-400">{{ p.position_text || '' }}</div>
                     </div>
                   </button>

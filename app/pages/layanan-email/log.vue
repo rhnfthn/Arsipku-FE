@@ -672,7 +672,7 @@ const isExporting = ref(false)
 const exportColumns = ref([
   { key: 'No', label: 'No', desc: 'Nomor urut data' },
   { key: 'waktu', label: 'Waktu', desc: 'Tanggal dan jam pengiriman email' },
-  { key: 'pengirim', label: 'Pengirim', desc: 'Nama dan persnum pengirim' },
+  { key: 'pengirim', label: 'Pengirim', desc: 'Nama dan e-NIK pengirim' },
   { key: 'subjek', label: 'Subjek', desc: 'Subjek email' },
   { key: 'to', label: 'Penerima (To)', desc: 'Alamat penerima email' },
   { key: 'surat', label: 'Surat', desc: 'Nomor surat dan perihal' },
