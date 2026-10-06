@@ -120,7 +120,7 @@
           <!-- Arsip Aktif — Multi Select -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Arsip Aktif <span class="text-red-500">*</span>
+              Arsip <span class="text-red-500">*</span>
             </label>
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
               Pilih arsip dengan retensi aktif habis. Bisa pilih lebih dari satu.
