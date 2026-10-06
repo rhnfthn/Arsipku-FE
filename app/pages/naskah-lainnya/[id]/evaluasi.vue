@@ -44,15 +44,11 @@
       </div>
 
       <NaskahDraftWorkspace
-        v-model="catatan"
         :detail="detail"
         :dokumen-pendukung="supportingDocuments"
         :area-title="workspaceAreaTitle"
         :area-description="workspaceAreaDescription"
-        :catatan-title="workspaceNoteTitle"
-        :catatan-placeholder="workspaceNotePlaceholder"
-        :show-catatan="!canDecideEvaluation"
-        :catatan-rich="true"
+        :show-catatan="false"
         :show-actions="false"
         :docx-url="detail.filePreviewUrl || `/naskah-lainnya/${id}/file`"
         :show-draf-download="false"
@@ -60,6 +56,7 @@
         staged-success-description="Revisi siap dikirim bersama tindakan persetujuan lanjutan"
         :divided="true"
         @download="downloadDocument"
+        @preview-pendukung="previewPendukung"
         @stage-revisi="stagedRevision = $event"
       />
 
@@ -111,7 +108,8 @@
 
         <div v-if="loadingCandidates || recipientOptions.length" class="flex items-center gap-2">
           <USelectMenu
-            v-model="selectedRecipientId"
+            :model-value="selectedRecipientId ?? undefined"
+            @update:model-value="selectedRecipientId = $event ?? null"
             :items="recipientOptions"
             :loading="loadingCandidates"
             :disabled="isBusy"
@@ -206,27 +204,14 @@
           >
             <UButton
               color="primary"
-              variant="outline"
               size="lg"
-              icon="i-lucide-forward"
+              :icon="selectedRecipient ? 'i-lucide-forward' : 'i-lucide-send'"
               class="w-full justify-center font-semibold sm:w-auto"
-              :loading="activeAction === 'forward'"
-              :disabled="isBusy || !selectedRecipientId"
-              @click="forwardContinuation"
-            >
-              Teruskan
-            </UButton>
-            <UButton
-              color="success"
-              size="lg"
-              icon="i-lucide-circle-check-big"
-              class="w-full justify-center font-semibold shadow-sm sm:w-auto"
-              :loading="activeAction === 'finish'"
+              :loading="activeAction === 'forward' || activeAction === 'finish'"
               :disabled="isBusy"
-              @click="finishContinuation"
+              @click="openContinueConfirmation"
+              >{{ selectedRecipient ? 'Teruskan' : 'Kirim' }}</UButton
             >
-              Selesai — Kembalikan ke EVP
-            </UButton>
           </div>
 
           <div v-else class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
@@ -262,7 +247,7 @@
               :disabled="isBusy"
               @click="openContinueConfirmation"
             >
-              Lanjut Persetujuan
+              {{ selectedRecipient ? 'Teruskan' : 'Kirim' }}
             </UButton>
           </div>
         </div>
@@ -277,6 +262,30 @@
       title="Menunggu proses evaluasi"
       description="Tidak ada tindakan persetujuan lanjutan yang perlu Anda kerjakan saat ini."
     />
+
+    <USlideover
+      v-model:open="previewOpen"
+      title="Preview Dokumen"
+      description="Pratinjau dokumen pendukung"
+      side="bottom"
+      :ui="{
+        content: 'h-[90vh] sm:h-screen max-h-screen rounded-t-2xl sm:rounded-none',
+        body: 'p-0',
+      }"
+    >
+      <template #body>
+        <div class="relative flex h-full w-full flex-col bg-gray-100 dark:bg-gray-900">
+          <div
+            v-if="previewLoading"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-gray-900/80"
+          >
+            <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary-500" />
+          </div>
+          <iframe v-if="previewUrl" :src="previewUrl" class="h-full w-full border-0 bg-white" />
+          <div v-else ref="previewDocxContainer" class="h-full w-full overflow-auto"></div>
+        </div>
+      </template>
+    </USlideover>
 
     <ApprovalNoteEditor
       v-model="showEvaluationRejectOptions"
@@ -294,20 +303,21 @@
     <ApprovalNoteEditor
       v-model="showContinueConfirmation"
       variant="approve"
-      title="Lanjut Persetujuan"
+      :title="selectedRecipient ? 'Teruskan Evaluasi' : 'Kirim Evaluasi'"
       :description="continueConfirmationDescription"
-      note-placeholder="Catatan persetujuan (opsional)"
-      confirm-label="Lanjut Persetujuan"
-      :saving="activeAction === 'decision'"
+      note-placeholder="Catatan evaluasi (opsional)"
+      :confirm-label="selectedRecipient ? 'Teruskan' : 'Kirim'"
+      :saving="isBusy"
       @confirm="submitContinueDecision"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { renderAsync } from 'docx-preview';
 import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
-import type { ApprovalItem, RevisionFilePair } from '~/types/naskah-lainnya';
+import type { ApprovalItem, DokumenFile, RevisionFilePair } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -335,7 +345,6 @@ type RecipientOption = ApprovalItem & {
   jabatan: string;
 };
 
-const catatan = ref('');
 const loading = ref(true);
 const activeAction = ref<
   'forward' | 'finish' | 'decision' | 'reject-legal' | 'reject-cancel' | null
@@ -349,6 +358,17 @@ const showContinueConfirmation = ref(false);
 const continueNote = ref('');
 const rejectionReason = ref('');
 const pendingDecision = ref<'legal_drafting_ulang' | 'batalkan' | null>(null);
+const previewOpen = ref(false);
+const previewLoading = ref(false);
+const previewUrl = ref<string | null>(null);
+const previewDocxContainer = ref<HTMLElement | null>(null);
+
+watch(previewOpen, (open) => {
+  if (open) return;
+  if (previewUrl.value) window.URL.revokeObjectURL(previewUrl.value);
+  previewUrl.value = null;
+  if (previewDocxContainer.value) previewDocxContainer.value.innerHTML = '';
+});
 
 const actions = computed(() => detail.value?.availableActions ?? []);
 const supportingDocuments = computed(() =>
@@ -386,6 +406,35 @@ async function previewSheetDokumen(doc: any) {
     toast.add({ title: 'Gagal memuat preview', color: 'error' });
   }
 }
+
+async function previewPendukung(doc: DokumenFile) {
+  previewLoading.value = true;
+  try {
+    const blob = await apiGet(`/naskah-lainnya/${id.value}/dokumen/${doc.id}/download?inline=1`, {
+      responseType: 'blob',
+    });
+    if (doc.nama.toLowerCase().endsWith('.docx')) {
+      previewOpen.value = true;
+      await nextTick();
+      if (!previewDocxContainer.value) throw new Error('Area preview DOCX tidak tersedia');
+      previewDocxContainer.value.innerHTML = '';
+      await renderAsync(await blob.arrayBuffer(), previewDocxContainer.value);
+    } else {
+      const pdf = new Blob([await blob.arrayBuffer()], { type: 'application/pdf' });
+      previewUrl.value = window.URL.createObjectURL(pdf);
+      previewOpen.value = true;
+    }
+  } catch (err) {
+    previewOpen.value = false;
+    toast.add({
+      title: 'Gagal memuat preview lampiran',
+      description: getErrorMessage(err, 'Dokumen pendukung tidak dapat ditampilkan.'),
+      color: 'error',
+    });
+  } finally {
+    previewLoading.value = false;
+  }
+}
 const errorMessage = computed(() => getErrorMessage(error.value, 'Gagal memuat detail naskah.'));
 
 const breadcrumbs = computed(() => [
@@ -405,7 +454,9 @@ const canProcessContinuation = computed(() =>
   )
 );
 const isFinalEvaluation = computed(() => detail.value?.tahapan === 'evaluasi_final');
-const showRecipientSelector = computed(() => canProcessContinuation.value);
+const showRecipientSelector = computed(
+  () => canProcessContinuation.value || canDecideEvaluation.value
+);
 const isBusy = computed(() => activeAction.value !== null);
 
 const currentContinuation = computed(
@@ -414,6 +465,20 @@ const currentContinuation = computed(
       .filter((item) => item.tahap === 'persetujuan_lanjutan' && item.status === 'waiting')
       .sort((a, b) => Number(a.urutan ?? 0) - Number(b.urutan ?? 0))[0]
 );
+
+const nextUpwardRecipient = computed(() => {
+  const current = currentContinuation.value;
+  return current
+    ? (detail.value?.approval || [])
+        .filter(
+          (row) =>
+            row.tahap === 'persetujuan_lanjutan' &&
+            row.status === 'pending' &&
+            row.urutan > current.urutan
+        )
+        .sort((a, b) => a.urutan - b.urutan)[0]
+    : null;
+});
 
 const continuationDescription = computed(() => {
   const recipient = currentContinuation.value;
@@ -426,16 +491,12 @@ const continuationDescription = computed(() => {
 });
 
 const workspaceBannerTitle = computed(() =>
-  canDecideEvaluation.value
-    ? isFinalEvaluation.value
-      ? 'Keputusan Final EVP'
-      : 'Evaluasi EVP Aktif'
-    : 'Persetujuan Lanjutan Aktif'
+  canDecideEvaluation.value ? 'Evaluasi EVP Aktif' : 'Persetujuan Lanjutan Aktif'
 );
 const workspaceBannerDescription = computed(() => {
   if (canDecideEvaluation.value) {
     return isFinalEvaluation.value
-      ? 'Hasil persetujuan lanjutan telah kembali. Tinjau naskah dan tentukan keputusan final EVP.'
+      ? 'Hasil persetujuan lanjutan telah kembali. Tinjau naskah dan tentukan keputusan evaluasi.'
       : 'Tinjau naskah, unggah revisi bila diperlukan, lalu tentukan keputusan evaluasi.';
   }
   return continuationDescription.value;
@@ -448,15 +509,7 @@ const workspaceAreaDescription = computed(() =>
     ? 'Tinjau naskah sebagai EVP. Bila diperlukan, unggah revisi DOCX; PDF pratinjau dibuat otomatis sebelum memberikan keputusan.'
     : 'Tinjau naskah, unggah revisi DOCX bila diperlukan, lalu teruskan atau selesaikan pekerjaan.'
 );
-const workspaceNoteTitle = computed(() =>
-  canDecideEvaluation.value ? 'Catatan Evaluasi EVP' : 'Catatan Penerima'
-);
-const workspaceNotePlaceholder = computed(() =>
-  canDecideEvaluation.value
-    ? 'Tambahkan catatan hasil evaluasi EVP...'
-    : 'Tambahkan catatan untuk proses persetujuan lanjutan...'
-);
-const recipientSectionTitle = computed(() => 'Penerima Selanjutnya');
+const recipientSectionTitle = computed(() => 'Teruskan kepada');
 const recipientPlaceholder = computed(() => 'Pilih penerima selanjutnya');
 const emptyRecipientDescription = computed(
   () =>
@@ -469,7 +522,7 @@ const actionSectionTitle = computed(() =>
 const toOption = (item: ApprovalItem): RecipientOption => ({
   ...item,
   value: String(item.positionId ?? item.persnum ?? item.nama),
-  label: item.nama || item.persnum || 'Penerima',
+  label: item.nama || String(item.persnum || 'Penerima'),
   jabatan: item.jabatan || 'Jabatan tidak tersedia',
 });
 
@@ -494,14 +547,16 @@ const clearSelectedRecipient = () => {
 const actionDescription = computed(() => {
   if (canDecideEvaluation.value) {
     if (isFinalEvaluation.value) {
-      return 'Lanjutkan ke tahap berikutnya, atau tolak untuk Legal Drafting Ulang maupun pembatalan.';
+      return 'Pilih penerima untuk meneruskan, atau kosongkan pilihan untuk mengirim ke tahap berikutnya.';
     }
-    return 'Lanjut Persetujuan akan mengarahkan naskah ke Blanko Verbal Persetujuan Direksi.';
+    return selectedRecipient.value
+      ? `Teruskan kepada ${selectedRecipient.value.label}.`
+      : 'Kirim akan melanjutkan ke Blanko Verbal Persetujuan Direksi.';
   }
   if (selectedRecipient.value) {
-    return `Teruskan kepada ${selectedRecipient.value.label}, atau selesaikan pekerjaan untuk dikembalikan ke EVP.`;
+    return `Teruskan kepada ${selectedRecipient.value.label}.`;
   }
-  return 'Pilih penerima untuk meneruskan, atau selesaikan pekerjaan untuk dikembalikan ke EVP.';
+  return `Kirim akan mengembalikan hasil kepada ${nextUpwardRecipient.value?.nama || 'EVP'}. Pilih penerima bila perlu diteruskan.`;
 });
 
 const getErrorMessage = (err: unknown, fallback: string) => {
@@ -520,19 +575,29 @@ const rejectionModalDescription = computed(() =>
 );
 
 const continueConfirmationDescription = computed(() =>
-  isFinalEvaluation.value
-    ? 'Pastikan naskah dan dokumen revisi sudah sesuai sebelum melanjutkan ke tahap berikutnya.'
-    : 'Naskah akan dilanjutkan ke step Blanko Verbal Persetujuan Direksi. Pastikan naskah dan dokumen revisi sudah sesuai.'
+  selectedRecipient.value
+    ? `Naskah akan diteruskan kepada ${selectedRecipient.value.label}.`
+    : canProcessContinuation.value
+      ? `Hasil evaluasi akan dikirim kembali kepada ${nextUpwardRecipient.value?.nama || 'EVP'}.`
+      : isFinalEvaluation.value
+        ? 'Pastikan naskah dan dokumen revisi sudah sesuai sebelum melanjutkan ke tahap berikutnya.'
+        : 'Naskah akan dilanjutkan ke step Blanko Verbal Persetujuan Direksi. Pastikan naskah dan dokumen revisi sudah sesuai.'
 );
 
 const openContinueConfirmation = () => {
-  if (!canDecideEvaluation.value || isBusy.value) return;
+  if ((!canDecideEvaluation.value && !canProcessContinuation.value) || isBusy.value) return;
   showContinueConfirmation.value = true;
 };
 
-const submitContinueDecision = (note: string) => {
+const submitContinueDecision = async (note: string) => {
+  if (isBusy.value) return;
   continueNote.value = note;
-  submitEvaluationDecision('lanjut_persetujuan');
+  if (canProcessContinuation.value) {
+    if (selectedRecipient.value) await forwardContinuation();
+    else await finishContinuation();
+  } else {
+    await submitEvaluationDecision('lanjut_persetujuan');
+  }
 };
 
 const openRejection = (decision: 'legal_drafting_ulang' | 'batalkan') => {
@@ -573,6 +638,10 @@ const submitEvaluationDecision = async (
     if (decision !== 'batalkan' && !(await commitRevision())) return;
     await keputusanEvaluasi(id.value, {
       keputusan: decision,
+      penerimaPertama:
+        decision === 'lanjut_persetujuan' && selectedRecipient.value
+          ? selectedRecipient.value
+          : undefined,
       catatan:
         decision === 'lanjut_persetujuan'
           ? continueNote.value.trim() || undefined
@@ -621,17 +690,18 @@ const commitRevision = async (): Promise<boolean> => {
 
 const forwardContinuation = async () => {
   const recipient = selectedRecipient.value;
-  if (!recipient || isBusy.value) return;
+  if (!canProcessContinuation.value || !recipient || isBusy.value) return;
 
   activeAction.value = 'forward';
   try {
     if (!(await commitRevision())) return;
-    await teruskanPersetujuan(id.value, recipient, catatan.value || undefined);
+    await teruskanPersetujuan(id.value, recipient, continueNote.value.trim() || undefined);
     toast.add({
       title: 'Naskah diteruskan',
       description: `Diteruskan kepada ${recipient.label}.`,
       color: 'success',
     });
+    showContinueConfirmation.value = false;
     await router.push(`/naskah-lainnya/${id.value}`);
   } catch (err) {
     toast.add({
@@ -645,22 +715,24 @@ const forwardContinuation = async () => {
 };
 
 const finishContinuation = async () => {
-  if (isBusy.value) return;
+  if (!canProcessContinuation.value || isBusy.value) return;
 
+  const recipientName = nextUpwardRecipient.value?.nama || 'EVP';
   activeAction.value = 'finish';
   try {
     if (!(await commitRevision())) return;
-    await selesaiPersetujuan(id.value, catatan.value || undefined);
+    await selesaiPersetujuan(id.value, continueNote.value.trim() || undefined);
     toast.add({
-      title: 'Dikembalikan ke EVP',
-      description: 'Pekerjaan selesai dan naskah telah dikembalikan ke EVP untuk keputusan final.',
+      title: `Hasil dikirim kepada ${recipientName}`,
+      description: 'Naskah dikembalikan mengikuti rantai evaluasi.',
       color: 'success',
     });
+    showContinueConfirmation.value = false;
     await router.push(`/naskah-lainnya/${id.value}`);
   } catch (err) {
     toast.add({
       title: 'Gagal menyelesaikan pekerjaan',
-      description: getErrorMessage(err, 'Naskah tidak dapat dikembalikan ke EVP.'),
+      description: getErrorMessage(err, 'Naskah tidak dapat dikirim kembali.'),
       color: 'error',
     });
   } finally {
@@ -699,7 +771,7 @@ onMounted(async () => {
 
   loading.value = false;
 
-  if (canProcessContinuation.value) {
+  if (showRecipientSelector.value) {
     await loadContinuationCandidates();
   }
 });

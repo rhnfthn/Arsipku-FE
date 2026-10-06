@@ -248,10 +248,12 @@
           </td>
         </tr>
         <tr>
-          <td colspan="3" class="bv-footer-note">
+          <td colspan="4" class="bv-footer-note">
             Setelah selesai di proses, harap diteruskan kepada (unit yang membidangi hukum)
           </td>
-          <td class="bv-catatan">Catatan : {{ modelValue?.catatan || '' }}</td>
+        </tr>
+        <tr>
+          <td colspan="4" class="bv-catatan">Catatan : {{ modelValue?.catatan || '' }}</td>
         </tr>
       </tbody>
     </table>
@@ -401,11 +403,16 @@ td {
 
 /* Sudah diparaf: gap kosong untuk paraf diisi stamp, jarak nama dirapatkan. */
 .bv-signature-person.bv-signed .bv-signature-name {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .bv-director-item {
   margin-bottom: 4px;
+}
+
+.bv-director-item :deep(.vd) {
+  margin-left: 0;
+  margin-right: auto;
 }
 
 .bv-director-divider {
@@ -421,7 +428,7 @@ td {
 }
 
 .bv-director-item.bv-signed .bv-director-name {
-  margin: 6px 0 8px 0;
+  margin: 2px 0 8px 0;
 }
 
 .bv-catatan {

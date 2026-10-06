@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue';
+import { resolveSenderTimeZone, formatSenderTimestamp } from '~/utils/sender-timezone';
 import { formatDelegatedPosition } from '@/utils/delegation-display';
 import {
   Calendar,
@@ -142,6 +143,11 @@ const recipientPositionText = (recipient: any) =>
   );
 
 // --- HELPERS ---
+const displayTimeZone = computed(() =>
+  props.context === 'sent'
+    ? resolveSenderTimeZone({ ...props.data?.from, ...props.data?.pengirim })
+    : 'Asia/Jakarta'
+);
 const parseWibDate = (v: string): Date | null => {
   if (!v) return null;
   // BE kirim WIB string: "YYYY-MM-DD HH:mm:ss" → parse sebagai WIB (+07:00)
@@ -159,37 +165,11 @@ const formatDate = (v: string) => {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-    timeZone: 'Asia/Jakarta',
+    timeZone: displayTimeZone.value,
   }).format(d);
 };
-const formatFullDateTime = (v: string) => {
-  const d = parseWibDate(v);
-  if (!d) return '-';
-  return (
-    new Intl.DateTimeFormat('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      timeZone: 'Asia/Jakarta',
-      hour12: false,
-    }).format(d) + ' WIB'
-  );
-};
-const formatTime = (v: string) => {
-  const d = parseWibDate(v);
-  if (!d) return '-';
-  return (
-    new Intl.DateTimeFormat('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Jakarta',
-      hour12: false,
-    }).format(d) + ' WIB'
-  );
-};
+const formatFullDateTime = (v: string) => formatSenderTimestamp(v, displayTimeZone.value, true);
+const formatTime = (v: string) => formatSenderTimestamp(v, displayTimeZone.value);
 const formatDisposisiInline = (v: any) =>
   Array.isArray(v) ? v.join(', ') : String(v || '').replace(/(\r\n|\n|\r)/gm, ', ');
 const getFlowInitials = (n: string) =>

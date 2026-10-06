@@ -42,7 +42,7 @@ const jabatanLabel = computed(() => {
   align-items: center;
   gap: 4px;
   padding: 3px 4px;
-  margin: 3px 0 2px;
+  margin: 3px auto 2px;
   background: #fff;
   break-inside: avoid;
   box-sizing: border-box;
