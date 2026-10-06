@@ -3,13 +3,15 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Search } from 'lucide-vue-next';
 import Modal from '~/components/Modal.vue';
 import Heading from '~/components/Heading.vue';
+import { getCategoryFullName } from '~/utils/mail-helpers';
 
 const props = defineProps<{
   naskahId?: string;
   naskahPerihal?: string;
   naskahNomor?: string;
-  // Multi-naskah: array of { naskahId, perihal, nomor }
-  naskahItems?: Array<{ naskahId: string; perihal?: string; nomor?: string }>;
+  naskahJenis?: string;
+  // Multi-naskah: array of { naskahId, perihal, nomor, jenis }
+  naskahItems?: Array<{ naskahId: string; perihal?: string; nomor?: string; jenis?: string }>;
   /** Penyebarluasan Surat Edaran: penerima diselesaikan backend dari org aktif. */
   distributionScope?: 'SELECTED' | 'ALL_EMPLOYEES';
   recipientHint?: string;
@@ -20,7 +22,7 @@ const emit = defineEmits<{
   (e: 'shared'): void;
 }>();
 
-const { createShare, searchUsers, searchResults, clearSearchResults } = useNaskahShare();
+const { createShare, searchUsers, searchResults, clearSearchResults, sendShareEmail } = useNaskahShare();
 const { hasPermission } = useFeatureAccess();
 const { t } = useI18n();
 
@@ -42,7 +44,7 @@ const todayStr = new Date().toISOString().split('T')[0];
 
 // Metode berbagi naskah: via ArsipKu, Email, atau WhatsApp
 const shareMethod = ref<'ARSIPKU' | 'EMAIL' | 'WHATSAPP'>('ARSIPKU');
-const shareMethodOptions = [
+const shareMethodOptions: Array<{ value: 'ARSIPKU' | 'EMAIL' | 'WHATSAPP'; label: string; icon: string }> = [
   { value: 'ARSIPKU', label: 'ArsipKu', icon: 'i-lucide-folder-open' },
   { value: 'EMAIL', label: 'Email', icon: 'i-lucide-mail' },
   { value: 'WHATSAPP', label: 'WhatsApp', icon: 'i-lucide-message-circle' },
@@ -53,8 +55,22 @@ const shareMethodDropdownRef = ref<HTMLElement | null>(null);
 const shareMethodLabel = computed(
   () => shareMethodOptions.find((o) => o.value === shareMethod.value)?.label || 'ArsipKu',
 );
-// Fitur selain ArsipKu belum tersedia
-const isShareMethodComingSoon = computed(() => shareMethod.value !== 'ARSIPKU');
+// Fitur selain ArsipKu & Email belum tersedia (WhatsApp menyusul)
+const isShareMethodComingSoon = computed(() => shareMethod.value === 'WHATSAPP');
+
+// ── State untuk berbagi via Email (alamat eksternal manual) ────────────────
+const emailTo = ref('');
+const emailCc = ref('');
+const emailBcc = ref('');
+
+const parseEmails = (input: string): string[] =>
+  input
+    .split(/[,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+const isValidEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 /** Duration options for RENTANG_WAKTU. 'Custom' shows date picker. */
 const durationOptions = computed(() => [
@@ -139,6 +155,53 @@ const handleSubmit = async () => {
     errorMsg.value = t('share_id_invalid');
     return;
   }
+
+  // ── Branch EMAIL: kirim ke alamat email manual ──────────────────────────
+  if (shareMethod.value === 'EMAIL') {
+    const toList = parseEmails(emailTo.value);
+    if (toList.length === 0) {
+      errors.value.emailTo = t('share_email_wajib');
+      return;
+    }
+    const invalid = toList.filter((e) => !isValidEmail(e));
+    if (invalid.length > 0) {
+      errors.value.emailTo = t('share_email_invalid');
+      return;
+    }
+    // Validasi CC/BCC opsional
+    const ccList = parseEmails(emailCc.value);
+    const bccList = parseEmails(emailBcc.value);
+    const invalidCc = ccList.filter((e) => !isValidEmail(e));
+    const invalidBcc = bccList.filter((e) => !isValidEmail(e));
+    if (invalidCc.length > 0 || invalidBcc.length > 0) {
+      errors.value.emailTo = t('share_email_invalid');
+      return;
+    }
+
+    isSubmitting.value = true;
+    errorMsg.value = '';
+    try {
+      await sendShareEmail(items[0].naskahId, {
+        to: toList.join(', '),
+        cc: ccList.length ? ccList.join(', ') : undefined,
+        bcc: bccList.length ? bccList.join(', ') : undefined,
+      });
+      useToast().add({
+        title: t('share_berhasil'),
+        description: t('share_email_berhasil'),
+        color: 'success',
+      });
+      emit('shared');
+      isOpen.value = false;
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+      errorMsg.value = serverMsg || err?.message || t('share_gagal_dibagikan');
+    } finally {
+      isSubmitting.value = false;
+    }
+    return;
+  }
+
   if (!isAllEmployees.value && selectedRecipients.value.length === 0) {
     errors.value.recipients = t('share_pilih_penerima');
   }
@@ -225,6 +288,9 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
               :key="item.naskahId"
               class="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 px-3 py-2 rounded-lg text-sm"
             >
+              <p v-if="item.jenis" class="text-[11px] font-semibold text-primary-600 dark:text-primary-400">
+                {{ getCategoryFullName(item.jenis) }}
+              </p>
               <p class="font-medium text-gray-900 dark:text-white">
                 <span class="text-gray-400 mr-1.5">{{ idx + 1 }}.</span>{{ item.perihal || t('share_tanpa_perihal') }}
               </p>
@@ -235,6 +301,9 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
           </div>
           <!-- Single naskah -->
           <div v-else class="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 px-3 py-2 rounded-lg text-sm">
+            <p v-if="naskahJenis" class="text-[11px] font-semibold text-primary-600 dark:text-primary-400">
+              {{ getCategoryFullName(naskahJenis) }}
+            </p>
             <p class="font-medium text-gray-900 dark:text-white">
               {{ naskahPerihal || t('share_tanpa_perihal') }}
             </p>
@@ -280,7 +349,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
               </div>
             </div>
           </div>
-          <!-- Coming soon untuk metode selain ArsipKu -->
+          <!-- Coming soon untuk WhatsApp -->
           <div v-if="isShareMethodComingSoon" class="mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center dark:border-gray-600 dark:bg-gray-700/30">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Feature coming soon
@@ -289,11 +358,49 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
               Metode berbagi via {{ shareMethodLabel }} akan segera tersedia.
             </p>
           </div>
+
+          <!-- Input email manual (metode EMAIL) -->
+          <div v-if="shareMethod === 'EMAIL'" class="mt-3 space-y-2">
+            <div>
+              <label class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {{ t('share_email_to') }} <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="emailTo"
+                type="text"
+                :placeholder="t('share_email_to_placeholder')"
+                class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {{ t('share_email_cc') }}
+              </label>
+              <input
+                v-model="emailCc"
+                type="text"
+                :placeholder="t('share_email_cc_placeholder')"
+                class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {{ t('share_email_bcc') }}
+              </label>
+              <input
+                v-model="emailBcc"
+                type="text"
+                :placeholder="t('share_email_bcc_placeholder')"
+                class="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <p v-if="errors.emailTo" class="mt-1 text-xs text-red-500">{{ errors.emailTo }}</p>
+          </div>
         </div>
       </div>
 
       <!-- Jenis Akses -->
-      <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
+      <div v-if="shareMethod !== 'EMAIL'" class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
           {{ t('share_jenis_akses') }} <span class="text-red-500">*</span>
         </span>
@@ -374,7 +481,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
       </div>
 
       <!-- Penerima -->
-      <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
+      <div v-if="shareMethod !== 'EMAIL'" class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
           {{ t('share_penerima') }} <span class="text-red-500">*</span>
         </span>
@@ -447,7 +554,7 @@ onUnmounted(() => document.removeEventListener('click', handleDocumentClick));
       </div>
 
       <!-- Catatan -->
-      <div class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
+      <div v-if="shareMethod !== 'EMAIL'" class="flex flex-col justify-between gap-1 border-b border-gray-200 py-2 dark:border-gray-600 sm:flex-row sm:items-start sm:gap-0">
         <span class="w-full shrink-0 pt-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
           {{ t('share_catatan') }}
           <span class="text-xs font-normal text-gray-400">{{ t('share_opsional') }}</span>
