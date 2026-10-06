@@ -229,10 +229,12 @@
           </td>
         </tr>
         <tr>
-          <td colspan="3" class="lpd-footer-note">
+          <td colspan="4" class="lpd-footer-note">
             Setelah selesai di proses, harap diteruskan kepada (unit yang membidangi hukum)
           </td>
-          <td class="lpd-catatan">Catatan : {{ modelValue?.catatan || '' }}</td>
+        </tr>
+        <tr>
+          <td colspan="4" class="lpd-catatan">Catatan : {{ modelValue?.catatan || '' }}</td>
         </tr>
       </tbody>
     </table>
@@ -383,11 +385,16 @@ td {
 }
 
 .lpd-signature-person.lpd-signed .lpd-signature-name {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .lpd-director-item {
   margin-bottom: 4px;
+}
+
+.lpd-director-item :deep(.vd) {
+  margin-left: 0;
+  margin-right: auto;
 }
 
 .lpd-director-name {
@@ -397,7 +404,7 @@ td {
 }
 
 .lpd-director-item.lpd-signed .lpd-director-name {
-  margin: 6px 0 8px 0;
+  margin: 2px 0 8px 0;
 }
 
 .lpd-catatan {

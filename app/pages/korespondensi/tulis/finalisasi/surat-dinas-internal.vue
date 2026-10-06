@@ -63,9 +63,9 @@
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              placeholder="Otomatis terisi saat upload file..." />
+            <input type="text" v-model="lampiranText"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+              :placeholder="$t('sdi_lampiran_keterangan')" />
           </div>
         </div>
 
@@ -77,10 +77,12 @@
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
+                </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText || "Tangerang" }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -111,12 +113,12 @@
                       </tbody>
                     </table>
                     <div class="mt-5">Kepada Yth.</div>
-                    <div class="font-bold mb-1">
+                    <div class="font-bold mb-1 ml-0 pl-0">
                       <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
-                          {{ p.labelJob || p.label }}{{ p.organization ? ' - ' + p.organization : '' }}
+                          {{ correspondenceRecipientLabel(p, 'organization') }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -139,14 +141,14 @@
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">Tembusan :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
+                      {{ correspondenceRecipientLabel(t, 'organization') }}
                     </li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -173,15 +175,13 @@
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ const alertState = useAlertState();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
-const { generatePdf } = useNotaDinas();
+const { generatePdf } = useSdi();
 const { getKtp } = useDigSign();
 const { fetchKonsepDetail } = useInbox();
 const { finalizeKonsep } = useKonsep();
@@ -302,7 +302,7 @@ useMandatoryRoutingCc({
 const pdfBlob = ref<Blob | null>(null);
 const pdfUrl = ref("");
 const maxPerihal = 200;
-const lampiranText = ref("");
+const lampiranText = useEditableLampiranText(existingFiles);
 
 const breadcrumbs = [
   { label: "Beranda", to: "/beranda" },
@@ -325,7 +325,7 @@ const tinyMceInit = {
   branding: false,
   placeholder: 'Ketik konten disini...',
   plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | link unlink | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
   setup(editor: TinyMCEEditor) {
     tinymceEditor.value = editor;
@@ -412,15 +412,17 @@ const getBasePayload = (): DraftPayload => {
     tembusan: selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value),
     penerima_grup: selectedTertuju.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', '')),
     tembusan_grup: selectedTembusan.value.filter(t => t.isGroup).map(i => String(i.value).replace('GROUP_', '')),
-    tertuju: selectedTertuju.value.map(i => i.labelJob || i.label),
+    tertuju: selectedTertuju.value.map(i => correspondenceRecipientLabel(i)),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
+    lampiran: lampiranText.value,
+    lampiran_text: lampiranText.value,
     konten: String(editorContent.value || ''),
     htmlContent: String(editorContent.value || ''),
     english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
+    nama_tempat: user.value?.alamatInfo?.kota || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
     nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
     tgl: tglDb,
@@ -435,7 +437,7 @@ const createFinalizeFormData = () => {
   const userPosition = user.value?.position || "";
   const lampiranIds = existingFiles.value.map(f => f.id).filter(Boolean);
 
-  formData.append("jenis", "ND");
+  formData.append("jenis", "SDI");
   formData.append("from_position_id", userPosition);
   formData.append("to_position_id", userPosition);
   formData.append("pengirim_position_id", userPosition);
@@ -453,11 +455,12 @@ const createFinalizeFormData = () => {
   formData.append("perihal", subject.value);
   formData.append("konten", String(editorContent.value || ''));
   formData.append("english", english.value ? "1" : "0");
-  formData.append("nama_tempat", user.value?.areaText || "Kantor Pusat");
+  formData.append("nama_tempat", user.value?.alamatInfo?.kota || "Tangerang");
   formData.append("nama_jabatan", user.value?.positionText || "");
   formData.append("nama_lengkap", formatDelegatedActorName(user.value?.nama, user.value?.position_status));
   formData.append("lampiran_temp_ids", JSON.stringify(lampiranIds));
-  formData.append("lampiran", lampiranIds.length > 0 ? "1" : "0");
+  formData.append("lampiran", lampiranText.value);
+  formData.append("lampiran_text", lampiranText.value);
 
   return formData;
 };
@@ -707,6 +710,7 @@ onMounted(async () => {
         );
 
         // --- 4. Sisanya (Lampiran & Sifat) ---
+        lampiranText.value = draftData.lampiran_text || (typeof draftData.lampiran === "string" ? draftData.lampiran : "");
         const lampiranSrc = draftData.lampiran_files || [];
         existingFiles.value = lampiranSrc.map((f: any) => ({
           id: f.id,

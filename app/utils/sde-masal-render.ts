@@ -1,3 +1,4 @@
+import { correspondenceRecipientLabel } from './correspondence-recipient-label';
 import type { SdeMasalConcept, SdeMasalPenerima } from '~/types/sde-masal';
 
 /** Format an ISO date without parsing it as UTC (which can shift the day). */
@@ -36,7 +37,7 @@ export function setInternalPositionLookup(
 ) {
   internalPositionLookup = (data || []).map((row) => ({
     position: String(row.position ?? ''),
-    position_text: String(row.position_text ?? ''),
+    position_text: correspondenceRecipientLabel({ raw: row }),
   }));
 }
 

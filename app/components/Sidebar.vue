@@ -360,6 +360,13 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+// Badge count draf di child menu Draf (Korespondensi & Naskah Lainnya).
+const {
+  korespondensiDraftCount,
+  naskahLainnyaDraftCount,
+  fetchCounts: fetchDraftCounts,
+  subscribeRealtime: subscribeDraftRealtime,
+} = useDraftCounts();
 // ── Kelola counts (badge notifikasi menu Kelola) ──
 const { counts: kelolaCounts, fetchCounts: fetchKelolaCounts } = useKelolaCounts();
 const kelolaTotalBadge = computed(() => {
@@ -654,6 +661,12 @@ onMounted(async () => {
     }
     // Fetch share diterima counts untuk badge sidebar
     if (hasPermission('naskah-share', 'read')) fetchShareCounts().catch(() => {});
+    // Fetch draf counts untuk badge child menu Draf
+    if (hasPermission('utama.draft', 'read')) {
+      fetchDraftCounts().catch(() => {});
+      // Realtime: badge draf refresh saat draft dibuat/dihapus/di-sign.
+      subscribeDraftRealtime();
+    }
     // Fetch Kelola counts untuk badge menu Kelola
     fetchKelolaCounts().catch(() => {});
     // Sinkronkan badge SDE Massal dengan folder yang benar-benar menunggu aksi.
@@ -940,11 +953,13 @@ const userMenuUtama = computed(() => [
         label: 'Korespondensi',
         to: '/korespondensi/draf',
         permission: { resource: 'utama.draft', action: 'read' },
+        badge: korespondensiDraftCount.value > 0 ? korespondensiDraftCount.value : null,
       },
       {
         label: 'Naskah Lainnya',
         to: '/naskah-lainnya/draf',
         permission: { resource: 'utama.draft', action: 'read' },
+        badge: naskahLainnyaDraftCount.value > 0 ? naskahLainnyaDraftCount.value : null,
       },
     ],
   },
@@ -1209,11 +1224,13 @@ const adminMenuUtama = computed(() => [
         label: 'Korespondensi',
         to: '/korespondensi/draf',
         permission: { resource: 'utama.draft', action: 'read' },
+        badge: korespondensiDraftCount.value > 0 ? korespondensiDraftCount.value : null,
       },
       {
         label: 'Naskah Lainnya',
         to: '/naskah-lainnya/draf',
         permission: { resource: 'utama.draft', action: 'read' },
+        badge: naskahLainnyaDraftCount.value > 0 ? naskahLainnyaDraftCount.value : null,
       },
     ],
   },

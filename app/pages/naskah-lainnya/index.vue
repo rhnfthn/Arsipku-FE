@@ -180,7 +180,7 @@
             <input
               v-model="search"
               type="text"
-              placeholder="Cari perihal naskah…"
+              placeholder="Cari nomor, perihal, nama, atau jabatan…"
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -236,10 +236,32 @@
           </div>
         </template>
         <template #cell-pemrakarsa="{ row }">
-          <span class="block truncate text-xs" :title="row.pemrakarsa">{{ row.pemrakarsa }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-gray-800 dark:text-gray-100" :title="row.pemrakarsa">
+              {{ row.pemrakarsa }}
+            </p>
+            <p
+              v-if="row.pemrakarsaJabatan"
+              class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+              :title="row.pemrakarsaJabatan"
+            >
+              {{ row.pemrakarsaJabatan }}
+            </p>
+          </div>
         </template>
         <template #cell-konseptor="{ row }">
-          <span class="block truncate text-xs" :title="row.konseptor">{{ row.konseptor }}</span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-gray-800 dark:text-gray-100" :title="row.konseptor">
+              {{ row.konseptor }}
+            </p>
+            <p
+              v-if="row.konseptorJabatan"
+              class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+              :title="row.konseptorJabatan"
+            >
+              {{ row.konseptorJabatan }}
+            </p>
+          </div>
         </template>
         <template #cell-tahapan="{ row }">
           <StatusBadge
@@ -313,7 +335,7 @@ const exportColumns = ref([
   { key: 'perihal', label: 'Perihal', desc: 'Perihal / judul naskah' },
   { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Pembuat / pemrakarsa naskah' },
   { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan proses naskah' },
-  { key: 'terakhirDiubah', label: 'Diubah', desc: 'Waktu terakhir diubah' }
+  { key: 'terakhirDiubah', label: 'Diubah', desc: 'Waktu terakhir diubah' },
 ]);
 
 const search = ref('');
@@ -347,7 +369,7 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
   persetujuan_lanjutan: 'Persetujuan Lanjutan',
-  evaluasi_final: 'Evaluasi Final EVP',
+  evaluasi_final: 'Evaluasi',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
   blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
@@ -499,21 +521,26 @@ function handleDocumentClick(e: MouseEvent) {
 // ── Sort + Pagination (client-side; API mengembalikan list penuh) ─
 
 const displayRows = computed(() =>
-  items.value.map((r) => ({
-    id: r.id,
-    nomor: r.nomor ?? '<draft>',
-    jenis: r.jenis,
-    perihal: r.perihal,
-    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
-    konseptor: r.pemrakarsa.nama,
-    tahapan:
-      r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
-        ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
-          ? 'selesai_final'
-          : 'selesai_belum_final'
-        : r.tahapan,
-    terakhirDiubah: r.terakhirDiubah,
-  }))
+  items.value.map((r) => {
+    const pemrakarsaPersona = r.pemrakarsaPejabat ?? r.pemrakarsa;
+    return {
+      id: r.id,
+      nomor: r.nomor ?? '<draft>',
+      jenis: r.jenis,
+      perihal: r.perihal,
+      pemrakarsa: naskahPersonaName(pemrakarsaPersona),
+      pemrakarsaJabatan: naskahPersonaPosition(pemrakarsaPersona),
+      konseptor: naskahPersonaName(r.pemrakarsa),
+      konseptorJabatan: naskahPersonaPosition(r.pemrakarsa),
+      tahapan:
+        r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
+          ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
+            ? 'selesai_final'
+            : 'selesai_belum_final'
+          : r.tahapan,
+      terakhirDiubah: r.terakhirDiubah,
+    };
+  })
 );
 
 const sortedRows = computed(() => {
@@ -605,7 +632,7 @@ async function handleExportConfirm(selectedKeys: string[]) {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
     }));
     worksheet['!cols'] = colWidths;
 
@@ -613,7 +640,7 @@ async function handleExportConfirm(selectedKeys: string[]) {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Naskah Lainnya');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     saveAs(blob, `naskah_lainnya_${new Date().toISOString().slice(0, 10)}.xlsx`);
 

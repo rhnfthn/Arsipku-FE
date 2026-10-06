@@ -131,6 +131,7 @@
             <USelectMenu
               v-model="selectedTertuju"
               :items="itemsTertuju"
+              :virtualize="{ estimateSize: 48, overscan: 8 }"
               multiple
               :placeholder="$t('f_kepada') + '...'"
               class="w-full p-0"
@@ -229,6 +230,7 @@
             <USelectMenu
               v-model="selectedTembusan"
               :items="itemsTembusan"
+              :virtualize="{ estimateSize: 48, overscan: 8 }"
               multiple
               :placeholder="$t('f_kepada') + '...'"
               class="w-full p-0"

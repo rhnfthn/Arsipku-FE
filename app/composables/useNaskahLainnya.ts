@@ -1,5 +1,9 @@
 import { ref } from 'vue';
 import { useApi } from './useApi';
+import {
+  normalizeNaskahPersona,
+  normalizeNaskahPersonas,
+} from '~/utils/naskah-lainnya-persona';
 import type {
   NaskahListItem,
   NaskahDetail,
@@ -34,7 +38,7 @@ export function useNaskahLainnya() {
     error.value = null;
     try {
       const res = await fn();
-      set(res.data);
+      set(normalizeNaskahPersonas(res.data));
       return res.data;
     } catch (e) {
       error.value = e;
@@ -65,7 +69,7 @@ export function useNaskahLainnya() {
     // Refresh realtime tidak menyalakan loading halaman agar section detail
     // berubah tanpa flicker. Error sementara juga tidak membuang data terakhir.
     const response = await request();
-    detail.value = response.data;
+    detail.value = normalizeNaskahPersonas(response.data);
     error.value = null;
   };
 
@@ -279,13 +283,16 @@ export function useNaskahLainnya() {
     // Endpoint kandidat mengambil data langsung dari org-data sehingga nama
     // field-nya berbeda dari ApprovalItem workflow. Normalisasi di satu tempat
     // agar dropdown detail dan halaman persetujuan lanjutan konsisten.
-    const normalized = rows
+    const normalized: ApprovalItem[] = rows
       .map(
         (row: any): ApprovalItem => ({
           positionId: String(row.position ?? row.positionId ?? ''),
           persnum: Number(row.persnum_person ?? row.persnum) || undefined,
-          nama: row.persnum_person_text ?? row.nama ?? 'Tanpa nama',
-          jabatan: row.position_text ?? row.jabatan ?? '',
+          ...normalizeNaskahPersona({
+            nama: row.persnum_person_text ?? row.nama ?? 'Tanpa nama',
+            jabatan: row.position_text ?? row.jabatan ?? '',
+            positionStatus: row.position_status ?? row.positionStatus,
+          }),
         })
       )
       .filter((row: ApprovalItem) => Boolean(row.positionId));
@@ -319,7 +326,7 @@ export function useNaskahLainnya() {
     // Tangani ketiga shape (double-wrap, single-wrap, mentah) agar robust.
     const mid = Array.isArray(res) ? res : res?.data;
     const arr = Array.isArray(mid) ? mid : mid?.data;
-    return (Array.isArray(arr) ? arr : []) as DirectorApprovalItem[];
+    return (Array.isArray(arr) ? arr : []).map(normalizeNaskahPersona) as DirectorApprovalItem[];
   };
 
   // ── BOD & BOD-1 (opsi pengganti penandatanga direksi) ──
@@ -327,7 +334,7 @@ export function useNaskahLainnya() {
     const res: any = await apiGet('/org-data/bod-bod1', {}, { skipCache: true });
     const mid = Array.isArray(res) ? res : res?.data;
     const arr = Array.isArray(mid) ? mid : mid?.data;
-    return (Array.isArray(arr) ? arr : []) as DirectorApprovalItem[];
+    return (Array.isArray(arr) ? arr : []).map(normalizeNaskahPersona) as DirectorApprovalItem[];
   };
 
   // ── Lembar Persetujuan Direksi ──

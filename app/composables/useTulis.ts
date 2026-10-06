@@ -91,7 +91,7 @@ export function useTulis() {
     placeholder: 'Ketik konten disini...',
     plugins: 'lists advlist link image code table fullscreen',
     toolbar:
-      'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+      'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | link unlink | code | fullscreen',
     content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
     setup(editor: TinyMCEEditor) {
       tinymceEditor.value = editor;

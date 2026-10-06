@@ -211,8 +211,7 @@
                   <div class="font-bold underline mb-1">{{ $t('f_tembusan') }} :</div>
                   <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ $t('sde_periksa_alamat_terlampir') }}</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + (t.raw?.area_text ? " - " +
-                      t.raw.area_text : "") }}</li>
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ correspondenceRecipientLabel(t, 'area') }}</li>
                   </ol>
                   <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
                 </div>
@@ -248,7 +247,7 @@
                     <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_tembusan').toUpperCase() }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob + (item.raw?.area_text ? " - " + item.raw.area_text : "") }}
+                        {{ correspondenceRecipientLabel(item, 'area') }}
                       </li>
                     </ol>
                   </div>
@@ -272,6 +271,8 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton v-if="hasPermission('utama.tulis.surat-dinas-eksternal', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="handleConfirmSaveDraft" />
           <UButton v-if="hasPermission('utama.tulis.surat-dinas-eksternal', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
