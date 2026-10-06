@@ -62,6 +62,10 @@ export interface RecipientItem {
   company: number
   company_name: string
 
+  /** Status delegasi posisi (PT/PH/PS) — disuntikkan BE via overlay delegasi aktif. */
+  position_status?: string | null
+  positionStatus?: string | null
+
   /** tambahan untuk hasil normalize */
   group?: string
   routing_source?: 'structural' | 'configured'

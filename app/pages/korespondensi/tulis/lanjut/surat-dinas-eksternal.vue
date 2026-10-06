@@ -118,8 +118,8 @@
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
             <div class="flex items-center flex-1 w-full gap-2">
-              <input type="text" v-model="lampiranText" readonly tabindex="-1"
-                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+              <input type="text" v-model="lampiranText"
+                class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 placeholder="Otomatis terisi saat upload file..." />
             </div>
           </div>
@@ -133,22 +133,12 @@
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <div class="flex items-center pb-4 mb-6 px-10">
-                  <div class="flex items-end gap-4">
-                    <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
-                    <div class="flex flex-col mb-1">
-                      <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
-                    </div>
-                  </div>
-                  <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
-                    <div class="font-bold uppercase">{{ user?.alamatInfo?.kantor }}</div>
-                    <div>{{ user?.alamatInfo?.gedung }} {{ user?.alamatInfo?.kota }}</div>
-                    <div v-html="user?.alamatInfo?.alamat"></div>
-                  </div>
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
                 </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText?.replace('Kantor', '') || "Tangerang" }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -182,7 +172,7 @@
                     <div class="font-bold mb-1">
                       <div v-if="selectedTertuju.length > 5">{{ isEnglish ? 'Please See Attached Address List' : 'Periksa Alamat Terlampir' }}</div>
                       <div v-else-if="selectedTertuju.length > 0">
-                        <div v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</div>
+                        <div v-for="(t, idx) in selectedTertuju" :key="t.value" class="leading-relaxed"><span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>{{ t.label }}</div>
                       </div>
                       <div v-else>................................................</div>
                     </div>
@@ -205,12 +195,12 @@
 
                 <div class="mt-8 text-[12px] text-black px-10">
                   <div class="font-bold underline mb-1">{{ isEnglish ? 'Copy to:' : 'Tembusan :' }}</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ isEnglish ? 'Please See Attached Address List' : 'Periksa Alamat Terlampir' }}</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div v-if="selectedTembusan.length > 5" class="ml-0 pl-0">{{ isEnglish ? 'Please See Attached Address List' : 'Periksa Alamat Terlampir' }}</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob + (t.raw?.area_text ? " - " +
                       t.raw.area_text : "") }}</li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -268,6 +258,8 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="handleConfirmSaveDraft" />
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
@@ -337,7 +329,7 @@ const {
 
 
 // --- SDE & REF SPECIFIC STATE ---
-const lampiranText = ref("");
+const lampiranText = useEditableLampiranText(existingFiles);
 const isEnglish = ref(false);
 
 const externalItems = ref<any[]>([]); // Data dropdown Tertuju
@@ -640,7 +632,7 @@ onMounted(async () => {
     const rawRec = internalRecRes.rawRecipients || [];
     const mapInternalItems = (list: any[]) => list.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
+      labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
       value: String(r.position || r.position_id || r.id),
       raw: r
     }));
@@ -705,10 +697,6 @@ onMounted(async () => {
   }
 });
 
-watch(existingFiles, (newFiles) => {
-  const jumlah = newFiles ? newFiles.length : 0;
-  lampiranText.value = jumlah > 0 ? `${jumlah} Lampiran` : "0 Lampiran";
-}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

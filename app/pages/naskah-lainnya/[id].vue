@@ -111,7 +111,7 @@ const APPROVAL_TAHAP_LABEL: Record<string, string> = {
   legal_drafting: 'Approval Legal Unit',
   evaluasi: 'Evaluasi',
   persetujuan_lanjutan: 'Persetujuan Lanjutan',
-  evaluasi_final: 'Evaluasi Final EVP',
+  evaluasi_final: 'Evaluasi',
   persetujuan_direksi_pemrakarsa: 'Direktur Pemrakarsa',
   persetujuan_direksi_ditetapkan: 'Ditetapkan/Disahkan Oleh',
   persetujuan_direksi: 'Diketahui Oleh',
@@ -122,7 +122,6 @@ const APPROVAL_TAHAP_LABEL: Record<string, string> = {
 };
 const tahapLabel = (t: string) => APPROVAL_TAHAP_LABEL[t] ?? t;
 const LEGAL_EVALUATION_TAHAPS = new Set(['evaluasi', 'persetujuan_lanjutan', 'evaluasi_final']);
-const LEGACY_DIGITAL_LEGAL_TAHAPS = new Set(['persetujuan_lanjutan', 'evaluasi_final']);
 
 const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRow[] }[]>(() => {
   const byTahap = detail.value?.approvalByTahap;
@@ -143,11 +142,8 @@ const approvalGroups = computed<{ tahap: string; label: string; rows: ApprovalRo
   }
   const isDigital = ['qr_only', 'digsig'].includes(detail.value?.signOption ?? '');
   const isDigitalWithoutLegal = isDigital && !detail.value?.butuhLegal;
-  const isDigitalWithLegal = isDigital && detail.value?.butuhLegal;
   const present = Object.keys(map).filter(
-    (tahap) =>
-      (!isDigitalWithoutLegal || !LEGAL_EVALUATION_TAHAPS.has(tahap)) &&
-      (!isDigitalWithLegal || !LEGACY_DIGITAL_LEGAL_TAHAPS.has(tahap))
+    (tahap) => !isDigitalWithoutLegal || !LEGAL_EVALUATION_TAHAPS.has(tahap)
   );
   const ordered = APPROVAL_TAHAP_ORDER.filter((k) => present.includes(k));
   const rest = present.filter((k) => !APPROVAL_TAHAP_ORDER.includes(k));
@@ -302,17 +298,6 @@ const approvalStatusLabel = (status: string) => {
   return 'Belum diproses';
 };
 
-const progressLabel = computed(() => {
-  const list = detail.value?.approval ?? [];
-  const verified = list.filter((a) => a.status === 'verified').length;
-  const total = list.length;
-  if (verified === total) return 'Verifikasi selesai';
-  const waiting = list.findIndex((a) => a.status === 'waiting');
-  return waiting >= 0
-    ? `Verifikasi Tahap ${waiting + 1} dari ${total}`
-    : `Verifikasi ${verified} dari ${total}`;
-});
-
 const isLastApprover = computed(() => {
   // Tahap-aware: hanya bandingkan baris pada tahap naskah saat ini, agar
   // approver legal & pemrakarsa sama-sama akurat (BE sort urutan ASC global →
@@ -371,7 +356,7 @@ const canBukaBlanko = computed(
     tahapan.value === 'blanko_verbal' &&
     (detail.value?.availableActions ?? []).includes('buka-blanko-verbal')
 );
-// Buat Lembar Persetujuan Direksi: legal menyusun lembar di sub-page. Muncul saat
+// Proses Lembar Persetujuan Direksi: legal menyusun lembar di sub-page. Muncul saat
 // evaluasi (alur normal: kirim = transisi ke PD) atau saat sudah di persetujuan_direksi
 // tapi lembar belum dibuat (recovery). Gated by availableActions dari BE.
 const canBuatLembarPersetujuanDireksi = computed(() =>
@@ -413,17 +398,17 @@ const actionDescription = computed(() => {
   const t = tahapan.value;
   if (t === 'persetujuan')
     return isLastApprover.value
-      ? 'Setujui untuk melanjutkan ke tahap berikutnya, atau tolak naskah ini.'
-      : 'Setujui untuk meneruskan ke approver berikutnya, atau tolak.';
+      ? 'Proses untuk melanjutkan ke tahap berikutnya, atau tolak naskah ini.'
+      : 'Proses untuk meneruskan ke approver berikutnya, atau tolak.';
   if (t === 'legal_drafting')
-    return 'Mulai legal drafting untuk meninjau naskah, atau kembalikan ke pemrakarsa.';
+    return 'Proses Legal Drafting untuk meninjau naskah, atau kembalikan ke pemrakarsa.';
   if (t === 'evaluasi')
     return canBuatLembarPersetujuanDireksi.value
       ? 'Susun lembar persetujuan direksi, lalu kirim ke para direksi untuk paraf.'
       : 'Evaluasi naskah sebelum ditandatangani.';
   if (t === 'persetujuan_lanjutan')
     return 'Lakukan legal drafting sendiri, teruskan dalam unit, atau selesaikan dan kembalikan ke EVP.';
-  if (t === 'evaluasi_final') return 'Hasil persetujuan lanjutan menunggu keputusan final EVP.';
+  if (t === 'evaluasi_final') return 'Hasil persetujuan lanjutan menunggu evaluasi.';
   if (t === 'persetujuan_direksi')
     return canBuatLembarPersetujuanDireksi.value
       ? 'Susun lembar persetujuan direksi, lalu kirim ke para direksi untuk paraf.'
@@ -496,7 +481,7 @@ const informationExpanded = ref(false);
 const documentExpanded = ref(false);
 const signerExpanded = ref(false);
 
-// ── Modal Setuju/Tolak (standarisasi ApprovalNoteEditor) ──
+// ── Modal Setuju/Batal (standarisasi ApprovalNoteEditor) ──
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
 const showReturnModal = ref(false);
@@ -530,7 +515,12 @@ const nomorClean = computed(() => {
 });
 const showTugasQuickCreate = ref(false);
 const canQuickCreateTugas = computed(
-  () => hasPermission('tugas', 'create-task') && Boolean(detail.value)
+  () =>
+    hasPermission('tugas', 'create-task') &&
+    detail.value?.tahapan === 'selesai' &&
+    (detail.value.signOption === 'ttd_basah'
+      ? isManualFinal.value
+      : ['final', 'final_tte'].includes(detail.value.documentStatus || ''))
 );
 const tugasReferenceLabel = computed(() =>
   [nomorClean.value, detail.value?.perihal || 'Naskah Lainnya'].filter(Boolean).join(' — ')
@@ -974,15 +964,15 @@ const ACTION_META: Record<
     to: '/naskah-lainnya/tulis',
   },
   setuju: {
-    label: 'Setujui',
+    label: 'Proses',
     icon: 'i-lucide-check',
     color: 'success',
     to: (id: string) => `/naskah-lainnya/${id}/persetujuan`,
   },
-  tolak: { label: 'Tolak', icon: 'i-lucide-x', color: 'error', variant: 'reject' },
+  tolak: { label: 'Batal', icon: 'i-lucide-x', color: 'error', variant: 'reject' },
   kembalikan: { label: 'Kembalikan', icon: 'i-lucide-undo-2', color: 'warning', variant: 'return' },
   'mulai-legal': {
-    label: 'Mulai Legal Drafting',
+    label: 'Proses Legal Drafting',
     icon: 'i-lucide-file-pen',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/legal-drafting`,
@@ -1030,7 +1020,7 @@ const ACTION_META: Record<
     to: (id: string) => `/naskah-lainnya/${id}/evaluasi`,
   },
   'simpan-blanko': {
-    label: 'Buat Lembar Persetujuan',
+    label: 'Proses Lembar Persetujuan',
     icon: 'i-lucide-file-check',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
@@ -1048,7 +1038,7 @@ const ACTION_META: Record<
     to: (id: string) => `/naskah-lainnya/${id}/blanko-verbal`,
   },
   paraf: {
-    label: 'Setujui',
+    label: 'Proses',
     icon: 'i-lucide-file-check-2',
     color: 'primary',
     to: (id: string) => `/naskah-lainnya/${id}/persetujuan-direksi`,
@@ -1059,7 +1049,7 @@ const ACTION_META: Record<
     color: 'primary',
   },
   'tolak-tanda-tangan': {
-    label: 'Tolak ke Unit Legal',
+    label: 'Batal ke Unit Legal',
     icon: 'i-lucide-undo-2',
     color: 'error',
     variant: 'reject',
@@ -1068,7 +1058,7 @@ const ACTION_META: Record<
 
 const actionLabel = (a: JenisAksi) =>
   a === 'tolak-tanda-tangan' && isPhysicalSigning.value
-    ? 'Tolak ke Pemrakarsa'
+    ? 'Batal ke Pemrakarsa'
     : (ACTION_META[a]?.label ?? a);
 const actionIcon = (a: JenisAksi) => ACTION_META[a]?.icon ?? 'i-lucide-arrow-right';
 const actionColor = (a: JenisAksi) => ACTION_META[a]?.color ?? 'primary';
@@ -1423,7 +1413,7 @@ const nextActionInfo = computed(() => {
     legal_drafting: 'Legal drafting sedang berjalan',
     evaluasi: 'Menunggu evaluasi',
     persetujuan_lanjutan: 'Persetujuan lanjutan sedang berjalan',
-    evaluasi_final: 'Menunggu keputusan final EVP',
+    evaluasi_final: 'Menunggu evaluasi',
     persetujuan_direksi: 'Menunggu persetujuan direksi',
     tanda_tangan_pemrakarsa: 'Menunggu tanda tangan pemrakarsa',
     blanko_verbal: 'Pembuatan blanko verbal',
@@ -1676,14 +1666,9 @@ const signLabel = computed(() =>
                 Progress persetujuan naskah.
               </p>
             </div>
-            <span
-              class="ml-auto inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-            >
-              {{ progressLabel }}
-            </span>
             <UIcon
               :name="verificationExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-              class="size-5 shrink-0 text-gray-400"
+              class="ml-auto size-5 shrink-0 text-gray-400"
             />
           </button>
           <div v-show="verificationExpanded" class="space-y-4 px-5 py-5">
@@ -2830,7 +2815,7 @@ const signLabel = computed(() =>
             </div>
             <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
               <!-- Approval pemrakarsa dari detail hanya diarahkan ke halaman kerja persetujuan.
-                   Aksi Tolak disediakan di halaman tersebut agar user review dokumen dulu. -->
+                   Aksi Batal disediakan di halaman tersebut agar user review dokumen dulu. -->
               <UButton
                 v-if="
                   detail.availableActions.includes('kembalikan') &&
@@ -2843,7 +2828,7 @@ const signLabel = computed(() =>
                 icon="i-lucide-circle-x"
                 :loading="savingAction"
                 @click="openActionModal('tolak')"
-                >Tolak</UButton
+                >Batal</UButton
               >
               <UButton
                 v-if="detail.availableActions.includes('setuju')"
@@ -2853,7 +2838,7 @@ const signLabel = computed(() =>
                 icon="i-lucide-arrow-right"
                 :loading="savingAction"
                 @click="openActionModal('setuju')"
-                >Setujui</UButton
+                >Proses</UButton
               >
               <UButton
                 v-if="
@@ -2872,7 +2857,7 @@ const signLabel = computed(() =>
                     ? navigateTo(`/naskah-lainnya/${id}/blanko-verbal`)
                     : openActionModal('tolak')
                 "
-                >Tolak</UButton
+                >Batal</UButton
               >
               <UButton
                 v-if="detail.availableActions.includes('paraf') && !canProcessSheetApproval"
@@ -2886,11 +2871,11 @@ const signLabel = computed(() =>
                     ? navigateTo(`/naskah-lainnya/${id}/blanko-verbal`)
                     : openActionModal('paraf')
                 "
-                >Setujui</UButton
+                >Proses</UButton
               >
 
               <!-- Approval Blanko/LPD wajib membuka workspace dokumen terlebih dahulu.
-                   Aksi Setujui dan Tolak hanya tersedia pada halaman tersebut. -->
+                   Aksi Proses dan Batal hanya tersedia pada halaman tersebut. -->
               <UButton
                 v-if="canProcessSheetApproval"
                 color="primary"
@@ -2898,10 +2883,10 @@ const signLabel = computed(() =>
                 icon="i-lucide-file-check-2"
                 class="w-full font-semibold sm:w-auto"
                 :to="`/naskah-lainnya/${id}/persetujuan-direksi`"
-                >Setujui</UButton
+                >Proses</UButton
               >
 
-              <!-- Mulai Legal Drafting: aktif di legal_drafting, hide di tahap lain -->
+              <!-- Proses Legal Drafting: aktif di legal_drafting, hide di tahap lain -->
               <UButton
                 v-if="canMulaiLegal"
                 color="primary"
@@ -2909,7 +2894,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/legal-drafting`"
-                >Mulai Legal Drafting</UButton
+                >Proses Legal Drafting</UButton
               >
 
               <!-- Penandatangan hanya memeriksa lalu tanda tangan/menolak; tanpa workspace upload. -->
@@ -2924,10 +2909,10 @@ const signLabel = computed(() =>
                 @click="openActionModal('tolak-tanda-tangan')"
                 >{{
                   isPhysicalSigning
-                    ? 'Tolak Naskah Draft'
+                    ? 'Batal Naskah Draft'
                     : isDigitalWithoutLegal
-                      ? 'Tolak dan Batalkan'
-                      : 'Tolak ke Unit Legal'
+                      ? 'Batal dan Batalkan'
+                      : 'Batal ke Unit Legal'
                 }}</UButton
               >
               <UButton
@@ -2939,7 +2924,7 @@ const signLabel = computed(() =>
                 :loading="pendingAction === 'tanda-tangan' && savingAction"
                 @click="openActionModal('tanda-tangan')"
                 >{{
-                  detail.signOption === 'ttd_basah' ? 'Setujui Naskah Draft' : 'Tanda Tangan'
+                  detail.signOption === 'ttd_basah' ? 'Proses Naskah Draft' : 'Tanda Tangan'
                 }}</UButton
               >
 
@@ -2952,11 +2937,11 @@ const signLabel = computed(() =>
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/blanko-verbal`"
                 >{{
-                  canBuatBlanko ? 'Buat Lembar Persetujuan' : 'Lihat Progres Persetujuan'
+                  canBuatBlanko ? 'Proses Lembar Persetujuan' : 'Lihat Progres Persetujuan'
                 }}</UButton
               >
 
-              <!-- Buat Lembar Persetujuan Direksi: legal menyusun lembar saat evaluasi (butuhLegal) -->
+              <!-- Proses Lembar Persetujuan Direksi: legal menyusun lembar saat evaluasi (butuhLegal) -->
               <UButton
                 v-if="canBuatLembarPersetujuanDireksi"
                 color="primary"
@@ -2964,7 +2949,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/persetujuan-direksi`"
-                >Buat Lembar Persetujuan</UButton
+                >Proses Lembar Persetujuan</UButton
               >
 
               <!-- Kembalikan ke pemrakarsa (legal drafting) -->
@@ -3025,7 +3010,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/evaluasi`"
-                >Buka Evaluasi</UButton
+                >Proses Evaluasi</UButton
               >
               <UButton
                 v-if="
@@ -3038,7 +3023,7 @@ const signLabel = computed(() =>
                 size="lg"
                 class="font-semibold w-full sm:w-auto"
                 :to="`/naskah-lainnya/${id}/evaluasi`"
-                >Buka Evaluasi</UButton
+                >Proses Evaluasi</UButton
               >
 
               <!-- Evaluasi legacy -->
@@ -3066,15 +3051,15 @@ const signLabel = computed(() =>
             ? 'Evaluasi Naskah'
             : pendingAction === 'tanda-tangan'
               ? detail.signOption === 'ttd_basah'
-                ? 'Setujui Naskah Draft'
+                ? 'Proses Naskah Draft'
                 : 'Tanda Tangani Naskah'
               : pendingAction === 'kirim'
                 ? 'Kirim Naskah'
-                : 'Setujui Naskah'
+                : 'Proses Naskah'
         "
         :description="
           pendingAction === 'evaluasi'
-            ? 'Periksa naskah dan hasil legal drafting (jika ada). Setujui jika naskah sesuai untuk dilanjutkan ke tanda tangan.'
+            ? 'Periksa naskah dan hasil legal drafting (jika ada). Proses jika naskah sesuai untuk dilanjutkan ke tanda tangan.'
             : pendingAction === 'tanda-tangan'
               ? detail.signOption === 'ttd_basah'
                 ? 'Pastikan Naskah Draft sudah benar. Nomor akan diterbitkan setelah seluruh penandatangan menyetujui.'
@@ -3088,14 +3073,14 @@ const signLabel = computed(() =>
         note-placeholder="Tuliskan catatan persetujuan (opsional)…"
         :confirm-label="
           pendingAction === 'evaluasi'
-            ? 'Ya, Setujui'
+            ? 'Ya, Proses'
             : pendingAction === 'tanda-tangan'
               ? detail.signOption === 'ttd_basah'
-                ? 'Ya, Setujui Draft'
+                ? 'Ya, Proses Draft'
                 : 'Ya, Tanda Tangani'
               : pendingAction === 'kirim'
                 ? 'Kirim'
-                : 'Ya, Setujui'
+                : 'Ya, Proses'
         "
         :saving="savingAction"
         :require-note="false"
@@ -3115,18 +3100,18 @@ const signLabel = computed(() =>
         @submit="handleSignMethodSubmit"
       />
 
-      <!-- Modal Tolak -->
+      <!-- Modal Batal -->
       <ApprovalNoteEditor
         v-model="showRejectModal"
         variant="reject"
         :title="
           pendingAction === 'tolak-tanda-tangan'
             ? isPhysicalSigning
-              ? 'Tolak Naskah Draft'
+              ? 'Batal Naskah Draft'
               : isDigitalWithoutLegal
-                ? 'Tolak dan Batalkan Naskah'
-                : 'Tolak ke Unit Legal'
-            : 'Tolak Naskah'
+                ? 'Batal dan Batalkan Naskah'
+                : 'Batal ke Unit Legal'
+            : 'Batal Naskah'
         "
         :description="
           pendingAction === 'tolak-tanda-tangan'
@@ -3150,11 +3135,11 @@ const signLabel = computed(() =>
         :confirm-label="
           pendingAction === 'tolak-tanda-tangan'
             ? isPhysicalSigning
-              ? 'Tolak dan Kembalikan'
+              ? 'Batal dan Kembalikan'
               : isDigitalWithoutLegal
-                ? 'Tolak dan Batalkan'
-                : 'Tolak ke Unit Legal'
-            : 'Tolak Naskah'
+                ? 'Batal dan Batalkan'
+                : 'Batal ke Unit Legal'
+            : 'Batal Naskah'
         "
         :saving="savingAction"
         :require-note="true"

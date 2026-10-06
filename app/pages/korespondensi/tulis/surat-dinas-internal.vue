@@ -84,7 +84,7 @@ const {
 const isAiDraftOpen = ref(false);
 
 // ── SDI-specific state ────────────────────────────────────────────────────────
-const lampiranText = ref("");
+const lampiranText = useEditableLampiranText(existingFiles, () => t('f_lampiran'));
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
 
@@ -142,7 +142,7 @@ const getPayload = (): SDIPayloadInput => ({
   lampiran: lampiranText.value,
   konten: editorContent.value,
   english: false,
-  nama_tempat: user.value?.areaText || "",
+  nama_tempat: user.value?.alamatInfo?.kota || "Tangerang",
   nama_jabatan: renderedPositionLabel.value || "",
   nama_lengkap: renderedActorName.value || "",
   tgl: tglDb.value,
@@ -356,7 +356,7 @@ onMounted(async () => {
       .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
       .map((r: any) => ({
         label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
-        labelJob: r.position_text || r.positionText,
+        labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
         organization: r.organization_text,
         value: String(r.position || r.position_id || r.id),
         raw: r,
@@ -460,13 +460,7 @@ onMounted(async () => {
   isLoadingData.value = false;
 });
 
-watch(
-  existingFiles,
-  (files) => {
-    lampiranText.value = files?.length > 0 ? `${files.length} ${t('f_lampiran')}` : `0 ${t('f_lampiran')}`;
-  },
-  { deep: true, immediate: true }
-);
+
 </script>
 
 <template>
@@ -509,10 +503,10 @@ watch(
           :loading="klasifikasiStatus === 'loading'" />
         <TulisInputTanggal v-model="date" :label="$t('f_tanggal_surat')" />
 
-        <TulisInputPenerima v-model="selectedTertuju" :label="$t('tertuju')" :placeholder="$t('sdi_pilih_tertuju')" :items="tertujuItems"
+        <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" :label="$t('tertuju')" :placeholder="$t('sdi_pilih_tertuju')" :items="tertujuItems"
           :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled-message="$t('sdi_sudah_dipilih')" />
 
-        <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
+        <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
           :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
           :disabled-message="$t('sdi_sudah_dipilih')" lock-mandatory-cc />
 
@@ -540,9 +534,9 @@ watch(
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_lampiran') }}</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              :placeholder="$t('sdi_lampiran_otomatis')" />
+            <input type="text" v-model="lampiranText"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+              :placeholder="$t('sdi_lampiran_keterangan')" />
           </div>
         </div>
 
@@ -554,10 +548,12 @@ watch(
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
+                </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText || "Tangerang" }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -588,12 +584,12 @@ watch(
                       </tbody>
                     </table>
                     <div class="mt-5">{{ $t('f_kepada_yth') }}</div>
-                    <div class="font-bold mb-1">
+                    <div class="font-bold mb-1 ml-0 pl-0">
                       <div v-if="selectedTertuju.length > 5">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
-                          {{ p.labelJob || p.label }}{{ p.organization ? ' - ' + p.organization : '' }}
+                          {{ sdiRecipientLabel(p, 'organization') }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -619,14 +615,14 @@ watch(
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underlinec mb-1">{{ $t('f_tembusan') }} :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="flex-1">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
+                      {{ sdiRecipientLabel(t, 'organization') }}
                     </li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -653,15 +649,13 @@ watch(
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_kepada_yth') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ sdiRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_tembusan') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ item.labelJob || item.label }}{{
-                        item.organization ? ' - ' + item.organization : '' }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ sdiRecipientLabel(item, 'organization') }}</li>
                     </ol>
                   </div>
                 </div>
@@ -675,6 +669,8 @@ watch(
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton v-if="canCreateSdi" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="handleConfirmSaveDraft" />
           <UButton v-if="canCreateSdi" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>

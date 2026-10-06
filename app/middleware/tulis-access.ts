@@ -27,6 +27,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
+  // Lanjutkan/edit/revisi konsep existing (dari kotak masuk, action=edit +
+  // ref_id) juga aksi lanjutan pada naskah yang sudah ada — bukan pembuatan
+  // naskah baru. Jangan blokir hanya karena user tidak punya capability create.
+  const action = Array.isArray(to.query.action) ? to.query.action[0] : to.query.action;
+  if (
+    to.path.startsWith('/korespondensi/tulis/konsep/') &&
+    String(action || '').toLowerCase() === 'edit' &&
+    Boolean(refId)
+  ) {
+    return;
+  }
+
   const { user, getProfile } = useAuth();
   const { canCreateCorrespondence, fetchCapabilities } = useCorrespondenceRoutingAccess();
   if (!user.value) await getProfile();

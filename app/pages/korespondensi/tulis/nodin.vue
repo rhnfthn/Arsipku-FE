@@ -131,6 +131,7 @@
             <USelectMenu
               v-model="selectedTertuju"
               :items="itemsTertuju"
+              :virtualize="{ estimateSize: 48, overscan: 8 }"
               multiple
               :placeholder="$t('f_kepada') + '...'"
               class="w-full p-0"
@@ -229,6 +230,7 @@
             <USelectMenu
               v-model="selectedTembusan"
               :items="itemsTembusan"
+              :virtualize="{ estimateSize: 48, overscan: 8 }"
               multiple
               :placeholder="$t('f_kepada') + '...'"
               class="w-full p-0"
@@ -1029,7 +1031,7 @@ onMounted(async () => {
 
       return {
         label: formattedLabel, // Ini yang akan muncul di Dropdown & Badge (jika default USelectMenu)
-        labelJob: r.position_text, // Simpan nama jabatan saja jika butuh
+        labelJob: formatDelegatedPositionText(r.position_text, r), // Simpan nama jabatan saja jika butuh
         value: safeValue ? String(safeValue) : "0", // Pastikan string ID
         raw: r,
       };

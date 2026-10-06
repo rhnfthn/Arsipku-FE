@@ -2,7 +2,8 @@
   <div
     :class="[
       'bg-base page-container relative h-screen w-full overflow-hidden',
-      loaded ? 'page-loaded' : ''
+      loaded ? 'page-loaded' : '',
+      introSkipped ? 'intro-skipped' : ''
     ]"
   >
     <!-- Background Animasi: Tech Grid & Menara ATC -->
@@ -89,6 +90,18 @@
           <ArrowRight class="h-4 w-6 sm:h-5 sm:w-8" />
         </UButton>
       </div>
+
+      <UButton
+        v-if="!showOnboarding"
+        type="button"
+        color="primary"
+        variant="soft"
+        trailing-icon="i-lucide-skip-forward"
+        class="fixed bottom-6 right-4 z-30 rounded-full shadow-sm"
+        @click="skipIntro"
+      >
+        {{ $t('skipAnimation') }}
+      </UButton>
 
       <!-- Version indicator -->
       <div
@@ -211,6 +224,45 @@ const planeAppear = ref(false)
 const planeTakeoff = ref(false)
 const showText = ref(false)
 const showOnboarding = ref(false)
+const introSkipped = ref(false)
+const introTimers = new Set()
+
+const scheduleIntro = (callback, delay) => {
+  const timer = setTimeout(() => {
+    introTimers.delete(timer)
+    callback()
+  }, delay)
+  introTimers.add(timer)
+}
+
+const clearIntroTimers = () => {
+  introTimers.forEach(clearTimeout)
+  introTimers.clear()
+}
+
+const skipIntro = () => {
+  clearIntroTimers()
+  introSkipped.value = true
+  loaded.value = true
+  logoClass.value = 'opacity-100'
+  textClass.value = 'opacity-100'
+  airnavClass.value = 'opacity-100'
+  OnboardingClass.value = 'opacity-100'
+  logoStyle.value = getResponsiveLogoSmall()
+  showPlane.value = false
+  showText.value = true
+  showOnboarding.value = true
+}
+
+const handleIntroKeydown = (event) => {
+  if (showOnboarding.value || event.repeat || event.isComposing) return
+  if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return
+  if (event.code !== 'Space' && event.key !== ' ') return
+  if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return
+
+  event.preventDefault()
+  skipIntro()
+}
 
 // Fungsi Responsive Logo Kecil
 const getResponsiveLogoSmall = () => {
@@ -307,9 +359,10 @@ const initAircraftCanvas = () => {
 }
 
 onMounted(() => {
+  window.addEventListener('keydown', handleIntroKeydown)
   // Animasi Masuk
-  setTimeout(() => (loaded.value = true), 50)
-  setTimeout(() => (logoClass.value = 'opacity-100'), 100)
+  scheduleIntro(() => (loaded.value = true), 50)
+  scheduleIntro(() => (logoClass.value = 'opacity-100'), 100)
 
   resizeHandler = () => {
     if (textClass.value === '') {
@@ -327,7 +380,7 @@ onMounted(() => {
   window.addEventListener('resize', resizeHandler)
 
   // Timeline Animasi
-  setTimeout(() => {
+  scheduleIntro(() => {
     textClass.value = 'opacity-100'
     airnavClass.value = 'opacity-100'
     OnboardingClass.value = 'opacity-100'
@@ -335,17 +388,17 @@ onMounted(() => {
   }, 1000)
 
   const startAt = 2000
-  setTimeout(() => {
+  scheduleIntro(() => {
     showPlane.value = true
-    setTimeout(() => (planeAppear.value = true), 50)
-    setTimeout(() => (planeTakeoff.value = true), 50 + 1200 + 800)
-    setTimeout(
+    scheduleIntro(() => (planeAppear.value = true), 50)
+    scheduleIntro(() => (planeTakeoff.value = true), 50 + 1200 + 800)
+    scheduleIntro(
       () => {
         showText.value = true
       },
       50 + 1200 + 800 + 600
     )
-    setTimeout(
+    scheduleIntro(
       () => {
         showOnboarding.value = true
       },
@@ -358,6 +411,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleIntroKeydown)
+  clearIntroTimers()
   if (resizeHandler) window.removeEventListener('resize', resizeHandler)
   if (canvasResizeHandler) window.removeEventListener('resize', canvasResizeHandler)
   if (animationFrameId) cancelAnimationFrame(animationFrameId)
@@ -365,6 +420,17 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.intro-skipped .fade-slide-up {
+  animation: none;
+  opacity: 1;
+}
+
+.intro-skipped,
+.intro-skipped .transition-all,
+.intro-skipped .transition-opacity {
+  transition: none;
+}
+
 /* Background Animation Styles */
 
 .tech-grid {
