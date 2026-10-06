@@ -1301,8 +1301,8 @@ const filteredVerifikatorList = computed(() => {
 const verifikatorOptions = computed(() => {
   return verifikatorList.value.map((item: any) => ({
     ...item,
-    label: item.nama ? `${item.nama} - ${item.jabatan || ''}`.trim() : `Persnum ${item.persnum}`,
-    nama: item.nama || `Persnum ${item.persnum}`,
+    label: item.nama ? `${item.nama} - ${item.jabatan || ''}`.trim() : `e-NIK ${item.persnum}`,
+    nama: item.nama || `e-NIK ${item.persnum}`,
     jabatan: item.jabatan || '-',
     lokasi: item.lokasi || item.areaText || ''
   }));
