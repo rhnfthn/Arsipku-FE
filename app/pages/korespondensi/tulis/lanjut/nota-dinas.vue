@@ -224,8 +224,8 @@
                                 ? selectedTertuju
                                     .map((s: any, i: number) =>
                                       selectedTertuju.length === 1
-                                        ? `<div>${s.labelJob || s.label}</div>`
-                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                                        ? `<div>${correspondenceRecipientLabel(s)}</div>`
+                                        : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${correspondenceRecipientLabel(s)}</div>`
                                     )
                                     .join('')
                                 : '................................................'
@@ -274,11 +274,11 @@
                       Periksa Alamat Terlampir
                     </div>
                     <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">
-                      {{ selectedTembusan[0]?.labelJob || selectedTembusan[0]?.label }}
+                      {{ correspondenceRecipientLabel(selectedTembusan[0]) }}
                     </div>
                     <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
                       <li v-for="t in selectedTembusan" :key="t.value">
-                        {{ t.labelJob || t.label }}
+                        {{ correspondenceRecipientLabel(t) }}
                       </li>
                     </ol>
                     <div v-else class="text-gray-400 italic">...</div>
@@ -294,6 +294,15 @@
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
         >
+          <UButton
+            label="Draft"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-heroicons-document-text"
+            class="px-8"
+            @click="handleConfirmSaveDraft"
+          />
           <UButton
             label="Pratinjau"
             color="primary"

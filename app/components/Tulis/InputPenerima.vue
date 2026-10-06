@@ -6,7 +6,8 @@
     </span>
 
     <div class="flex flex-wrap gap-1 w-full items-center">
-      <USelectMenu :model-value="model" :items="combinedOptions" multiple :placeholder="placeholder"
+      <USelectMenu :model-value="selectedValues" value-key="value" :items="combinedOptions" multiple :placeholder="placeholder"
+        :virtualize="{ estimateSize: 48, overscan: 8 }" @update:model-value="syncDropdownSelection"
         class="w-full p-0 custom-select-menu" variant="none"
         :content="selectContentProps" :filter-fields="['label']" :ui="{
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
@@ -42,13 +43,13 @@
 
           <div v-else class="flex items-start gap-3 w-full py-1 overflow-hidden"
             :class="{ 'opacity-50 cursor-not-allowed': item.disabled }" @click.stop.prevent="handlePersonClick(item)">
-            <UCheckbox :model-value="isSelected(item)" class="pointer-events-none shrink-0" :checked="isSelected(item)"
+            <UCheckbox :model-value="isSelected(item)" class="pointer-events-none shrink-0"
               :disabled="item.disabled" />
             <img v-if="item.image" :src="item.image" :alt="item.label"
               class="w-7 h-7 rounded-full object-cover shrink-0" />
             <div class="flex-1 min-w-0">
               <span class="block text-sm text-left truncate w-full">
-                {{ formatInternalRecipientLabel(item) }}
+                {{ item.label }}
               </span>
               <span v-if="item.disabled" class="text-xs text-red-500 italic block">
                 {{ disabledMessage }}
@@ -195,32 +196,31 @@ const formatInternalRecipientLabel = (item: any) => {
 // field Tertuju item tersebut tetap bisa dipilih dan dihapus secara normal.
 const isMandatoryCc = (item: any) =>
   props.lockMandatoryCc === true && routingMeta(item).routing_mandatory === true;
-// 1. Memproses Orang (Person) - Menandai Disabled
-const processedPeople = computed(() => {
-  // Ambil ID semua individu yang sudah ter-cover oleh grup yang SEDANG DIPILIH di input ini
-  const selectedGroupMemberIds = model.value
-    .filter(m => m.isGroup)
-    .flatMap(g => g.raw.details?.map((d: any) => String(d.position)) || []);
-
-  return props.items.filter((item) => !isSupervisoryBoard(item)).map((item) => {
-    const isExcluded = props.excludeItems?.some((ex) => ex.value === item.value);
-    // Disabled jika: Ada di list lawan (excludeItems) ATAU grupnya sudah dipilih di input ini
-    const isDisabled = isExcluded || selectedGroupMemberIds.includes(String(item.value));
-
-    // Flatten metadata routing ke level atas agar badge/section Tambahan konsisten
-    // untuk semua halaman (beberapa halaman menyimpan metadata di item.raw).
+// Label tidak bergantung pada pilihan; hitung ulang hanya ketika master berubah.
+const preparedPeople = computed(() =>
+  props.items.filter((item) => !isSupervisoryBoard(item)).map((item) => {
     const meta = routingMeta(item);
-
     return {
       ...item,
+      value: String(item.value),
       label: formatInternalRecipientLabel(item),
       type: 'person',
-      disabled: isDisabled,
       ...(meta.routing_source ? { routing_source: meta.routing_source } : {}),
       ...(meta.routing_mandatory != null ? { routing_mandatory: meta.routing_mandatory } : {}),
     };
-  });
-});
+  })
+);
+const selectedIds = computed(() => new Set(model.value.map((item) => String(item.value))));
+const selectedValues = computed(() => [...selectedIds.value]);
+const excludedIds = computed(() => new Set((props.excludeItems || []).map((item) => String(item.value))));
+const selectedGroupMemberIds = computed(() => new Set<string>(
+  model.value.filter((item) => item.isGroup)
+    .flatMap((group) => group.raw?.details?.map((item: any) => String(item.position)) || [])
+));
+const processedPeople = computed(() => preparedPeople.value.map((item) => ({
+  ...item,
+  disabled: excludedIds.value.has(item.value) || selectedGroupMemberIds.value.has(item.value),
+})));
 
 // Penerima tambahan hasil konfigurasi routing persuratan (routing_source === 'configured')
 // dipisah ke section "Tambahan" agar mudah dibedakan dari penerima struktural.
@@ -240,9 +240,9 @@ const processedGroups = computed(() => {
     (/tembusan/i.test(props.label) ? 'TEMBUSAN' : 'PENERIMA');
 
   // Ambil ID semua individu yang sudah dipilih secara manual di input ini
-  const selectedIndividualIds = model.value
+  const selectedIndividualIds = new Set(model.value
     .filter(m => !m.isGroup)
-    .map(m => String(m.value));
+    .map(m => String(m.value)));
 
   return props.groups
     .filter(
@@ -256,12 +256,10 @@ const processedGroups = computed(() => {
     const groupMemberIds = g.details?.map((d: any) => String(d.position)) || [];
 
     // Cek apakah grup ini ada di list lawan
-    const isExcluded = props.excludeItems?.some((ex) =>
-      ex.value === groupValue || groupMemberIds.includes(String(ex.value))
-    );
+    const isExcluded = excludedIds.value.has(groupValue) || groupMemberIds.some((id: string) => excludedIds.value.has(id));
 
     // Cek apakah salah satu anggota grup ini sudah dipilih secara manual di input ini
-    const hasSelectedMemberInSelf = groupMemberIds.some((id: string) => selectedIndividualIds.includes(id));
+    const hasSelectedMemberInSelf = groupMemberIds.some((id: string) => selectedIndividualIds.has(id));
 
     return {
       ...g,
@@ -285,7 +283,7 @@ const handleGroupClick = (group: any) => {
 
   // Grup tembusan wajib tidak boleh dilepas dari dropdown. Metadata routing
   // tersimpan pada item model hasil auto-pick, bukan pada master grup.
-  const selectedGroup = model.value.find((item) => item.value === group.value);
+  const selectedGroup = model.value.find((item) => String(item.value) === String(group.value));
   if (currentlySelected && selectedGroup && isMandatoryCc(selectedGroup)) return;
 
   if (!currentlySelected) {
@@ -303,7 +301,7 @@ const handleGroupClick = (group: any) => {
   } else {
     // UN-CHECKLIST: Hapus badge grup dari model
     updateModelPreservingScroll(() => {
-      model.value = model.value.filter(m => m.value !== group.value);
+      model.value = model.value.filter(m => String(m.value) !== String(group.value));
     });
   }
 };
@@ -333,11 +331,27 @@ const combinedOptions = computed(() => {
 
 // --- LOGIC SELEKSI ---
 
-const isSelected = (item: any) => model.value.some((s) => s.value === item.value);
+const isSelected = (item: any) => selectedIds.value.has(String(item.value));
 
 // Cek Status Centang Grup (Cukup cek berdasarkan Value Prefix Grupnya)
 const isGroupSelected = (group: any) => {
-  return model.value.some((s) => s.value === group.value);
+  return selectedIds.value.has(String(group.value));
+};
+
+// Nilai scalar membuat Reka UI membandingkan ID, bukan seluruh objek org/grup.
+// Jalur keyboard menggunakan guard grup dan tembusan wajib yang sama dengan klik.
+const syncDropdownSelection = (values: string[]) => {
+  const next = new Set(values.map(String));
+  for (const item of model.value) {
+    if (!next.has(String(item.value))) removePerson(item);
+  }
+  for (const value of next) {
+    if (selectedIds.value.has(value)) continue;
+    const item = combinedOptions.value.find((option) => option.value === value);
+    if (!item || item.disabled) continue;
+    if (item.type === 'group') handleGroupClick(item);
+    else handlePersonClick(item);
+  }
 };
 
 // Handle Klik Orang (Single)
@@ -357,7 +371,7 @@ const handlePersonClick = (person: any) => {
 
 const removePerson = (item: any) => {
   if (isMandatoryCc(item)) return;
-  const index = model.value.findIndex((s) => s.value === item.value);
+  const index = model.value.findIndex((s) => String(s.value) === String(item.value));
   if (index > -1) {
     const newModel = [...model.value];
     newModel.splice(index, 1);

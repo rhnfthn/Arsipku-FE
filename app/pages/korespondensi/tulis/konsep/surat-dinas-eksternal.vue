@@ -260,7 +260,7 @@
                   <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.raw?.area_text ? ' - ' + t.raw.area_text : '' }}
+                      {{ correspondenceRecipientLabel(t, 'area') }}
                     </li>
                   </ol>
                   <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
@@ -289,7 +289,7 @@
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}{{ item.raw?.area_text ? ' - ' + item.raw.area_text : '' }}
+                        {{ correspondenceRecipientLabel(item, 'area') }}
                       </li>
                     </ol>
                   </div>
