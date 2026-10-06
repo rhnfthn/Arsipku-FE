@@ -107,7 +107,7 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string; dot:
     dot: 'bg-amber-700',
   },
   evaluasi_final: {
-    label: 'Evaluasi Final EVP',
+    label: 'Evaluasi',
     bg: 'bg-blue-100 dark:bg-blue-900/30',
     text: 'text-blue-700 dark:text-blue-400',
     dot: 'bg-blue-700',

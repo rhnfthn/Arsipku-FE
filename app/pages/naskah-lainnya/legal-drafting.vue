@@ -210,7 +210,7 @@
             <input
               v-model="search"
               type="text"
-              placeholder="Cari perihal, nomor, atau pemrakarsa…"
+              placeholder="Cari nomor, perihal, nama, atau jabatan…"
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -296,9 +296,7 @@
           </span>
         </template>
         <template #cell-aksi="{ row }">
-          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)"
-            >Detail</UButton
-          >
+          <UButton size="xs" color="primary" variant="soft" @click="goDetail(row)">Detail</UButton>
         </template>
       </DataTable>
 
@@ -330,6 +328,7 @@
 </template>
 
 <script setup lang="ts">
+import { matchesNaskahSearch } from '~/utils/naskah-lainnya-search';
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
@@ -593,11 +592,7 @@ const filteredRows = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return rows;
   return rows.filter((r) =>
-    [r.nomor, r.perihal, r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama].some((v) =>
-      String(v ?? '')
-        .toLowerCase()
-        .includes(q)
-    )
+    matchesNaskahSearch(r, q, [STATUS_LEGAL_LABEL[r.statusLegal ?? '']])
   );
 });
 
@@ -606,8 +601,8 @@ const displayRows = computed(() =>
     id: r.id,
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
-    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
-    konseptor: r.pemrakarsa.nama,
+    pemrakarsa: naskahPersonaLabel(r.pemrakarsaPejabat ?? r.pemrakarsa),
+    konseptor: naskahPersonaLabel(r.pemrakarsa),
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     statusLegal: r.statusLegal ?? '',

@@ -152,9 +152,9 @@
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              placeholder="Otomatis terisi saat upload file..." />
+            <input type="text" v-model="lampiranText"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+              :placeholder="$t('sdi_lampiran_keterangan')" />
           </div>
         </div>
 
@@ -166,10 +166,12 @@
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
+                </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText || 'Tangerang' }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -200,7 +202,7 @@
                       </tbody>
                     </table>
                     <div class="mt-5">Kepada Yth.</div>
-                    <div class="font-bold mb-1">
+                    <div class="font-bold mb-1 ml-0 pl-0">
                       <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
@@ -231,12 +233,12 @@
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">Tembusan :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">{{ t.labelJob || t.label }}</li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -356,7 +358,6 @@ const isExistingDraft = ref(false);
 const message = ref("");
 const subject = ref("");
 const editorContent = ref("");
-const lampiranText = ref("");
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 const today = new Date();
@@ -365,6 +366,7 @@ const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<UploadedFile[]>([]);
+const lampiranText = useEditableLampiranText(existingFiles);
 const selectedSifat = ref<SifatOption | null>(null);
 const items = ref<RecipientItem[]>([]);
 const senderItems = ref<RecipientItem[]>([]);
@@ -684,7 +686,7 @@ const tinyMceInit = {
   branding: false,
   placeholder: 'Ketik konten disini...',
   plugins: 'lists advlist link image code table fullscreen',
-  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | code | fullscreen',
+  toolbar: 'undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist table | link unlink | code | fullscreen',
   content_style: `body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; border: none !important; }`,
   setup(editor: TinyMCEEditor) {
     tinymceEditor.value = editor;
@@ -785,10 +787,11 @@ const getBasePayload = (): DraftPayload => {
     sifat: selectedSifat.value?.value || 'biasa',
     perihal: subject.value,
     lampiran: lampiranText.value,
+    lampiran_text: lampiranText.value,
     konten: String(editorContent.value || ''),
     htmlContent: String(editorContent.value || ''),
     english: english.value,
-    nama_tempat: senderRaw.area_text || senderRaw.areaText || user.value?.areaText || "Kantor Pusat",
+    nama_tempat: user.value?.alamatInfo?.kota || "Tangerang",
     nama_jabatan: senderPositionLabel(senderRaw),
     nama_lengkap: senderActorName(senderRaw),
     tgl: tglDb,
@@ -836,9 +839,10 @@ const prepareKonsepFormData = () => {
   formData.append('sifat', selectedSifat.value?.value || 'biasa');
   formData.append('perihal', subject.value);
   formData.append('lampiran', lampiranText.value);
+  formData.append('lampiran_text', lampiranText.value);
   formData.append('konten', editorContent.value);
   formData.append('english', String(english.value));
-  formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Jakarta");
+  formData.append('nama_tempat', user.value?.alamatInfo?.kota || "Tangerang");
   formData.append('nama_jabatan', senderPositionLabel(signerRaw) || signerInfo.labelJob || "");
   formData.append('nama_lengkap', senderActorName(signerRaw));
   formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
@@ -933,9 +937,10 @@ const handleKirimDokumen = async () => {
       formData.append('sifat', selectedSifat.value?.value || 'biasa');
       formData.append('perihal', subject.value);
       formData.append('lampiran', lampiranText.value);
+  formData.append('lampiran_text', lampiranText.value);
       formData.append('konten', editorContent.value);
       formData.append('english', String(english.value));
-      formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
+      formData.append('nama_tempat', user.value?.alamatInfo?.kota || "Tangerang");
       formData.append('nama_jabatan', senderPositionLabel(signerRaw) || currentSender.labelJob || "");
       formData.append('nama_lengkap', senderActorName(signerRaw));
       formData.append('lampiran_temp_ids', JSON.stringify(lampiranIds));
@@ -1033,9 +1038,7 @@ watch(selectedSender, async (newVal, oldVal) => {
   }
 }, { deep: true });
 
-watch(existingFiles, (files) => {
-  lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
-}, { deep: true, immediate: true });
+
 
 // --- Lifecycle ---
 onMounted(async () => {
@@ -1203,6 +1206,7 @@ onMounted(async () => {
         ];
 
         // Lampiran
+        lampiranText.value = latestKonsep.lampiran_text || (typeof latestKonsep.lampiran === "string" ? latestKonsep.lampiran : "");
         if (latestKonsep.lampiran_files?.length) {
           existingFiles.value = latestKonsep.lampiran_files.map((f: any) => ({
             id: f.id,
@@ -1288,7 +1292,7 @@ onMounted(async () => {
         const d = resDraft.data;
         subject.value = d.perihal || "";
         editorContent.value = d.konten || "";
-        lampiranText.value = d.lampiran || "";
+        lampiranText.value = d.lampiran_text || (typeof d.lampiran === "string" ? d.lampiran : "");
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
         if (d.to_position_id) {

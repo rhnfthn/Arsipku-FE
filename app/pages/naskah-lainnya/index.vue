@@ -180,7 +180,7 @@
             <input
               v-model="search"
               type="text"
-              placeholder="Cari perihal naskah…"
+              placeholder="Cari nomor, perihal, nama, atau jabatan…"
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -313,7 +313,7 @@ const exportColumns = ref([
   { key: 'perihal', label: 'Perihal', desc: 'Perihal / judul naskah' },
   { key: 'pemrakarsa', label: 'Pemrakarsa', desc: 'Pembuat / pemrakarsa naskah' },
   { key: 'tahapan', label: 'Tahapan', desc: 'Tahapan proses naskah' },
-  { key: 'terakhirDiubah', label: 'Diubah', desc: 'Waktu terakhir diubah' }
+  { key: 'terakhirDiubah', label: 'Diubah', desc: 'Waktu terakhir diubah' },
 ]);
 
 const search = ref('');
@@ -347,7 +347,7 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
   persetujuan_lanjutan: 'Persetujuan Lanjutan',
-  evaluasi_final: 'Evaluasi Final EVP',
+  evaluasi_final: 'Evaluasi',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
   blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
@@ -504,8 +504,8 @@ const displayRows = computed(() =>
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
     perihal: r.perihal,
-    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
-    konseptor: r.pemrakarsa.nama,
+    pemrakarsa: naskahPersonaLabel(r.pemrakarsaPejabat ?? r.pemrakarsa),
+    konseptor: naskahPersonaLabel(r.pemrakarsa),
     tahapan:
       r.tahapan === 'selesai' && r.signOption === 'ttd_basah'
         ? r.manualFinalStatus === 'final' || r.documentStatus === 'final'
@@ -605,7 +605,7 @@ async function handleExportConfirm(selectedKeys: string[]) {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
     }));
     worksheet['!cols'] = colWidths;
 
@@ -613,7 +613,7 @@ async function handleExportConfirm(selectedKeys: string[]) {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Naskah Lainnya');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     saveAs(blob, `naskah_lainnya_${new Date().toISOString().slice(0, 10)}.xlsx`);
 

@@ -50,21 +50,6 @@
     </div>
 
     <div v-if="forwardTargetInfo" class="mb-4">
-      <!-- DEBUG: Turunkan target info -->
-      <div v-if="isTurunkanAction" class="mb-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 px-3 py-2 text-[11px] font-mono text-yellow-800 dark:text-yellow-300">
-        <p class="font-bold mb-1">DEBUG — Turunkan Target:</p>
-        <p>turunkan_position_id: {{ $route.query.turunkan_position_id }}</p>
-        <p>turunkan_nama: {{ $route.query.turunkan_nama }}</p>
-        <p>isTurunkanAction: {{ isTurunkanAction }}</p>
-        <p>isRejectAction: {{ isRejectAction }}</p>
-        <p>forwardTargetInfo.position: {{ forwardTargetInfo?.position }}</p>
-        <p>forwardTargetInfo.positionText: {{ forwardTargetInfo?.positionText }}</p>
-        <p>refPengirimPositionId: {{ refPengirimPositionId }}</p>
-        <p>selectedSender: {{ selectedSender?.value || selectedSender?.label || 'null' }}</p>
-        <p>detail.from_position_id: {{ detail?.from_position_id }}</p>
-        <p>detail.aksi: {{ detail?.aksi }}</p>
-        <p>atasanLangsung.position: {{ atasanLangsungInfo?.position }}</p>
-      </div>
       <div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3">
         <div class="flex items-start gap-2">
           <UIcon name="i-lucide-user-round-check" class="w-4 h-4 text-primary-500 mt-0.5" />

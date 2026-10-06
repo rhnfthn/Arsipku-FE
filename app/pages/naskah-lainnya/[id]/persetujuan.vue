@@ -219,7 +219,7 @@
               icon="i-lucide-circle-x"
               :disabled="!canProcess || busy"
               @click="showRejectModal = true"
-              >Tolak</UButton
+              >Batal</UButton
             >
             <UButton
               size="lg"
@@ -250,10 +250,10 @@
     <ApprovalNoteEditor
       v-model="showRejectModal"
       variant="reject"
-      title="Tolak Naskah"
+      title="Batal Naskah"
       description="Berikan alasan penolakan. Bila ada revisi yang di-stage, revisi tersebut akan diunggah terlebih dahulu."
       note-placeholder="Alasan penolakan"
-      confirm-label="Tolak"
+      confirm-label="Batal"
       :saving="busy && activeAction === 'tolak'"
       :require-note="true"
       @confirm="tolakNaskah"
@@ -416,7 +416,7 @@ const TAHAP_LABELS: Record<string, string> = {
   persetujuan_lanjutan: 'Persetujuan Lanjutan',
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
-  evaluasi_final: 'Evaluasi Final',
+  evaluasi_final: 'Evaluasi',
   persetujuan_direksi: 'Persetujuan Direksi',
   blanko_verbal: 'Blanko Verbal',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',

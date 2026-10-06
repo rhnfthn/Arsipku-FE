@@ -107,7 +107,8 @@
               <DirectorOrderSelector
                 v-model="sheet.diketahuiOleh"
                 label="Diketahui Oleh"
-                hint="urutan paraf direksi"
+                hint="direktur pemrakarsa wajib disertakan dan tidak dapat dihapus"
+                :required-directors="sheet.diketahuiOleh ? sheet.direkturPemrakarsa || [] : []"
                 placeholder="Pilih direksi paraf"
                 :recipients="selectableDirectors"
               />
@@ -285,10 +286,10 @@
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
-                    paraf-label="Setuju"
+                    paraf-label="Proses"
                     :is-legal="isLegalRole"
                     @paraf="openParafModal"
-                    @tolak="openTolakModal"
+                    @tolak="openBatalModal"
                     @add-delegate="openAddDelegate"
                     @edit-delegate="openEditDelegate"
                     @remove-delegate="removeDelegate"
@@ -306,10 +307,10 @@
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
-                    paraf-label="Setuju"
+                    paraf-label="Proses"
                     :is-legal="isLegalRole"
                     @paraf="openParafModal"
-                    @tolak="openTolakModal"
+                    @tolak="openBatalModal"
                     @add-delegate="openAddDelegate"
                     @edit-delegate="openEditDelegate"
                     @remove-delegate="removeDelegate"
@@ -327,10 +328,10 @@
                     :can-approve="canApprove"
                     :can-approve-item="canApproveDirector"
                     :busy="busy"
-                    paraf-label="Setuju"
+                    paraf-label="Proses"
                     :is-legal="isLegalRole"
                     @paraf="openParafModal"
-                    @tolak="openTolakModal"
+                    @tolak="openBatalModal"
                     @add-delegate="openAddDelegate"
                     @edit-delegate="openEditDelegate"
                     @remove-delegate="removeDelegate"
@@ -393,11 +394,11 @@
       <ApprovalNoteEditor
         v-model="parafModalOpen"
         variant="approve"
-        title="Setuju"
+        title="Proses"
         description="Anda akan menyetujui lembar persetujuan direksi atas nama pejabat berikut."
         note-label="Catatan"
         note-placeholder="Catatan opsional — dapat memuat pasal-pasal atau batang tubuh…"
-        confirm-label="Setuju"
+        confirm-label="Proses"
         :saving="busy"
         @confirm="confirmParaf"
       >
@@ -437,20 +438,20 @@
         @submit="submitFinalSignature"
       />
 
-      <!-- ── Tolak Modal ── -->
+      <!-- ── Batal Modal ── -->
       <ApprovalNoteEditor
         v-model="tolakModalOpen"
         variant="reject"
-        title="Tolak"
+        title="Batal"
         description="Berikan alasan penolakan. Naskah akan dikembalikan ke legal drafting."
         warning="Penolakan akan mengembalikan naskah ke tahap legal drafting untuk direvisi."
         note-label="Alasan Penolakan"
         note-placeholder="Alasan penolakan (minimal 5 karakter) — dapat memuat pasal-pasal atau batang tubuh…"
-        confirm-label="Tolak"
+        confirm-label="Batal"
         :saving="busy"
         :require-note="true"
         :min-note-length="5"
-        @confirm="confirmTolak"
+        @confirm="confirmBatal"
       />
     </template>
 
@@ -478,6 +479,7 @@ import DireksiApprovalProgress from '~/components/NaskahLainnya/DireksiApprovalP
 import TemplateDireksiSelector from '~/components/NaskahLainnya/TemplateDireksiSelector.vue';
 import DelegateDireksiPickerModal from '~/components/NaskahLainnya/DelegateDireksiPickerModal.vue';
 import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
+import { defaultNaskahDiketahuiDirectors } from '~/utils/naskah-lainnya-persona';
 import type { SheetFormModel, DirectorApprovalItem, ApprovalRow } from '~/types/naskah-lainnya';
 
 definePageMeta({ middleware: ['auth'] });
@@ -825,10 +827,12 @@ function initDirectorSelection() {
     sheet.value.direkturPemrakarsa = [];
   }
   if (!Array.isArray(sheet.value.diketahuiOleh)) {
-    const nonDirut = selectableDirectors.value.filter((d) => !isDirut(d));
-    sheet.value.diketahuiOleh = (nonDirut.length ? nonDirut : selectableDirectors.value).map(
-      compactDirector
-    );
+    const signers = detail.value.penandatangan;
+    sheet.value.diketahuiOleh = defaultNaskahDiketahuiDirectors(
+      selectableDirectors.value,
+      Array.isArray(signers) ? signers : signers ? [signers] : [],
+      sheet.value.direkturPemrakarsa
+    ).map(compactDirector);
   }
 }
 
@@ -956,7 +960,18 @@ function apiErrorMessage(e) {
   return Array.isArray(raw) ? raw[0] : raw || '';
 }
 
+function validateDirectorSelection() {
+  const signers = detail.value?.penandatangan;
+  const message = validateNaskahSheetDirectors(
+    sheet.value,
+    Array.isArray(signers) ? signers : signers ? [signers] : []
+  );
+  if (message) toast.add({ title: message, color: 'warning' });
+  return !message;
+}
+
 function openKirim() {
+  if (!validateDirectorSelection()) return;
   if (!sheet.value.direkturPemrakarsa?.length) {
     toast.add({ title: 'Direktur Pemrakarsa belum tersedia', color: 'warning' });
     return;
@@ -979,6 +994,7 @@ function openKirim() {
 }
 
 async function kirimSheet() {
+  if (!validateDirectorSelection()) return;
   if (!sheet.value.direkturPemrakarsa?.length) {
     toast.add({ title: 'Direktur Pemrakarsa belum tersedia', color: 'warning' });
     return;
@@ -1014,7 +1030,7 @@ function openParafModal(item: DirectorApprovalItem) {
   parafModalOpen.value = true;
 }
 
-function openTolakModal(item: DirectorApprovalItem) {
+function openBatalModal(item: DirectorApprovalItem) {
   activeDirector.value = item;
   tolakModalOpen.value = true;
 }
@@ -1025,7 +1041,11 @@ async function confirmParaf(note) {
     try {
       tteMode.value = await getTteMode('NL');
     } catch {
-      toast.add({ title: 'Konfigurasi TTE tidak dapat dibaca', description: 'Silakan coba lagi.', color: 'error' });
+      toast.add({
+        title: 'Konfigurasi TTE tidak dapat dibaca',
+        description: 'Silakan coba lagi.',
+        color: 'error',
+      });
       return;
     }
     pendingParafNote.value = note ?? '';
@@ -1075,7 +1095,11 @@ async function persistParaf(
     }
   } catch (e) {
     const message = apiErrorMessage(e);
-    if (tteMode.value === 'bsre_direct' && signing?.signMethod === 'digsig' && /passphrase|bsre/i.test(message)) {
+    if (
+      tteMode.value === 'bsre_direct' &&
+      signing?.signMethod === 'digsig' &&
+      /passphrase|bsre/i.test(message)
+    ) {
       signMethodModalRef.value?.setPassphraseError(message);
     } else {
       toast.add({ title: 'Gagal mencatat paraf', description: message, color: 'error' });
@@ -1086,7 +1110,7 @@ async function persistParaf(
   }
 }
 
-async function confirmTolak(note) {
+async function confirmBatal(note) {
   busy.value = true;
   busyMessage.value = 'Menolak lembar persetujuan…';
   try {

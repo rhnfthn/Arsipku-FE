@@ -84,7 +84,7 @@ const {
 const isAiDraftOpen = ref(false);
 
 // ── SDI-specific state ────────────────────────────────────────────────────────
-const lampiranText = ref("");
+const lampiranText = useEditableLampiranText(existingFiles, () => t('f_lampiran'));
 const tertujuItems = ref<any[]>([]);
 const tembusanItems = ref<any[]>([]);
 
@@ -142,7 +142,7 @@ const getPayload = (): SDIPayloadInput => ({
   lampiran: lampiranText.value,
   konten: editorContent.value,
   english: false,
-  nama_tempat: user.value?.areaText || "",
+  nama_tempat: user.value?.alamatInfo?.kota || "Tangerang",
   nama_jabatan: renderedPositionLabel.value || "",
   nama_lengkap: renderedActorName.value || "",
   tgl: tglDb.value,
@@ -460,13 +460,7 @@ onMounted(async () => {
   isLoadingData.value = false;
 });
 
-watch(
-  existingFiles,
-  (files) => {
-    lampiranText.value = files?.length > 0 ? `${files.length} ${t('f_lampiran')}` : `0 ${t('f_lampiran')}`;
-  },
-  { deep: true, immediate: true }
-);
+
 </script>
 
 <template>
@@ -540,9 +534,9 @@ watch(
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ $t('f_lampiran') }}</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
-              :placeholder="$t('sdi_lampiran_otomatis')" />
+            <input type="text" v-model="lampiranText"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+              :placeholder="$t('sdi_lampiran_keterangan')" />
           </div>
         </div>
 
@@ -554,10 +548,12 @@ watch(
               class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <TulisKopSurat :alamat-info="user?.alamatInfo" class="px-6" />
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
+                </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText || "Tangerang" }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -588,7 +584,7 @@ watch(
                       </tbody>
                     </table>
                     <div class="mt-5">{{ $t('f_kepada_yth') }}</div>
-                    <div class="font-bold mb-1">
+                    <div class="font-bold mb-1 ml-0 pl-0">
                       <div v-if="selectedTertuju.length > 5">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
@@ -619,14 +615,14 @@ watch(
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underlinec mb-1">{{ $t('f_tembusan') }} :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="flex-1">{{ $t('sdi_periksa_alamat_terlampir') }}</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
                       {{ t.labelJob || t.label }}{{ t.organization ? ' - ' + t.organization : '' }}
                     </li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"

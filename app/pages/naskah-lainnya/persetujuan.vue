@@ -210,7 +210,7 @@
             <input
               v-model="search"
               type="text"
-              placeholder="Cari perihal, nomor, atau pemrakarsa…"
+              placeholder="Cari nomor, perihal, nama, atau jabatan…"
               class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
             />
           </div>
@@ -321,15 +321,15 @@
       {{ errorMessage }}
     </div>
 
-    <!-- Modal Setujui -->
+    <!-- Modal Proses -->
     <ApprovalNoteEditor
       v-model="modalOpen"
       variant="approve"
-      :title="`Setujui — ${selected?.nomor ?? ''}`"
+      :title="`Proses — ${selected?.nomor ?? ''}`"
       :description="selected?.perihal ?? ''"
       note-label="Catatan"
       note-placeholder="Catatan persetujuan (opsional)…"
-      confirm-label="Setujui"
+      confirm-label="Proses"
       :saving="busy"
       @confirm="doSetuju"
     >
@@ -341,7 +341,7 @@
             variant="soft"
             icon="i-lucide-x"
             @click="tolakOpen = true"
-            >Tolak</UButton
+            >Batal</UButton
           >
           <UButton
             size="xs"
@@ -355,15 +355,15 @@
       </template>
     </ApprovalNoteEditor>
 
-    <!-- Modal Tolak -->
+    <!-- Modal Batal -->
     <ApprovalNoteEditor
       v-model="tolakOpen"
       variant="reject"
-      :title="`Tolak — ${selected?.nomor ?? ''}`"
+      :title="`Batal — ${selected?.nomor ?? ''}`"
       description="Alasan penolakan wajib diisi."
       note-label="Alasan Penolakan"
       note-placeholder="Tuliskan alasan penolakan…"
-      confirm-label="Tolak"
+      confirm-label="Batal"
       :saving="busy"
       :require-note="true"
       @confirm="doTolak"
@@ -408,6 +408,7 @@
 </template>
 
 <script setup lang="ts">
+import { matchesNaskahSearch } from '~/utils/naskah-lainnya-search';
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { useNaskahLainnya } from '~/composables/useNaskahLainnya';
@@ -506,7 +507,7 @@ const tahapanFilterLabels: Record<Tahapan, string> = {
   legal_drafting: 'Legal Drafting',
   evaluasi: 'Evaluasi',
   persetujuan_lanjutan: 'Persetujuan Lanjutan',
-  evaluasi_final: 'Evaluasi Final EVP',
+  evaluasi_final: 'Evaluasi',
   persetujuan_direksi: 'Persetujuan Direksi',
   tanda_tangan_pemrakarsa: 'TTD Pemrakarsa',
   blanko_verbal: 'Blanko Verbal / Persetujuan Direksi',
@@ -666,12 +667,7 @@ const filteredRows = computed(() => {
     const matchesJenis = !filterJenis.value || r.jenis === filterJenis.value;
     const matchesTahapan = !filterTahapan.value || r.tahapan === filterTahapan.value;
     const matchesSearch =
-      !q ||
-      [r.nomor, r.perihal, r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama].some((v) =>
-        String(v ?? '')
-          .toLowerCase()
-          .includes(q)
-      );
+      matchesNaskahSearch(r, q, [APPROVAL_STATUS_LABEL[approvalStatusKey(r.approvalStatus)]]);
     return matchesJenis && matchesTahapan && matchesSearch;
   });
 });
@@ -697,8 +693,8 @@ const displayRows = computed(() =>
     id: r.id,
     nomor: r.nomor ?? '<draft>',
     jenis: r.jenis,
-    pemrakarsa: r.pemrakarsaPejabat?.nama ?? r.pemrakarsa.nama,
-    konseptor: r.pemrakarsa.nama,
+    pemrakarsa: naskahPersonaLabel(r.pemrakarsaPejabat ?? r.pemrakarsa),
+    konseptor: naskahPersonaLabel(r.pemrakarsa),
     perihal: r.perihal,
     tahapan: r.tahapan.replace(/_/g, ' '),
     tahapanRaw: r.tahapan,
