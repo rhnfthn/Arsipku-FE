@@ -50,42 +50,6 @@
             >
               <UIcon name="i-lucide-plus" class="w-3 h-3" /> Tambah Delegate
             </button>
-            <!-- Catatan approval: render HTML dari editor TinyMCE (pasal/batang tubuh).
-                 Konten panjang di-clamp dengan tombol "Lihat selengkapnya". -->
-            <div
-              v-if="d.catatan"
-              class="approval-note mt-1.5 rounded-lg border-l-4 border-primary-400 bg-primary-50/70 px-3 py-1.5 text-xs text-primary-900 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-100"
-            >
-              <span
-                class="mb-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70"
-              >
-                <UIcon name="i-lucide-message-square-text" class="size-3" />
-                Catatan
-              </span>
-              <!-- eslint-disable-next-line vue/no-v-html -->
-              <div
-                class="approval-note-content"
-                :class="
-                  longNotes.has(noteKey(d, idx)) && !expandedNotes.has(noteKey(d, idx))
-                    ? 'note-clamped'
-                    : ''
-                "
-                :data-note-id="noteKey(d, idx)"
-                v-html="d.catatan"
-              ></div>
-              <button
-                v-if="longNotes.has(noteKey(d, idx))"
-                type="button"
-                class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70 transition-opacity hover:opacity-100 text-primary-700 dark:text-primary-300"
-                @click="toggleNote(noteKey(d, idx))"
-              >
-                <UIcon
-                  :name="expandedNotes.has(noteKey(d, idx)) ? 'i-lucide-chevrons-up' : 'i-lucide-chevrons-down'"
-                  class="size-3"
-                />
-                {{ expandedNotes.has(noteKey(d, idx)) ? 'Tutup' : 'Lihat selengkapnya' }}
-              </button>
-            </div>
           </div>
         </div>
 
@@ -112,10 +76,48 @@
               :loading="busy"
               @click="$emit('tolak', d)"
             >
-              Tolak
+              Batal
             </UButton>
           </template>
         </div>
+      </div>
+      <!-- Catatan approval: render HTML dari editor TinyMCE (pasal/batang tubuh).
+                 Konten panjang di-clamp dengan tombol "Lihat selengkapnya". -->
+      <div
+        v-if="d.catatan"
+        class="approval-note mt-3 w-full min-w-0 rounded-lg border-l-4 border-primary-400 bg-primary-50/70 px-3 py-1.5 text-xs text-primary-900 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-100"
+      >
+        <span
+          class="mb-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70"
+        >
+          <UIcon name="i-lucide-message-square-text" class="size-3" />
+          Catatan
+        </span>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div
+          class="approval-note-content"
+          :class="
+            longNotes.has(noteKey(d, idx)) && !expandedNotes.has(noteKey(d, idx))
+              ? 'note-clamped'
+              : ''
+          "
+          :data-note-id="noteKey(d, idx)"
+          v-html="d.catatan"
+        ></div>
+        <button
+          v-if="longNotes.has(noteKey(d, idx))"
+          type="button"
+          class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest opacity-70 transition-opacity hover:opacity-100 text-primary-700 dark:text-primary-300"
+          @click="toggleNote(noteKey(d, idx))"
+        >
+          <UIcon
+            :name="
+              expandedNotes.has(noteKey(d, idx)) ? 'i-lucide-chevrons-up' : 'i-lucide-chevrons-down'
+            "
+            class="size-3"
+          />
+          {{ expandedNotes.has(noteKey(d, idx)) ? 'Tutup' : 'Lihat selengkapnya' }}
+        </button>
       </div>
     </div>
 
@@ -234,7 +236,11 @@ defineEmits<{
   inset-inline: 0;
   bottom: 0;
   height: 28px;
-  background: linear-gradient(to bottom, transparent, var(--note-fade-color, rgba(232, 239, 246, 0.95)));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--note-fade-color, rgba(232, 239, 246, 0.95))
+  );
   pointer-events: none;
 }
 .dark .note-clamped::after {

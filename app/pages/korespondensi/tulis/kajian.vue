@@ -130,8 +130,8 @@
                           <span v-else v-html="selectedPenerima.length
                             ? selectedPenerima.map((s: any, i: number) =>
                               selectedPenerima.length === 1
-                                ? `<div>${s.labelJob || s.label}</div>`
-                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${s.labelJob || s.label}</div>`
+                                ? `<div>${correspondenceRecipientLabel(s)}</div>`
+                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${correspondenceRecipientLabel(s)}</div>`
                             ).join('')
                             : '................................................'
                             "></span>
@@ -196,7 +196,7 @@
                     <div class="font-bold text-[14px] mb-2 uppercase">{{ $t('f_kepada_yth') }} :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedPenerima" :key="item.value">
-                        {{ item.labelJob || item.label }}
+                        {{ correspondenceRecipientLabel(item) }}
                       </li>
                     </ol>
                   </div>
@@ -211,6 +211,8 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="confirmSaveDraft" />
           <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
@@ -697,7 +699,8 @@ onMounted(async () => {
         // Nama field sesuai JSON: "nama", "positionName", "position" (id)
         // Fallback ke snake_case jika camelCase tidak ada
         const nama = r.nama || r.persnum_person_text || '';
-        const jabatan = r.positionName || r.position_text || '';
+        // Render prefix delegasi (PT./PH./PS.) bila posisi penerima sedang didelegasikan.
+        const jabatan = formatDelegatedPositionText(r.positionName || r.position_text || '', r);
         const idPos = String(r.position || r.position_id || r.id);
 
         return {
@@ -777,7 +780,7 @@ onMounted(async () => {
 
             // Fallback: format label sama persis seperti mapRec
             const nama = item.nama || item.persnum_person_text || '';
-            const jabatan = item.positionName || item.position_text || item.positionText || '';
+            const jabatan = formatDelegatedPositionText(item.positionName || item.position_text || item.positionText || '', item);
             const idStr = candidateIds[0] || String(item.value ?? '');
             return {
               label: nama ? `${nama} - ${jabatan}` : `${idStr} - ${jabatan}`,

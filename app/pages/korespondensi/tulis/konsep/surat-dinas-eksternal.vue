@@ -170,8 +170,8 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
             <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
-            <input type="text" v-model="lampiranText" readonly tabindex="-1"
-              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600 cursor-default opacity-75"
+            <input type="text" v-model="lampiranText"
+              class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
               placeholder="Otomatis terisi saat upload file..." />
           </div>
         </div>
@@ -183,22 +183,12 @@
             <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
               <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
 
-                <div class="flex items-center pb-4 mb-6 px-10">
-                  <div class="flex items-end gap-4">
-                    <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
-                    <div class="flex flex-col mb-1">
-                      <span class="text-2xl font-bold tracking-wide text-[18px]">AirNav Indonesia</span>
-                    </div>
-                  </div>
-                  <div class="ml-auto text-[10px] leading-[1.1] text-gray-700 text-left">
-                    <div class="font-bold uppercase">{{ user?.alamatInfo?.kantor }}</div>
-                    <div>{{ user?.alamatInfo?.gedung }} {{ user?.alamatInfo?.kota }}</div>
-                    <div v-html="user?.alamatInfo?.alamat"></div>
-                  </div>
+                <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+                  <TulisKopSurat :alamat-info="user?.alamatInfo" />
                 </div>
 
                 <div class="flex mb-4 text-[14px] px-10">
-                  <div>{{ user?.areaText?.replace('Kantor', '') || 'Tangerang' }}, {{ formattedDate }}</div>
+                  <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
@@ -232,7 +222,7 @@
                     <div class="font-bold mb-1">
                       <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
                       <div v-else-if="selectedTertuju.length > 0">
-                        <div v-for="t in selectedTertuju" :key="t.value">{{ t.label }}</div>
+                        <div v-for="(t, idx) in selectedTertuju" :key="t.value" class="leading-relaxed"><span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>{{ t.label }}</div>
                       </div>
                       <div v-else>................................................</div>
                     </div>
@@ -256,14 +246,14 @@
                 </div>
 
                 <div class="mt-8 text-[12px] text-black px-10">
-                  <div class="font-bold underline mb-1">Tembusan :</div>
-                  <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                  <ol v-else-if="selectedTembusan.length > 0" class="list-decimal ml-4 pl-2">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="ml-0 pl-0">Periksa Alamat Terlampir</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
                     <li v-for="t in selectedTembusan" :key="t.value">
-                      {{ t.labelJob || t.label }}{{ t.raw?.area_text ? ' - ' + t.raw.area_text : '' }}
+                      {{ correspondenceRecipientLabel(t, 'area') }}
                     </li>
                   </ol>
-                  <div v-else class="ml-4 pl-2 text-gray-400 italic">...</div>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
@@ -289,7 +279,7 @@
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
                       <li v-for="item in selectedTembusan" :key="item.value">
-                        {{ item.labelJob || item.label }}{{ item.raw?.area_text ? ' - ' + item.raw.area_text : '' }}
+                        {{ correspondenceRecipientLabel(item, 'area') }}
                       </li>
                     </ol>
                   </div>
@@ -388,7 +378,6 @@ const isExistingDraft = ref(false);
 const message = ref("");
 const subject = ref("");
 const editorContent = ref("");
-const lampiranText = ref("");
 const english = ref(false);
 const tinymceEditor = ref<TinyMCEEditor | null>(null);
 const today = new Date();
@@ -397,6 +386,7 @@ const klasifikasiList = ref<Klasifikasi[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<UploadedFile[]>([]);
+const lampiranText = useEditableLampiranText(existingFiles);
 const selectedSifat = ref<SifatOption | null>(null);
 
 // SDE: dua list terpisah
@@ -548,7 +538,7 @@ watch(selectedAtasNamaId, (newId) => {
   if (selectedTembusan.value.some((t: any) => Number(t.value) === Number(newId))) return;
   selectedTembusan.value.push({
     label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text}`,
-    labelJob: r.position_text,
+    labelJob: formatDelegatedPositionText(r.position_text, r),
     value: String(r.position),
     raw: r,
   } as any);
@@ -760,6 +750,7 @@ const getBasePayload = () => {
     sifat: selectedSifat.value?.value || "biasa",
     perihal: subject.value,
     lampiran: lampiranText.value,
+    lampiran_text: lampiranText.value,
     konten: String(editorContent.value || ''),
     english: english.value,
     nama_tempat: senderRaw.area_text || user.value?.areaText || "Tangerang",
@@ -809,6 +800,7 @@ const prepareKonsepFormData = () => {
   formData.append('sifat', selectedSifat.value?.value || 'biasa');
   formData.append('perihal', subject.value);
   formData.append('lampiran', lampiranText.value);
+  formData.append('lampiran_text', lampiranText.value);
   formData.append('konten', editorContent.value);
   formData.append('english', String(english.value));
   formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
@@ -906,6 +898,7 @@ const handleKirimDokumen = async () => {
       formData.append('sifat', selectedSifat.value?.value || 'biasa');
       formData.append('perihal', subject.value);
       formData.append('lampiran', lampiranText.value);
+  formData.append('lampiran_text', lampiranText.value);
       formData.append('konten', editorContent.value);
       formData.append('english', String(english.value));
       formData.append('nama_tempat', signerRaw.area_text || user.value?.areaText || "Tangerang");
@@ -1012,7 +1005,7 @@ const fetchTembusanBySender = async (senderPositionId: string) => {
     if (Array.isArray(tembusanData)) {
       internalItems.value = tembusanData.map((r: any) => ({
         label: `${r.persnum_person_text || r.persnum || '-'} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
-        labelJob: r.position_text || r.positionText,
+        labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
         value: String(r.position || r.position_id || r.id),
         raw: r,
       }));
@@ -1035,9 +1028,6 @@ watch(selectedSender, async (newVal, oldVal) => {
   await fetchTembusanBySender(String(newVal?.value || ''));
 }, { deep: true });
 
-watch(existingFiles, (files) => {
-  lampiranText.value = files?.length > 0 ? `${files.length} Lampiran` : "0 Lampiran";
-}, { deep: true, immediate: true });
 
 // --- Lifecycle ---
 onMounted(async () => {
@@ -1120,7 +1110,7 @@ onMounted(async () => {
           unwrappedData.perihal || unwrappedData.konsep?.perihal,
           'SDE',
         );
-        lampiranText.value = unwrappedData.lampiran || "";
+        lampiranText.value = unwrappedData.lampiran_text || (typeof unwrappedData.lampiran === "string" ? unwrappedData.lampiran : "");
 
         if (unwrappedData.flow && Array.isArray(unwrappedData.flow)) {
           const createFlow = unwrappedData.flow.find((f: any) => f.aksi === 'create');
@@ -1326,7 +1316,7 @@ onMounted(async () => {
         isPrefillingKonsep.value = true;
         subject.value = d.perihal || "";
         editorContent.value = d.konten || "";
-        lampiranText.value = d.lampiran || "";
+        lampiranText.value = d.lampiran_text || (typeof d.lampiran === "string" ? d.lampiran : "");
         message.value = d.catatan || "";
         english.value = Boolean(d.english);
         if (d.to_position_id) {

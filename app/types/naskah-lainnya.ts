@@ -313,6 +313,8 @@ export interface SheetFormModel {
 
 /** Baris persetujuan direksi untuk lembar/blanko. */
 export interface DirectorApprovalItem {
+  positionStatus?: string;
+  abbreviation?: string;
   index?: number;
   nama: string;
   jabatan: string;

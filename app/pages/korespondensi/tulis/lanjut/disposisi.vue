@@ -140,8 +140,9 @@
                     <img src="/logoAirnav.png" alt="Logo" class="h-12 w-auto object-contain" />
                     <span class="font-bold text-xl tracking-wide">AirNav Indonesia</span>
                   </div>
-                  <div class="w-1/3 p-2 flex flex-col justify-center text-center font-bold text-sm">
-                    <div>DISPOSISI</div>
+                  <div class="w-1/3 p-2 flex flex-col justify-start items-end text-right font-bold text-sm">
+                    <div>Lembar Disposisi</div>
+                    <div class="text-[10px] mt-0.5 uppercase">{{ user?.positionText || '' }}</div>
                   </div>
                 </div>
 
@@ -250,6 +251,8 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
+          <UButton label="Draft" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+            @click="confirmSaveDraft" />
           <UButton label="Pratinjau" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
@@ -823,7 +826,7 @@ onMounted(async () => {
           return found || {
             value: val,
             label: item.nama || item.label,
-            labelJob: item.position_text || item.positionText || item.labelJob
+            labelJob: formatDelegatedPositionText(item.position_text || item.positionText || item.labelJob || '', item)
           };
         });
 

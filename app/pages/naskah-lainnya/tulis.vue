@@ -353,7 +353,7 @@
             <div v-if="selectedApprovals.length" class="space-y-2">
               <div
                 v-for="(v, idx) in selectedApprovals"
-                :key="v.persnum"
+                :key="v.positionId"
                 class="flex items-center gap-2"
               >
                 <span
@@ -369,7 +369,7 @@
                 <button
                   type="button"
                   class="text-gray-400 hover:text-red-500 shrink-0"
-                  @click="removeApproval(v.persnum)"
+                  @click="removeApproval(v.positionId)"
                   aria-label="Hapus verifikator"
                 >
                   <UIcon name="i-lucide-x" class="w-4 h-4" />
@@ -749,14 +749,12 @@ const isRevisi = computed(() => detail.value?.tahapan === 'perlu_perbaikan');
 const isPhysicalMetadataMode = computed(() => route.query.mode === 'data-sistem');
 const isPhysicalSigning = computed(() => form.value.signOption === 'ttd_basah');
 const canPreview = computed(() =>
-  hasPermission('utama.tulis.naskah-lainnya.button-pratinjau', 'create'),
+  hasPermission('utama.tulis.naskah-lainnya.button-pratinjau', 'create')
 );
 const canSaveDraft = computed(() =>
-  hasPermission('utama.tulis.naskah-lainnya.button-simpan-draft', 'create'),
+  hasPermission('utama.tulis.naskah-lainnya.button-simpan-draft', 'create')
 );
-const canSend = computed(() =>
-  hasPermission('utama.tulis.naskah-lainnya.button-kirim', 'create'),
-);
+const canSend = computed(() => hasPermission('utama.tulis.naskah-lainnya.button-kirim', 'create'));
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -802,17 +800,22 @@ const getHierarchyRank = (jabatan: string): number => {
 };
 const penandatanganItems = computed(() =>
   [...verifikatorList.value]
-    .filter((v) => !String(v.jabatan || '').toLocaleLowerCase('id-ID').includes('dewan pengawas'))
+    .filter(
+      (v) =>
+        v.positionId &&
+        v.nama &&
+        !String(v.jabatan || '')
+          .toLocaleLowerCase('id-ID')
+          .includes('dewan pengawas')
+    )
     .sort((a, b) => getHierarchyRank(a.jabatan) - getHierarchyRank(b.jabatan))
     .map((v) => ({
-      label: [
-        toTitleCase(v.nama),
-        '-',
-        v.abbreviation ? `(${String(v.abbreviation).toUpperCase()})` : '',
-        toTitleCase(v.jabatan),
-      ].filter(Boolean).join(' '),
-      labelJob: toTitleCase(v.jabatan),
-      value: String(v.persnum),
+      label: naskahPersonaLabel(v),
+      labelName: [v.nama, v.abbreviation ? `(${v.abbreviation.toUpperCase()})` : '']
+        .filter(Boolean)
+        .join(' '),
+      labelJob: v.jabatan,
+      value: String(v.positionId),
       raw: v,
     }))
 );
@@ -959,11 +962,7 @@ watch(
 async function applyJenisConfigDefault(jenis: string) {
   if (!jenis) return;
   try {
-    const res: any = await apiGet(
-      `/config/naskah-lainnya/${jenis}`,
-      {},
-      { skipCache: true }
-    );
+    const res: any = await apiGet(`/config/naskah-lainnya/${jenis}`, {}, { skipCache: true });
     const cfg = res?.data ?? res;
     if (!cfg) return;
     if (typeof cfg.butuhLegal === 'boolean') form.value.butuhLegal = cfg.butuhLegal;
@@ -1009,9 +1008,8 @@ function resolveSlotSigner(value: string | null, fallbackIndex: number): Penanda
 function findSignerValue(stored: Partial<Penandatangan>): string | null {
   const match = penandatanganItems.value.find((item) => {
     const raw = item.raw;
+    if (stored.positionId) return String(raw?.positionId) === String(stored.positionId);
     if (stored.persnum != null && String(raw?.persnum) === String(stored.persnum)) return true;
-    if (stored.positionId != null && String(raw?.positionId) === String(stored.positionId))
-      return true;
     if (stored.nama != null && raw?.nama?.toLowerCase() === stored.nama.toLowerCase()) return true;
     return false;
   });
@@ -1057,34 +1055,39 @@ const approvalPickerValue = ref<string | null>(null);
 // Satu pejabat boleh merangkap sebagai penandatangan dan verifikator.
 // Duplikat hanya dicegah di dalam rantai verifikator itu sendiri.
 const availableApprovals = computed(() => {
-  const selectedSet = new Set(selectedApprovals.value.map((v) => v.persnum));
-  return approvalCandidates.value.filter((v) => !selectedSet.has(v.persnum));
+  const selectedSet = new Set(selectedApprovals.value.map((v) => String(v.positionId)));
+  return approvalCandidates.value.filter((v) => !selectedSet.has(String(v.positionId)));
 });
 
 const approvalOptions = computed(() =>
   availableApprovals.value.map((v) => ({
-    value: String(v.persnum),
-    label: v.nama,
+    value: String(v.positionId),
+    label: naskahPersonaLabel(v),
+    labelName: [v.nama, v.abbreviation ? `(${v.abbreviation.toUpperCase()})` : '']
+      .filter(Boolean)
+      .join(' '),
     labelJob: v.jabatan || '',
   }))
 );
 const onApprovalSelectItem = (item: any) => {
-  const persnum = Number(item?.value);
-  const v = approvalCandidates.value.find((x) => Number(x.persnum) === persnum);
+  const positionId = String(item?.value);
+  const v = approvalCandidates.value.find((x) => String(x.positionId) === positionId);
   if (!v) return;
-  if (!selectedApprovals.value.some((x) => Number(x.persnum) === persnum)) {
+  if (!selectedApprovals.value.some((x) => String(x.positionId) === positionId)) {
     selectedApprovals.value.push(v);
   }
   // Reset picker setelah pilih — slot berikutnya siap dipilih.
   approvalPickerValue.value = null;
 };
 
-const removeApproval = (persnum: number) => {
-  selectedApprovals.value = selectedApprovals.value.filter((v) => v.persnum !== persnum);
+const removeApproval = (positionId: number | string) => {
+  selectedApprovals.value = selectedApprovals.value.filter(
+    (v) => String(v.positionId) !== String(positionId)
+  );
 };
 
 function approvalLabel(approval: Verifikator) {
-  return [approval.nama, approval.jabatan].filter(Boolean).join(' — ');
+  return naskahPersonaLabel(approval);
 }
 
 const uploadStatus = ref<'idle' | 'reading' | 'done' | 'error'>('idle');
@@ -1173,6 +1176,7 @@ onMounted(async () => {
   // Penandatangan: dari /digsig/document/verifikator (semua personil area).
   try {
     await fetchVerifikator({ chiefOnly: false });
+    verifikatorList.value = verifikatorList.value.map(normalizeNaskahPersona);
   } catch {
     // abaikan — dropdown penandatangan akan kosong
   }
@@ -1202,6 +1206,8 @@ onMounted(async () => {
           nama: r.persnum_person_text || 'Tanpa nama',
           positionId: Number(r.position) || undefined,
           jabatan: r.position_text || '',
+          abbreviation: r.abbreviation || null,
+          positionStatus: r.position_status || r.positionStatus,
         }) as Verifikator
     );
 
@@ -1224,7 +1230,9 @@ onMounted(async () => {
     ) {
       candidates.unshift(selfCandidate);
     }
-    approvalCandidates.value = candidates;
+    approvalCandidates.value = candidates
+      .filter((v) => v.positionId && Number(v.persnum) > 0 && v.nama)
+      .map(normalizeNaskahPersona);
   } catch {
     // abaikan — dropdown verifikator akan kosong, form tetap bisa dipakai (fallback default workflow)
   } finally {

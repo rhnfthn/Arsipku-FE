@@ -95,6 +95,13 @@ const tugasTaskUpdate = ref<{
   occurredAt: string;
 } | null>(null);
 
+// Draft changed (badge sidebar) — payload sinyal dari server saat draft
+// korespondensi / naskah lainnya dibuat, dihapus, atau berpindah tahapan.
+const draftChanged = ref<{
+  source: 'korespondensi' | 'naskah-lainnya';
+  occurredAt: string;
+} | null>(null);
+
 // Tugas forum komentar events — payload ringkas; client fetch komentar
 // terkait saat event diterima (komentar tidak menaikkan revision papan).
 const tugasCommentAdded = ref<{
@@ -408,6 +415,15 @@ const connectSocket = async (): Promise<void> => {
       }
     });
 
+    socket.on('draft:changed', (payload: any) => {
+      if (payload?.source) {
+        draftChanged.value = {
+          source: payload.source as 'korespondensi' | 'naskah-lainnya',
+          occurredAt: String(payload.occurredAt ?? new Date().toISOString()),
+        };
+      }
+    });
+
     socket.on('realtime:connected', () => {
       // Server mengkonfirmasi koneksi, 'connect' event sudah handle
     });
@@ -545,6 +561,7 @@ export function useRealtimeSocket() {
     tugasTaskUpdate,
     tugasCommentAdded,
     tugasCommentDeleted,
+    draftChanged,
     flagUpdate,
     correspondenceRoutingUpdate,
     naskahLainnyaUpdate,
