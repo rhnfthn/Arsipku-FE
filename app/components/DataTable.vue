@@ -51,7 +51,7 @@
           v-else
           v-for="(row, idx) in rows"
           :key="row.id ?? row.persnum ?? idx"
-          :class="[rowClass, 'group relative']"
+          :class="[rowClass, rowClassesFn?.(row) ?? '', 'group relative']"
         >
           <td
             v-for="col in columns"
@@ -96,6 +96,8 @@ withDefaults(
     headerClass?: string;
     bodyClass?: string;
     rowClass?: string;
+    /** Class dinamis per baris (mis. bold untuk data terbaru). */
+    rowClassesFn?: (row: Record<string, any>) => string;
     /** Layout fixed dengan padding rapat; konten panjang wajib dibatasi oleh cell slot. */
     compact?: boolean;
   }>(),

@@ -697,7 +697,8 @@ onMounted(async () => {
         // Nama field sesuai JSON: "nama", "positionName", "position" (id)
         // Fallback ke snake_case jika camelCase tidak ada
         const nama = r.nama || r.persnum_person_text || '';
-        const jabatan = r.positionName || r.position_text || '';
+        // Render prefix delegasi (PT./PH./PS.) bila posisi penerima sedang didelegasikan.
+        const jabatan = formatDelegatedPositionText(r.positionName || r.position_text || '', r);
         const idPos = String(r.position || r.position_id || r.id);
 
         return {
@@ -777,7 +778,7 @@ onMounted(async () => {
 
             // Fallback: format label sama persis seperti mapRec
             const nama = item.nama || item.persnum_person_text || '';
-            const jabatan = item.positionName || item.position_text || item.positionText || '';
+            const jabatan = formatDelegatedPositionText(item.positionName || item.position_text || item.positionText || '', item);
             const idStr = candidateIds[0] || String(item.value ?? '');
             return {
               label: nama ? `${nama} - ${jabatan}` : `${idStr} - ${jabatan}`,

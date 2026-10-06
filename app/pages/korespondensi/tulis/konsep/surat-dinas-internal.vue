@@ -710,7 +710,7 @@ const fetchRecipientsBySender = async (senderPositionId: string) => {
       ];
       items.value = combinedArray.map((r: any): RecipientItem => ({
         label: `${r.persnum_person_text || '-'} - ${r.position_text}`,
-        labelJob: r.position_text,
+        labelJob: formatDelegatedPositionText(r.position_text, r),
         value: String(r.position),
         raw: r,
       }));
@@ -1167,7 +1167,7 @@ onMounted(async () => {
               const found = items.value.find((m: any) => String(m.value) === posId);
               return found || {
                 label: `${item.nama || ''} - ${item.position_text || ''}`,
-                labelJob: item.position_text || '',
+                labelJob: formatDelegatedPositionText(item.position_text || '', item),
                 value: posId,
                 raw: item,
               };
@@ -1339,7 +1339,7 @@ onMounted(async () => {
           const master = items.value.find(m => m.value === posId);
           return master || {
             label: `${item.nama || ''} - ${item.position_text || item.positionText || ''}`,
-            labelJob: item.position_text || item.positionText || '', value: posId, raw: item,
+            labelJob: formatDelegatedPositionText(item.position_text || item.positionText || '', item), value: posId, raw: item,
           };
         }) || [];
 

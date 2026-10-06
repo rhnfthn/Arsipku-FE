@@ -721,7 +721,8 @@ onMounted(async () => {
 
     const rawData = recRes.recipients || (recRes as any).data || [];
     items.value = rawData.map((r: any) => {
-      const posText = r.position_text || r.positionText;
+      // Render prefix delegasi (PT./PH./PS.) bila posisi penerima sedang didelegasikan.
+      const posText = formatDelegatedPositionText(r.position_text || r.positionText, r);
       const nama = r.nama || r.person_name || r.persnum_person_text || '';
       // Tambahkan nama ke belakang jabatan agar muncul saat render UI & Print
       const labelJob = nama && nama !== '-' && nama !== 'empty' ? `${posText}(${nama})` : posText;

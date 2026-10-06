@@ -640,7 +640,7 @@ onMounted(async () => {
     const rawRec = internalRecRes.rawRecipients || [];
     const mapInternalItems = (list: any[]) => list.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum_person || r.persnum} - (${r.position_abbreviation || r.abbreviation || '-'}) ${r.position_text || r.positionText}`,
-      labelJob: r.position_text || r.positionText,
+      labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
       value: String(r.position || r.position_id || r.id),
       raw: r
     }));
