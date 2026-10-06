@@ -93,6 +93,21 @@ export interface TransferActiveToInactive {
   totalTuApprovalLevels?: number;
 }
 
+export interface BacTembusanListItem {
+  id: string;
+  nomorUsulan: string;
+  arsipPerihal: string;
+  arsipKode: string | null;
+  tanggalUsulan: string;
+  status: TransferActiveToInactiveStatus;
+  beritaAcaraNomor: string | null;
+  bacPihakPertamaName: string | null;
+  bacPihakPertamaJabatan: string | null;
+  bacSignedAt: string | null;
+  bacStatus: 'MENUNGGU_TANDA_TANGAN' | 'SUDAH_DITANDATANGANI';
+  beritaAcaraUrl: string | null;
+}
+
 /** Level approval berjenjang. */
 export interface ApprovalLevel {
   id: string;

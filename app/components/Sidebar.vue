@@ -1518,10 +1518,14 @@ const isManagerialPosition = computed(() => {
 
 /** Penandatangan BAC hanya untuk pejabat EVP dan jenjang di atasnya. */
 const isEvpOrAbovePosition = computed(() => {
+  const bodTag = String(user.value?.bodTag ?? '')
+    .trim()
+    .toUpperCase();
   const posText = String(user.value?.positionText ?? '').toUpperCase();
   return (
-    hasBodTag.value ||
-    /\b(EVP|DIREKTUR|CEO|PRESIDEN|BOD)\b/.test(posText)
+    bodTag === 'BOD' ||
+    bodTag === 'BOD-1' ||
+    /\b(EVP|DIREKTUR|DIRUT|DIRECTOR|CEO|PRESIDEN|PRESIDENT|BOD)\b/.test(posText)
   );
 });
 
@@ -1532,6 +1536,13 @@ const isSekretarisActor = computed(
     activePositionStatus.value === 'SE' ||
     activePositionStatus.value === 'PS' ||
     isSekretarisRole.value
+);
+
+const isDivisionSecretaryPosition = computed(
+  () =>
+    activePositionStatus.value === 'SE' ||
+    isSekretarisRole.value ||
+    /^\s*SE(?:\.|\s|$)/i.test(String(user.value?.positionText ?? ''))
 );
 
 const unitDokumenKelolaMenus = computed(() => [
@@ -1549,8 +1560,7 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Penerimaan Usulan',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
-        badge:
-          kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
+        badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
@@ -1609,9 +1619,7 @@ const unitDokumenKelolaMenus = computed(() => [
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
         badge:
-          kelolaCounts.value.penataanPemusnahan > 0
-            ? kelolaCounts.value.penataanPemusnahan
-            : null,
+          kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
       },
     ],
   },
@@ -1632,13 +1640,13 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Pemindahan Arsip',
         to: '/maintenance/transfer-active-to-inactive-file',
         icon: 'i-lucide-file-up',
+        showIfDivisionSecretary: true,
       },
       {
         label: 'Penerimaan Usulan',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
-        badge:
-          kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
+        badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
@@ -1698,9 +1706,7 @@ const sekretarisKelolaMenus = computed(() => [
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
         badge:
-          kelolaCounts.value.penataanPemusnahan > 0
-            ? kelolaCounts.value.penataanPemusnahan
-            : null,
+          kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
       },
     ],
   },
@@ -1731,7 +1737,13 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         showIfEvpOrAbove: true,
       },
       {
-        label: 'Verifikasi Usulan',
+        label: 'Tembusan BAC',
+        to: '/maintenance/tembusan-bac',
+        icon: 'i-lucide-copy',
+        showIfEvpOrAbove: true,
+      },
+      {
+        label: 'Pemindahan',
         to: '/maintenance/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
       },
@@ -1808,6 +1820,12 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         showIfEvpOrAbove: true,
       },
       {
+        label: 'Tembusan BAC',
+        to: '/maintenance/tembusan-bac',
+        icon: 'i-lucide-copy',
+        showIfEvpOrAbove: true,
+      },
+      {
         label: 'Verifikasi Persetujuan',
         to: '/maintenance/verifikasi-persetujuan-tu',
         icon: 'i-lucide-file-check-2',
@@ -1815,13 +1833,6 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
           kelolaCounts.value.verifikasiPersetujuanTu > 0
             ? kelolaCounts.value.verifikasiPersetujuanTu
             : null,
-      },
-      {
-        label: 'Verifikasi Usulan',
-        to: '/maintenance/verifikasi-usulan',
-        icon: 'i-lucide-file-check-2',
-        badge:
-          kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
       },
     ],
   },
@@ -1932,24 +1943,29 @@ const adminMenuKelola = computed(() => {
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
     {
+      label: 'Pemindahan Arsip',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+      showIfDivisionSecretary: true,
+    },
+    {
       label: 'Penandatanganan',
       to: '/maintenance/penandatanganan',
       icon: 'i-lucide-pen-tool',
       showIfEvpOrAbove: true,
     },
     {
-      label: 'Pemindahan Arsip',
-      to: '/maintenance/transfer-active-to-inactive-file',
-      icon: 'i-lucide-file-up',
-      showIfSekretarisOnly: true,
+      label: 'Tembusan BAC',
+      to: '/maintenance/tembusan-bac',
+      icon: 'i-lucide-copy',
+      showIfEvpOrAbove: true,
     },
     {
       label: 'Penerimaan Usulan',
       to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
-      badge:
-        kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
+      badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
     },
     {
       label: 'Penataan Arsip Inaktif',
@@ -1972,12 +1988,11 @@ const adminMenuKelola = computed(() => {
           : null,
     },
     {
-      label: 'Verifikasi Usulan',
+      label: 'Pemindahan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
-      showIfAtasan: true,
-      badge:
-        kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
+      showIfAtasanSekretaris: true,
+      badge: kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
     },
   ];
 
@@ -2017,8 +2032,6 @@ const adminMenuKelola = computed(() => {
     });
   }
 
-
-
   penggunaanChildren.push({
     label: 'Verifikasi Usulan',
     to: '/kelola/penggunaan/verifikasi-usulan',
@@ -2052,9 +2065,7 @@ const adminMenuKelola = computed(() => {
       icon: 'i-lucide-list',
       showIfTuRole: true,
       badge:
-        kelolaCounts.value.pengajuanPenyusutan > 0
-          ? kelolaCounts.value.pengajuanPenyusutan
-          : null,
+        kelolaCounts.value.pengajuanPenyusutan > 0 ? kelolaCounts.value.pengajuanPenyusutan : null,
     },
     {
       label: 'Penataan & Pemusnahan',
@@ -2062,9 +2073,7 @@ const adminMenuKelola = computed(() => {
       icon: 'i-lucide-archive',
       showIfTuRole: true,
       badge:
-        kelolaCounts.value.penataanPemusnahan > 0
-          ? kelolaCounts.value.penataanPemusnahan
-          : null,
+        kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
     },
     {
       label: 'Verifikasi Penyusutan',
@@ -2114,24 +2123,29 @@ const userMenuKelola = computed(() => {
       badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
     },
     {
+      label: 'Pemindahan Arsip',
+      to: '/maintenance/transfer-active-to-inactive-file',
+      icon: 'i-lucide-file-up',
+      showIfDivisionSecretary: true,
+    },
+    {
       label: 'Penandatanganan',
       to: '/maintenance/penandatanganan',
       icon: 'i-lucide-pen-tool',
       showIfEvpOrAbove: true,
     },
     {
-      label: 'Pemindahan Arsip',
-      to: '/maintenance/transfer-active-to-inactive-file',
-      icon: 'i-lucide-file-up',
-      showIfSekretarisOnly: true,
+      label: 'Tembusan BAC',
+      to: '/maintenance/tembusan-bac',
+      icon: 'i-lucide-copy',
+      showIfEvpOrAbove: true,
     },
     {
       label: 'Penerimaan Usulan',
       to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
       showIfTuRole: true,
-      badge:
-        kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
+      badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
     },
     {
       label: 'Penataan Arsip Inaktif',
@@ -2154,12 +2168,11 @@ const userMenuKelola = computed(() => {
           : null,
     },
     {
-      label: 'Verifikasi Usulan',
+      label: 'Pemindahan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
-      showIfAtasan: true,
-      badge:
-        kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
+      showIfAtasanSekretaris: true,
+      badge: kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
     },
   ];
 
@@ -2233,9 +2246,7 @@ const userMenuKelola = computed(() => {
       icon: 'i-lucide-list',
       showIfTuRole: true,
       badge:
-        kelolaCounts.value.pengajuanPenyusutan > 0
-          ? kelolaCounts.value.pengajuanPenyusutan
-          : null,
+        kelolaCounts.value.pengajuanPenyusutan > 0 ? kelolaCounts.value.pengajuanPenyusutan : null,
     },
     {
       label: 'Penataan & Pemusnahan',
@@ -2243,9 +2254,7 @@ const userMenuKelola = computed(() => {
       icon: 'i-lucide-archive',
       showIfTuRole: true,
       badge:
-        kelolaCounts.value.penataanPemusnahan > 0
-          ? kelolaCounts.value.penataanPemusnahan
-          : null,
+        kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
     },
     {
       label: 'Verifikasi Penyusutan',
@@ -2349,6 +2358,15 @@ const filterMenuByPermission = (items) => {
       return null;
     }
 
+    // Pemindahan adalah halaman verifikasi untuk atasan workflow Sekretaris
+    // Divisi, bukan menu untuk atasan Unit Dokumen/TU.
+    if (
+      cloned.showIfAtasanSekretaris &&
+      (!isAtasanManagerialUsulan.value || isAtasanManagerialTuUsulan.value)
+    ) {
+      return null;
+    }
+
     // Cek showIfAtasanTu — tampilkan HANYA jika user adalah Atasan Managerial TU
     // (terdaftar di tuApprovalLevels suatu usulan). Menu ini untuk verifikasi
     // persetujuan penerimaan arsip dari TU, bukan verifikasi usulan sekretaris.
@@ -2364,6 +2382,15 @@ const filterMenuByPermission = (items) => {
 
     // Penandatangan BAC hanya tampil untuk EVP atau pejabat yang lebih tinggi.
     if (cloned.showIfEvpOrAbove && !isEvpOrAbovePosition.value) {
+      return null;
+    }
+
+    // Pemindahan Arsip Aktif ke Inaktif adalah workspace khusus Sekretaris
+    // Divisi, bukan menu untuk atasan managerial atau admin.
+    if (
+      cloned.showIfDivisionSecretary &&
+      !isDivisionSecretaryPosition.value
+    ) {
       return null;
     }
 

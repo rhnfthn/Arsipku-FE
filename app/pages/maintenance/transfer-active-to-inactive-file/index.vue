@@ -2,10 +2,7 @@
   <div class="bg-gray-50 dark:bg-gray-900 pt-5 min-h-screen px-5">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-      <PageHeader
-        title="Pemindahan Arsip Aktif ke Inaktif"
-        :items="items"
-      />
+      <PageHeader title="Pemindahan Arsip Aktif ke Inaktif" :items="items" />
       <!-- Tombol Usul Pindah Arsip disembunyikan sementara. -->
       <!--
       <button
@@ -193,8 +190,15 @@
           <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
         </template>
         <template #cell-kodeBerkas="{ row }">
-          <div class="truncate font-medium text-gray-700 dark:text-gray-200" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
-          <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
+          <div
+            class="truncate font-medium text-gray-700 dark:text-gray-200"
+            :title="row.kodeBerkas ?? '-'"
+          >
+            {{ row.kodeBerkas ?? '-' }}
+          </div>
+          <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">
+            {{ row.nomorUsulan }}
+          </div>
         </template>
         <template #cell-klasifikasi="{ row }">
           <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
@@ -203,12 +207,15 @@
           <span class="whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</span>
         </template>
         <template #cell-status="{ row }">
-          <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{ statusLabel(row.status as any) }}</span>
+          <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{
+            statusLabel(row.status as any)
+          }}</span>
           <span
             v-if="!row.isUsulan && row.berkasStatus === 'retensi_inaktif'"
             class="ml-1 px-2 py-0.5 text-[11px] rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
             title="Berkas sudah masuk fase retensi inaktif"
-          >Retensi Inaktif</span>
+            >Retensi Inaktif</span
+          >
         </template>
         <template #cell-aksi="{ row }">
           <div class="text-center" @click.stop>
@@ -309,7 +316,7 @@ import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'division-secretary-only'] });
 
 const showExportModal = ref(false);
 const exportColumns = ref([
@@ -317,16 +324,19 @@ const exportColumns = ref([
   { key: 'kodeBerkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
   { key: 'perihal', label: 'Nama Berkas', desc: 'Perihal atau nama berkas' },
   { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
-  { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', desc: 'Tanggal batas retensi aktif habis' },
+  {
+    key: 'tanggalRetensiAktifHabis',
+    label: 'Retensi Habis',
+    desc: 'Tanggal batas retensi aktif habis',
+  },
   { key: 'atasanName', label: 'Atasan', desc: 'Nama atasan penilai' },
   { key: 'status', label: 'Status', desc: 'Status usulan pemindahan' },
-  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' }
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' },
 ]);
 
 const { apiGet, apiPost } = useApi();
 const { send, fetchDetail } = useTransferActiveToInactive();
 const { user, isSuperadmin, isAdmin } = useAuth();
-
 
 /** Baris gabungan (arsip belum usulan + usulan sudah dibuat). */
 interface GabunganRow {
@@ -440,7 +450,8 @@ const onSignBacSubmit = async (payload: { method: string; passphrase?: string })
     console.error('Gagal TTE BAC:', e);
     useToast().add({
       title: 'Gagal menandatangani Berita Acara',
-      description: e?.response?.data?.message || e?.message || 'Periksa passphrase Anda dan coba kembali.',
+      description:
+        e?.response?.data?.message || e?.message || 'Periksa passphrase Anda dan coba kembali.',
       color: 'error',
     });
   } finally {
@@ -486,7 +497,7 @@ const openRowsPerPage = ref(false);
 const openFilterStatus = ref(false);
 const openFilterKlasifikasi = ref(false);
 const statusFilterLabel = computed(
-  () => statusOptions.find((o) => o.value === filter.status)?.label ?? 'Semua Status',
+  () => statusOptions.find((o) => o.value === filter.status)?.label ?? 'Semua Status'
 );
 const klasifikasiLabel = computed(() => {
   if (!filter.klasifikasi) return 'Semua Klasifikasi';
@@ -529,13 +540,12 @@ function handleDocumentClick(e: MouseEvent) {
   for (const el of Array.from(els)) {
     if (el.contains(target)) return;
   }
-  openRowsPerPage.value =
-    openFilterStatus.value =
-    openFilterKlasifikasi.value =
-      false;
+  openRowsPerPage.value = openFilterStatus.value = openFilterKlasifikasi.value = false;
 }
 
-const totalPages = computed(() => Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value)));
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value))
+);
 
 const paginatedList = computed(() => {
   let list = gabunganList.value;
@@ -570,7 +580,10 @@ const isSekretaris = computed(() => {
 const items = [
   { label: 'Beranda', to: '/' },
   { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
-  { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
+  {
+    label: 'Pemindahan Arsip Aktif ke Inaktif',
+    to: '/maintenance/transfer-active-to-inactive-file',
+  },
 ];
 
 const loadGabungan = async () => {
@@ -580,7 +593,11 @@ const loadGabungan = async () => {
     if (filter.search) params.search = filter.search;
     if (filter.status) params.status = filter.status;
     if (filter.klasifikasi) params.klasifikasi = filter.klasifikasi;
-    const res: any = await apiGet('/transfer-active-to-inactive/gabungan', { params }, { skipCache: true });
+    const res: any = await apiGet(
+      '/transfer-active-to-inactive/gabungan',
+      { params },
+      { skipCache: true }
+    );
     // Normalize ke plain object agar DataTable tidak menerima reactive proxy
     // (menyebabkan warning "_isVue"/"constructor" saat render).
     const raw: any[] = res?.data ?? [];
@@ -622,7 +639,11 @@ const isExporting = ref(false);
 
 const onExport = () => {
   if (gabunganList.value.length === 0) {
-    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    useToast().add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
     return;
   }
   showExportModal.value = true;
@@ -638,7 +659,8 @@ const handleExportConfirm = (selectedKeys: string[]) => {
       if (selectedKeys.includes('kodeBerkas')) row['Kode Berkas'] = r.kodeBerkas || '-';
       if (selectedKeys.includes('perihal')) row['Nama Berkas'] = r.perihal || '-';
       if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = r.klasifikasi || '-';
-      if (selectedKeys.includes('tanggalRetensiAktifHabis')) row['Retensi Habis'] = r.tanggalRetensiAktifHabis || '-';
+      if (selectedKeys.includes('tanggalRetensiAktifHabis'))
+        row['Retensi Habis'] = r.tanggalRetensiAktifHabis || '-';
       if (selectedKeys.includes('atasanName')) row['Atasan'] = r.atasanName || '-';
       if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
       if (selectedKeys.includes('tanggal')) row['Tanggal'] = r.tanggal || '-';
@@ -647,7 +669,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
     }));
     worksheet['!cols'] = colWidths;
 
@@ -655,15 +677,23 @@ const handleExportConfirm = (selectedKeys: string[]) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Pemindahan Arsip');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     saveAs(blob, `pemindahan_arsip_aktif_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
     showExportModal.value = false;
-    useToast().add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
+    useToast().add({
+      title: 'Berhasil',
+      description: `${data.length} data berhasil diexport`,
+      color: 'success',
+    });
   } catch (err) {
     console.error('Export pemindahan arsip aktif error:', err);
-    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+    useToast().add({
+      title: 'Gagal export',
+      description: 'Terjadi kesalahan saat export.',
+      color: 'error',
+    });
   } finally {
     isExporting.value = false;
   }

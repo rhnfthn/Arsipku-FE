@@ -97,7 +97,7 @@ import { useApi } from '~/composables/useApi';
 import { useAuth } from '~/composables/useAuth';
 import { formatDate } from '~/utils/transfer-status';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'evp-or-above'] });
 
 interface SigningRow {
   id: string;

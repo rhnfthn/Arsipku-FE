@@ -1,14 +1,20 @@
 <template>
-  <div class="space-y-5">
+  <div class="flex flex-col gap-5">
     <!-- Card 1: Informasi Usulan + Keterangan + Total Arsip -->
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+    <div class="order-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
-        <div class="flex items-center gap-2">
-          <span :class="verifikasiStatusBadge(usulan.status)">{{ verifikasiStatusLabel(usulan.status) }}</span>
-        </div>
+        <button
+          type="button"
+          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          @click="infoOpen = !infoOpen"
+          :title="infoOpen ? 'Lipat Informasi Usulan' : 'Buka Informasi Usulan'"
+          :aria-expanded="infoOpen"
+        >
+          <UIcon :name="infoOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 text-gray-400" />
+        </button>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div v-show="infoOpen" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ usulan.nomorUsulan }}</p>
@@ -16,6 +22,10 @@
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Usulan</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ formatVerifikasiDate(usulan.tanggalUsulan) }}</p>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
+          <p class="mt-1"><span :class="verifikasiStatusBadge(usulan.status)">{{ verifikasiStatusLabel(usulan.status) }}</span></p>
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
@@ -45,17 +55,17 @@
           <p class="text-gray-900 dark:text-white font-medium">{{ usulan.arsipPerihal }}</p>
         </div>
       </div>
-      <div v-if="usulan.rejectedNote" class="mt-4">
+      <div v-if="infoOpen && usulan.rejectedNote" class="mt-4">
         <span class="text-gray-500 dark:text-gray-400 text-xs">Catatan Penolakan</span>
         <p class="text-red-600 dark:text-red-400 text-sm mt-1 bg-red-50 dark:bg-red-900/20 p-2 rounded">{{ usulan.rejectedNote }}</p>
       </div>
-      <div v-if="usulan.verifyNote" class="mt-2">
+      <div v-if="infoOpen && usulan.verifyNote" class="mt-2">
         <span class="text-gray-500 dark:text-gray-400 text-xs">Catatan Verifikasi</span>
         <p class="text-gray-700 dark:text-gray-300 text-sm mt-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">{{ usulan.verifyNote }}</p>
       </div>
 
       <!-- Keterangan -->
-      <div v-if="usulan.keterangan" class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div v-if="infoOpen && usulan.keterangan" class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
         <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Keterangan</h4>
         <p class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg italic">
           {{ usulan.keterangan }}
@@ -63,15 +73,18 @@
       </div>
     </div>
 
-    <!-- Card 2: Daftar Arsip yang Akan Dipindahkan -->
+    <!-- Card 2: Daftar Berkas yang Akan Dipindahkan -->
     <div
       v-if="daftarArsip && daftarArsip.length > 0"
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+      class="order-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-        Daftar Arsip({{ daftarArsip.length }})
-      </h3>
-      <div class="space-y-1.5">
+      <button type="button" class="flex w-full items-center justify-between gap-3 text-left" @click="berkasOpen = !berkasOpen">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+          Daftar Berkas ({{ daftarArsip.length }})
+        </h3>
+        <UIcon :name="berkasOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 text-gray-400" />
+      </button>
+      <div v-show="berkasOpen" class="mt-4 space-y-1.5">
         <div
           v-for="(a, idx) in daftarArsip"
           :key="idx"
@@ -99,10 +112,13 @@
     <!-- Card: Daftar Atasan Verifikasi (Berjenjang) — sisi Atasan Managerial Sekretaris -->
     <div
       v-if="usulan.approvalLevels && usulan.approvalLevels.length > 0"
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+      class="order-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi</h3>
-      <div class="space-y-2">
+      <button type="button" class="flex w-full items-center justify-between gap-3 text-left" @click="atasanOpen = !atasanOpen">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Atasan Verifikasi</h3>
+        <UIcon :name="atasanOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 text-gray-400" />
+      </button>
+      <div v-show="atasanOpen" class="mt-4 space-y-2">
         <div
           v-for="level in usulan.approvalLevels"
           :key="level.id"
@@ -126,6 +142,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import type { VerifikasiUsulanItem } from '~/types/verifikasi-usulan';
 import {
   verifikasiStatusBadge,
@@ -137,6 +154,10 @@ const props = defineProps<{
   usulan: VerifikasiUsulanItem;
   daftarArsip?: any[];
 }>();
+
+const infoOpen = ref(true);
+const atasanOpen = ref(true);
+const berkasOpen = ref(true);
 
 const levelStatusClass = (status: string): string => {
   if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
