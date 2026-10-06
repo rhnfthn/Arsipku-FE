@@ -52,10 +52,13 @@
                 <button
                   @click="$emit('detail', row)"
                   :title="needsVerification(row.status) ? 'Verifikasi' : 'Detail'"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
+                  :class="needsVerification(row.status)
+                    ? 'rounded-md bg-primary text-white hover:bg-primary-800'
+                    : 'text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300'"
+                  class="inline-flex h-8 w-8 items-center justify-center transition-colors"
                 >
                   <UIcon v-if="needsVerification(row.status)" name="i-lucide-file-check-2" class="w-4 h-4" />
-                  <UIcon v-else name="i-heroicons-eye" class="w-4 h-4" />
+                  <UIcon v-else name="i-lucide-eye" class="w-4 h-4" />
                 </button>
               </td>
             </tr>
@@ -99,17 +102,10 @@ const isSelesai = (s: VerifikasiStatus) =>
   s === 'SELESAI';
 
 /** Status yang masih butuh aksi verifikasi (bukan hanya lihat detail). */
+// Setelah usulan dipindahkan atau menunggu TTD BAC, baris hanya dibaca.
 const needsVerification = (s: VerifikasiStatus) =>
   s === 'MENUNGGU_VERIFIKASI_ATASAN' ||
   s === 'DISETUJUI_ATASAN' ||
   s === 'MENUNGGU_VERIFIKASI_TERAKHIR' ||
-  s === 'DISETUJUI_VERIFIKASI_TERAKHIR' ||
-  s === 'USUL_PINDAH_DIKIRIM' ||
-  s === 'SIAPKAN_BERKAS_FISIK' ||
-  s === 'DIKIRIM' ||
-  s === 'MENUNGGU_VERIFIKASI_BERKAS_FISIK' ||
-  s === 'BERKAS_FISIK_SESUAI' ||
-  s === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU' ||
-  s === 'DISETUJUI_PERSETUJUAN_TU' ||
-  s === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU';
+  s === 'DISETUJUI_VERIFIKASI_TERAKHIR';
 </script>

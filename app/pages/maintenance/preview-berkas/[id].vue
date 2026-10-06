@@ -83,51 +83,53 @@
         </div>
       </div>
 
-      <!-- Daftar Naskah -->
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div class="flex flex-col gap-3 border-b border-gray-200 p-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
+      <!-- Daftar Isi Berkas -->
+      <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex flex-col gap-3 px-5 pb-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-3">
-            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/30">
-              <UIcon name="i-lucide-file-text" class="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            </span>
             <div>
               <h2 class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
-                Daftar Naskah
+                Daftar Isi Berkas
                 <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ naskahList.length }}</span>
               </h2>
             </div>
           </div>
         </div>
         <DataTable
-          :columns="naskahColumns"
-          :rows="naskahList"
+          :columns="daftarIsiColumns"
+          :rows="daftarIsiRows"
           :loading="loading"
-          empty-message="Belum ada naskah dalam berkas ini."
+          empty-message="Belum ada isi berkas."
+          header-class="bg-[#457fb6] text-white text-left"
+          row-class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
         >
-          <template #cell-nomorSurat="{ row }">
-            <div class="min-w-40">
-              <p class="font-mono text-xs font-semibold text-gray-900 dark:text-white">{{ row.nomorSurat || row.nomor || '-' }}</p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.tanggalNaskah || row.tanggal) }}</p>
-            </div>
+          <template #cell-nomorBerkas="{ row }">
+            <p class="font-mono text-xs font-semibold text-gray-900 dark:text-white">{{ row.nomorBerkas }}</p>
           </template>
-          <template #cell-perihal="{ row }">
-            <p class="min-w-64 max-w-xl font-medium text-gray-800 dark:text-gray-200">{{ row.perihal || 'Tanpa perihal' }}</p>
+          <template #cell-kodeKlasifikasi="{ row }">
+            <p class="text-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi }}</p>
           </template>
-          <template #cell-naskahTipe="{ row }">
-            <span class="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">{{ row.naskahTipe || row.jenis || '-' }}</span>
+          <template #cell-uraianInformasi="{ row }">
+            <p class="min-w-64 max-w-xl font-medium text-gray-800 dark:text-gray-200">{{ row.uraianInformasi }}</p>
           </template>
-          <template #cell-sumber="{ row }">
-            <span class="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300">
-              <UIcon :name="row.sumber === 'terkirim' ? 'i-lucide-send' : 'i-lucide-inbox'" class="h-3.5 w-3.5" />
-              {{ row.sumber === 'terkirim' ? 'Terkirim' : 'Kotak Masuk' }}
-            </span>
+          <template #cell-tanggal="{ row }">
+            <p class="whitespace-nowrap text-gray-600 dark:text-gray-300">{{ formatDate(row.tanggal) }}</p>
+          </template>
+          <template #cell-jumlah="{ row }">
+            <p class="text-center text-gray-600 dark:text-gray-300">{{ row.jumlah }}</p>
+          </template>
+          <template #cell-lokasiSimpan="{ row }">
+            <p class="text-gray-600 dark:text-gray-300">{{ row.lokasiSimpan }}</p>
+          </template>
+          <template #cell-klasifikasiKeamanan="{ row }">
+            <p class="text-gray-600 dark:text-gray-300">{{ row.klasifikasiKeamanan }}</p>
           </template>
           <template #cell-aksi="{ row }">
             <button
               type="button"
-              @click="openNaskahPdf(row)"
-              class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
-              title="Lihat naskah"
+              @click="openNaskahPdf(row.naskah)"
+              class="inline-flex p-1 text-[##000000] transition-colors hover:text-[#3a6d9c]"
+              title="Lihat isi berkas"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </button>
@@ -252,6 +254,7 @@ const breadcrumbItems = computed(() => {
 });
 
 const naskahList = ref<any[]>([]);
+const daftarIsiMetadata = ref<any>(null);
 const isArchived = ref(false);
 const isMusnah = ref(false);
 const loading = ref(true);
@@ -325,13 +328,28 @@ const openNaskahPdf = async (naskah: any) => {
   }
 };
 
-const naskahColumns = [
-  { key: 'nomorSurat', label: 'Nomor & Tanggal' },
-  { key: 'perihal', label: 'Perihal' },
-  { key: 'naskahTipe', label: 'Jenis' },
-  { key: 'sumber', label: 'Sumber' },
-  { key: 'aksi', label: 'Aksi' },
+const daftarIsiColumns = [
+  { key: 'nomorBerkas', label: 'Nomor Berkas', headerClass: 'text-center' },
+  { key: 'kodeKlasifikasi', label: 'Kode Klasifikasi', headerClass: 'text-center' },
+  { key: 'uraianInformasi', label: 'Uraian Informasi Isi Berkas', headerClass: 'text-center' },
+  { key: 'tanggal', label: 'Tanggal', headerClass: 'text-center' },
+  { key: 'jumlah', label: 'Jumlah', headerClass: 'text-center' },
+  { key: 'lokasiSimpan', label: 'Lokasi Simpan', headerClass: 'text-center' },
+  { key: 'klasifikasiKeamanan', label: 'Klasifikasi Keamanan', headerClass: 'text-center' },
+  { key: 'aksi', label: 'Aksi', headerClass: 'text-center' },
 ];
+
+const daftarIsiRows = computed(() => naskahList.value.map((naskah, index) => ({
+  id: naskah.id ?? naskah.naskahId ?? index,
+  nomorBerkas: daftarIsiMetadata.value?.kode || berkas.value?.kodeBerkas || '-',
+  kodeKlasifikasi: daftarIsiMetadata.value?.kodeKlasifikasi || berkas.value?.klasifikasi || '-',
+  uraianInformasi: naskah.perihal || naskah.nomorSurat || 'Tanpa uraian',
+  tanggal: naskah.tanggalNaskah || naskah.tanggal || daftarIsiMetadata.value?.tanggal || null,
+  jumlah: 1,
+  lokasiSimpan: daftarIsiMetadata.value?.lokasiSimpan || berkas.value?.lokasiSimpan || berkas.value?.lokasi || '-',
+  klasifikasiKeamanan: daftarIsiMetadata.value?.klasifikasiKeamanan || berkas.value?.klasifikasiKeamanan || berkas.value?.keamanan || '-',
+  naskah,
+})));
 
 const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
   aktif: { label: 'Terbuka', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
@@ -442,6 +460,15 @@ onMounted(async () => {
         if (usulanRes?.data?.status) {
           usulanStatus.value = usulanRes.data.status;
         }
+
+        // Samakan metadata tabel preview dengan Daftar Isi Berkas pada halaman usulan.
+        const daftarIsiRes: any = await apiGet(
+          `/transfer-active-to-inactive/${usulanId}/daftar-isi`,
+          {},
+          { skipCache: true },
+        );
+        const rows = daftarIsiRes?.data?.daftarIsi ?? [];
+        daftarIsiMetadata.value = rows.find((row: any) => row.id === id) ?? rows[0] ?? null;
       } catch {
         // Ignore — fallback to berkas status
       }
