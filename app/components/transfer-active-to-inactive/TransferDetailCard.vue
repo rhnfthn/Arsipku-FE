@@ -65,33 +65,76 @@
       </div>
     </div>
 
-    <!-- Card 2: Daftar Arsip yang Akan Dipindahkan -->
+    <!-- Card 2: Daftar Berkas (format ringkasan untuk Sekretaris Divisi) -->
     <div
-      v-if="transfer.arsipIds && transfer.arsipIds.length > 0"
+      v-if="berkasRows.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
-      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-        Daftar Arsip({{ transfer.arsipIds.length }})
-      </h3>
-      <div class="space-y-1.5">
-        <div
-          v-for="(a, idx) in transfer.arsipIds"
-          :key="a.id"
-          class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-        >
-          <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm text-gray-900 dark:text-white truncate">{{ a.kode ?? '-' }} — {{ a.perihal }}</p>
-          </div>
-          <!-- Icon mata: lihat detail berkas -->
-          <NuxtLink
-            :to="`/maintenance/preview-berkas/${a.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=transfer`"
-            class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 shrink-0"
-            title="Lihat detail berkas"
+      <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+          Daftar Berkas ({{ berkasRows.length }})
+        </h3>
+        <div class="flex items-center gap-1 self-end sm:self-auto">
+          <button
+            type="button"
+            @click="printDaftarBerkas"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            title="Print Daftar Berkas"
+            aria-label="Print Daftar Berkas"
           >
-            <UIcon name="i-lucide-eye" class="w-4 h-4" />
-          </NuxtLink>
+            <UIcon name="i-lucide-printer" class="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            @click="berkasOpen = !berkasOpen"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            :title="berkasOpen ? 'Lipat Daftar Berkas' : 'Buka Daftar Berkas'"
+            :aria-expanded="berkasOpen"
+          >
+            <UIcon :name="berkasOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4" />
+          </button>
         </div>
+      </div>
+      <div v-show="berkasOpen" id="daftar-berkas-print" class="overflow-x-auto">
+        <table class="w-full min-w-[1280px] border-collapse rounded-xl border border-gray-200 text-xs dark:border-gray-700">
+          <thead>
+            <tr class="bg-[#457fb6] text-white">
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">No</span><span class="block">Berkas</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]">Uraian Informasi Berkas</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kurun</span><span class="block">Waktu</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Jumlah</span><span class="block">Berkas</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Tingkat</span><span class="block">Perkembangan</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Retensi Arsip</span><span class="block">Aktif</span></th>
+              <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in berkasRows" :key="row.id ?? idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
+              <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.kurunWaktu ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlahBerkas ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.tingkatPerkembangan ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.retensiArsipAktif ?? '-' }}</td>
+              <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
+                <NuxtLink
+                  v-if="row.id"
+                  :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=transfer`"
+                  class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
+                  title="Lihat detail berkas"
+                >
+                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                </NuxtLink>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -152,10 +195,49 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import type { TransferActiveToInactive, ApprovalLevel } from '~/types/transfer-active-to-inactive';
 import { statusBadgeClass, statusLabel, formatDate } from '~/utils/transfer-status';
 
-const props = defineProps<{ transfer: TransferActiveToInactive }>();
+const props = defineProps<{
+  transfer: TransferActiveToInactive;
+  daftarBerkas?: any[];
+}>();
+
+const berkasOpen = ref(true);
+
+const printDaftarBerkas = () => {
+  const el = document.getElementById('daftar-berkas-print');
+  if (!el) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Berkas</title><style>
+    body{font-family:Arial,sans-serif;padding:30px;color:#111}table{width:100%;border-collapse:collapse;font-size:12px}
+    th{background:#457fb6;color:#fff;border:1px solid #457fb6;padding:8px;text-align:center}
+    td{border:1px solid #d1d5db;padding:8px;vertical-align:top}.print-action{display:none}h2{text-align:center}
+  </style></head><body><h2>Daftar Berkas</h2>${el.innerHTML}</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); w.close(); }, 250);
+};
+
+const berkasRows = computed(() => {
+  if (props.daftarBerkas && props.daftarBerkas.length > 0) return props.daftarBerkas;
+  return (props.transfer.arsipIds ?? []).map((a, idx) => ({
+    no: idx + 1,
+    id: a.id,
+    kode: a.kode,
+    namaBerkas: a.perihal,
+    uraianInformasi: a.perihal,
+    kodeKlasifikasi: '-',
+    kurunWaktu: '-',
+    jumlahBerkas: '-',
+    tingkatPerkembangan: '-',
+    lokasiSimpan: '-',
+    klasifikasiKeamanan: '-',
+    retensiArsipAktif: a.tanggalRetensiHabis ? `Habis: ${a.tanggalRetensiHabis}` : '-',
+  }));
+});
 
 const levelStatusClass = (status: string): string => {
   if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';

@@ -15,7 +15,10 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+    <div
+      v-if="loading"
+      class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8"
+    >
       <div class="space-y-4 animate-pulse">
         <div class="h-6 w-48 rounded bg-gray-200 dark:bg-gray-700" />
         <div class="h-32 rounded bg-gray-200 dark:bg-gray-700" />
@@ -35,7 +38,9 @@
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
           >
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Berkas</h3>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                Informasi Berkas
+              </h3>
               <StatusBadge v-if="berkas.status" :status="berkas.status" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -64,7 +69,9 @@
             <div class="flex items-start gap-3">
               <UIcon name="i-lucide-clock" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
               <div>
-                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">Menunggu Verifikasi Atasan</h3>
+                <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-1">
+                  Menunggu Verifikasi Atasan
+                </h3>
                 <p class="text-sm text-blue-600 dark:text-blue-400">
                   Usulan dikirim ke {{ item.atasanName }}. Menunggu verifikasi.
                 </p>
@@ -110,7 +117,7 @@ import AjukanAtasanModal from '~/components/transfer-active-to-inactive/AjukanAt
 import StatusBadge from '~/components/StatusBadge.vue';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'division-secretary-only'] });
 
 const route = useRoute();
 const { getBerkasById } = useArsipDinamis();
@@ -128,13 +135,16 @@ const isAjukanModalOpen = ref(false);
 const breadcrumbItems = computed(() => [
   { label: 'Beranda', to: '/' },
   { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
-  { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
+  {
+    label: 'Pemindahan Arsip Aktif ke Inaktif',
+    to: '/maintenance/transfer-active-to-inactive-file',
+  },
   { label: item.value?.nomorUsulan ?? 'Usul Pindah Arsip' },
 ]);
 
 /** Form ajukan tampil jika: mode berkas (belum usulan) ATAU usulan masih DRAFT. */
-const showForm = computed(() =>
-  !loading.value && (berkas.value || (item.value && item.value.status === 'DRAFT')),
+const showForm = computed(
+  () => !loading.value && (berkas.value || (item.value && item.value.status === 'DRAFT'))
 );
 
 /** Metadata berkas untuk mode belum-usulan. */
@@ -144,12 +154,18 @@ const berkasMetadata = computed(() => {
   const fmt = (v: any) => {
     if (!v) return '-';
     const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    return Number.isNaN(d.getTime())
+      ? String(v)
+      : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   };
   return [
     { label: 'Nama Berkas', value: b.judulBerkas ?? '-' },
     { label: 'Kode Berkas', value: b.kodeBerkas ?? '-' },
-    { label: 'Klasifikasi', value: [b.klasifikasi, b.klasifikasiTeks ?? b.klasifikasi_text].filter(Boolean).join(' — ') || '-' },
+    {
+      label: 'Klasifikasi',
+      value:
+        [b.klasifikasi, b.klasifikasiTeks ?? b.klasifikasi_text].filter(Boolean).join(' — ') || '-',
+    },
     { label: 'Retensi Aktif', value: `${b.retensiAktifTahun ?? 0} Tahun` },
     { label: 'Retensi Inaktif', value: `${b.retensiInaktifTahun ?? 0} Tahun` },
     { label: 'Lokasi Fisik', value: b.lokasi ?? '-' },

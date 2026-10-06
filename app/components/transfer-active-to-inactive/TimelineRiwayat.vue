@@ -1,7 +1,10 @@
 <template>
   <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-    <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Timeline Riwayat</h3>
-    <div class="space-y-1">
+    <button type="button" class="flex w-full items-center justify-between gap-3 text-left" @click="isOpen = !isOpen">
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white">Timeline Riwayat</h3>
+      <UIcon :name="isOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 text-gray-400" />
+    </button>
+    <div v-show="isOpen" class="mt-4 space-y-1">
       <!-- Steps ditampilkan TERBALIK: paling baru (Selesai) di atas, paling lama (Draft) di bawah -->
       <div
         v-for="(step, i) in reversedSteps"
@@ -35,11 +38,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import { formatDate } from '~/utils/transfer-status';
 
 const props = defineProps<{ item: TransferActiveToInactive }>();
+const isOpen = ref(true);
 
 /** Mapping status → index step (0-4). */
 const stepIndex = computed(() => {

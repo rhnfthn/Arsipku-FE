@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader
-        :title="`Detail Usulan ${usulan?.nomorUsulan ?? ''}`"
+        :title="`Detail Pemindahan ${usulan?.nomorUsulan ?? ''}`"
         :items="items"
       />
       <NuxtLink
@@ -38,55 +38,78 @@
         </div>
       </div>
 
-      <!-- 2-column layout: info+timeline+aksi (left) + timeline (right) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Left: Informasi Usulan + Timeline + Tombol Aksi (8/12) -->
-        <div class="lg:col-span-8 space-y-5">
-          <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarIsi" />
+      <!-- Alur detail satu kolom agar urutan verifikasi mudah diikuti. -->
+      <div class="mx-auto w-full max-w-none space-y-5">
+          <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarBerkas" />
 
-          <!-- ─── Card: Daftar Isi ─── -->
+          <!-- ─── Card: Daftar Isi Berkas ─── -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
-              <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
-              </button>
+            <div class="flex flex-col gap-3 mb-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Isi Berkas ({{ daftarIsi.length }})</h3>
+              <div class="flex items-center gap-1 self-end sm:self-auto">
+                <button
+                  type="button"
+                  @click="printDaftarIsi"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  title="Print Daftar Isi Berkas"
+                  aria-label="Print Daftar Isi Berkas"
+                >
+                  <UIcon name="i-lucide-printer" class="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  @click="daftarIsiOpen = !daftarIsiOpen"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  :title="daftarIsiOpen ? 'Lipat Daftar Isi Berkas' : 'Buka Daftar Isi Berkas'"
+                  :aria-expanded="daftarIsiOpen"
+                >
+                  <UIcon :name="daftarIsiOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <div id="daftar-isi-print" class="text-sm">
-              <p class="font-semibold text-gray-900 dark:text-white mb-3">{{ usulan.nomorUsulan }}</p>
-              <table class="w-full border-collapse text-xs">
-                <thead>
-                  <tr class="border-b-2 border-gray-300 dark:border-gray-500">
-                    <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
-                    <th class="text-center py-2 px-2 text-gray-500 w-16">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                    <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
-                      <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
-                      {{ d.namaBerkas }}
-                    </td>
-                    <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
-                    <td class="text-center py-2 px-2">
-                      <NuxtLink
-                        v-if="d.id"
-                        :to="`/maintenance/preview-berkas/${d.id}?nomor_usulan=${usulan?.nomorUsulan ?? ''}&usulan_id=${usulan?.id ?? ''}`"
-                        class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
-                        title="Lihat detail berkas"
-                      >
-                        <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                      </NuxtLink>
-                    </td>
-                  </tr>
-                  <tr v-if="daftarIsi.length === 0">
-                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div v-show="daftarIsiOpen" id="daftar-isi-print" class="text-sm overflow-x-auto">
+                <table class="w-full min-w-[1280px] border-collapse rounded-xl border border-gray-200 text-xs dark:border-gray-700">
+                  <thead>
+                    <tr class="bg-[#457fb6] text-white">
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Nomor</span><span class="block">Berkas</span></th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Nomor</span><span class="block">Item</span></th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Tingkat</span><span class="block">Perkembangan</span></th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
+                      <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+                      <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(d, idx) in daftarIsi" :key="idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
+                      <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ d.kode ?? '-' }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ d.kodeKlasifikasi ?? '-' }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ d.nomorItem ?? idx + 1 }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ d.uraianInformasi ?? d.namaBerkas ?? '-' }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatTanggalTabel(d.tanggal) }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.jumlah ?? d.jumlahBerkas ?? '-' }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.tingkatPerkembangan ?? '-' }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.lokasiSimpan ?? '-' }}</td>
+                      <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ d.klasifikasiKeamanan ?? '-' }}</td>
+                      <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
+                        <NuxtLink
+                          v-if="d.id"
+                          :to="`/maintenance/preview-berkas/${d.id}?nomor_usulan=${usulan?.nomorUsulan ?? ''}&usulan_id=${usulan?.id ?? ''}`"
+                          class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
+                          title="Lihat detail berkas"
+                        >
+                          <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                        </NuxtLink>
+                      </td>
+                    </tr>
+                    <tr v-if="daftarIsi.length === 0">
+                      <td colspan="10" class="border-b border-gray-200 px-3 py-8 text-center italic text-gray-400 dark:border-gray-700">Tidak ada isi berkas</td>
+                    </tr>
+                  </tbody>
+                </table>
             </div>
           </div>
 
@@ -95,9 +118,12 @@
             v-if="showBeritaAcara"
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
           >
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
-              <div class="flex gap-2">
+            <div class="flex flex-col gap-3 mb-3 sm:flex-row sm:items-center sm:justify-between">
+              <button type="button" class="flex min-w-0 flex-1 items-center gap-2 text-left" @click="beritaAcaraOpen = !beritaAcaraOpen">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
+                <UIcon :name="beritaAcaraOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 text-gray-400" />
+              </button>
+              <div class="flex flex-wrap gap-2">
                 <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
                 </button>
@@ -106,7 +132,7 @@
                 </button>
               </div>
             </div>
-            <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
+            <div v-show="beritaAcaraOpen" id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
               <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
               <p class="text-center text-xs mb-3">Nomor: {{ usulan.nomorUsulan }}</p>
               <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatDate(usulan.tanggalUsulan) }}</p>
@@ -160,8 +186,10 @@
             </div>
           </div>
 
+          <TimelineRiwayat :item="usulanToTransfer" />
+
           <!-- Tombol Aksi di bawah card verifikasi -->
-          <div v-if="canVerify || canFinalVerify || canKirimTU" class="flex items-center gap-2">
+          <div v-if="canVerify || canFinalVerify || canKirimTU" class="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               @click="openRejectModal"
               :disabled="actionLoading"
@@ -176,7 +204,7 @@
               class="px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white disabled:opacity-50 transition-colors"
             >
               <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-send" class="w-4 h-4 mr-1 inline" /> Kirim
+              <UIcon v-else name="i-lucide-check" class="w-4 h-4 mr-1 inline" /> Terima
             </button>
             <button
               v-if="canFinalVerify"
@@ -246,14 +274,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Right: Timeline Riwayat (4/12, sticky) -->
-        <div class="lg:col-span-4">
-          <div class="lg:sticky lg:top-5 space-y-5">
-            <TimelineRiwayat :item="usulanToTransfer" />
-          </div>
-        </div>
       </div>
     </template>
 
@@ -270,7 +290,7 @@
       v-model="isApproveModalOpen"
       :usulan="usulan"
       :title="approveMode === 'finalVerify' ? 'Konfirmasi Verifikasi Terakhir' : 'Konfirmasi Verifikasi'"
-      :confirm-label="approveMode === 'finalVerify' ? 'Pindah Usulan' : 'Kirim'"
+      :confirm-label="approveMode === 'finalVerify' ? 'Pindah Usulan' : 'Terima'"
       @confirm="onConfirmApprove"
     />
 
@@ -300,7 +320,7 @@ import type { VerifikasiUsulanItem, JenisUsulan } from '~/types/verifikasi-usula
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import { formatDate } from '~/utils/transfer-status';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'atasan-managerial-secretary-only'] });
 
 const route = useRoute();
 const { user } = useAuth();
@@ -330,9 +350,12 @@ const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
 const daftarIsi = ref<any[]>([]);
+const daftarBerkas = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 const checklistBerkasFisik = ref(false);
 const checklistBeritaAcara = ref(false);
+const daftarIsiOpen = ref(true);
+const beritaAcaraOpen = ref(true);
 
 const canSendToTU = computed(() => checklistBerkasFisik.value && checklistBeritaAcara.value);
 
@@ -349,12 +372,26 @@ const formatTanggalLengkap = (d: string | Date | null): string => {
   const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
 };
+const formatTanggalTabel = (d: string | Date | null | undefined): string => {
+  if (!d) return '-';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  if (Number.isNaN(date.getTime())) return String(d);
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
 
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
     daftarIsi.value = res?.data?.daftarIsi ?? [];
-  } catch { daftarIsi.value = []; }
+    daftarBerkas.value = res?.data?.daftarBerkas ?? [];
+  } catch {
+    daftarIsi.value = [];
+    daftarBerkas.value = [];
+  }
 };
 const loadBeritaAcaraData = async () => {
   try {
@@ -368,14 +405,14 @@ const printDaftarIsi = () => {
   if (!el) return;
   const w = window.open('', '_blank');
   if (!w) return;
-  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title><style>
+  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi Berkas</title><style>
     body{font-family:Arial,sans-serif;padding:30px;color:#111}
     .text-sm{font-size:13px}.text-xs{font-size:12px}.font-semibold{font-weight:600}
     .mb-3{margin-bottom:12px}.text-gray-500{color:#6b7280}.text-gray-600{color:#4b5563}
     .text-gray-700{color:#374151}.text-gray-400{color:#9ca3af}.text-center{text-align:center}
     .italic{font-style:italic}.w-full{width:100%}.w-8{width:32px}.w-10{width:40px}
     table{width:100%;border-collapse:collapse}
-    th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}
+    th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}.print-action{display:none}
     td{border-bottom:1px solid #f3f4f6;padding:8px}
     .px-2{padding-left:8px;padding-right:8px}.py-2{padding-top:8px;padding-bottom:8px}
     .py-4{padding-top:16px;padding-bottom:16px}input[type=checkbox]{width:16px;height:16px}p{margin:0}
@@ -462,7 +499,7 @@ const jenis = computed<JenisUsulan>(() => {
 
 const items = computed(() => [
   { label: 'Beranda', to: '/' },
-  { label: 'Verifikasi Usulan', to: '/maintenance/verifikasi-usulan' },
+  { label: 'Pemindahan', to: '/maintenance/verifikasi-usulan' },
   { label: usulan.value?.nomorUsulan ?? 'Detail', to: `/maintenance/verifikasi-usulan/${route.params.id}` },
 ]);
 

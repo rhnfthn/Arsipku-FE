@@ -24,10 +24,8 @@
 
     <!-- Content -->
     <template v-else-if="item">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Left: Informasi Usulan (8/12) -->
-        <div class="lg:col-span-8 space-y-5">
-          <TransferDetailCard :transfer="item" />
+      <div class="mx-auto w-full max-w-none space-y-5">
+          <TransferDetailCard :transfer="item" :daftar-berkas="daftarBerkas" />
 
           <!-- Catatan Penolakan (hanya jika DITOLAK_ATASAN) -->
           <div
@@ -180,18 +178,11 @@
               </div>
             </div>
 
-          </div>
-
-        <!-- Right: Timeline Riwayat (4/12, sticky) -->
-        <div class="lg:col-span-4">
-          <div class="lg:sticky lg:top-4 space-y-5">
-            <TimelineRiwayat :item="item" />
-          </div>
-        </div>
+          <TimelineRiwayat :item="item" />
       </div>
 
       <!-- Berita Acara Serah Terima (di bawah grid, lebar sama dengan kolom kiri) -->
-      <div v-if="showBeritaAcara" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]">
+      <div v-if="showBeritaAcara" class="mx-auto w-full max-w-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5 mt-5">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
           <div class="flex gap-2">
@@ -274,7 +265,7 @@
       <!-- Pengingat Persiapan Berkas (di bawah Berita Acara) -->
       <div
         v-if="item && (item.status === 'DISETUJUI_VERIFIKASI_TERAKHIR' || item.status === 'DIKIRIM')"
-        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
+        class="mx-auto w-full max-w-none bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
           <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
@@ -290,7 +281,7 @@
       <!-- Menunggu Penerimaan (di bawah Pengingat) -->
       <div
         v-if="item && item.status === 'DIKIRIM'"
-        class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
+        class="mx-auto w-full max-w-none bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
           <UIcon name="i-lucide-clock" class="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
@@ -306,7 +297,7 @@
       <!-- Card Persetujuan Terakhir Atasan TU (untuk atasan managerial TU) -->
       <div
         v-if="item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
-        class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5 lg:max-w-[calc(66.666%-10px)]"
+        class="mx-auto w-full max-w-none bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-sm p-5 mt-5"
       >
         <div class="flex items-start gap-3">
           <UIcon name="i-lucide-check-check" class="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
@@ -550,6 +541,7 @@ const catatanSetujuiTerakhir = ref('');
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
 const daftarIsi = ref<any[]>([]);
+const daftarBerkas = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 
 const items = computed(() => [
@@ -614,8 +606,10 @@ const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
     daftarIsi.value = res?.data?.daftarIsi ?? [];
+    daftarBerkas.value = res?.data?.daftarBerkas ?? [];
   } catch (e) {
     daftarIsi.value = [];
+    daftarBerkas.value = [];
   }
 };
 
