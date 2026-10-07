@@ -260,8 +260,15 @@ export const useAuth = () => {
     return newAccessToken as string;
   };
 
-
   const hasPermission = (resource: string, action: string): boolean => {
+    if (
+      resource === 'tugas' &&
+      (user.value?.active_profile === 'sekretaris' ||
+        ['PT', 'PH', 'PS', 'VI', 'SE'].includes(
+          String(user.value?.position_status ?? '').toUpperCase()
+        ))
+    )
+      return false;
     const perms = user.value?.activePermissions || [];
 
     return perms.some((p: ActivePermission) => {
