@@ -361,6 +361,7 @@ const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCount
 const { counts: usulanCounts, fetchCounts: fetchUsulanCounts } = useUsulanAksesBerkasCounts();
 const { counts: shareCounts, fetchCounts: fetchShareCounts } = useNaskahShareCounts();
 const { unreadCount, fetchInboxCount } = useInboxCount();
+const { tertundaCount, fetchTertundaCount } = useTertundaCount();
 // Badge count draf di child menu Draf (Korespondensi & Naskah Lainnya).
 const {
   korespondensiDraftCount,
@@ -667,6 +668,8 @@ onMounted(async () => {
     }
     // Fetch share diterima counts untuk badge sidebar
     if (hasPermission('naskah-share', 'read')) fetchShareCounts().catch(() => {});
+    // Fetch jumlah naskah tertunda untuk badge sidebar
+    if (hasPermission('utama.tertunda', 'read')) fetchTertundaCount().catch(() => {});
     // Fetch draf counts untuk badge child menu Draf
     if (hasPermission('utama.draft', 'read')) {
       fetchDraftCounts().catch(() => {});
@@ -946,6 +949,7 @@ const userMenuUtama = computed(() => [
     to: '/korespondensi/tertunda',
     icon: 'i-lucide-file-clock',
     permission: { resource: 'utama.tertunda', action: 'read' },
+    badge: tertundaCount.value > 0 ? tertundaCount.value : null,
   },
   {
     ...sdeMasalMenu.value,
@@ -1217,6 +1221,7 @@ const adminMenuUtama = computed(() => [
     to: '/korespondensi/tertunda',
     icon: 'i-lucide-file-clock',
     permission: { resource: 'utama.tertunda', action: 'read' },
+    badge: tertundaCount.value > 0 ? tertundaCount.value : null,
   },
   {
     ...sdeMasalMenu.value,

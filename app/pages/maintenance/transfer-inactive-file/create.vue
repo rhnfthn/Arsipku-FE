@@ -27,7 +27,7 @@
             <input
               v-model="atasanSearch"
               type="text"
-              :placeholder="atasanLoading ? 'Memuat data atasan...' : 'Ketik nama atau persnum atasan...'"
+              :placeholder="atasanLoading ? 'Memuat data atasan...' : 'Ketik nama atau e-NIK atasan...'"
               :disabled="atasanLoading"
               @focus="atasanDropdownOpen = true"
               @input="onAtasanSearchInput"

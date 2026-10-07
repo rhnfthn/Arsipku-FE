@@ -188,6 +188,10 @@ export function useInbox() {
       const payload: any = { id_sirkulasi: idToSend, flag_type: flagType };
       if (flagType === "note" && noteText !== undefined) {
         payload.note_text = noteText;
+        // Set nilai flag secara eksplisit: catatan dengan teks = aktif (1),
+        // kosong = nonaktif (0). Tanpa ini BE toggle 1→0 sehingga catatan
+        // yang sudah ada hilang saat diperbarui.
+        payload.new_value = !!(noteText && noteText.trim().length > 0);
       }
       await apiPatch("/naskah_sirkulasi/toggle-flag", payload);
     } catch (err) {

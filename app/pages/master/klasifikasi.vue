@@ -1387,7 +1387,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
 const onExport = () => {
-  if (!klasifikasiList.value.length) {
+  if (!filteredKlasifikasi.value.length) {
     showToast({
       title: locale.value === 'id' ? 'Tidak ada data' : 'No Data',
       message: t('ka_export_empty'),
@@ -1440,7 +1440,7 @@ const toggleColumn = (key: string) => {
 const handleExportConfirm = () => {
   const selectedKeys = selectedExportColumns.value;
   if (selectedKeys.length === 0) return;
-  const excelData = klasifikasiList.value.map((item, index) => {
+  const excelData = filteredKlasifikasi.value.map((item, index) => {
     const row: Record<string, any> = {};
     if (selectedKeys.includes('No')) row['No'] = index + 1;
     if (selectedKeys.includes('kode')) row[t('ka_kode')] = item.klasifikasi;

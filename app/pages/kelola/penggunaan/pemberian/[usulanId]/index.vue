@@ -131,7 +131,7 @@ const getProgressLabel = (detail: any): string => getAksesProgressLabel(detail);
               <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-200 text-[9px] font-semibold text-primary-700 dark:bg-primary-800 dark:text-primary-300">
                 {{ (p.nama || String(p.persnum)).charAt(0).toUpperCase() }}
               </span>
-              <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
+              <span>{{ p.nama || `e-NIK ${p.persnum}` }}</span>
               <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
             </span>
           </div>
@@ -192,7 +192,7 @@ const getProgressLabel = (detail: any): string => getAksesProgressLabel(detail);
                   {{ (v.nama || String(v.persnum)).charAt(0).toUpperCase() }}
                 </span>
                 <div class="min-w-0">
-                  <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `Persnum ${v.persnum}` }}</p>
+                  <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `e-NIK ${v.persnum}` }}</p>
                   <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.level_jabatan }}<span v-if="v.divisi_nama"> · {{ v.divisi_nama }}</span></p>
                 </div>
               </div>
@@ -207,7 +207,7 @@ const getProgressLabel = (detail: any): string => getAksesProgressLabel(detail);
                   {{ (v.nama || String(v.persnum)).charAt(0).toUpperCase() }}
                 </span>
                 <div class="min-w-0">
-                  <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `Persnum ${v.persnum}` }}</p>
+                  <p class="text-xs font-medium text-gray-900 dark:text-white truncate">{{ v.nama || `e-NIK ${v.persnum}` }}</p>
                   <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ v.jabatan || v.level_jabatan }}<span v-if="v.divisi_nama"> · {{ v.divisi_nama }}</span></p>
                 </div>
               </div>
@@ -279,7 +279,7 @@ const getProgressLabel = (detail: any): string => getAksesProgressLabel(detail);
                 </span>
               </div>
               <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {{ step.verifier_nama || `Persnum ${step.verifier_persnum}` }}<span v-if="step.verifier_jabatan"> · {{ step.verifier_jabatan }}</span> · {{ formatDate(step.verified_at) }}
+                {{ step.verifier_nama || `e-NIK ${step.verifier_persnum}` }}<span v-if="step.verifier_jabatan"> · {{ step.verifier_jabatan }}</span> · {{ formatDate(step.verified_at) }}
               </div>
               <div v-if="step.catatan" class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ step.catatan }}</div>
               <div v-if="step.catatan_revisi" class="mt-1 text-sm text-orange-600 dark:text-orange-400">Revisi: {{ step.catatan_revisi }}</div>

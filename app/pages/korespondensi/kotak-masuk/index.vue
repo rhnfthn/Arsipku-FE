@@ -68,7 +68,17 @@ const handleShare = (mail: any) => {
     toast.add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
     return;
   }
-  shareNaskah.value = mail;
+  shareNaskah.value = {
+    ...mail,
+    // Map ke field yang dipakai ShareModal (perihal/nomor/jenis)
+    // mail.subject dari useInbox = it.perihal
+    // mail.nomor dari useInbox = it.nomor (fallback ke raw)
+    // mail.category dari useInbox = it.jenis
+    naskahId: mail.naskahId,
+    perihal: mail.subject || mail.perihal || mail.judul || '',
+    nomor: mail.nomor || '',
+    jenis: mail.category || mail.jenis || mail.category_label || '',
+  };
   showShareModal.value = true;
 };
 
@@ -89,8 +99,13 @@ const handleBulkShare = () => {
     if (item?.naskahId) {
       selectedNaskahs.push({
         naskahId: item.naskahId,
-        perihal: item.perihal || item.judul || item.subject,
-        nomor: item.nomor,
+        // item.subject dari useInbox = it.perihal (lebih reliable)
+        // mail.perihal di FE = raw.perihal yang bisa undefined
+        // mail.nomor di FE = raw.nomor
+        // mail.category di FE = jenis
+        perihal: item.subject || item.perihal || item.judul || '',
+        nomor: item.nomor || '',
+        jenis: item.category || item.jenis || item.category_label || '',
       });
     }
   });
@@ -230,6 +245,7 @@ const handleAddToBerkas = async () => {
       naskah_ids: [selectedNaskahForBerkas.value.naskahId],
       sumber: 'kotak_masuk',
     });
+    await fetchBerkasStatus(items.value || []);
     toast.add({ title: 'Naskah berhasil ditambahkan ke berkas', color: 'success' });
     showAddToBerkasModal.value = false;
   } catch (e: any) {
@@ -557,7 +573,8 @@ const saveNoteFromList = async () => {
   if (!mail) return;
   isSavingNote.value = true;
   try {
-    const item = items.value.find((i) => i.id === mail.id);
+    // mail.id dari displayItems adalah id_naskah, sementara items.value.id adalah id_sirkulasi.
+    const item = items.value.find((i) => (i.sirkulasiId && i.sirkulasiId === mail.sirkulasiId) || i.id === mail.sirkulasiId || i.id === mail.id);
     const hasText = noteModalText.value && noteModalText.value.trim().length > 0;
     if (item) {
       item.isNote = hasText;
@@ -666,19 +683,69 @@ const isExporting = ref(false);
 const downloadExcel = async () => {
   isExporting.value = true;
   try {
-    // Fetch semua data tanpa pagination dan filter
-    const params: Record<string, any> = {
-      page: 1,
-      limit: 9999,
-    };
+    let allItems: any[] = [];
 
-    // Hanya kirim jenis jika tab aktif bukan ALL
-    if (activeTab.value !== 'ALL' && activeTab.value !== 'Semua') {
-      params.jenis = activeTab.value;
+    // Special case: jika ada naskah di-select, export hanya yang di-select.
+    if (selectedIds.value.size > 0) {
+      allItems = items.value.filter((m) => selectedIds.value.has(m.id));
+    } else {
+      // Terapkan semua filter yang aktif ke export
+      const hasFilter = 
+        (searchQuery.value && searchQuery.value.trim() !== '') || 
+        (activeFilterType.value !== 'Semua') || 
+        (activeDateLabel.value !== 'Semua') || 
+        (activeTab.value !== 'ALL' && activeTab.value !== 'Semua');
+
+      const params: Record<string, any> = {
+        page: hasFilter ? currentPage.value : 1,
+        limit: hasFilter ? itemsPerPage.value : 9999,
+        search: searchQuery.value || undefined,
+      };
+
+      if (activeTab.value !== 'ALL' && activeTab.value !== 'Semua') {
+        params.jenis = activeTab.value;
+      }
+
+      // Date filter
+      const now = new Date();
+      const toStr = (d: Date) => d.toISOString().split('T')[0];
+      if (activeDateLabel.value === 'Custom') {
+        params.start_date = startDateInput.value;
+        params.end_date = endDateInput.value;
+      } else if (activeDateLabel.value !== 'Semua') {
+        const daysMap: Record<string, number> = {
+          '7 Hari': 7,
+          '30 Hari': 30,
+          '60 Hari': 60,
+          '1 Tahun': 365,
+        };
+        const days = daysMap[activeDateLabel.value];
+        if (days) {
+          const from = new Date(now);
+          from.setDate(now.getDate() - days);
+          params.start_date = toStr(from);
+          params.end_date = toStr(now);
+        }
+      }
+
+      params.sort = activeSortLabel.value === 'Terlama' ? 'terlama' : 'terbaru';
+
+      const filterMap: Record<string, Record<string, any>> = {
+        'Sudah Dibaca': { status_baca: 'terbaca' },
+        'Belum Dibaca': { status_baca: 'belum_terbaca' },
+        Favorite: { favorite: true },
+        'Sudah Tinjut': { tinjut: 'sudah_tinjut' },
+        'Belum Tinjut': { tinjut: 'belum_tinjut' },
+        Lock: { lock: true },
+        Note: { note: true },
+        Arsip: { arsip: true },
+        Prioritas: { priority: true },
+      };
+      Object.assign(params, filterMap[activeFilterType.value] || {});
+
+      await fetchInbox(params);
+      allItems = items.value || [];
     }
-
-    await fetchInbox(params);
-    const allItems = items.value || [];
 
     if (allItems.length === 0) {
       toast.add({
@@ -703,7 +770,7 @@ const downloadExcel = async () => {
     }));
 
     const ws = XLSX.utils.aoa_to_sheet([
-      ['RINGKASAN KOTAK MASUK (Semua Data)'],
+      [selectedIds.value.size > 0 ? 'RINGKASAN KOTAK MASUK (Data Terpilih)' : 'RINGKASAN KOTAK MASUK (Semua Data)'],
       ['Total Item', allItems.length],
       ['Total Terbaca', totalTerbaca],
       ['Total Belum Dibaca', totalBelumDibaca],
@@ -1241,16 +1308,15 @@ onUnmounted(() => {
         </div>
 
         <!-- Download Excel -->
-        <UTooltip :text="$t('k_download_excel')">
-          <button
-            @click="downloadExcel"
-            :disabled="isExporting"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors disabled:opacity-50"
-          >
-            <Loader2 v-if="isExporting" class="w-3.5 h-3.5 animate-spin" />
-            <Download v-else class="w-3.5 h-3.5" />
-          </button>
-        </UTooltip>
+        <button
+          @click="downloadExcel"
+          :disabled="isExporting"
+          class="flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium text-neutral-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-white rounded transition-colors disabled:opacity-50"
+        >
+          <Loader2 v-if="isExporting" class="w-3.5 h-3.5 animate-spin" />
+          <Download v-else class="w-3.5 h-3.5" />
+          <span>Export</span>
+        </button>
 
         <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
@@ -1513,17 +1579,11 @@ onUnmounted(() => {
                       />
                     </UTooltip>
                     <div class="flex flex-col min-w-0">
-                      <UTooltip
-                        :text="mail.fullRecipients"
-                        :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-pre-line text-left' }"
-                        class="min-w-0 truncate"
+                      <span
+                        class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-white shrink-0 font-semibold"
                       >
-                        <span
-                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-white shrink-0 font-semibold cursor-help"
-                        >
-                          {{ mail.from }}
-                        </span>
-                      </UTooltip>
+                        {{ mail.from }}
+                      </span>
                       <div
                         class="text-[11px] text-neutral-400 dark:text-gray-500 flex items-center gap-2 mt-0.5"
                       >
@@ -1573,7 +1633,7 @@ onUnmounted(() => {
                   </div>
 
                   <!-- Status Berkas -->
-                  <div class="hidden md:flex shrink-0 w-[100px] justify-start items-center">
+                  <div class="hidden md:flex shrink-0 w-[120px] justify-start items-center">
                     <span
                       v-if="berkasStatusMap[mail.naskahId]"
                       class="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
@@ -1583,10 +1643,10 @@ onUnmounted(() => {
                     </span>
                     <span
                       v-else
-                      class="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      class="whitespace-nowrap text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                      Belum
+                      Belum Diberkaskan
                     </span>
                   </div>
 
@@ -1666,8 +1726,9 @@ onUnmounted(() => {
     <SharedShareModal
       v-if="showShareModal && shareNaskah"
       :naskah-id="shareNaskah.naskahId"
-      :naskah-perihal="shareNaskah.perihal || shareNaskah.judul"
+      :naskah-perihal="shareNaskah.perihal"
       :naskah-nomor="shareNaskah.nomor"
+      :naskah-jenis="shareNaskah.jenis"
       @close="handleShareClose"
       @shared="handleShareClose"
     />
@@ -1962,7 +2023,7 @@ onUnmounted(() => {
                 class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
               >
                 <Loader2 v-if="isSavingNote" class="w-4 h-4 animate-spin" />
-                {{ isSavingNote ? $t('km_menyimpan') : $t('k_simpan') }}
+                {{ isSavingNote ? $t('km_menyimpan') : (noteModalMail?.isNote || (noteModalMail?.noteText && noteModalMail?.noteText !== '') ? $t('k_perbarui') : $t('k_simpan')) }}
               </button>
             </div>
           </div>

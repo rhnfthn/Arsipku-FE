@@ -78,7 +78,17 @@ const handleShare = (mail: any) => {
     toast.add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
     return;
   }
-  shareNaskah.value = mail;
+  shareNaskah.value = {
+    ...mail,
+    // Map ke field yang dipakai ShareModal (perihal/nomor/jenis)
+    // mail.subject dari useTerkirim = item.perihal
+    // mail.nomor di FE = item.nomor (fallback ke raw)
+    // mail.category dari useTerkirim = item.jenis
+    naskahId: mail.naskahId,
+    perihal: mail.subject || mail.perihal || mail.judul || '',
+    nomor: mail.nomor || '',
+    jenis: mail.category || mail.jenis || mail.category_label || '',
+  };
   showShareModal.value = true;
 };
 
@@ -98,8 +108,13 @@ const handleBulkShare = () => {
     if (item?.naskahId) {
       selectedNaskahs.push({
         naskahId: item.naskahId,
-        perihal: item.perihal || item.judul || item.subject,
-        nomor: item.nomor,
+        // item.subject dari useTerkirim = item.perihal (lebih reliable)
+        // mail.perihal di FE = raw.perihal yang bisa undefined
+        // mail.nomor di FE = item.nomor
+        // mail.category di FE = item.jenis
+        perihal: item.subject || item.perihal || item.judul || '',
+        nomor: item.nomor || '',
+        jenis: item.category || item.jenis || item.category_label || '',
       });
     }
   });
@@ -239,6 +254,7 @@ const handleAddToBerkas = async () => {
       naskah_ids: [selectedNaskahForBerkas.value.naskahId],
       sumber: 'terkirim',
     });
+    await fetchBerkasStatus(items.value || []);
     toast.add({ title: 'Naskah berhasil ditambahkan ke berkas', color: 'success' });
     showAddToBerkasModal.value = false;
   } catch (e: any) {
@@ -820,29 +836,83 @@ const applyCustomDate = () => {
 // ── Excel Export ──────────────────────────────────────────────────────────────
 const downloadExcel = async () => {
   try {
-    // Fetch semua data tanpa pagination — kirim limit besar, tanpa filter halaman
-    const exportParams: Record<string, any> = {
-      page: 1,
-      limit: 9999,
-    };
+    let allData: any[] = [];
 
-    // Tetap terapkan filter jenis/tab agar kontekstual dengan tab aktif
-    // tapi TIDAK filter pagination, date, sort — export semua
-    // Hapus baris ini jika ingin export benar-benar semua tanpa filter tab:
-    if (activeTab.value !== 'ALL' && activeTab.value !== 'Semua') {
-      exportParams.jenis = activeTab.value === 'KO' ? 'K' : activeTab.value;
+    // Special case: jika ada naskah di-select, export hanya yang di-select.
+    if (selectedIds.value.size > 0) {
+      const selectedSet = selectedIds.value;
+      allData = items.value
+        .filter((m) => selectedSet.has(m.id))
+        .map((m) => m.originalData || m);
+    } else {
+      // Export mengikuti data yang sedang tampil: jika ada filter aktif
+      // (search/tab/filter/date), kirim parameter yang sama dengan refreshData.
+      // Jika tidak ada filter, export semua data (limit besar).
+      const hasFilter =
+        (searchQuery.value && searchQuery.value.trim() !== '') ||
+        (activeFilterType.value !== 'Semua') ||
+        (activeDateLabel.value !== 'Semua') ||
+        (activeTab.value !== 'ALL' && activeTab.value !== 'Semua');
+
+      const query = new URLSearchParams();
+      // Saat filter aktif, export data halaman yang sedang tampil; jika tidak,
+      // export semua data (limit besar).
+      query.append('page', String(hasFilter ? currentPage.value : 1));
+      query.append('limit', String(hasFilter ? itemsPerPage.value : 9999));
+
+      // Tab → jenis (sama dengan refreshData)
+      if (activeTab.value !== 'ALL' && activeTab.value !== 'Semua') {
+        query.append('jenis', activeTab.value === 'KO' ? 'K' : activeTab.value);
+      }
+
+      // Filter type → API param (sama dengan refreshData)
+      const filterMap: Record<string, Record<string, any>> = {
+        Arsip: { arsip: true },
+        Favorit: { favorite: true },
+        Prioritas: { priority: true },
+        Catatan: { note: true },
+        Lock: { lock: true },
+      };
+      for (const [key, val] of Object.entries(filterMap[activeFilterType.value] || {})) {
+        query.append(key, String(val));
+      }
+
+      // Sort (sama dengan refreshData)
+      query.append('sort', activeSortLabel.value === 'Terlama' ? 'terlama' : 'terbaru');
+
+      // Date filter (sama dengan refreshData)
+      const now = new Date();
+      const toStr = (d: Date) => d.toISOString().split('T')[0];
+      if (activeDateLabel.value === 'Custom') {
+        query.append('start_date', startDateInput.value);
+        query.append('end_date', endDateInput.value);
+      } else if (activeDateLabel.value !== 'Semua') {
+        const daysMap: Record<string, number> = {
+          '7 Hari': 7,
+          '30 Hari': 30,
+          '60 Hari': 60,
+          '1 Tahun': 365,
+        };
+        const days = daysMap[activeDateLabel.value];
+        if (days) {
+          const from = new Date(now);
+          from.setDate(now.getDate() - days);
+          query.append('start_date', toStr(from));
+          query.append('end_date', toStr(now));
+        }
+      }
+
+      // Search (sama dengan refreshData)
+      if (searchQuery.value && searchQuery.value.trim() !== '') {
+        query.append('search', searchQuery.value);
+      }
+
+      // Jalankan fetch sementara ke instance terpisah agar tidak ganggu state utama
+      const { apiGet } = useApi();
+      const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`, {}, { skipCache: true });
+      const responseBody = res?.data?.pagination ? res.data : res;
+      allData = Array.isArray(responseBody?.data) ? responseBody.data : [];
     }
-
-    // Jalankan fetch sementara ke instance terpisah agar tidak ganggu state utama
-    const { apiGet } = useApi();
-    const query = new URLSearchParams();
-    query.append('page', '1');
-    query.append('limit', '9999');
-    if (exportParams.jenis) query.append('jenis', exportParams.jenis);
-
-    const res = await apiGet(`/naskah_sirkulasi/sent/?${query.toString()}`);
-    const responseBody = res?.data?.pagination ? res.data : res;
-    const allData: any[] = Array.isArray(responseBody?.data) ? responseBody.data : [];
 
     if (allData.length === 0) {
       toast.add({
@@ -1433,14 +1503,13 @@ onUnmounted(() => {
         </div>
 
         <!-- Ganti @click="downloadExcel" -->
-        <UTooltip :text="$t('k_download_excel')">
-          <button
-            @click="downloadExcel"
-            class="p-1.5 text-neutral-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
-          >
-            <Download class="w-3.5 h-3.5" />
-          </button>
-        </UTooltip>
+        <button
+          @click="downloadExcel"
+          class="flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium text-neutral-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-neutral-900 dark:hover:text-gray-200 rounded transition-colors"
+        >
+          <Download class="w-3.5 h-3.5" />
+          <span>Export</span>
+        </button>
 
         <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
@@ -1656,17 +1725,11 @@ onUnmounted(() => {
                 >
                   <div class="flex items-center md:w-44 lg:w-65 shrink-0 mb-1 md:mb-0">
                     <div class="flex flex-col min-w-0">
-                      <UTooltip
-                        :text="mail.fullRecipients"
-                        :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-pre-line text-left' }"
-                        class="min-w-0 truncate"
+                      <span
+                        class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-gray-100 shrink-0 font-semibold"
                       >
-                        <span
-                          class="block w-full md:w-48 xl:w-64 truncate text-[13px] text-neutral-900 dark:text-gray-100 shrink-0 font-semibold cursor-help"
-                        >
-                          {{ mail.from }}
-                        </span>
-                      </UTooltip>
+                        {{ mail.from }}
+                      </span>
                       <div
                         class="text-[11px] font-mono text-neutral-400 dark:text-gray-500 flex items-center gap-2 truncate"
                       >
@@ -1715,7 +1778,7 @@ onUnmounted(() => {
                   </div>
 
                   <!-- Status Berkas -->
-                  <div class="hidden md:flex shrink-0 w-[100px] justify-start items-center">
+                  <div class="hidden md:flex shrink-0 w-[120px] justify-start items-center">
                     <span
                       v-if="berkasStatusMap[mail.naskahId]"
                       class="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
@@ -1725,10 +1788,10 @@ onUnmounted(() => {
                     </span>
                     <span
                       v-else
-                      class="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      class="whitespace-nowrap text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                      Belum
+                      Belum Diberkaskan
                     </span>
                   </div>
 
@@ -1813,8 +1876,9 @@ onUnmounted(() => {
     <SharedShareModal
       v-if="showShareModal && shareNaskah"
       :naskah-id="shareNaskah.naskahId"
-      :naskah-perihal="shareNaskah.subject || shareNaskah.perihal || shareNaskah.judul"
-      :naskah-nomor="shareNaskah.body || shareNaskah.nomor"
+      :naskah-perihal="shareNaskah.perihal"
+      :naskah-nomor="shareNaskah.nomor"
+      :naskah-jenis="shareNaskah.jenis"
       @close="handleShareClose"
       @shared="handleShareClose"
     />
@@ -2476,7 +2540,7 @@ onUnmounted(() => {
                 class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
               >
                 <Loader2 v-if="isSavingNote" class="w-4 h-4 animate-spin" />
-                {{ isSavingNote ? $t('tk_menyimpan') : $t('k_simpan') }}
+                {{ isSavingNote ? $t('tk_menyimpan') : (noteModalMail?.isNote || (noteModalMail?.noteText && noteModalMail?.noteText !== '') ? $t('k_perbarui') : $t('k_simpan')) }}
               </button>
             </div>
           </div>

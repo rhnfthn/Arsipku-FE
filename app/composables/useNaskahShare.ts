@@ -75,7 +75,7 @@ export function useNaskahShare() {
         total: number;
         page: number;
         limit: number;
-      }>(`/naskah-share?${query.toString()}`);
+      }>(`/naskah-share?${query.toString()}`, undefined, { skipCache: true });
 
       if (params.tab === 'shared-to-me') {
         sharedToMe.value = res.data || [];
@@ -187,6 +187,25 @@ export function useNaskahShare() {
     }
   };
 
+  // ── Send share via email (alamat eksternal manual) ────────────────
+  const sendShareEmail = async (
+    naskahId: string,
+    payload: { to: string; cc?: string; bcc?: string; from_as?: string },
+  ) => {
+    try {
+      const res = await apiPost<{
+        success: boolean;
+        message: string;
+        data: any;
+      }>(`/naskah-share/${naskahId}/send-email`, payload);
+      clearApiCache();
+      return res;
+    } catch (err: any) {
+      console.error('[useNaskahShare] sendShareEmail error:', err);
+      throw err;
+    }
+  };
+
   // ── Search users for share modal ────────────────
   const searchUsers = async (query: string) => {
     if (!query || query.length < 2) {
@@ -239,5 +258,6 @@ export function useNaskahShare() {
     searchUsers,
     clearSearchResults,
     getShareDetail,
+    sendShareEmail,
   };
 }
