@@ -3,7 +3,7 @@
     <!-- Page Header -->
     <div class="mb-5">
       <PageHeader
-        title="Verifikasi Usulan"
+        title="Pemindahan"
         :items="items"
       />
     </div>
@@ -53,7 +53,7 @@
       v-model="showExportModal"
       :columns="exportColumns"
       :total-rows="meta?.total || list.length"
-      title="Pilih Kolom Export Verifikasi Usulan"
+      title="Pilih Kolom Export Pemindahan"
       :is-exporting="isExporting"
       @confirm="handleExportConfirm"
     />
@@ -75,7 +75,7 @@ import type {
   VerifikasiUsulanItem,
 } from '~/types/verifikasi-usulan';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'atasan-managerial-secretary-only'] });
 
 const showExportModal = ref(false);
 const isExporting = ref(false);
@@ -113,7 +113,7 @@ const isMultiRole = computed(() => {
 const items = [
   { label: 'Beranda', to: '/' },
   { label: 'Pemeliharaan', to: '/maintenance/verifikasi-usulan' },
-  { label: 'Verifikasi Usulan', to: '/maintenance/verifikasi-usulan' },
+  { label: 'Pemindahan', to: '/maintenance/verifikasi-usulan' },
 ];
 
 const filter = ref<VerifikasiFilter>({
@@ -175,7 +175,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
     worksheet['!cols'] = colWidths;
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Verifikasi Usulan');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pemindahan');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

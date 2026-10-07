@@ -161,7 +161,22 @@ const items = computed(() => [
 
 const showBeritaAcara = computed(() => {
   if (!item.value) return false;
-  return ['DISETUJUI_ATASAN', 'DISETUJUI_VERIFIKASI_TERAKHIR', 'DIKIRIM', 'SELESAI'].includes(item.value.status);
+  return [
+    'DISETUJUI_ATASAN',
+    'DISETUJUI_VERIFIKASI_TERAKHIR',
+    'USUL_PINDAH_DIKIRIM',
+    'SIAPKAN_BERKAS_FISIK',
+    'DIKIRIM',
+    'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
+    'BERKAS_FISIK_SESUAI',
+    'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
+    'DISETUJUI_PERSETUJUAN_TU',
+    'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
+    'DISETUJUI_PERSETUJUAN_TERAKHIR_TU',
+    'ARSIP_INAKTIF_DITERIMA',
+    'PENATAAN_ARSIP_INAKTIF',
+    'SELESAI',
+  ].includes(item.value.status);
 });
 
 const loadDetail = async () => {
