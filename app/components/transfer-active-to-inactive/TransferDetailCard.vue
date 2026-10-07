@@ -153,7 +153,7 @@
               <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
                 <NuxtLink
                   v-if="row.id"
-                  :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=transfer`"
+                  :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=${previewFrom}`"
                   class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
                   title="Buka detail berkas"
                 >
@@ -166,9 +166,129 @@
       </div>
     </div>
 
-    <!-- Card 3: Daftar Atasan Verifikasi (Berjenjang) -->
+    <!-- Daftar Isi Berkas -->
     <div
-      v-if="transfer.approvalLevels && transfer.approvalLevels.length > 0"
+      v-if="showDaftarIsiCard"
+      class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+    >
+      <div class="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+          Daftar Isi Berkas ({{ daftarIsiRows.length }})
+        </h3>
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            @click="printDaftarIsi"
+            class="inline-flex h-8 w-8 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+            title="Print Daftar Isi Berkas"
+            aria-label="Print Daftar Isi Berkas"
+          >
+            <UIcon name="i-lucide-printer" class="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            @click="daftarIsiOpen = !daftarIsiOpen"
+            class="inline-flex h-8 w-8 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+            :title="daftarIsiOpen ? 'Lipat Daftar Isi Berkas' : 'Buka Daftar Isi Berkas'"
+            :aria-expanded="daftarIsiOpen"
+          >
+            <UIcon :name="daftarIsiOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <div v-show="!collapsible || daftarIsiOpen" id="daftar-isi-print" class="overflow-x-auto">
+        <table class="w-full min-w-[900px] border-collapse text-xs">
+          <thead>
+            <tr class="bg-[#457fb6] text-white">
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">No.</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Nomor &amp; Tanggal Naskah</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Kode Klasifikasi</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]">Uraian Informasi Isi Berkas</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Jumlah</th>
+              <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in daftarIsiRows" :key="row.naskahId ?? `${row.id}-${idx}`" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
+              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.no ?? idx + 1 }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                <p>{{ row.nomorSurat ?? '-' }}</p>
+                <p class="mt-1 text-gray-400">{{ formatDate(row.tanggal) }}</p>
+              </td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.perihal ?? '-' }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? 1 }}</td>
+              <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
+                <NuxtLink
+                  v-if="row.id"
+                  :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=${previewFrom}`"
+                  class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+                  title="Buka detail berkas"
+                >
+                  <UIcon name="i-lucide-eye" class="h-4 w-4" />
+                </NuxtLink>
+              </td>
+            </tr>
+            <tr v-if="daftarIsiRows.length === 0">
+              <td colspan="7" class="border-b border-gray-200 px-3 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Penandatangan BAC ditampilkan sebelum riwayat verifikasi. -->
+    <div
+      v-if="showBacSigner && hasBacSigner"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+    >
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        aria-expanded="bacSignerOpen"
+        @click="bacSignerOpen = !bacSignerOpen"
+      >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Penandatangan BAC</h3>
+        <UIcon
+          :name="bacSignerOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="h-4 w-4 text-gray-400"
+        />
+      </button>
+      <div v-show="bacSignerOpen" class="space-y-3">
+        <div
+          v-if="transfer.bacPihakPertamaPersnum || transfer.bacPihakPertamaName"
+          class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+            Pihak Pertama
+          </span>
+        </div>
+        <div
+          v-if="transfer.bacPihakKeduaPersnum || transfer.bacPihakKeduaName"
+          class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-900/20"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ transfer.bacPihakKeduaName || '-' }}<span v-if="transfer.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakKeduaJabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+            Pihak Kedua
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daftar Atasan Verifikasi (Berjenjang) -->
+    <div
+      v-if="showApprovalLevels && transfer.approvalLevels && transfer.approvalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <button
@@ -210,40 +330,9 @@
       </div>
     </div>
 
-    <!-- Card 4: Pejabat Penandatangan BAC -->
-    <div
-      v-if="hasBacSigner"
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-    >
-      <button
-        type="button"
-        class="flex w-full items-center justify-between gap-3 text-left mb-4"
-        aria-expanded="bacSignerOpen"
-        @click="bacSignerOpen = !bacSignerOpen"
-      >
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Pejabat Penandatangan</h3>
-        <UIcon
-          :name="bacSignerOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          class="h-4 w-4 text-gray-400"
-        />
-      </button>
-      <div v-show="bacSignerOpen" class="space-y-2">
-        <div class="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
-            </p>
-          </div>
-          <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-            Penandatangan
-          </span>
-        </div>
-      </div>
-    </div>
-
     <!-- Card 5: Tembusan BAC -->
     <div
-      v-if="hasBacTembusan"
+      v-if="showBacTembusan && hasBacTembusan"
       class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <button
@@ -278,7 +367,7 @@
 
     <!-- Card 6: Daftar Atasan TU Verifikasi (Berjenjang) -->
     <div
-      v-if="transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"
+      v-if="showTuApprovalLevels && transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <button
@@ -327,14 +416,27 @@ import { statusBadgeClass, statusLabel, formatDate } from '~/utils/transfer-stat
 const props = defineProps<{
   transfer: TransferActiveToInactive;
   daftarBerkas?: any[];
+  daftarIsi?: any[];
+  unitKerjaPihakPertama?: string;
   collapsible?: boolean;
   showHeaderStatus?: boolean;
+  previewFrom?: string;
+  showApprovalLevels?: boolean;
+  showBacSigner?: boolean;
+  showBacTembusan?: boolean;
+  showTuApprovalLevels?: boolean;
 }>();
 
 const collapsible = computed(() => props.collapsible === true);
 const showHeaderStatus = computed(() => props.showHeaderStatus !== false);
+const showApprovalLevels = computed(() => props.showApprovalLevels !== false);
+const showBacSigner = computed(() => props.showBacSigner !== false);
+const showBacTembusan = computed(() => props.showBacTembusan !== false);
+const showTuApprovalLevels = computed(() => props.showTuApprovalLevels !== false);
+const previewFrom = computed(() => props.previewFrom ?? 'transfer');
 const infoOpen = ref(true);
 const berkasOpen = ref(true);
+const daftarIsiOpen = ref(true);
 const approvalOpen = ref(true);
 const tuApprovalOpen = ref(true);
 const bacSignerOpen = ref(true);
@@ -344,20 +446,42 @@ const bacTembusan = computed(() =>
   Array.isArray(props.transfer.bacTembusan) ? props.transfer.bacTembusan : [],
 );
 const hasBacSigner = computed(
-  () => Boolean(props.transfer.bacPihakPertamaPersnum || props.transfer.bacPihakPertamaName),
+  () => Boolean(
+    props.transfer.bacPihakPertamaPersnum ||
+    props.transfer.bacPihakPertamaName ||
+    props.transfer.bacPihakKeduaPersnum ||
+    props.transfer.bacPihakKeduaName,
+  ),
 );
 const hasBacTembusan = computed(() => bacTembusan.value.length > 0);
 
 const printDaftarBerkas = () => {
-  const el = document.getElementById('daftar-berkas-print');
-  if (!el) return;
+  openTablePrintPreview('Daftar Berkas', 'daftar-berkas-print', 'table');
+};
+
+const printDaftarIsi = () => {
+  openTablePrintPreview('Daftar Isi Berkas', 'daftar-isi-print', 'table');
+};
+
+const openTablePrintPreview = (title: string, elementId: string, selector: string) => {
+  const element = document.getElementById(elementId);
+  const table = element?.querySelector(selector);
+  if (!table) return;
   const w = window.open('', '_blank');
   if (!w) return;
-  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Berkas</title><style>
-    body{font-family:Arial,sans-serif;padding:30px;color:#111}table{width:100%;border-collapse:collapse;font-size:12px}
+  const unitKerja = props.unitKerjaPihakPertama || props.transfer.divisiName || '................................';
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  };
+  const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => htmlEscapes[char] ?? char);
+  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title><style>
+    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:36px;color:#111;font-size:12pt}
+    h1{font-size:18pt;margin:0 0 18px;font-weight:bold}.unit{font-size:14pt;margin:0 0 18px}
+    hr{border:0;border-top:1px solid #222;margin:0 0 20px}table{width:100%;border-collapse:collapse;font-size:10pt}
     th{background:#457fb6;color:#fff;border:1px solid #457fb6;padding:8px;text-align:center}
-    td{border:1px solid #d1d5db;padding:8px;vertical-align:top}.print-action{display:none}h2{text-align:center}
-  </style></head><body><h2>Daftar Berkas</h2>${el.innerHTML}</body></html>`);
+    td{border:1px solid #d1d5db;padding:8px;vertical-align:top}.print-action{display:none!important}
+    @page{size:A4 landscape;margin:15mm}
+  </style></head><body><h1>${escapeHtml(title)}</h1><p class="unit">Unit Kerja: ${escapeHtml(unitKerja)}</p><hr>${table.outerHTML}</body></html>`);
   w.document.close();
   w.focus();
   setTimeout(() => { w.print(); w.close(); }, 250);
@@ -379,6 +503,9 @@ const berkasRows = computed(() => {
     klasifikasiKeamanan: '-',
   }));
 });
+
+const daftarIsiRows = computed(() => props.daftarIsi ?? []);
+const showDaftarIsiCard = computed(() => props.daftarIsi !== undefined);
 
 const levelStatusClass = (status: string): string => {
   if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';

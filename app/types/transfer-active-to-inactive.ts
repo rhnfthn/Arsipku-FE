@@ -20,6 +20,7 @@ export type TransferActiveToInactiveStatus =
   | 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU'
   | 'DITOLAK_PERSETUJUAN_TERAKHIR_TU'
   | 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU'
+  | 'MENUNGGU_TTD_PIHAK_KEDUA'
   | 'ARSIP_INAKTIF_DITERIMA'
   | 'PENATAAN_ARSIP_INAKTIF'
   | 'SELESAI';
@@ -68,6 +69,9 @@ export interface TransferActiveToInactive {
   bacPihakPertamaPersnum?: number | null;
   bacPihakPertamaName?: string | null;
   bacPihakPertamaJabatan?: string | null;
+  bacPihakKeduaPersnum?: number | null;
+  bacPihakKeduaName?: string | null;
+  bacPihakKeduaJabatan?: string | null;
   bacTembusan?: Array<{
     persnum: number;
     name: string;
@@ -76,6 +80,9 @@ export interface TransferActiveToInactive {
   bacSignedAt?: string | null;
   bacSignedBy?: number | null;
   bacSignatureQr?: string | null;
+  bacPihakKeduaSignedAt?: string | null;
+  bacPihakKeduaSignedBy?: number | null;
+  bacPihakKeduaSignatureQr?: string | null;
   tanggalDikirim: string | null;
   physicalChecklist: Record<string, boolean> | null;
   physicalVerifiedBy: number | null;
@@ -115,6 +122,9 @@ export interface BacTembusanListItem {
   beritaAcaraNomor: string | null;
   bacPihakPertamaName: string | null;
   bacPihakPertamaJabatan: string | null;
+  bacPihakKeduaName: string | null;
+  bacPihakKeduaJabatan: string | null;
+  bacPihakKeduaSignedAt: string | null;
   bacSignedAt: string | null;
   bacStatus: 'MENUNGGU_TANDA_TANGAN' | 'SUDAH_DITANDATANGANI';
   beritaAcaraUrl: string | null;

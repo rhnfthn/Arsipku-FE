@@ -174,6 +174,7 @@
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >Batal</NuxtLink>
         <button
+          v-if="canCreate"
           @click="showAjukanModal = true"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
         >
@@ -369,11 +370,12 @@ import { useArsipDinamis } from '~/composables/useArsipDinamis'
 import { useApi } from '~/composables/useApi'
 import type { JenisPenyusutan, ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const route = useRoute()
 const toast = useToast()
 const { ajukanPenyusutan, fetchById } = usePenyusutan()
+const { canCreate } = usePenyusutanPermission()
 const { fetchPenataanDetail } = useTuVerifikasi()
 const { apiGet } = useApi()
 const { getBerkasById } = useArsipDinamis()
@@ -629,6 +631,10 @@ const statusBadgeClass = (status: string) => {
 }
 
 const submitAjukan = async () => {
+  if (!canCreate.value) {
+    toast.add({ title: 'Akses ditolak', description: 'Anda tidak memiliki izin membuat pengajuan penyusutan.', color: 'error' })
+    return
+  }
   if (!item.value) return
   submitting.value = true
   try {

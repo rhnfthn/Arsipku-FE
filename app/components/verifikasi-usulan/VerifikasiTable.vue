@@ -35,7 +35,7 @@
               v-for="row in data"
               :key="row.id"
               class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              :class="newRowClass(row)"
+              :class="rowClass(row)"
             >
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.arsipPerihal">{{ row.arsipPerihal }}</td>
               <td class="px-4 py-3 text-gray-700 dark:text-gray-200 whitespace-nowrap">
@@ -50,7 +50,7 @@
               </td>
               <td class="px-4 py-3 text-center">
                 <button
-                  @click="$emit('detail', row)"
+                  @click="openDetail(row)"
                   :title="needsVerification(row.status) ? 'Verifikasi' : 'Detail'"
                   :class="needsVerification(row.status)
                     ? 'rounded-md bg-primary text-white hover:bg-primary-800'
@@ -81,7 +81,13 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
-defineEmits<{ detail: [row: VerifikasiUsulanItem] }>();
+const emit = defineEmits<{ detail: [row: VerifikasiUsulanItem] }>();
+const { rowClass, markViewed } = useViewedRows('verifikasi-usulan');
+
+const openDetail = (row: VerifikasiUsulanItem) => {
+  markViewed(row);
+  emit('detail', row);
+};
 
 // Debug: log data yang diterima komponen
 watch(

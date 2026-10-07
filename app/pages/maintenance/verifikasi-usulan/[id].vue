@@ -42,62 +42,12 @@
       <div class="mx-auto w-full max-w-none space-y-5">
           <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarIsi" />
 
-          <!-- Berita Acara Serah Terima (hanya tampil setelah verifikasi disetujui) -->
-          <div
+          <!-- BAC ditampilkan langsung seperti pada halaman Sekretaris Divisi. -->
+          <TransferBeritaAcaraCard
             v-if="showBeritaAcara"
-            class="overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div class="flex w-full items-center justify-between gap-3 px-5 pb-4 pt-5 sm:px-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
-              <button
-                type="button"
-                @click="bacCardOpen = !bacCardOpen"
-                :aria-expanded="bacCardOpen"
-                aria-label="Lipat atau buka Berita Acara Serah Terima"
-                class="inline-flex items-center justify-center p-1.5 text-gray-500 transition-colors hover:text-[#457fb6] dark:text-gray-300"
-              >
-                <UIcon
-                  :name="bacCardOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-                  class="h-5 w-5"
-                />
-              </button>
-            </div>
-
-            <div v-show="bacCardOpen" class="overflow-x-auto">
-              <table class="w-full min-w-[960px] border-collapse text-sm">
-                <thead>
-                  <tr class="bg-[#457fb6] text-white">
-                    <th class="border border-[#457fb6] px-5 py-3 text-left font-semibold">Pihak</th>
-                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">Nama</th>
-                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">e-NIK</th>
-                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">Jabatan</th>
-                    <th class="border border-[#457fb6] px-5 py-3 text-center font-semibold">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-                    <td class="border-b border-gray-200 px-5 py-4 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">Pihak Pertama</td>
-                    <td class="border-b border-gray-200 px-5 py-4 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ usulan.bacPihakPertamaName || '-' }}</td>
-                    <td class="border-b border-gray-200 px-5 py-4 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ usulan.bacPihakPertamaPersnum || '-' }}</td>
-                    <td class="border-b border-gray-200 px-5 py-4 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ usulan.bacPihakPertamaJabatan || '-' }}</td>
-                    <td class="border-b border-gray-200 px-5 py-4 text-center dark:border-gray-700">
-                      <button
-                        type="button"
-                        @click.stop="openBacPreview"
-                        :disabled="bacPreviewLoading"
-                        :aria-expanded="showBacPdfViewer"
-                        aria-label="Buka preview Berita Acara Serah Terima"
-                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#457fb6] text-white transition-colors hover:bg-[#3a6d9c] disabled:cursor-wait disabled:opacity-60"
-                      >
-                        <UIcon v-if="bacPreviewLoading" name="i-lucide-loader-2" class="h-4 w-4 animate-spin" />
-                        <UIcon v-else name="i-lucide-eye" class="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+            :transfer="usulanToTransfer"
+            :berita-acara-data="beritaAcaraData"
+          />
 
           <TimelineRiwayat :item="usulanToTransfer" />
 
@@ -215,57 +165,16 @@
       @confirm="onConfirmKirimTU"
     />
 
-    <!-- PDF Viewer Full Page, sama seperti preview naskah. -->
-    <Teleport to="body">
-      <div
-        v-if="showBacPdfViewer"
-        class="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-gray-950"
-      >
-        <div class="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-900">
-          <div class="flex min-w-0 items-center gap-2">
-            <UIcon name="i-lucide-file-text" class="h-4 w-4 shrink-0 text-primary-500" />
-            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">Berita Acara Serah Terima</p>
-          </div>
-          <button
-            type="button"
-            @click="closeBacPreview"
-            class="shrink-0 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-            title="Tutup preview"
-            aria-label="Tutup preview Berita Acara Serah Terima"
-          >
-            <UIcon name="i-lucide-x" class="h-5 w-5" />
-          </button>
-        </div>
-        <div class="relative min-h-0 flex-1 bg-gray-100 dark:bg-gray-900">
-          <div v-if="bacPreviewLoading" class="absolute inset-0 z-10 flex items-center justify-center">
-            <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 px-8 py-6 shadow-lg backdrop-blur-sm dark:bg-gray-900/80">
-              <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary-500" />
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Memuat dokumen...</p>
-            </div>
-          </div>
-          <iframe
-            v-if="bacPdfViewerUrl"
-            :key="bacPdfViewerUrl"
-            :src="bacPdfViewerUrl"
-            title="Preview Berita Acara Serah Terima"
-            class="h-full w-full border-none"
-          />
-          <div v-else-if="!bacPreviewLoading" class="flex h-full flex-col items-center justify-center gap-2 text-gray-500">
-            <UIcon name="i-lucide-file-text" class="h-12 w-12 opacity-30" />
-            <span class="text-sm">PDF BAC tidak tersedia.</span>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
 import { useApi } from '~/composables/useApi';
+import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue';
 import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
@@ -304,79 +213,30 @@ const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
 const daftarIsi = ref<any[]>([]);
+const beritaAcaraData = ref<any>({});
 const checklistBerkasFisik = ref(false);
 const checklistBeritaAcara = ref(false);
 
 const canSendToTU = computed(() => checklistBerkasFisik.value && checklistBeritaAcara.value);
 
-const { apiGet, apiPost } = useApi();
-const bacCardOpen = ref(true);
-const bacPreviewLoading = ref(false);
-const showBacPdfViewer = ref(false);
-const bacPdfViewerUrl = ref<string | null>(null);
-const bacPreviewError = ref('');
+const { apiGet } = useApi();
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
-    daftarIsi.value = res?.data?.daftarIsi ?? [];
+    daftarIsi.value = res?.data?.daftarBerkas ?? [];
   } catch {
     daftarIsi.value = [];
   }
 };
-const closeBacPreview = () => {
-  showBacPdfViewer.value = false;
-  if (bacPdfViewerUrl.value) URL.revokeObjectURL(bacPdfViewerUrl.value);
-  bacPdfViewerUrl.value = null;
-  bacPreviewLoading.value = false;
-};
-
-const openBacPreview = async () => {
-  if (bacPreviewLoading.value) return;
-  bacPreviewError.value = '';
-  bacPreviewLoading.value = true;
+const loadBeritaAcaraData = async () => {
   try {
-    // Regenerate BAC yang belum bertanda tangan agar data lama yang masih
-    // menyimpan PDF gabungan lampiran berubah menjadi BAC-only. Untuk QR
-    // bertanda tangan, migrasikan hanya PDF QR layout lama ke template terbaru.
-    if (!usulan.value?.bacSignedAt) {
-      await apiPost(
-        `/transfer-active-to-inactive/${route.params.id}/berita-acara-pdf`,
-        {},
-      );
-    } else if (
-      usulan.value.beritaAcaraUrl &&
-      /qr-signed/i.test(usulan.value.beritaAcaraUrl) &&
-      (!/qr-signed-layout-v6\.pdf$/i.test(usulan.value.beritaAcaraUrl) || !usulan.value.bacSignatureQr)
-    ) {
-      // Jangan jatuh diam-diam ke PDF lama: file lama bisa masih bold dan
-      // kehilangan QR. Tampilkan error akses/perbaikan supaya penandatangan
-      // yang ditugaskan dapat membuka BAC dan melakukan normalisasi.
-      await apiPost(`/digsig/bac/${route.params.id}/repair-qr-layout`, {});
-    }
-
-    const file = await apiGet<any>(
-      `/transfer-active-to-inactive/${route.params.id}/berita-acara.pdf`,
-      { responseType: 'blob' },
-      { skipCache: true },
-    );
-    const blob = file instanceof Blob ? file : file?.data instanceof Blob ? file.data : null;
-    if (!blob) throw new Error('Respons PDF tidak valid');
-    bacPdfViewerUrl.value = URL.createObjectURL(blob);
-    showBacPdfViewer.value = true;
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true });
+    beritaAcaraData.value = res?.data ?? {};
   } catch (error) {
-    console.error('Gagal memuat preview BAC:', error);
-    bacPreviewError.value = error instanceof Error && error.message
-      ? `Preview BAC gagal dimuat: ${error.message}`
-      : 'Preview PDF BAC tidak dapat dimuat.';
-    alert(bacPreviewError.value);
-  } finally {
-    bacPreviewLoading.value = false;
+    console.error('Gagal memuat data Berita Acara:', error);
+    beritaAcaraData.value = {};
   }
 };
-
-onBeforeUnmount(() => {
-  closeBacPreview();
-});
 
 /** Mapping usulan ke format TransferActiveToInactive untuk TimelineRiwayat. */
 const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
@@ -415,9 +275,15 @@ const usulanToTransfer = computed<TransferActiveToInactive>(() => ({
   bacPihakPertamaPersnum: usulan.value?.bacPihakPertamaPersnum ?? null,
   bacPihakPertamaName: usulan.value?.bacPihakPertamaName ?? null,
   bacPihakPertamaJabatan: usulan.value?.bacPihakPertamaJabatan ?? null,
+  bacPihakKeduaPersnum: usulan.value?.bacPihakKeduaPersnum ?? null,
+  bacPihakKeduaName: usulan.value?.bacPihakKeduaName ?? null,
+  bacPihakKeduaJabatan: usulan.value?.bacPihakKeduaJabatan ?? null,
   bacSignedAt: usulan.value?.bacSignedAt ?? null,
   bacSignedBy: usulan.value?.bacSignedBy ?? null,
   bacSignatureQr: usulan.value?.bacSignatureQr ?? null,
+  bacPihakKeduaSignedAt: usulan.value?.bacPihakKeduaSignedAt ?? null,
+  bacPihakKeduaSignedBy: usulan.value?.bacPihakKeduaSignedBy ?? null,
+  bacPihakKeduaSignatureQr: usulan.value?.bacPihakKeduaSignatureQr ?? null,
   tanggalDikirim: null,
   physicalChecklist: null,
   physicalVerifiedBy: null,
@@ -656,7 +522,7 @@ const loadDetail = async () => {
     } else {
       isCurrentTurn.value = false;
     }
-    await loadDaftarIsi();
+    await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -690,7 +556,7 @@ const refresh = async () => {
   } else {
     isCurrentTurn.value = false;
   }
-  await loadDaftarIsi();
+  await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
 };
 
 const act = async (fn: () => Promise<any>) => {
@@ -775,7 +641,7 @@ const onSelesaikan = () => {
 };
 
 const onApproveReceipt = () => {
-  if (!confirm('Setujui penerimaan usulan ini? Usulan akan diselesaikan.')) return;
+  if (!confirm('Setujui penerimaan arsip ini? Usulan akan diselesaikan.')) return;
   act(() => approveReceipt(usulan.value!.id, jenis.value));
 };
 
