@@ -200,26 +200,22 @@
         <table class="w-full min-w-[900px] border-collapse text-xs">
           <thead>
             <tr class="bg-[#457fb6] text-white">
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">No.</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Nomor &amp; Tanggal Naskah</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-left font-semibold whitespace-nowrap">Nomor &amp; Tanggal</th>
               <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Kode Klasifikasi</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]">Uraian Informasi Isi Berkas</th>
+              <th class="border border-[#457fb6] px-3 py-3 text-left font-semibold min-w-[280px]">Uraian Informasi Isi Berkas</th>
               <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Jumlah</th>
               <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, idx) in daftarIsiRows" :key="row.naskahId ?? `${row.id}-${idx}`" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.no ?? idx + 1 }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">
-                <p>{{ row.nomorSurat ?? '-' }}</p>
+              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                <p class="font-semibold">{{ row.nomorSurat ?? row.nomor_surat ?? row.nomor ?? '-' }}</p>
                 <p class="mt-1 text-gray-400">{{ formatDate(row.tanggal) }}</p>
               </td>
               <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
               <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.perihal ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? 1 }}</td>
+              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
               <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
                 <NuxtLink
                   v-if="row.id"
@@ -232,7 +228,7 @@
               </td>
             </tr>
             <tr v-if="daftarIsiRows.length === 0">
-              <td colspan="7" class="border-b border-gray-200 px-3 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
+              <td colspan="5" class="border-b border-gray-200 px-3 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
             </tr>
           </tbody>
         </table>
