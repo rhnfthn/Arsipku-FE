@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
-import { X, Trash2, ListTodo, SquarePlus, Lock, FileText } from 'lucide-vue-next';
+import { X, Trash2, Lock, FileText } from 'lucide-vue-next';
+import { resolveTugasBoardIcon } from '~/utils/tugas-board-icon';
 import TugasReferenceEditor from './TugasReferenceEditor.vue';
 import TulisInputTanggal from '~/components/Tulis/InputTanggal.vue';
 import type {
@@ -15,6 +16,7 @@ import type {
 const props = defineProps<{
   modelValue: boolean;
   boardType: 'personal' | 'bersama';
+  boardIcon?: string | null;
   task: TugasTask | null;
   members: TugasMember[];
   saving: boolean;
@@ -79,6 +81,7 @@ const form = ref({
 });
 const evidenceFiles = ref<File[]>([]);
 
+const taskBoardIcon = computed(() => resolveTugasBoardIcon(props.boardIcon));
 const isCreateMode = computed(() => props.mode === 'create');
 const NO_PRIORITY = '__NO_PRIORITY__';
 const NO_PIC = '__NO_PIC__';
@@ -222,8 +225,7 @@ const selectedAssigneeMember = computed(() =>
             <span
               class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
             >
-              <SquarePlus v-if="isCreateMode" class="h-5 w-5" />
-              <ListTodo v-else class="h-5 w-5" />
+              <component :is="taskBoardIcon" class="h-5 w-5" />
             </span>
             <div>
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">
