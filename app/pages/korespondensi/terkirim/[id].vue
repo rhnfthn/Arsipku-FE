@@ -27,6 +27,8 @@ const { fetchInboxDetail, fetchKonsepDetail, toggleFlag } = useInbox();
 const { rejectKonsep } = useKonsep();
 const { fetchSentNavigation } = useSirkulasi();
 const { apiPost, apiGet, api } = useApi();
+const { getBerkasList, addNaskahToBerkas, getBerkasStatusByNaskah } = useArsipDinamis();
+const { canReadBerkasStatus } = useArsipDinamisPermission();
 
 const id = route.params.id as string;
 const jenisQuery = route.query.jenis as string;
@@ -610,11 +612,13 @@ const loadData = async () => {
 onMounted(() => {
   loadData();
   window.addEventListener('scroll', handleScroll, { passive: true });
+  document.addEventListener('click', handleBerkasDocumentClick);
   checkScrollPosition();
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  document.removeEventListener('click', handleBerkasDocumentClick);
 });
 
 watch(
@@ -635,6 +639,160 @@ const goToNav = (target: any) => {
 
 const goToNewer = () => goToNav(navNext.value);
 const goToOlder = () => goToNav(navPrev.value);
+
+// ── Share Naskah ─────────────────────────────────────────────────────────────
+const showShareModal = ref(false);
+const shareNaskah = ref<any>(null);
+
+const handleShare = () => {
+  const s = selected.value;
+  const naskahId = s?.id || s?.naskahId || s?.id_naskah || id;
+  if (!naskahId) {
+    useToast().add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
+    return;
+  }
+  shareNaskah.value = {
+    naskahId,
+    perihal: s?.perihal || s?.subject || '',
+    nomor: s?.nomor || '',
+    jenis: s?.jenis || s?.jenis_label || '',
+  };
+  showShareModal.value = true;
+};
+
+const handleShareClose = () => {
+  showShareModal.value = false;
+  shareNaskah.value = null;
+};
+
+// ── Masukkan ke Berkas ───────────────────────────────────────────────────────
+const showAddToBerkasModal = ref(false);
+const selectedNaskahForBerkas = ref<any>(null);
+const berkasListForModal = ref<any[]>([]);
+const selectedBerkasId = ref('');
+const isAddingToBerkas = ref(false);
+const berkasStatusMap = ref<Record<string, any>>({});
+const openBerkasDropdown = ref(false);
+const berkasSearch = ref('');
+const berkasTriggerRef = ref<HTMLElement | null>(null);
+const berkasPanelStyle = ref<Record<string, string>>({});
+const berkasLockedInfo = ref<any>(null);
+
+const updateBerkasPanelPosition = () => {
+  const el = berkasTriggerRef.value;
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  berkasPanelStyle.value = {
+    left: `${rect.left}px`,
+    top: `${rect.bottom + 6}px`,
+    width: `${rect.width}px`,
+  };
+};
+
+const toggleBerkasDropdown = () => {
+  openBerkasDropdown.value = !openBerkasDropdown.value;
+  if (openBerkasDropdown.value) {
+    updateBerkasPanelPosition();
+    berkasSearch.value = '';
+  }
+};
+
+const selectedBerkasLabel = computed(() => {
+  const b = berkasListForModal.value.find((x) => x.id === selectedBerkasId.value);
+  if (!b) return '';
+  return `${b.kodeBerkas ?? b.kode_berkas ?? '-'} — ${b.judulBerkas ?? b.judul_berkas ?? '-'}`;
+});
+
+const filteredBerkasList = computed(() => {
+  const q = berkasSearch.value.trim().toLowerCase();
+  if (!q) return berkasListForModal.value;
+  return berkasListForModal.value.filter((b) =>
+    `${b.kodeBerkas ?? b.kode_berkas ?? ''} ${b.judulBerkas ?? b.judul_berkas ?? ''}`
+      .toLowerCase()
+      .includes(q),
+  );
+});
+
+const selectBerkas = (b: any) => {
+  selectedBerkasId.value = b.id;
+  openBerkasDropdown.value = false;
+  berkasSearch.value = '';
+};
+
+function handleBerkasDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (target.closest('[data-custom-dropdown]')) return;
+  openBerkasDropdown.value = false;
+  berkasSearch.value = '';
+}
+
+const fetchBerkasStatus = async (naskahId: string) => {
+  if (!canReadBerkasStatus.value || !naskahId) return;
+  try {
+    const res: any = await getBerkasStatusByNaskah([naskahId]);
+    const arr: any[] = res?.data ?? res;
+    const map: Record<string, any> = {};
+    arr.forEach((x: any) => { map[x.naskah_id] = x; });
+    berkasStatusMap.value = map;
+  } catch {
+    berkasStatusMap.value = {};
+  }
+};
+
+const openAddToBerkasModal = async () => {
+  const s = selected.value;
+  const naskahId = s?.id || s?.naskahId || s?.id_naskah || id;
+  if (!naskahId) return;
+  selectedNaskahForBerkas.value = {
+    naskahId,
+    subject: s?.perihal || s?.subject || '',
+  };
+  selectedBerkasId.value = '';
+  openBerkasDropdown.value = false;
+  berkasSearch.value = '';
+  showAddToBerkasModal.value = true;
+  try {
+    const data: any = await getBerkasList({ status: 'aktif', limit: 100 });
+    berkasListForModal.value =
+      data?.data?.data && Array.isArray(data.data.data)
+        ? data.data.data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+  } catch (e) {
+    console.error('Gagal memuat daftar berkas:', e);
+  }
+  await fetchBerkasStatus(naskahId);
+  const current = berkasStatusMap.value[naskahId];
+  if (current?.berkas_status && current.berkas_status !== 'aktif') {
+    berkasLockedInfo.value = current;
+  } else {
+    berkasLockedInfo.value = null;
+    if (current?.berkas_id) {
+      selectedBerkasId.value = current.berkas_id;
+    }
+  }
+};
+
+const handleAddToBerkas = async () => {
+  if (!selectedBerkasId.value || !selectedNaskahForBerkas.value) return;
+  if (berkasLockedInfo.value) return;
+  isAddingToBerkas.value = true;
+  try {
+    await addNaskahToBerkas(selectedBerkasId.value, {
+      naskah_ids: [selectedNaskahForBerkas.value.naskahId],
+      sumber: 'terkirim',
+    });
+    useToast().add({ title: 'Naskah berhasil ditambahkan ke berkas', color: 'success' });
+    showAddToBerkasModal.value = false;
+  } catch (e: any) {
+    useToast().add({ title: e?.message || 'Gagal menambahkan ke berkas', color: 'error' });
+  } finally {
+    isAddingToBerkas.value = false;
+  }
+};
 
 // --- ACTION HANDLERS (Sama seperti sebelumnya) ---
 const goBack = () => router.push({
@@ -697,7 +855,12 @@ const handleToggleFlag = async (
       await toggleFlag(mailObj, type, noteText);
       // Sync to selected.value so DetailNaskah picks up updated noteText
       if (selected.value) {
-        selected.value.noteText = hasText ? noteText : '';
+        const textToSave = hasText ? noteText : '';
+        selected.value.noteText = textToSave;
+        selected.value.catatan = textToSave;
+        if (selected.value.disposisi_content) {
+          selected.value.disposisi_content.catatan = textToSave;
+        }
         selected.value.isNote = hasText;
       }
     } catch {
@@ -1051,6 +1214,8 @@ const konsepOptions = [
             @lock="handleToggleFlag('lock')"
             @catatan="(text) => handleToggleFlag('note', text)"
             @archive="handleToggleFlag('arsip')"
+            @share="handleShare"
+            @add-to-berkas="openAddToBerkasModal"
             @toggle-collapse="toggleCardCollapse(index)" />
         </div>
       </div>
@@ -1407,6 +1572,154 @@ const konsepOptions = [
         </div>
       </template>
     </USlideover>
+
+    <!-- Share Modal -->
+    <SharedShareModal
+      v-if="showShareModal && shareNaskah"
+      :naskah-id="shareNaskah.naskahId"
+      :naskah-perihal="shareNaskah.perihal"
+      :naskah-nomor="shareNaskah.nomor"
+      :naskah-jenis="shareNaskah.jenis"
+      @close="handleShareClose"
+      @shared="handleShareClose"
+    />
+
+    <!-- Modal Masukkan ke Berkas -->
+    <Teleport to="body">
+      <Modal
+        v-model="showAddToBerkasModal"
+        size="md"
+        :saving="isAddingToBerkas"
+        @save="handleAddToBerkas"
+      >
+        <template #title>
+          <div class="ml-5 mt-5 mb-2 flex items-center gap-2.5">
+            <span
+              class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/40"
+            >
+              <UIcon name="i-lucide-folder-plus" class="size-4.5 text-primary-600 dark:text-primary-400" />
+            </span>
+            <Heading variant="heading9b" class="text-sm font-bold dark:text-white">
+              Masukkan ke Berkas
+            </Heading>
+          </div>
+        </template>
+
+        <div class="space-y-4 p-1">
+          <div
+            v-if="selectedNaskahForBerkas"
+            class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-700/40"
+          >
+            <span
+              class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-800"
+            >
+              <UIcon name="i-lucide-file-text" class="size-4 text-primary-600 dark:text-primary-400" />
+            </span>
+            <div class="min-w-0">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Naskah</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ selectedNaskahForBerkas.subject || '-' }}
+              </p>
+            </div>
+          </div>
+
+          <div v-if="!berkasLockedInfo">
+            <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
+              Pilih Berkas Aktif <span class="text-red-500">*</span>
+            </Heading>
+            <div class="relative mt-1" data-custom-dropdown>
+              <button
+                ref="berkasTriggerRef"
+                type="button"
+                :disabled="berkasListForModal.length === 0"
+                @click.stop="toggleBerkasDropdown"
+                :class="[
+                  'flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60',
+                  !selectedBerkasId
+                    ? 'border-gray-300 text-gray-400 dark:border-gray-600 dark:text-gray-500'
+                    : 'border-gray-300 text-gray-700 dark:border-gray-600',
+                ]"
+              >
+                <span class="truncate">{{ selectedBerkasLabel || 'Pilih berkas tujuan' }}</span>
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="size-4 shrink-0 text-gray-400 transition-transform duration-200"
+                  :class="{ 'rotate-180': openBerkasDropdown }"
+                />
+              </button>
+            </div>
+
+            <Teleport to="body">
+              <div
+                v-if="openBerkasDropdown && berkasListForModal.length > 0"
+                data-custom-dropdown
+                class="fixed z-[10000] max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                :style="berkasPanelStyle"
+              >
+                <div class="border-b border-gray-100 p-2 dark:border-gray-700">
+                  <div class="relative">
+                    <UIcon
+                      name="i-lucide-search"
+                      class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      v-model="berkasSearch"
+                      type="text"
+                      placeholder="Cari berkas…"
+                      class="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:bg-white dark:border-gray-700 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-800"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+                <div class="max-h-44 overflow-y-auto">
+                  <button
+                    v-for="b in filteredBerkasList"
+                    :key="b.id"
+                    type="button"
+                    @click.stop="selectBerkas(b)"
+                    :class="[
+                      'w-full border-b border-gray-50 px-4 py-2.5 text-left text-sm transition-colors last:border-0 dark:border-gray-700',
+                      selectedBerkasId === b.id
+                        ? 'bg-primary/5 font-medium text-primary dark:text-primary-400'
+                        : 'text-gray-700 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    <span class="font-mono text-xs">{{ b.kodeBerkas ?? b.kode_berkas ?? '-' }}</span>
+                    <span class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">
+                      {{ b.judulBerkas ?? b.judul_berkas ?? '-' }}
+                    </span>
+                  </button>
+                  <div
+                    v-if="filteredBerkasList.length === 0"
+                    class="px-4 py-3 text-sm text-gray-400"
+                  >
+                    Berkas tidak ditemukan.
+                  </div>
+                </div>
+              </div>
+            </Teleport>
+            <p v-if="berkasListForModal.length === 0" class="mt-2 text-xs text-gray-400">
+              Tidak ada berkas aktif. Buat berkas baru di halaman Pemberkasan.
+            </p>
+          </div>
+
+          <div v-else class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <UIcon name="i-lucide-lock" class="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Naskah tidak bisa dipindahkan
+              </p>
+              <p class="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
+                Naskah sudah berada di berkas
+                <span class="font-semibold">{{ berkasLockedInfo.kode_berkas }}</span>
+                yang berstatus {{ berkasLockedInfo.berkas_status === 'closed_retensi_aktif' ? 'Tertutup' : 'Retensi Inaktif' }}.
+                Arsip yang sudah ditutup tidak dapat dipindah ke berkas lain.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    </Teleport>
 
   </div>
   </template>

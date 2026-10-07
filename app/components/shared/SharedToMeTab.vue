@@ -13,6 +13,7 @@ const props = defineProps<{
   page: number;
   limit: number;
   userPosition?: string;
+  searchQuery?: string;
 }>();
 
 const emit = defineEmits<{
@@ -57,6 +58,24 @@ const canOpenPdf = (share: ShareItem): boolean => {
   }
   return true;
 };
+
+const escapeHtml = (text: string): string =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const highlightText = (text: string, query?: string) => {
+  // Escape dulu agar perihal/nomor (data user) tidak dirender sebagai HTML
+  // (mencegah XSS via v-html).
+  const safeText = escapeHtml(text || '');
+  if (!query || !safeText) return safeText;
+  const safeQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${safeQuery})`, 'gi');
+  return safeText.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-500/50 text-inherit px-0.5 rounded">$1</mark>');
+};
 </script>
 
 <template>
@@ -68,10 +87,12 @@ const canOpenPdf = (share: ShareItem): boolean => {
       :empty-message="t('share_belum_ada_ke_saya')"
     >
       <template #cell-naskahPerihal="{ row }">
-        <div class="max-w-[260px]">
-          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {{ row.naskahPerihal || t('share_tanpa_perihal') }}
-          </p>
+        <div class="max-w-[260px] flex items-center gap-2">
+          <span v-if="row.recipients?.find(r => r.recipientId === userPosition)?.status === 'TERKIRIM'" class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full" title="Belum dibaca"></span>
+          <p
+            class="text-sm font-medium text-gray-900 dark:text-white truncate"
+            v-html="highlightText(row.naskahPerihal || t('share_tanpa_perihal'), searchQuery)"
+          ></p>
         </div>
       </template>
 
@@ -89,9 +110,10 @@ const canOpenPdf = (share: ShareItem): boolean => {
       </template>
 
       <template #cell-naskahNomor="{ row }">
-        <span class="text-xs text-gray-600 dark:text-gray-400 font-mono">
-          {{ row.naskahNomor || '-' }}
-        </span>
+        <span
+          class="text-xs text-gray-600 dark:text-gray-400 font-mono"
+          v-html="highlightText(row.naskahNomor || '-', searchQuery)"
+        ></span>
       </template>
 
       <template #cell-pemberi="{ row }">
