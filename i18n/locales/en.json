@@ -2328,5 +2328,18 @@
   "tugas_ref_pilih": "Select a reference document",
   "tugas_ref_upload": "Upload reference",
   "tugas_ref_personal_info": "Enter a document number from Inbox/Sent or upload a reference manually.",
-  "tugas_ref_manual_info": "PDF, JPG, or PNG; up to 10 MB."
+  "tugas_ref_manual_info": "PDF, JPG, or PNG; up to 10 MB.",
+  "tugas_forum_tambah_reaksi": "Add reaction",
+  "tugas_forum_reaksi_label": "Reaction {emoji}, {count} members",
+  "tugas_forum_reaksi_gagal": "Failed to save reaction",
+  "df_tte_waiting": "Awaiting signature",
+  "df_tte_processing": "Processing signature",
+  "df_tte_attention": "Needs attention",
+  "df_tte_resume": "Continue signing",
+  "df_tte_check": "Check signing status",
+  "df_tte_checked": "Signing status checked",
+  "df_tte_check_failed": "Unable to check signing status",
+  "tte_callback_sent": "Open Sent",
+  "tte_callback_redirect": "The document is complete. Redirecting to Sent.",
+  "tte_callback_incomplete": "Document completion is still pending. Check the status again or open Drafts."
 }

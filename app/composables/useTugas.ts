@@ -14,6 +14,7 @@ import type {
   TugasReferenceType,
   TugasReferenceCandidate,
   TugasTaskComment,
+  TugasCommentReaction,
   TugasTaskCommentPage,
   TugasTaskPage,
   TugasTaskQuery,
@@ -369,6 +370,12 @@ export const useTugas = () => {
     };
   };
 
+  const fetchCommentReactions = (boardId: string, commentId: string) =>
+    getFresh<{ data: TugasCommentReaction[] }>(`/tugas/boards/${boardId}/comments/${commentId}/reactions`);
+
+  const setCommentReaction = (boardId: string, commentId: string, emoji: string, active: boolean) =>
+    post<{ data: TugasCommentReaction[] }>(`/tugas/boards/${boardId}/comments/${commentId}/reactions`, { emoji, active });
+
   const addBoardComment = async (boardId: string, isi: string, taskId?: string | null) => {
     return post<{ data: TugasTaskComment }>(`/tugas/boards/${boardId}/comments`, {
       isi,
@@ -446,6 +453,8 @@ export const useTugas = () => {
     removeTaskEvidence,
     // forum diskusi
     fetchBoardComments,
+    fetchCommentReactions,
+    setCommentReaction,
     addBoardComment,
     removeBoardComment,
     // util
