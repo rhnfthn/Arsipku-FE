@@ -115,7 +115,7 @@
         <!-- Tertuju: exclude yang sudah dipilih di TEMBUSAN -->
         <!-- Tertuju: exclude tembusan + anggota grup tembusan -->
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTertuju" label="Tertuju"
+          <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" label="Tertuju"
             :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="items"
             :groups="recipientGroups" :exclude-items="expandedExcludeTertuju" :disabled="!isSenderSelected"
             disabled-message="Sudah dipilih di Tembusan" />
@@ -123,7 +123,7 @@
 
         <!-- Tembusan: exclude tertuju + anggota grup tertuju -->
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
-          <TulisInputPenerima v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan"
+          <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan"
             :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
             :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
             disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
@@ -207,7 +207,7 @@
                       <div v-else-if="selectedTertuju.length > 0">
                         <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
                           <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
-                          {{ correspondenceRecipientLabel(p) }}
+                          {{ sdiRecipientLabel(p) }}
                         </div>
                       </div>
                       <div v-else>................................................</div>
@@ -236,7 +236,7 @@
                   <div class="font-bold mb-1">Tembusan Yth:</div>
                   <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
                   <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
-                    <li v-for="t in selectedTembusan" :key="t.value">{{ correspondenceRecipientLabel(t) }}</li>
+                    <li v-for="t in selectedTembusan" :key="t.value">{{ sdiRecipientLabel(t) }}</li>
                   </ol>
                   <div v-else class="text-gray-400 italic">...</div>
                 </div>
@@ -265,13 +265,13 @@
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item) }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ sdiRecipientLabel(item) }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item) }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ sdiRecipientLabel(item) }}</li>
                     </ol>
                   </div>
                 </div>
@@ -781,7 +781,7 @@ const getBasePayload = (): DraftPayload => {
     tembusan: tembusanIndividu.value,
     penerima_grup: tertujuGrup.value,
     tembusan_grup: tembusanGrup.value,
-    tertuju: selectedTertuju.value.map(i => correspondenceRecipientLabel(i)),
+    tertuju: selectedTertuju.value.map(i => sdiRecipientLabel(i)),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',

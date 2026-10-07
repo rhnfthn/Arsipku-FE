@@ -145,6 +145,8 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
     // Menu Kelola (Pemindahan Arsip / Penyusutan)
     OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/maintenance/penerimaan-usulan',
+    OPEN_TRANSFER_BAC_SIGNING: '/maintenance/penandatanganan',
+    OPEN_TRANSFER_BAC_COPY: '/maintenance/tembusan-bac',
     OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',
   };
 
@@ -159,7 +161,12 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
   }
 
   // Notifikasi Kelola: bawa id usulan agar halaman tujuan bisa auto-buka detail
-  if (action === 'OPEN_TRANSFER_ACTIVE_TO_INACTIVE' || action === 'OPEN_PENYUSUTAN') {
+  if (
+    action === 'OPEN_TRANSFER_ACTIVE_TO_INACTIVE' ||
+    action === 'OPEN_TRANSFER_BAC_COPY' ||
+    action === 'OPEN_PENYUSUTAN'
+  ) {
+    if (action === 'OPEN_TRANSFER_BAC_COPY') return { path: base };
     const id = getString('id', 'idUsulan', 'id_usulan');
     return id ? { path: `${base}/${encodeURIComponent(id)}` } : { path: base };
   }
@@ -177,14 +184,18 @@ export const useNotifications = () => {
 
   const recentToastKeys = useState<Record<string, number>>(
     'notifications:sde-masal-toast-keys',
-    () => ({}),
+    () => ({})
   );
   const toastDedupMs = 5 * 60_000;
 
   const getNotificationToastKey = (payload: NotificationItem): string => {
     const data = payload.data || {};
-    const title = String(payload.title || '').trim().replace(/\s+/g, ' ');
-    const description = String(payload.body || '').trim().replace(/\s+/g, ' ');
+    const title = String(payload.title || '')
+      .trim()
+      .replace(/\s+/g, ' ');
+    const description = String(payload.body || '')
+      .trim()
+      .replace(/\s+/g, ' ');
     const isSdeMasal =
       data.category === 'SDE_MASAL' || title.toLowerCase().startsWith('sde massal ');
     if (isSdeMasal) {
@@ -207,18 +218,19 @@ export const useNotifications = () => {
     // masuk ke UI sebelum guard ini berjalan. Sisakan satu saja.
     if (
       payload.data?.category === 'SDE_MASAL' ||
-      String(payload.title || '').trim().toLowerCase().startsWith('sde massal ')
+      String(payload.title || '')
+        .trim()
+        .toLowerCase()
+        .startsWith('sde massal ')
     ) {
       const title = payload.title || 'Notifikasi baru';
       const description = payload.body || undefined;
       const sameToasts = toast.toasts.value.filter(
-        (item) => item.title === title && item.description === description,
+        (item) => item.title === title && item.description === description
       );
       if (sameToasts.length > 0) {
         const duplicateIds = new Set(sameToasts.slice(1).map((item) => item.id));
-        toast.toasts.value = toast.toasts.value.filter(
-          (item) => !duplicateIds.has(item.id),
-        );
+        toast.toasts.value = toast.toasts.value.filter((item) => !duplicateIds.has(item.id));
         recentToastKeys.value[key] = now;
         return false;
       }
@@ -382,10 +394,7 @@ export const useNotifications = () => {
       notifications.value.forEach((notification) => {
         const data = notification.data || {};
         const relatedFolderId = data.folderId || data.folder_id;
-        if (
-          String(relatedFolderId || '') === normalizedFolderId &&
-          !notification.isRead
-        ) {
+        if (String(relatedFolderId || '') === normalizedFolderId && !notification.isRead) {
           notification.isRead = true;
           notification.readAt = new Date().toISOString();
           changed += 1;
@@ -520,7 +529,10 @@ export const useNotifications = () => {
           notifications.value.unshift(payload);
           const isSdeMasal =
             payload.data?.category === 'SDE_MASAL' ||
-            String(payload.title || '').trim().toLowerCase().startsWith('sde massal ');
+            String(payload.title || '')
+              .trim()
+              .toLowerCase()
+              .startsWith('sde massal ');
           const isReturned = payload.data?.status === 'DIKEMBALIKAN';
           const isVerification = payload.data?.action === 'OPEN_SDE_MASAL_VERIFIKASI';
           if (shouldShowNotificationToast(payload)) {

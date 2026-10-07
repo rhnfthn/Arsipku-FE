@@ -128,6 +128,10 @@ export const useTransferActiveToInactive = () => {
     const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/selesai`, {});
     return r?.data;
   };
+  const dispatchSignedBacToTu = async (id: string) => {
+    const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/dispatch-signed-bac-to-tu`, {});
+    return r?.data;
+  };
   const approveReceipt = async (id: string) => {
     const r: any = await apiPatch(`/transfer-active-to-inactive/${id}/approve-receipt`, {});
     return r?.data;
@@ -190,6 +194,7 @@ export const useTransferActiveToInactive = () => {
     kirimUsulPindah,
     siapkanBerkasFisik,
     selesaikanUsulan,
+    dispatchSignedBacToTu,
     approveReceipt,
     verifyPhysical,
     tuApprove,

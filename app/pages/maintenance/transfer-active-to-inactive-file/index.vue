@@ -2,18 +2,18 @@
   <div class="bg-gray-50 dark:bg-gray-900 pt-5 min-h-screen px-5">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-      <PageHeader
-        title="Pemindahan Arsip Aktif ke Inaktif"
-        :items="items"
-      />
+      <PageHeader title="Pemindahan Arsip Aktif ke Inaktif" :items="items" />
+      <!-- Tombol Usul Pindah Arsip disembunyikan sementara. -->
+      <!--
       <button
-        v-if="isSekretaris"
-        @click="openCreateModal"
-        class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
-      >
-        <Plus class="w-4 h-4" />
-        Usul Pindah Arsip
-      </button>
+          v-if="isSekretaris"
+          @click="openCreateModal"
+          class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
+        >
+          <Plus class="w-4 h-4" />
+          Usul Pindah Arsip
+        </button>
+      -->
     </div>
 
     <!-- Table Card -->
@@ -190,8 +190,15 @@
           <div class="truncate" :title="row.perihal">{{ row.perihal }}</div>
         </template>
         <template #cell-kodeBerkas="{ row }">
-          <div class="truncate font-medium text-gray-700 dark:text-gray-200" :title="row.kodeBerkas ?? '-'">{{ row.kodeBerkas ?? '-' }}</div>
-          <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">{{ row.nomorUsulan }}</div>
+          <div
+            class="truncate font-medium text-gray-700 dark:text-gray-200"
+            :title="row.kodeBerkas ?? '-'"
+          >
+            {{ row.kodeBerkas ?? '-' }}
+          </div>
+          <div v-if="row.isUsulan" class="text-[11px] text-gray-400 truncate">
+            {{ row.nomorUsulan }}
+          </div>
         </template>
         <template #cell-klasifikasi="{ row }">
           <div class="truncate" :title="row.klasifikasi ?? '-'">{{ row.klasifikasi ?? '-' }}</div>
@@ -200,12 +207,15 @@
           <span class="whitespace-nowrap">{{ formatDate(row.tanggalRetensiAktifHabis) }}</span>
         </template>
         <template #cell-status="{ row }">
-          <span :class="statusBadgeClass(row.status as any)" class="text-[11px]">{{ statusLabel(row.status as any) }}</span>
+          <span :class="displayStatusClass(row)" class="text-[11px]">
+            {{ displayStatusLabel(row) }}
+          </span>
           <span
             v-if="!row.isUsulan && row.berkasStatus === 'retensi_inaktif'"
             class="ml-1 px-2 py-0.5 text-[11px] rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
             title="Berkas sudah masuk fase retensi inaktif"
-          >Retensi Inaktif</span>
+            >Retensi Inaktif</span
+          >
         </template>
         <template #cell-aksi="{ row }">
           <div class="text-center" @click.stop>
@@ -235,15 +245,6 @@
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
               <UIcon name="i-heroicons-eye" class="w-4 h-4" />
-            </button>
-            <!-- EVP pihak pertama BAC → tombol Tanda Tangan (TTE) -->
-            <button
-              v-if="canSignBac(row)"
-              @click="openSignBac(row)"
-              title="Tanda Tangan Berita Acara (TTE)"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white transition-colors ml-1"
-            >
-              <UIcon name="i-lucide-pen-tool" class="w-4 h-4" />
             </button>
           </div>
         </template>
@@ -278,16 +279,6 @@
       @confirm="handleExportConfirm"
     />
 
-    <!-- Modal Passphrase TTE BAC (EVP pihak pertama) -->
-    <DigsigPassphraseModal
-      :open="isSignBacModalOpen"
-      :signer-info="signBacSignerInfo"
-      :is-loading="signBacLoading"
-      :hide-qr="true"
-      :hide-basah="true"
-      @update:open="(v: boolean) => (isSignBacModalOpen = v)"
-      @submit="onSignBacSubmit"
-    />
   </div>
 </template>
 
@@ -301,12 +292,11 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import CreateTransferModal from '~/components/transfer-active-to-inactive/CreateTransferModal.vue';
-import DigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModal.vue';
 import DataTable from '~/components/DataTable.vue';
 import { formatDate, statusBadgeClass, statusLabel } from '~/utils/transfer-status';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({ middleware: ['auth', 'division-secretary-only'] });
 
 const showExportModal = ref(false);
 const exportColumns = ref([
@@ -314,16 +304,19 @@ const exportColumns = ref([
   { key: 'kodeBerkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
   { key: 'perihal', label: 'Nama Berkas', desc: 'Perihal atau nama berkas' },
   { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
-  { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', desc: 'Tanggal batas retensi aktif habis' },
+  {
+    key: 'tanggalRetensiAktifHabis',
+    label: 'Retensi Habis',
+    desc: 'Tanggal batas retensi aktif habis',
+  },
   { key: 'atasanName', label: 'Atasan', desc: 'Nama atasan penilai' },
   { key: 'status', label: 'Status', desc: 'Status usulan pemindahan' },
-  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' }
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal pelaksanaan usulan' },
 ]);
 
-const { apiGet, apiPost } = useApi();
+const { apiGet } = useApi();
 const { send, fetchDetail } = useTransferActiveToInactive();
 const { user, isSuperadmin, isAdmin } = useAuth();
-
 
 /** Baris gabungan (arsip belum usulan + usulan sudah dibuat). */
 interface GabunganRow {
@@ -339,9 +332,8 @@ interface GabunganRow {
   /** Status asli berkas (untuk baris belum-usulan: closed_retensi_aktif / retensi_inaktif). */
   berkasStatus?: string | null;
   tanggal: string | null;
-  /** Pejabat pihak pertama BAC — untuk tombol Tanda Tangan (EVP). */
-  bacPihakPertamaPersnum?: number | null;
-  bacPihakPertamaName?: string | null;
+  /** Status BAC presentasi, tanpa mengubah status workflow utama. */
+  bacStatus?: 'MENUNGGU_TTD' | 'SUDAH_DITANDATANGANI' | null;
   bacSignedAt?: string | null;
   beritaAcaraUrl?: string | null;
 }
@@ -394,56 +386,19 @@ const onSendUsulan = async (row: GabunganRow) => {
 
 const isCreateModalOpen = ref(false);
 
-// ── TTE BAC (EVP pihak pertama) ──
-const isSignBacModalOpen = ref(false);
-const signBacLoading = ref(false);
-const signBacTarget = ref<GabunganRow | null>(null);
-const signBacSignerInfo = computed(() => ({
-  name: user.value?.nama ?? '-',
-  role: user.value?.positionText ?? '-',
-  label: 'Berita Acara Serah Terima',
-}));
+const displayStatusLabel = (row: GabunganRow): string =>
+  row.bacStatus === 'MENUNGGU_TTD'
+    ? 'Menunggu TTD'
+    : row.bacStatus === 'SUDAH_DITANDATANGANI'
+      ? 'BAC Ditandatangani'
+      : statusLabel(row.status as any);
 
-/** Tombol Tanda Tangan tampil jika: user = pihak pertama BAC, BAC sudah di-generate, belum TTE. */
-const canSignBac = (row: GabunganRow): boolean => {
-  if (!row.isUsulan) return false;
-  if (!row.bacPihakPertamaPersnum) return false;
-  if (Number(row.bacPihakPertamaPersnum) !== Number(user.value?.persnum)) return false;
-  if (!row.beritaAcaraUrl) return false;
-  if (row.bacSignedAt) return false;
-  return true;
-};
-
-const openSignBac = (row: GabunganRow) => {
-  signBacTarget.value = row;
-  isSignBacModalOpen.value = true;
-};
-
-const onSignBacSubmit = async (payload: { method: string; passphrase?: string }) => {
-  if (!signBacTarget.value || !payload.passphrase) return;
-  signBacLoading.value = true;
-  try {
-    await apiPost(`/digsig/bac/${signBacTarget.value.id}/sign`, {
-      passphrase: payload.passphrase,
-    });
-    useToast().add({
-      title: 'Berita Acara berhasil ditandatangani',
-      description: 'BAC telah ditandatangani dengan TTE (BSrE).',
-      color: 'success',
-    });
-    isSignBacModalOpen.value = false;
-    await loadGabungan();
-  } catch (e: any) {
-    console.error('Gagal TTE BAC:', e);
-    useToast().add({
-      title: 'Gagal menandatangani Berita Acara',
-      description: e?.response?.data?.message || e?.message || 'Periksa passphrase Anda dan coba kembali.',
-      color: 'error',
-    });
-  } finally {
-    signBacLoading.value = false;
-  }
-};
+const displayStatusClass = (row: GabunganRow): string =>
+  row.bacStatus === 'MENUNGGU_TTD'
+    ? 'px-2 py-0.5 text-xs rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+    : row.bacStatus === 'SUDAH_DITANDATANGANI'
+      ? 'px-2 py-0.5 text-xs rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+    : statusBadgeClass(row.status as any);
 const selectedTransfer = ref<TransferActiveToInactive | null>(null);
 
 const filter = reactive({
@@ -483,7 +438,7 @@ const openRowsPerPage = ref(false);
 const openFilterStatus = ref(false);
 const openFilterKlasifikasi = ref(false);
 const statusFilterLabel = computed(
-  () => statusOptions.find((o) => o.value === filter.status)?.label ?? 'Semua Status',
+  () => statusOptions.find((o) => o.value === filter.status)?.label ?? 'Semua Status'
 );
 const klasifikasiLabel = computed(() => {
   if (!filter.klasifikasi) return 'Semua Klasifikasi';
@@ -526,13 +481,12 @@ function handleDocumentClick(e: MouseEvent) {
   for (const el of Array.from(els)) {
     if (el.contains(target)) return;
   }
-  openRowsPerPage.value =
-    openFilterStatus.value =
-    openFilterKlasifikasi.value =
-      false;
+  openRowsPerPage.value = openFilterStatus.value = openFilterKlasifikasi.value = false;
 }
 
-const totalPages = computed(() => Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value)));
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(gabunganList.value.length / itemsPerPage.value))
+);
 
 const paginatedList = computed(() => {
   let list = gabunganList.value;
@@ -567,7 +521,10 @@ const isSekretaris = computed(() => {
 const items = [
   { label: 'Beranda', to: '/' },
   { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
-  { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
+  {
+    label: 'Pemindahan Arsip Aktif ke Inaktif',
+    to: '/maintenance/transfer-active-to-inactive-file',
+  },
 ];
 
 const loadGabungan = async () => {
@@ -577,7 +534,11 @@ const loadGabungan = async () => {
     if (filter.search) params.search = filter.search;
     if (filter.status) params.status = filter.status;
     if (filter.klasifikasi) params.klasifikasi = filter.klasifikasi;
-    const res: any = await apiGet('/transfer-active-to-inactive/gabungan', { params }, { skipCache: true });
+    const res: any = await apiGet(
+      '/transfer-active-to-inactive/gabungan',
+      { params },
+      { skipCache: true }
+    );
     // Normalize ke plain object agar DataTable tidak menerima reactive proxy
     // (menyebabkan warning "_isVue"/"constructor" saat render).
     const raw: any[] = res?.data ?? [];
@@ -596,9 +557,7 @@ const loadGabungan = async () => {
       // Timestamp untuk deteksi baris terbaru (bold)
       createdAt: r.createdAt ?? null,
       updatedAt: r.updatedAt ?? null,
-      // Pejabat BAC — untuk tombol Tanda Tangan (EVP pihak pertama)
-      bacPihakPertamaPersnum: r.bacPihakPertamaPersnum ?? null,
-      bacPihakPertamaName: r.bacPihakPertamaName ?? null,
+      bacStatus: r.bacStatus ?? null,
       bacSignedAt: r.bacSignedAt ?? null,
       beritaAcaraUrl: r.beritaAcaraUrl ?? null,
     }));
@@ -619,7 +578,11 @@ const isExporting = ref(false);
 
 const onExport = () => {
   if (gabunganList.value.length === 0) {
-    useToast().add({ title: 'Tidak ada data', description: 'Tidak ada data untuk diexport', color: 'warning' });
+    useToast().add({
+      title: 'Tidak ada data',
+      description: 'Tidak ada data untuk diexport',
+      color: 'warning',
+    });
     return;
   }
   showExportModal.value = true;
@@ -635,7 +598,8 @@ const handleExportConfirm = (selectedKeys: string[]) => {
       if (selectedKeys.includes('kodeBerkas')) row['Kode Berkas'] = r.kodeBerkas || '-';
       if (selectedKeys.includes('perihal')) row['Nama Berkas'] = r.perihal || '-';
       if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = r.klasifikasi || '-';
-      if (selectedKeys.includes('tanggalRetensiAktifHabis')) row['Retensi Habis'] = r.tanggalRetensiAktifHabis || '-';
+      if (selectedKeys.includes('tanggalRetensiAktifHabis'))
+        row['Retensi Habis'] = r.tanggalRetensiAktifHabis || '-';
       if (selectedKeys.includes('atasanName')) row['Atasan'] = r.atasanName || '-';
       if (selectedKeys.includes('status')) row['Status'] = r.status || '-';
       if (selectedKeys.includes('tanggal')) row['Tanggal'] = r.tanggal || '-';
@@ -644,7 +608,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2
+      wch: Math.max(key.length, ...data.map((row: any) => String(row[key] ?? '').length)) + 2,
     }));
     worksheet['!cols'] = colWidths;
 
@@ -652,15 +616,23 @@ const handleExportConfirm = (selectedKeys: string[]) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Pemindahan Arsip');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     saveAs(blob, `pemindahan_arsip_aktif_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
     showExportModal.value = false;
-    useToast().add({ title: 'Berhasil', description: `${data.length} data berhasil diexport`, color: 'success' });
+    useToast().add({
+      title: 'Berhasil',
+      description: `${data.length} data berhasil diexport`,
+      color: 'success',
+    });
   } catch (err) {
     console.error('Export pemindahan arsip aktif error:', err);
-    useToast().add({ title: 'Gagal export', description: 'Terjadi kesalahan saat export.', color: 'error' });
+    useToast().add({
+      title: 'Gagal export',
+      description: 'Terjadi kesalahan saat export.',
+      color: 'error',
+    });
   } finally {
     isExporting.value = false;
   }

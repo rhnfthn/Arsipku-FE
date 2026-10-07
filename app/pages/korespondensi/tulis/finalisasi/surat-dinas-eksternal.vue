@@ -54,81 +54,112 @@
           </div>
         </div>
 
+        <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+          <span class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">Lampiran</span>
+          <input v-model="lampiranText" type="text"
+            class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
+            placeholder="Keterangan lampiran" />
+        </div>
+
         <div class="flex flex-col py-4">
           <TulisTemplateManager :current-content="editorContent" @apply="handleApplyTemplate" />
 
           <ClientOnly>
-            <div class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
-              <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black">
+            <div
+              class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']">
+              <div class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]">
+
                 <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
                   <TulisKopSurat :alamat-info="user?.alamatInfo" />
-                  <div class="text-center mb-6 text-black">
-                    <h1 class="text-xl font-bold decoration-2 underline-offset-4 text-[16px] uppercase tn-roman">NOTA DINAS</h1>
-                    <p class="text-lg mt-1 text-[14px]">Nomor : ..............................................</p>
-                  </div>
-                  <table class="w-[50%] mx-auto text-lg leading-relaxed mb-4 tn-roman text-black">
-                    <tbody>
-                      <tr>
-                        <td class="text-[14px] w-[120px] font-bold align-top">Kepada Yth.</td>
-                        <td class="text-[14px] w-[20px] align-top">:</td>
-                        <td class="text-[14px] align-top">
-                          <span v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</span>
-                          <span v-else v-html="selectedTertuju.length
-                            ? selectedTertuju.map((s: any, i: number) =>
-                              selectedTertuju.length === 1
-                                ? `<div>${correspondenceRecipientLabel(s)}</div>`
-                                : `<div style='margin-left:1em;text-indent:-1em'>${i + 1}. ${correspondenceRecipientLabel(s)}</div>`
-                            ).join('')
-                            : '................................................'
-                            "></span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-[14px] font-bold align-top">Dari</td>
-                        <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ user?.positionText || 'Posisi' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="text-[14px] font-bold align-top">Perihal</td>
-                        <td class="text-[14px] align-top">:</td>
-                        <td class="text-[14px] align-top">{{ subject || "................................................" }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
                 </div>
 
-                <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" class="min-h-[400px]" />
+                <div class="flex mb-4 text-[14px] px-10">
+                  <div>{{ user?.alamatInfo?.kota || "Tangerang" }}, {{ formattedDate }}</div>
+                </div>
 
-                <div class="bg-white px-8 pt-4 pb-8 border-t border-gray-100 select-none">
-                  <div class="flex justify-end mb-4 text-black">
-                    <div class="text-center min-w-[250px]">
-                      <div class="mb-24 text-[14px]">
-                        <div>{{ user?.alamatInfo?.kota || 'Tangerang' }}, {{ formattedDate }}</div>
-                        <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
+                  <div class="w-full">
+                    <table class="w-full align-top">
+                      <tbody>
+                        <tr>
+                          <td class="w-[80px] align-top">Nomor</td>
+                          <td class="w-[10px] align-top">:</td>
+                          <td class="align-top">................................................</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top">Sifat</td>
+                          <td class="align-top">:</td>
+                          <td class="align-top capitalize">{{ selectedSifat?.label || 'Biasa' }}</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top">Lampiran</td>
+                          <td class="align-top">:</td>
+                          <td class="align-top">{{ lampiranText || '-' }}</td>
+                        </tr>
+                        <tr>
+                          <td class="align-top">Perihal</td>
+                          <td class="align-top">:</td>
+                          <td class="align-top font-bold text-justify">{{ subject ||
+                            "................................................" }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div class="mt-5">Kepada Yth.</div>
+                    <div class="font-bold mb-1 ml-0 pl-0">
+                      <div v-if="selectedTertuju.length > 5">Periksa Alamat Terlampir</div>
+                      <div v-else-if="selectedTertuju.length > 0">
+                        <div v-for="(p, idx) in selectedTertuju" :key="idx" class="leading-relaxed">
+                          <span v-if="selectedTertuju.length > 1">{{ idx + 1 }}. </span>
+                          {{ p.label }}
+                        </div>
                       </div>
-                      <div class="font-bold text-[14px]">{{ toTitleCase(formatDelegatedActorName(user?.nama, user?.position_status)) || 'Nama Lengkap' }}</div>
+                      <div v-else>................................................</div>
                     </div>
+                    <div class="mb-1">Di Tempat</div>
                   </div>
-                  <div class="text-[12px] mt-2 w-full text-left text-black">
-                    <div class="font-bold underline mb-1">Tembusan :</div>
-                    <div v-if="selectedTembusan.length > 5" class="ml-4 pl-2">Periksa Alamat Terlampir</div>
-                    <div v-else-if="selectedTembusan.length === 1" class="ml-4 pl-2">{{ correspondenceRecipientLabel(selectedTembusan[0]) }}</div>
-                    <ol v-else-if="selectedTembusan.length > 1" class="list-decimal ml-4 pl-2">
-                      <li v-for="t in selectedTembusan" :key="t.value">{{ correspondenceRecipientLabel(t) }}</li>
-                    </ol>
-                    <div v-else class="text-gray-400 italic">...</div>
+                </div>
+
+                <div class="min-h-[300px] relative group">
+                  <TinymceEditorAsync api-key="no-api-key" v-model="editorContent" :init="tinyMceInit" />
+                </div>
+
+                <div class="flex mt-12 text-black px-10">
+                  <div class="text-center min-w-[250px]">
+                    <div class="mb-24 text-[14px]">
+                      <div class="font-bold">{{ user?.positionText || 'Nama Jabatan' }}</div>
+                    </div>
+                    <div class="font-bold text-[14px] underline">{{ toTitleCase(formatDelegatedActorName(user?.nama, user?.position_status)) || 'Nama Lengkap' }}</div>
                   </div>
+                </div>
+
+                <div class="mt-8 text-[12px] text-black px-10">
+                  <div class="font-bold mb-1">Tembusan Yth:</div>
+                  <div v-if="selectedTembusan.length > 5" class="flex-1">Periksa Alamat Terlampir</div>
+                  <ol v-else-if="selectedTembusan.length > 0" :class="selectedTembusan.length > 1 ? 'list-decimal list-inside pl-0' : 'list-none pl-0'" class="m-0">
+                    <li v-for="t in selectedTembusan" :key="t.value">
+                      {{ correspondenceRecipientLabel(t, 'area') }}
+                    </li>
+                  </ol>
+                  <div v-else class="text-gray-400 italic">...</div>
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page">
+                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
                   <div class="flex justify-end mb-10 text-[14px]">
                     <div class="text-left min-w-[300px]">
                       <table class="w-full">
                         <tbody>
-                          <tr><td class="align-top pr-2">Lampiran Surat</td></tr>
-                          <tr><td class="align-top pr-2">Nomor Surat :</td><td>.....................................</td></tr>
-                          <tr><td class="align-top pr-2">Tanggal Surat :</td><td>{{ formattedDate }}</td></tr>
+                          <tr>
+                            <td class="align-top pr-2">Lampiran Surat</td>
+                          </tr>
+                          <tr>
+                            <td class="align-top pr-2">Nomor Surat :</td>
+                            <td>.....................................</td>
+                          </tr>
+                          <tr>
+                            <td class="align-top pr-2">Tanggal Surat :</td>
+                            <td>{{ formattedDate }}</td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -136,16 +167,17 @@
                   <div v-if="selectedTertuju.length > 5" class="mb-8">
                     <div class="font-bold text-[14px] mb-2 uppercase">KEPADA YTH :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTertuju" :key="item.value">{{ correspondenceRecipientLabel(item) }}</li>
+                      <li v-for="item in selectedTertuju" :key="item.value">{{ item.label }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
                     <div class="font-bold text-[14px] mb-2 uppercase">TEMBUSAN :</div>
                     <ol class="list-decimal ml-6 text-[14px] space-y-1">
-                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item) }}</li>
+                      <li v-for="item in selectedTembusan" :key="item.value">{{ correspondenceRecipientLabel(item, 'area') }}</li>
                     </ol>
                   </div>
                 </div>
+
               </div>
             </div>
           </ClientOnly>
@@ -204,7 +236,7 @@ const alertState = useAlertState();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
-const { generatePdf } = useNotaDinas();
+const { generatePdf } = useSde();
 const { getKtp } = useDigSign();
 const { fetchKonsepDetail } = useInbox();
 const { finalizeKonsep } = useKonsep();
@@ -236,6 +268,7 @@ const klasifikasiList = ref<any[]>([]);
 const klasifikasiStatus = ref<"idle" | "loading" | "success" | "error">("idle");
 const selectedKlasifikasiId = ref<string | null>(null);
 const existingFiles = ref<any[]>([]);
+const lampiranText = useEditableLampiranText(existingFiles);
 
 const selectedSifat = ref<any>(null);
 const items = ref<any[]>([]);
@@ -345,7 +378,7 @@ const getBasePayload = (): DraftPayload => {
     tembusan: selectedTembusan.value.filter(t => !t.isGroup).map(i => i.value),
     penerima_grup: selectedTertuju.value.filter(t => t.isGroup).map(i => i.value),
     tembusan_grup: selectedTembusan.value.filter(t => t.isGroup).map(i => i.value),
-    tertuju: selectedTertuju.value.map(i => correspondenceRecipientLabel(i)),
+    tertuju: selectedTertuju.value.map(i => i.label),
     klasifikasi: selectedKlasifikasi.value?.klasifikasi || '',
     klasifikasi_text: selectedKlasifikasi.value?.klasifikasi_text || undefined,
     sifat: selectedSifat.value?.value || 'biasa',
@@ -353,12 +386,14 @@ const getBasePayload = (): DraftPayload => {
     konten: String(editorContent.value || ''),
     htmlContent: String(editorContent.value || ''),
     english: english.value,
-    nama_tempat: user.value?.areaText || "Kantor Pusat",
+    nama_tempat: user.value?.alamatInfo?.kota || "Tangerang",
     nama_jabatan: user.value?.positionText || "",
     nama_lengkap: formatDelegatedActorName(user.value?.nama, user.value?.position_status),
     tgl: tglDb,
     tanggal: tglPreview,
     lampiran_temp_ids: lampiranIds,
+    lampiran: lampiranText.value,
+    lampiran_text: lampiranText.value,
   };
 };
 
@@ -368,7 +403,7 @@ const createFinalizeFormData = () => {
   const userPosition = user.value?.position || "";
   const lampiranIds = existingFiles.value.map(f => f.id).filter(Boolean);
 
-  formData.append("jenis", "ND");
+  formData.append("jenis", "SDE");
   formData.append("from_position_id", userPosition);
   formData.append("to_position_id", userPosition);
   formData.append("pengirim_position_id", userPosition);
@@ -386,11 +421,12 @@ const createFinalizeFormData = () => {
   formData.append("perihal", subject.value);
   formData.append("konten", String(editorContent.value || ''));
   formData.append("english", english.value ? "1" : "0");
-  formData.append("nama_tempat", user.value?.areaText || "Kantor Pusat");
+  formData.append("nama_tempat", user.value?.alamatInfo?.kota || "Tangerang");
   formData.append("nama_jabatan", user.value?.positionText || "");
   formData.append("nama_lengkap", formatDelegatedActorName(user.value?.nama, user.value?.position_status));
   formData.append("lampiran_temp_ids", JSON.stringify(lampiranIds));
-  formData.append("lampiran", lampiranIds.length > 0 ? "1" : "0");
+  formData.append("lampiran", lampiranText.value);
+  formData.append("lampiran_text", lampiranText.value);
 
   return formData;
 };
@@ -608,6 +644,7 @@ onMounted(async () => {
         selectedTembusan.value = [...mappedTembusanGrup, ...mappedTembusanIndiv];
 
         // --- 4. Sisanya (Lampiran & Sifat) ---
+        lampiranText.value = draftData.lampiran_text || (typeof draftData.lampiran === "string" ? draftData.lampiran : "");
         const lampiranSrc = draftData.lampiran_files || [];
         existingFiles.value = lampiranSrc.map((f: any) => ({
           id: f.id,

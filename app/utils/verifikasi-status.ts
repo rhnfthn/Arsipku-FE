@@ -14,7 +14,7 @@ export const verifikasiStatusBadge = (s: VerifikasiStatus): string => {
     DITOLAK_VERIFIKASI_TERAKHIR: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
     // Menunggu Verifikasi (Atasan Sekretaris approve → dikirim ke Unit Dokumen) = biru
     DISETUJUI_VERIFIKASI_TERAKHIR: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
-    USUL_PINDAH_DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+    USUL_PINDAH_DIKIRIM: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
     SIAPKAN_BERKAS_FISIK: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     DIKIRIM: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK:
@@ -54,7 +54,7 @@ export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
     DITOLAK_VERIFIKASI_TERAKHIR: 'Ditolak',
     // Atasan Sekretaris approve → dikirim ke Unit Dokumen = Menunggu Verifikasi
     DISETUJUI_VERIFIKASI_TERAKHIR: 'Menunggu Verifikasi',
-    USUL_PINDAH_DIKIRIM: 'Menunggu Verifikasi',
+    USUL_PINDAH_DIKIRIM: 'Menunggu TTD',
     SIAPKAN_BERKAS_FISIK: 'Menunggu Verifikasi',
     DIKIRIM: 'Menunggu Verifikasi',
     MENUNGGU_VERIFIKASI_BERKAS_FISIK: 'Menunggu Verifikasi',
