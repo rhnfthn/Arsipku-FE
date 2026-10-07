@@ -12,6 +12,7 @@
         ]"
       />
       <button
+        v-if="canCreatePemberkasan"
         @click="openCreateModal"
         class="flex items-center gap-2 bg-primary dark:bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-800 dark:hover:bg-primary-700 text-sm transition-colors shrink-0"
       >
@@ -662,6 +663,7 @@ const {
   createBerkas,
   uploadBerkasFile,
 } = useArsipDinamis();
+const { canCreatePemberkasan } = useArsipDinamisPermission();
 // Gunakan sumber klasifikasi yang sama dengan seluruh form pembuatan naskah.
 // Endpoint ini juga memuat metadata retensi/penyusutan untuk autofill berkas.
 const { getKlasifikasi } = useKlasifikasi();
@@ -889,6 +891,10 @@ const handleSort = (key: string) => {
 };
 
 const openCreateModal = () => {
+  if (!canCreatePemberkasan.value) {
+    toast.error('Anda tidak memiliki izin untuk membuat berkas');
+    return;
+  }
   resetForm();
   showCreateModal.value = true;
 };
@@ -963,6 +969,12 @@ const onFotoLokasiChange = (e: Event) => {
 // ── Submit ───────────────────────────────────────────────────────
 
 const onSubmitBerkas = async () => {
+  if (!canCreatePemberkasan.value) {
+    showCreateModal.value = false;
+    toast.error('Anda tidak memiliki izin untuk membuat berkas');
+    return;
+  }
+
   modalErrors.klasifikasi = !form.klasifikasi;
   modalErrors.judul_berkas = !form.judul_berkas;
   modalErrors.lokasi = !form.lokasi;

@@ -158,7 +158,7 @@
           Batal
         </NuxtLink>
         <button
-          v-if="item.status === 'diajukan' && isCurrentVerifikator"
+          v-if="item.status === 'diajukan' && isCurrentVerifikator && canApprove"
           @click="openConfirmModal"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
         >
@@ -226,15 +226,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
+import { usePenyusutanPermission } from '~/composables/usePenyusutanPermission'
 import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const route = useRoute()
 const router = useRouter()
 const { user } = useAuth()
 const { fetchById, verifyPenyusutan } = usePenyusutan()
+const { canApprove } = usePenyusutanPermission()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },

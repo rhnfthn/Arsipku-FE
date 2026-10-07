@@ -74,14 +74,14 @@
             <tr v-if="loading"><td colspan="6" class="px-4 py-6"><div class="space-y-4 animate-pulse"><div v-for="n in 5" :key="n" class="h-12 w-full rounded-lg bg-gray-200 dark:bg-gray-700" /></div></td></tr>
             <tr v-else-if="list.length === 0"><td colspan="6" class="px-4 py-10 text-center text-sm text-gray-400">Tidak ada usulan</td></tr>
             <template v-else>
-              <tr v-for="(row, idx) in list" :key="row.id" class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+              <tr v-for="(row, idx) in list" :key="row.id" class="border-b border-gray-100 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors" :class="rowClass(row)">
                 <td class="px-4 py-3 text-gray-500">{{ idx + 1 + ((meta?.page ?? 1) - 1) * (meta?.limit ?? 10) }}</td>
                 <td class="px-4 py-3 font-medium whitespace-nowrap text-gray-700 dark:text-gray-200">{{ row.nomorUsulan }}</td>
                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="row.arsipPerihal">{{ row.arsipPerihal }}</td>
                 <td class="px-4 py-3 text-gray-700 dark:text-gray-200">{{ row.sekretarisName }}</td>
                 <td class="px-4 py-3"><span :class="statusBadge(row.status)">{{ statusLabel(row.status) }}</span></td>
                 <td class="px-4 py-3 text-center">
-                  <NuxtLink :to="`/maintenance/transfer-active-to-inactive/${row.id}`" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap">
+                  <NuxtLink :to="`/maintenance/transfer-active-to-inactive/${row.id}`" @click="markViewed(row)" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors whitespace-nowrap">
                     <UIcon name="i-heroicons-eye" class="w-3.5 h-3.5" /> Verifikasi
                   </NuxtLink>
                 </td>
@@ -121,6 +121,7 @@ import { saveAs } from 'file-saver';
 definePageMeta({ middleware: ['auth'] });
 
 const { fetchList, fetchSummary, list, summary, loading, meta } = useTransferActiveToInactive();
+const { rowClass, markViewed } = useViewedRows('final-approval-transfer-active-to-inactive');
 
 const items = [
   { label: 'Beranda', to: '/' },

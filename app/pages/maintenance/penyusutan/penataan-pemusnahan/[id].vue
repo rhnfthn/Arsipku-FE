@@ -397,9 +397,9 @@
                 <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500" /> Berita Acara
               </h3>
               <div class="flex items-center gap-2">
-                <a v-if="beritaAcaraUrl && !showEditBerita" :href="beritaAcaraUrl" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0" title="Buka berita acara">
+                <button v-if="beritaAcaraUrl && !showEditBerita" type="button" @click="openPenyusutanBeritaAcara" class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0" title="Preview berita acara">
                   <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                </a>
+                </button>
               </div>
             </div>
             <div class="px-5 pb-5">
@@ -529,6 +529,14 @@
         </div>
       </div>
     </Teleport>
+
+    <SharedSharePdfViewer
+      v-model="beritaAcaraViewerOpen"
+      :url="beritaAcaraViewerUrl"
+      title="Preview Berita Acara"
+      :loading="false"
+      @close="closePenyusutanBeritaAcara"
+    />
   </div>
 </template>
 
@@ -540,7 +548,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const route = useRoute()
 const toast = useToast()
@@ -562,6 +570,8 @@ const ruang = ref('')
 const beritaAcaraFiles = ref<File[]>([])
 const beritaAcaraPreview = ref('')
 const beritaAcaraPreviewType = ref<'pdf' | 'image'>('pdf')
+const beritaAcaraViewerOpen = ref(false)
+const beritaAcaraViewerUrl = ref('')
 const fotoFiles = ref<File[]>([])
 const fotoPreview = ref('')
 const submitting = ref(false)
@@ -819,26 +829,14 @@ const formatBaDay = (dateStr: string | null | undefined) => {
   return days[d.getDay()]
 }
 
-// ── Print Berita Acara ──
-const printBeritaAcara = () => {
-  const el = document.getElementById('berita-acara-print')
-  if (!el || !item.value) return
-  const w = window.open('', '_blank')
-  if (!w) return
-  w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Penataan Arsip</title><style>
-    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:40px;max-width:800px;margin:0 auto;color:#111}
-    .text-sm{font-size:13px}.text-xs{font-size:12px}.text-base{font-size:16px}
-    .text-center{text-align:center}.text-right{text-align:right}
-    .font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}
-    .mb-1{margin-bottom:4px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
-    .mb-6{margin-bottom:24px}.mb-16{margin-bottom:64px}.space-y-3>*+*{margin-top:12px}
-    .leading-relaxed{line-height:1.625}.text-gray-500{color:#6b7280}
-    .grid{display:grid}.grid-cols-2{grid-template-columns:1fr 1fr}
-    .gap-8{gap:32px}.border-t{border-top:1px solid #9ca3af}.pt-1{padding-top:4px}
-    ol{padding-left:20px;margin:0}li{margin-bottom:4px}p{margin:0}
-    .py-4{padding-top:16px;padding-bottom:16px}
-  </style></head><body>${el.innerHTML}</body></html>`)
-  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250)
+const openPenyusutanBeritaAcara = () => {
+  if (!beritaAcaraUrl.value) return
+  beritaAcaraViewerUrl.value = beritaAcaraUrl.value
+  beritaAcaraViewerOpen.value = true
+}
+
+const closePenyusutanBeritaAcara = () => {
+  beritaAcaraViewerUrl.value = ''
 }
 
 const submitPenataan = async () => {

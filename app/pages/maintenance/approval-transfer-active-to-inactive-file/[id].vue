@@ -24,7 +24,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <!-- Left: Info + Timeline -->
         <div class="lg:col-span-2 space-y-5">
-          <TransferDetailCard :transfer="item" />
+          <TransferDetailCard :transfer="item" :daftar-berkas="daftarBerkas" />
           <TransferTimeline :status="item.status" />
 
           <!-- Verify Card -->
@@ -120,6 +120,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTransferApproval } from '~/composables/useTransferApproval';
 import { useAuth } from '~/composables/useAuth';
+import { useApi } from '~/composables/useApi';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 
@@ -127,6 +128,7 @@ definePageMeta({ middleware: ['auth'] });
 
 const route = useRoute();
 const { user } = useAuth();
+const { apiGet } = useApi();
 const {
   fetchApprovalDetail,
   verifyTransfer,
@@ -139,6 +141,7 @@ const item = ref<TransferActiveToInactive | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
 const isRejectModalOpen = ref(false);
+const daftarBerkas = ref<any[]>([]);
 
 const isFinalVerifier = computed(() => {
   if (!item.value || !user.value) return false;
@@ -183,6 +186,8 @@ const loadDetail = async () => {
   loading.value = true;
   try {
     item.value = await fetchApprovalDetail(route.params.id as string);
+    const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
+    daftarBerkas.value = res?.data?.daftarBerkas ?? [];
   } catch (e) {
     console.error('Gagal memuat detail:', e);
   } finally {
@@ -192,6 +197,8 @@ const loadDetail = async () => {
 
 const refresh = async () => {
   item.value = await fetchApprovalDetail(route.params.id as string);
+  const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
+  daftarBerkas.value = res?.data?.daftarBerkas ?? [];
 };
 
 const act = async (fn: () => Promise<any>) => {

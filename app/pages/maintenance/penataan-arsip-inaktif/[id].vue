@@ -16,65 +16,25 @@
     </div>
 
     <template v-else-if="item">
-      <div class="max-w-4xl space-y-5">
-        <!-- Informasi Usulan -->
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
-            <span :class="statusBadgeClass(item.status)" class="text-xs">{{ statusLabel(item.status) }}</span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span><p class="text-gray-900 dark:text-white font-medium">{{ item.nomorUsulan }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Sekretaris</span><p class="text-gray-900 dark:text-white font-medium">{{ item.sekretarisName }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span><p class="text-gray-900 dark:text-white font-medium">{{ item.atasanName ?? '-' }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span><p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Diterima</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.receivedAt) }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span><p class="text-gray-900 dark:text-white font-medium">{{ item.arsipKode ?? '-' }}</p></div>
-            <div><span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span><p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggalRetensiAktifHabis) }}</p></div>
-            <div class="sm:col-span-2"><span class="text-gray-500 dark:text-gray-400 text-xs">Perihal Arsip</span><p class="text-gray-900 dark:text-white font-medium">{{ item.arsipPerihal }}</p></div>
-          </div>
+      <div class="w-full space-y-5">
+        <TransferDetailCard
+          :transfer="sharedTransfer"
+          :daftar-berkas="daftarBerkas"
+          :daftar-isi="daftarIsiData"
+          :unit-kerja-pihak-pertama="unitKerjaPihakPertama"
+          :preview-from="'tu'"
+          :collapsible="true"
+          :show-bac-signer="false"
+          :show-bac-tembusan="false"
+          :show-tu-approval-levels="false"
+        />
 
-          <!-- Keterangan -->
-          <div v-if="item.keterangan" class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Keterangan</h4>
-            <p class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg italic">
-              {{ item.keterangan }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Daftar Arsip yang Akan Dipindahkan -->
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-            Daftar Arsip({{ daftarBerkas.length }})
-          </h3>
-          <div class="space-y-1.5">
-            <div
-              v-for="(berkas, idx) in daftarBerkas"
-              :key="idx"
-              class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-            >
-              <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm text-gray-900 dark:text-white truncate">
-                  <span v-if="berkas.kode" class="font-mono text-xs text-gray-500">{{ berkas.kode }}</span>
-                  — {{ berkas.perihal }}
-                </p>
-              </div>
-              <NuxtLink
-                v-if="berkas.id"
-                :to="`/maintenance/preview-berkas/${berkas.id}?nomor_usulan=${item.nomorUsulan}&usulan_id=${item.id}&from=tu`"
-                class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 shrink-0"
-                title="Lihat detail berkas"
-              >
-                <UIcon name="i-lucide-eye" class="w-4 h-4" />
-              </NuxtLink>
-            </div>
-            <div v-if="daftarBerkas.length === 0" class="text-sm text-gray-400 italic py-2">
-              Tidak ada arsip
-            </div>
-          </div>
-        </div>
+        <TransferBeritaAcaraCard
+          v-if="canShowBeritaAcara && sharedTransfer"
+          :transfer="sharedTransfer"
+          :berita-acara-data="beritaAcaraData"
+          preview-icon="eye"
+        />
 
         <!-- Penataan Arsip (form) -->
         <div v-if="item.status === 'ARSIP_INAKTIF_DITERIMA' && mode === 'penataan'" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
@@ -86,19 +46,26 @@
                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Rak</label>
-              <input v-model="form.rak" type="text" placeholder="Rak..."
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">No. Ruang</label>
+              <input v-model="form.rak" type="text" placeholder="Contoh: A1"
                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Baris</label>
-              <input v-model="form.baris" type="text" placeholder="Baris..."
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">No. Rak</label>
+              <input v-model="form.baris" type="text" placeholder="Contoh: 01"
                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kolom</label>
-              <input v-model="form.kolom" type="text" placeholder="Kolom..."
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">No. Boks</label>
+              <input v-model="form.kolom" type="text" placeholder="Contoh: 0001"
                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Label</label>
+              <input :value="generatedLabel" type="text" readonly aria-describedby="label-penataan-help"
+                placeholder="Contoh: A1.01.0001"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 cursor-not-allowed" />
+              <p id="label-penataan-help" class="mt-1 text-xs text-gray-400">Terbentuk otomatis dari No. Ruang, No. Rak, dan No. Boks (contoh: A1.01.0001).</p>
             </div>
           </div>
           <div class="mt-4">
@@ -164,6 +131,12 @@
                 <UIcon name="i-lucide-map-pin" class="w-3.5 h-3.5" /> Lokasi Penyimpanan
               </h4>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <!-- Label boks -->
+                <div class="col-span-2 sm:col-span-4 flex flex-col items-center text-center p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800">
+                  <UIcon name="i-lucide-tag" class="w-5 h-5 text-primary-500 mb-1.5" />
+                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Label</span>
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ savedGeneratedLabel || item.labelPenataan || '-' }}</p>
+                </div>
                 <!-- Lokasi -->
                 <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
                   <UIcon name="i-lucide-building-2" class="w-5 h-5 text-primary-500 mb-1.5" />
@@ -173,19 +146,19 @@
                 <!-- Rak -->
                 <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
                   <UIcon name="i-lucide-library" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Rak</span>
+                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">No. Ruang</span>
                   <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.rak || '-' }}</p>
                 </div>
                 <!-- Baris -->
                 <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
                   <UIcon name="i-lucide-rows-3" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Baris</span>
+                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">No. Rak</span>
                   <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.baris || '-' }}</p>
                 </div>
                 <!-- Kolom -->
                 <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
                   <UIcon name="i-lucide-columns-3" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Kolom</span>
+                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">No. Boks</span>
                   <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.kolom || '-' }}</p>
                 </div>
               </div>
@@ -281,6 +254,8 @@
             </div>
           </div>
         </div>
+
+        <TimelineRiwayat v-if="sharedTransfer" :item="sharedTransfer" />
       </div>
     </template>
 
@@ -293,61 +268,62 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
+import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive'
+import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue'
+import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue'
+import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
 const { fetchPenataanDetail, selesaiPenataan, uploadFotoPenataan } = useTuVerifikasi()
-const { api } = useApi()
+const { api, apiGet } = useApi()
 const config = useRuntimeConfig()
 
 const item = ref<TuUsulanItem | null>(null)
+const beritaAcaraData = ref<any>(null)
+const daftarBerkasData = ref<any[]>([])
+const daftarIsiData = ref<any[]>([])
 const loading = ref(true)
 const actionLoading = ref(false)
 const mode = ref<'detail' | 'penataan'>('detail')
 const fromPenataanQuery = route.query.mode === 'penataan'
-
-const statusLabel = (s: string) => {
-  if (s === 'SELESAI') return 'Selesai'
-  if (s === 'ARSIP_INAKTIF_DITERIMA') return 'Diterima'
-  if (s === 'PENATAAN_ARSIP_INAKTIF') return 'Penataan Arsip'
-  if (s === 'DIKIRIM') return 'Menunggu Verifikasi'
-  if (s === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU') return 'Menunggu Persetujuan'
-  if (s === 'DISETUJUI_PERSETUJUAN_TU') return 'Disetujui Persetujuan'
-  if (s === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'Menunggu Persetujuan Terakhir'
-  if (s === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU') return 'Disetujui Persetujuan Terakhir'
-  return s
-}
-
-const statusBadgeClass = (s: string) => {
-  if (s === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-  if (s === 'ARSIP_INAKTIF_DITERIMA' || s === 'PENATAAN_ARSIP_INAKTIF') return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-  if (s === 'DISETUJUI_PERSETUJUAN_TU' || s === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-  if (s === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU' || s === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-  return 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-}
-
-const levelStatusClass = (status: string): string => {
-  if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-  if (status === 'DITOLAK') return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-  return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-}
-
-const levelBadgeClass = (status: string): string => {
-  if (status === 'DISETUJUI') return 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-  if (status === 'DITOLAK') return 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-  return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-}
-
-const levelStatusLabel = (status: string): string => {
-  if (status === 'DISETUJUI') return 'Disetujui'
-  if (status === 'DITOLAK') return 'Ditolak'
-  return 'Menunggu'
-}
+const sharedTransfer = computed(() =>
+  item.value ? (item.value as unknown as TransferActiveToInactive) : null
+)
+const unitKerjaPihakPertama = computed(() =>
+  beritaAcaraData.value?.pihakPertama?.unitKerja
+    || beritaAcaraData.value?.pihakPertamaUnitKerja
+    || beritaAcaraData.value?.unitKerjaPengusul
+    || item.value?.divisiName
+    || '................................'
+)
+const canShowBeritaAcara = computed(() =>
+  Boolean(item.value && [
+    'DISETUJUI_ATASAN',
+    'DISETUJUI_VERIFIKASI_TERAKHIR',
+    'USUL_PINDAH_DIKIRIM',
+    'SIAPKAN_BERKAS_FISIK',
+    'DIKIRIM',
+    'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
+    'BERKAS_FISIK_SESUAI',
+    'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
+    'DISETUJUI_PERSETUJUAN_TU',
+    'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
+    'DISETUJUI_PERSETUJUAN_TERAKHIR_TU',
+    'MENUNGGU_TTD_PIHAK_KEDUA',
+    'ARSIP_INAKTIF_DITERIMA',
+    'PENATAAN_ARSIP_INAKTIF',
+    'SELESAI',
+  ].includes(item.value.status))
+)
 
 // Daftar berkas (dari arsipIds atau fallback ke arsip tunggal)
 const daftarBerkas = computed(() => {
   if (!item.value) return []
+  // Endpoint berita-acara-data hanya memuat ringkasan arsip. Gunakan endpoint
+  // daftar-isi agar seluruh metadata pemberkasan tersedia pada tabel ini.
+  if (daftarBerkasData.value.length > 0) return daftarBerkasData.value
   if (item.value.arsipIds && Array.isArray(item.value.arsipIds)) {
     return item.value.arsipIds
   }
@@ -371,6 +347,13 @@ const form = reactive({
   kolom: '',
   keterangan: '',
 })
+
+const joinPhysicalLabel = (parts: Array<string | null | undefined>) =>
+  parts.map((part) => String(part ?? '').trim()).filter(Boolean).join('.')
+const generatedLabel = computed(() => joinPhysicalLabel([form.rak, form.baris, form.kolom]))
+const savedGeneratedLabel = computed(() =>
+  item.value ? joinPhysicalLabel([item.value.rak, item.value.baris, item.value.kolom]) : ''
+)
 
 // Foto lampiran penataan
 const fotoFile = ref<File | null>(null)
@@ -495,17 +478,42 @@ const breadcrumbs = computed(() => [
   { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/penataan-arsip-inaktif/${route.params.id}` },
 ])
 
-const formatDate = (d: string | null) => {
-  if (!d) return '-'
-  return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
 const loadDetail = async () => {
   loading.value = true
   try {
     const res = await fetchPenataanDetail(route.params.id as string)
     item.value = res?.data ?? res
     if (item.value) {
+      if (canShowBeritaAcara.value) {
+        try {
+          const bacResponse: any = await apiGet(
+            `/transfer-active-to-inactive/${item.value.id}/berita-acara-data`,
+            undefined,
+            { skipCache: true },
+          )
+          beritaAcaraData.value = bacResponse?.data?.data ?? bacResponse?.data ?? bacResponse
+        } catch {
+          beritaAcaraData.value = null
+        }
+
+        try {
+          const daftarResponse: any = await apiGet(
+            `/transfer-active-to-inactive/${item.value.id}/daftar-isi`,
+            undefined,
+            { skipCache: true },
+          )
+          const daftarData = daftarResponse?.data?.data ?? daftarResponse?.data ?? daftarResponse
+          daftarBerkasData.value = Array.isArray(daftarData?.daftarBerkas)
+            ? daftarData.daftarBerkas
+            : []
+          daftarIsiData.value = Array.isArray(daftarData?.daftarIsi)
+            ? daftarData.daftarIsi
+            : []
+        } catch {
+          daftarBerkasData.value = []
+          daftarIsiData.value = []
+        }
+      }
       form.lokasi = item.value.lokasiPenataan || ''
       form.rak = item.value.rak || ''
       form.baris = item.value.baris || ''

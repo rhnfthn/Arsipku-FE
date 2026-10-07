@@ -351,7 +351,15 @@ import { buildLabelTree } from '~/utils/treeHelper';
 import { isEvpOrAbovePosition as hasEvpOrAboveAccess } from '~/utils/evp-access';
 import SidebarLabelItem from '~/components/SidebarLabelItem.vue';
 
-const { user, getProfile, hasRole, hasPermission, isSuperadmin, isLegalRole } = useAuth();
+const {
+  user,
+  getProfile,
+  refreshPermissions,
+  hasRole,
+  hasPermission,
+  isSuperadmin,
+  isLegalRole,
+} = useAuth();
 const { isReadOnly, activePositionStatus } = useDelegationMode();
 const { adminCounts, userCounts, getNomorRequestCountAdmin, getNomorRequestCountUser } =
   usePenomoran();
@@ -387,6 +395,7 @@ const { sdeMasalUnreadCount, notifications, fetchNotifications } = useNotificati
 const { fetchFolders, fetchVerificationFolders } = useSdeMasal();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
+let kelolaNotificationRefreshTimer = null;
 const {
   labels,
   labelCounts,
@@ -567,6 +576,13 @@ const checkAtasanManagerialPenyusutan = async () => {
   }
 };
 
+// Menu verifikasi harus tampil sejak user dikenal sebagai Atasan TU,
+// walaupun belum ada pengajuan penyusutan yang memilihnya sebagai verifikator.
+// Data pengajuan menentukan isi tabel, bukan visibilitas menu.
+const canAccessVerifikasiPenyusutan = computed(
+  () => isAtasanManagerialPenyusutan.value || isAtasanManagerialTuUsulan.value,
+);
+
 // ─── Count fetching ───────────────────────────────────────────────────────────
 // Nomor count sekarang sepenuhnya dari WebSocket (realtime:summary + nomor:count event).
 // Tidak ada lagi REST fallback ke /admin/nomor-request-count atau /nomor-request-count.
@@ -648,6 +664,7 @@ watch(
 onMounted(async () => {
   try {
     if (!user.value) await getProfile();
+    else await refreshPermissions();
     await fetchCurrentTheme().catch(() => null);
     await nextTick();
     checkScreenSize();
@@ -689,6 +706,10 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (kelolaNotificationRefreshTimer) {
+    clearTimeout(kelolaNotificationRefreshTimer);
+    kelolaNotificationRefreshTimer = null;
+  }
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', checkScreenSize);
     window.removeEventListener('storage', syncProfileFromStorage);
@@ -771,6 +792,21 @@ const refreshSdeMasalCounts = async () => {
     sdeMasalVerificationCount.value = 0;
   }
 };
+
+watch(
+  () => notifications.value[0]?.id,
+  (notificationId) => {
+    if (!notificationId) return;
+    // Notifikasi dikirim kepada pengguna/posisi yang mendapat tugas. Refresh
+    // hitungan Kelola untuk sesi tersebut agar badge dan titik merah berubah
+    // tanpa perlu membuka ulang halaman.
+    if (kelolaNotificationRefreshTimer) clearTimeout(kelolaNotificationRefreshTimer);
+    kelolaNotificationRefreshTimer = setTimeout(() => {
+      fetchKelolaCounts(true).catch(() => {});
+      kelolaNotificationRefreshTimer = null;
+    }, 250);
+  }
+);
 
 watch(sdeMasalUnreadCount, async () => {
   await fetchNotifications(1, 100, true);
@@ -1565,7 +1601,8 @@ const isDivisionSecretaryPosition = computed(
     (activeProfile.value === 'sekretaris' && isSekretarisRole.value)
 );
 
-const unitDokumenKelolaMenus = computed(() => [
+const unitDokumenKelolaMenus = computed(() => {
+  const menus = [
   {
     label: 'Pemeliharaan',
     icon: 'i-lucide-folder-cog',
@@ -1577,15 +1614,17 @@ const unitDokumenKelolaMenus = computed(() => [
         permission: { resource: 'pemeliharaan.pemberkasan', action: 'read' },
       },
       {
-        label: 'Penerimaan Usulan',
+        label: 'Penerimaan Arsip',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
+        permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
         badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
         to: '/maintenance/penataan-arsip-inaktif',
         icon: 'i-lucide-archive',
+        permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
         badge:
           kelolaCounts.value.penataanArsipInaktif > 0
             ? kelolaCounts.value.penataanArsipInaktif
@@ -1629,6 +1668,7 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Pengajuan Penyusutan',
         to: '/maintenance/penyusutan/pengajuan-penyusutan',
         icon: 'i-lucide-list',
+        permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
         badge:
           kelolaCounts.value.pengajuanPenyusutan > 0
             ? kelolaCounts.value.pengajuanPenyusutan
@@ -1638,14 +1678,21 @@ const unitDokumenKelolaMenus = computed(() => [
         label: 'Penataan dan Pemusnahan',
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
+        permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
         badge:
           kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
       },
     ],
   },
-]);
+  ];
+  // Unit Dokumen menampilkan Penyusutan sebagai menu utama tepat setelah
+  // Pemeliharaan, bukan sebagai child Pemeliharaan dan bukan di bawah
+  // Penggunaan.
+  return [menus[0], menus[2], menus[1]];
+});
 
-const sekretarisKelolaMenus = computed(() => [
+const sekretarisKelolaMenus = computed(() => {
+  const menus = [
   {
     label: 'Pemeliharaan',
     icon: 'i-lucide-folder-cog',
@@ -1660,18 +1707,21 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Pemindahan Arsip',
         to: '/maintenance/transfer-active-to-inactive-file',
         icon: 'i-lucide-file-up',
+        permission: { resource: 'pemeliharaan.pemindahan', action: 'read' },
         showIfDivisionSecretary: true,
       },
       {
-        label: 'Penerimaan Usulan',
+        label: 'Penerimaan Arsip',
         to: '/maintenance/penerimaan-usulan',
         icon: 'i-lucide-bell',
+        permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
         badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
         to: '/maintenance/penataan-arsip-inaktif',
         icon: 'i-lucide-archive',
+        permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
         badge:
           kelolaCounts.value.penataanArsipInaktif > 0
             ? kelolaCounts.value.penataanArsipInaktif
@@ -1716,6 +1766,7 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Pengajuan Penyusutan',
         to: '/maintenance/penyusutan/pengajuan-penyusutan',
         icon: 'i-lucide-list',
+        permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
         badge:
           kelolaCounts.value.pengajuanPenyusutan > 0
             ? kelolaCounts.value.pengajuanPenyusutan
@@ -1725,12 +1776,18 @@ const sekretarisKelolaMenus = computed(() => [
         label: 'Penataan dan Pemusnahan',
         to: '/maintenance/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
+        permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
         badge:
           kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
       },
     ],
   },
-]);
+  ];
+
+  // Sekretaris TU/Unit Dokumen memakai Penyusutan sebagai menu utama,
+  // sejajar dengan Pemeliharaan dan Penggunaan.
+  return [menus[0], menus[2], menus[1]];
+});
 
 const atasanManagerialSekretarisKelolaMenus = computed(() => [
   {
@@ -1754,18 +1811,21 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         label: 'Penandatanganan',
         to: '/maintenance/penandatanganan',
         icon: 'i-lucide-pen-tool',
+        permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
         showIfEvpOrAbove: true,
       },
       {
         label: 'Tembusan BAC',
         to: '/maintenance/tembusan-bac',
         icon: 'i-lucide-copy',
+        permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
         showIfEvpOrAbove: true,
       },
       {
         label: 'Pemindahan',
         to: '/maintenance/verifikasi-usulan',
         icon: 'i-lucide-file-check-2',
+        permission: { resource: 'pemeliharaan.verifikasi-pemindahan', action: 'read' },
       },
     ],
   },
@@ -1806,6 +1866,8 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         label: 'Verifikasi Penyusutan',
         to: '/maintenance/penyusutan/verifikasi-penyusutan',
         icon: 'i-lucide-file-check',
+        permission: { resource: 'pemeliharaan.penyusutan.verifikasi', action: 'read' },
+        showIfAtasanPenyusutan: true,
         badge:
           kelolaCounts.value.verifikasiPenyusutan > 0
             ? kelolaCounts.value.verifikasiPenyusutan
@@ -1837,18 +1899,21 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         label: 'Penandatanganan',
         to: '/maintenance/penandatanganan',
         icon: 'i-lucide-pen-tool',
+        permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
         showIfEvpOrAbove: true,
       },
       {
         label: 'Tembusan BAC',
         to: '/maintenance/tembusan-bac',
         icon: 'i-lucide-copy',
+        permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
         showIfEvpOrAbove: true,
       },
       {
         label: 'Verifikasi Persetujuan',
         to: '/maintenance/verifikasi-persetujuan-tu',
         icon: 'i-lucide-file-check-2',
+        permission: { resource: 'pemeliharaan.verifikasi-persetujuan-tu', action: 'read' },
         badge:
           kelolaCounts.value.verifikasiPersetujuanTu > 0
             ? kelolaCounts.value.verifikasiPersetujuanTu
@@ -1892,6 +1957,8 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         label: 'Verifikasi Penyusutan',
         to: '/maintenance/penyusutan/verifikasi-penyusutan',
         icon: 'i-lucide-file-check',
+        permission: { resource: 'pemeliharaan.penyusutan.verifikasi', action: 'read' },
+        showIfAtasanPenyusutan: true,
         badge:
           kelolaCounts.value.verifikasiPenyusutan > 0
             ? kelolaCounts.value.verifikasiPenyusutan
@@ -1916,7 +1983,7 @@ const isAtasanManagerialSekretarisProfile = computed(
     isSekretarisProfile.value &&
     (isManagerialPosition.value ||
       isAtasanManagerialUsulan.value ||
-      isAtasanManagerialPenyusutan.value)
+      canAccessVerifikasiPenyusutan.value)
 );
 const isAtasanManagerialUnitDokumenProfile = computed(
   () =>
@@ -1926,14 +1993,14 @@ const isAtasanManagerialUnitDokumenProfile = computed(
     (isUnitDokumenProfile.value &&
       (isManagerialPosition.value ||
         isAtasanManagerialUsulan.value ||
-        isAtasanManagerialPenyusutan.value))
+        canAccessVerifikasiPenyusutan.value))
 );
 
 const profileKelolaMenus = computed(() => {
   if (isAtasanManagerialUnitDokumenProfile.value)
     return atasanManagerialUnitDokumenKelolaMenus.value;
   if (isAtasanManagerialSekretarisProfile.value) return atasanManagerialSekretarisKelolaMenus.value;
-  if (isUnitDokumenProfile.value && isTuRole.value) return unitDokumenKelolaMenus.value;
+  if (isUnitDokumenProfile.value) return unitDokumenKelolaMenus.value;
   if (isSekretarisProfile.value && isSekretarisActor.value) return sekretarisKelolaMenus.value;
   return null;
 });
@@ -1966,24 +2033,28 @@ const adminMenuKelola = computed(() => {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
+      permission: { resource: 'pemeliharaan.pemindahan', action: 'read' },
       showIfDivisionSecretary: true,
     },
     {
       label: 'Penandatanganan',
       to: '/maintenance/penandatanganan',
       icon: 'i-lucide-pen-tool',
+      permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
       showIfEvpOrAbove: true,
     },
     {
       label: 'Tembusan BAC',
       to: '/maintenance/tembusan-bac',
       icon: 'i-lucide-copy',
+      permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
       showIfEvpOrAbove: true,
     },
     {
-      label: 'Penerimaan Usulan',
+      label: 'Penerimaan Arsip',
       to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
+      permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
       showIfTuRole: true,
       badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
     },
@@ -1991,6 +2062,7 @@ const adminMenuKelola = computed(() => {
       label: 'Penataan Arsip Inaktif',
       to: '/maintenance/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
+      permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
       showIfTuRole: true,
       badge:
         kelolaCounts.value.penataanArsipInaktif > 0
@@ -2001,6 +2073,7 @@ const adminMenuKelola = computed(() => {
       label: 'Verifikasi Persetujuan',
       to: '/maintenance/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
+      permission: { resource: 'pemeliharaan.verifikasi-persetujuan-tu', action: 'read' },
       showIfAtasanTu: true,
       badge:
         kelolaCounts.value.verifikasiPersetujuanTu > 0
@@ -2011,6 +2084,7 @@ const adminMenuKelola = computed(() => {
       label: 'Pemindahan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
+      permission: { resource: 'pemeliharaan.verifikasi-pemindahan', action: 'read' },
       showIfAtasanSekretaris: true,
       badge: kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
     },
@@ -2083,6 +2157,7 @@ const adminMenuKelola = computed(() => {
       label: 'Pengajuan Penyusutan',
       to: '/maintenance/penyusutan/pengajuan-penyusutan',
       icon: 'i-lucide-list',
+      permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
       showIfTuRole: true,
       badge:
         kelolaCounts.value.pengajuanPenyusutan > 0 ? kelolaCounts.value.pengajuanPenyusutan : null,
@@ -2091,15 +2166,17 @@ const adminMenuKelola = computed(() => {
       label: 'Penataan & Pemusnahan',
       to: '/maintenance/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive',
+      permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
       showIfTuRole: true,
       badge:
         kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
     },
-    {
-      label: 'Verifikasi Penyusutan',
-      to: '/maintenance/penyusutan/verifikasi-penyusutan',
-      icon: 'i-lucide-file-check',
-      showIfAtasanPenyusutan: true,
+      {
+        label: 'Verifikasi Penyusutan',
+        to: '/maintenance/penyusutan/verifikasi-penyusutan',
+        icon: 'i-lucide-file-check',
+        permission: { resource: 'pemeliharaan.penyusutan.verifikasi', action: 'read' },
+        showIfAtasanPenyusutan: true,
       badge:
         kelolaCounts.value.verifikasiPenyusutan > 0
           ? kelolaCounts.value.verifikasiPenyusutan
@@ -2109,12 +2186,12 @@ const adminMenuKelola = computed(() => {
 
   const filteredPenyusutanChildren = penyusutanChildren.filter((c) => {
     if (c.showIfTuRole && !isTuRole.value) return false;
-    if (c.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) return false;
+    if (c.showIfAtasanPenyusutan && !canAccessVerifikasiPenyusutan.value) return false;
     return true;
   });
 
   if (filteredPenyusutanChildren.length > 0) {
-    menus.push({
+    menus.splice(1, 0, {
       label: 'Penyusutan',
       icon: 'i-lucide-file-minus',
       children: filteredPenyusutanChildren,
@@ -2146,24 +2223,28 @@ const userMenuKelola = computed(() => {
       label: 'Pemindahan Arsip',
       to: '/maintenance/transfer-active-to-inactive-file',
       icon: 'i-lucide-file-up',
+      permission: { resource: 'pemeliharaan.pemindahan', action: 'read' },
       showIfDivisionSecretary: true,
     },
     {
       label: 'Penandatanganan',
       to: '/maintenance/penandatanganan',
       icon: 'i-lucide-pen-tool',
+      permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
       showIfEvpOrAbove: true,
     },
     {
       label: 'Tembusan BAC',
       to: '/maintenance/tembusan-bac',
       icon: 'i-lucide-copy',
+      permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
       showIfEvpOrAbove: true,
     },
     {
-      label: 'Penerimaan Usulan',
+      label: 'Penerimaan Arsip',
       to: '/maintenance/penerimaan-usulan',
       icon: 'i-lucide-bell',
+      permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
       showIfTuRole: true,
       badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
     },
@@ -2171,6 +2252,7 @@ const userMenuKelola = computed(() => {
       label: 'Penataan Arsip Inaktif',
       to: '/maintenance/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
+      permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
       showIfTuRole: true,
       badge:
         kelolaCounts.value.penataanArsipInaktif > 0
@@ -2181,6 +2263,7 @@ const userMenuKelola = computed(() => {
       label: 'Verifikasi Persetujuan',
       to: '/maintenance/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
+      permission: { resource: 'pemeliharaan.verifikasi-persetujuan-tu', action: 'read' },
       showIfAtasanTu: true,
       badge:
         kelolaCounts.value.verifikasiPersetujuanTu > 0
@@ -2191,6 +2274,7 @@ const userMenuKelola = computed(() => {
       label: 'Pemindahan',
       to: '/maintenance/verifikasi-usulan',
       icon: 'i-lucide-file-check-2',
+      permission: { resource: 'pemeliharaan.verifikasi-pemindahan', action: 'read' },
       showIfAtasanSekretaris: true,
       badge: kelolaCounts.value.verifikasiUsulan > 0 ? kelolaCounts.value.verifikasiUsulan : null,
     },
@@ -2264,6 +2348,7 @@ const userMenuKelola = computed(() => {
       label: 'Pengajuan Penyusutan',
       to: '/maintenance/penyusutan/pengajuan-penyusutan',
       icon: 'i-lucide-list',
+      permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
       showIfTuRole: true,
       badge:
         kelolaCounts.value.pengajuanPenyusutan > 0 ? kelolaCounts.value.pengajuanPenyusutan : null,
@@ -2272,15 +2357,17 @@ const userMenuKelola = computed(() => {
       label: 'Penataan & Pemusnahan',
       to: '/maintenance/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive',
+      permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
       showIfTuRole: true,
       badge:
         kelolaCounts.value.penataanPemusnahan > 0 ? kelolaCounts.value.penataanPemusnahan : null,
     },
-    {
-      label: 'Verifikasi Penyusutan',
-      to: '/maintenance/penyusutan/verifikasi-penyusutan',
-      icon: 'i-lucide-file-check',
-      showIfAtasanPenyusutan: true,
+      {
+        label: 'Verifikasi Penyusutan',
+        to: '/maintenance/penyusutan/verifikasi-penyusutan',
+        icon: 'i-lucide-file-check',
+        permission: { resource: 'pemeliharaan.penyusutan.verifikasi', action: 'read' },
+        showIfAtasanPenyusutan: true,
       badge:
         kelolaCounts.value.verifikasiPenyusutan > 0
           ? kelolaCounts.value.verifikasiPenyusutan
@@ -2290,12 +2377,12 @@ const userMenuKelola = computed(() => {
 
   const filteredPenyusutanChildrenKelola = penyusutanChildrenKelola.filter((c) => {
     if (c.showIfTuRole && !isTuRole.value) return false;
-    if (c.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) return false;
+    if (c.showIfAtasanPenyusutan && !canAccessVerifikasiPenyusutan.value) return false;
     return true;
   });
 
   if (filteredPenyusutanChildrenKelola.length > 0) {
-    menus.push({
+    menus.splice(1, 0, {
       label: 'Penyusutan',
       icon: 'i-lucide-file-minus',
       children: filteredPenyusutanChildrenKelola,
@@ -2396,7 +2483,7 @@ const filterMenuByPermission = (items) => {
 
     // Cek showIfAtasanPenyusutan — tampilkan HANYA jika user adalah Atasan
     // Managerial di penyusutan (terdaftar di penyusutan_verifikator).
-    if (cloned.showIfAtasanPenyusutan && !isAtasanManagerialPenyusutan.value) {
+    if (cloned.showIfAtasanPenyusutan && !canAccessVerifikasiPenyusutan.value) {
       return null;
     }
 
