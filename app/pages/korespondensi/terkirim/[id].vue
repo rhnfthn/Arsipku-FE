@@ -54,7 +54,8 @@ const isLoading = ref(true);
 const isKonsepData = ref(false);
 
 const isCurrentDetail = (detail: any) =>
-  String(detail?.id || '') === String(route.params.id || '');
+  String(detail?.id || '') === String(route.params.id || '') ||
+  String(detail?.konsepNaskah?.id || '') === String(route.params.id || '');
 
 const navPrev = ref<any>(null);
 const navNext = ref<any>(null);
@@ -77,7 +78,7 @@ const navigateToSurat = (index: number) => {
     toggleCardCollapse(index);
   }
   nextTick(() => {
-    const element = document.getElementById(`card-${detail.id || detail.urutan}`);
+    const element = document.getElementById(`card-${detail.flow_id || detail.id || detail.urutan}`);
     if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 };
@@ -86,7 +87,7 @@ const updateActiveSurat = () => {
   let bestIndex = 0;
   let bestTop = Infinity;
   details.value.forEach((detail, i) => {
-    const el = document.getElementById(`card-${detail.id || detail.urutan}`);
+    const el = document.getElementById(`card-${detail.flow_id || detail.id || detail.urutan}`);
     if (el) {
       const rect = el.getBoundingClientRect();
       const dist = Math.abs(rect.top - 120);
@@ -322,7 +323,7 @@ const isHighlighted = (detail: any) => {
   if (!target) return false;
 
   // 2. Cek ID Flow / Urutan
-  if (String(detail.id) === String(target) || String(detail.urutan) === String(target)) {
+  if (String(detail.id) === String(target) || String(detail.konsepNaskah?.id || '') === String(target) || String(detail.urutan) === String(target)) {
     return true;
   }
 
@@ -437,7 +438,7 @@ const loadData = async () => {
 
       if (rawFlows.length === 0) return;
 
-      const sortedFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
+      const sortedFlows = mergeSentConceptFlow([...rawFlows].sort(compareNaskahFlowNewestFirst));
 
       selected.value = sortedFlows.find((flow: any) => isCurrentDetail(flow)) || sortedFlows[0];
       initFlagState();
@@ -480,7 +481,12 @@ const loadData = async () => {
           created_at: flow.created_at || flow.createdAt || flow.detail?.created_at || flow.detail?.createdAt,
           pengirim: flow.detail?.naskah_pengirim || flow.pengirim,
           from: flow.pengirim,
-          to_konsep: flow.penerima[0] || {},
+          to_konsep: flow.penerima?.[0] || {},
+          konsepNaskah: flow.konsepNaskah ? {
+            ...flow.konsepNaskah,
+            to: processGrouping(flow.konsepNaskah.penerima || [], flow.konsepNaskah.penerima_grup || []),
+            cc: processGrouping(flow.konsepNaskah.tembusan || [], flow.konsepNaskah.tembusan_grup || []),
+          } : null,
           penerima: processedPenerima,
           to: processedPenerima,
           cc: processedTembusan,
@@ -523,7 +529,7 @@ const loadData = async () => {
         rawFlows = (inboxData.flow && inboxData.flow.length > 0) ? inboxData.flow : [inboxData];
       }
 
-      rawFlows = [...rawFlows].sort(compareNaskahFlowNewestFirst);
+      rawFlows = mergeFinalizedConceptFlow([...rawFlows].sort(compareNaskahFlowNewestFirst));
 
       if (inboxData && rawFlows.length > 0) {
         selected.value = inboxData;
@@ -540,7 +546,7 @@ const loadData = async () => {
           else if (Array.isArray(item.to)) listPenerima = item.to;
           else if (item.to && typeof item.to === 'object') listPenerima = [item.to];
 
-          if (listPenerima.length === 0 && inboxData) {
+          if (listPenerima.length === 0 && inboxData && item.jenis !== 'K') {
             if (Array.isArray(inboxData.penerima)) listPenerima = inboxData.penerima;
             else if (Array.isArray(inboxData.kepada)) listPenerima = inboxData.kepada;
           }
@@ -552,7 +558,7 @@ const loadData = async () => {
           if (Array.isArray(item.tembusan)) listTembusan = item.tembusan;
           else if (Array.isArray(item.cc)) listTembusan = item.cc;
 
-          if (listTembusan.length === 0 && inboxData) {
+          if (listTembusan.length === 0 && inboxData && item.jenis !== 'K') {
             if (Array.isArray(inboxData.tembusan)) listTembusan = inboxData.tembusan;
             else if (Array.isArray(inboxData.cc)) listTembusan = inboxData.cc;
           }
@@ -561,24 +567,31 @@ const loadData = async () => {
 
           return {
             id: item.id,
+            flow_id: item.flow_id,
+            conceptFinalization: item.conceptFinalization,
+            status: item.status,
+            konsep_sequence: item.konsep_sequence,
+            jenis_naskah_konsep: item.jenis_naskah_konsep,
             ttd: item.ttd,
             sifat: item.sifat,
             dikirim_oleh: inboxData.dikirim_oleh || null,
-            aksi: item.status || 'read',
+            aksi: item.aksi || item.detail?.aksi || item.status || 'read',
             jenis: item.jenis || inboxData.jenis || 'SM',
-            jenis_label: item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',
+            jenis_label: item.jenis === 'K' ? 'Konsep' : item.jenis_label || inboxData.jenis_label || 'SURAT MASUK',
             perihal: item.perihal || inboxData.perihal,
             nomor: item.nomor || inboxData.nomor || '-',
             tanggal: item.tanggal || inboxData.tanggal,
             created_at: item.created_at || item.createdAt || item.detail?.created_at || item.detail?.createdAt || item.raw?.created_at || item.raw?.createdAt || inboxData.created_at || inboxData.createdAt || null,
             pengirim: item.pengirim || item.from || inboxData.pengirim,
+            from: item.pengirim || item.from || inboxData.pengirim,
+            to_konsep: item.jenis === 'K' ? item.penerima?.[0] : null,
             to: listPenerima,
             cc: listTembusan,
             mainDisplayContentHtml: item.konten || item.isi || '',
-            catatan: item.catatan || inboxData.detail?.catatan || inboxData.disposisi_content?.catatan || '',
+            catatan: item.jenis === 'K' ? item.catatan || item.detail?.catatan || '' : item.catatan || inboxData.detail?.catatan || inboxData.disposisi_content?.catatan || '',
             disposisi: item.disposisi || item.instruksi || inboxData.disposisi_content?.disposisi,
             lampiran_files: item.lampiran_files || item.attachments || [],
-            final_pdf_url: item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
+            final_pdf_url: item.jenis === 'K' ? item.final_pdf_url || item.file_url || null : item.final_pdf_url || item.file_url || inboxData.final_pdf_url,
             _ui: { showAllRecipients: false, showAllCC: false, isContentExpanded: false, showReadMoreButton: false },
             _hasNewer: isCurrentDetail(item) ? hasNewer : false,
             _hasOlder: isCurrentDetail(item) ? hasOlder : false,
@@ -740,7 +753,7 @@ const goToFirstSurat = () => {
   viewMode.value = 'first-only';
   nextTick(() => {
     const firstSurat = details.value[firstIdx];
-    const element = document.getElementById(`card-${firstSurat.id || firstSurat.urutan}`);
+    const element = document.getElementById(`card-${firstSurat.flow_id || firstSurat.id || firstSurat.urutan}`);
     if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 };
@@ -750,7 +763,7 @@ const goToLatestSurat = () => {
   viewMode.value = 'all';
   nextTick(() => {
     const latest = details.value.find(isCurrentDetail) || details.value[0];
-    const element = document.getElementById(`card-${latest.id || latest.urutan}`);
+    const element = document.getElementById(`card-${latest.flow_id || latest.id || latest.urutan}`);
     if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 };
@@ -1013,12 +1026,12 @@ const konsepOptions = [
 
 
     <template v-else-if="details && details.length > 0">
-      <div v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
-        :id="`card-${detail.id || detail.urutan}`" class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
+      <div v-for="(detail, index) in details" :key="detail.flow_id || detail.id || detail.urutan || index"
+        :id="`card-${detail.flow_id || detail.id || detail.urutan}`" class="relative transition-all duration-500 scroll-mt-24 mb-3 last:mb-0"
         :class="{ 'ring-2 ring-primary-200 rounded-xl': details.length > 1 && isHighlighted(detail) }">
 
         <div>
-          <DetailNaskah context="sent" :data="detail" :is-head="isCurrentDetail(detail)"
+          <DetailNaskah context="sent" :data="detail" :konsep-naskah="detail.konsepNaskah" :is-head="isCurrentDetail(detail)"
             :is-starred="flagState.isStarred" :is-tinjut="flagState.isTinjut" :is-locked="flagState.isLocked" :is-note="flagState.isNote"
             :is-archived="flagState.isArchived"
             :collapsed="isCardCollapsed(index)"
@@ -1246,7 +1259,7 @@ const konsepOptions = [
             </button>
           </div>
           <div class="overflow-y-auto flex-1 p-2 space-y-1">
-            <button v-for="(detail, index) in details" :key="detail.id || detail.urutan || index"
+            <button v-for="(detail, index) in details" :key="detail.flow_id || detail.id || detail.urutan || index"
               @click="navigateToSurat(index)"
               class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group"
               :class="activeSuratIndex === index

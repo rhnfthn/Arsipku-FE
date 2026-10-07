@@ -1,6 +1,7 @@
 export interface NaskahFlowItem {
   jenis?: string | null;
   nomor?: string | null;
+  konsep_sequence?: number | null;
   level?: number | null;
   tanggal?: string | Date | null;
   created_at?: string | Date | null;
@@ -9,6 +10,8 @@ export interface NaskahFlowItem {
 
 export const getKonsepSequence = (item: NaskahFlowItem): number | null => {
   if (String(item.jenis || '').toUpperCase() !== 'K') return null;
+
+  if (item.konsep_sequence != null) return Number(item.konsep_sequence);
 
   const match = String(item.nomor || '').match(/^KONSEP-(\d+)$/i);
   return match ? Number(match[1]) : null;
