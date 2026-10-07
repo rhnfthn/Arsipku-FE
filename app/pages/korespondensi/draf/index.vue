@@ -30,6 +30,28 @@ const { addNaskahToLabel: _addNaskahToLabel } = useLabel();
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 const selectedIds = ref(new Set());
+const { getPendingCorrespondence } = useTtePortal();
+const checkingTte = ref(null);
+const tteResumable = (mail) => mail.canResumeTte && ['PENDING', 'OPENED'].includes(mail.tteStatus) && (!mail.tteExpiresAt || new Date(mail.tteExpiresAt) > new Date());
+const tteLabel = (mail) => {
+  if (['PROCESSING', 'RECONCILING', 'SIGNED'].includes(mail.tteStatus)) return t('df_tte_processing');
+  if ((['PENDING', 'OPENED'].includes(mail.tteStatus) && mail.tteExpiresAt && new Date(mail.tteExpiresAt) <= new Date()) || !mail.tteStatus || ['PARTIAL', 'FAILED', 'CANCELLED', 'EXPIRED'].includes(mail.tteStatus)) return t('df_tte_attention');
+  return t('df_tte_waiting');
+};
+const checkTte = async (mail, resume = false) => {
+  checkingTte.value = mail.id;
+  try {
+    const result = await getPendingCorrespondence(mail.id);
+    if (resume && result.signingUrl) {
+      window.location.assign(result.signingUrl);
+      return;
+    }
+    await refreshData();
+    toast.add({ title: t('df_tte_checked'), color: 'success' });
+  } catch (error) {
+    toast.add({ title: t('df_tte_check_failed'), description: error?.message, color: 'error' });
+  } finally { checkingTte.value = null; }
+};
 const searchQuery = ref("");
 const isLabelProcessing = ref(false);
 const isRefreshing = ref(false);
@@ -194,6 +216,7 @@ const getListState = () => ({
 });
 
 const handleEdit = async (mail) => {
+  if (mail.status === 'pending_tte') return;
   const jenis = (mail.category || '').trim().toUpperCase();
   const listQuery = await replaceCurrentKorespondensiListQuery(router, route, getListState());
 
@@ -282,14 +305,16 @@ const openLabelAssignModal = () => { showLabelAssignModal.value = true; };
 
 // ── Selection ─────────────────────────────────────────────────────────────────
 const toggleSelection = (id) => {
+  if (items.value.find(mail => mail.id === id)?.status === 'pending_tte') return;
   if (selectedIds.value.has(id)) selectedIds.value.delete(id);
   else selectedIds.value.add(id);
 };
+const selectableItems = computed(() => items.value.filter(mail => mail.status !== 'pending_tte'));
 const toggleSelectAll = () => {
-  if (selectedIds.value.size === items.value.length) selectedIds.value.clear();
-  else items.value.forEach((mail) => selectedIds.value.add(mail.id));
+  if (selectedIds.value.size === selectableItems.value.length) selectedIds.value.clear();
+  else selectableItems.value.forEach((mail) => selectedIds.value.add(mail.id));
 };
-const isAllSelected = computed(() => items.value.length > 0 && selectedIds.value.size === items.value.length);
+const isAllSelected = computed(() => selectableItems.value.length > 0 && selectedIds.value.size === selectableItems.value.length);
 
 // ── Filter / Sort / Pagination UI Actions ─────────────────────────────────────
 const selectSortOption = (opt) => { activeSortLabel.value = opt; showSortMenu.value = false; currentPage.value = 1; refreshData(); };
@@ -641,6 +666,8 @@ onMounted(() => {
                 <div
                   class="w-3.5 h-3.5 border-[1.5px] border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center transition-colors cursor-pointer"
                   :class="selectedIds.has(mail.id) ? 'bg-primary border-primary' : 'bg-white dark:bg-gray-800'"
+                  :aria-disabled="mail.status === 'pending_tte'"
+                  :style="mail.status === 'pending_tte' ? { opacity: 0.3, cursor: 'default' } : {}"
                   @click="toggleSelection(mail.id)">
                   <Check v-if="selectedIds.has(mail.id)" class="w-3 h-3 text-white" />
                 </div>
@@ -675,6 +702,7 @@ onMounted(() => {
                       </span>
                     </UTooltip>
                   </div>
+                  <UBadge v-if="mail.status === 'pending_tte'" color="warning" variant="soft" size="sm">{{ tteLabel(mail) }}</UBadge>
                   <div class="text-[13px] text-neutral-900 dark:text-gray-100 truncate flex-1 min-w-[120px]">
                     {{ mail.subject }}
                   </div>
@@ -703,14 +731,22 @@ onMounted(() => {
               </div>
 
               <div class="pl-2 shrink-0 flex justify-end gap-1">
-                <UTooltip :text="$t('k_edit')">
+                <template v-if="mail.status === 'pending_tte'">
+                  <UButton v-if="tteResumable(mail)" size="xs" color="primary"
+                    :loading="checkingTte === mail.id" @click.stop="checkTte(mail, true)">{{ $t('df_tte_resume') }}</UButton>
+                  <UTooltip :text="$t('df_tte_check')">
+                    <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-refresh-cw"
+                      :aria-label="$t('df_tte_check')" :loading="checkingTte === mail.id" @click.stop="checkTte(mail)" />
+                  </UTooltip>
+                </template>
+                <UTooltip v-if="mail.status !== 'pending_tte'" :text="$t('k_edit')">
                   <button
                     class="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg text-orange-500 dark:text-orange-400 transition-colors"
                     @click.stop="hasPermission('utama.draft', 'update') ? handleEdit(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_edit_ditolak') || 'Anda tidak memiliki izin untuk mengedit.', color: 'error', icon: 'i-lucide-x-circle' })">
                     <Pencil class="w-4 h-4" />
                   </button>
                 </UTooltip>
-                <UTooltip :text="$t('k_hapus')">
+                <UTooltip v-if="mail.status !== 'pending_tte'" :text="$t('k_hapus')">
                   <button
                     class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 transition-colors"
                     @click.stop="hasPermission('utama.draft', 'delete') ? confirmDeleteModal(mail) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_hapus_ditolak') || 'Anda tidak memiliki izin untuk menghapus.', color: 'error', icon: 'i-lucide-x-circle' })">

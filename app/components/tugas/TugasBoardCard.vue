@@ -1,29 +1,6 @@
 <script setup lang="ts">
-import {
-  KanbanSquare,
-  Users,
-  CircleCheckBig,
-  Pencil,
-  Trash2,
-  LoaderCircle,
-  Rocket,
-  Briefcase,
-  Target,
-  CalendarDays,
-  ClipboardList,
-  FolderKanban,
-  Presentation,
-  Megaphone,
-  HeartPulse,
-  GraduationCap,
-  Plane,
-  Wrench,
-  Banknote,
-  FileStack,
-  Lightbulb,
-  PartyPopper,
-  Building2,
-} from 'lucide-vue-next';
+import { Users, CircleCheckBig, Pencil, Trash2, LoaderCircle } from 'lucide-vue-next';
+import { resolveTugasBoardIcon } from '~/utils/tugas-board-icon';
 import type { TugasBoardSummary } from '~/types/tugas';
 
 const props = defineProps<{
@@ -38,30 +15,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-/** Map slug icon (kolom tugas_board.icon) ke komponen lucide. */
-const iconMap: Record<string, typeof Rocket> = {
-  rocket: Rocket,
-  briefcase: Briefcase,
-  target: Target,
-  'calendar-days': CalendarDays,
-  'clipboard-list': ClipboardList,
-  'folder-kanban': FolderKanban,
-  presentation: Presentation,
-  megaphone: Megaphone,
-  'heart-pulse': HeartPulse,
-  'graduation-cap': GraduationCap,
-  plane: Plane,
-  wrench: Wrench,
-  banknote: Banknote,
-  'file-stack': FileStack,
-  lightbulb: Lightbulb,
-  'party-popper': PartyPopper,
-  'building-2': Building2,
-};
-
-const boardIcon = computed(
-  () => (props.board.icon && iconMap[props.board.icon]) || KanbanSquare
-);
+const boardIcon = computed(() => resolveTugasBoardIcon(props.board.icon));
 
 const progressPercent = computed(() => {
   const counts = props.board.counts;
@@ -204,7 +158,10 @@ const formatTanggal = (value: string) =>
           <LoaderCircle class="h-3 w-3" />
           {{ activeTasks }} {{ t('tugas_aktif') }}
         </span>
-        <span v-else-if="progressPercent === 100" class="font-medium text-green-600 dark:text-green-400">
+        <span
+          v-else-if="progressPercent === 100"
+          class="font-medium text-green-600 dark:text-green-400"
+        >
           {{ t('tugas_selesai_semua') }}
         </span>
       </div>

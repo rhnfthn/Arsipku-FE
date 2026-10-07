@@ -2327,5 +2327,18 @@
   "tugas_ref_pilih": "Pilih naskah referensi",
   "tugas_ref_upload": "Unggah referensi",
   "tugas_ref_personal_info": "Masukkan nomor naskah dari Kotak Masuk/Terkirim atau unggah referensi manual.",
-  "tugas_ref_manual_info": "Format PDF, JPG, atau PNG; maksimal 10 MB."
+  "tugas_ref_manual_info": "Format PDF, JPG, atau PNG; maksimal 10 MB.",
+  "tugas_forum_tambah_reaksi": "Tambahkan reaksi",
+  "tugas_forum_reaksi_label": "Reaksi {emoji}, {count} anggota",
+  "tugas_forum_reaksi_gagal": "Reaksi gagal disimpan",
+  "df_tte_waiting": "Menunggu TTE",
+  "df_tte_processing": "Sedang diproses",
+  "df_tte_attention": "Perlu tindak lanjut",
+  "df_tte_resume": "Lanjutkan TTE",
+  "df_tte_check": "Periksa status TTE",
+  "df_tte_checked": "Status TTE sudah diperiksa",
+  "df_tte_check_failed": "Status TTE belum dapat diperiksa",
+  "tte_callback_sent": "Buka Terkirim",
+  "tte_callback_redirect": "Naskah selesai diproses. Mengarahkan ke halaman Terkirim.",
+  "tte_callback_incomplete": "Penyelesaian naskah belum selesai. Periksa status kembali atau buka Draf."
 }

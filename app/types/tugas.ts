@@ -145,7 +145,14 @@ export interface TugasTaskEvidence {
   url: string;
 }
 
+export interface TugasCommentReaction {
+  emoji: string;
+  count: number;
+  reacted: boolean;
+}
+
 export interface TugasTaskComment {
+  reactions: TugasCommentReaction[];
   id: string;
   boardId: string;
   /** Task yang di-tag — null bila komentar umum tanpa rujukan task. */
