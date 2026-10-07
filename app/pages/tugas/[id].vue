@@ -7,6 +7,7 @@ import TugasTaskCard from '~/components/tugas/TugasTaskCard.vue';
 import TugasTaskDetailModal from '~/components/tugas/TugasTaskDetailModal.vue';
 import TugasMemberModal from '~/components/tugas/TugasMemberModal.vue';
 import TugasTaskForum from '~/components/tugas/TugasTaskForum.vue';
+import { resolveTugasBoardIcon } from '~/utils/tugas-board-icon';
 import { useTugas, mapTugasError } from '~/composables/useTugas';
 import type {
   TugasBoardDetail,
@@ -14,6 +15,7 @@ import type {
   TugasMember,
   TugasTask,
   TugasTaskComment,
+  TugasCommentReaction,
   TugasTaskPriority,
   TugasReferenceType,
   TugasTaskReference,
@@ -54,6 +56,8 @@ const {
   removeTaskEvidence,
   fetchBoardActivity,
   fetchBoardComments,
+  fetchCommentReactions,
+  setCommentReaction,
   addBoardComment,
   removeBoardComment,
 } = useTugas();
@@ -93,6 +97,7 @@ const canManageMembers = computed(() => hasPermission('tugas', 'manage-members')
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const board = computed<TugasBoardDetail | null>(() => boardDetails.value[boardId.value] ?? null);
+const boardIcon = computed(() => resolveTugasBoardIcon(board.value?.icon));
 const tasks = computed<TugasTask[]>(() => boardTasks.value[boardId.value] ?? []);
 const showArchived = ref(false);
 const archivedTasks = computed(() => tasks.value.filter((task) => Boolean(task.archivedAt)));
@@ -161,6 +166,7 @@ const {
   tugasTaskMoved,
   tugasTaskUpdate,
   tugasCommentAdded,
+  tugasCommentReactionChanged,
   tugasCommentDeleted,
 } = useRealtimeSocket();
 
@@ -623,6 +629,38 @@ const handleRemoveComment = async (commentId: string, scope: 'me' | 'everyone' =
   }
 };
 
+const reactingCommentIds = ref(new Set<string>());
+const reactionRequestVersions = new Map<string, number>();
+
+const updateCommentReactions = async (commentId: string, emoji?: string, active?: boolean) => {
+  const version = (reactionRequestVersions.get(commentId) ?? 0) + 1;
+  reactionRequestVersions.set(commentId, version);
+  const response = emoji
+    ? await setCommentReaction(boardId.value, commentId, emoji, !!active)
+    : await fetchCommentReactions(boardId.value, commentId);
+  if (reactionRequestVersions.get(commentId) !== version) return;
+  const payload = ((response as { data?: unknown }).data ?? response) as { data?: TugasCommentReaction[] };
+  const comment = forumComments.value.find((item) => item.id === commentId);
+  if (comment && Array.isArray(payload?.data)) comment.reactions = payload.data;
+};
+
+const handleReactComment = async (commentId: string, emoji: string, active: boolean) => {
+  if (reactingCommentIds.value.has(commentId)) return;
+  reactingCommentIds.value.add(commentId);
+  try {
+    await updateCommentReactions(commentId, emoji, active);
+  } catch {
+    toast.add({ title: t('tugas_forum_reaksi_gagal'), color: 'error' });
+  } finally {
+    reactingCommentIds.value.delete(commentId);
+  }
+};
+
+watch(tugasCommentReactionChanged, (event) => {
+  if (!event || event.boardId !== boardId.value || !forumComments.value.some((item) => item.id === event.commentId)) return;
+  void updateCommentReactions(event.commentId).catch(() => undefined);
+});
+
 const handleLoadMoreComments = () => loadForumComments(false);
 
 // Muat komentar saat tab forum dibuka pertama kali.
@@ -944,7 +982,7 @@ const detailTabs = computed(() => [
                 class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
                 :style="{ backgroundColor: `${board.warna}1A`, color: board.warna }"
               >
-                <UIcon name="i-lucide-folder-kanban" class="h-7 w-7" />
+                <component :is="boardIcon" class="h-7 w-7" />
               </span>
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
@@ -1262,7 +1300,7 @@ const detailTabs = computed(() => [
           </section>
 
           <section
-            class="flex max-h-72 flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:col-span-2"
+            class="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:col-span-2"
           >
             <div class="mb-4 flex shrink-0 items-center justify-between gap-3">
               <Heading variant="heading9b" as="h2" class="text-gray-900 dark:text-white">
@@ -1270,32 +1308,34 @@ const detailTabs = computed(() => [
               </Heading>
               <UIcon name="i-lucide-activity" class="h-5 w-5 text-gray-400" />
             </div>
-            <div class="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
-              <div v-for="activity in activities" :key="activity.id" class="flex gap-3">
-                <ProfileAvatar
-                  size="xs"
-                  :persnum="activity.actor?.persnum ?? activity.actorPersnum"
-                  :alt="activityActorName(activity)"
-                  avatar-class="shrink-0 bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
-                >
-                  {{ memberInitials(activityActorName(activity)) }}
-                </ProfileAvatar>
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm text-gray-800 dark:text-gray-100">
-                    <strong class="font-semibold">{{ activityActorName(activity) }}</strong>
-                    <span class="capitalize"> {{ activityLabel(activity.aksi) }}</span>
-                    <span v-if="activitySubject(activity)" class="font-medium">
-                      “{{ activitySubject(activity) }}”
-                    </span>
-                  </p>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span v-if="activity.actor?.positionText">
-                      {{ activity.actor.positionText }} ·
-                    </span>
-                    {{ formatActivityDate(activity.createdAt) }}
-                  </p>
-                </div>
-              </div>
+            <div class="custom-scrollbar max-h-96 overflow-y-auto pr-2">
+              <ol class="divide-y divide-gray-100 dark:divide-gray-700">
+                <li v-for="activity in activities" :key="activity.id" class="flex items-start gap-3 py-3 first:pt-0">
+                  <ProfileAvatar
+                    size="sm"
+                    :persnum="activity.actor?.persnum ?? activity.actorPersnum"
+                    :alt="activityActorName(activity)"
+                    avatar-class="shrink-0 bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                  >
+                    {{ memberInitials(activityActorName(activity)) }}
+                  </ProfileAvatar>
+                  <div class="min-w-0 flex-1">
+                    <p class="break-words text-sm font-semibold leading-5 text-gray-900 dark:text-white">
+                      {{ activityActorName(activity) }}
+                    </p>
+                    <p class="mt-1 break-words text-sm leading-5 text-gray-700 dark:text-gray-200">
+                      {{ activityLabel(activity.aksi) }}{{ activitySubject(activity) ? ` “${activitySubject(activity)}”` : '' }}
+                    </p>
+                    <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                      <span v-if="activity.actor?.positionText" class="break-words">
+                        {{ activity.actor.positionText }}
+                      </span>
+                      <span v-if="activity.actor?.positionText" aria-hidden="true">·</span>
+                      <time :datetime="activity.createdAt">{{ formatActivityDate(activity.createdAt) }}</time>
+                    </p>
+                  </div>
+                </li>
+              </ol>
               <Paragraph
                 v-if="!activities.length && !isLoadingActivity"
                 variant="body2"
@@ -1422,10 +1462,12 @@ const detailTabs = computed(() => [
               :loading="isLoadingForum"
               :sending="isSendingComment"
               :removing-ids="removingCommentIds"
+              :reacting-ids="reactingCommentIds"
               :has-more="forumPage < forumLastPage"
               :loading-more="isLoadingMoreForum"
               :current-position-id="userPositionId"
               @send="handleSendComment"
+              @react="handleReactComment"
               @remove="handleRemoveComment"
               @load-more="handleLoadMoreComments"
             />
@@ -1439,6 +1481,7 @@ const detailTabs = computed(() => [
       v-model="showTaskModal"
       :task="activeTask"
       :board-type="board?.tipe ?? 'personal'"
+      :board-icon="board?.icon"
       :members="members"
       :saving="isSavingTask || isCreatingTask"
       :can-create-task="canCreateTask"
