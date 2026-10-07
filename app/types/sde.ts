@@ -112,6 +112,8 @@ export interface SdeActionResponse {
     lampiran_files?: any[];
     konten?: string;
     english?: boolean;
+    atas_nama?: string | null;
+    atas_nama_position_id?: string | number | null;
     klasifikasi?: string;
     klasifikasi_text?: string;
     sifat?: string;

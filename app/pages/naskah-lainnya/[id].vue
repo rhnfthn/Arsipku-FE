@@ -14,7 +14,6 @@ import { JENIS_LABELS } from '~/types/naskah-lainnya';
 import { formatNaskahDate, formatNaskahDateTime } from '~/utils/naskah-lainnya-date';
 import ApprovalNoteEditor from '~/components/ApprovalNoteEditor.vue';
 import TulisDigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModalAsync.vue';
-import TugasQuickCreateModal from '~/components/tugas/TugasQuickCreateModal.vue';
 
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 useHead({ title: 'Detail Naskah Lainnya' });
@@ -513,18 +512,6 @@ const nomorClean = computed(() => {
   const n = detail.value?.nomor;
   return n && !/\{\{[^}]*\}\}/.test(n) ? n : '';
 });
-const showTugasQuickCreate = ref(false);
-const canQuickCreateTugas = computed(
-  () =>
-    hasPermission('tugas', 'create-task') &&
-    detail.value?.tahapan === 'selesai' &&
-    (detail.value.signOption === 'ttd_basah'
-      ? isManualFinal.value
-      : ['final', 'final_tte'].includes(detail.value.documentStatus || ''))
-);
-const tugasReferenceLabel = computed(() =>
-  [nomorClean.value, detail.value?.perihal || 'Naskah Lainnya'].filter(Boolean).join(' — ')
-);
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -1600,15 +1587,6 @@ const signLabel = computed(() =>
               {{ detail?.perihal ?? 'Draf Naskah' }}
             </h1>
             <StatusBadge v-if="detail" :status="detailDisplayStatus" />
-            <UButton
-              v-if="canQuickCreateTugas"
-              icon="i-lucide-list-plus"
-              color="primary"
-              size="sm"
-              @click="showTugasQuickCreate = true"
-            >
-              {{ t('tugas_buat_dari_naskah') }}
-            </UButton>
           </div>
         </template>
         <template #subtitle>
@@ -3205,13 +3183,6 @@ const signLabel = computed(() =>
 
     <!-- Nested route outlet (legal-drafting, evaluasi, tanda-tangan, dll) -->
     <NuxtPage />
-    <TugasQuickCreateModal
-      v-if="!isChildRoute"
-      v-model="showTugasQuickCreate"
-      reference-type="naskah_lainnya"
-      :reference-id="id"
-      :reference-label="tugasReferenceLabel"
-    />
   </div>
 </template>
 

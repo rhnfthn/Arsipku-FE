@@ -119,7 +119,11 @@ export interface TugasActivityItem {
   createdAt: string;
 }
 
-export type TugasReferenceType = 'naskah_masuk' | 'disposisi' | 'naskah_lainnya';
+export type TugasReferenceType =
+  | 'naskah_masuk'
+  | 'naskah_terkirim'
+  | 'disposisi'
+  | 'naskah_lainnya';
 
 export interface TugasTaskReference {
   id: string;
@@ -257,4 +261,10 @@ export interface TugasTaskQuery {
 export interface TugasMyTaskQuery extends TugasTaskQuery {
   scope?: TugasMyTaskScope;
   boardId?: string;
+}
+
+export interface TugasReferenceCandidate {
+  referenceType: TugasReferenceType;
+  referenceId: string;
+  label: string;
 }

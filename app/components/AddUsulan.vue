@@ -948,7 +948,7 @@ const generatedNomorPreview = computed(() => {
   const date = tanggalString.value ? new Date(tanggalString.value) : new Date();
   const bulan = ROMAN_MONTHS[date.getMonth()];
   const tahun = date.getFullYear();
-  return `${jenis}..../TN/00/LPPNPI/${klasifikasi}/${bulan}/${tahun}`;
+  return `${jenis}..../TN/TNG/LPPNPI/${klasifikasi}/${bulan}/${tahun}`;
 });
 
 // ─── CLICK OUTSIDE ────────────────────────────────────────────
