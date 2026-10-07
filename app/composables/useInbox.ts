@@ -268,6 +268,11 @@ export function useInbox() {
 
         return {
           id:             d.id,
+          id_naskah_asli:  d.id_naskah_asli,
+          flow_id:        d.flow_id,
+          konsep_sequence: d.konsep_sequence,
+          aksi:           d.aksi || d.detail?.aksi,
+          jenis_naskah_konsep: d.jenis_naskah_konsep,
           ttd:            d.label_ttd,
           jenis:          d.jenis,
           jenis_label:    d.jenis_label || JENIS_LABEL_MAP[d.jenis] || d.jenis,

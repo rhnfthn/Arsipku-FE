@@ -197,6 +197,14 @@ const aksiConfig: Record<string, { label: string; color: string }> = {
 };
 
 const aksiBadge = computed(() => {
+  if (props.context === 'sent' && props.data?.conceptFinalization) {
+    const state = sentConceptDocumentStatus(props.data);
+    return { label: state.label, color: state.isFinal ? 'bg-green-500' : 'bg-amber-500' };
+  }
+  if (props.context === 'sent' && props.konsepNaskah) {
+    const state = sentConceptDocumentStatus(props.konsepNaskah);
+    return { label: state.label, color: state.isFinal ? 'bg-green-500' : 'bg-amber-500' };
+  }
   const aksi = props.data?.aksi as string;
   return aksiConfig[aksi as keyof typeof aksiConfig] ?? null; // null = badge tidak ditampilkan
 });
@@ -233,6 +241,7 @@ const isKonsepJenis = computed(() => {
 const hasPrimaryConceptMessage = computed(
   () =>
     Boolean(props.isHead) &&
+    !(props.context === 'sent' && props.konsepNaskah) &&
     isKonsepJenis.value &&
     ['reject', 'create', 'forward'].includes(String(props.data?.aksi || '').toLowerCase())
 );
@@ -244,7 +253,11 @@ const konsepNaskahInfo = computed(
   () => props.konsepNaskah || (isKonsepNaskahJenis.value ? props.data : null)
 );
 
+const isMergedSentConcept = computed(() => props.context === 'sent' && Boolean(props.konsepNaskah));
+const sentDocumentStatus = computed(() => sentConceptDocumentStatus(konsepNaskahInfo.value));
+
 const konsepNaskahStatus = computed(() => {
+  if (isMergedSentConcept.value) return sentDocumentStatus.value;
   const nomor = String(konsepNaskahInfo.value?.nomor || '').trim();
   const hasNomor = nomor !== '' && nomor !== '-';
   return {
@@ -261,6 +274,12 @@ const isKonsepNaskahTerkirim = computed(() => {
   const nomor = String(konsepNaskahInfo.value?.nomor || '').trim();
   return props.data?.isKonsepFinished || (nomor !== '' && nomor !== '-');
 });
+
+const conceptActionTitle = computed(() => ({
+  create: 'Konsep Awal', forward: 'Konsep Diteruskan', reject: 'Konsep Ditolak',
+  revisi: 'Konsep Direvisi', turunkan: 'Permintaan Revisi Konsep',
+  approve: 'Konsep Disetujui', finalize: 'Finalisasi Konsep',
+} as Record<string, string>)[props.data?.aksi] || '');
 
 const konsepRecipientLabel = computed(() =>
   isKonsepNaskahTerkirim.value ? 'Penerima Naskah' : 'Penerima Konsep'
@@ -372,6 +391,7 @@ const removeNote = () => {
             <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
               {{
                 data.subject ||
+                (isKonsepJenis && !isMergedSentConcept ? conceptActionTitle : '') ||
                 (data.aksi === 'create'
                   ? 'Konsep Awal'
                   : data.aksi === 'reject'
@@ -380,7 +400,7 @@ const removeNote = () => {
                       ? 'Revisi Konsep'
                       : data.jenis === 'DI'
                         ? 'Disposisi'
-                        : isKonsepNaskahJenis
+                        : isKonsepNaskahJenis || isMergedSentConcept
                           ? 'Konsep Naskah'
                           : 'Riwayat')
               }}
@@ -727,8 +747,16 @@ const removeNote = () => {
       tag="div"
     >
       <div class="p-5 sm:p-8">
+        <div v-if="context === 'sent' && data.conceptFinalization" class="mb-5 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <Paragraph variant="body2sb" class="text-gray-900 dark:text-white">Hasil Finalisasi Konsep</Paragraph>
+          <Paragraph variant="body3" class="mt-1 text-gray-500 dark:text-gray-400">
+            Difinalisasi oleh {{ data.conceptFinalization.pengirim?.nama || '-' }}
+            · {{ formatFullDateTime(data.conceptFinalization.created_at) }}
+          </Paragraph>
+          <Paragraph v-if="data.conceptFinalization.catatan" variant="body2" class="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{{ data.conceptFinalization.catatan }}</Paragraph>
+        </div>
         <div
-          v-if="!isKonsepNaskahJenis"
+          v-if="!isKonsepNaskahJenis && !isMergedSentConcept"
           class="flex items-center gap-4 mb-5 border-gray-200 dark:border-gray-700/50"
         >
           <ProfileAvatar
@@ -812,21 +840,26 @@ const removeNote = () => {
             }}</span>
 
             <span class="text-gray-500 dark:text-gray-400">Pengirim:</span>
-            <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">
-              {{ konsepNaskahInfo.pengirim?.position_text || '-' }}
-              <span class="font-normal text-gray-500 dark:text-gray-400">
+            <div class="flex items-center gap-3 min-w-0">
+              <ProfileAvatar size="sm" :persnum="konsepNaskahInfo.pengirim?.persnum || konsepNaskahInfo.pengirim?.id_sirkuler" :alt="konsepNaskahInfo.pengirim?.nama || ''" avatar-class="shrink-0">
+                {{ getFlowInitials(konsepNaskahInfo.pengirim?.nama) }}
+              </ProfileAvatar>
+              <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">
+                {{ recipientPositionText(konsepNaskahInfo.pengirim) || '-' }}
+                <span class="font-normal text-gray-500 dark:text-gray-400">
                 ({{ konsepNaskahInfo.pengirim?.nama || '-' }})
               </span>
-            </span>
+              </span>
+            </div>
 
             <span class="text-gray-500 dark:text-gray-400">Tertuju:</span>
-            <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
-              Array.isArray(konsepNaskahInfo.to)
-                ? konsepNaskahInfo.to
-                    .map((t: any) => `${recipientPositionText(t) || '-'} (${t.nama || '-'})`)
-                    .join(', ')
-                : '-'
-            }}</span>
+            <div class="min-w-0 space-y-2">
+              <div v-for="(person, index) in konsepNaskahInfo.to || []" :key="person.position_id || index" class="flex items-center gap-3">
+                <ProfileAvatar v-if="!person.isGroup && !person.is_group" size="sm" :persnum="person.persnum || person.id_sirkuler" :alt="person.nama || ''" avatar-class="shrink-0">{{ getFlowInitials(person.nama) }}</ProfileAvatar>
+                <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{ recipientPositionText(person) || person.label || '-' }}<span v-if="person.nama" class="font-normal text-gray-500 dark:text-gray-400"> ({{ person.nama }})</span></span>
+              </div>
+              <span v-if="!konsepNaskahInfo.to?.length">-</span>
+            </div>
 
             <span class="text-gray-500 dark:text-gray-400">Tembusan:</span>
             <span class="min-w-0 font-medium text-gray-900 dark:text-white break-words">{{
@@ -1023,19 +1056,24 @@ const removeNote = () => {
           </div>
         </div>
 
+        <div v-if="isMergedSentConcept && data.catatan && data.catatan !== '-'" class="mb-4 text-sm text-gray-700 dark:text-gray-300">
+          <p class="text-xs font-semibold mb-1">Catatan</p>
+          <p class="whitespace-pre-line">{{ data.catatan }}</p>
+        </div>
+
         <!-- Ganti seluruh div bg-gray-50 yang berisi template iframe -->
         <div
           v-if="!hasPrimaryConceptMessage"
           class="bg-gray-50 dark:bg-gray-900 rounded-lg mt-5 p-5 border border-gray-100 dark:border-gray-700 relative"
         >
           <!-- Riwayat konsep (non-head): catatan inline + hint pratinjau, konten full di preview ikon -->
-          <template v-if="!isHead && ['K', 'KO'].includes(data.jenis)">
+          <template v-if="!isHead && ['K', 'KO'].includes(data.jenis) && !isMergedSentConcept">
             <div class="space-y-3">
               <div v-if="data.catatan && data.catatan !== '-'">
                 <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mb-1">Catatan</span>
                 <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ data.catatan }}</p>
               </div>
-              <p class="text-xs text-gray-400 dark:text-gray-500 italic">
+              <p v-if="data.pdf_snapshot || data.naskah?.final_pdf || data.final_pdf_url" class="text-xs text-gray-400 dark:text-gray-500 italic">
                 Klik ikon pratinjau di pojok kanan atas untuk melihat isi dokumen.
               </p>
             </div>
@@ -1043,7 +1081,7 @@ const removeNote = () => {
 
           <template
             v-else-if="
-              String(data.jenis || '').toUpperCase() !== 'K' &&
+              (String(data.jenis || '').toUpperCase() !== 'K' || isMergedSentConcept) &&
               (!isKonsepJenis || data.rich_content || data.mainDisplayContentHtml)
             "
           >

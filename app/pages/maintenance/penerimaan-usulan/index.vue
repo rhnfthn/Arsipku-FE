@@ -303,7 +303,7 @@ const statusLabel = (status: string) => {
   if (status === 'DIKIRIM') return 'Menunggu Verifikasi'
   if (status === 'MENUNGGU_VERIFIKASI_BERKAS_FISIK') return 'Menunggu Verifikasi'
   if (status === 'BERKAS_FISIK_SESUAI') return 'Menunggu Verifikasi'
-  if (status === 'USUL_PINDAH_DIKIRIM') return 'Menunggu Verifikasi'
+  if (status === 'USUL_PINDAH_DIKIRIM') return 'Menunggu TTD'
   if (status === 'SIAPKAN_BERKAS_FISIK') return 'Menunggu Verifikasi'
   // Menunggu Penerimaan (Unit Dokumen → Atasan Unit Dokumen)
   if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU') return 'Menunggu Penerimaan'
@@ -323,6 +323,7 @@ const statusBadgeClass = (status: string) => {
   if (status === 'BERKAS_FISIK_TIDAK_SESUAI') return 'px-2 py-0.5 rounded-full font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
   if (status === 'SELESAI' || status === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU' || status === 'ARSIP_INAKTIF_DITERIMA' || status === 'PENATAAN_ARSIP_INAKTIF') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
   if (status === 'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU' || status === 'DISETUJUI_PERSETUJUAN_TU' || status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+  if (status === 'USUL_PINDAH_DIKIRIM') return 'px-2 py-0.5 rounded-full font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
   return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
 }
 

@@ -108,6 +108,7 @@ const props = defineProps<{
   lockMandatoryCc?: boolean;
   /** Tujuan pemakaian grup. Jika kosong, diturunkan dari label field. */
   recipientType?: 'PENERIMA' | 'TEMBUSAN';
+  hideGmAbbreviation?: boolean;
 }>();
 
 const model = defineModel<any[]>({ default: [] });
@@ -178,8 +179,8 @@ const formatInternalRecipientLabel = (item: any) => {
   if (!name) return capitalizeWords(positionText);
 
   const isGeneralManager =
-    String(abbreviation || '').trim().toUpperCase() === 'GM' ||
-    /\bgeneral manager\b/i.test(String(positionText));
+     /^GM(?:[-_\s]|$)/i.test(String(abbreviation || '').trim()) ||
+    /^(?:general\s+manager|GM)\b/i.test(String(positionText).replace(/^(?:PT|PH|PS)\.\s*/i, ''));
   const location = isGeneralManager
     ? raw?.area_text || raw?.areaText || raw?.sub_area_text || raw?.subAreaText
     : null;
@@ -187,7 +188,7 @@ const formatInternalRecipientLabel = (item: any) => {
   return [
     capitalizeWords(name),
     '-',
-    abbreviation ? `(${String(abbreviation).toUpperCase()})` : '',
+    abbreviation && !(isGeneralManager && props.hideGmAbbreviation) ? `(${String(abbreviation).toUpperCase()})` : '',
     capitalizeWords(positionText),
     location && !String(positionText).toLocaleLowerCase('id-ID').endsWith(String(location).toLocaleLowerCase('id-ID')) ? `- ${location}` : '',
   ].filter(Boolean).join(' ');

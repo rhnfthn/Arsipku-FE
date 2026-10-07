@@ -1,7 +1,7 @@
 import { toTitleCase } from './formatNama';
 import { formatDelegatedPosition } from './delegation-display';
 
-export function correspondenceRecipientLabel(item: any, suffix: 'organization' | 'area' | '' = ''): string {
+export function correspondenceRecipientLabel(item: any, suffix: 'organization' | 'area' | '' = '', includeAbbreviation = true): string {
   if (!item) return '';
   const raw = item.raw || item;
   const position = String(raw.position_text || raw.positionText || item.labelJob || item.label || '').trim();
@@ -13,10 +13,14 @@ export function correspondenceRecipientLabel(item: any, suffix: 'organization' |
       .map(value => String(value ?? '').trim()).find(Boolean) || '';
     const positionWithBranch = branch && !position.toLocaleLowerCase('id-ID').endsWith(branch.toLocaleLowerCase('id-ID'))
       ? `${position} - ${branch}` : position;
-    return [toTitleCase(name), abbreviation || 'GM', formatDelegatedPosition(positionWithBranch, raw.position_status || raw.positionStatus)]
+    return [toTitleCase(name), includeAbbreviation ? abbreviation || 'GM' : '', formatDelegatedPosition(positionWithBranch, raw.position_status || raw.positionStatus)]
       .filter(Boolean).join(' - ');
   }
   const label = item.labelJob || item.label || position;
   const tail = suffix === 'organization' ? item.organization : suffix === 'area' ? raw.area_text : '';
   return tail ? `${label} - ${tail}` : label;
+}
+
+export function sdiRecipientLabel(item: any, suffix: 'organization' | 'area' | '' = ''): string {
+  return correspondenceRecipientLabel(item, suffix, false);
 }
