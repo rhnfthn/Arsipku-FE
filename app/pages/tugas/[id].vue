@@ -121,9 +121,7 @@ const myMember = computed<TugasMember | null>(
  * anggota — backend memvalidasi via assertBoardOwner, jadi tombol aksi
  * disembunyikan untuk anggota biasa papan milik orang lain.
  */
-const isBoardOwner = computed(
-  () => myMember.value?.role === 'owner'
-);
+const isBoardOwner = computed(() => myMember.value?.role === 'owner');
 
 /** Pembuat tetap menjadi pemilik task, termasuk hak hapus. */
 const isTaskCreator = (task: TugasTask | null): boolean => {
@@ -377,11 +375,15 @@ const handleAddReference = async (
     isAddingReference.value
   )
     return;
+  const taskId = activeTask.value.id;
   isAddingReference.value = true;
   try {
-    await addTaskReference(activeTask.value.id, referenceType, referenceNumber);
-    taskReferences.value = await fetchTaskReferences(activeTask.value.id);
-    onAdded?.();
+    await addTaskReference(taskId, referenceType, referenceNumber);
+    const references = await fetchTaskReferences(taskId);
+    if (activeTask.value?.id === taskId) {
+      taskReferences.value = references;
+      onAdded?.();
+    }
     toast.add({ title: t('tugas_referensi_berhasil_ditambahkan'), color: 'success' });
   } catch (error) {
     toast.add({ title: mapTugasError(error), color: 'error' });
@@ -561,9 +563,7 @@ const loadForumComments = async (reset = true) => {
     // API mengembalikan terbaru duluan; urutkan ascending agar chat
     // mengalir dari atas (terlama) ke bawah (terbaru).
     const rows = [...result.data].reverse();
-    forumComments.value = mergeForumComments(
-      reset ? rows : [...rows, ...forumComments.value]
-    );
+    forumComments.value = mergeForumComments(reset ? rows : [...rows, ...forumComments.value]);
     forumPage.value = page;
     forumLastPage.value = result.meta.totalPages ?? page;
   } catch (error) {
@@ -597,10 +597,7 @@ const handleSendComment = async (isi: string, taskId: string | null) => {
   }
 };
 
-const handleRemoveComment = async (
-  commentId: string,
-  scope: 'me' | 'everyone' = 'me'
-) => {
+const handleRemoveComment = async (commentId: string, scope: 'me' | 'everyone' = 'me') => {
   if (removingCommentIds.value.has(commentId)) return;
   removingCommentIds.value.add(commentId);
   try {
@@ -1441,6 +1438,7 @@ const detailTabs = computed(() => [
     <TugasTaskDetailModal
       v-model="showTaskModal"
       :task="activeTask"
+      :board-type="board?.tipe ?? 'personal'"
       :members="members"
       :saving="isSavingTask || isCreatingTask"
       :can-create-task="canCreateTask"

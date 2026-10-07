@@ -6,10 +6,10 @@ import type { TugasReferenceType, TugasTaskPriority } from '~/types/tugas';
 
 /**
  * TugasQuickCreateModal — modal reusable untuk aksi "Buat Tugas" dari
- * konteks naskah (Kotak Masuk/Disposisi/Naskah Lainnya).
+ * konteks naskah (Kotak Masuk/Disposisi/Terkirim).
  *
  * - Menerima konteks reference (type + id + label awal untuk judul).
- * - Memuat board yang dapat ditulisi user (owner/member).
+ * - Memuat papan personal yang dapat ditulisi user.
  * - Judul awal terisi dari nomor/perihal; user bisa mengubah sebelum simpan.
  * - Reference disimpan server-side (route/label dibentuk backend).
  */
@@ -62,11 +62,13 @@ const deadlineDate = computed<CalendarDate | null>({
 });
 
 const boardOptions = computed(() =>
-  boards.value.map((board) => ({
-    label: board.nama,
-    value: board.id,
-    icon: 'i-lucide-kanban',
-  }))
+  boards.value
+    .filter((board) => board.tipe === 'personal')
+    .map((board) => ({
+      label: board.nama,
+      value: board.id,
+      icon: 'i-lucide-kanban',
+    }))
 );
 const priorityOptions = computed(() => [
   { label: t('tugas_tanpa_prioritas'), value: NO_PRIORITY, icon: 'i-lucide-minus' },
@@ -123,9 +125,9 @@ watch(
         isLoadingBoards.value = false;
       }
     }
-    // Default: board pertama.
-    if (!form.value.boardId && boards.value.length) {
-      form.value.boardId = boards.value[0].id;
+    // Tautan naskah hanya boleh masuk papan personal.
+    if (!form.value.boardId && boardOptions.value.length) {
+      form.value.boardId = boardOptions.value[0]!.value;
     }
   }
 );
@@ -144,7 +146,13 @@ watch(
 );
 
 const save = async () => {
-  if (isSaving.value || !form.value.boardId || !form.value.judul.trim()) return;
+  if (
+    !canCreateTask.value ||
+    isSaving.value ||
+    !boardOptions.value.some((board) => board.value === form.value.boardId) ||
+    !form.value.judul.trim()
+  )
+    return;
   isSaving.value = true;
   try {
     const res = await createTask(form.value.boardId, {
@@ -224,7 +232,7 @@ const save = async () => {
           }"
         />
         <Paragraph
-          v-if="!isLoadingBoards && !boards.length"
+          v-if="!isLoadingBoards && !boardOptions.length"
           variant="caption2"
           class="mt-1 text-gray-500 dark:text-gray-400"
         >
