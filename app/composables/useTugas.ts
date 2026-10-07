@@ -12,6 +12,7 @@ import type {
   TugasMyTaskPage,
   TugasMyTaskQuery,
   TugasReferenceType,
+  TugasReferenceCandidate,
   TugasTaskComment,
   TugasTaskCommentPage,
   TugasTaskPage,
@@ -308,6 +309,25 @@ export const useTugas = () => {
     });
   };
 
+  const fetchReferenceCandidates = async (source: 'inbox' | 'sent', q = '') => {
+    const res = await getFresh<TugasReferenceCandidate[]>('/tugas/reference-candidates', {
+      params: { source, q },
+    });
+    return Array.isArray(res) ? res : ((res as { data?: TugasReferenceCandidate[] }).data ?? []);
+  };
+
+  const fetchTaskReferenceFiles = async (taskId: string) => {
+    const res = await getFresh<TugasTaskEvidence[]>(`/tugas/tasks/${taskId}/reference-files`);
+    return Array.isArray(res) ? res : ((res as { data?: TugasTaskEvidence[] }).data ?? []);
+  };
+  const addTaskReferenceFile = async (taskId: string, file: File) => {
+    const data = new FormData();
+    data.append('file', file);
+    return post(`/tugas/tasks/${taskId}/reference-files`, data);
+  };
+  const removeTaskReferenceFile = (taskId: string, id: string) =>
+    del(`/tugas/tasks/${taskId}/reference-files/${id}`);
+
   const removeTaskReference = async (taskId: string, referenceId: string) => {
     return del(`/tugas/tasks/${taskId}/references/${referenceId}`);
   };
@@ -349,11 +369,7 @@ export const useTugas = () => {
     };
   };
 
-  const addBoardComment = async (
-    boardId: string,
-    isi: string,
-    taskId?: string | null
-  ) => {
+  const addBoardComment = async (boardId: string, isi: string, taskId?: string | null) => {
     return post<{ data: TugasTaskComment }>(`/tugas/boards/${boardId}/comments`, {
       isi,
       taskId: taskId || undefined,
@@ -418,6 +434,10 @@ export const useTugas = () => {
     fetchBoardActivity,
     // referensi
     fetchTaskReferences,
+    fetchReferenceCandidates,
+    fetchTaskReferenceFiles,
+    addTaskReferenceFile,
+    removeTaskReferenceFile,
     addTaskReference,
     removeTaskReference,
     // evidence

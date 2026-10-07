@@ -63,7 +63,7 @@
   "tugas_selesai": "selesai",
   "tugas_status_todo": "Akan Dikerjakan",
   "tugas_status_in_progress": "Sedang Dikerjakan",
-  "tugas_status_done": "Done",
+  "tugas_status_done": "Selesai Dikerjakan",
   "tugas_prioritas_rendah": "Rendah",
   "tugas_prioritas_sedang": "Sedang",
   "tugas_prioritas_tinggi": "Tinggi",
@@ -2320,5 +2320,12 @@
   "theme_navigation_accent_desc": "Warna ini digunakan pada menu sidebar saat diarahkan atau sedang aktif agar selaras dengan background tema.",
   "theme_navigation_preview": "Preview menu aktif",
   "theme_navigation_color_invalid": "Warna navigasi harus berupa kode hex, misalnya #D3E3FD.",
-  "theme_final_preview": "Preview Akhir Tema"
+  "theme_final_preview": "Preview Akhir Tema",
+  "tugas_ref_kotak_masuk": "Kotak Masuk",
+  "tugas_ref_terkirim": "Terkirim",
+  "tugas_ref_cari": "Cari nomor atau perihal naskah",
+  "tugas_ref_pilih": "Pilih naskah referensi",
+  "tugas_ref_upload": "Unggah referensi",
+  "tugas_ref_personal_info": "Masukkan nomor naskah dari Kotak Masuk/Terkirim atau unggah referensi manual.",
+  "tugas_ref_manual_info": "Format PDF, JPG, atau PNG; maksimal 10 MB."
 }

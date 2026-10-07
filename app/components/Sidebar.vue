@@ -2407,10 +2407,7 @@ const filterMenuByPermission = (items) => {
 
     // Pemindahan Arsip Aktif ke Inaktif adalah workspace khusus Sekretaris
     // Divisi, bukan menu untuk atasan managerial atau admin.
-    if (
-      cloned.showIfDivisionSecretary &&
-      !isDivisionSecretaryPosition.value
-    ) {
+    if (cloned.showIfDivisionSecretary && !isDivisionSecretaryPosition.value) {
       return null;
     }
 
@@ -2509,13 +2506,17 @@ const apps = computed(() => {
         menus: filterMenuByPermission(adminMenuUtilitas.value),
         hasNotification: hasUtilitasNotification.value, // ← UBAH dari false
       },
-      {
-        id: 'admin-tugas',
-        label: t('tugas', 'Tugas'),
-        icon: 'i-lucide-square-kanban',
-        menus: filterMenuByPermission(tugasMenu.value),
-        hasNotification: hasTugasNotification.value,
-      },
+      ...(hasPermission('tugas', 'read-board') || hasPermission('tugas', 'read-my-tasks')
+        ? [
+            {
+              id: 'admin-tugas',
+              label: t('tugas', 'Tugas'),
+              icon: 'i-lucide-square-kanban',
+              menus: filterMenuByPermission(tugasMenu.value),
+              hasNotification: hasTugasNotification.value,
+            },
+          ]
+        : []),
       {
         id: 'admin-administrasi',
         label: t('administrasi'),
@@ -2569,13 +2570,17 @@ const apps = computed(() => {
       menus: filterMenuByPermission(userMenuUtilitas.value),
       hasNotification: hasUtilitasNotification.value,
     },
-    {
-      id: 'user-tugas',
-      label: t('tugas', 'Tugas'),
-      icon: 'i-lucide-square-kanban',
-      menus: filterMenuByPermission(tugasMenu.value),
-      hasNotification: hasTugasNotification.value,
-    },
+    ...(hasPermission('tugas', 'read-board') || hasPermission('tugas', 'read-my-tasks')
+      ? [
+          {
+            id: 'user-tugas',
+            label: t('tugas', 'Tugas'),
+            icon: 'i-lucide-square-kanban',
+            menus: filterMenuByPermission(tugasMenu.value),
+            hasNotification: hasTugasNotification.value,
+          },
+        ]
+      : []),
     {
       id: 'user-faq',
       label: 'FAQ',

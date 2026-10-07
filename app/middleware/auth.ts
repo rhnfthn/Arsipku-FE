@@ -74,6 +74,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
+  if (
+    isPathMatchPrefix(['/tugas']) &&
+    (user.value?.active_profile === 'sekretaris' ||
+      ['PT', 'PH', 'PS', 'VI', 'SE'].includes(
+        String(user.value?.position_status ?? '').toUpperCase()
+      ))
+  )
+    return navigateTo('/beranda', { replace: true });
+
   const role = user.value?.role ?? roleCookie.value ?? null;
 
   if (process.client && user.value?.role && roleCookie.value !== user.value.role) {
