@@ -1,7 +1,9 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4 sm:px-6 lg:px-8">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4 sm:px-6 lg:px-8"
+    >
       <PageHeader :title="editTitle" :items="items" />
       <div class="flex items-center gap-2">
         <NuxtLink
@@ -15,7 +17,10 @@
     </div>
 
     <div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div v-if="loading" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
+      <div
+        v-if="loading"
+        class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8"
+      >
         <div class="space-y-4 animate-pulse">
           <div class="h-6 w-48 rounded bg-gray-200 dark:bg-gray-700" />
           <div class="h-32 rounded bg-gray-200 dark:bg-gray-700" />
@@ -23,7 +28,9 @@
       </div>
 
       <template v-else-if="role">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+        <div
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden"
+        >
           <!-- Navigation kategori dibuat satu baris penuh agar tab tidak terhimpit tombol aksi. -->
           <div class="border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-1 overflow-x-auto no-scrollbar px-3 sm:px-5">
@@ -32,23 +39,39 @@
                 :key="section.key"
                 @click="selectTab(section.key)"
                 class="px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0"
-                :class="activeTab === section.key
-                  ? 'border-primary text-primary font-semibold'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                :class="
+                  activeTab === section.key
+                    ? 'border-primary text-primary font-semibold'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                "
               >
-                {{ section.tree?.label === 'FAQ & Pedoman' ? 'FAQ' : (section.tree?.label ?? section.key) }}
+                {{
+                  section.tree?.label === 'FAQ & Pedoman'
+                    ? 'FAQ'
+                    : (section.tree?.label ?? section.key)
+                }}
               </button>
             </div>
-            <div class="flex items-center justify-end gap-2 border-t border-gray-100 dark:border-gray-800 px-3 sm:px-5 py-2">
-              <button type="button" @click="allExpanded ? collapseAll() : expandAll()"
-                class="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors whitespace-nowrap">
+            <div
+              class="flex items-center justify-end gap-2 border-t border-gray-100 dark:border-gray-800 px-3 sm:px-5 py-2"
+            >
+              <button
+                type="button"
+                @click="allExpanded ? collapseAll() : expandAll()"
+                class="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
+              >
                 {{ allExpanded ? t('rbac_collapse_all') : t('rbac_expand_all') }}
               </button>
-              <button type="button" @click="toggleCheckAll"
+              <button
+                type="button"
+                @click="toggleCheckAll"
                 class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-                :class="currentTabAllChecked
-                  ? 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
-                  : 'bg-primary text-white hover:bg-primary-700'">
+                :class="
+                  currentTabAllChecked
+                    ? 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    : 'bg-primary text-white hover:bg-primary-700'
+                "
+              >
                 {{ currentTabAllChecked ? t('rbac_uncheck_all_btn') : t('rbac_check_all_btn') }}
               </button>
             </div>
@@ -60,7 +83,10 @@
               {{ t('rbac_resources_empty') }}
             </div>
 
-            <div v-else class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+            <div
+              v-else
+              class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+            >
               <div class="divide-y divide-gray-100 dark:divide-gray-800">
                 <div v-for="menu in currentTree.menus" :key="`${activeTab}-${menu.key}`">
                   <button
@@ -68,13 +94,22 @@
                     @click="toggle(`${activeTab}-${menu.key}`)"
                   >
                     <UIcon
-                      :name="isOpen(`${activeTab}-${menu.key}`) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                      :name="
+                        isOpen(`${activeTab}-${menu.key}`)
+                          ? 'i-lucide-chevron-down'
+                          : 'i-lucide-chevron-right'
+                      "
                       class="w-4 h-4 text-gray-400 dark:text-gray-500"
                     />
-                    <Paragraph variant="body2b" class="text-gray-900 dark:text-white">{{ menu.label }}</Paragraph>
+                    <Paragraph variant="body2b" class="text-gray-900 dark:text-white">{{
+                      menu.label
+                    }}</Paragraph>
                   </button>
 
-                  <div v-show="isOpen(`${activeTab}-${menu.key}`)" class="divide-y divide-gray-100 dark:divide-gray-800/60">
+                  <div
+                    v-show="isOpen(`${activeTab}-${menu.key}`)"
+                    class="divide-y divide-gray-100 dark:divide-gray-800/60"
+                  >
                     <div
                       v-for="subMenu in menu.subMenus"
                       :key="`${activeTab}-${menu.key}-${subMenu.key}`"
@@ -84,12 +119,24 @@
                         {{ subMenu.label }}
                       </Paragraph>
 
-                      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-5 gap-y-4 min-w-0">
-                        <template v-for="fitur in subMenu.fiturs" :key="`${activeTab}-${menu.key}-${subMenu.key}-${fitur.key}`">
+                      <div
+                        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-5 gap-y-4 min-w-0"
+                      >
+                        <template
+                          v-for="fitur in subMenu.fiturs"
+                          :key="`${activeTab}-${menu.key}-${subMenu.key}-${fitur.key}`"
+                        >
                           <label
                             v-for="perm in fitur.permissions"
                             :key="perm.permissionId || perm.permissionName"
-                            v-show="!(isUserRole && ['template.create', 'template.update', 'template.delete'].includes(perm.permissionName))"
+                            v-show="
+                              !(
+                                isUserRole &&
+                                ['template.create', 'template.update', 'template.delete'].includes(
+                                  perm.permissionName
+                                )
+                              )
+                            "
                             class="flex min-w-0 items-start gap-2 cursor-pointer select-none"
                           >
                             <input
@@ -99,9 +146,11 @@
                               class="w-4 h-4 mt-0.5 text-primary border-gray-300 rounded focus:ring-primary flex-shrink-0"
                               @change="togglePermission(perm.permissionId, $event.target.checked)"
                             />
-                              <span class="min-w-0 flex-1 break-words text-sm text-gray-600 dark:text-gray-400 leading-5">
-                                {{ perm.label }} — {{ perm.description }}
-                              </span>
+                            <span
+                              class="min-w-0 flex-1 break-words text-sm text-gray-600 dark:text-gray-400 leading-5"
+                            >
+                              {{ perm.label }} — {{ perm.description }}
+                            </span>
                           </label>
                         </template>
                       </div>
@@ -113,7 +162,9 @@
           </div>
 
           <!-- Footer -->
-          <div class="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 px-6 py-3">
+          <div
+            class="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 px-6 py-3"
+          >
             <span class="text-xs text-gray-500 dark:text-gray-400">
               {{ selectedPermIds.length }} {{ t('rbac_selected') }}
             </span>
@@ -136,7 +187,10 @@
         </div>
       </template>
 
-      <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
+      <div
+        v-else
+        class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400"
+      >
         {{ t('rbac_roles_not_found') }}
       </div>
     </div>
@@ -184,7 +238,9 @@ const tugasTree = ref<any>(null);
 const selectedIds = ref<string[]>([]);
 const initialIds = ref<string[]>(new Set<string>());
 const openKeys = ref<Set<string>>(new Set());
-const activeTab = ref<'utama' | 'kelola' | 'utilitas' | 'tugas' | 'administrasi' | 'laporan' | 'faq'>('utama');
+const activeTab = ref<
+  'utama' | 'kelola' | 'utilitas' | 'tugas' | 'administrasi' | 'laporan' | 'faq'
+>('utama');
 
 const tabs = computed(() => {
   const all = [
@@ -199,7 +255,7 @@ const tabs = computed(() => {
   const roleName = (role.value?.name || '').toUpperCase();
   // USER tetap melihat kategori operasional yang dipakai pada sidebar.
   if (roleName === 'USER') {
-    return all.filter(t => ['utama', 'kelola', 'utilitas', 'tugas', 'faq'].includes(t.key));
+    return all.filter((t) => ['utama', 'kelola', 'utilitas', 'tugas', 'faq'].includes(t.key));
   }
   return all;
 });
@@ -247,10 +303,10 @@ function administrasiTreeForRole(tree: any, roleName: string) {
 
   const dataMaster = (tree.menus ?? []).find((menu: any) => menu.key === 'data-master');
   let tertujuSubMenu = (dataMaster?.subMenus ?? []).find(
-    (subMenu: any) => subMenu.key === 'tertuju',
+    (subMenu: any) => subMenu.key === 'tertuju'
   );
   const menus = (tree.menus ?? []).filter(
-    (menu: any) => !['data-master', 'konfigurasi', 'audit'].includes(menu.key),
+    (menu: any) => !['data-master', 'konfigurasi', 'audit'].includes(menu.key)
   );
 
   if (tertujuSubMenu) {
@@ -265,7 +321,7 @@ function administrasiTreeForRole(tree: any, roleName: string) {
             permissions: (fitur.permissions ?? []).filter(
               (permission: any) =>
                 permission.permissionName === 'master-data.read-tertuju' ||
-                (permission.resource === 'master-data' && permission.action === 'read-tertuju'),
+                (permission.resource === 'master-data' && permission.action === 'read-tertuju')
             ),
           }))
           .filter((fitur: any) => fitur.permissions.length > 0),
@@ -299,7 +355,7 @@ function hydratePermissionIds(tree: any, permissionIdsByName: Map<string, string
             permissionId:
               permission.permissionId ??
               permissionIdsByName.get(
-                permission.permissionName ?? `${permission.resource}.${permission.action}`,
+                permission.permissionName ?? `${permission.resource}.${permission.action}`
               ) ??
               null,
           })),
@@ -324,8 +380,9 @@ function kelolaTreeForUser(tree: any) {
     menus: (tree.menus ?? []).map((menu: any) => ({
       ...menu,
       subMenus: (menu.subMenus ?? [])
-        .filter((subMenu: any) =>
-          menu.key !== 'penggunaan' || !['verifikasi-usulan', 'pemberian'].includes(subMenu.key),
+        .filter(
+          (subMenu: any) =>
+            menu.key !== 'penggunaan' || !['verifikasi-usulan', 'pemberian'].includes(subMenu.key)
         )
         .map((subMenu: any) => ({
           ...subMenu,
@@ -334,7 +391,12 @@ function kelolaTreeForUser(tree: any) {
               ...fitur,
               permissions: (fitur.permissions ?? []).filter(
                 (permission: any) =>
-                  permission.action === 'read' || permission.action.startsWith('read-'),
+                  // Penyusutan membutuhkan Create/Update dan aksi workflow
+                  // yang dapat dikonfigurasi untuk Unit Dokumen melalui RBAC.
+                    permission.resource === 'pemeliharaan.penyusutan' ||
+                    permission.resource.startsWith('pemeliharaan.penyusutan.') ||
+                  permission.action === 'read' ||
+                  permission.action.startsWith('read-')
               ),
             }))
             .filter((fitur: any) => fitur.permissions.length > 0),
@@ -356,7 +418,7 @@ function readOnlyMenu(menu: any, label?: string) {
             ...fitur,
             permissions: (fitur.permissions ?? []).filter(
               (permission: any) =>
-                permission.action === 'read' || permission.action.startsWith('read-'),
+                permission.action === 'read' || permission.action.startsWith('read-')
             ),
           }))
           .filter((fitur: any) => fitur.permissions.length > 0),
@@ -381,9 +443,7 @@ function utilitasTreeForUser(tree: any, administrasiTree: any) {
   const administrasiMenus = administrasiTree?.menus ?? [];
   const titelatur = administrasiMenus.find((menu: any) => menu.key === 'titelatur');
   const dataMaster = administrasiMenus.find((menu: any) => menu.key === 'data-master');
-  const tertuju = (dataMaster?.subMenus ?? []).find(
-    (subMenu: any) => subMenu.key === 'tertuju',
-  );
+  const tertuju = (dataMaster?.subMenus ?? []).find((subMenu: any) => subMenu.key === 'tertuju');
   const penomoran = administrasiMenus.find((menu: any) => menu.key === 'penomoran');
 
   if (titelatur) menus.push(titelatur);
@@ -395,8 +455,8 @@ function utilitasTreeForUser(tree: any, administrasiTree: any) {
           label: 'Tertuju',
           subMenus: [tertuju],
         },
-        'Tertuju',
-      ),
+        'Tertuju'
+      )
     );
   }
   if (penomoran) menus.push(readOnlyMenu(penomoran, 'Usulan Penomoran'));
@@ -425,32 +485,33 @@ function isAllowedUserUtilitasPermission(name?: string) {
   return true;
 }
 
-  const currentTree = computed(() => {
-    const source = treeMap[activeTab.value]?.value ?? null;
-    const roleName = (role.value?.name || '').toUpperCase();
-    const rawSource = roleName === 'USER'
-      ? (source?.key === 'utama'
+const currentTree = computed(() => {
+  const source = treeMap[activeTab.value]?.value ?? null;
+  const roleName = (role.value?.name || '').toUpperCase();
+  const rawSource =
+    roleName === 'USER'
+      ? source?.key === 'utama'
         ? utamaTreeForUser(source)
         : source?.key === 'kelola'
           ? kelolaTreeForUser(source)
           : source?.key === 'tugas'
             ? tugasTreeForUser(source)
-            : source)
+            : source
       : source;
-    const raw = rawSource?.key === 'kelola' ? dedupeTreePermissions(rawSource) : rawSource;
-    if (!raw) return null;
-    if (roleName === 'USER' && raw.key === 'utilitas') {
-      return utilitasTreeForUser(raw, administrasiTree.value);
-    }
-    if (roleName === 'USER' && raw.key === 'faq') {
-      const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
-      return { ...raw, menus: raw.menus.filter((m: any) => !userHidden.includes(m.key)) };
-    }
-    if (raw.key === 'administrasi') {
-      return administrasiTreeForRole(raw, roleName);
-    }
-    return raw;
-  });
+  const raw = rawSource?.key === 'kelola' ? dedupeTreePermissions(rawSource) : rawSource;
+  if (!raw) return null;
+  if (roleName === 'USER' && raw.key === 'utilitas') {
+    return utilitasTreeForUser(raw, administrasiTree.value);
+  }
+  if (roleName === 'USER' && raw.key === 'faq') {
+    const userHidden = ['manajemen-faq', 'manajemen-pedoman'];
+    return { ...raw, menus: raw.menus.filter((m: any) => !userHidden.includes(m.key)) };
+  }
+  if (raw.key === 'administrasi') {
+    return administrasiTreeForRole(raw, roleName);
+  }
+  return raw;
+});
 
 const selectedPermIds = computed(() => selectedIds.value.slice());
 
@@ -468,7 +529,15 @@ const allPermissionIds = computed<string[]>(() => {
   const ids: string[] = [];
   const roleName = (role.value?.name || '').toUpperCase();
   const skipKeys = roleName === 'USER' ? ['administrasi', 'laporan'] : [];
-  for (const tree of [utamaTree.value, kelolaTree.value, utilitasTree.value, tugasTree.value, administrasiTree.value, laporanTree.value, faqTree.value]) {
+  for (const tree of [
+    utamaTree.value,
+    kelolaTree.value,
+    utilitasTree.value,
+    tugasTree.value,
+    administrasiTree.value,
+    laporanTree.value,
+    faqTree.value,
+  ]) {
     if (!tree) continue;
     if (skipKeys.includes(tree.key)) continue;
     let menus = tree.menus ?? [];
@@ -480,10 +549,10 @@ const allPermissionIds = computed<string[]>(() => {
         ['titelatur', 'penomoran'].includes(m.key)
       );
       const dataMaster = (administrasiTree.value.menus ?? []).find(
-        (m: any) => m.key === 'data-master',
+        (m: any) => m.key === 'data-master'
       );
       const tertuju = (dataMaster?.subMenus ?? []).find(
-        (subMenu: any) => subMenu.key === 'tertuju',
+        (subMenu: any) => subMenu.key === 'tertuju'
       );
       menus = [...menus, ...extraMenus];
       if (tertuju) {
@@ -504,11 +573,13 @@ const allPermissionIds = computed<string[]>(() => {
       }
     }
   }
-  return ids;
+  return Array.from(new Set(ids));
 });
 
 const allChecked = computed(
-  () => allPermissionIds.value.length > 0 && allPermissionIds.value.every((id) => selectedIds.value.includes(id)),
+  () =>
+    allPermissionIds.value.length > 0 &&
+    allPermissionIds.value.every((id) => selectedIds.value.includes(id))
 );
 
 /**
@@ -538,8 +609,9 @@ const currentTabPermissionIds = computed<string[]>(() => {
  * Apakah semua permission di tab aktif sudah tercentang.
  */
 const currentTabAllChecked = computed(
-  () => currentTabPermissionIds.value.length > 0 &&
-        currentTabPermissionIds.value.every((id) => selectedIds.value.includes(id)),
+  () =>
+    currentTabPermissionIds.value.length > 0 &&
+    currentTabPermissionIds.value.every((id) => selectedIds.value.includes(id))
 );
 
 function isOpen(key: string): boolean {
@@ -601,7 +673,7 @@ const allSections = computed(() => {
     { key: 'faq', tree: faqTree.value },
   ];
   if (roleName === 'USER') {
-    return sections.filter(s => ['utama', 'kelola', 'utilitas', 'tugas', 'faq'].includes(s.key));
+    return sections.filter((s) => ['utama', 'kelola', 'utilitas', 'tugas', 'faq'].includes(s.key));
   }
   return sections;
 });
@@ -633,7 +705,11 @@ const savePermissions = async () => {
   if (!role.value) return;
   saving.value = true;
   try {
-    await assignPermissions(role.value.id, selectedIds.value.slice(), allPermissionIds.value);
+    await assignPermissions(
+      role.value.id,
+      Array.from(new Set(selectedIds.value)),
+      Array.from(new Set(allPermissionIds.value)),
+    );
     toast.add({
       title: t('rbac_success'),
       description: t('rbac_permission_saved'),
@@ -663,7 +739,7 @@ onMounted(async () => {
     if (role.value) {
       await fetchPermissions();
       const permissionIdsByName = new Map(
-        permissions.value.map((permission) => [permission.name, permission.id]),
+        permissions.value.map((permission) => [permission.name, permission.id])
       );
       const [utama, utilitas, administrasi, laporan, faq, kelola, tugas] = await Promise.all([
         fetchMatrixUtama(role.value.id),
@@ -689,7 +765,7 @@ onMounted(async () => {
       (kelola.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       (tugas.assignedPermissionIds ?? []).forEach((id: string) => ids.add(id));
       const permissionNameById = new Map(
-        permissions.value.map((permission) => [permission.id, permission.name]),
+        permissions.value.map((permission) => [permission.id, permission.name])
       );
       selectedIds.value = Array.from(ids).filter((id) => {
         if ((role.value?.name || '').toUpperCase() !== 'USER') return true;
@@ -716,13 +792,16 @@ onMounted(async () => {
           'usulan-akses-berkas.',
         ].some((prefix) => name?.startsWith(prefix));
         if (isKelolaPermission) {
-          if ([
-            'usulan-akses-berkas.read-verifikasi',
-            'usulan-akses-berkas.verify-pengusul',
-            'usulan-akses-berkas.read-pemberian',
-            'usulan-akses-berkas.verify-pemberi',
-            'usulan-akses-berkas.approve-pemberi',
-          ].includes(name || '')) return false;
+          if (
+            [
+              'usulan-akses-berkas.read-verifikasi',
+              'usulan-akses-berkas.verify-pengusul',
+              'usulan-akses-berkas.read-pemberian',
+              'usulan-akses-berkas.verify-pemberi',
+              'usulan-akses-berkas.approve-pemberi',
+            ].includes(name || '')
+          )
+            return false;
           const action = name?.split('.').pop() || '';
           return action === 'read' || action.startsWith('read-');
         }

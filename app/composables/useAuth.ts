@@ -273,6 +273,17 @@ export const useAuth = () => {
       ) {
         return false;
       }
+      // Penyusutan sudah dipisah menjadi submenu granular. Permission legacy
+      // `pemeliharaan.penyusutan.*` tidak boleh menghidupkan Read submenu lain
+      // secara tidak langsung setelah checkbox submenu tersebut dinonaktifkan.
+      const isGranularPenyusutan =
+        p.resource === 'pemeliharaan.penyusutan' ||
+        p.resource.startsWith('pemeliharaan.penyusutan.') ||
+        resource === 'pemeliharaan.penyusutan' ||
+        resource.startsWith('pemeliharaan.penyusutan.');
+      if (isGranularPenyusutan && p.resource !== resource) {
+        return false;
+      }
       // Match: exact, parent→child (user punya parent, FE cek child),
       // atau child→parent (user punya child, FE cek parent)
       const resourceMatch =

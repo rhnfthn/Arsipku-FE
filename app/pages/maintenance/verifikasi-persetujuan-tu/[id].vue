@@ -24,14 +24,11 @@
 
     <!-- Content -->
     <template v-else-if="item">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Kiri: Informasi Usulan + Daftar Arsip + Berita Acara -->
-        <div class="lg:col-span-8 space-y-5">
+      <div class="w-full space-y-5">
           <!-- Card 1: Informasi Usulan + Keterangan + Total Arsip -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
-              <span :class="statusBadgeClass(item.status)" class="text-xs">{{ statusLabel(item.status) }}</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
@@ -57,6 +54,10 @@
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
+                <p class="mt-1"><span :class="statusBadgeClass(item.status)" class="text-xs">{{ statusLabel(item.status) }}</span></p>
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">TU Pengirim</span>
@@ -85,41 +86,57 @@
                 </button>
               </div>
               <div v-if="showTotalArsip" class="text-sm text-gray-600 dark:text-gray-300">
-                <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ daftarBerkas.length }} berkas</span></p>
+                <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ daftarBerkasDisplay.length }} berkas</span></p>
               </div>
             </div>
           </div>
 
-          <!-- Card 2: Daftar Arsip yang Akan Dipindahkan -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">
-              Daftar Arsip({{ daftarBerkas.length }})
-            </h3>
-            <div class="space-y-1.5">
-              <div
-                v-for="(berkas, idx) in daftarBerkas"
-                :key="idx"
-                class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-              >
-                <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-900 dark:text-white truncate">
-                    <span v-if="berkas.kode" class="font-mono text-xs text-gray-500">{{ berkas.kode }}</span>
-                    — {{ berkas.perihal }}
-                  </p>
-                </div>
-                <NuxtLink
-                  v-if="berkas.id"
-                  :to="`/maintenance/preview-berkas/${berkas.id}?nomor_usulan=${item.nomorUsulan}&usulan_id=${item.id}&from=tu`"
-                  class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 shrink-0"
-                  title="Lihat detail berkas"
-                >
-                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                </NuxtLink>
-              </div>
-              <div v-if="daftarBerkas.length === 0" class="text-sm text-gray-400 italic py-2">
-                Tidak ada arsip
-              </div>
+          <!-- Card 2: satu baris untuk satu berkas dan metadata dari pemberkasan awal -->
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="px-5 pb-3 pt-5">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                Daftar Berkas ({{ daftarBerkasDisplay.length }})
+              </h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[1120px] border-collapse text-xs">
+                <thead>
+                  <tr class="bg-[#457fb6] text-white">
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(berkas, idx) in daftarBerkasDisplay" :key="berkas.id ?? idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
+                    <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ berkas.kode ?? '-' }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ berkas.kodeKlasifikasi ?? '-' }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ berkas.uraianInformasi ?? berkas.namaBerkas ?? berkas.perihal ?? '-' }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatDate(berkas.tanggal) }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkas.jumlah ?? berkas.jumlahBerkas ?? '-' }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkas.lokasiSimpan ?? '-' }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkas.klasifikasiKeamanan ?? '-' }}</td>
+                    <td class="border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
+                      <NuxtLink
+                        v-if="berkas.id"
+                        :to="`/maintenance/preview-berkas/${berkas.id}?nomor_usulan=${item.nomorUsulan}&usulan_id=${item.id}&from=tu`"
+                        class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+                        title="Lihat detail berkas"
+                      >
+                        <UIcon name="i-lucide-eye" class="h-4 w-4" />
+                      </NuxtLink>
+                    </td>
+                  </tr>
+                  <tr v-if="daftarBerkasDisplay.length === 0">
+                    <td colspan="8" class="py-4 text-center text-gray-400 italic">Tidak ada berkas</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -177,106 +194,14 @@
             </div>
           </div>
 
-          <!-- Card: Daftar Isi -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Daftar Isi</h3>
-              <button @click="printDaftarIsi" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print Daftar Isi
-              </button>
-            </div>
-            <div id="daftar-isi-print" class="text-sm">
-              <p class="font-semibold text-gray-900 dark:text-white mb-3">{{ item.nomorUsulan }}</p>
-              <table class="w-full border-collapse text-xs">
-                <thead>
-                  <tr class="border-b-2 border-gray-300 dark:border-gray-500">
-                    <th class="text-left py-2 px-2 text-gray-500 w-10">No</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Nama Berkas / Perihal</th>
-                    <th class="text-left py-2 px-2 text-gray-500">Keterangan</th>
-                    <th class="text-center py-2 px-2 text-gray-500 w-16">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(d, idx) in daftarIsi" :key="idx" class="border-b border-gray-100 dark:border-gray-700">
-                    <td class="py-2 px-2 text-gray-600 dark:text-gray-300">{{ d.no }}</td>
-                    <td class="py-2 px-2 text-gray-700 dark:text-gray-200">
-                      <span v-if="d.kode" class="text-xs text-gray-400 block">{{ d.kode }}</span>
-                      {{ d.namaBerkas }}
-                    </td>
-                    <td class="py-2 px-2 text-gray-500">{{ d.keterangan }}</td>
-                    <td class="text-center py-2 px-2">
-                      <NuxtLink
-                        v-if="d.id"
-                        :to="`/maintenance/preview-berkas/${d.id}?nomor_usulan=${item.nomorUsulan}&usulan_id=${item.id}&from=tu`"
-                        class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
-                        title="Lihat detail berkas"
-                      >
-                        <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                      </NuxtLink>
-                    </td>
-                  </tr>
-                  <tr v-if="daftarIsi.length === 0">
-                    <td colspan="4" class="py-4 text-center text-gray-400 italic">Tidak ada arsip</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <!-- Berita Acara menggunakan komponen bersama agar preview dan tampilannya seragam. -->
+          <TransferBeritaAcaraCard
+            :transfer="item"
+            :berita-acara-data="beritaAcaraData"
+            preview-icon="eye"
+          />
 
-          <!-- Berita Acara Serah Terima -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara Serah Terima</h3>
-              <button @click="printBeritaAcara" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <UIcon name="i-lucide-printer" class="w-3.5 h-3.5" /> Print
-              </button>
-            </div>
-            <div id="berita-acara-print" class="text-sm" style="font-family: 'Times New Roman', serif;">
-              <p class="font-bold text-center text-base mb-1">BERITA ACARA SERAH TERIMA PEKERJAAN</p>
-              <p class="text-center text-xs text-gray-500 mb-1">Pemindahan Arsip Aktif ke Inaktif</p>
-              <p class="text-center text-xs mb-3">Nomor: {{ beritaAcaraData?.nomorUsulan ?? item.nomorUsulan }}</p>
-              <p class="text-center text-xs text-gray-500 mb-4">Tanggal: {{ formatBaDate(item.tanggalUsulan) }}</p>
-              <p class="text-xs leading-relaxed mb-4">
-                Pada hari ini {{ formatBaDay(item.tanggalUsulan) }} tanggal {{ formatBaDate(item.tanggalUsulan) }}, yang bertanda tangan di bawah ini:
-              </p>
-              <div class="space-y-3 mb-4 text-xs">
-                <div>
-                  <p><span class="font-semibold">1. Nama</span> &nbsp;&nbsp;&nbsp;: {{ beritaAcaraData?.atasan?.nama ?? item.atasanName ?? '-' }}</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> : {{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
-                  <p class="text-gray-500 italic">Selanjutnya disebut pihak pertama</p>
-                </div>
-                <div>
-                  <p><span class="font-semibold">2. Nama</span> &nbsp;&nbsp;&nbsp; :</p>
-                  <p><span class="font-semibold">&nbsp;&nbsp;&nbsp;Jabatan</span> :</p>
-                  <p class="text-gray-500 italic">Selanjutnya disebut pihak kedua</p>
-                </div>
-              </div>
-              <p class="text-xs leading-relaxed mb-3">Dengan ini menerangkan bahwa:</p>
-              <p class="text-xs leading-relaxed mb-3">Pihak pertama telah menyerahkan kepada pihak kedua berupa:</p>
-              <ol class="list-decimal list-inside text-xs space-y-1 mb-4 ml-2">
-                <li v-for="(arsip, idx) in (beritaAcaraData?.daftarArsip ?? [])" :key="idx">
-                  {{ arsip.kode ?? '-' }} — {{ arsip.perihal }}
-                </li>
-                <li v-if="beritaAcaraData?.keterangan || item.keterangan">
-                  {{ beritaAcaraData?.keterangan ?? item.keterangan }}
-                </li>
-              </ol>
-              <p class="text-xs leading-relaxed mb-6">Demikian Berita Acara serah terima ini dibuat rangkap 2 untuk dapat digunakan sebagaimana mestinya.</p>
-              <p class="text-xs text-right mb-6">Jakarta, {{ formatBaDate(item.tanggalUsulan) }}</p>
-              <div class="grid grid-cols-2 gap-8 text-xs">
-                <div class="text-center">
-                  <p class="font-semibold mb-16">Pihak Pertama</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">{{ beritaAcaraData?.atasan?.nama ?? item.atasanName ?? '-' }}</p>
-                  <p class="text-gray-500">{{ beritaAcaraData?.atasan?.jabatan ?? '-' }}</p>
-                </div>
-                <div class="text-center">
-                  <p class="font-semibold mb-16">Pihak Kedua</p>
-                  <p class="border-t border-gray-400 pt-1 font-semibold">&nbsp;</p>
-                  <p class="text-gray-500">&nbsp;</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <TimelineRiwayat :item="item as any" />
 
           <!-- Status: Ditolak -->
           <div
@@ -302,6 +227,19 @@
               <div>
                 <h3 class="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-1">Arsip Diterima</h3>
                 <p class="text-sm text-emerald-600 dark:text-emerald-400">Usulan telah diterima dan disetujui secara final. TU dapat melanjutkan ke penataan arsip inaktif.</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="item.status === 'MENUNGGU_TTD_PIHAK_KEDUA'"
+            class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl shadow-sm p-5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon name="i-lucide-pen-line" class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">Menunggu Tanda Tangan Pihak Kedua</h3>
+                <p class="text-sm text-amber-700 dark:text-amber-400">Seluruh verifikasi telah selesai. Setelah Berita Acara ditandatangani, usulan akan kembali ke TU untuk penataan arsip inaktif.</p>
               </div>
             </div>
           </div>
@@ -334,12 +272,7 @@
               <UIcon v-else name="i-lucide-check-check" class="w-4 h-4 mr-1 inline" /> Setujui
             </button>
           </div>
-        </div>
 
-        <!-- Kanan: Timeline Riwayat -->
-        <div class="lg:col-span-4 space-y-5">
-          <TimelineRiwayat :item="item as any" />
-        </div>
       </div>
     </template>
 
@@ -361,7 +294,7 @@
           </div>
           <div class="p-6">
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Apakah Anda yakin ingin menyetujui penerimaan usulan ini?
+              Apakah Anda yakin ingin menyetujui penerimaan arsip ini?
             </p>
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Catatan Verifikasi (opsional)</label>
             <textarea
@@ -437,7 +370,7 @@
           </div>
           <div class="p-6">
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Apakah Anda yakin ingin menyetujui penerimaan usulan ini secara final?
+              Apakah Anda yakin ingin menyetujui penerimaan arsip ini secara final?
               Berita Acara Serah Terima akan digenerate dan usulan akan diterima.
             </p>
             <div class="space-y-2 mb-4 text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
@@ -468,6 +401,7 @@
         </div>
       </div>
     </Teleport>
+
   </div>
 </template>
 
@@ -478,6 +412,7 @@ import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useAuth } from '~/composables/useAuth'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue'
+import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 
 definePageMeta({ middleware: ['auth'] })
 
@@ -489,9 +424,8 @@ const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
 const showTotalArsip = ref(true)
-const daftarIsi = ref<any[]>([])
+const daftarBerkasDetail = ref<any[]>([])
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] })
-
 const showSetujuiModal = ref(false)
 const showTolakModal = ref(false)
 const showSetujuiTerakhirModal = ref(false)
@@ -517,6 +451,10 @@ const daftarBerkas = computed(() => {
     tanggalRetensiHabis: null,
   }]
 })
+
+const daftarBerkasDisplay = computed(() =>
+  daftarBerkasDetail.value.length > 0 ? daftarBerkasDetail.value : daftarBerkas.value,
+)
 
 /** True jika user login adalah atasan TU level saat ini (giliran verifikasi). */
 const isCurrentTuTurn = computed(() => {
@@ -564,8 +502,9 @@ const statusLabel = (s: string) => {
     MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
     DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
     MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Penerimaan',
+    MENUNGGU_TTD_PIHAK_KEDUA: 'Menunggu Tanda Tangan Pihak Kedua',
     // Selesai
-    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Selesai',
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Tanda Tangan Pihak Kedua',
     ARSIP_INAKTIF_DITERIMA: 'Selesai',
     PENATAAN_ARSIP_INAKTIF: 'Selesai',
     SELESAI: 'Selesai',
@@ -583,8 +522,9 @@ const statusBadgeClass = (s: string) => {
     MENUNGGU_VERIFIKASI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     DISETUJUI_PERSETUJUAN_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
+    MENUNGGU_TTD_PIHAK_KEDUA: 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
     // Selesai = hijau
-    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
     ARSIP_INAKTIF_DITERIMA: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     PENATAAN_ARSIP_INAKTIF: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     SELESAI: 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
@@ -613,27 +553,13 @@ const levelStatusLabel = (status: string): string => {
   return 'Menunggu'
 }
 
-const formatBaDate = (dateStr: string | null) => {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
-  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
-}
-
-const formatBaDay = (dateStr: string | null) => {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-  return days[d.getDay()]
-}
-
 const loadDaftarIsi = async () => {
   try {
     const { apiGet } = useApi()
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true })
-    daftarIsi.value = res?.data?.daftarIsi ?? []
+    daftarBerkasDetail.value = res?.data?.daftarBerkas ?? []
   } catch {
-    daftarIsi.value = []
+    daftarBerkasDetail.value = []
   }
 }
 
@@ -645,47 +571,6 @@ const loadBeritaAcaraData = async () => {
   } catch {
     beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] }
   }
-}
-
-const printDaftarIsi = () => {
-  const el = document.getElementById('daftar-isi-print')
-  if (!el) return
-  const w = window.open('', '_blank')
-  if (!w) return
-  w.document.write(`<!DOCTYPE html><html><head><title>Daftar Isi</title><style>
-    body{font-family:Arial,sans-serif;padding:30px;color:#111}
-    .text-sm{font-size:13px}.text-xs{font-size:12px}.font-semibold{font-weight:600}
-    .mb-3{margin-bottom:12px}.text-gray-500{color:#6b7280}.text-gray-600{color:#4b5563}
-    .text-gray-700{color:#374151}.text-gray-400{color:#9ca3af}.text-center{text-align:center}
-    .italic{font-style:italic}.w-full{width:100%}.w-8{width:32px}.w-10{width:40px}
-    table{width:100%;border-collapse:collapse}
-    th{border-bottom:2px solid #d1d5db;padding:8px;text-align:left;font-weight:600}
-    td{border-bottom:1px solid #f3f4f6;padding:8px}
-    .px-2{padding-left:8px;padding-right:8px}.py-2{padding-top:8px;padding-bottom:8px}
-    .py-4{padding-top:16px;padding-bottom:16px}input[type=checkbox]{width:16px;height:16px}p{margin:0}
-  </style></head><body>${el.innerHTML}</body></html>`)
-  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250)
-}
-
-const printBeritaAcara = () => {
-  const el = document.getElementById('berita-acara-print')
-  if (!el) return
-  const w = window.open('', '_blank')
-  if (!w) return
-  w.document.write(`<!DOCTYPE html><html><head><title>Berita Acara Serah Terima</title><style>
-    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:40px;max-width:800px;margin:0 auto;color:#111}
-    .text-sm{font-size:13px}.text-xs{font-size:12px}.text-base{font-size:16px}
-    .text-center{text-align:center}.text-right{text-align:right}
-    .font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}
-    .mb-1{margin-bottom:4px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
-    .mb-6{margin-bottom:24px}.mb-16{margin-bottom:64px}.space-y-3>*+*{margin-top:12px}
-    .space-y-1>*+*{margin-top:4px}.leading-relaxed{line-height:1.625}
-    .text-gray-500{color:#6b7280}.ml-2{margin-left:8px}
-    .grid{display:grid}.grid-cols-2{grid-template-columns:1fr 1fr}
-    .gap-8{gap:32px}.border-t{border-top:1px solid #9ca3af}.pt-1{padding-top:4px}
-    ol{padding-left:20px;margin:0}li{margin-bottom:4px}p{margin:0}
-  </style></head><body>${el.innerHTML}</body></html>`)
-  w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 250)
 }
 
 const loadDetail = async () => {

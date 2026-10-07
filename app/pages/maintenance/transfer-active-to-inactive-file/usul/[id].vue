@@ -220,7 +220,7 @@ const loadDaftarIsi = async (id: string) => {
       {},
       { skipCache: true },
     );
-    daftarIsi.value = res?.data?.daftarIsi ?? [];
+    daftarIsi.value = res?.data?.daftarBerkas ?? [];
   } catch (e) {
     console.error('Gagal memuat daftar isi berkas:', e);
     daftarIsi.value = [];

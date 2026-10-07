@@ -142,7 +142,7 @@
                 v-for="item in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                :class="newRowClass(item)"
+                :class="rowClass(item)"
               >
                 <td class="px-3 py-3">{{ item.nama_berkas }}</td>
                 <td class="px-3 py-3">
@@ -166,14 +166,16 @@
                     <NuxtLink
                       v-if="item.status !== 'draft'"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
                     </NuxtLink>
                     <NuxtLink
-                      v-if="item.atasan_managerial.length === 0"
+                      v-if="item.atasan_managerial.length === 0 && canCreate"
                       :to="`/maintenance/penyusutan/pengajuan-penyusutan/ajukan/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                       title="Ajukan Penyusutan"
                     >
@@ -220,11 +222,13 @@ import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useApi } from '~/composables/useApi'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const { loadData: loadPenyusutan, list: penyusutanList } = usePenyusutan()
+const { canCreate } = usePenyusutanPermission()
 const { fetchPenataanList } = useTuVerifikasi()
 const { apiGet } = useApi()
+const { rowClass, markViewed } = useViewedRows('penyusutan-pengajuan')
 
 const list = ref<ArsipPenyusutan[]>([])
 

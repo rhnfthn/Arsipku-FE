@@ -138,7 +138,7 @@ import ExportColumnModal from '~/components/ExportColumnModal.vue'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const { loadBackupStatus } = usePenyusutan()
 

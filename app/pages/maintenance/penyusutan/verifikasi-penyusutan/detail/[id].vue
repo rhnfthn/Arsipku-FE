@@ -151,14 +151,14 @@
       <!-- Tombol Aksi -->
       <div class="flex items-center gap-3 mt-5">
         <button
-          v-if="item.status === 'diajukan' && isCurrentVerifikator"
+          v-if="item.status === 'diajukan' && isCurrentVerifikator && canReject"
           @click="openRejectModal"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
         >
           <UIcon name="i-lucide-x" class="w-4 h-4" /> Tolak
         </button>
         <button
-          v-if="item.status === 'diajukan' && isCurrentVerifikator"
+          v-if="item.status === 'diajukan' && isCurrentVerifikator && canApprove"
           @click="openTindakLanjutiModal"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
         >
@@ -312,15 +312,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
+import { usePenyusutanPermission } from '~/composables/usePenyusutanPermission'
 import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const route = useRoute()
 const router = useRouter()
 const { user } = useAuth()
 const { fetchById, verifyPenyusutan } = usePenyusutan()
+const { canApprove, canReject } = usePenyusutanPermission()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },

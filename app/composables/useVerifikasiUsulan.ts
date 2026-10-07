@@ -74,6 +74,12 @@ export const useVerifikasiUsulan = () => {
       raw.bacPihakPertamaName ?? raw.bac_pihak_pertama_name ?? null,
     bacPihakPertamaJabatan:
       raw.bacPihakPertamaJabatan ?? raw.bac_pihak_pertama_jabatan ?? null,
+    bacPihakKeduaPersnum:
+      raw.bacPihakKeduaPersnum ?? raw.bac_pihak_kedua_persnum ?? null,
+    bacPihakKeduaName:
+      raw.bacPihakKeduaName ?? raw.bac_pihak_kedua_name ?? null,
+    bacPihakKeduaJabatan:
+      raw.bacPihakKeduaJabatan ?? raw.bac_pihak_kedua_jabatan ?? null,
     bacTembusan: Array.isArray(raw.bacTembusan ?? raw.bac_tembusan)
       ? (raw.bacTembusan ?? raw.bac_tembusan).map((copy: any) => ({
           persnum: Number(copy?.persnum ?? copy?.personum ?? 0),
@@ -84,6 +90,12 @@ export const useVerifikasiUsulan = () => {
     bacSignedAt: raw.bacSignedAt ?? raw.bac_signed_at ?? null,
     bacSignedBy: raw.bacSignedBy ?? raw.bac_signed_by ?? null,
     bacSignatureQr: raw.bacSignatureQr ?? raw.bac_signature_qr ?? null,
+    bacPihakKeduaSignedAt:
+      raw.bacPihakKeduaSignedAt ?? raw.bac_pihak_kedua_signed_at ?? null,
+    bacPihakKeduaSignedBy:
+      raw.bacPihakKeduaSignedBy ?? raw.bac_pihak_kedua_signed_by ?? null,
+    bacPihakKeduaSignatureQr:
+      raw.bacPihakKeduaSignatureQr ?? raw.bac_pihak_kedua_signature_qr ?? null,
     approvedAt: raw.approvedAt ?? raw.approved_at ?? null,
     finalVerifiedAt: raw.finalVerifiedAt ?? raw.final_verified_at ?? null,
     createdAt: raw.createdAt ?? raw.created_at,

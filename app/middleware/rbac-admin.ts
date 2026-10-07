@@ -1,11 +1,14 @@
 /**
- * Middleware: halaman /rbac/* HANYA untuk SUPERADMIN.
- * Non-superadmin yang akses paksa → redirect ke halaman 403 (Forbidden).
+ * Middleware: halaman /rbac/* membutuhkan permission `role.read`.
+ * Halaman edit permission juga dilindungi lagi oleh backend dengan
+ * `role.assign-permission` saat menyimpan.
  */
 export default defineNuxtRouteMiddleware(() => {
-  const { hasRole, user } = useAuth();
-  const role = user.value?.activeRole?.name || user.value?.role;
-  const ok = hasRole('SUPERADMIN') || role === 'superadmin' || role === 'SUPERADMIN';
+  const { hasRole, hasPermission } = useAuth();
+  const ok =
+    hasRole('SUPERADMIN') ||
+    hasPermission('role', 'read') ||
+    hasPermission('role', 'assign-permission');
   if (!ok) {
     throw createError({ statusCode: 403, statusMessage: 'Akses Ditolak', fatal: true });
   }

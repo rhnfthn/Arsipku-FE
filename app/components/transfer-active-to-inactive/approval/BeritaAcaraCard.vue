@@ -14,28 +14,50 @@
         <UIcon v-else name="i-lucide-file-text" class="w-4 h-4" />
         {{ generating ? 'Generating...' : 'Generate Berita Acara' }}
       </button>
-      <a
+      <button
         v-if="transfer.beritaAcaraUrl"
-        :href="transfer.beritaAcaraUrl"
-        target="_blank"
+        type="button"
+        @click="openPreview"
         class="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg border border-[#457fb6] text-[#457fb6] hover:bg-[#457fb6]/10 transition-colors"
       >
-        <UIcon name="i-lucide-download" class="w-4 h-4" /> Unduh PDF
-      </a>
+        <UIcon name="i-lucide-eye" class="w-4 h-4" /> Preview PDF
+      </button>
     </div>
     <p v-if="transfer.beritaAcaraNomor" class="text-sm text-gray-700 dark:text-gray-300 mt-3">
       Nomor: {{ transfer.beritaAcaraNomor }}
     </p>
+    <SharedSharePdfViewer
+      v-model="bacPreviewOpen"
+      :url="bacPreviewUrl"
+      :title="bacPreviewTitle"
+      :loading="bacPreviewLoading"
+      @close="closeBacPreview"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 
-defineProps<{
+const props = defineProps<{
   transfer: TransferActiveToInactive;
   generating?: boolean;
 }>();
+
+const {
+  bacPreviewOpen,
+  bacPreviewLoading,
+  bacPreviewUrl,
+  bacPreviewTitle,
+  openBacPreview,
+  closeBacPreview,
+} = useBacPdfPreview();
+
+const openPreview = () =>
+  openBacPreview(
+    props.transfer.id,
+    props.transfer.beritaAcaraNomor || props.transfer.nomorUsulan,
+  );
 
 defineEmits<{ generate: [] }>();
 </script>

@@ -105,14 +105,14 @@
                   Belum ada arsip untuk ditata.
                 </td>
               </tr>
-              <tr v-for="item in list" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors" :class="newRowClass(item)">
+              <tr v-for="item in list" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors" :class="rowClass(item)">
                 <td class="px-3 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="item.arsipPerihal">{{ item.arsipPerihal }}</td>
                 <td class="px-3 py-3 whitespace-nowrap">
                   <div class="font-medium text-gray-800 dark:text-white">{{ item.arsipKode ?? '-' }}</div>
                   <div class="text-[11px] text-gray-400">{{ item.nomorUsulan }}</div>
                 </td>
                 <td class="px-3 py-3 text-gray-600 dark:text-gray-300">{{ item.arsipKlasifikasi ?? '-' }}</td>
-                <td class="px-3 py-3 text-gray-600 dark:text-gray-300">{{ item.lokasiPenataan || '-' }}</td>
+                <td class="px-3 py-3 text-gray-600 dark:text-gray-300">{{ item.lokasiAwal || '-' }}</td>
                 <td class="px-3 py-3">
                   <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
                 </td>
@@ -121,7 +121,8 @@
                     <NuxtLink
                       v-if="item.status !== 'ARSIP_INAKTIF_DITERIMA'"
                       :to="`/maintenance/penataan-arsip-inaktif/${item.id}`"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
+                      @click="markViewed(item)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
@@ -129,7 +130,8 @@
                     <NuxtLink
                       v-if="item.status === 'ARSIP_INAKTIF_DITERIMA'"
                       :to="`/maintenance/penataan-arsip-inaktif/${item.id}?mode=penataan`"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
+                      @click="markViewed(item)"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 transition-colors"
                       title="Penataan"
                     >
                       <UIcon name="i-lucide-archive" class="w-4 h-4" />
@@ -178,6 +180,7 @@ import type { TuUsulanItem } from '~/types/tu-verifikasi'
 definePageMeta({ middleware: ['auth'] })
 
 const { fetchPenataanList } = useTuVerifikasi()
+const { rowClass, markViewed } = useViewedRows('penataan-arsip-inaktif')
 const { apiGet } = useApi()
 const { getKlasifikasiList } = useKlasifikasi()
 

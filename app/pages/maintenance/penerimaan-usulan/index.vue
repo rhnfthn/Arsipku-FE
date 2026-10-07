@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6">
-        <Heading variant="heading6b" class="text-mobile-md">Penerimaan Usulan</Heading>
+        <Heading variant="heading6b" class="text-mobile-md">Penerimaan Arsip</Heading>
         <PageHeader :items="breadcrumbs" />
       </div>
 
@@ -138,7 +138,7 @@
                 v-for="item in list"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                :class="newRowClass(item)"
+                :class="penerimaanRowClass(item)"
               >
                 <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.arsipPerihal }}</td>
                 <td class="px-3 py-3">
@@ -155,6 +155,7 @@
                 <td class="px-3 py-3 text-center">
                   <NuxtLink
                     :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
+                    @click="markRowAsViewed(item)"
                     class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
                     :title="isDetailOnly(item.status) ? 'Detail' : 'Verifikasi'"
                   >
@@ -186,7 +187,7 @@
       v-model="showExportModal"
       :columns="exportColumns"
       :total-rows="total || list.length"
-      title="Pilih Kolom Export Penerimaan Usulan"
+      title="Pilih Kolom Export Penerimaan Arsip"
       :is-exporting="isExporting"
       @confirm="handleExportConfirm"
     />
@@ -204,10 +205,11 @@ definePageMeta({ middleware: ['auth'] })
 
 const { fetchNotifikasiList } = useTuVerifikasi()
 const { apiGet } = useApi()
+const { user } = useAuth()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penerimaan Usulan', to: '/maintenance/penerimaan-usulan' },
+  { label: 'Penerimaan Arsip', to: '/maintenance/penerimaan-usulan' },
 ])
 
 const list = ref<TuUsulanItem[]>([])
@@ -224,6 +226,38 @@ const pageSizeOpen = ref(false)
 const statusOpen = ref(false)
 const klasifikasiOpen = ref(false)
 const klasifikasiList = ref<any[]>([])
+
+// Baris baru ditebalkan sampai pengguna membuka detail atau menekan aksi.
+const viewedRowIds = ref<Set<string>>(new Set())
+const viewedRowsStorageKey = computed(
+  () => `penerimaan-arsip:viewed:${String(user.value?.persnum ?? user.value?.id ?? 'anonymous')}`,
+)
+
+const loadViewedRows = () => {
+  if (!import.meta.client) return
+  try {
+    const raw = localStorage.getItem(viewedRowsStorageKey.value)
+    const ids = raw ? JSON.parse(raw) : []
+    viewedRowIds.value = new Set(Array.isArray(ids) ? ids.map((id) => String(id)) : [])
+  } catch {
+    viewedRowIds.value = new Set()
+  }
+}
+
+const markRowAsViewed = (item: TuUsulanItem) => {
+  if (!import.meta.client || !item?.id) return
+  const next = new Set(viewedRowIds.value)
+  next.add(String(item.id))
+  viewedRowIds.value = next
+  try {
+    localStorage.setItem(viewedRowsStorageKey.value, JSON.stringify([...next]))
+  } catch {
+    // Tetap hilangkan bold pada halaman aktif jika storage tidak tersedia.
+  }
+}
+
+const penerimaanRowClass = (item: TuUsulanItem): string =>
+  viewedRowIds.value.has(String(item.id)) ? '' : newRowClass(item)
 
 const klasifikasiLabel = computed(() => {
   if (!filterKlasifikasi.value) return 'Semua Klasifikasi'
@@ -406,12 +440,12 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
     worksheet['!cols'] = colWidths;
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Penerimaan Usulan');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Penerimaan Arsip');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    saveAs(blob, `penerimaan_usulan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    saveAs(blob, `penerimaan_arsip_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
     showExportModal.value = false;
     useToast().add({ title: 'Berhasil', description: `${data.length} data usulan berhasil diexport`, color: 'success' });
@@ -425,6 +459,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
+  loadViewedRows()
   fetchKlasifikasi()
   fetchData()
 })
