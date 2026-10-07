@@ -228,7 +228,7 @@
                     value-key="value"
                     label-key="label"
                     searchable
-                    searchable-placeholder="Cari nama, jabatan, atau persnum..."
+                    searchable-placeholder="Cari nama, jabatan, atau NIK..."
                     placeholder="Pilih verifikator..."
                     class="w-full"
                     :disabled="!verifikatorOptions.length"

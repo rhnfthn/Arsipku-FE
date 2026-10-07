@@ -24,12 +24,9 @@
             </span>
           </div>
 
-          <div v-else class="flex flex-col min-w-0 w-full overflow-hidden">
+          <div v-else class="flex flex-col min-w-0 w-full overflow-hidden" :class="{ 'cursor-not-allowed': item.disabled }">
             <span
-              class="text-sm block w-full truncate"
-              :class="item.disabled
-                ? 'text-gray-400 dark:text-gray-500 line-through'
-                : 'font-medium text-gray-900 dark:text-white'"
+              class="text-sm block w-full truncate font-medium text-gray-900 dark:text-white"
             >
               {{ item.klasifikasi }} - {{ item.klasifikasi_text }}
             </span>

@@ -1520,7 +1520,7 @@ const buildSearchSuggestions = (
       key: `person:${personId || persnum}`,
       type: 'person',
       title: person.name || '-',
-      subtitle: persnum ? `Persnum ${persnum}` : 'Anggota',
+      subtitle: persnum ? `e-NIK ${persnum}` : 'Anggota',
       personId,
       persnum,
       organizationId,

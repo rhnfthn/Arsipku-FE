@@ -55,7 +55,7 @@ const showSortMenu = ref(false);
 const showPageMenu = ref(false);
 const showStatusDropdown = ref(false);
 
-const filterStatus = ref('Semua');
+const filterStatus = ref('AKTIF');
 const statusOptions = computed(() => [
   { label: t('share_semua_status'), value: 'Semua' },
   { label: t('share_aktif'), value: 'AKTIF' },
@@ -122,7 +122,7 @@ const handleRefresh = () => loadData();
 
 /** Reset semua filter (status, search, sort) lalu muat ulang data. */
 const resetFilters = () => {
-  filterStatus.value = 'Semua';
+  filterStatus.value = 'AKTIF';
   searchQuery.value = '';
   activeSortLabel.value = t('share_terbaru');
   currentPage.value = 1;
@@ -143,11 +143,12 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
   if ((pagination.total === 0 && sharedToMe.value.length === 0) || selectedKeys.length === 0) return;
   isExporting.value = true;
   try {
-    // Fetch SEMUA data (bukan hanya halaman saat ini) dengan filter yang sama
+    const hasFilter = (searchQuery.value && searchQuery.value.trim() !== '') || (filterStatus.value && filterStatus.value !== 'Semua');
+    // Fetch SEMUA data jika tidak difilter. Jika difilter, export data yang tampil (current page).
     await fetchShares({
       tab: 'shared-to-me',
-      page: 1,
-      limit: pagination.total || 9999,
+      page: hasFilter ? currentPage.value : 1,
+      limit: hasFilter ? itemsPerPage.value : (pagination.total || 9999),
       search: searchQuery.value || undefined,
       status: filterStatus.value !== 'Semua' ? filterStatus.value : undefined,
       sort: activeSortLabel.value === t('share_terlama') ? 'ASC' : 'DESC',
@@ -411,15 +412,7 @@ onMounted(async () => {
             </Transition>
           </div>
 
-          <!-- REFRESH BUTTON -->
-          <button
-            @click="handleRefresh"
-            :disabled="isRefreshing"
-            class="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-lg font-medium whitespace-nowrap shadow-sm hover:shadow-md bg-primary hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
-            {{ t('share_refresh') }}
-          </button>
+
 
           <!-- EXPORT BUTTON -->
           <button
@@ -438,7 +431,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- ── CONTENT ─────────────────────────────────────────────────────── -->
       <div class="overflow-x-auto">
         <SharedToMeTab
           :shares="sharedToMe"
@@ -447,6 +439,7 @@ onMounted(async () => {
           :page="currentPage"
           :limit="itemsPerPage"
           :user-position="user?.position"
+          :search-query="searchQuery"
           @update:page="currentPage = $event"
           @view="handleViewDetail"
           @open-pdf="handleOpenPdf"

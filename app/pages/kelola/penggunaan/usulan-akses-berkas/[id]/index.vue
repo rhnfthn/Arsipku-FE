@@ -534,7 +534,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
     id: 'created',
     icon: 'i-lucide-file-plus',
     iconBg: 'bg-primary-500',
-    title: usulanDetail.value.pengusul_info?.nama || `Persnum ${pengusulPersnum}`,
+    title: usulanDetail.value.pengusul_info?.nama || `e-NIK ${pengusulPersnum}`,
     jabatan: usulanDetail.value.pengusul_info?.jabatan,
     action: 'Pembuat Usulan',
     actionColor: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
@@ -566,7 +566,7 @@ const timelineEntries = computed<TimelineEntry[]>(() => {
           : step.keputusan === Keputusan.TOLAK
             ? 'bg-red-500'
             : 'bg-orange-500',
-      title: step.verifier_nama || `Persnum ${step.verifier_persnum}`,
+      title: step.verifier_nama || `e-NIK ${step.verifier_persnum}`,
       jabatan: step.verifier_jabatan,
       action:
         step.keputusan === Keputusan.SETUJU ? 'Disetujui'
@@ -762,7 +762,7 @@ const nextActionInfo = computed(() => {
     if (verifikator) {
       return {
         label: `Menunggu verifikasi pengusul jenjang ${expectedUrutan}`,
-        oleh: verifikator.nama || `Persnum ${verifikator.persnum}`,
+        oleh: verifikator.nama || `e-NIK ${verifikator.persnum}`,
         jabatan: verifikator.jabatan || verifikator.level_jabatan || '',
       };
     }
@@ -791,7 +791,7 @@ const nextActionInfo = computed(() => {
     if (verifikator) {
       return {
         label: `Menunggu persetujuan pemberi jenjang ${expectedUrutan}`,
-        oleh: verifikator.nama || `Persnum ${verifikator.persnum}`,
+        oleh: verifikator.nama || `e-NIK ${verifikator.persnum}`,
         jabatan: verifikator.jabatan || verifikator.level_jabatan || '',
       };
     }
@@ -1365,7 +1365,7 @@ onBeforeUnmount(() => {
                   <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-200 text-[9px] font-semibold text-primary-700 dark:bg-primary-800 dark:text-primary-300">
                     {{ (p.nama || String(p.persnum)).charAt(0).toUpperCase() }}
                   </span>
-                  <span>{{ p.nama || `Persnum ${p.persnum}` }}</span>
+                  <span>{{ p.nama || `e-NIK ${p.persnum}` }}</span>
                   <span v-if="p.jabatan" class="text-[10px] text-primary-400 dark:text-primary-500">· {{ p.jabatan }}</span>
                 </span>
               </div>
@@ -1493,7 +1493,7 @@ onBeforeUnmount(() => {
                       {{ idx + 1 }}
                     </span>
                     <div class="flex-1 min-w-0">
-                      <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
+                      <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `e-NIK ${v.persnum}` }}</div>
                       <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.level_jabatan }}</div>
                     </div>
                   </div>
@@ -1513,7 +1513,7 @@ onBeforeUnmount(() => {
                         {{ idx + 1 }}
                       </span>
                       <div class="flex-1 min-w-0">
-                        <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
+                        <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `e-NIK ${v.persnum}` }}</div>
                         <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.level_jabatan }}</div>
                       </div>
                     </div>
@@ -2008,7 +2008,7 @@ onBeforeUnmount(() => {
                     {{ idx + 1 }}
                   </span>
                   <div class="flex-1 min-w-0">
-                    <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `Persnum ${v.persnum}` }}</div>
+                    <div class="truncate text-xs font-medium text-gray-800 dark:text-gray-200">{{ v.nama || `e-NIK ${v.persnum}` }}</div>
                     <div class="truncate text-[11px] text-gray-500 dark:text-gray-400">{{ v.jabatan || v.level_jabatan }}</div>
                   </div>
                   <button
@@ -2061,7 +2061,7 @@ onBeforeUnmount(() => {
                     @click="onSelectVerifikatorPemberi(String(v.persnum)); showVerikPemberiDropdown = false"
                     class="flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors hover:bg-primary-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
-                    <span class="font-medium">{{ v.nama || `Persnum ${v.persnum}` }}</span>
+                    <span class="font-medium">{{ v.nama || `e-NIK ${v.persnum}` }}</span>
                     <span class="text-xs text-gray-400">{{ v.jabatan || v.level_jabatan || '' }}</span>
                   </button>
                 </div>

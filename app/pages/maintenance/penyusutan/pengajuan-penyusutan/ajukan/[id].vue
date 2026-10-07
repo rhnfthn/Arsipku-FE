@@ -298,7 +298,7 @@
                   <input
                     v-model="atasanSearch"
                     type="text"
-                    placeholder="Ketik nama atau persnum atasan..."
+                    placeholder="Ketik nama atau e-NIK atasan..."
                     @focus="openAtasanDropdown"
                     @input="onAtasanSearchInput"
                     @keydown.escape="atasanDropdownOpen = false"

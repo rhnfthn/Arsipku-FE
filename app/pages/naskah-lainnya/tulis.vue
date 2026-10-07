@@ -1407,7 +1407,7 @@ const buildPayload = (): BuatNaskahPayload => {
       ? selectedApprovals.value.map(
           (v): ApprovalItem => ({
             positionId: String(v.positionId ?? ''),
-            nama: v.nama || `Persnum ${v.persnum}`,
+            nama: v.nama || `e-NIK ${v.persnum}`,
             jabatan: v.jabatan || '',
           })
         )
