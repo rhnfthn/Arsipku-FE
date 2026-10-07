@@ -1101,7 +1101,7 @@
       </template>
     </UModal>
 
-    <SharePdfViewer
+    <SharedSharePdfViewer
       v-model="showNaskahPreview"
       :url="naskahPreviewUrl || ''"
       :title="naskahPreviewTitle"
@@ -1233,6 +1233,12 @@ const {
   removeNaskahFromBerkas,
   fetchBerkasFileBlob,
 } = useArsipDinamis();
+const {
+  canUpdateBerkas,
+  canDeleteBerkas,
+  canAddNaskah: canAddNaskahPermission,
+  canAjukanTutup,
+} = useArsipDinamisPermission();
 const toast = useToast();
 const backPath = '/kelola/pemeliharaan/pemberkasan/berkas-saya';
 
@@ -1413,12 +1419,27 @@ function resetCandidateFilters() {
   candidateDateFrom.value = '';
   candidateDateTo.value = '';
 }
-const canAddNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
-const canRemoveNaskah = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
-const canClose = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
-const canEdit = computed(() => ['aktif', 'ditolak'].includes(berkas.value?.status));
+const canAddNaskah = computed(
+  () =>
+    canAddNaskahPermission.value &&
+    ['aktif', 'ditolak'].includes(berkas.value?.status),
+);
+const canRemoveNaskah = computed(
+  () =>
+    canAddNaskahPermission.value &&
+    ['aktif', 'ditolak'].includes(berkas.value?.status),
+);
+const canClose = computed(
+  () => canAjukanTutup.value && ['aktif', 'ditolak'].includes(berkas.value?.status),
+);
+const canEdit = computed(
+  () => canUpdateBerkas.value && ['aktif', 'ditolak'].includes(berkas.value?.status),
+);
 const canDelete = computed(
-  () => berkas.value?.status === 'aktif' && naskahList.value.length === 0,
+  () =>
+    canDeleteBerkas.value &&
+    berkas.value?.status === 'aktif' &&
+    naskahList.value.length === 0,
 );
 const quickInfoCards = computed(() => [
   { label: 'Kode Berkas', value: berkas.value?.kodeBerkas || '-', icon: Hash },

@@ -121,7 +121,7 @@
                 v-for="item in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                :class="newRowClass(item)"
+                :class="rowClass(item)"
               >
                 <td class="px-3 py-3">{{ item.nama_berkas }}</td>
                 <td class="px-3 py-3">
@@ -145,6 +145,7 @@
                     <NuxtLink
                       v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
                     >
@@ -153,6 +154,7 @@
                     <NuxtLink
                       v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                       title="Penataan"
                     >
@@ -161,6 +163,7 @@
                     <NuxtLink
                       v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
                       title="Pemusnahan"
                     >
@@ -203,9 +206,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const { penataanList, loadPenataanList } = usePenyusutan()
+const { rowClass, markViewed } = useViewedRows('penyusutan-penataan-pemusnahan')
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },

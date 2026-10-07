@@ -44,6 +44,7 @@ const pageNumbers = computed(() => {
 
 // Displayed count
 const displayedCount = computed(() => {
+  if (props.totalItems === 0) return { start: 0, end: 0 };
   const start = (props.currentPage - 1) * props.rowsPerPage + 1;
   const end = Math.min(props.currentPage * props.rowsPerPage, props.totalItems);
   return { start, end };

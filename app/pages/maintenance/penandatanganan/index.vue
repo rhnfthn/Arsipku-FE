@@ -12,15 +12,18 @@
         @export="openExportModal"
       >
         <template #before-search>
-          <select
+          <USelectMenu
             v-model="statusFilter"
-            class="h-8 min-w-[150px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            :items="statusFilterOptions"
+            value-key="value"
+            label-key="label"
+            :search-input="false"
+            class="w-[176px] shrink-0"
+            :ui="{
+              base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200',
+            }"
             aria-label="Filter status"
-          >
-            <option value="">Semua Status</option>
-            <option value="MENUNGGU_TTD">Menunggu TTD</option>
-            <option value="SELESAI">Selesai</option>
-          </select>
+          />
         </template>
       </DataToolbar>
 
@@ -33,6 +36,7 @@
         header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        :row-classes-fn="rowClass"
         empty-message="Tidak ada BAC untuk ditampilkan."
         @sort="handleSort"
       >
@@ -61,7 +65,7 @@
         <template #cell-status="{ row }">
           <span
             class="whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium"
-            :class="row.bacSignedAt
+            :class="isSigned(row)
               ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
               : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'"
           >
@@ -74,14 +78,14 @@
             <button
               type="button"
               class="inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
-              :class="row.bacSignedAt
+              :class="isSigned(row)
                 ? 'text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300'
                 : 'bg-primary text-white hover:bg-primary-700'"
-              :title="row.bacSignedAt ? 'Lihat detail BAC' : 'Tanda Tangani BAC'"
-              :aria-label="row.bacSignedAt ? 'Lihat detail BAC' : 'Tanda Tangani BAC'"
-              @click="navigateTo(`/maintenance/transfer-active-to-inactive-file/${row.id}?from=penandatanganan`)"
+              :title="isSigned(row) ? 'Lihat detail BAC' : 'Tanda Tangani BAC'"
+              :aria-label="isSigned(row) ? 'Lihat detail BAC' : 'Tanda Tangani BAC'"
+              @click="openSigningRow(row)"
             >
-              <UIcon :name="row.bacSignedAt ? 'i-lucide-eye' : 'i-lucide-pen-tool'" class="h-4 w-4" />
+              <UIcon :name="isSigned(row) ? 'i-lucide-eye' : 'i-lucide-pen-tool'" class="h-4 w-4" />
             </button>
           </div>
         </template>
@@ -121,6 +125,13 @@ import { formatDate } from '~/utils/transfer-status';
 
 definePageMeta({ middleware: ['auth', 'evp-or-above'] });
 
+const { rowClass, markViewed } = useViewedRows('penandatanganan');
+
+const openSigningRow = (row: SigningRow) => {
+  markViewed(row);
+  return navigateTo(`/maintenance/transfer-active-to-inactive-file/${row.id}?from=penandatanganan&signer=${row.signerType || 'pihak_pertama'}`);
+};
+
 interface SigningRow {
   id: string;
   nomorUsulan: string;
@@ -132,10 +143,15 @@ interface SigningRow {
   beritaAcaraUrl: string | null;
   bacPihakPertamaName: string | null;
   bacPihakPertamaJabatan: string | null;
+  bacPihakKeduaName: string | null;
+  bacPihakKeduaJabatan: string | null;
   bacTembusanCount: number;
   bacSignedAt?: string | null;
   bacSignedBy?: number | null;
   bacStatus?: string | null;
+  signerType?: 'pihak_pertama' | 'pihak_kedua';
+  pihakPertamaSignedAt?: string | null;
+  pihakKeduaSignedAt?: string | null;
 }
 
 const { apiGet } = useApi();
@@ -147,6 +163,11 @@ const showExportModal = ref(false);
 const isExporting = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('');
+const statusFilterOptions = [
+  { label: 'Semua Status', value: '' },
+  { label: 'Menunggu TTD', value: 'MENUNGGU_TTD' },
+  { label: 'Ditandatangani', value: 'SELESAI' },
+];
 const perPage = ref(10);
 const currentPage = ref(1);
 const sortKey = ref('tanggalUsulan');
@@ -169,14 +190,19 @@ const columns = [
 ];
 
 const displayStatus = (row: SigningRow) => {
-  return row.bacSignedAt || row.bacStatus === 'SELESAI' ? 'Selesai' : 'Menunggu TTD';
+  return isSigned(row) ? 'Ditandatangani' : 'Menunggu TTD';
 };
+
+const isSigned = (row: SigningRow) =>
+  Boolean(row.bacSignedAt) ||
+  row.bacStatus === 'SELESAI' ||
+  row.bacStatus === 'SUDAH_DITANDATANGANI';
 
 const filteredRows = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return rows.value.filter((row) => {
-    if (statusFilter.value === 'MENUNGGU_TTD' && row.bacSignedAt) return false;
-    if (statusFilter.value === 'SELESAI' && !row.bacSignedAt) return false;
+    if (statusFilter.value === 'MENUNGGU_TTD' && isSigned(row)) return false;
+    if (statusFilter.value === 'SELESAI' && !isSigned(row)) return false;
     if (!query) return true;
     return [row.nomorUsulan, row.arsipKode, row.arsipPerihal, row.beritaAcaraNomor]
       .filter(Boolean)
