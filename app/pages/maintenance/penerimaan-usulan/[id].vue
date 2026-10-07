@@ -343,7 +343,7 @@
                     ref="atasanTuSearchInputRef"
                     v-model="atasanTuSearch"
                     type="text"
-                    placeholder="Ketik nama atau persnum atasan..."
+                    placeholder="Ketik nama atau e-NIK atasan..."
                     :disabled="atasanTuLoading"
                     @focus="atasanTuPickerOpen = true"
                     @keydown.escape.stop="atasanTuPickerOpen = false"

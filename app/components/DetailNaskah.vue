@@ -29,6 +29,8 @@ import {
   Loader2,
   ArrowDownCircle,
   Archive,
+  FolderPlus,
+  Share2,
 } from 'lucide-vue-next';
 
 // Tambah prop
@@ -81,6 +83,8 @@ const emit = defineEmits<{
   (e: 'lock'): void;
   (e: 'catatan', text: string): void;
   (e: 'archive'): void;
+  (e: 'share'): void;
+  (e: 'add-to-berkas'): void;
 }>();
 
 const shouldShowFinalize = computed(() => {
@@ -335,8 +339,16 @@ const noteText = ref('');
 const isSavingNote = ref(false);
 const showRepairDropdown = ref(false);
 
+const isNoteComputed = computed(() => {
+  let existingNote = props.data?.catatan || props.data?.disposisi_content?.catatan || props.data?.noteText || props.data?.note_text || '';
+  if (existingNote === '-') existingNote = '';
+  return props.data?.isNote || existingNote.length > 0;
+});
+
 const openNoteModal = () => {
-  noteText.value = props.data?.noteText || props.data?.note_text || '';
+  let existingNote = props.data?.catatan || props.data?.disposisi_content?.catatan || props.data?.noteText || props.data?.note_text || '';
+  if (existingNote === '-') existingNote = '';
+  noteText.value = existingNote;
   showNoteModal.value = true;
 };
 
@@ -451,19 +463,6 @@ const removeNote = () => {
           </button>
         </UTooltip>
 
-        <UTooltip v-if="isHead" :text="isArchived ? 'Kembalikan dari arsip' : 'Arsipkan'">
-          <button
-            @click="emit('archive')"
-            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            :aria-label="isArchived ? 'Kembalikan dari arsip' : 'Arsipkan naskah'"
-          >
-            <Archive
-              class="w-4 h-4 transition-colors cursor-pointer"
-              :class="isArchived ? 'text-primary-600 fill-primary-100' : 'text-gray-400 dark:text-gray-500 hover:text-primary-500'"
-            />
-          </button>
-        </UTooltip>
-
         <!-- Tindak Lanjut (display only, tidak bisa di-toggle manual) -->
         <UTooltip
           v-if="context !== 'sent'"
@@ -480,6 +479,23 @@ const removeNote = () => {
               "
             />
           </div>
+        </UTooltip>
+
+        <!-- Catatan -->
+        <UTooltip v-if="isHead" :text="isNote ? 'Catatan (ada)' : 'Catatan'">
+          <button
+            @click="openNoteModal"
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <StickyNote
+              class="w-4 h-4 transition-colors cursor-pointer"
+              :class="
+                isNote
+                  ? 'text-orange-600 fill-orange-100'
+                  : 'text-gray-400 dark:text-gray-500 hover:text-orange-500'
+              "
+            />
+          </button>
         </UTooltip>
 
         <!-- Lock (hanya untuk inbox, tidak ada di terkirim) -->
@@ -499,19 +515,39 @@ const removeNote = () => {
           </button>
         </UTooltip>
 
-        <!-- Catatan -->
-        <UTooltip v-if="isHead" :text="isNote ? 'Catatan (ada)' : 'Catatan'">
+        <UTooltip v-if="isHead" :text="isArchived ? 'Kembalikan dari arsip' : 'Arsipkan'">
           <button
-            @click="openNoteModal"
+            @click="emit('archive')"
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            :aria-label="isArchived ? 'Kembalikan dari arsip' : 'Arsipkan naskah'"
+          >
+            <Archive
+              class="w-4 h-4 transition-colors cursor-pointer"
+              :class="isArchived ? 'text-primary-600 fill-primary-100' : 'text-gray-400 dark:text-gray-500 hover:text-primary-500'"
+            />
+          </button>
+        </UTooltip>
+
+        <!-- Masukkan ke Berkas -->
+        <UTooltip v-if="isHead" text="Masukkan ke Berkas">
+          <button
+            @click="emit('add-to-berkas')"
             class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <StickyNote
-              class="w-4 h-4 transition-colors cursor-pointer"
-              :class="
-                isNote
-                  ? 'text-orange-600 fill-orange-100'
-                  : 'text-gray-400 dark:text-gray-500 hover:text-orange-500'
-              "
+            <FolderPlus
+              class="w-4 h-4 transition-colors cursor-pointer text-gray-400 dark:text-gray-500 hover:text-primary-500"
+            />
+          </button>
+        </UTooltip>
+
+        <!-- Berbagi -->
+        <UTooltip v-if="isHead" text="Bagikan">
+          <button
+            @click="emit('share')"
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Share2
+              class="w-4 h-4 transition-colors cursor-pointer text-gray-400 dark:text-gray-500 hover:text-blue-500"
             />
           </button>
         </UTooltip>
@@ -1481,7 +1517,7 @@ const removeNote = () => {
     <template #footer>
       <div class="flex justify-between gap-3 w-full">
         <button
-          v-if="data.isNote"
+          v-if="isNoteComputed"
           @click="removeNote"
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
         >
@@ -1501,7 +1537,7 @@ const removeNote = () => {
           >
             <CheckCircle v-if="!isSavingNote" class="w-4 h-4" />
             <Loader2 v-else class="w-4 h-4 animate-spin" />
-            {{ isSavingNote ? 'Menyimpan...' : 'Simpan Catatan' }}
+            {{ isSavingNote ? 'Menyimpan...' : (isNoteComputed ? $t('k_perbarui') : $t('k_simpan')) }}
           </button>
         </div>
       </div>

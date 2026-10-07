@@ -178,7 +178,17 @@ export const useTertunda = () => {
   const fetchTertundaDetail = async (id: string, jenis: string) => {
     const response = await fetchInboxDetail(id, jenis);
     const dataArray: any[] = Array.isArray(response) ? response : response ? [response] : [];
-    return dataArray[0]?.raw ?? dataArray[0] ?? null;
+    if (dataArray.length === 0) return null;
+
+    // buildChainFlow mengembalikan ancestor chain (root → parent → viewed).
+    // dataArray[0] adalah root (mis. ND induk), bukan naskah yang sedang
+    // dibuka. Cari node yang id-nya sama dengan route id agar final_pdf_url,
+    // lampiran, perihal, dll milik naskah yang sedang dilihat (mis. SDE).
+    const viewed =
+      dataArray.find((n: any) => String(n?.id) === String(id)) ||
+      dataArray.find((n: any) => String(n?.raw?.id) === String(id)) ||
+      dataArray[0];
+    return viewed?.raw ?? viewed ?? null;
   };
 
   const fetchTertundaNavigation = async (idNaskah: string, jenis?: string) => {
@@ -236,7 +246,12 @@ export const useTertunda = () => {
       const idToSend = mail.id_sirkulasi || mail.originalData?.id_sirkulasi || mail.naskahId || mail.id;
       if (!idToSend) throw new Error('ID sirkulasi tidak ditemukan');
       const payload: any = { id_sirkulasi: idToSend, flag_type: flagType };
-      if (flagType === 'note' && noteText !== undefined) payload.note_text = noteText;
+      if (flagType === 'note' && noteText !== undefined) {
+        payload.note_text = noteText;
+        // Set nilai flag secara eksplisit agar update catatan tidak men-toggle
+        // flagNote jadi 0 (catatan hilang).
+        payload.new_value = !!(noteText && noteText.trim().length > 0);
+      }
       await apiPatch('/naskah_sirkulasi/toggle-flag', payload);
     } catch (err) {
       console.error('Gagal toggle flag:', flagType, err);

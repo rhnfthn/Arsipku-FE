@@ -24,7 +24,7 @@ import { computed, ref, watch, type PropType } from 'vue';
 import { getProfilePhotoUrl, getProfilePhotoFallbackUrl } from '~/utils/profile-photo';
 
 const props = defineProps({
-  /** Persnum pegawai — sumber URL foto profile */
+  /** e-NIK pegawai — sumber URL foto profile */
   persnum: {
     type: [String, Number] as PropType<string | number | null | undefined>,
     default: null,
