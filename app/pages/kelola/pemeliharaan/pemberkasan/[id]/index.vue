@@ -468,12 +468,12 @@
               ></template
             >
             <template #cell-aksi="{ row }">
-              <div class="flex items-center gap-1">
+              <div class="flex items-center justify-center gap-1">
                 <button
                   type="button"
                   class="inline-flex rounded-md p-2 text-gray-500 transition-colors hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30"
                   title="Lihat PDF naskah"
-                  @click="openNaskahPdf(row)"
+                  @click="openNaskahPreview(row)"
                 >
                   <Eye class="h-4 w-4" />
                 </button>
@@ -996,14 +996,16 @@
                 <span v-else class="text-xs text-gray-400">Belum</span>
               </template>
               <template #cell-aksi="{ row }">
-                <UButton
-                  color="primary"
-                  variant="ghost"
-                  size="xs"
-                  icon="i-lucide-eye"
-                  title="Lihat PDF naskah"
-                  @click="openCandidatePdf(row)"
-                />
+                <div class="flex items-center justify-center">
+                  <UButton
+                    color="primary"
+                    variant="ghost"
+                    size="xs"
+                    icon="i-lucide-eye"
+                    title="Lihat PDF naskah"
+                    @click="openCandidatePdf(row)"
+                  />
+                </div>
               </template>
             </DataTable>
           </div>
@@ -1099,55 +1101,13 @@
       </template>
     </UModal>
 
-    <!-- Popup PDF naskah (dibuka dari tab Daftar Naskah, tanpa pindah halaman) -->
-    <UModal
-      v-model:open="showPdfModal"
-      fullscreen
-      :ui="{
-        overlay: 'bg-black/80 backdrop-blur-sm',
-        body: 'p-0',
-      }"
-    >
-      <template #header>
-        <div class="flex items-center justify-end pr-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-x"
-            size="sm"
-            :padded="false"
-            @click="closePdfModal"
-          />
-        </div>
-      </template>
-      <template #body>
-        <div class="relative flex h-full min-h-0 w-full flex-col bg-gray-100 dark:bg-gray-900">
-          <div
-            v-if="pdfLoading"
-            class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90"
-          >
-            <UIcon
-              name="i-lucide-loader-circle"
-              class="mb-2 size-10 animate-spin text-primary-500"
-            />
-            <span class="text-xs text-gray-500 dark:text-gray-400">Memuat Dokumen...</span>
-          </div>
-          <iframe
-            v-if="pdfUrl"
-            :src="pdfUrl"
-            class="h-full w-full flex-1 border-none"
-            title="Preview dokumen"
-          />
-          <div
-            v-else-if="!pdfLoading"
-            class="flex h-full flex-col items-center justify-center gap-2 text-gray-500"
-          >
-            <UIcon name="i-lucide-file-text" class="size-12 opacity-30" />
-            <span class="text-sm">Dokumen tidak dapat ditampilkan.</span>
-          </div>
-        </div>
-      </template>
-    </UModal>
+    <SharePdfViewer
+      v-model="showNaskahPreview"
+      :url="naskahPreviewUrl || ''"
+      :title="naskahPreviewTitle"
+      :loading="naskahPreviewLoading"
+      @close="clearNaskahPreview"
+    />
 
     <!-- Popup PDF naskah kandidat (dibuka dari modal Tambah Naskah) -->
     <UModal
@@ -1264,9 +1224,11 @@ const {
   getBerkasStatusByNaskah,
   getDaftarNaskah,
   getNaskahDetailInBerkas,
+  getNaskahPdfBlob,
   getNaskahPdfUrl,
   getNaskahSaya,
   getNaskahSiapArsip,
+  getNaskahLainnyaKandidat,
   getVerifikasiDetail,
   removeNaskahFromBerkas,
   fetchBerkasFileBlob,
@@ -1303,10 +1265,10 @@ const naskahPending = ref(false);
 const naskahPage = ref(1);
 const naskahPerPage = 20;
 const naskahTotal = ref(0);
-// Popup PDF naskah (tab Daftar Naskah — langsung tampil tanpa pindah halaman)
-const showPdfModal = ref(false);
-const pdfLoading = ref(false);
-const pdfUrl = ref<string | null>(null);
+const showNaskahPreview = ref(false);
+const naskahPreviewLoading = ref(false);
+const naskahPreviewUrl = ref<string | null>(null);
+const naskahPreviewTitle = ref('Preview Naskah');
 // Popup PDF naskah kandidat (modal Tambah Naskah — preview sebelum diberkaskan)
 const showCandidatePdfModal = ref(false);
 const candidatePdfLoading = ref(false);
@@ -1319,7 +1281,7 @@ const candidateSearch = ref('');
 const candidatePending = ref(false);
 const selectedNaskahSumber = ref<Record<string, string>>({}); // id -> sumber
 const isSubmittingNaskah = ref(false);
-const addNaskahTab = ref<'kotak_masuk' | 'terkirim' | 'siap_arsip'>('siap_arsip');
+const addNaskahTab = ref<'kotak_masuk' | 'terkirim' | 'siap_arsip' | 'naskah_lainnya'>('siap_arsip');
 const candidateJenisFilter = ref('');
 const candidateStatusFilter = ref('out');
 const candidateDivisiFilter = ref('');
@@ -1333,7 +1295,7 @@ const jenisFilterOptions = [
   { value: '', label: 'Semua Jenis' },
   { value: 'ND', label: 'Nota Dinas' },
   { value: 'SDI', label: 'Surat Dinas Internal' },
-  { value: 'SDE', label: 'Surat Dinas Eksternal' },
+  { value: 'SDE', label: 'SDE' },
   { value: 'DI', label: 'Disposisi' },
   { value: 'KA', label: 'Korespondensi Aktif' },
   { value: 'UND', label: 'Surat Undangan' },
@@ -1347,6 +1309,7 @@ const addNaskahTabs = [
   { label: 'Siap Arsip', value: 'siap_arsip' as const, icon: 'i-lucide-folder-check' },
   { label: 'Kotak Masuk', value: 'kotak_masuk' as const, icon: 'i-lucide-inbox' },
   { label: 'Terkirim', value: 'terkirim' as const, icon: 'i-lucide-send' },
+  { label: 'Naskah Lainnya', value: 'naskah_lainnya' as const, icon: 'i-lucide-files' },
 ];
 const showRemoveModal = ref(false);
 const selectedNaskah = ref<Record<string, any> | null>(null);
@@ -1371,7 +1334,12 @@ const naskahColumns = [
   { key: 'naskahTipe', label: 'Jenis' },
   { key: 'sumber', label: 'Sumber' },
   { key: 'status', label: 'Status' },
-  { key: 'aksi', label: 'Aksi', class: 'w-24' },
+  {
+    key: 'aksi',
+    label: 'Aksi',
+    class: 'w-24 text-center',
+    headerClass: 'w-24 text-center',
+  },
 ];
 const candidateColumns = [
   { key: 'select', label: '', class: 'w-12' },
@@ -1383,7 +1351,12 @@ const candidateColumns = [
   { key: 'nama', label: 'Nama' },
   { key: 'sumber', label: 'Sumber' },
   { key: 'berkas', label: 'Status Berkas' },
-  { key: 'aksi', label: 'Aksi', class: 'w-20' },
+  {
+    key: 'aksi',
+    label: 'Aksi',
+    class: 'w-20 text-center',
+    headerClass: 'w-20 text-center',
+  },
 ];
 // Opsi filter divisi: semua org scope (dari BE) + divisi unik dari daftar kandidat.
 const candidateDivisiOptions = computed(() => [
@@ -1737,7 +1710,7 @@ function getNaskahTypeLabel(value?: string) {
   const labels: Record<string, string> = {
     ND: 'Nota Dinas',
     SDI: 'Surat Dinas Internal',
-    SDE: 'Surat Dinas Eksternal',
+    SDE: 'SDE',
     DI: 'Disposisi',
     KA: 'Korespondensi Aktif',
     UND: 'Surat Undangan',
@@ -1746,46 +1719,68 @@ function getNaskahTypeLabel(value?: string) {
   return labels[String(value || '').toUpperCase()] || value || '-';
 }
 function getSourceLabel(value?: string) {
-  return value === 'terkirim' ? 'Terkirim' : value === 'kotak_masuk' ? 'Kotak Masuk' : 'Siap Arsip';
+  if (value === 'naskah_lainnya') return 'Naskah Lainnya';
+  if (value === 'terkirim') return 'Terkirim';
+  if (value === 'siap_arsip') return 'Siap Arsip';
+  return 'Kotak Masuk';
 }
 function sourceBadgeClass(value?: string) {
+  if (value === 'naskah_lainnya')
+    return 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
   return value === 'terkirim'
     ? 'bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-400'
     : 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400';
 }
-// Popup PDF naskah — dibuka langsung dari tab Daftar Naskah tanpa pindah
-// halaman. URL PDF final didapat dari getNaskahDetailInBerkas (satu-satunya
-// endpoint yang menyertakan final_pdf_url), lalu dirender via blob.
-function closePdfModal() {
-  showPdfModal.value = false;
-  pdfUrl.value = null;
+function clearNaskahPreview() {
+  if (naskahPreviewUrl.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(naskahPreviewUrl.value);
+  }
+  naskahPreviewUrl.value = null;
 }
 
-async function openNaskahPdf(row: Record<string, any>) {
-  showPdfModal.value = true;
-  pdfLoading.value = true;
-  pdfUrl.value = null;
+// Gunakan viewer preview yang sudah tersedia. Detail naskah dicari berdasarkan
+// ID baris agar PDF yang tampil sesuai dengan naskah yang diklik.
+async function openNaskahPreview(row: Record<string, any>) {
+  const naskahId = row.naskahId || row.id;
+  if (!naskahId || !berkasId.value) return;
+
+  clearNaskahPreview();
+  naskahPreviewTitle.value = row.perihal || row.nomorSurat || 'Preview Naskah';
+  showNaskahPreview.value = true;
+  naskahPreviewLoading.value = true;
+
   try {
-    const response = await getNaskahDetailInBerkas(berkasId.value, row.naskahId);
-    const rawData: any = response?.data ?? response;
-    let flow: any[] = [];
-    if (Array.isArray(rawData)) flow = rawData;
-    else if (rawData && Array.isArray(rawData.flow)) flow = rawData.flow;
-    else if (rawData) flow = [rawData];
-    const url = flow[0]?.final_pdf_url || flow[0]?.final_pdf || '';
-    if (!url) throw new Error('Naskah tidak memiliki PDF final');
-    const res = await fetch(url);
-    const blob = new Blob([await res.arrayBuffer()], { type: 'application/pdf' });
-    pdfUrl.value = URL.createObjectURL(blob);
-  } catch (e: any) {
+    const response = await getNaskahDetailInBerkas(berkasId.value, String(naskahId));
+    const payload: any = response?.data ?? response;
+    const flow: any[] = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.flow)
+        ? payload.flow
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : payload
+            ? [payload]
+            : [];
+    const detail =
+      flow.find((item) => String(item?.id || '') === String(naskahId)) || flow[0];
+    if (!detail?.final_pdf_url && !detail?.final_pdf) {
+      throw new Error('Naskah tidak memiliki PDF final');
+    }
+
+    const blob = await getNaskahPdfBlob(String(naskahId));
+    if (!blob?.size) throw new Error('PDF kosong');
+    naskahPreviewUrl.value = URL.createObjectURL(
+      new Blob([blob], { type: 'application/pdf' }),
+    );
+  } catch (error: any) {
+    showNaskahPreview.value = false;
     toast.add({
-      title: 'Gagal memuat PDF',
-      description: e?.message || 'Silakan coba kembali.',
+      title: 'Preview naskah gagal dimuat',
+      description: error?.message || 'Silakan coba kembali.',
       color: 'error',
     });
-    showPdfModal.value = false;
   } finally {
-    pdfLoading.value = false;
+    naskahPreviewLoading.value = false;
   }
 }
 
@@ -2021,6 +2016,17 @@ async function fetchCandidates() {
           };
         });
       }
+    } else if (addNaskahTab.value === 'naskah_lainnya') {
+      const response = await getNaskahLainnyaKandidat(berkasId.value, {
+        search: candidateSearch.value.trim() || undefined,
+        page: 1,
+        limit: 100,
+      });
+      const payload = unwrapEnvelope<any>(response);
+      rows = (Array.isArray(payload) ? payload : payload?.data || []).map((r: any) => ({
+        ...r,
+        sumber: 'naskah_lainnya',
+      }));
     } else {
       const response = await getNaskahSaya(addNaskahTab.value, {
         search: candidateSearch.value.trim() || undefined,
@@ -2200,6 +2206,7 @@ onMounted(loadPage);
 onBeforeUnmount(() => {
   clearTimeout(naskahSearchTimer);
   clearTimeout(candidateSearchTimer);
+  clearNaskahPreview();
   revokeBerkasFiles();
 });
 </script>

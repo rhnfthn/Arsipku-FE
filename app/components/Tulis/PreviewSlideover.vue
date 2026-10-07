@@ -15,7 +15,7 @@
       </div>
     </template>
 
-    <template #footer>
+    <template #footer v-if="!hideActions">
       <div class="flex gap-4 w-full">
         <UButton
           v-if="showSaveDraft && (hasPermission('naskah-dinas', 'create'))"
@@ -52,8 +52,10 @@ const props = withDefaults(defineProps<{
   pdfUrl: string | null;
   alertIsOpen?: boolean;
   showSaveDraft?: boolean;
+  hideActions?: boolean;
 }>(), {
-  showSaveDraft: true
+  showSaveDraft: true,
+  hideActions: false,
 });
 
 // --- EMITS ---
