@@ -979,20 +979,8 @@ const filterDotClass = (val: string) => ({
   'bg-red-500': val === 'rejected'
 });
 
-// Count badge dihitung dari allRows (client-side, akurat)
-const statusCountMap = computed(() => {
-  const m: Record<string, number> = {
-    all: allRows.value.length,
-    draft: 0,
-    approved: 0,
-    rejected: 0
-  };
-  for (const r of allRows.value) {
-    const s = r.status ?? 'draft';
-    if (s in m) m[s]++;
-  }
-  return m;
-});
+// Counts cover the full filtered dataset, not just the current page.
+const statusCountMap = ref<Record<string, number>>({ all: 0, draft: 0, approved: 0, rejected: 0 });
 
 const filterOptions = computed(() => [
   { label: 'Semua', value: 'all', count: statusCountMap.value.all },
@@ -1009,7 +997,7 @@ const selectFilterStatus = (val: StatusFilter) => {
   statusFilter.value = val;
   showFilterDropdown.value = false;
   currentPage.value = 1;
-  // Tidak perlu fetchData ulang — filter dilakukan client-side
+  fetchData();
 };
 
 // ─── Row status label & class ──────────────────────────────────────────────────
@@ -1122,18 +1110,8 @@ const sortedAllRows = computed(() => {
   });
 });
 
-/**
- * filteredRows — filter CLIENT-SIDE berdasarkan statusFilter.
- * Ini yang ditampilkan di tabel — dijamin akurat tanpa bergantung API.
- */
-const filteredRows = computed(() => {
-  if (statusFilter.value === 'all') return sortedAllRows.value;
-  return sortedAllRows.value.filter((r) => (r.status ?? 'draft') === statusFilter.value);
-});
-
-const paginationTotal = computed(() =>
-  statusFilter.value === 'all' ? (pagination.value?.total ?? 0) : filteredRows.value.length
-);
+const filteredRows = computed(() => sortedAllRows.value);
+const paginationTotal = computed(() => pagination.value?.total ?? 0);
 
 // ─── Export Excel dengan Pemilihan Kolom ──────────────────────────────────────
 const showExportModal = ref(false);
@@ -1303,8 +1281,10 @@ const mapApiRows = (data: any[]) =>
     };
   });
 
-// ─── Fetch — TANPA filter status agar client bisa filter sendiri ──────────────
+// ─── Fetch — filter dan pagination oleh backend ──────────────
+let listRequestSequence = 0;
 const fetchData = async () => {
+  const requestSequence = ++listRequestSequence;
   loading.value = true;
   try {
     const params: Record<string, any> = {
@@ -1312,18 +1292,22 @@ const fetchData = async () => {
       page: currentPage.value,
       limit: rowsPerPage.value,
       sort_by: sortBy.value || undefined,
-      sort_order: sortOrder.value || undefined
-      // Sengaja tidak mengirim 'status' — server kembalikan semua, filter di client
+      sort_order: sortOrder.value || undefined,
+      status: statusFilter.value !== 'all' ? statusFilter.value : undefined
     };
     const res = await getListPendingApproval(params);
+    if (requestSequence !== listRequestSequence) return;
     pagination.value = res.pagination || null;
+    statusCountMap.value = res.counts || { all: 0, draft: 0, approved: 0, rejected: 0 };
     allRows.value = Array.isArray(res.data) ? mapApiRows(res.data) : [];
   } catch (e) {
+    if (requestSequence !== listRequestSequence) return;
     console.error('❌ Error fetch:', e);
+    statusCountMap.value = { all: 0, draft: 0, approved: 0, rejected: 0 };
     allRows.value = [];
     pagination.value = null;
   } finally {
-    loading.value = false;
+    if (requestSequence === listRequestSequence) loading.value = false;
   }
 };
 

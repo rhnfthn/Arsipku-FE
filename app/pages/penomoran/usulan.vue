@@ -770,7 +770,7 @@ definePageMeta({ middleware: 'auth' })
 const { t } = useI18n()
 const { user, getProfile, hasPermission } = useAuth()
 const { canAccessPage } = useFeatureAccess()
-const { getListUsulan, getDetailUsulan, getKlasifikasi } = usePenomoran()
+const { getListUsulan, getDetailUsulan, getKlasifikasi, getAllPenomoranPages } = usePenomoran()
 const toast = useToast()
 
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
@@ -921,7 +921,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
     let exportRows = sortedRows.value
 
     if (pagination.value && pagination.value.total > rowsPerPage.value) {
-      const res = await getListUsulan(String(user.value?.position), {
+      const res = await getAllPenomoranPages(params => getListUsulan(String(user.value?.position), params), {
         search: search.value || undefined,
         page: 1,
         limit: pagination.value.total,
@@ -1082,12 +1082,15 @@ const fetchKlasifikasiMap = async () => {
   try {
     const list = await getKlasifikasi()
     list.forEach((item: any) => klasifikasiMap.value.set(item.code, item.display))
+    rows.value.forEach(row => { row.klasifikasiDisplay = klasifikasiMap.value.get(row.klasifikasi) || row.klasifikasi })
   } catch (e) {
     console.error('❌ Error fetch klasifikasi map:', e)
   }
 }
 
+let listRequestSequence = 0;
 const fetchData = async () => {
+  const requestSequence = ++listRequestSequence;
   loading.value = true
   try {
     if (!user.value?.position) {
@@ -1104,6 +1107,7 @@ const fetchData = async () => {
       sort_order: sortOrder.value || undefined
     }
     const response = await getListUsulan(String(user.value?.position), params)
+    if (requestSequence !== listRequestSequence) return;
     const data = response.data || []
     pagination.value = response.pagination || null
     if (!Array.isArray(data)) {
@@ -1134,11 +1138,12 @@ const fetchData = async () => {
       }
     })
   } catch (err) {
+    if (requestSequence !== listRequestSequence) return;
     console.error('❌ Gagal fetch data:', err)
     rows.value = []
     pagination.value = null
   } finally {
-    loading.value = false
+    if (requestSequence === listRequestSequence) loading.value = false
   }
 }
 
@@ -1296,8 +1301,7 @@ const onMouseLeave = () => {
 onMounted(async () => {
   loading.value = true
   if (!user.value) await getProfile()
-  await fetchKlasifikasiMap()
-  await fetchData()
+  await Promise.all([fetchKlasifikasiMap(), fetchData()])
   document.addEventListener('click', handleDocumentClick)
 })
 onBeforeUnmount(() => {

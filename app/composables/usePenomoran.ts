@@ -449,7 +449,6 @@ export const usePenomoran = () => {
       console.log('📍 Full endpoint:', endpoint);
 
       const res = await get(endpoint);
-      console.log('✅ Nomor data received:', res);
 
       return {
         data: res.data ?? [],
@@ -498,7 +497,6 @@ export const usePenomoran = () => {
       console.log('📤 Fetching usulan for position:', positionId, 'with params:', params);
 
       const res = await get(endpoint);
-      console.log('✅ Usulan data received:', res);
 
       return {
         data: res.data ?? [],
@@ -569,7 +567,6 @@ export const usePenomoran = () => {
       console.log('📍 Full endpoint:', endpoint);
 
       const res = await get(endpoint);
-      console.log('✅ Admin usulan data received:', res);
 
       return {
         data: res.data ?? [],
@@ -666,7 +663,8 @@ export const usePenomoran = () => {
 
       return dataArray.map((item: any) => ({
         code: item.jenis,
-        display: `${item.jenis} - ${item.jenis_text}`
+        display: `${item.jenis} - ${item.jenis_text}`,
+        format: item.format_penomoran
       }));
     } catch (e: any) {
       console.error('❌ Error fetch jenis:', e);
@@ -722,7 +720,6 @@ export const usePenomoran = () => {
       console.log('📍 Full endpoint:', endpoint);
 
       const res = await get(endpoint);
-      console.log('✅ Submitted data received:', res);
 
       return {
         data: res.data ?? [],
@@ -1185,6 +1182,7 @@ export const usePenomoran = () => {
     search?: string;
     page?: number;
     limit?: number;
+    status?: string;
     sort_by?: string;
     sort_order?: string;
   }) => {
@@ -1193,6 +1191,7 @@ export const usePenomoran = () => {
       if (params?.search) queryParams.append('search', params.search);
       if (params?.page) queryParams.append('page', String(params.page));
       if (params?.limit) queryParams.append('limit', String(params.limit));
+      if (params?.status && params.status !== 'all') queryParams.append('status', params.status);
       if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
       if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
@@ -1203,11 +1202,11 @@ export const usePenomoran = () => {
       console.log('📍 Full endpoint:', endpoint);
 
       const res = await get(endpoint);
-      console.log('✅ Pending approval data received:', res);
 
       return {
         data: res.data ?? [],
-        pagination: res.pagination ?? null
+        pagination: res.pagination ?? null,
+        counts: res.counts ?? null
       };
     } catch (e: any) {
       console.error('❌ Error ambil list pending approval:', e);
@@ -1216,7 +1215,7 @@ export const usePenomoran = () => {
         description: e.message || 'Gagal mengambil daftar usulan menunggu persetujuan',
         color: 'error'
       });
-      return { data: [], pagination: null };
+      return { data: [], pagination: null, counts: null };
     }
   };
 
@@ -1455,7 +1454,22 @@ export const usePenomoran = () => {
     });
   };
 
+  const getAllPenomoranPages = async (fetchPage: (params: any) => Promise<any>, params: Record<string, any>) => {
+    const data: any[] = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const response = await fetchPage({ ...params, page, limit: 100 });
+      if (!response.pagination) throw new Error('Gagal mengambil halaman ekspor penomoran');
+      data.push(...response.data);
+      totalPages = response.pagination.totalPages;
+      page++;
+    } while (page <= totalPages);
+    return { data };
+  };
+
   return {
+    getAllPenomoranPages,
     // STATE - TERPISAH
     adminCounts,
     userCounts,
