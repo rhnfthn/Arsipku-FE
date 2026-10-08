@@ -48,8 +48,14 @@
         <div class="max-w-6xl search-suggestion-container">
           <div class="mb-3 flex flex-wrap items-center gap-2">
             <span class="text-xs font-medium text-gray-500 dark:text-gray-400"
-              >Cari berdasarkan:</span
+              >{{ $t('stu_search_by') }}</span
             >
+            <UButton
+              :color="searchScope === 'all' ? 'primary' : 'neutral'"
+              :variant="searchScope === 'all' ? 'solid' : 'outline'"
+              :aria-pressed="searchScope === 'all'"
+              @click="setSearchScope('all')"
+            >{{ $t('stu_search_all') }}</UButton>
             <button
               type="button"
               @click="setSearchScope('organization')"
@@ -60,7 +66,7 @@
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
               ]"
             >
-              Unit
+              {{ $t('stu_label_unit') }}
             </button>
             <button
               type="button"
@@ -72,7 +78,7 @@
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
               ]"
             >
-              Posisi
+              {{ $t('stu_label_posisi') }}
             </button>
             <button
               type="button"
@@ -84,7 +90,7 @@
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300'
               ]"
             >
-              Nama
+              {{ $t('stu_search_name') }}
             </button>
           </div>
 
@@ -97,6 +103,7 @@
               @input="handleSearch"
               @focus="onSearchFocus"
               @blur="hideSearchSuggestions"
+              :aria-label="$t('stu_cari_placeholder')"
               @keydown.enter.prevent="selectFirstSuggestion"
               @keydown.escape="showSearchSuggestions = false"
               :disabled="!searchScope"
@@ -165,6 +172,8 @@
             </div>
           </div>
         </div>
+
+        <Paragraph variant="caption1" class="mt-2 text-gray-500 dark:text-gray-400">{{ $t('stu_search_hint') }}</Paragraph>
 
         <!-- Search Results Info -->
         <div v-if="searchQuery && !loadingSearch && !loadingExpand" class="mt-4 space-y-2">
@@ -247,6 +256,14 @@
         </div>
       </div>
 
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Heading variant="heading10sb" as="h2" class="text-gray-900 dark:text-white">{{ $t('stu_title') }}</Heading>
+        <div class="flex gap-1 rounded-[var(--radius-input)] border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800" role="group" :aria-label="$t('stu_chart_display')">
+          <UButton :color="structureView === 'chart' ? 'primary' : 'neutral'" :variant="structureView === 'chart' ? 'subtle' : 'ghost'" icon="i-lucide-network" :aria-pressed="structureView === 'chart'" @click="structureView = 'chart'">{{ $t('stu_chart_view') }}</UButton>
+          <UButton :color="structureView === 'list' ? 'primary' : 'neutral'" :variant="structureView === 'list' ? 'subtle' : 'ghost'" icon="i-lucide-list-tree" :aria-pressed="structureView === 'list'" @click="structureView = 'list'">{{ $t('stu_chart_list') }}</UButton>
+        </div>
+      </div>
+
       <!-- Organization Tree Card -->
       <div
         class="bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden"
@@ -287,8 +304,21 @@
         </div>
 
         <!-- Organization Tree -->
-        <div v-if="companyExpanded" class="p-8" ref="treeContainer">
-          <div v-if="displayTree.length === 0" class="text-center py-12">
+        <div v-if="companyExpanded" ref="treeContainer" :class="structureView === 'list' ? 'p-8' : ''">
+          <div v-if="loadingStructure" class="space-y-4 p-8">
+            <USkeleton class="mx-auto h-24 w-64" />
+            <div class="flex justify-center gap-6"><USkeleton v-for="i in 3" :key="i" class="h-32 w-64" /></div>
+          </div>
+          <UAlert v-else-if="structureLoadFailed" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="$t('stu_chart_load_failed')" class="m-6" />
+          <OrganizationChart
+            v-else-if="structureView === 'chart' && displayTree.length"
+            :key="String(route.params.kode)"
+            :company-name="company?.namaPanjang || ''" :nodes="displayTree"
+            :expanded-nodes="expandedNodes" :loading-nodes="loadingChartNodes"
+            :search-results="searchResultsMap" :highlight-node-id="highlightNodeId"
+            @action="handleChartAction"
+          />
+          <div v-if="!loadingStructure && !structureLoadFailed && displayTree.length === 0" class="text-center py-12">
             <Building class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p class="text-gray-500 dark:text-gray-400 text-lg">
               {{ $t('stu_belum_ada_struktur') }}
@@ -302,6 +332,7 @@
             </button>
           </div>
 
+          <template v-if="structureView === 'list' && !loadingStructure && !structureLoadFailed">
           <Organization
             v-for="(node, idx) in displayTree"
             :key="node.id"
@@ -321,6 +352,7 @@
             @open-add-position="openAddPositionModal"
             @open-add-member="openAddMemberModal"
           />
+          </template>
         </div>
       </div>
       </div>
@@ -1000,6 +1032,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
+import type { StructureChartNode, StructureChartAction } from '~/types/structure-chart'
+
 import { useStruktur } from '~/composables/useStruktur'
 import { useCompany } from '~/composables/useCompany'
 import { useArea } from '~/composables/useArea'
@@ -1066,7 +1100,7 @@ const loadingSearch = ref(false)
 const loadingExpand = ref(false)
 
 type SearchSuggestionType = 'organization' | 'position' | 'person'
-type SearchScope = SearchSuggestionType | ''
+type SearchScope = SearchSuggestionType | 'all'
 
 interface SearchSuggestionItem {
   key: string
@@ -1092,11 +1126,12 @@ const SEARCH_MIN_LENGTH = 2
 const SEARCH_DEBOUNCE_MS = 450
 const SEARCH_SUGGESTION_LIMIT = 8
 
-const searchScope = ref<SearchScope>('')
+const searchScope = ref<SearchScope>('all')
 const searchSuggestions = ref<SearchSuggestionItem[]>([])
 const showSearchSuggestions = ref(false)
 const searchCache = ref<Record<string, CachedSearchResult>>({})
 const activeSearchRequestId = ref(0)
+let activeFocusRequestId = 0
 
 // Modal search states
 const subAreaSearchQuery = ref('')
@@ -1179,6 +1214,10 @@ const formMember = ref({
 // Data
 const company = ref<any>(null)
 const organizationTree = ref<any[]>([])
+const structureView = ref<'chart' | 'list'>('chart')
+const loadingStructure = ref(false)
+const structureLoadFailed = ref(false)
+const loadingChartNodes = ref<Record<string, boolean>>({})
 const subAreaOptions = ref<any[]>([])
 const loadingSubArea = ref(false)
 const parentHasChief = ref(false)
@@ -1409,13 +1448,13 @@ const emptySearchResults = () => ({
 })
 
 const getSearchPlaceholder = () => {
-  if (!searchScope.value) return 'Pilih Unit / Posisi / Nama terlebih dahulu'
-  if (searchScope.value === 'organization') return 'Cari unit...'
-  if (searchScope.value === 'position') return 'Cari posisi...'
-  return 'Cari nama anggota...'
+  if (searchScope.value === 'all') return t('stu_cari_placeholder')
+  if (searchScope.value === 'organization') return t('stu_search_unit_placeholder')
+  if (searchScope.value === 'position') return t('stu_search_position_placeholder')
+  return t('stu_search_person_placeholder')
 }
 
-const setSearchScope = (scope: SearchSuggestionType) => {
+const setSearchScope = (scope: SearchScope) => {
   if (searchScope.value === scope) return
   searchScope.value = scope
   clearSearch()
@@ -1574,10 +1613,13 @@ const buildSearchSuggestions = (
     })
   }
 
-  return suggestions.slice(0, SEARCH_SUGGESTION_LIMIT)
+  const typeOrder = { organization: 0, position: 1, person: 2 }
+  return suggestions
+    .sort((a, b) => typeOrder[a.type] - typeOrder[b.type])
+    .slice(0, SEARCH_SUGGESTION_LIMIT)
 }
 
-const performSearch = async (queryOverride?: string) => {
+const performSearch = async (queryOverride?: string, autoFocus = true) => {
   const query = (queryOverride ?? searchQuery.value).trim()
   if (!company.value?.kode || query.length < SEARCH_MIN_LENGTH || !searchScope.value) {
     searchResults.value = emptySearchResults()
@@ -1590,7 +1632,8 @@ const performSearch = async (queryOverride?: string) => {
     previousExpandedState.value = { ...expandedNodes.value }
   }
 
-  const cacheKey = `${searchScope.value}:${query.toLowerCase()}`
+  const companyCode = String(company.value.kode)
+  const cacheKey = `${companyCode}:${searchScope.value}:${query.toLowerCase()}`
   const cached = searchCache.value[cacheKey]
   if (cached) {
     searchResults.value = {
@@ -1600,6 +1643,7 @@ const performSearch = async (queryOverride?: string) => {
     }
     searchSuggestions.value = cached.suggestions
     showSearchSuggestions.value = true
+    if (autoFocus && cached.suggestions[0]) await focusSearchSuggestion(cached.suggestions[0])
     return
   }
 
@@ -1617,7 +1661,16 @@ const performSearch = async (queryOverride?: string) => {
     let positions: any[] = []
     let persons: any[] = []
 
-    if (searchScope.value === 'organization') {
+    if (searchScope.value === 'all') {
+      const [orgRes, posRes, personRes] = await Promise.all([
+        searchOrganization(companyCode, query, controller.signal),
+        searchPosition(companyCode, query, controller.signal),
+        searchPerson(companyCode, query, controller.signal)
+      ])
+      organizations = orgRes.data || []
+      positions = posRes.data || []
+      persons = personRes.data || []
+    } else if (searchScope.value === 'organization') {
       const orgRes = await searchOrganization(String(company.value.kode), query, controller.signal)
       organizations = orgRes.data || []
     } else if (searchScope.value === 'position') {
@@ -1646,6 +1699,7 @@ const performSearch = async (queryOverride?: string) => {
     }
     searchSuggestions.value = suggestions
     showSearchSuggestions.value = true
+    if (autoFocus && suggestions[0]) await focusSearchSuggestion(suggestions[0])
   } catch (err) {
     if (requestId !== activeSearchRequestId.value) return
     if ((err as any)?.name === 'CanceledError' || (err as any)?.code === 'ERR_CANCELED') return
@@ -1664,6 +1718,13 @@ const performSearch = async (queryOverride?: string) => {
 }
 
 const handleSearch = async () => {
+  activeSearchRequestId.value += 1
+  activeFocusRequestId += 1
+  searchAbortController?.abort()
+  loadingSearch.value = false
+  loadingExpand.value = false
+  highlightNodeId.value = null
+  searchSuggestions.value = []
   const trimmed = searchQuery.value.trim()
 
   if (!searchScope.value) {
@@ -1700,6 +1761,7 @@ const clearSearch = () => {
     searchAbortController = null
   }
   activeSearchRequestId.value += 1
+  activeFocusRequestId += 1
 
   if (Object.keys(previousExpandedState.value).length > 0) {
     expandedNodes.value = { ...previousExpandedState.value }
@@ -1735,16 +1797,21 @@ const expandParentChain = (nodes: any[], targetId: string): boolean => {
   return false
 }
 
-const scrollToNodeById = async (targetNodeId: string) => {
+const scrollToNodeById = async (targetNodeId: string, isCurrent = () => true) => {
   await nextTick()
   await new Promise((resolve) => setTimeout(resolve, 300))
 
+  if (!isCurrent()) return
   highlightNodeId.value = targetNodeId
 
   const scrollTo = (el: Element) => {
     const offset = 200
     const top = el.getBoundingClientRect().top + window.pageYOffset - offset
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    if (structureView.value === 'chart') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    } else {
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    }
     setTimeout(() => {
       if (highlightNodeId.value === targetNodeId) {
         highlightNodeId.value = null
@@ -1752,14 +1819,16 @@ const scrollToNodeById = async (targetNodeId: string) => {
     }, 3000)
   }
 
-  const element = document.querySelector(`[data-node-id="${targetNodeId}"]`)
+  const selector = `[data-node-id="${CSS.escape(String(targetNodeId))}"]`
+  const element = treeContainer.value?.querySelector(selector)
   if (element) {
     scrollTo(element)
     return
   }
 
   await new Promise((resolve) => setTimeout(resolve, 400))
-  const retry = document.querySelector(`[data-node-id="${targetNodeId}"]`)
+  if (!isCurrent()) return
+  const retry = treeContainer.value?.querySelector(selector)
   if (retry) {
     scrollTo(retry)
   }
@@ -1774,16 +1843,17 @@ const isPositionMatch = (positionNode: any, item: SearchSuggestionItem) => {
     normalizeText(positionNode.name || positionNode.longText || positionNode.shortText).includes(
       normalizeText(item.title)
     )
-  return byId || byCode || byName
+  return item.positionId || item.positionCode ? byId || byCode : byName
 }
 
-const findPositionNodeBySuggestion = async (item: SearchSuggestionItem): Promise<any | null> => {
+const findPositionNodeBySuggestion = async (item: SearchSuggestionItem, isCurrent = () => true): Promise<any | null> => {
   const walk = async (nodes: any[]): Promise<any | null> => {
     for (const node of nodes) {
       if (node.type !== 'unit' && node.type !== 'direktorat') continue
 
+      if (!isCurrent()) return null
       if (!node._positionsLoaded) await loadPositions(node)
-      expandedNodes.value[node.id] = true
+      if (!isCurrent()) return null
 
       const positionNode = (node.children || []).find(
         (child: any) => child.type === 'position' && isPositionMatch(child, item)
@@ -1791,7 +1861,6 @@ const findPositionNodeBySuggestion = async (item: SearchSuggestionItem): Promise
 
       if (positionNode) {
         expandParentChain(organizationTree.value, node.id)
-        expandedNodes.value[positionNode.id] = true
         return positionNode
       }
 
@@ -1811,17 +1880,20 @@ const findPositionNodeBySuggestion = async (item: SearchSuggestionItem): Promise
   return walk(organizationTree.value)
 }
 
-const findPersonNodeByPersnum = async (targetPersnum: string): Promise<any | null> => {
+const findPersonNodeByPersnum = async (targetPersnum: string, isCurrent = () => true): Promise<any | null> => {
   const walk = async (nodes: any[]): Promise<any | null> => {
     for (const node of nodes) {
       if (node.type !== 'unit' && node.type !== 'direktorat') continue
 
+      if (!isCurrent()) return null
       if (!node._positionsLoaded) await loadPositions(node)
-      expandedNodes.value[node.id] = true
+      if (!isCurrent()) return null
 
       const positions = (node.children || []).filter((child: any) => child.type === 'position')
       for (const positionNode of positions) {
+        if (!isCurrent()) return null
         if (!positionNode._personsLoaded) await loadPersons(positionNode)
+        if (!isCurrent()) return null
 
         const personNode = (positionNode.children || []).find(
           (child: any) => child.type === 'member' && toText(child.persnum) === toText(targetPersnum)
@@ -1856,6 +1928,9 @@ const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
     previousExpandedState.value = { ...expandedNodes.value }
   }
 
+  const focusRequestId = ++activeFocusRequestId
+  const companyCode = String(company.value.kode)
+  const isCurrent = () => focusRequestId === activeFocusRequestId && String(company.value?.kode) === companyCode
   loadingExpand.value = true
   companyExpanded.value = true
 
@@ -1878,6 +1953,8 @@ const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
     if (item.type === 'organization') {
       if (organizationNode) {
         expandParentChain(organizationTree.value, organizationNode.id)
+        if (!organizationNode._positionsLoaded) await loadPositions(organizationNode)
+        if (!isCurrent()) return
         targetNode = organizationNode
       }
     }
@@ -1887,18 +1964,15 @@ const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
         expandParentChain(organizationTree.value, organizationNode.id)
         expandedNodes.value[organizationNode.id] = true
         if (!organizationNode._positionsLoaded) await loadPositions(organizationNode)
+        if (!isCurrent()) return
 
         targetNode = (organizationNode.children || []).find(
           (node: any) => node.type === 'position' && isPositionMatch(node, item)
         )
-
-        if (targetNode) {
-          expandedNodes.value[targetNode.id] = true
-        }
       }
 
       if (!targetNode) {
-        targetNode = await findPositionNodeBySuggestion(item)
+        targetNode = await findPositionNodeBySuggestion(item, isCurrent)
       }
     }
 
@@ -1908,6 +1982,7 @@ const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
         expandParentChain(organizationTree.value, organizationNode.id)
         expandedNodes.value[organizationNode.id] = true
         if (!organizationNode._positionsLoaded) await loadPositions(organizationNode)
+        if (!isCurrent()) return
 
         const positions = (organizationNode.children || []).filter(
           (node: any) => node.type === 'position'
@@ -1922,38 +1997,47 @@ const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
         const positionsToScan = preferredPosition ? [preferredPosition] : positions
 
         for (const positionNode of positionsToScan) {
-          expandedNodes.value[positionNode.id] = true
           if (!positionNode._personsLoaded) await loadPersons(positionNode)
+          if (!isCurrent()) return
 
           targetNode = (positionNode.children || []).find(
             (node: any) => node.type === 'member' && toText(node.persnum) === targetPersnum
           )
 
-          if (targetNode) break
+          if (targetNode) {
+            expandedNodes.value[positionNode.id] = true
+            break
+          }
         }
       }
 
       if (!targetNode && targetPersnum) {
-        targetNode = await findPersonNodeByPersnum(targetPersnum)
+        targetNode = await findPersonNodeByPersnum(targetPersnum, isCurrent)
       }
     }
 
-    if (targetNode?.id) {
-      await scrollToNodeById(targetNode.id)
+    if (isCurrent() && targetNode?.id) {
+      await scrollToNodeById(targetNode.id, isCurrent)
     }
   } catch (err) {
     console.error('❌ Focus search result error:', err)
   } finally {
-    loadingExpand.value = false
+    if (isCurrent()) loadingExpand.value = false
   }
 }
 
 const selectSearchSuggestion = async (item: SearchSuggestionItem) => {
+  clearTimeout(searchTimeout)
+  activeSearchRequestId.value += 1
+  searchAbortController?.abort()
+  loadingSearch.value = false
   showSearchSuggestions.value = false
   await focusSearchSuggestion(item)
 }
 
 const selectFirstSuggestion = async () => {
+  clearTimeout(searchTimeout)
+  await performSearch(undefined, false)
   const firstSuggestion = searchSuggestions.value[0]
   if (!firstSuggestion) return
   await selectSearchSuggestion(firstSuggestion)
@@ -2076,6 +2160,8 @@ const expandParentNodes = async (nodeId: string) => {
 
 // ─── Data Fetching ────────────────────────────────────────────────────────────
 const fetchData = async (kode: string | number) => {
+  loadingStructure.value = true
+  structureLoadFailed.value = false
   try {
     const companyRes = await getCompanyByCode(String(kode))
     if (!companyRes) return
@@ -2091,7 +2177,10 @@ const fetchData = async (kode: string | number) => {
     const res = await getCompanyTree(String(kode))
     organizationTree.value = await mapCompanyTree(res.data.tree)
   } catch (err) {
+    structureLoadFailed.value = true
     console.error('❌ fetchData error:', err)
+  } finally {
+    loadingStructure.value = false
   }
 }
 
@@ -2168,19 +2257,26 @@ const loadPositions = async (node: any) => {
   node._positionsLoaded = true
 }
 
+const pendingPersonLoads = new WeakMap<object, Promise<void>>()
 const loadPersons = async (node: any) => {
-  if (node._personsLoaded) return
-  if (!node.positionCode) return
-  try {
-    const res = await getPersonsByPosition(node.positionCode, company.value?.kode)
-    const validPersons: any[] = []
-    for (const p of res.data) {
-      validPersons.push(mapPersonToNode(p, node.positionCode))
+  if (node._personsLoaded || !node.positionCode) return
+  const companyCode = company.value?.kode
+  const pending = pendingPersonLoads.get(node)
+  if (pending) return pending
+  const request = (async () => {
+    try {
+      const res = await getPersonsByPosition(node.positionCode, companyCode)
+      node.children = res.data.map((person: any) => mapPersonToNode(person, node.positionCode))
+      node._personsLoaded = true
+    } catch (err) {
+      console.error('❌ gagal load person:', err)
     }
-    node.children = validPersons
-    node._personsLoaded = true
-  } catch (err) {
-    console.error('❌ gagal load person:', err)
+  })()
+  pendingPersonLoads.set(node, request)
+  try {
+    await request
+  } finally {
+    if (pendingPersonLoads.get(node) === request) pendingPersonLoads.delete(node)
   }
 }
 
@@ -2363,6 +2459,37 @@ const toggleNode = async (node: any) => {
   if ((node.type === 'unit' || node.type === 'direktorat') && !node._positionsLoaded)
     await loadPositions(node)
   if (node.type === 'position') await loadPersons(node)
+}
+
+const handleChartAction = async (action: StructureChartAction, node: StructureChartNode) => {
+  if (action === 'load-members') {
+    if (loadingChartNodes.value[node.id]) return
+    loadingChartNodes.value[node.id] = true
+    try {
+      await loadPersons(node)
+    } finally {
+      loadingChartNodes.value[node.id] = false
+    }
+  } else if (action === 'toggle') {
+    if (loadingChartNodes.value[node.id]) return
+    loadingChartNodes.value[node.id] = true
+    try {
+      await toggleNode(node)
+      if (node.type === 'position' && expandedNodes.value[node.id] && !node._personsLoaded) {
+        expandedNodes.value[node.id] = false
+        showErrorToast(t('stu_chart_load_failed'))
+      }
+    } catch {
+      expandedNodes.value[node.id] = false
+      showErrorToast(t('stu_chart_load_failed'))
+    } finally {
+      loadingChartNodes.value[node.id] = false
+    }
+  } else if (action === 'add-unit') await openAddUnitModal(node, node.type)
+  else if (action === 'add-position') await openAddPositionModal(node)
+  else if (action === 'add-member') openAddMemberModal(node)
+  else if (action === 'edit') openEditModal(node)
+  else if (action === 'delete') openDelete(node)
 }
 
 const setHoveredNode = (id: string | null) => {
@@ -2681,6 +2808,8 @@ watch(
   (kode) => {
     if (!kode) return
     // Reset tree dan state lain agar tidak bocor data perusahaan sebelumnya
+    clearSearch()
+    searchCache.value = {}
     organizationTree.value = []
     expandedNodes.value = {}
     selectedParentNode.value = null
