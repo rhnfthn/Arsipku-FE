@@ -501,7 +501,7 @@ onMounted(() => { loadData(); });
     <Teleport to="body">
       <div
         v-if="showRevokeAllModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+        class="fixed inset-0 z-[var(--z-confirm)] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
       >
         <div
           class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800"
