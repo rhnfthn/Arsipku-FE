@@ -21,12 +21,16 @@
           :transfer="sharedTransfer"
           :daftar-berkas="daftarBerkas"
           :daftar-isi="daftarIsiData"
+          berkas-layout="penataan"
           :unit-kerja-pihak-pertama="unitKerjaPihakPertama"
           :preview-from="'tu'"
           :collapsible="true"
           :show-bac-signer="false"
           :show-bac-tembusan="false"
           :show-tu-approval-levels="false"
+          information-title="Informasi Berkas"
+          information-layout="penataan"
+          :show-bac-status="false"
         />
 
         <TransferBeritaAcaraCard
@@ -68,10 +72,27 @@
               <p id="label-penataan-help" class="mt-1 text-xs text-gray-400">Terbentuk otomatis dari No. Ruang, No. Rak, dan No. Boks (contoh: A1.01.0001).</p>
             </div>
           </div>
-          <div class="mt-4">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Keterangan</label>
-            <textarea v-model="form.keterangan" rows="3" placeholder="Keterangan penataan..."
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
+          <div class="mt-4 max-w-md">
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tingkat Perkembangan</label>
+            <select v-model="form.tingkatPerkembangan"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500">
+              <option value="">Pilih tingkat perkembangan</option>
+              <option value="Asli">Asli</option>
+              <option value="Salinan">Salinan</option>
+              <option value="Asli dan Salinan">Asli dan Salinan</option>
+            </select>
+          </div>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kondisi Arsip</label>
+              <textarea v-model="form.kondisi" rows="3" placeholder="Contoh: kondisi arsip baik..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Media Arsip</label>
+              <textarea v-model="form.media" rows="3" placeholder="Contoh: kertas, foto, atau media lainnya..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
+            </div>
           </div>
 
           <!-- Foto Lampiran Penataan (Max 5MB) -->
@@ -345,7 +366,9 @@ const form = reactive({
   rak: '',
   baris: '',
   kolom: '',
-  keterangan: '',
+  kondisi: '',
+  media: '',
+  tingkatPerkembangan: '',
 })
 
 const joinPhysicalLabel = (parts: Array<string | null | undefined>) =>
@@ -354,6 +377,38 @@ const generatedLabel = computed(() => joinPhysicalLabel([form.rak, form.baris, f
 const savedGeneratedLabel = computed(() =>
   item.value ? joinPhysicalLabel([item.value.rak, item.value.baris, item.value.kolom]) : ''
 )
+const serializeConditionAndMedia = () => {
+  const parts = [
+    form.kondisi.trim() ? `Kondisi: ${form.kondisi.trim()}` : '',
+    form.media.trim() ? `Media: ${form.media.trim()}` : '',
+    form.tingkatPerkembangan ? `Tingkat Perkembangan: ${form.tingkatPerkembangan}` : '',
+  ].filter(Boolean)
+  return parts.join('\n')
+}
+const restoreConditionAndMedia = (value: string | null | undefined) => {
+  const text = String(value ?? '')
+  if (
+    !text.startsWith('Kondisi: ') &&
+    !text.startsWith('Media: ') &&
+    !text.startsWith('Tingkat Perkembangan: ')
+  ) {
+    form.kondisi = text
+    form.media = ''
+    form.tingkatPerkembangan = ''
+    return
+  }
+  const readField = (label: string) => {
+    const marker = `${label}: `
+    const index = text.indexOf(marker)
+    if (index < 0) return ''
+    const start = index + marker.length
+    const nextField = text.slice(start).search(/\n(?:Kondisi|Media|Tingkat Perkembangan): /)
+    return text.slice(start, nextField >= 0 ? start + nextField : undefined)
+  }
+  form.kondisi = readField('Kondisi')
+  form.media = readField('Media')
+  form.tingkatPerkembangan = readField('Tingkat Perkembangan')
+}
 
 // Foto lampiran penataan
 const fotoFile = ref<File | null>(null)
@@ -518,7 +573,7 @@ const loadDetail = async () => {
       form.rak = item.value.rak || ''
       form.baris = item.value.baris || ''
       form.kolom = item.value.kolom || ''
-      form.keterangan = item.value.keteranganPenataan || ''
+      restoreConditionAndMedia(item.value.keteranganPenataan)
       // Jika sudah ada foto penataan (status SELESAI), tampilkan preview
       fotoLoadError.value = false  // reset error state setiap load
       if (item.value.fotoPenataan) {
@@ -550,7 +605,7 @@ const onSelesai = async () => {
       rak: form.rak || undefined,
       baris: form.baris || undefined,
       kolom: form.kolom || undefined,
-      keterangan: form.keterangan || undefined,
+      keterangan: serializeConditionAndMedia() || undefined,
       fotoPenataan: fotoKeyToSend,
     })
     useToast().add({ title: 'Berhasil', description: 'Penataan arsip selesai.', color: 'success' })
