@@ -2889,7 +2889,7 @@ const signLabel = computed(() =>
                   isPhysicalSigning
                     ? 'Batal Naskah Draft'
                     : isDigitalWithoutLegal
-                      ? 'Batal dan Batalkan'
+                      ? t('nl_cancel_action')
                       : 'Batal ke Unit Legal'
                 }}</UButton
               >
@@ -3087,7 +3087,7 @@ const signLabel = computed(() =>
             ? isPhysicalSigning
               ? 'Batal Naskah Draft'
               : isDigitalWithoutLegal
-                ? 'Batal dan Batalkan Naskah'
+                ? t('nl_cancel_document')
                 : 'Batal ke Unit Legal'
             : 'Batal Naskah'
         "
@@ -3115,7 +3115,7 @@ const signLabel = computed(() =>
             ? isPhysicalSigning
               ? 'Batal dan Kembalikan'
               : isDigitalWithoutLegal
-                ? 'Batal dan Batalkan'
+                ? t('nl_cancel_action')
                 : 'Batal ke Unit Legal'
             : 'Batal Naskah'
         "

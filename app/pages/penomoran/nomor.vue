@@ -962,7 +962,8 @@ const {
   showToastPilihFile,
   showToastSaveTitle,
   showToastPenomoranSuccess,
-  showToastCopied
+  showToastCopied,
+  getAllPenomoranPages
 } = usePenomoran()
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -1323,7 +1324,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
     let exportRows = rows.value
 
     if (pagination.value && pagination.value.total > limit.value) {
-      const res = await getListNomor({
+      const res = await getAllPenomoranPages(getListNomor, {
         page: 1,
         limit: pagination.value.total,
         search: searchQuery.value || undefined,
@@ -1435,7 +1436,9 @@ function groupDuplicateRows(dataArray: any[]) {
   return Array.from(grouped.values())
 }
 
+let listRequestSequence = 0;
 const fetchData = async () => {
+  const requestSequence = ++listRequestSequence;
   loading.value = true
   try {
     const params: any = { page: currentPage.value, limit: limit.value }
@@ -1445,6 +1448,7 @@ const fetchData = async () => {
       params.sort_order = sortOrder.value
     }
     const response = await getListNomor(params)
+    if (requestSequence !== listRequestSequence) return;
     if (response?.data && Array.isArray(response.data)) {
       rows.value = groupDuplicateRows(response.data)
       pagination.value = response.pagination || null
@@ -1453,11 +1457,12 @@ const fetchData = async () => {
       pagination.value = null
     }
   } catch (error) {
+    if (requestSequence !== listRequestSequence) return;
     console.error('❌ Error fetch data:', error)
     rows.value = []
     pagination.value = null
   } finally {
-    loading.value = false
+    if (requestSequence === listRequestSequence) loading.value = false
   }
 }
 

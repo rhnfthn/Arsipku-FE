@@ -3,7 +3,7 @@
     :model-value="props.modelValue"
     @update:modelValue="handleCloseRequest"
     :hide-default-footer="true"
-    size="xl"
+    size="approval"
   >
     <template #title>
       <Heading variant="heading9b" class="font-bold text-sm mb-3 mt-5 ml-5 dark:text-gray-100">
@@ -74,61 +74,15 @@
           </p>
         </div>
 
-        <!-- Klasifikasi -->
+        <!-- Klasifikasi: reuse the document form selector, with paged lookup. -->
         <div>
-          <Heading variant="heading11m" class="text-xs font-medium dark:text-gray-200">
-            {{ $t('add_usl_klasifikasi') }} <span class="text-red-500">*</span>
-          </Heading>
-          <div class="relative" ref="klasifikasiRef">
-            <button
-              @click="toggleKlasifikasi"
-              :disabled="isLoadingKlasifikasi"
-              class="mt-1 w-full flex justify-between rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border"
-              :class="[
-                formErrors.klasifikasi ? 'border-red-500' : 'border-gray-300 dark:border-gray-600',
-                !form.klasifikasiDisplay ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'
-              ]"
-            >
-              {{ form.klasifikasiDisplay || $t('add_usl_pilih_klasifikasi') }}
-              <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-            </button>
-            <p
-              v-if="formErrors.klasifikasi"
-              class="mt-1 text-xs text-red-500 flex items-center gap-1"
-            >
-              {{ $t('tmpl_error_harus_diisi') || 'Harus diisi' }}
-            </p>
-            <div
-              v-if="openKlasifikasi"
-              class="absolute z-[8100] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg"
-            >
-              <div class="p-2 border-b border-gray-200 dark:border-gray-700">
-                <input
-                  v-model="klasifikasiSearch"
-                  ref="klasifikasiInput"
-                  :placeholder="$t('add_usl_cari_klasifikasi')"
-                  :disabled="isLoadingKlasifikasi"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div class="max-h-52 overflow-y-auto">
-                <button
-                  v-for="item in filteredKlasifikasi"
-                  :key="item.code"
-                  @click="selectKlasifikasi(item)"
-                  class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
-                >
-                  {{ item.display }}
-                </button>
-                <p
-                  v-if="filteredKlasifikasi.length === 0"
-                  class="px-3 py-2 text-xs text-center text-gray-400"
-                >
-                  {{ isLoadingKlasifikasi ? $t('add_usl_memuat') : $t('add_usl_tidak_ada_hasil') }}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TulisInputKlasifikasi v-model="selectedKlasifikasiId" :items="klasifikasiItems" :loading="isLoadingKlasifikasi" layout="stacked" :invalid="formErrors.klasifikasi" content-class="z-[calc(var(--z-modal)+1)]" required remote
+            @update:open="onKlasifikasiOpen" @search="klasifikasiSearch = $event">
+            <template #content-bottom>
+              <UButton v-if="klasifikasiPage < klasifikasiTotalPages" color="primary" variant="ghost" class="w-full justify-center" :loading="isLoadingKlasifikasi" :disabled="isLoadingKlasifikasi" @click.stop="fetchKlasifikasi(klasifikasiPage + 1)">{{ $t('penomoran_load_more') }}</UButton>
+            </template>
+          </TulisInputKlasifikasi>
+          <p v-if="formErrors.klasifikasi" class="mt-1 text-xs text-red-500">{{ $t('tmpl_error_harus_diisi') }}</p>
         </div>
 
         <!-- Jenis Naskah -->
@@ -193,7 +147,7 @@
           <div class="relative" ref="penandatanganRef">
             <button
               @click="togglePenandatangan"
-              :disabled="isLoadingPositions"
+
               class="mt-1 w-full flex justify-between rounded-lg px-3 py-2 text-sm text-left disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-gray-200 disabled:cursor-wait hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border"
               :class="[
                 formErrors.penandatangan
@@ -220,7 +174,7 @@
                   v-model="penandatanganSearch"
                   ref="penandatanganInput"
                   :placeholder="$t('add_usl_cari_penandatangan')"
-                  :disabled="isLoadingPositions"
+
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -239,6 +193,7 @@
                 >
                   {{ isLoadingPositions ? $t('add_usl_memuat') : $t('add_usl_tidak_ada_hasil') }}
                 </p>
+                <UButton v-if="positionsPage < positionsTotalPages" color="primary" variant="ghost" class="w-full justify-center" :loading="isLoadingPositions" :disabled="isLoadingPositions" @click="fetchPositions(positionsPage + 1)">{{ $t('penomoran_load_more') }}</UButton>
               </div>
             </div>
           </div>
@@ -721,11 +676,13 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ChevronDown, FileText, X } from 'lucide-vue-next';
+import TulisInputKlasifikasi from '~/components/Tulis/InputKlasifikasi.vue';
 import Heading from '~/components/Heading.vue';
 import ConfirmPopup from '~/components/ConfirmPopup.vue';
 import { usePenomoran } from '~/composables/usePenomoran';
 import { useAuth } from '~/composables/useAuth';
 import { useApi } from '~/composables/useApi';
+import { JENIS_LABELS } from '~/types/naskah-lainnya';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false }
@@ -734,7 +691,7 @@ const emit = defineEmits(['update:modelValue', 'submit']);
 
 const { t } = useI18n();
 const toast = useToast();
-const { getKlasifikasi, getJenis, deleteUsulanUser, submitBooking, submitBookingSingleFile } =
+const { getJenis, deleteUsulanUser, submitBooking, submitBookingSingleFile } =
   usePenomoran();
 const { user, getProfile } = useAuth();
 const { get, post, api } = useApi();
@@ -786,58 +743,66 @@ watch(tanggalString, (val) => {
 // ─── DROPDOWN: KLASIFIKASI ─────────────────────────────────────
 const openKlasifikasi = ref(false);
 const klasifikasiSearch = ref('');
-const klasifikasiRef = ref(null);
-const klasifikasiInput = ref(null);
 const klasifikasiOptions = ref([]);
 const isLoadingKlasifikasi = ref(false);
 const hasLoadedKlasifikasi = ref(false);
-
-const filteredKlasifikasi = computed(() => {
-  if (!klasifikasiSearch.value) return klasifikasiOptions.value;
-  const query = klasifikasiSearch.value.trim().toLowerCase();
-  return klasifikasiOptions.value.filter((i) =>
-    String(i.searchText || [i.code, i.text, i.deskripsi].filter(Boolean).join(' '))
-      .toLowerCase()
-      .includes(query)
-  );
+const selectedKlasifikasiItem = ref(null);
+const selectedKlasifikasiId = computed({
+  get: () => selectedKlasifikasiItem.value?.id || null,
+  set: id => {
+    const item = klasifikasiOptions.value.find(option => option.id === id);
+    selectedKlasifikasiItem.value = item || null;
+    form.value.klasifikasi = item?.klasifikasi || '';
+    form.value.klasifikasiDisplay = item ? `${item.klasifikasi} - ${item.klasifikasi_text}` : '';
+    if (item) formErrors.value.klasifikasi = false;
+  }
 });
-
-const toggleKlasifikasi = async () => {
-  if (!openKlasifikasi.value && !hasLoadedKlasifikasi.value) {
-    await fetchKlasifikasi();
-    hasLoadedKlasifikasi.value = true;
-  }
-  openKlasifikasi.value = !openKlasifikasi.value;
-  if (openKlasifikasi.value) {
-    await nextTick();
-    klasifikasiInput.value?.focus();
-  }
+const klasifikasiItems = computed(() => selectedKlasifikasiItem.value &&
+  !klasifikasiOptions.value.some(item => item.id === selectedKlasifikasiItem.value.id)
+    ? [...klasifikasiOptions.value, selectedKlasifikasiItem.value] : klasifikasiOptions.value);
+const onKlasifikasiOpen = async (open) => {
+  openKlasifikasi.value = open;
+  if (open && !hasLoadedKlasifikasi.value) await fetchKlasifikasi();
 };
+const lookupPage = response => Array.isArray(response?.data) ? response : response?.data || response;
 
-const selectKlasifikasi = (item) => {
-  form.value.klasifikasi = item.code;
-  form.value.klasifikasiDisplay = item.display;
-  formErrors.value.klasifikasi = false;
-  klasifikasiSearch.value = '';
-  openKlasifikasi.value = false;
-};
-
-const fetchKlasifikasi = async () => {
+const klasifikasiPage = ref(1);
+const klasifikasiTotalPages = ref(1);
+let klasifikasiRequestSequence = 0;
+let klasifikasiSearchTimer;
+const fetchKlasifikasi = async (page = 1) => {
+  const sequence = ++klasifikasiRequestSequence;
   isLoadingKlasifikasi.value = true;
   try {
-    const response = await getKlasifikasi();
-    klasifikasiOptions.value = response;
-  } catch (err) {
-    console.error('❌ Error fetch klasifikasi:', err);
-    toast.add({
-      title: t('add_usl_toast_gagal_klasifikasi_title'),
-      description: t('add_usl_toast_gagal_klasifikasi_desc'),
-      color: 'warning'
-    });
+    const response = await get('/persuratan/klasifikasi/options', { params: { page, limit: 50, search: klasifikasiSearch.value.trim() || undefined } });
+    if (sequence !== klasifikasiRequestSequence) return;
+    const result = lookupPage(response);
+    const options = Array.isArray(result?.data) ? result.data : [];
+    klasifikasiOptions.value = page === 1 ? options : [...klasifikasiOptions.value, ...options];
+    klasifikasiPage.value = page;
+    klasifikasiTotalPages.value = result.totalPages || 1;
+    hasLoadedKlasifikasi.value = true;
+  } catch (error) {
+    if (sequence !== klasifikasiRequestSequence) return;
+    hasLoadedKlasifikasi.value = false;
+    toast.add({ title: t('penomoran_lookup_failed'), color: 'error' });
   } finally {
-    isLoadingKlasifikasi.value = false;
+    if (sequence === klasifikasiRequestSequence) isLoadingKlasifikasi.value = false;
   }
 };
+watch(klasifikasiSearch, () => {
+  hasLoadedKlasifikasi.value = false;
+  ++klasifikasiRequestSequence;
+  isLoadingKlasifikasi.value = false;
+  klasifikasiOptions.value = [];
+  klasifikasiTotalPages.value = 1;
+  if (klasifikasiSearchTimer) clearTimeout(klasifikasiSearchTimer);
+  if (openKlasifikasi.value) klasifikasiSearchTimer = setTimeout(() => fetchKlasifikasi(), 300);
+});
+onBeforeUnmount(() => {
+  ++klasifikasiRequestSequence;
+  if (klasifikasiSearchTimer) clearTimeout(klasifikasiSearchTimer);
+});
 
 // ─── DROPDOWN: JENIS ──────────────────────────────────────────
 const jenisOptions = ref([]);
@@ -859,7 +824,9 @@ const toggleJenis = async () => {
   if (!openJenis.value && !hasLoadedJenis.value) {
     isLoadingJenis.value = true;
     try {
-      jenisOptions.value = await getJenis();
+      jenisOptions.value = (await getJenis()).filter(item =>
+        Object.prototype.hasOwnProperty.call(JENIS_LABELS, item.code)
+      );
       hasLoadedJenis.value = true;
     } finally {
       isLoadingJenis.value = false;
@@ -888,26 +855,19 @@ const penandatanganOptions = ref([]);
 const isLoadingPositions = ref(false);
 const hasLoadedPositions = ref(false);
 
-const filteredPenandatangan = computed(() => {
-  if (!penandatanganSearch.value) return penandatanganOptions.value;
-  return penandatanganOptions.value.filter((i) =>
-    i.displayText.toLowerCase().includes(penandatanganSearch.value.toLowerCase())
-  );
-});
+const filteredPenandatangan = computed(() => penandatanganOptions.value);
 
 const togglePenandatangan = async () => {
-  if (!openPenandatangan.value && !hasLoadedPositions.value) {
-    await fetchPositions();
-    hasLoadedPositions.value = true;
-  }
   openPenandatangan.value = !openPenandatangan.value;
   if (openPenandatangan.value) {
     await nextTick();
     penandatanganInput.value?.focus();
+    if (!hasLoadedPositions.value) await fetchPositions();
   }
 };
 
 const selectPenandatangan = (item) => {
+  selectedPenandatangan.value = item;
   form.value.penandatanganJabatan = item.displayText;
   form.value.id_position_penandatangan = Number(item.position);
   penandatanganNama.value = item.nama;
@@ -915,46 +875,70 @@ const selectPenandatangan = (item) => {
   openPenandatangan.value = false;
 };
 
-const fetchPositions = async () => {
+const positionsPage = ref(1);
+const selectedPenandatangan = ref(null);
+const positionsTotalPages = ref(1);
+let positionsRequestSequence = 0;
+let positionsSearchTimer;
+const fetchPositions = async (page = 1) => {
+  const sequence = ++positionsRequestSequence;
   isLoadingPositions.value = true;
   try {
-    const response = await get('/person/with-position/all');
-    const raw = response?.data ?? response;
-    const list = Array.isArray(raw) ? raw : [];
-    penandatanganOptions.value = list.map((item) => {
-      const positionText = item.position_text || '';
-      const subAreaText = item.sub_area_text || '';
-      const displayText = subAreaText ? `${positionText} - ${subAreaText}` : positionText;
-      return { displayText, position: item.position, nama: item.nama };
-    });
-  } catch (err) {
-    console.error('❌ Error fetch positions:', err);
-    toast.add({
-      title: t('add_usl_toast_gagal_posisi_title'),
-      description: t('add_usl_toast_gagal_posisi_desc'),
-      color: 'error'
-    });
+    const response = await get('/person/with-position/all', { params: { page, limit: 50, scope: 'same-unit', search: penandatanganSearch.value.trim() || undefined } });
+    if (sequence !== positionsRequestSequence) return;
+    const result = lookupPage(response);
+    const list = Array.isArray(result?.data) ? result.data : [];
+    const options = list.map(item => ({ displayText: item.sub_area_text ? `${item.position_text || ''} - ${item.sub_area_text}` : item.position_text || '', position: item.position, nama: item.nama, abbreviation: item.abbreviation, area: item.area }));
+    penandatanganOptions.value = page === 1 ? options : [...penandatanganOptions.value, ...options];
+    positionsPage.value = page;
+    positionsTotalPages.value = result.totalPages || 1;
+    hasLoadedPositions.value = true;
+  } catch (error) {
+    if (sequence !== positionsRequestSequence) return;
+    hasLoadedPositions.value = false;
+    toast.add({ title: t('penomoran_lookup_failed'), color: 'error' });
   } finally {
-    isLoadingPositions.value = false;
+    if (sequence === positionsRequestSequence) isLoadingPositions.value = false;
   }
 };
+watch(penandatanganSearch, () => {
+  hasLoadedPositions.value = false;
+  ++positionsRequestSequence;
+  isLoadingPositions.value = false;
+  penandatanganOptions.value = [];
+  positionsTotalPages.value = 1;
+  if (positionsSearchTimer) clearTimeout(positionsSearchTimer);
+  if (openPenandatangan.value) positionsSearchTimer = setTimeout(() => fetchPositions(), 300);
+});
+onBeforeUnmount(() => {
+  ++positionsRequestSequence;
+  if (positionsSearchTimer) clearTimeout(positionsSearchTimer);
+});
 
 // ─── NOMOR PREVIEW GENERATOR ──────────────────────────────────
 const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
 const generatedNomorPreview = computed(() => {
-  const jenis = form.value.jenis || '...';
-  const klasifikasi = form.value.klasifikasi || '...';
+  const jenis = form.value.jenis;
+  const format = jenisOptions.value.find(item => item.code === jenis)?.format;
+  if (!format) return '';
   const date = tanggalString.value ? new Date(tanggalString.value) : new Date();
   const bulan = ROMAN_MONTHS[date.getMonth()];
   const tahun = date.getFullYear();
-  return `${jenis}..../TN/TNG/LPPNPI/${klasifikasi}/${bulan}/${tahun}`;
+  const area = String(selectedPenandatangan.value?.area || user.value?.area || '').trim();
+  const areaCode = area.length >= 2 ? area.slice(-2) : area.padStart(2, '0');
+  const lokasi = !area ? '' : area.toUpperCase() === 'TNG' || areaCode === '00' ? 'TNG' : areaCode;
+  const values = {
+    TIPE: jenis, NO_URUT: '.....', INSTANSI: 'LPPNPI',
+    JABATAN: selectedPenandatangan.value?.abbreviation || '', LOKASI: lokasi,
+    KLASIFIKASI: form.value.klasifikasi || '', BULAN: bulan, TAHUN: String(tahun)
+  };
+  return format.replace(/\{(TIPE|NO_URUT|INSTANSI|JABATAN|LOKASI|KLASIFIKASI|BULAN|TAHUN)\}/g,
+    (_, key) => values[key]);
 });
 
 // ─── CLICK OUTSIDE ────────────────────────────────────────────
 const handleClickOutside = (e) => {
-  if (klasifikasiRef.value && !klasifikasiRef.value.contains(e.target))
-    openKlasifikasi.value = false;
   if (jenisRef.value && !jenisRef.value.contains(e.target)) openJenis.value = false;
   if (penandatanganRef.value && !penandatanganRef.value.contains(e.target))
     openPenandatangan.value = false;
@@ -1261,10 +1245,12 @@ function resetAndClose() {
     perihal: '',
     jumlah: 1
   };
+  selectedKlasifikasiId.value = null;
   klasifikasiSearch.value = '';
   jenisSearch.value = '';
   penandatanganSearch.value = '';
   penandatanganNama.value = '';
+  selectedPenandatangan.value = null;
   jumlahError.value = '';
   perihalError.value = '';
   openKlasifikasi.value = false;
