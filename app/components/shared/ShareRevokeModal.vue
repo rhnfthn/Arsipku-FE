@@ -49,7 +49,7 @@ watch(isOpen, (val) => {
 
 <template>
   <Teleport to="body">
-    <Modal v-model="isOpen" :hideDefaultFooter="true" size="md">
+    <Modal v-model="isOpen" :hideDefaultFooter="true" size="md" z-index="var(--z-confirm)">
       <template #title>
         <Heading variant="heading9b" class="ml-5 mt-5 mb-2 text-sm font-bold dark:text-white">
           {{ t('share_revoke_title') }}

@@ -3,6 +3,7 @@
     <div
       v-if="modelValue"
       class="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 transition-opacity"
+      :style="{ zIndex: props.zIndex }"
     >
       <!-- Hanya modal yang dianimasikan -->
       <Transition name="modal">
@@ -139,6 +140,17 @@ const props = defineProps({
   ui: {
     type: Object,
     default: () => ({}),
+  },
+
+  /**
+   * Override z-index overlay. Default --z-modal (9999). Untuk modal yang
+   * dibuka dari dalam modal lain (mis. konfirmasi cabut akses dari modal
+   * detail share), kirim nilai lebih tinggi (mis. "var(--z-confirm)")
+   * agar tidak tertutup modal induknya.
+   */
+  zIndex: {
+    type: String,
+    default: 'var(--z-modal)',
   },
 });
 
