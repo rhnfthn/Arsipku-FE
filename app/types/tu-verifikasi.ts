@@ -95,6 +95,7 @@ export interface TuUsulanListResponse {
 
 export interface TuFilterParams {
   status?: string;
+  nasibAkhir?: string;
   search?: string;
   klasifikasi?: string;
   page?: number;

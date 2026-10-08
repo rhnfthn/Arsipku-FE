@@ -28,6 +28,7 @@
           :show-bac-signer="false"
           :show-bac-tembusan="false"
           :show-tu-approval-levels="false"
+          :show-information-card="true"
           information-title="Informasi Berkas"
           information-layout="penataan"
           :show-bac-status="false"
@@ -72,192 +73,104 @@
               <p id="label-penataan-help" class="mt-1 text-xs text-gray-400">Terbentuk otomatis dari No. Ruang, No. Rak, dan No. Boks (contoh: A1.01.0001).</p>
             </div>
           </div>
-          <div class="mt-4 max-w-md">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tingkat Perkembangan</label>
-            <select v-model="form.tingkatPerkembangan"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500">
-              <option value="">Pilih tingkat perkembangan</option>
-              <option value="Asli">Asli</option>
-              <option value="Salinan">Salinan</option>
-              <option value="Asli dan Salinan">Asli dan Salinan</option>
-            </select>
-          </div>
-          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kondisi Arsip</label>
-              <textarea v-model="form.kondisi" rows="3" placeholder="Contoh: kondisi arsip baik..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Media Arsip</label>
-              <textarea v-model="form.media" rows="3" placeholder="Contoh: kertas, foto, atau media lainnya..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
-            </div>
-          </div>
-
-          <!-- Foto Lampiran Penataan (Max 5MB) -->
-          <div class="mt-4">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-              Foto Lampiran Penataan <span class="text-gray-400">(Max 5MB, JPEG/PNG/WebP/GIF)</span>
-            </label>
-            <div v-if="fotoPreview" class="relative inline-block mb-2">
-              <img :src="fotoPreview" alt="Foto penataan" class="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600" />
-              <button type="button" @click="removeFoto"
-                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
-                <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div v-else>
-              <label
-                class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <div class="flex flex-col items-center justify-center pt-4 pb-5">
-                  <UIcon name="i-lucide-upload-cloud" class="w-8 h-8 text-gray-400 mb-2" />
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Klik untuk upload foto</p>
-                  <p class="text-xs text-gray-400 mt-1">Max 5MB</p>
-                </div>
+          <div class="mt-4 grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">
+            <!-- Foto Lampiran Penataan (Max 5MB) -->
+            <div class="flex flex-col">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Foto Lampiran Penataan <span class="text-gray-400">(Max 5MB, JPEG/PNG/WebP/GIF)</span>
+              </label>
+              <div v-if="fotoPreview" class="relative inline-block">
+                <img :src="fotoPreview" alt="Foto penataan" class="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600" />
+                <button type="button" @click="removeFoto"
+                  class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                  <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <label v-else
+                class="flex min-h-32 w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700">
+                <UIcon name="i-lucide-upload-cloud" class="mb-2 h-8 w-8 text-gray-400" />
+                <p class="text-sm text-gray-500 dark:text-gray-400">Klik untuk upload foto</p>
+                <p class="mt-1 text-xs text-gray-400">Max 5MB</p>
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" @change="onFotoChange" />
               </label>
+              <p v-if="fotoError" class="mt-1 text-xs text-red-500">{{ fotoError }}</p>
+              <p v-if="uploadingFoto" class="mt-1 text-xs text-blue-500">Mengupload foto...</p>
             </div>
-            <p v-if="fotoError" class="text-xs text-red-500 mt-1">{{ fotoError }}</p>
-            <p v-if="uploadingFoto" class="text-xs text-blue-500 mt-1">Mengupload foto...</p>
-          </div>
 
-          <div class="mt-4">
-            <button @click="onSelesai" :disabled="actionLoading || uploadingFoto"
-              class="px-5 py-2.5 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50 transition-colors">
-              <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-              <UIcon v-else name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Selesai Penataan
-            </button>
+            <div class="space-y-4">
+              <div>
+                <label class="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">Kondisi Arsip</label>
+                <input v-model="form.kondisi" type="text" placeholder="Contoh: kondisi arsip baik..."
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">Media Arsip</label>
+                <input v-model="form.media" type="text" placeholder="Contoh: kertas, foto, atau media lainnya..."
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
+              </div>
+              <div class="pt-1">
+                <button @click="onSelesai" :disabled="actionLoading || uploadingFoto"
+                  class="px-5 py-2.5 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50 transition-colors">
+                  <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
+                  <UIcon v-else name="i-lucide-check-circle" class="w-4 h-4 mr-1 inline" /> Selesai Penataan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Status Selesai — Card Penataan -->
-        <div v-if="item.status === 'SELESAI'" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
-          <!-- Header banner -->
-          <div class="bg-gradient-to-r from-emerald-500 to-green-600 dark:from-emerald-700 dark:to-green-800 px-5 py-4 flex items-center gap-3">
-            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm shrink-0">
-              <UIcon name="i-lucide-check-circle" class="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 class="text-base font-bold text-white">Penataan Selesai</h3>
-              <p class="text-xs text-emerald-50 dark:text-emerald-100 mt-0.5">Arsip telah berhasil ditata dan disimpan</p>
-            </div>
-          </div>
-
-          <!-- Body -->
-          <div class="p-5">
-            <!-- Lokasi Penyimpanan -->
-            <div class="mb-5">
-              <h4 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                <UIcon name="i-lucide-map-pin" class="w-3.5 h-3.5" /> Lokasi Penyimpanan
-              </h4>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <!-- Label boks -->
-                <div class="col-span-2 sm:col-span-4 flex flex-col items-center text-center p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800">
-                  <UIcon name="i-lucide-tag" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Label</span>
-                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ savedGeneratedLabel || item.labelPenataan || '-' }}</p>
-                </div>
-                <!-- Lokasi -->
-                <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
-                  <UIcon name="i-lucide-building-2" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Lokasi</span>
-                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.lokasiPenataan || '-' }}</p>
-                </div>
-                <!-- Rak -->
-                <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
-                  <UIcon name="i-lucide-library" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">No. Ruang</span>
-                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.rak || '-' }}</p>
-                </div>
-                <!-- Baris -->
-                <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
-                  <UIcon name="i-lucide-rows-3" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">No. Rak</span>
-                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.baris || '-' }}</p>
-                </div>
-                <!-- Kolom -->
-                <div class="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600">
-                  <UIcon name="i-lucide-columns-3" class="w-5 h-5 text-primary-500 mb-1.5" />
-                  <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">No. Boks</span>
-                  <p class="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{{ item.kolom || '-' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Keterangan -->
-            <div v-if="item.keteranganPenataan" class="mb-5">
-              <h4 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                <UIcon name="i-lucide-sticky-note" class="w-3.5 h-3.5" /> Keterangan
-              </h4>
-              <p class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg italic">
-                {{ item.keteranganPenataan }}
-              </p>
-            </div>
-
-            <!-- Foto Penataan -->
-            <div>
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
-                  <UIcon name="i-lucide-camera" class="w-3.5 h-3.5" /> Foto Dokumentasi
-                </h4>
-                <!-- Button Edit Foto -->
+        <div v-if="item.status === 'SELESAI'" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div class="grid grid-cols-1 items-stretch gap-5 p-5 lg:grid-cols-2">
+            <section class="min-w-0 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Foto dokumentasi</h4>
                 <button
                   v-if="!isEditingFoto"
                   @click="startEditFoto"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" /> Edit Foto
+                  <UIcon name="i-lucide-pencil" class="h-3.5 w-3.5" /> Edit Foto
                 </button>
                 <button
                   v-else
                   @click="cancelEditFoto"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
-                  <UIcon name="i-lucide-x" class="w-3.5 h-3.5" /> Batal
+                  <UIcon name="i-lucide-x" class="h-3.5 w-3.5" /> Batal
                 </button>
               </div>
 
-              <!-- Mode View (foto ada) -->
-              <div v-if="!isEditingFoto && item.fotoPenataan && !fotoLoadError" class="relative group inline-block">
-                <a :href="fotoUrl(item.fotoPenataan)" target="_blank" class="block">
+              <div v-if="!isEditingFoto && item.fotoPenataan && !fotoLoadError" class="group relative">
+                <a :href="fotoUrl(item.fotoPenataan)" target="_blank" rel="noopener noreferrer" class="block h-64 overflow-hidden rounded-md bg-gray-50 dark:bg-gray-900/30">
                   <img
                     :src="fotoUrl(item.fotoPenataan)"
                     alt="Foto penataan"
-                    class="w-full max-w-sm h-48 object-cover rounded-xl border border-gray-200 dark:border-gray-600 transition-shadow group-hover:shadow-lg"
+                    class="h-full w-full object-contain"
                     @error="onFotoError"
                   />
-                  <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl flex items-center justify-center">
-                    <span class="opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm font-medium flex items-center gap-1.5">
-                      <UIcon name="i-lucide-eye" class="w-4 h-4" /> Lihat Foto
-                    </span>
-                  </div>
+                  <span class="absolute inset-0 flex items-center justify-center bg-black/0 text-sm font-medium text-white opacity-0 transition-opacity group-hover:bg-black/20 group-hover:opacity-100">
+                    <UIcon name="i-lucide-eye" class="mr-1 h-4 w-4" /> Lihat foto
+                  </span>
                 </a>
               </div>
 
-              <!-- Mode View (foto tidak ada) -->
-              <div v-else-if="!isEditingFoto" class="flex flex-col items-center justify-center w-full max-w-sm h-48 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30">
-                <UIcon name="i-lucide-image-off" class="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
-                <p class="text-sm text-gray-400 dark:text-gray-500">Foto tidak tersedia</p>
+              <div v-else-if="!isEditingFoto" class="flex h-64 flex-col items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-gray-600 dark:bg-gray-700/30">
+                <UIcon name="i-lucide-image-off" class="mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
+                <p class="text-sm">Foto tidak tersedia</p>
               </div>
 
-              <!-- Mode Edit (upload ulang) -->
               <div v-else class="space-y-3">
-                <div v-if="fotoPreview" class="relative inline-block">
-                  <img :src="fotoPreview" alt="Foto penataan" class="w-full max-w-sm h-48 object-cover rounded-xl border border-gray-300 dark:border-gray-600" />
-                  <button type="button" @click="removeFoto"
-                    class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
-                    <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+                <div v-if="fotoPreview" class="relative">
+                  <img :src="fotoPreview" alt="Foto penataan" class="h-64 w-full rounded-md border border-gray-300 object-contain dark:border-gray-600" />
+                  <button type="button" @click="removeFoto" class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600">
+                    <UIcon name="i-lucide-x" class="h-4 w-4" />
                   </button>
                 </div>
-                <label
-                  v-else
-                  class="flex flex-col items-center justify-center w-full max-w-sm h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <div class="flex flex-col items-center justify-center pt-4 pb-5">
-                    <UIcon name="i-lucide-upload-cloud" class="w-8 h-8 text-gray-400 mb-2" />
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Klik untuk upload foto</p>
-                    <p class="text-xs text-gray-400 mt-1">Max 5MB, JPEG/PNG/WebP/GIF</p>
-                  </div>
+                <label v-else class="flex h-64 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700">
+                  <UIcon name="i-lucide-upload-cloud" class="mb-2 h-8 w-8 text-gray-400" />
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Klik untuk upload foto</p>
+                  <p class="mt-1 text-xs text-gray-400">Max 5MB, JPEG/PNG/WebP/GIF</p>
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" @change="onFotoChange" />
                 </label>
                 <p v-if="fotoError" class="text-xs text-red-500">{{ fotoError }}</p>
@@ -266,12 +179,51 @@
                   v-if="fotoKey"
                   @click="onSaveFoto"
                   :disabled="actionLoading || uploadingFoto"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white disabled:opacity-50 transition-colors"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-800 disabled:opacity-50"
                 >
-                  <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="w-4 h-4 mr-1 inline animate-spin" />
-                  <UIcon v-else name="i-lucide-save" class="w-4 h-4 mr-1 inline" /> Simpan Foto
+                  <UIcon v-if="actionLoading" name="i-lucide-loader-2" class="mr-1 inline h-4 w-4 animate-spin" />
+                  <UIcon v-else name="i-lucide-save" class="mr-1 inline h-4 w-4" /> Simpan Foto
                 </button>
               </div>
+            </section>
+
+            <div class="grid min-w-0 content-start gap-5">
+              <section class="min-w-0 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <h4 class="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Lokasi penyimpanan</h4>
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
+                  <div class="min-w-0">
+                    <dt class="text-xs text-gray-500 dark:text-gray-400">Label boks</dt>
+                    <dd class="mt-1 break-words text-sm font-medium text-gray-900 dark:text-white">{{ savedGeneratedLabel || item.labelPenataan || '-' }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs text-gray-500 dark:text-gray-400">Lokasi</dt>
+                    <dd class="mt-1 break-words text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.lokasiPenataan || '-' }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs text-gray-500 dark:text-gray-400">No. ruang</dt>
+                    <dd class="mt-1 break-words text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.rak || '-' }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs text-gray-500 dark:text-gray-400">No. rak</dt>
+                    <dd class="mt-1 break-words text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.baris || '-' }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs text-gray-500 dark:text-gray-400">No. boks</dt>
+                    <dd class="mt-1 break-words text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.kolom || '-' }}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section class="min-w-0 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <div>
+                  <h4 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-gray-200">Kondisi Arsip</h4>
+                  <p class="whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-300">{{ form.kondisi || '-' }}</p>
+                </div>
+                <div class="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
+                  <h4 class="mb-1.5 text-sm font-semibold text-gray-800 dark:text-gray-200">Media Arsip</h4>
+                  <p class="whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-300">{{ form.media || '-' }}</p>
+                </div>
+              </section>
             </div>
           </div>
         </div>
@@ -281,11 +233,57 @@
     </template>
 
     <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">Arsip tidak ditemukan</div>
+
+    <div v-if="item?.status === 'SELESAI' && eligibleArchives.length" class="mt-5 flex justify-start">
+      <button
+        type="button"
+        @click="openPenyusutanModal"
+        class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-800"
+      >
+        <UIcon name="i-lucide-send" class="h-4 w-4" /> Penyusutan
+      </button>
+    </div>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showPenyusutanModal" class="fixed inset-0 z-9999 flex items-center justify-center p-4">
+          <button type="button" class="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-label="Tutup dialog" @click="closePenyusutanModal" />
+          <section class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800" role="dialog" aria-modal="true" aria-labelledby="penyusutan-modal-title">
+            <header class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
+              <h3 id="penyusutan-modal-title" class="text-lg font-semibold text-gray-900 dark:text-white">Pindahkan ke Pengajuan Penyusutan</h3>
+            </header>
+
+            <div class="space-y-5 p-6">
+              <p class="text-sm leading-6 text-gray-500 dark:text-gray-400">Berkas akan disimpan sebagai draft dan dapat dilengkapi sebelum diajukan.</p>
+
+              <div v-if="eligibleArchives.length > 1">
+                <label for="penyusutan-archive" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Berkas</label>
+                <select id="penyusutan-archive" v-model="selectedArchiveId" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <option v-for="archive in eligibleArchives" :key="archive.id" :value="archive.id">{{ archive.kode }} — {{ archive.nama }}</option>
+                </select>
+              </div>
+              <div v-else class="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700 dark:bg-gray-700/60 dark:text-gray-200">
+                {{ eligibleArchives[0]?.kode }} — {{ eligibleArchives[0]?.nama }}
+              </div>
+
+            </div>
+
+            <footer class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+              <button type="button" @click="closePenyusutanModal" :disabled="creatingPenyusutanDraft" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Batal</button>
+              <button type="button" @click="createPenyusutanDraft" :disabled="creatingPenyusutanDraft || !selectedArchive" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50">
+                <UIcon v-if="creatingPenyusutanDraft" name="i-lucide-loader-2" class="h-4 w-4 animate-spin" />
+                <UIcon v-else name="i-lucide-send" class="h-4 w-4" /> Penyusutan
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
@@ -298,7 +296,7 @@ definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
 const { fetchPenataanDetail, selesaiPenataan, uploadFotoPenataan } = useTuVerifikasi()
-const { api, apiGet } = useApi()
+const { api, apiGet, apiPost } = useApi()
 const config = useRuntimeConfig()
 
 const item = ref<TuUsulanItem | null>(null)
@@ -342,19 +340,82 @@ const canShowBeritaAcara = computed(() =>
 // Daftar berkas (dari arsipIds atau fallback ke arsip tunggal)
 const daftarBerkas = computed(() => {
   if (!item.value) return []
+  let archives: any[]
   // Endpoint berita-acara-data hanya memuat ringkasan arsip. Gunakan endpoint
   // daftar-isi agar seluruh metadata pemberkasan tersedia pada tabel ini.
-  if (daftarBerkasData.value.length > 0) return daftarBerkasData.value
-  if (item.value.arsipIds && Array.isArray(item.value.arsipIds)) {
-    return item.value.arsipIds
+  if (daftarBerkasData.value.length > 0) {
+    archives = daftarBerkasData.value
+  } else if (item.value.arsipIds && Array.isArray(item.value.arsipIds)) {
+    archives = item.value.arsipIds
+  } else {
+    archives = [{
+      id: item.value.arsipId,
+      perihal: item.value.arsipPerihal,
+      kode: item.value.arsipKode,
+      tanggalRetensiHabis: null,
+    }]
   }
-  return [{
-    id: item.value.arsipId,
-    perihal: item.value.arsipPerihal,
-    kode: item.value.arsipKode,
-    tanggalRetensiHabis: null,
-  }]
+  return archives.map((archive: any) => ({
+    ...archive,
+    penyusutanSudahDiajukan: penyusutanBerkasIds.value.has(String(archive.id)),
+  }))
 })
+
+const isRetentionExpired = (date: string | null | undefined) => {
+  if (!date) return false
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const dateKey = String(date).slice(0, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateKey) && dateKey <= today
+}
+const penyusutanBerkasIds = ref<Set<string>>(new Set())
+const eligibleArchives = computed(() => daftarBerkas.value
+  .filter((archive: any) => archive?.id
+    && isRetentionExpired(archive.tanggalRetensiInaktifBerakhir)
+    && !penyusutanBerkasIds.value.has(String(archive.id)))
+  .map((archive: any) => ({
+    ...archive,
+    kode: archive.kodeBerkas ?? archive.kode ?? '',
+    nama: archive.perihal ?? archive.namaBerkas ?? archive.uraianInformasi ?? '-',
+  })))
+const showPenyusutanModal = ref(false)
+const selectedArchiveId = ref('')
+const creatingPenyusutanDraft = ref(false)
+const selectedArchive = computed(() => eligibleArchives.value.find((archive: any) => archive.id === selectedArchiveId.value) ?? null)
+const openPenyusutanModal = () => {
+  selectedArchiveId.value = eligibleArchives.value[0]?.id ?? ''
+  showPenyusutanModal.value = true
+}
+const closePenyusutanModal = () => {
+  if (creatingPenyusutanDraft.value) return
+  showPenyusutanModal.value = false
+}
+const createPenyusutanDraft = async () => {
+  if (!item.value || !selectedArchive.value || creatingPenyusutanDraft.value) return
+  creatingPenyusutanDraft.value = true
+  try {
+    const archive: any = selectedArchive.value
+    const berkasId = String(archive.id)
+    await apiPost('/penyusutan/draft', {
+      berkasId,
+      kodeBerkas: archive.kode || undefined,
+      namaBerkas: archive.nama || undefined,
+      klasifikasi: archive.kodeKlasifikasi ?? archive.klasifikasiKode ?? undefined,
+      klasifikasiText: archive.klasifikasi ?? archive.klasifikasiTeks ?? undefined,
+      tanggalRetensiHabis: String(archive.tanggalRetensiInaktifBerakhir).slice(0, 10),
+      jenisPenyusutan: archive.nasibAkhir?.toLowerCase() === 'musnah' ? 'musnah' : 'permanen',
+      daftarArsip: [{ id: berkasId, nama: archive.nama || '-', kode: archive.kode || '' }],
+    })
+    penyusutanBerkasIds.value = new Set([...penyusutanBerkasIds.value, berkasId])
+    useToast().add({ title: 'Berhasil', description: 'Berkas dipindahkan ke Pengajuan Penyusutan dengan status draft.', color: 'success' })
+    showPenyusutanModal.value = false
+    await navigateTo('/maintenance/penyusutan/pengajuan-penyusutan')
+  } catch (e: any) {
+    useToast().add({ title: 'Gagal', description: e?.data?.message || e?.message || 'Gagal menyimpan draft penyusutan.', color: 'error' })
+  } finally {
+    creatingPenyusutanDraft.value = false
+  }
+}
 
 // Jika ada query ?mode=penataan, langsung buka mode penataan
 if (fromPenataanQuery) {
@@ -368,7 +429,6 @@ const form = reactive({
   kolom: '',
   kondisi: '',
   media: '',
-  tingkatPerkembangan: '',
 })
 
 const joinPhysicalLabel = (parts: Array<string | null | undefined>) =>
@@ -381,7 +441,6 @@ const serializeConditionAndMedia = () => {
   const parts = [
     form.kondisi.trim() ? `Kondisi: ${form.kondisi.trim()}` : '',
     form.media.trim() ? `Media: ${form.media.trim()}` : '',
-    form.tingkatPerkembangan ? `Tingkat Perkembangan: ${form.tingkatPerkembangan}` : '',
   ].filter(Boolean)
   return parts.join('\n')
 }
@@ -394,7 +453,6 @@ const restoreConditionAndMedia = (value: string | null | undefined) => {
   ) {
     form.kondisi = text
     form.media = ''
-    form.tingkatPerkembangan = ''
     return
   }
   const readField = (label: string) => {
@@ -407,7 +465,6 @@ const restoreConditionAndMedia = (value: string | null | undefined) => {
   }
   form.kondisi = readField('Kondisi')
   form.media = readField('Media')
-  form.tingkatPerkembangan = readField('Tingkat Perkembangan')
 }
 
 // Foto lampiran penataan
@@ -416,6 +473,49 @@ const fotoPreview = ref<string | null>(null)
 const fotoKey = ref<string | null>(null)
 const uploadingFoto = ref(false)
 const fotoError = ref('')
+const penataanDraftReady = ref(false)
+
+type PenataanDraft = {
+  lokasi: string
+  rak: string
+  baris: string
+  kolom: string
+  kondisi: string
+  media: string
+  fotoKey: string | null
+}
+
+const penataanDraftStorageKey = (id: string) => `arsipku:penataan-arsip-draft:${id}`
+const readPenataanDraft = (id: string): PenataanDraft | null => {
+  if (!import.meta.client) return null
+  try {
+    const value = localStorage.getItem(penataanDraftStorageKey(id))
+    return value ? JSON.parse(value) as PenataanDraft : null
+  } catch {
+    return null
+  }
+}
+const clearPenataanDraft = (id: string) => {
+  if (!import.meta.client) return
+  try { localStorage.removeItem(penataanDraftStorageKey(id)) } catch { /* storage may be unavailable */ }
+}
+
+watch(
+  () => [form.lokasi, form.rak, form.baris, form.kolom, form.kondisi, form.media, fotoKey.value],
+  () => {
+    if (!import.meta.client || !penataanDraftReady.value || !item.value || item.value.status !== 'ARSIP_INAKTIF_DITERIMA') return
+    const draft: PenataanDraft = {
+      lokasi: form.lokasi,
+      rak: form.rak,
+      baris: form.baris,
+      kolom: form.kolom,
+      kondisi: form.kondisi,
+      media: form.media,
+      fotoKey: fotoKey.value,
+    }
+    try { localStorage.setItem(penataanDraftStorageKey(item.value.id), JSON.stringify(draft)) } catch { /* storage may be unavailable */ }
+  },
+)
 
 /** Base URL API untuk foto penataan (fallback jika fotoPenataan adalah key). */
 const apiBaseUrl = api.defaults.baseURL || config.public.apiBaseUrl || ''
@@ -535,6 +635,7 @@ const breadcrumbs = computed(() => [
 
 const loadDetail = async () => {
   loading.value = true
+  penataanDraftReady.value = false
   try {
     const res = await fetchPenataanDetail(route.params.id as string)
     item.value = res?.data ?? res
@@ -569,24 +670,55 @@ const loadDetail = async () => {
           daftarIsiData.value = []
         }
       }
+      if (item.value.status === 'SELESAI') {
+        try {
+          const penyusutanResponse: any = await apiGet('/penyusutan/pengajuan', {}, { skipCache: true })
+          const penyusutanItems = Array.isArray(penyusutanResponse?.data)
+            ? penyusutanResponse.data
+            : Array.isArray(penyusutanResponse)
+              ? penyusutanResponse
+              : []
+          penyusutanBerkasIds.value = new Set(
+            penyusutanItems
+              .map((row: any) => row.berkasId ?? row.berkas_id)
+              .filter(Boolean)
+              .map((id: string) => String(id)),
+          )
+        } catch {
+          // Daftar penyusutan mungkin tidak dapat dibaca oleh peran ini;
+          // endpoint penyimpanan draft tetap mencegah pengajuan duplikat.
+          penyusutanBerkasIds.value = new Set()
+        }
+      }
       form.lokasi = item.value.lokasiPenataan || ''
       form.rak = item.value.rak || ''
       form.baris = item.value.baris || ''
       form.kolom = item.value.kolom || ''
       restoreConditionAndMedia(item.value.keteranganPenataan)
+      const draft = readPenataanDraft(item.value.id)
+      if (draft) {
+        form.lokasi = draft.lokasi ?? ''
+        form.rak = draft.rak ?? ''
+        form.baris = draft.baris ?? ''
+        form.kolom = draft.kolom ?? ''
+        form.kondisi = draft.kondisi ?? ''
+        form.media = draft.media ?? ''
+      }
       // Jika sudah ada foto penataan (status SELESAI), tampilkan preview
       fotoLoadError.value = false  // reset error state setiap load
-      if (item.value.fotoPenataan) {
-        fotoKey.value = item.value.fotoPenataan
+      const restoredFotoKey = draft ? draft.fotoKey : item.value.fotoPenataan
+      if (restoredFotoKey) {
+        fotoKey.value = restoredFotoKey
         // Gunakan nextTick agar <img> re-render dengan URL baru setelah
         // fotoLoadError di-reset (hindari race condition dengan @error).
         nextTick(() => {
-          fotoPreview.value = fotoUrl(item.value.fotoPenataan!)
+          fotoPreview.value = fotoUrl(restoredFotoKey)
         })
       } else {
         fotoKey.value = null
         fotoPreview.value = null
       }
+      penataanDraftReady.value = true
     }
   } catch (e: any) {
     useToast().add({ title: 'Gagal', description: 'Gagal memuat detail.', color: 'error' })
@@ -608,6 +740,8 @@ const onSelesai = async () => {
       keterangan: serializeConditionAndMedia() || undefined,
       fotoPenataan: fotoKeyToSend,
     })
+    clearPenataanDraft(item.value.id)
+    penataanDraftReady.value = false
     useToast().add({ title: 'Berhasil', description: 'Penataan arsip selesai.', color: 'success' })
     await loadDetail()
   } catch (e: any) {

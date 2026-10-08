@@ -360,7 +360,7 @@
                   Dasar perhitungan retensi
                 </h3>
                 <p class="mt-1 text-xs leading-5 text-primary-700 dark:text-primary-400">
-                  {{ berkas.hitungWaktuRetensiDari || 'Belum ditentukan' }} dengan tindakan akhir
+                  {{ berkas.hitungWaktuRetensiDari || 'Belum ditentukan' }} dengan nasib akhir
                   <strong>{{ berkas.tindakanPenyusutanAkhir || 'belum ditentukan' }}</strong
                   >.
                 </p>
@@ -699,7 +699,7 @@
               <div>
                 <h2 class="font-semibold text-gray-900 dark:text-white">Siklus Retensi Arsip</h2>
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Tahap retensi berjalan menuju tindakan akhir.
+                  Tahap retensi berjalan menuju nasib akhir.
                 </p>
               </div>
             </div>
@@ -762,7 +762,7 @@
           >
             <AlertTriangle class="h-5 w-5 shrink-0 text-warning-600 dark:text-warning-400" />
             <p class="text-xs leading-5 text-warning-800 dark:text-warning-300">
-              Pada akhir masa retensi, berkas akan dikenakan tindakan akhir
+              Pada akhir masa retensi, berkas akan dikenakan nasib akhir
               <strong>{{ berkas.tindakanPenyusutanAkhir }}</strong
               >.
             </p>
@@ -1546,7 +1546,7 @@ const retensiSteps = computed(() => {
       icon: 'i-lucide-archive',
     },
     {
-      label: 'Tindakan Akhir',
+      label: 'Nasib Akhir',
       sub: berkas.value?.tindakanPenyusutanAkhir || '-',
       date: formatDate(berkas.value?.tanggalRetensiInaktifBerakhir),
       state: 'todo',
@@ -1574,7 +1574,7 @@ const metadataList = computed(() => [
   { label: 'Lokasi Fisik', value: berkas.value?.lokasi || '-', icon: MapPin },
   { label: 'Dibuat Oleh', value: berkas.value?.penciptaNama || '-', icon: UserRound },
   { label: 'Unit Pencipta', value: berkas.value?.unitPenciptaNama || '-', icon: Building2 },
-  { label: 'Tindakan Akhir', value: berkas.value?.tindakanPenyusutanAkhir || '-', icon: Scale },
+  { label: 'Nasib Akhir', value: berkas.value?.tindakanPenyusutanAkhir || '-', icon: Scale },
   { label: 'Terakhir Diperbarui', value: formatDateTime(berkas.value?.updatedAt), icon: RefreshCw },
 ]);
 const retentionTimeline = computed(() => [

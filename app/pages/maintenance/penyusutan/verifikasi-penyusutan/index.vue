@@ -19,7 +19,7 @@
           </button>
           <div v-if="pageSizeOpen" class="absolute top-full left-0 mt-1.5 z-50 min-w-[80px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
             <button
-              v-for="size in [10, 30, 50]"
+              v-for="size in [10, 25, 50]"
               :key="size"
               @click="onLimitChange(size); pageSizeOpen = false"
               class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -115,54 +115,60 @@
       <!-- Table -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full table-fixed text-xs">
             <thead class="bg-[#457fb6] text-white">
               <tr>
-                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
-                <th class="px-3 py-3 text-center font-semibold">Kode Berkas / No Usulan</th>
-                <th class="px-3 py-3 text-center font-semibold">Pengusul</th>
-                <th class="px-3 py-3 text-center font-semibold">Klasifikasi</th>
-                <th class="px-3 py-3 text-center font-semibold">Jenis</th>
-                <th class="px-3 py-3 text-center font-semibold">Status</th>
-                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
+                <th class="w-[4%] px-1.5 py-2 text-center font-semibold">No</th>
+                <th class="w-[12%] px-1.5 py-2 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="w-[18%] px-1.5 py-2 text-center font-semibold">Uraian Informasi Berkas</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Kurun Waktu</th>
+                <th class="w-[6%] px-1.5 py-2 text-center font-semibold">Jumlah Berkas</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Lokasi Simpan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Klasifikasi Keamanan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Nasib Akhir</th>
+                <th class="w-[10%] px-1.5 py-2 text-center font-semibold">Keterangan</th>
+                <th class="w-[10%] px-1.5 py-2 text-center font-semibold">Status</th>
+                <th class="w-[6%] px-1.5 py-2 text-center font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="7" class="px-3 py-10 text-center">
+                <td colspan="11" class="px-3 py-10 text-center">
                   <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
                 </td>
               </tr>
               <tr v-else-if="filteredList.length === 0">
-                <td colspan="7" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="11" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
                   Tidak ada pengajuan untuk diverifikasi.
                 </td>
               </tr>
               <tr
-                v-for="item in paginatedList"
+                v-for="(item, index) in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
                 :class="rowClass(item)"
               >
-                <td class="px-3 py-3">{{ item.nama_berkas }}</td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.kode_berkas }}</div>
-                  <div v-if="item.no_usulan" class="text-[11px] text-gray-400">{{ item.no_usulan }}</div>
+                <td class="break-words px-1.5 py-2 text-center text-gray-700 dark:text-gray-200">{{ (page - 1) * limit + index + 1 }}</td>
+                <td class="break-words px-1.5 py-2 text-center">
+                  <div class="font-medium text-gray-800 dark:text-white">{{ archiveFor(item)?.klasifikasi ?? item.klasifikasiText ?? item.klasifikasi_text ?? '-' }}</div>
+                  <div class="mt-0.5 text-[10px] text-gray-400">{{ archiveFor(item)?.klasifikasiKode ?? item.klasifikasi ?? '-' }}</div>
                 </td>
-                <td class="px-3 py-3">{{ item.sekretaris }}</td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.klasifikasiText || item.klasifikasi_text || item.klasifikasi || '-' }}</div>
-                  <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
+                <td class="break-words px-1.5 py-2 text-gray-700 dark:text-gray-200">{{ archiveFor(item)?.uraianInformasi ?? item.nama_berkas ?? '-' }}</td>
+                <td class="whitespace-nowrap px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ archiveFor(item)?.kurunWaktu ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ archiveFor(item)?.jumlahBerkas ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ archiveFor(item)?.lokasiSimpan ?? transferFor(item)?.lokasiPenataan ?? item.lokasiSimpan ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ archiveFor(item)?.klasifikasiKeamanan ?? '-' }}</td>
+                <td class="whitespace-nowrap px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ archiveFor(item)?.nasibAkhir ?? (item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen') }}</td>
+                <td class="break-words px-1.5 py-2 text-center">
+                  <button v-if="transferFor(item)" type="button" @click="openLampiranPreview(transferFor(item))" class="text-primary hover:underline dark:text-primary-400">
+                    Lampiran/{{ transferFor(item)?.nomorUsulan ?? item.no_usulan }}
+                  </button>
+                  <span v-else>-</span>
                 </td>
-                <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
-                    {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
-                  </span>
+                <td class="px-1.5 py-2 text-center">
+                  <span :class="statusBadgeClass(item.status)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(item.status) }}</span>
                 </td>
-                <td class="px-3 py-3">
-                  <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
-                </td>
-                <td class="px-3 py-3">
+                <td class="px-1.5 py-2 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
                       v-if="item.status === 'selesai' || item.status === 'diterima' || item.status === 'ditolak' || hasUserApproved(item)"
@@ -195,12 +201,20 @@
             :total-pages="totalPages"
             :total-items="total"
             :rows-per-page="limit"
-            :rows-options="[10, 20, 50]"
+            :rows-options="[]"
             @update:page="onPageChange"
             @update:rows-per-page="onLimitChange"
           />
         </div>
       </div>
+
+      <SharedSharePdfViewer
+        v-model="lampiranPreviewOpen"
+        :url="lampiranPreviewUrl"
+        :title="lampiranPreviewTitle"
+        :loading="lampiranPreviewLoading"
+        @close="closeLampiranPreview"
+      />
 
       <!-- Modal Detail / Verifikasi -->
     <Teleport to="body">
@@ -317,6 +331,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
 import { usePenyusutanPermission } from '~/composables/usePenyusutanPermission'
+import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
+import { useApi } from '~/composables/useApi'
 import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
@@ -344,6 +360,68 @@ const { user } = useAuth()
 const { rowClass, markViewed } = useViewedRows('penyusutan-verifikasi')
 const { verifikasiList, loadVerifikasiList, verifyPenyusutan } = usePenyusutan()
 const { canApprove, canReject } = usePenyusutanPermission()
+const { apiGet } = useApi()
+const toast = useToast()
+const lampiranPreviewOpen = ref(false)
+const lampiranPreviewLoading = ref(false)
+const lampiranPreviewUrl = ref('')
+const lampiranPreviewTitle = ref('Preview Lampiran')
+
+const archiveFor = (item: ArsipPenyusutan) => {
+  const archives = item.penataanData?.daftarBerkas ?? []
+  const archiveId = item.berkasId ?? (item as any).berkas_id
+  return archives.find((archive: any) => String(archive.id) === String(archiveId)) ?? archives[0] ?? null
+}
+
+const transferFor = (item: ArsipPenyusutan) => {
+  const penataan = item.penataanData
+  return penataan?.transferId
+    ? { id: penataan.transferId, nomorUsulan: penataan.nomorUsulan ?? item.nomorUsulan }
+    : null
+}
+
+const closeLampiranPreview = () => {
+  lampiranPreviewOpen.value = false
+  if (lampiranPreviewUrl.value.startsWith('blob:')) URL.revokeObjectURL(lampiranPreviewUrl.value)
+  lampiranPreviewUrl.value = ''
+}
+
+const openLampiranPreview = async (transfer: any) => {
+  if (!transfer?.id) return
+  closeLampiranPreview()
+  lampiranPreviewTitle.value = `Lampiran/${transfer.nomorUsulan || ''}`
+  lampiranPreviewOpen.value = true
+  lampiranPreviewLoading.value = true
+  try {
+    let response: any = await apiGet<unknown>(
+      `/transfer-active-to-inactive/${transfer.id}/lampiran-penataan.pdf`,
+      { responseType: 'blob', headers: { Accept: 'application/pdf' } },
+      { skipCache: true },
+    )
+    if (response && typeof response === 'object' && !(response instanceof Blob) && 'data' in response) response = response.data
+    const pdfBlob = response instanceof Blob
+      ? response
+      : response instanceof ArrayBuffer
+        ? new Blob([response], { type: 'application/pdf' })
+        : ArrayBuffer.isView(response)
+          ? new Blob([new Uint8Array(response.buffer, response.byteOffset, response.byteLength)], { type: 'application/pdf' })
+          : null
+    if (!pdfBlob || pdfBlob.size === 0 || (await pdfBlob.slice(0, 5).text()) !== '%PDF-') throw new Error('Lampiran bukan PDF yang valid.')
+    lampiranPreviewUrl.value = URL.createObjectURL(pdfBlob)
+  } catch (error: any) {
+    let description = error?.response?.data?.message || error?.message
+    if (error?.response?.data instanceof Blob) {
+      try {
+        const body = JSON.parse(await error.response.data.text())
+        description = body?.message || description
+      } catch { /* gunakan pesan fallback */ }
+    }
+    lampiranPreviewOpen.value = false
+    toast.add({ title: 'Preview lampiran gagal dibuka', description: description || 'Silakan coba kembali.', color: 'error' })
+  } finally {
+    lampiranPreviewLoading.value = false
+  }
+}
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -603,5 +681,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onClickOutside)
+  if (lampiranPreviewUrl.value.startsWith('blob:')) URL.revokeObjectURL(lampiranPreviewUrl.value)
 })
 </script>

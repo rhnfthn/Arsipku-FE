@@ -680,7 +680,7 @@ const metadata = computed(() => [
   },
   { label: 'Lokasi Fisik', value: display(berkas.value?.lokasi), icon: 'i-lucide-map-pin' },
   {
-    label: 'Tindakan Akhir',
+    label: 'Nasib Akhir',
     value: display(berkas.value?.tindakanPenyusutanAkhir),
     icon: 'i-lucide-scale',
   },

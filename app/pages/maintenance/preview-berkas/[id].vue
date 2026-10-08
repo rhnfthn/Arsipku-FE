@@ -26,17 +26,16 @@
     <template v-else-if="berkas">
       <!-- Info Berkas -->
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5 mb-5">
-        <div class="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          class="mb-4 flex w-full items-center justify-between gap-3 text-left"
+          :aria-expanded="infoBerkasOpen"
+          @click="infoBerkasOpen = !infoBerkasOpen"
+        >
           <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Berkas</h3>
-          <span
-            class="px-2.5 py-0.5 text-xs rounded-full font-medium inline-flex items-center gap-1 border"
-            :style="statusStyle(berkas.status)"
-          >
-            <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: statusStyle(berkas.status).dot }" />
-            {{ statusStyle(berkas.status).label }}
-          </span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <UIcon :name="infoBerkasOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4 shrink-0 text-gray-500" />
+        </button>
+        <div v-show="infoBerkasOpen" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Nama Berkas</span>
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.judulBerkas }}</p>
@@ -62,7 +61,7 @@
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.retensiInaktifTahun || 0 }} Tahun</p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Nasib Akhir</span>
             <p class="text-gray-900 dark:text-white font-medium">
               <span
                 v-if="berkas.tindakanPenyusutanAkhir"
@@ -89,50 +88,77 @@
 
       <!-- Daftar Isi Berkas -->
       <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div class="flex flex-col gap-3 px-5 pb-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-3">
-            <div>
-              <h2 class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
-                Daftar Isi Berkas
-                <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ naskahList.length }}</span>
-              </h2>
-            </div>
-          </div>
-        </div>
-        <DataTable
-          :columns="daftarIsiColumns"
-          :rows="daftarIsiRows"
-          :loading="loading"
-          empty-message="Belum ada isi berkas."
-          header-class="bg-[#457fb6] text-white text-left"
-          row-class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-        >
-          <template #cell-nomorSurat="{ row }">
-            <div class="min-w-40">
-              <p class="font-mono text-xs font-semibold text-gray-900 dark:text-white">{{ row.nomorSurat || '-' }}</p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.tanggalNaskah) }}</p>
-            </div>
-          </template>
-          <template #cell-kodeKlasifikasi="{ row }">
-            <p class="text-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi }}</p>
-          </template>
-          <template #cell-jumlah="{ row }">
-            <p class="text-gray-700 dark:text-gray-200">{{ row.jumlahHalaman ?? '-' }}</p>
-          </template>
-          <template #cell-uraianInformasi="{ row }">
-            <p class="min-w-64 max-w-xl font-medium text-gray-800 dark:text-gray-200">{{ row.uraianInformasi }}</p>
-          </template>
-          <template #cell-aksi="{ row }">
+        <div class="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
+          <h2 class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+            Daftar Isi Berkas
+            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ naskahList.length }}</span>
+          </h2>
+          <div class="flex items-center gap-1">
             <button
               type="button"
-              @click="openNaskahPdf(row.naskah)"
-              class="inline-flex p-1 text-black transition-colors hover:text-[#3a6d9c] dark:text-white"
-              title="Lihat naskah"
+              @click="printDaftarIsi"
+              class="inline-flex h-8 w-8 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+              title="Print Daftar Isi Berkas"
+              aria-label="Print Daftar Isi Berkas"
             >
-              <UIcon name="i-lucide-eye" class="h-4 w-4" />
+              <UIcon name="i-lucide-printer" class="h-4 w-4" />
             </button>
-          </template>
-        </DataTable>
+            <button
+              type="button"
+              @click="daftarIsiOpen = !daftarIsiOpen"
+              class="inline-flex h-8 w-8 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+              :title="daftarIsiOpen ? 'Lipat Daftar Isi Berkas' : 'Buka Daftar Isi Berkas'"
+              :aria-expanded="daftarIsiOpen"
+            >
+              <UIcon :name="daftarIsiOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div v-show="daftarIsiOpen" id="preview-daftar-isi-print" class="w-full overflow-hidden">
+          <table class="w-full table-fixed border-collapse text-xs">
+            <thead class="bg-[#457fb6] text-white">
+              <tr>
+                <th class="w-[4%] px-1.5 py-3 text-center font-semibold">No</th>
+                <th class="w-[14%] px-1.5 py-3 text-center font-semibold">Nomor Naskah</th>
+                <th class="w-[10%] px-1.5 py-3 text-center font-semibold">Kode Berkas</th>
+                <th class="w-[14%] px-1.5 py-3 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="w-[20%] px-1.5 py-3 text-center font-semibold">Uraian Informasi Isi Berkas</th>
+                <th class="w-[9%] px-1.5 py-3 text-center font-semibold">Tanggal</th>
+                <th class="w-[5%] px-1.5 py-3 text-center font-semibold">Jumlah</th>
+                <th class="w-[9%] px-1.5 py-3 text-center font-semibold">Lokasi Simpan</th>
+                <th class="w-[11%] px-1.5 py-3 text-center font-semibold">Klasifikasi Keamanan</th>
+                <th class="print-action w-[6%] px-1.5 py-3 text-center font-semibold">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading">
+                <td colspan="10" class="px-3 py-8 text-center text-gray-500">Memuat data…</td>
+              </tr>
+              <tr v-else-if="daftarIsiRows.length === 0">
+                <td colspan="10" class="px-3 py-8 text-center text-gray-400">Belum ada isi berkas.</td>
+              </tr>
+              <tr v-for="row in daftarIsiRows" :key="row.id" class="border-b border-gray-100 odd:bg-white even:bg-gray-50/70 dark:border-gray-700 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
+                <td class="break-words px-1.5 py-3 text-center text-gray-700 dark:text-gray-200">{{ row.no }}</td>
+                <td class="break-words px-1.5 py-3 font-mono font-semibold text-gray-900 dark:text-white">{{ row.nomorSurat }}</td>
+                <td class="break-words px-1.5 py-3 font-mono text-gray-700 dark:text-gray-200">{{ row.kodeBerkas }}</td>
+                <td class="break-words px-1.5 py-3 text-gray-700 dark:text-gray-200">
+                  <div class="font-semibold">{{ row.klasifikasiNama }}</div>
+                  <div class="mt-0.5 text-[10px] text-gray-400">{{ row.kodeKlasifikasi }}</div>
+                </td>
+                <td class="break-words px-1.5 py-3 text-gray-800 dark:text-gray-200">{{ row.uraianInformasi }}</td>
+                <td class="break-words px-1.5 py-3 text-center text-gray-700 dark:text-gray-200">{{ formatDate(row.tanggalNaskah) }}</td>
+                <td class="break-words px-1.5 py-3 text-center text-gray-700 dark:text-gray-200">{{ row.jumlahHalaman ?? '-' }}</td>
+                <td class="break-words px-1.5 py-3 text-gray-700 dark:text-gray-200">{{ row.lokasiSimpan }}</td>
+                <td class="break-words px-1.5 py-3 text-center text-gray-700 dark:text-gray-200">{{ row.klasifikasiKeamanan }}</td>
+                <td class="print-action px-1.5 py-3 text-center">
+                  <button type="button" @click="openNaskahPdf(row.naskah)" class="inline-flex p-1 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300" title="Lihat naskah">
+                    <UIcon name="i-lucide-eye" class="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </template>
 
@@ -185,14 +211,20 @@
       </div>
     </Teleport>
   </div>
+  <SharedSharePdfViewer
+    v-model="tablePdfPreviewOpen"
+    :url="tablePdfPreviewUrl"
+    :title="tablePdfPreviewTitle"
+    :loading="tablePdfPreviewLoading"
+    @close="closeTablePdfPreview"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { useArsipDinamis } from '~/composables/useArsipDinamis';
 import { useApi } from '~/composables/useApi';
-import DataTable from '~/components/DataTable.vue';
 
 definePageMeta({ middleware: ['auth'] });
 
@@ -209,6 +241,15 @@ const pageTitle = computed(() =>
 
 // Set tab title ke nama berkas agar tidak "about:blank"
 const berkas = ref<any>(null);
+const daftarIsiMetadata = ref<any[]>([]);
+const daftarBerkasMetadata = ref<any[]>([]);
+const infoBerkasOpen = ref(true);
+const daftarIsiOpen = ref(true);
+const unitKerjaPihakPertama = ref('');
+const tablePdfPreviewOpen = ref(false);
+const tablePdfPreviewLoading = ref(false);
+const tablePdfPreviewUrl = ref('');
+const tablePdfPreviewTitle = ref('Preview Daftar Isi Berkas');
 useHead(() => ({
   title: berkas.value?.judulBerkas
     ? `${berkas.value.judulBerkas} — Detail Berkas`
@@ -325,60 +366,128 @@ const openNaskahPdf = async (naskah: any) => {
   }
 };
 
-const daftarIsiColumns = [
-  { key: 'nomorSurat', label: 'Nomor & Tanggal' },
-  { key: 'kodeKlasifikasi', label: 'Kode Klasifikasi' },
-  { key: 'uraianInformasi', label: 'Uraian Informasi Isi Berkas' },
-  { key: 'jumlah', label: 'Jumlah', headerClass: 'text-left' },
-  { key: 'aksi', label: 'Aksi', headerClass: 'text-center' },
-];
+const daftarIsiRows = computed(() => naskahList.value.map((naskah, index) => {
+  const naskahId = naskah.naskahId ?? naskah.id;
+  const metadata = daftarIsiMetadata.value.find((row) =>
+    String(row.naskahId ?? '') === String(naskahId ?? '')
+      && String(row.id ?? route.params.id) === String(route.params.id),
+  ) ?? daftarIsiMetadata.value.find((row) => String(row.id ?? '') === String(route.params.id));
+  const archiveMetadata = daftarBerkasMetadata.value.find((row) => String(row.id ?? '') === String(route.params.id));
 
-const daftarIsiRows = computed(() => naskahList.value.map((naskah, index) => ({
-  id: naskah.id ?? naskah.naskahId ?? index,
-  nomorSurat: naskah.nomorSurat ?? naskah.nomor_surat ?? '-',
-  kodeKlasifikasi: berkas.value?.klasifikasi ?? '-',
-  uraianInformasi: naskah.perihal || naskah.nomorSurat || 'Tanpa uraian',
-  jumlahHalaman: naskah.jumlahHalaman ?? naskah.jumlah_halaman ?? null,
-  tanggalNaskah: naskah.tanggalNaskah ?? naskah.tanggal_naskah ?? naskah.tanggal ?? null,
-  naskah,
-})));
-
-const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
-  aktif: { label: 'Terbuka', bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#15803D' },
-  menunggu_verifikasi: { label: 'Menunggu Verifikasi', bg: '#FEF3C7', text: '#B45309', border: '#FCD34D', dot: '#B45309' },
-  menunggu_verifikasi_atasan: { label: 'Menunggu Persetujuan', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  menunggu_verifikasi_terakhir: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  disetujui_atasan: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  disetujui_verifikasi_terakhir: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  dikirim: { label: 'Menunggu Verifikasi', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  selesai: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
-  ditolak_atasan: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
-  ditolak: { label: 'Ditolak', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
-  closed_retensi_aktif: { label: 'Tertutup', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  draft: { label: 'Draft', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' },
-  permanen: { label: 'Permanen', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD', dot: '#2563EB' },
-  musnah: { label: 'Musnah', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5', dot: '#DC2626' },
-  // Unit Dokumen → Atasan Unit Dokumen = Menunggu Penerimaan
-  menunggu_verifikasi_persetujuan_tu: { label: 'Menunggu Penerimaan', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
-  disetujui_persetujuan_tu: { label: 'Menunggu Penerimaan', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
-  menunggu_persetujuan_terakhir_tu: { label: 'Menunggu Penerimaan', bg: '#F3E8FF', text: '#7E22CE', border: '#D8B4FE', dot: '#7E22CE' },
-  disetujui_persetujuan_terakhir_tu: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
-  arsip_inaktif_diterima: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
-  penataan_arsip_inaktif: { label: 'Selesai', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7', dot: '#059669' },
-};
-
-const statusStyle = (status: string) => {
-  // Jika ada usulan terkait, override status berkas dengan status usulan
-  const effectiveStatus = usulanStatus.value || status;
-  const key = (effectiveStatus || '').toLowerCase().replace(/[\s-]+/g, '_');
-  const s = STATUS_STYLE[key] || { label: effectiveStatus || status || '-', bg: '#F3F4F6', text: '#4B5563', border: '#D1D5DB', dot: '#9CA3AF' };
-  return { label: s.label, backgroundColor: s.bg, color: s.text, borderColor: s.border, dot: s.dot };
-};
+  return {
+    id: naskah.id ?? naskah.naskahId ?? index,
+    no: index + 1,
+    nomorSurat: naskah.nomorSurat ?? naskah.nomor_surat ?? metadata?.nomorSurat ?? '-',
+    kodeBerkas: berkas.value?.kodeBerkas ?? berkas.value?.kode_berkas ?? metadata?.kode ?? '-',
+    klasifikasiNama: archiveMetadata?.klasifikasi ?? berkas.value?.klasifikasiTeks ?? '-',
+    kodeKlasifikasi: archiveMetadata?.kodeKlasifikasi ?? metadata?.kodeKlasifikasi ?? berkas.value?.klasifikasi ?? '-',
+    uraianInformasi: naskah.perihal || naskah.nomorSurat || metadata?.uraianInformasi || 'Tanpa uraian',
+    jumlahHalaman: naskah.jumlahHalaman ?? naskah.jumlah_halaman ?? naskah.jumlahHalamanPdf ?? naskah.jumlah_halaman_pdf ?? naskah.pageCount ?? naskah.page_count ?? metadata?.jumlah ?? null,
+    tanggalNaskah: naskah.tanggalNaskah ?? naskah.tanggal_naskah ?? naskah.tanggal ?? naskah.createdAt ?? naskah.created_at ?? metadata?.tanggal ?? null,
+    lokasiSimpan: metadata?.lokasiSimpan ?? berkas.value?.lokasi ?? berkas.value?.lokasiSimpan ?? berkas.value?.lokasi_simpan ?? berkas.value?.lokasiFisik ?? berkas.value?.lokasi_fisik ?? '-',
+    klasifikasiKeamanan: metadata?.klasifikasiKeamanan ?? berkas.value?.klasifikasiKeamanan ?? berkas.value?.klasifikasi_keamanan ?? berkas.value?.keamananKlasifikasi?.keamanan ?? berkas.value?.klasifikasi?.keamanan ?? '-',
+    naskah,
+  };
+}));
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const closeTablePdfPreview = () => {
+  if (tablePdfPreviewUrl.value.startsWith('blob:')) URL.revokeObjectURL(tablePdfPreviewUrl.value);
+  tablePdfPreviewUrl.value = '';
+  tablePdfPreviewOpen.value = false;
+};
+
+onBeforeUnmount(closeTablePdfPreview);
+
+const printDaftarIsi = async () => {
+  const table = document.querySelector<HTMLTableElement>('#preview-daftar-isi-print table');
+  if (!table) return;
+
+  closeTablePdfPreview();
+  tablePdfPreviewTitle.value = 'Preview Daftar Isi Berkas';
+  tablePdfPreviewOpen.value = true;
+  tablePdfPreviewLoading.value = true;
+
+  try {
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const margin = 12;
+    const pageWidth = 297;
+    const pageHeight = 210;
+    const contentWidth = pageWidth - margin * 2;
+    const headers = Array.from(table.querySelectorAll('thead th'))
+      .filter((cell) => !cell.classList.contains('print-action'))
+      .map((cell) => (cell.textContent || '').trim());
+    const rows = Array.from(table.querySelectorAll('tbody tr'))
+      .filter((row) => row.querySelector('td') && !row.querySelector('td[colspan]'))
+      .map((row) => Array.from(row.querySelectorAll('td'))
+        .filter((cell) => !cell.classList.contains('print-action'))
+        .map((cell) => ((cell as HTMLElement).innerText || cell.textContent || '').trim().replace(/\s*\n\s*/g, ' ') || '-'));
+    const weights = headers.map((label) => {
+      if (/uraian|informasi/i.test(label)) return 3;
+      if (/nomor/i.test(label)) return 1.7;
+      if (/kode|lokasi|keamanan/i.test(label)) return 1.25;
+      return 0.8;
+    });
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+    const widths = weights.map((weight) => (weight / totalWeight) * contentWidth);
+    const xPositions = widths.map((_, index) => margin + widths.slice(0, index).reduce((sum, width) => sum + width, 0));
+    const drawHeading = () => {
+      pdf.setTextColor(20, 20, 20);
+      pdf.setFont('times', 'bold');
+      pdf.setFontSize(15);
+      pdf.text('Daftar Isi Berkas', pageWidth / 2, 15, { align: 'center' });
+      pdf.setFont('times', 'normal');
+      pdf.setFontSize(11);
+      pdf.text(`Unit Kerja: ${unitKerjaPihakPertama.value || '........................'}`, pageWidth / 2, 22, { align: 'center' });
+      return 32;
+    };
+    const drawRow = (cells: string[], y: number, isHeader = false) => {
+      pdf.setFont('times', isHeader ? 'bold' : 'normal');
+      pdf.setFontSize(9);
+      const lines = widths.map((width, index) => pdf.splitTextToSize(cells[index] || '-', Math.max(8, width - 4)) as string[]);
+      const rowHeight = Math.max(8, ...lines.map((cellLines) => cellLines.length * 4 + 4));
+      const fontHeight = pdf.getFontSize() * 0.3528;
+      cells.forEach((_, index) => {
+        const x = xPositions[index];
+        const width = widths[index];
+        const textHeight = (lines[index].length - 1) * 4 + fontHeight;
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(40, 40, 40);
+        pdf.rect(x, y, width, rowHeight, 'FD');
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(lines[index], x + width / 2, y + (rowHeight - textHeight) / 2 + fontHeight, {
+          align: 'center', maxWidth: width - 4, lineHeightFactor: 1.1,
+        });
+      });
+      return rowHeight;
+    };
+
+    let y = drawHeading();
+    y += drawRow(headers, y, true);
+    for (const row of rows) {
+      const estimatedHeight = Math.max(8, ...row.map((text, index) =>
+        pdf.splitTextToSize(text, Math.max(8, widths[index] - 4)).length * 4 + 4,
+      ));
+      if (y + estimatedHeight > pageHeight - margin) {
+        pdf.addPage();
+        y = drawHeading();
+        y += drawRow(headers, y, true);
+      }
+      y += drawRow(row, y);
+    }
+    tablePdfPreviewUrl.value = URL.createObjectURL(pdf.output('blob'));
+  } catch (error: any) {
+    useToast().add({ title: 'Preview PDF gagal dibuat', description: error?.message || 'Silakan coba kembali.', color: 'error' });
+    tablePdfPreviewOpen.value = false;
+  } finally {
+    tablePdfPreviewLoading.value = false;
+  }
 };
 
 onMounted(async () => {
@@ -450,18 +559,40 @@ onMounted(async () => {
     if (usulanId) {
       try {
         const usulanRes: any = await apiGet(`/transfer-active-to-inactive/${usulanId}`, {}, { skipCache: true });
-        if (usulanRes?.data?.status) {
-          usulanStatus.value = usulanRes.data.status;
-        }
+        const usulanData = usulanRes?.data?.data ?? usulanRes?.data ?? usulanRes;
+        if (usulanData?.status) usulanStatus.value = usulanData.status;
+        unitKerjaPihakPertama.value = usulanData?.unitKerjaPihakPertama
+          ?? usulanData?.unit_kerja_pihak_pertama
+          ?? usulanData?.divisiName
+          ?? usulanData?.unitKerja
+          ?? '';
 
       } catch {
         // Ignore — fallback to berkas status
+      }
+
+      try {
+        const daftarRes: any = await apiGet(`/transfer-active-to-inactive/${usulanId}/daftar-isi`, {}, { skipCache: true });
+        const daftarData = daftarRes?.data?.data ?? daftarRes?.data ?? daftarRes;
+        daftarIsiMetadata.value = Array.isArray(daftarData?.daftarIsi) ? daftarData.daftarIsi : [];
+        daftarBerkasMetadata.value = Array.isArray(daftarData?.daftarBerkas) ? daftarData.daftarBerkas : [];
+      } catch (error) {
+        console.warn('Metadata klasifikasi keamanan daftar isi gagal dimuat:', error);
       }
     }
   } catch (e) {
     console.error('Gagal memuat berkas:', e);
   } finally {
     loading.value = false;
+  }
+
+  // Jika halaman dibuka dari aksi pada satu baris daftar isi, langsung tampilkan PDF naskah tersebut.
+  const targetNaskahId = route.query.naskah_id as string | undefined;
+  if (targetNaskahId) {
+    const targetNaskah = naskahList.value.find((naskah) =>
+      String(naskah.naskahId ?? naskah.id) === targetNaskahId,
+    );
+    if (targetNaskah) await openNaskahPdf(targetNaskah);
   }
 });
 </script>

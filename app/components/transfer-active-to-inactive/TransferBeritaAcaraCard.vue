@@ -35,7 +35,7 @@
     <div v-show="open" class="overflow-x-auto">
       <div id="transfer-berita-acara-print" class="mx-auto w-full max-w-[794px] bg-white p-8 text-sm leading-relaxed text-black shadow-sm ring-1 ring-gray-200" style="font-family: 'Times New Roman', serif;">
         <div class="mb-6 text-center">
-          <p class="m-0 underline">BERITA ACARA</p>
+          <p class="m-0">BERITA ACARA</p>
           <p class="m-0">TENTANG</p>
           <p class="m-0 uppercase">PEMINDAHAN ARSIP INAKTIF TAHUN {{ year }} - UNIT KERJA {{ unitKerjaPengusul }}</p>
           <p class="mt-2">Nomor : {{ transfer.beritaAcaraNomor ?? `BA/${transfer.nomorUsulan ?? '-'}` }}</p>
@@ -45,36 +45,36 @@
           Pada hari ini {{ formatBaDay(transfer.tanggalUsulan) }} tanggal {{ formatBaDate(transfer.tanggalUsulan) }}, dilaksanakan pemindahan arsip inaktif dari Unit Kerja {{ unitKerjaPengusul }} ke Unit Kerja {{ unitKerjaTu }} yang melibatkan:
         </p>
 
-        <table class="mb-3 w-[calc(100%-42px)] border-0 border-collapse ml-[42px]">
+        <table class="mb-3 w-[calc(100%-42px)] table-fixed border-0 border-collapse ml-[42px]">
           <tbody>
             <tr><td class="w-[42px] p-0 align-top">1.</td><td class="w-[92px] p-0 align-top">Nama</td><td class="w-[22px] p-0 align-top">:</td><td class="p-0 align-top">{{ transfer.bacPihakPertamaName ?? '-' }}</td></tr>
             <tr><td class="p-0" /><td class="p-0 align-top">e-NIK</td><td class="p-0 align-top">:</td><td class="p-0 align-top">{{ transfer.bacPihakPertamaPersnum ?? '-' }}</td></tr>
             <tr><td class="p-0" /><td class="p-0 align-top">Jabatan</td><td class="p-0 align-top">:</td><td class="p-0 align-top">{{ transfer.bacPihakPertamaJabatan ?? '-' }}</td></tr>
           </tbody>
         </table>
-        <p class="mb-5 ml-[42px] text-justify">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ unitKerjaPihakPertama }} yang selanjutnya disebut PIHAK PERTAMA.</p>
+        <p class="mb-5 ml-[84px] text-justify">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ unitKerjaPihakPertama }} yang selanjutnya disebut PIHAK PERTAMA.</p>
 
-        <table class="mb-3 w-[calc(100%-42px)] border-0 border-collapse ml-[42px]">
+        <table class="mb-3 w-[calc(100%-42px)] table-fixed border-0 border-collapse ml-[42px]">
           <tbody>
             <tr><td class="w-[42px] p-0 align-top">2.</td><td class="w-[92px] p-0 align-top">Nama</td><td class="w-[22px] p-0 align-top">:</td><td class="p-0 align-top">{{ data?.pihakKedua?.nama || transfer.bacPihakKeduaName || '-' }}</td></tr>
             <tr><td class="p-0" /><td class="p-0 align-top">e-NIK</td><td class="p-0 align-top">:</td><td class="p-0 align-top">{{ data?.pihakKedua?.enik || transfer.bacPihakKeduaPersnum || '-' }}</td></tr>
             <tr><td class="p-0" /><td class="p-0 align-top">Jabatan</td><td class="p-0 align-top">:</td><td class="p-0 align-top">{{ data?.pihakKedua?.jabatan || transfer.bacPihakKeduaJabatan || '-' }}</td></tr>
           </tbody>
         </table>
-        <p class="mb-6 ml-[42px] text-justify">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ unitKerjaPihakKedua }} yang selanjutnya disebut PIHAK KEDUA.</p>
+        <p class="mb-6 ml-[84px] text-justify">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ unitKerjaPihakKedua }} yang selanjutnya disebut PIHAK KEDUA.</p>
 
-        <p class="mb-5 text-justify">Menyatakan telah melaksanakan serah terima pemindahan arsip inaktif seperti tercantum pada daftar arsip terlampir.</p>
-        <p class="mb-1">Daftar arsip:</p>
-        <p v-if="arsip.length === 1" class="mb-6 pl-5">{{ arsip[0].kode ?? '-' }} — {{ arsip[0].perihal ?? '-' }}</p>
-        <ol v-else class="mb-6 pl-10">
+        <p class="mb-5 ml-[84px] text-justify">Menyatakan telah melaksanakan serah terima pemindahan arsip inaktif seperti tercantum pada daftar arsip terlampir.</p>
+        <p class="mb-1 ml-[84px]">Daftar arsip:</p>
+        <p v-if="arsip.length === 1" class="mb-6 ml-[84px]">{{ arsip[0].kode ?? '-' }} — {{ arsip[0].perihal ?? '-' }}</p>
+        <ol v-else class="mb-6 ml-[84px] list-none pl-0">
           <li v-for="(row, index) in arsip" :key="index">{{ row.kode ?? '-' }} — {{ row.perihal ?? '-' }}</li>
         </ol>
 
-        <p class="mb-14 text-justify">Demikian Berita Acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+        <p class="mb-14 ml-[84px] text-justify">Demikian Berita Acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
         <table class="w-full border-0">
           <tbody><tr>
-            <td class="w-1/2 align-top"><p class="mb-5">Pihak Pertama</p><div v-if="transfer.bacSignedAt && transfer.bacSignatureQr" class="mb-2 h-[92px]"><img :src="transfer.bacSignatureQr" alt="QR tanda tangan Pihak Pertama" class="block h-[82px] w-[82px] object-contain" /></div><p v-else class="mb-[78px]">Ttd</p><p>({{ transfer.bacPihakPertamaJabatan ?? 'Jabatan' }})</p></td>
-            <td class="w-1/2 align-top"><p class="mb-5">Pihak Kedua</p><div v-if="transfer.bacPihakKeduaSignedAt && transfer.bacPihakKeduaSignatureQr" class="mb-2 h-[92px]"><img :src="transfer.bacPihakKeduaSignatureQr" alt="QR tanda tangan Pihak Kedua" class="block h-[82px] w-[82px] object-contain" /></div><p v-else class="mb-[78px]">Ttd</p><p>({{ transfer.bacPihakKeduaJabatan ?? 'Jabatan' }})</p></td>
+            <td class="w-1/2 align-top text-center"><p class="mb-5">Pihak Pertama</p><div v-if="transfer.bacSignedAt && transfer.bacSignatureQr" class="mb-2 flex h-[92px] justify-center"><img :src="transfer.bacSignatureQr" alt="QR tanda tangan Pihak Pertama" class="block h-[82px] w-[82px] object-contain" /></div><p v-else class="mb-[78px]">Ttd</p><p>({{ transfer.bacPihakPertamaJabatan ?? 'Jabatan' }})</p></td>
+            <td class="w-1/2 align-top text-center"><p class="mb-5">Pihak Kedua</p><div v-if="transfer.bacPihakKeduaSignedAt && transfer.bacPihakKeduaSignatureQr" class="mb-2 flex h-[92px] justify-center"><img :src="transfer.bacPihakKeduaSignatureQr" alt="QR tanda tangan Pihak Kedua" class="block h-[82px] w-[82px] object-contain" /></div><p v-else class="mb-[78px]">Ttd</p><p>({{ transfer.bacPihakKeduaJabatan ?? 'Jabatan' }})</p></td>
           </tr></tbody>
         </table>
       </div>

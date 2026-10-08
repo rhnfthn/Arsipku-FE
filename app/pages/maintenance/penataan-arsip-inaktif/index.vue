@@ -46,6 +46,23 @@
               </div>
             </div>
 
+            <!-- FILTER NASIB AKHIR -->
+            <div ref="nasibRef" class="relative shrink-0" data-custom-dropdown>
+              <button
+                type="button"
+                @click.stop="nasibOpen = !nasibOpen"
+                class="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-lg px-3 py-1.5 hover:border-primary outline-none transition-all min-w-[135px] justify-between"
+              >
+                <span class="truncate">{{ nasibOptions.find(o => o.value === filterNasib)?.label ?? 'Semua Nasib' }}</span>
+                <UIcon name="i-lucide-chevron-down" class="w-4 h-4 text-gray-400 shrink-0" :class="{ 'rotate-180': nasibOpen }" />
+              </button>
+              <div v-if="nasibOpen" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[160px]">
+                <button v-for="opt in nasibOptions" :key="opt.value" type="button" @click.stop="filterNasib = opt.value; page = 1; fetchData(); nasibOpen = false"
+                  :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0', filterNasib === opt.value ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
+                >{{ opt.label }}</button>
+              </div>
+            </div>
+
             <!-- FILTER KLASIFIKASI -->
             <div ref="klasifikasiRef" class="relative shrink-0" data-custom-dropdown>
               <button
@@ -87,15 +104,15 @@
             <thead class="bg-primary dark:bg-primary-700 text-white">
               <tr>
                 <th class="w-[4%] px-1.5 py-2 text-center font-semibold">No</th>
-                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Kode Klasifikasi</th>
-                <th class="w-[14%] px-1.5 py-2 text-center font-semibold">Uraian Informasi Berkas</th>
+                <th class="w-[12%] px-1.5 py-2 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="w-[18%] px-1.5 py-2 text-center font-semibold">Uraian Informasi Berkas</th>
                 <th class="w-[7%] px-1.5 py-2 text-center font-semibold">Kurun Waktu</th>
                 <th class="w-[6%] px-1.5 py-2 text-center font-semibold">Jumlah Berkas</th>
                 <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Lokasi Simpan</th>
                 <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Klasifikasi Keamanan</th>
                 <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Retensi Arsip Inaktif</th>
                 <th class="w-[7%] px-1.5 py-2 text-center font-semibold">Nasib Akhir</th>
-                <th class="w-[15%] px-1.5 py-2 text-center font-semibold">Keterangan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Keterangan</th>
                 <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Status</th>
                 <th class="w-[4%] px-1.5 py-2 text-center font-semibold">Aksi</th>
               </tr>
@@ -122,11 +139,18 @@
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.jumlahBerkas ?? '-' }}</td>
                 <td class="break-words px-1.5 py-2 text-gray-600 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
-                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.retensiArsipInaktif ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ formatRetensiEndDate(row.tanggalRetensiInaktifBerakhir) }}</td>
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.nasibAkhir ?? '-' }}</td>
                 <td class="break-words px-1.5 py-2 text-gray-600 dark:text-gray-300">
                   <button
-                    v-if="row.transfer.beritaAcaraNomor"
+                    v-if="row.transfer.status === 'SELESAI'"
+                    type="button"
+                    class="text-primary hover:underline dark:text-primary-400"
+                    :title="`Preview Lampiran/${row.transfer.nomorUsulan}`"
+                    @click.stop="openPenataanLampiran(row.transfer)"
+                  >Lampiran/{{ row.transfer.nomorUsulan }}</button>
+                  <button
+                    v-else-if="row.transfer.beritaAcaraNomor"
                     type="button"
                     class="text-primary hover:underline dark:text-primary-400"
                     @click.stop="openBacPreview(String(row.transfer.id), row.transfer.beritaAcaraNomor)"
@@ -134,7 +158,7 @@
                   <span v-else>-</span>
                 </td>
                 <td class="px-1.5 py-2 text-center">
-                  <span :class="statusBadgeClass(row.status, row.tanggalRetensiInaktifBerakhir)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(row.status, row.tanggalRetensiInaktifBerakhir) }}</span>
+                  <span :class="statusBadgeClass(row.status, row.tanggalRetensiInaktifBerakhir, row.penyusutanSudahDiajukan)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(row.status, row.tanggalRetensiInaktifBerakhir, row.penyusutanSudahDiajukan) }}</span>
                 </td>
                 <td class="px-1.5 py-2 text-center">
                   <div class="flex items-center justify-center gap-1.5">
@@ -185,6 +209,14 @@
       @close="closeBacPreview"
     />
 
+    <SharedSharePdfViewer
+      v-model="lampiranPreviewOpen"
+      :url="lampiranPreviewUrl"
+      :title="lampiranPreviewTitle"
+      :loading="lampiranPreviewLoading"
+      @close="closePenataanLampiranPreview"
+    />
+
     <!-- Export Column Modal -->
     <ExportColumnModal
       v-model="showExportModal"
@@ -220,12 +252,68 @@ const {
   closeBacPreview,
 } = useBacPdfPreview()
 
+const lampiranPreviewOpen = ref(false)
+const lampiranPreviewLoading = ref(false)
+const lampiranPreviewUrl = ref('')
+const lampiranPreviewTitle = ref('Preview Lampiran')
+
+const closePenataanLampiranPreview = () => {
+  lampiranPreviewOpen.value = false
+  if (lampiranPreviewUrl.value.startsWith('blob:')) URL.revokeObjectURL(lampiranPreviewUrl.value)
+  lampiranPreviewUrl.value = ''
+}
+
+const openPenataanLampiran = async (transfer: any) => {
+  closePenataanLampiranPreview()
+  lampiranPreviewTitle.value = `Lampiran/${transfer.nomorUsulan || ''}`
+  lampiranPreviewOpen.value = true
+  lampiranPreviewLoading.value = true
+  try {
+    let response: any = await apiGet<unknown>(
+      `/transfer-active-to-inactive/${transfer.id}/lampiran-penataan.pdf`,
+      { responseType: 'blob', headers: { Accept: 'application/pdf' } },
+      { skipCache: true },
+    )
+    if (response && typeof response === 'object' && !(response instanceof Blob) && 'data' in response) {
+      response = response.data
+    }
+    const pdfBlob = response instanceof Blob
+      ? response
+      : response instanceof ArrayBuffer
+        ? new Blob([response], { type: 'application/pdf' })
+        : ArrayBuffer.isView(response)
+          ? new Blob([new Uint8Array(response.buffer, response.byteOffset, response.byteLength)], { type: 'application/pdf' })
+          : null
+    if (!pdfBlob || pdfBlob.size === 0 || (await pdfBlob.slice(0, 5).text()) !== '%PDF-') {
+      throw new Error('Lampiran bukan PDF yang valid.')
+    }
+    lampiranPreviewUrl.value = URL.createObjectURL(pdfBlob)
+  } catch (error: any) {
+    let description = error?.response?.data?.message || error?.message
+    if (error?.response?.data instanceof Blob) {
+      try {
+        const body = JSON.parse(await error.response.data.text())
+        description = body?.message || description
+      } catch { /* gunakan pesan fallback */ }
+    }
+    lampiranPreviewOpen.value = false
+    useToast().add({
+      title: 'Preview lampiran gagal dibuka',
+      description: description || 'Silakan coba kembali.',
+      color: 'error',
+    })
+  } finally {
+    lampiranPreviewLoading.value = false
+  }
+}
+
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
   { label: 'Penataan Arsip Inaktif', to: '/maintenance/penataan-arsip-inaktif' },
 ])
 
 const list = ref<TuUsulanItem[]>([])
+const penyusutanBerkasIds = ref<Set<string>>(new Set())
 const tableRows = computed(() => {
   let number = (page.value - 1) * limit.value + 1
   return list.value.flatMap((transfer: any) => {
@@ -248,6 +336,7 @@ const tableRows = computed(() => {
         }]
     return archives.map((archive: any) => ({
       ...archive,
+      penyusutanSudahDiajukan: penyusutanBerkasIds.value.has(String(archive.id)),
       lokasiSimpan: transfer.status === 'SELESAI' ? (transfer.lokasiPenataan || '-') : '-',
       no: number++,
       transfer,
@@ -255,6 +344,11 @@ const tableRows = computed(() => {
     }))
   })
 })
+const formatRetensiEndDate = (value: string | null | undefined) => {
+  if (!value) return '-'
+  const match = String(value).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : String(value)
+}
 const isLoading = ref(false)
 const page = ref(1)
 const limit = ref(10)
@@ -263,11 +357,14 @@ const totalPages = ref(1)
 
 const searchInput = ref('')
 const filterStatus = ref('')
+const filterNasib = ref('')
 const filterKlasifikasi = ref('')
 const pageSizeOpen = ref(false)
 const pageSizeRef = ref<HTMLElement | null>(null)
 const statusOpen = ref(false)
 const statusRef = ref<HTMLElement | null>(null)
+const nasibOpen = ref(false)
+const nasibRef = ref<HTMLElement | null>(null)
 const klasifikasiOpen = ref(false)
 const klasifikasiRef = ref<HTMLElement | null>(null)
 const klasifikasiList = ref<{ klasifikasi: string; klasifikasi_text: string }[]>([])
@@ -280,8 +377,15 @@ const klasifikasiLabel = computed(() => {
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
-  { value: 'ARSIP_INAKTIF_DITERIMA', label: 'Diterima' },
-  { value: 'SELESAI', label: 'Selesai' },
+  { value: 'DITERIMA', label: 'Diterima' },
+  { value: 'MENUNGGU_RETENSI_INAKTIF', label: 'Menunggu Retensi Inaktif' },
+  { value: 'SIAP_PENYUSUTAN', label: 'Siap Penyusutan' },
+];
+
+const nasibOptions = [
+  { value: '', label: 'Semua Nasib' },
+  { value: 'PERMANEN', label: 'Permanen' },
+  { value: 'MUSNAH', label: 'Musnah' },
 ];
 
 const onClickOutside = (e: MouseEvent) => {
@@ -292,6 +396,7 @@ const onClickOutside = (e: MouseEvent) => {
   }
   pageSizeOpen.value = false
   statusOpen.value = false
+  nasibOpen.value = false
   klasifikasiOpen.value = false
 }
 
@@ -307,6 +412,7 @@ const fetchData = async () => {
     const res = await fetchPenataanList({
       search: searchInput.value || undefined,
       status: filterStatus.value || undefined,
+      nasibAkhir: filterNasib.value || undefined,
       klasifikasi: filterKlasifikasi.value || undefined,
       page: page.value, limit: limit.value,
     })
@@ -329,13 +435,15 @@ const isRetentionExpired = (date: string | null | undefined) => {
   return String(date).slice(0, 10) <= today
 }
 
-const statusLabel = (s: string, retentionEnd?: string | null) => {
+const statusLabel = (s: string, retentionEnd?: string | null, penyusutanSudahDiajukan = false) => {
+  if (penyusutanSudahDiajukan) return 'Selesai'
   if (s === 'SELESAI') return isRetentionExpired(retentionEnd) ? 'Siap Penyusutan' : 'Menunggu Retensi Inaktif'
   return 'Diterima'
 }
 
-const statusBadgeClass = (s: string, retentionEnd?: string | null) => {
-  if (s === 'SELESAI' && isRetentionExpired(retentionEnd)) return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+const statusBadgeClass = (s: string, retentionEnd?: string | null, penyusutanSudahDiajukan = false) => {
+  if (penyusutanSudahDiajukan) return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+  if (s === 'SELESAI' && isRetentionExpired(retentionEnd)) return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
   if (s === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
   return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
 }
@@ -358,7 +466,7 @@ const exportColumns = ref([
   { key: 'lokasiSimpan', label: 'Lokasi Simpan', desc: 'Lokasi penyimpanan arsip' },
   { key: 'klasifikasiKeamanan', label: 'Klasifikasi Keamanan', desc: 'Keamanan dari master klasifikasi' },
   { key: 'retensiArsipInaktif', label: 'Retensi Arsip Inaktif', desc: 'Retensi dari pemberkasan' },
-  { key: 'nasibAkhir', label: 'Nasib Akhir', desc: 'Tindakan akhir sesuai jadwal retensi' },
+  { key: 'nasibAkhir', label: 'Nasib Akhir', desc: 'Nasib akhir sesuai jadwal retensi' },
   { key: 'keterangan', label: 'Keterangan', desc: 'Kondisi, media, dan nomor berita acara' },
   { key: 'status', label: 'Status', desc: 'Status penataan arsip' },
 ]);
@@ -380,6 +488,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
       const res = await fetchPenataanList({
         search: searchInput.value || undefined,
         status: filterStatus.value || undefined,
+        nasibAkhir: filterNasib.value || undefined,
         klasifikasi: filterKlasifikasi.value || undefined,
         page: 1,
         limit: total.value
@@ -396,7 +505,11 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
         const row: Record<string, any> = {};
         for (const column of exportColumns.value) {
           if (selectedKeys.includes(column.key)) {
-            row[column.label] = column.key === 'no' ? exportNumber++ : archive[column.key] ?? '-';
+            row[column.label] = column.key === 'no'
+              ? exportNumber++
+              : column.key === 'keterangan' && transfer.status === 'SELESAI'
+                ? `Lampiran/${transfer.nomorUsulan}`
+                : archive[column.key] ?? '-';
           }
         }
         return row;
@@ -429,6 +542,22 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
 
 onMounted(async () => {
   fetchData()
+  try {
+    const response: any = await apiGet('/penyusutan/pengajuan', {}, { skipCache: true })
+    const penyusutanList = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+        ? response
+        : []
+    penyusutanBerkasIds.value = new Set(
+      penyusutanList
+        .map((entry: any) => entry.berkasId ?? entry.berkas_id)
+        .filter(Boolean)
+        .map((id: string) => String(id)),
+    )
+  } catch {
+    // Penataan tetap dapat dibuka walau daftar pengajuan tidak bisa diakses.
+  }
   document.addEventListener('mousedown', onClickOutside)
   try {
     const list = await getKlasifikasiList()
@@ -443,5 +572,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', onClickOutside)
+  closePenataanLampiranPreview()
 })
 </script>
