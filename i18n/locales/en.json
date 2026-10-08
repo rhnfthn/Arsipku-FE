@@ -2343,5 +2343,7 @@
   "tte_callback_redirect": "The document is complete. Redirecting to Sent.",
   "tte_callback_incomplete": "Document completion is still pending. Check the status again or open Drafts.",
   "nl_cancel_action": "Cancel",
-  "nl_cancel_document": "Cancel Document"
+  "nl_cancel_document": "Cancel Document",
+  "penomoran_load_more": "Load more",
+  "penomoran_lookup_failed": "Unable to load numbering options"
 }

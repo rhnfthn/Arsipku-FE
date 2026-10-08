@@ -9,6 +9,7 @@ export interface Klasifikasi {
   id_parent: string;
   active: number;
   is_select: number;
+  has_children?: boolean;
   retensi_aktif_tahun: number | null;
   retensi_inaktif_tahun: number | null;
   penyusutan: string | null;

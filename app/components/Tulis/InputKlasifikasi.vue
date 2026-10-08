@@ -1,16 +1,20 @@
 <template>
   <div
-    class="flex flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-    <span class="w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0">
+    class="flex gap-1"
+    :class="layout === 'stacked' ? 'flex-col' : 'flex-col sm:flex-row sm:items-start py-2 border-b border-gray-200 dark:border-gray-600 sm:gap-0'">
+    <span :class="layout === 'stacked' ? 'text-xs font-medium dark:text-gray-200' : 'w-full sm:w-40 text-sm mt-0 sm:mt-1.5 text-gray-500 dark:text-gray-400 font-medium shrink-0'">
       {{ $t('klasifikasi') }}<span v-if="required" class="text-red-500 ml-0.5">*</span>
     </span>
 
     <div class="flex flex-wrap gap-1 w-full items-center min-w-0">
-      <USelectMenu v-model="model" :items="computedItems" value-key="id" label-key="searchLabel" variant="none"
-        class="w-full" searchable :content="({ class: 'max-h-[380px] w-[min(60vw,64rem)] max-w-[calc(100vw-2rem)]' } as any)"
+      <USelectMenu v-model="model" :loading="loading" :ignore-filter="remote"
+        @update:open="emit('update:open', $event)" @update:search-term="emit('search', $event)" :items="computedItems" value-key="id" label-key="searchLabel" :variant="layout === 'stacked' ? 'outline' : 'none'"
+        class="w-full" searchable :content="({ class: `max-h-[380px] w-[min(60vw,64rem)] max-w-[calc(100vw-2rem)] ${contentClass || ''}` } as any)"
         :search-attributes="['searchLabel']" :placeholder="$t('f_pilih_klasifikasi')"
         :search-input="{ placeholder: $t('f_cari_klasifikasi') }" :ui="{
-          base: '!px-0 !bg-transparent w-full dark:text-white',
+          base: layout === 'stacked'
+            ? `!px-3 !py-2 !min-h-0 !bg-white dark:!bg-gray-700 w-full rounded-lg border text-sm text-left dark:text-gray-200 hover:!bg-gray-50 dark:hover:!bg-gray-600 ${invalid ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`
+            : '!px-0 !bg-transparent w-full dark:text-white',
           ring: 'ring-0',
           shadow: 'shadow-none',
           width: 'w-full sm:w-auto max-w-[calc(100vw-2rem)]'
@@ -45,6 +49,7 @@
           </span>
         </template>
 
+        <template #content-bottom><slot name="content-bottom" /></template>
       </USelectMenu>
     </div>
   </div>
@@ -58,8 +63,13 @@ const props = defineProps<{
   items: Klasifikasi[];
   loading?: boolean;
   required?: boolean;
+  remote?: boolean;
+  contentClass?: string;
+  layout?: 'inline' | 'stacked';
+  invalid?: boolean;
 }>();
 
+const emit = defineEmits<{ 'update:open': [open: boolean]; search: [term: string] }>();
 const model = defineModel<any>();
 const selectedObj = computed(() => {
   return props.items.find((b) => b.id === model.value);
@@ -80,7 +90,7 @@ const computedItems = computed(() => {
   );
 
   return sortedItems.map(item => {
-    const isParent = childIds.has(item.id);
+    const isParent = item.has_children === true || childIds.has(item.id);
     // Tidak bisa dipilih jika: parent (punya child) ATAU is_select = 0.
     const selectable = !isParent && Number(item.is_select ?? 1) === 1;
     return {

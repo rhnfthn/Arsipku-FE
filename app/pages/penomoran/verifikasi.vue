@@ -1080,7 +1080,8 @@ const {
   showToastNomorMinimal,
   showToastKeteranganRequired,
   showToastApprovalSuccess,
-  showToastTidakAdaNomor
+  showToastTidakAdaNomor,
+  getAllPenomoranPages
 } = usePenomoran()
 
 // ─── Breadcrumbs & headers ────────────────────────────────────────────────────
@@ -1170,7 +1171,7 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
     let exportRows = sortedRows.value
 
     if (pagination.value && pagination.value.total > rowsPerPage.value) {
-      const res = await getListSubmitted({
+      const res = await getAllPenomoranPages(getListSubmitted, {
         search: search.value || undefined,
         page: 1,
         limit: pagination.value.total,
@@ -1322,7 +1323,9 @@ const selectRowsPerPage = (n: number) => {
 }
 
 // ─── Fetch data ───────────────────────────────────────────────────────────────
+let listRequestSequence = 0;
 const fetchData = async () => {
+  const requestSequence = ++listRequestSequence;
   loading.value = true
   try {
     const params = {
@@ -1334,6 +1337,7 @@ const fetchData = async () => {
       sort_order: sortOrder.value || undefined
     }
     const res = await getListSubmitted(params)
+    if (requestSequence !== listRequestSequence) return;
     const data = res.data || []
     pagination.value = res.pagination || null
     if (!Array.isArray(data)) {
@@ -1361,11 +1365,12 @@ const fetchData = async () => {
       }
     })
   } catch (error) {
+    if (requestSequence !== listRequestSequence) return;
     console.error('❌ Error fetch data verifikasi:', error)
     rows.value = []
     pagination.value = null
   } finally {
-    loading.value = false
+    if (requestSequence === listRequestSequence) loading.value = false
   }
 }
 
