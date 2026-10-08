@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import {
   ArrowLeft, Printer, Hash, Calendar, Paperclip,
   FileText, Upload, X, Loader2, Send,
-  ChevronLeft, ChevronRight, Eye, Trash2,
+  ChevronLeft, ChevronRight, Eye, Trash2, AlertTriangle,
 } from "lucide-vue-next";
 import { useTertunda } from "~/composables/useTertunda";
 import { formatShortDate, getInitials } from "~/utils/mail-helpers";
@@ -176,6 +176,8 @@ watch(
 );
 
 // --- SEND ---
+const showConfirmKirim = ref(false);
+
 const handleKirim = async () => {
   if (!uploadedFile.value) return;
   isSending.value = true;
@@ -485,7 +487,7 @@ onMounted(loadData);
 
         <!-- Tombol Kirim -->
         <div class="pt-2">
-          <button @click="hasPermission('utama.tertunda', 'read') ? handleKirim() : toast.add({ title: $t('akses_ditolak'), description: $t('akses_kirim_ditolak') || 'Anda tidak memiliki izin untuk mengirim.', color: 'error', icon: 'i-lucide-x-circle' })" :disabled="!uploadedFile || isSending"
+          <button @click="hasPermission('utama.tertunda', 'read') ? (showConfirmKirim = true) : toast.add({ title: $t('akses_ditolak'), description: $t('akses_kirim_ditolak') || 'Anda tidak memiliki izin untuk mengirim.', color: 'error', icon: 'i-lucide-x-circle' })" :disabled="!uploadedFile || isSending"
             class="flex items-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-primary-600 hover:bg-primary-700 active:scale-[0.98] shadow-sm">
             <Loader2 v-if="isSending" class="w-4 h-4 animate-spin" />
             <Send v-else class="w-4 h-4" />
@@ -495,6 +497,65 @@ onMounted(loadData);
 
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Kirim -->
+    <UModal v-model:open="showConfirmKirim" :ui="{ overlay: 'bg-black/50 backdrop-blur-sm' }">
+      <template #header>
+        <div class="w-full flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-full">
+              <Send class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                Konfirmasi Kirim Naskah
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Naskah akan dikirim ke seluruh penerima dan tidak dapat dibatalkan
+              </p>
+            </div>
+          </div>
+          <button @click="showConfirmKirim = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </template>
+      <template #body>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+            <AlertTriangle class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div class="text-sm text-amber-800 dark:text-amber-200">
+              <p class="font-medium">Pastikan scan tanda tangan basah sudah benar.</p>
+              <p class="text-xs mt-0.5 text-amber-700 dark:text-amber-300">
+                Setelah dikirim, naskah berstatus final dan langsung diteruskan ke penerima.
+              </p>
+            </div>
+          </div>
+          <div v-if="uploadedFile" class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2.5">
+            <FileText class="w-5 h-5 text-red-500 shrink-0" stroke-width="1.5" />
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ uploadedFile.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatFileSize(uploadedFile.size) }}</p>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-3 w-full">
+          <button @click="showConfirmKirim = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700">
+            Batal
+          </button>
+          <button @click="showConfirmKirim = false; handleKirim()" :disabled="isSending"
+            class="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50">
+            <Loader2 v-if="isSending" class="w-4 h-4 animate-spin" />
+            <Send v-else class="w-4 h-4" />
+            {{ isSending ? "Mengirim..." : "Ya, Kirim" }}
+          </button>
+        </div>
+      </template>
+    </UModal>
 
     <!-- PDF Preview Slideover -->
     <USlideover v-model:open="isPreviewOpen" title="Preview Dokumen" description="Preview dokumen" side="bottom"
