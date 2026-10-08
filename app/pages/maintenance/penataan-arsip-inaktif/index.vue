@@ -82,55 +82,75 @@
         </div>
 
         <!-- Table -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+        <div class="w-full overflow-hidden">
+          <table class="w-full table-fixed text-xs">
             <thead class="bg-primary dark:bg-primary-700 text-white">
               <tr>
-                <th class="px-3 py-3 text-left font-semibold">Nama Berkas</th>
-                <th class="px-3 py-3 text-left font-semibold">Kode Berkas / No. Usulan</th>
-                <th class="px-3 py-3 text-left font-semibold">Klasifikasi</th>
-                <th class="px-3 py-3 text-left font-semibold">Lokasi</th>
-                <th class="px-3 py-3 text-left font-semibold">Status</th>
-                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
+                <th class="w-[4%] px-1.5 py-2 text-center font-semibold">No</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="w-[14%] px-1.5 py-2 text-center font-semibold">Uraian Informasi Berkas</th>
+                <th class="w-[7%] px-1.5 py-2 text-center font-semibold">Kurun Waktu</th>
+                <th class="w-[6%] px-1.5 py-2 text-center font-semibold">Jumlah Berkas</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Lokasi Simpan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Klasifikasi Keamanan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Retensi Arsip Inaktif</th>
+                <th class="w-[7%] px-1.5 py-2 text-center font-semibold">Nasib Akhir</th>
+                <th class="w-[15%] px-1.5 py-2 text-center font-semibold">Keterangan</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Status</th>
+                <th class="w-[4%] px-1.5 py-2 text-center font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="6" class="px-3 py-10 text-center">
+                <td colspan="12" class="px-3 py-10 text-center">
                   <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
                 </td>
               </tr>
               <tr v-else-if="list.length === 0">
-                <td colspan="6" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="12" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
                   Belum ada arsip untuk ditata.
                 </td>
               </tr>
-              <tr v-for="item in list" :key="item.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors" :class="rowClass(item)">
-                <td class="px-3 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate" :title="item.arsipPerihal">{{ item.arsipPerihal }}</td>
-                <td class="px-3 py-3 whitespace-nowrap">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.arsipKode ?? '-' }}</div>
-                  <div class="text-[11px] text-gray-400">{{ item.nomorUsulan }}</div>
+              <tr v-for="row in tableRows" :key="`${row.transferId}-${row.id}`" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors" :class="rowClass(row.transfer)">
+                <td class="break-words px-1.5 py-2 text-center text-gray-700 dark:text-gray-200">{{ row.no }}</td>
+                <td class="break-words px-1.5 py-2 text-center">
+                  <div class="font-medium text-gray-800 dark:text-white">{{ row.klasifikasi ?? '-' }}</div>
+                  <div class="mt-0.5 text-[10px] text-gray-400">{{ row.klasifikasiKode ?? '-' }}</div>
                 </td>
-                <td class="px-3 py-3 text-gray-600 dark:text-gray-300">{{ item.arsipKlasifikasi ?? '-' }}</td>
-                <td class="px-3 py-3 text-gray-600 dark:text-gray-300">{{ item.lokasiAwal || '-' }}</td>
-                <td class="px-3 py-3">
-                  <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
+                <td class="break-words px-1.5 py-2 text-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.kurunWaktu ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.jumlahBerkas ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-gray-600 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.retensiArsipInaktif ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.nasibAkhir ?? '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-gray-600 dark:text-gray-300">
+                  <button
+                    v-if="row.transfer.beritaAcaraNomor"
+                    type="button"
+                    class="text-primary hover:underline dark:text-primary-400"
+                    @click.stop="openBacPreview(String(row.transfer.id), row.transfer.beritaAcaraNomor)"
+                  >{{ row.transfer.beritaAcaraNomor }}</button>
+                  <span v-else>-</span>
                 </td>
-                <td class="px-3 py-3 text-center">
+                <td class="px-1.5 py-2 text-center">
+                  <span :class="statusBadgeClass(row.status, row.tanggalRetensiInaktifBerakhir)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(row.status, row.tanggalRetensiInaktifBerakhir) }}</span>
+                </td>
+                <td class="px-1.5 py-2 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
-                      v-if="item.status !== 'ARSIP_INAKTIF_DITERIMA'"
-                      :to="`/maintenance/penataan-arsip-inaktif/${item.id}`"
-                      @click="markViewed(item)"
+                      v-if="row.transfer.status !== 'ARSIP_INAKTIF_DITERIMA'"
+                      :to="`/maintenance/penataan-arsip-inaktif/${row.transfer.id}`"
+                      @click="markViewed(row.transfer)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
                     </NuxtLink>
                     <NuxtLink
-                      v-if="item.status === 'ARSIP_INAKTIF_DITERIMA'"
-                      :to="`/maintenance/penataan-arsip-inaktif/${item.id}?mode=penataan`"
-                      @click="markViewed(item)"
+                      v-if="row.transfer.status === 'ARSIP_INAKTIF_DITERIMA'"
+                      :to="`/maintenance/penataan-arsip-inaktif/${row.transfer.id}?mode=penataan`"
+                      @click="markViewed(row.transfer)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 transition-colors"
                       title="Penataan"
                     >
@@ -150,13 +170,20 @@
             :total-pages="totalPages"
             :total-items="total"
             :rows-per-page="limit"
-            :rows-options="[10, 20, 50]"
             @update:page="onPageChange"
             @update:rows-per-page="onLimitChange"
           />
         </div>
       </div>
     </div>
+
+    <SharedSharePdfViewer
+      v-model="bacPreviewOpen"
+      :url="bacPreviewUrl"
+      :title="bacPreviewTitle"
+      :loading="bacPreviewLoading"
+      @close="closeBacPreview"
+    />
 
     <!-- Export Column Modal -->
     <ExportColumnModal
@@ -175,6 +202,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useApi } from '~/composables/useApi'
 import { useKlasifikasi } from '~/composables/useKlasifikasi'
+import { useBacPdfPreview } from '~/composables/useBacPdfPreview'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
 
 definePageMeta({ middleware: ['auth'] })
@@ -183,6 +211,14 @@ const { fetchPenataanList } = useTuVerifikasi()
 const { rowClass, markViewed } = useViewedRows('penataan-arsip-inaktif')
 const { apiGet } = useApi()
 const { getKlasifikasiList } = useKlasifikasi()
+const {
+  bacPreviewOpen,
+  bacPreviewLoading,
+  bacPreviewUrl,
+  bacPreviewTitle,
+  openBacPreview,
+  closeBacPreview,
+} = useBacPdfPreview()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
@@ -190,6 +226,35 @@ const breadcrumbs = computed(() => [
 ])
 
 const list = ref<TuUsulanItem[]>([])
+const tableRows = computed(() => {
+  let number = (page.value - 1) * limit.value + 1
+  return list.value.flatMap((transfer: any) => {
+    const archives = Array.isArray(transfer.arsipRows) && transfer.arsipRows.length
+      ? transfer.arsipRows
+      : [{
+          id: transfer.arsipId,
+          klasifikasi: transfer.arsipKlasifikasi,
+          klasifikasiKode: transfer.arsipKlasifikasiKode,
+          uraianInformasi: transfer.arsipPerihal,
+          kurunWaktu: '-',
+          jumlahBerkas: '-',
+          status: transfer.status,
+          lokasiSimpan: '-',
+          klasifikasiKeamanan: '-',
+          retensiArsipInaktif: '-',
+          tanggalRetensiInaktifBerakhir: null,
+          nasibAkhir: transfer.arsipTindakanPenyusutan,
+          keterangan: transfer.beritaAcaraNomor ? `No. BA: ${transfer.beritaAcaraNomor}` : '-',
+        }]
+    return archives.map((archive: any) => ({
+      ...archive,
+      lokasiSimpan: transfer.status === 'SELESAI' ? (transfer.lokasiPenataan || '-') : '-',
+      no: number++,
+      transfer,
+      transferId: transfer.id,
+    }))
+  })
+})
 const isLoading = ref(false)
 const page = ref(1)
 const limit = ref(10)
@@ -257,13 +322,21 @@ const fetchData = async () => {
 const onPageChange = (p: number) => { page.value = p; fetchData() }
 const onLimitChange = (l: number) => { limit.value = l; page.value = 1; fetchData() }
 
-const statusLabel = (s: string) => {
-  if (s === 'SELESAI') return 'Selesai'
+const isRetentionExpired = (date: string | null | undefined) => {
+  if (!date) return false
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return String(date).slice(0, 10) <= today
+}
+
+const statusLabel = (s: string, retentionEnd?: string | null) => {
+  if (s === 'SELESAI') return isRetentionExpired(retentionEnd) ? 'Siap Penyusutan' : 'Menunggu Retensi Inaktif'
   return 'Diterima'
 }
 
-const statusBadgeClass = (s: string) => {
-  if (s === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+const statusBadgeClass = (s: string, retentionEnd?: string | null) => {
+  if (s === 'SELESAI' && isRetentionExpired(retentionEnd)) return 'px-2 py-0.5 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+  if (s === 'SELESAI') return 'px-2 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
   return 'px-2 py-0.5 rounded-full font-medium bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
 }
 
@@ -276,13 +349,18 @@ const showExportModal = ref(false);
 const isExporting = ref(false);
 
 const exportColumns = ref([
-  { key: 'No', label: 'No', desc: 'Nomor urut data' },
-  { key: 'namaBerkas', label: 'Nama Berkas', desc: 'Perihal arsip berkas' },
-  { key: 'kodeBerkas', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
-  { key: 'nomorUsulan', label: 'No. Usulan', desc: 'Nomor usulan pemindahan' },
-  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi arsip' },
-  { key: 'lokasi', label: 'Lokasi', desc: 'Lokasi penataan arsip' },
-  { key: 'status', label: 'Status', desc: 'Status penataan arsip' }
+  { key: 'no', label: 'No. Berkas', desc: 'Nomor urut berkas' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Nama klasifikasi arsip' },
+  { key: 'klasifikasiKode', label: 'Kode Klasifikasi', desc: 'Kode klasifikasi arsip' },
+  { key: 'uraianInformasi', label: 'Uraian Informasi Berkas', desc: 'Uraian berkas' },
+  { key: 'kurunWaktu', label: 'Kurun Waktu', desc: 'Waktu arsip tercipta' },
+  { key: 'jumlahBerkas', label: 'Jumlah Berkas', desc: 'Jumlah naskah dalam berkas' },
+  { key: 'lokasiSimpan', label: 'Lokasi Simpan', desc: 'Lokasi penyimpanan arsip' },
+  { key: 'klasifikasiKeamanan', label: 'Klasifikasi Keamanan', desc: 'Keamanan dari master klasifikasi' },
+  { key: 'retensiArsipInaktif', label: 'Retensi Arsip Inaktif', desc: 'Retensi dari pemberkasan' },
+  { key: 'nasibAkhir', label: 'Nasib Akhir', desc: 'Tindakan akhir sesuai jadwal retensi' },
+  { key: 'keterangan', label: 'Keterangan', desc: 'Kondisi, media, dan nomor berita acara' },
+  { key: 'status', label: 'Status', desc: 'Status penataan arsip' },
 ]);
 
 const onExport = () => {
@@ -312,17 +390,18 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
       }
     }
 
-    const data = allRows.map((r: any, idx: number) => {
-      const row: Record<string, any> = {};
-      if (selectedKeys.includes('No')) row['No'] = idx + 1;
-      if (selectedKeys.includes('namaBerkas')) row['Nama Berkas'] = r.arsipPerihal || '-';
-      if (selectedKeys.includes('kodeBerkas')) row['Kode Berkas'] = r.arsipKode || '-';
-      if (selectedKeys.includes('nomorUsulan')) row['No. Usulan'] = r.nomorUsulan || '-';
-      if (selectedKeys.includes('klasifikasi')) row['Klasifikasi'] = r.arsipKlasifikasi || '-';
-      if (selectedKeys.includes('lokasi')) row['Lokasi'] = r.lokasiPenataan || '-';
-      if (selectedKeys.includes('status')) row['Status'] = statusLabel(r.status);
-      return row;
-    });
+    let exportNumber = 1
+    const data = allRows.flatMap((transfer: any) =>
+      (transfer.arsipRows ?? []).map((archive: any) => {
+        const row: Record<string, any> = {};
+        for (const column of exportColumns.value) {
+          if (selectedKeys.includes(column.key)) {
+            row[column.label] = column.key === 'no' ? exportNumber++ : archive[column.key] ?? '-';
+          }
+        }
+        return row;
+      }),
+    );
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const colWidths = Object.keys(data[0] || {}).map((key) => ({

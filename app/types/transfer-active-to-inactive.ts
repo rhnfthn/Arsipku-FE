@@ -48,6 +48,10 @@ export interface TransferActiveToInactive {
   arsipKode: string | null;
   arsipKlasifikasi?: string | null;
   arsipTindakanPenyusutan?: string | null;
+  /** Lokasi awal dari pemberkasan dan lokasi baru hasil penataan arsip. */
+  lokasiAwal?: string | null;
+  lokasiPenataan?: string | null;
+  labelPenataan?: string | null;
   tanggalRetensiAktifHabis: string | null;
   arsipIds: Array<{
     id: string;

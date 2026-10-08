@@ -9,7 +9,7 @@
         :aria-expanded="collapsible ? infoOpen : undefined"
         @click="collapsible && (infoOpen = !infoOpen)"
       >
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ informationTitle }}</h3>
         <div class="flex items-center gap-3">
           <span
             v-if="showHeaderStatus"
@@ -23,7 +23,49 @@
         </div>
       </button>
       <div v-show="!collapsible || infoOpen">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div v-if="informationLayout === 'penataan'" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.nomorUsulan }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Perihal Arsip</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
+            <p class="text-gray-900 dark:text-white font-normal">
+              {{ [transfer.arsipKlasifikasiKode, transfer.arsipKlasifikasi].filter(Boolean).join(' ') || '-' }}
+            </p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.sekretarisName || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
+            <p class="text-gray-900 dark:text-white font-normal">
+              {{ transfer.atasanName || '-' }}<span v-if="transfer.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.atasanPositionText }}</span>
+            </p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Nasib Akhir</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipTindakanPenyusutan ?? '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
+            <div class="mt-1">
+              <span :class="penataanStatusClass(transfer.status)">{{ penataanStatusLabel(transfer.status) }}</span>
+            </div>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Lokasi Simpan</span>
+            <p class="text-gray-900 dark:text-white font-normal">
+              {{ transfer.status === 'SELESAI' ? (transfer.lokasiPenataan || '-') : (transfer.lokasiAwal || '-') }}
+            </p>
+          </div>
+        </div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.nomorUsulan }}</p>
@@ -38,7 +80,7 @@
             <span :class="statusBadgeClass(transfer.status)">{{ statusLabel(transfer.status) }}</span>
           </div>
         </div>
-        <div>
+        <div v-if="showBacStatus">
           <span class="text-gray-500 dark:text-gray-400 text-xs">Status BAC</span>
           <p class="text-gray-900 dark:text-white font-medium">
             {{ transfer.bacSignedAt ? 'Ditandatangani' : transfer.bacPihakPertamaPersnum ? 'Menunggu Tanda Tangan' : 'Belum Ditandatangani' }}
@@ -55,6 +97,7 @@
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.arsipKlasifikasi ?? '-' }}</p>
+          <p v-if="transfer.arsipKlasifikasiKode" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ transfer.arsipKlasifikasiKode }}</p>
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
@@ -128,37 +171,79 @@
         </div>
       </div>
       <div v-show="!collapsible || berkasOpen" id="daftar-berkas-print" class="overflow-x-auto">
-        <table class="w-full min-w-[1120px] border-collapse text-xs">
+        <table class="w-full border-collapse text-xs" :class="berkasLayout === 'penataan' ? 'min-w-[1240px]' : 'min-w-[1120px]'">
           <thead>
             <tr class="bg-[#457fb6] text-white">
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+              <template v-if="berkasLayout === 'penataan'">
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">No Berkas</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[240px]">Uraian Informasi Berkas</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Kurun Waktu</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah Berkas</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Lokasi Simpan</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Klasifikasi Keamanan</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Retensi Arsip Inaktif</th>
+              </template>
+              <template v-else>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
+                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+              </template>
               <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, idx) in berkasRows" :key="row.id ?? idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-              <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggal) }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+              <template v-if="berkasLayout === 'penataan'">
+                <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                  <div>{{ row.klasifikasi ?? '-' }}</div>
+                  <div class="mt-0.5 text-xs text-gray-400">{{ row.kodeKlasifikasi ?? '-' }}</div>
+                </td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.kurunWaktu ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlahBerkas ?? row.jumlah ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkasLocation(row) }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.retensiArsipInaktif ?? '-' }}</td>
+              </template>
+              <template v-else>
+                <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggal) }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
+                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+              </template>
               <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
-                <NuxtLink
-                  v-if="row.id"
-                  :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=${previewFrom}`"
-                  class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
-                  title="Buka detail berkas"
-                >
-                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                </NuxtLink>
+                <div class="flex items-center justify-center gap-1">
+                  <NuxtLink
+                    v-if="row.id"
+                    :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=${previewFrom}`"
+                    class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
+                    title="Buka detail berkas"
+                  >
+                    <UIcon name="i-lucide-eye" class="w-4 h-4" />
+                  </NuxtLink>
+                  <NuxtLink
+                    v-if="berkasLayout === 'penataan' && transfer.status === 'SELESAI' && isRetentionExpired(row.tanggalRetensiInaktifBerakhir)"
+                    :to="`/maintenance/penyusutan/pengajuan-penyusutan?berkasId=${row.id}&transferId=${transfer.id}`"
+                    class="inline-flex items-center gap-1 rounded-md bg-[#457fb6] px-2 py-1 text-[10px] font-medium text-white transition-colors hover:bg-[#3a6d9c]"
+                    title="Ajukan penyusutan"
+                  >
+                    <UIcon name="i-lucide-send" class="h-3.5 w-3.5" /> Penyusutan
+                  </NuxtLink>
+                  <span
+                    v-else-if="berkasLayout === 'penataan' && transfer.status === 'SELESAI'"
+                    class="text-[10px] text-gray-400"
+                    title="Tombol penyusutan tersedia setelah retensi inaktif berakhir"
+                  >Menunggu retensi</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -421,6 +506,10 @@ const props = defineProps<{
   showBacSigner?: boolean;
   showBacTembusan?: boolean;
   showTuApprovalLevels?: boolean;
+  informationTitle?: string;
+  informationLayout?: 'default' | 'penataan';
+  berkasLayout?: 'default' | 'penataan';
+  showBacStatus?: boolean;
 }>();
 
 const collapsible = computed(() => props.collapsible === true);
@@ -429,6 +518,33 @@ const showApprovalLevels = computed(() => props.showApprovalLevels !== false);
 const showBacSigner = computed(() => props.showBacSigner !== false);
 const showBacTembusan = computed(() => props.showBacTembusan !== false);
 const showTuApprovalLevels = computed(() => props.showTuApprovalLevels !== false);
+const informationTitle = computed(() => props.informationTitle ?? 'Informasi Usulan');
+const informationLayout = computed(() => props.informationLayout ?? 'default');
+const berkasLayout = computed(() => props.berkasLayout ?? 'default');
+const showBacStatus = computed(() => props.showBacStatus !== false);
+const isRetentionExpired = (date: string | null | undefined) => {
+  if (!date) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return String(date).slice(0, 10) <= today;
+};
+const penataanStatusLabel = (status: string) => {
+  if (status !== 'SELESAI') return 'Diterima';
+  return berkasRows.value.length > 0
+    && berkasRows.value.every((row: any) => isRetentionExpired(row.tanggalRetensiInaktifBerakhir))
+    ? 'Siap Penyusutan'
+    : 'Menunggu Retensi Inaktif';
+};
+const penataanStatusClass = (status: string) => {
+  const label = penataanStatusLabel(status);
+  if (label === 'Siap Penyusutan') {
+    return 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300';
+  }
+  if (label === 'Menunggu Retensi Inaktif') {
+    return 'inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+  }
+  return 'inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300';
+};
 const previewFrom = computed(() => props.previewFrom ?? 'transfer');
 const infoOpen = ref(true);
 const berkasOpen = ref(true);
@@ -484,7 +600,12 @@ const openTablePrintPreview = (title: string, elementId: string, selector: strin
 };
 
 const berkasRows = computed(() => {
-  if (props.daftarBerkas && props.daftarBerkas.length > 0) return props.daftarBerkas;
+  if (props.daftarBerkas && props.daftarBerkas.length > 0) {
+    return props.daftarBerkas.map((row: any) => ({
+      ...row,
+      lokasiSimpan: berkasLocation(row),
+    }));
+  }
   return (props.transfer.arsipIds ?? []).map((a, idx) => ({
     no: idx + 1,
     id: a.id,
@@ -499,6 +620,10 @@ const berkasRows = computed(() => {
     klasifikasiKeamanan: '-',
   }));
 });
+
+const berkasLocation = (row: any) => props.transfer.status === 'SELESAI'
+  ? props.transfer.lokasiPenataan || row.lokasiSimpan || '-'
+  : row.lokasiSimpan || '-';
 
 const daftarIsiRows = computed(() => props.daftarIsi ?? []);
 const showDaftarIsiCard = computed(() => props.daftarIsi !== undefined);
