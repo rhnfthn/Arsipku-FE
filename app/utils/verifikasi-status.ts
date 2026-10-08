@@ -30,9 +30,10 @@ export const verifikasiStatusBadge = (s: VerifikasiStatus): string => {
     MENUNGGU_PERSETUJUAN_TERAKHIR_TU:
       'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+    MENUNGGU_TTD_PIHAK_KEDUA: 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
     // Selesai = hijau
     DISETUJUI_PERSETUJUAN_TERAKHIR_TU:
-      'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
+      'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
     ARSIP_INAKTIF_DITERIMA:
       'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300',
     PENATAAN_ARSIP_INAKTIF:
@@ -65,11 +66,12 @@ export const verifikasiStatusLabel = (s: VerifikasiStatus): string => {
     DITOLAK_PERSETUJUAN_TU: 'Ditolak',
     DISETUJUI_PERSETUJUAN_TU: 'Menunggu Penerimaan',
     MENUNGGU_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Penerimaan',
+    MENUNGGU_TTD_PIHAK_KEDUA: 'Menunggu Tanda Tangan Pihak Kedua',
     DITOLAK_PERSETUJUAN_TERAKHIR_TU: 'Ditolak',
     // Atasan Unit Dokumen approve + penataan = Selesai
-    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Selesai',
-    ARSIP_INAKTIF_DITERIMA: 'Selesai',
-    PENATAAN_ARSIP_INAKTIF: 'Selesai',
+    DISETUJUI_PERSETUJUAN_TERAKHIR_TU: 'Menunggu Tanda Tangan Pihak Kedua',
+    ARSIP_INAKTIF_DITERIMA: 'Menunggu Penataan',
+    PENATAAN_ARSIP_INAKTIF: 'Penataan Arsip Inaktif',
     SELESAI: 'Selesai',
   };
   return m[s] || s;

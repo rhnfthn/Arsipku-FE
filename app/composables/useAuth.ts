@@ -260,8 +260,15 @@ export const useAuth = () => {
     return newAccessToken as string;
   };
 
-
   const hasPermission = (resource: string, action: string): boolean => {
+    if (
+      resource === 'tugas' &&
+      (user.value?.active_profile === 'sekretaris' ||
+        ['PT', 'PH', 'PS', 'VI', 'SE'].includes(
+          String(user.value?.position_status ?? '').toUpperCase()
+        ))
+    )
+      return false;
     const perms = user.value?.activePermissions || [];
 
     return perms.some((p: ActivePermission) => {
@@ -271,6 +278,17 @@ export const useAuth = () => {
         p.resource === 'utama.tulis.naskah-lainnya' &&
         resource.startsWith('utama.tulis.naskah-lainnya.')
       ) {
+        return false;
+      }
+      // Penyusutan sudah dipisah menjadi submenu granular. Permission legacy
+      // `pemeliharaan.penyusutan.*` tidak boleh menghidupkan Read submenu lain
+      // secara tidak langsung setelah checkbox submenu tersebut dinonaktifkan.
+      const isGranularPenyusutan =
+        p.resource === 'pemeliharaan.penyusutan' ||
+        p.resource.startsWith('pemeliharaan.penyusutan.') ||
+        resource === 'pemeliharaan.penyusutan' ||
+        resource.startsWith('pemeliharaan.penyusutan.');
+      if (isGranularPenyusutan && p.resource !== resource) {
         return false;
       }
       // Match: exact, parent→child (user punya parent, FE cek child),

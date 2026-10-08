@@ -196,7 +196,7 @@ import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const route = useRoute()
 const { fetchById } = usePenyusutan()

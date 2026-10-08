@@ -125,29 +125,6 @@
             disabled-message="Sudah dipilih di Tertuju" />
         </div>
 
-        <!-- Garis Kewenangan (a.n.) — khusus SDE. Signer bertanda tangan atas nama pejabat pemberi kuasa. -->
-        <div :class="['flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0', { 'opacity-60 grayscale pointer-events-none': !isSenderSelected }]">
-          <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="useGarisKewenangan" :disabled="!isSenderSelected" class="w-4 h-4 accent-primary-500" />
-              Garis Kewenangan (a.n.)
-            </label>
-            <div class="flex items-center flex-1 w-full gap-2">
-              <template v-if="useGarisKewenangan">
-                <template v-if="isDirut">
-                  <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
-                </template>
-                <template v-else>
-                  <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
-                  <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
-                  <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
-                </template>
-              </template>
-              <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
-            </div>
-          </div>
-        </div>
-
         <TulisInputSifat v-model="selectedSifat" />
 
         <!-- Perihal -->
@@ -290,6 +267,29 @@
           </ClientOnly>
 
           <TulisInputLampiran v-model:existingFiles="existingFiles" />
+
+          <!-- Garis Kewenangan (a.n.) — khusus SDE. Signer bertanda tangan atas nama pejabat pemberi kuasa. -->
+          <div :class="['flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0', { 'opacity-60 grayscale pointer-events-none': !isSenderSelected }]">
+            <div class="flex flex-col sm:flex-row sm:items-center w-full">
+              <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="useGarisKewenangan" :disabled="!isSenderSelected" class="w-4 h-4 accent-primary-500" />
+                Garis Kewenangan (a.n.)
+              </label>
+              <div class="flex items-center flex-1 w-full gap-2">
+                <template v-if="useGarisKewenangan">
+                  <template v-if="isDirut">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
+                  </template>
+                  <template v-else>
+                    <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
+                    <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
+                    <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
+                  </template>
+                </template>
+                <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
+              </div>
+            </div>
+          </div>
 
           <div class="flex items-center py-3 mt-2 gap-2">
             <input type="checkbox" id="check_english" v-model="english"
@@ -489,7 +489,7 @@ const isNewKonsepFromReference = computed(() =>
 
 // --- GARIS KEWENANGAN (a.n.) — clone dari form SDE biasa ---
 // Signer = selectedSender (pengirim konsep). a.n. based on signer position.
-const useGarisKewenangan = ref(false);
+const useGarisKewenangan = ref(true);
 const atasanOptions = ref<any[]>([]);
 const selectedAtasNamaId = ref<number | null>(null);
 const isLoadingAtasan = ref(false);
@@ -513,11 +513,12 @@ const atasNamaLabel = computed(() => {
 });
 
 const fetchAtasan = async () => {
-  const signerPosId = selectedSender.value?.value || user.value?.position;
+  const signerPosId = selectedSender.value?.value;
   if (isDirut.value || !signerPosId) return;
   isLoadingAtasan.value = true;
   try {
     const res = await apiGet<any>(`/org-data/atasnama/${signerPosId}`);
+    if (!useGarisKewenangan.value || String(selectedSender.value?.value) !== String(signerPosId)) return;
     atasanOptions.value = res?.data || [];
     // Auto-fill atasan pertama (paling senior di direktorat signer).
     selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
@@ -531,8 +532,8 @@ const fetchAtasan = async () => {
 };
 
 // Auto-tembusan: ketika atas nama dipilih (non-Dirut), add atasan ke tembusan.
-watch(selectedAtasNamaId, (newId) => {
-  if (!newId) return;
+watch([selectedAtasNamaId, atasanOptions], ([newId]) => {
+  if (!useGarisKewenangan.value || !newId) return;
   const r = atasanOptions.value.find((x) => Number(x.position) === Number(newId));
   if (!r) return;
   if (selectedTembusan.value.some((t: any) => Number(t.value) === Number(newId))) return;
@@ -569,8 +570,10 @@ watch(useGarisKewenangan, (on) => {
 
 // Signer berubah → reset a.n. (atasan lama salah untuk signer baru).
 watch(() => selectedSender.value?.value, () => {
+  if (isPrefillingKonsep.value) return;
   atasanOptions.value = [];
   selectedAtasNamaId.value = null;
+  atasNamaManualLabel.value = '';
   if (useGarisKewenangan.value && !isDirut.value) fetchAtasan();
 });
 const forwardTargetInfo = computed(() => {
@@ -1211,6 +1214,7 @@ onMounted(async () => {
         // Garis Kewenangan (a.n.): restore dari KN node.
         // atas_nama = label (untuk display), atas_nama_position_id = position id
         // (untuk selectedAtasNamaId supaya re-toggle/tembusan konsisten).
+        useGarisKewenangan.value = Boolean(kn.atas_nama);
         if (kn.atas_nama) {
           atasNamaManualLabel.value = kn.atas_nama;
           if (kn.atas_nama_position_id) {
@@ -1402,6 +1406,7 @@ onMounted(async () => {
           }).filter((item: RecipientItem) => Boolean(item.value));
         }
 
+        useGarisKewenangan.value = Boolean(d.atas_nama);
         if (d.atas_nama) {
           await nextTick();
           atasNamaManualLabel.value = d.atas_nama;
@@ -1439,6 +1444,10 @@ onMounted(async () => {
   // D. NEW
   else {
     isLoadingData.value = false;
+  }
+  await nextTick();
+  if (useGarisKewenangan.value && selectedSender.value?.value && !isDirut.value && !atasNamaManualLabel.value) {
+    await fetchAtasan();
   }
 });
 </script>

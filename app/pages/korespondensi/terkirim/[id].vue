@@ -54,7 +54,6 @@ const details = ref<any[]>([]);
 const selected = ref<any>(null);
 const isLoading = ref(true);
 const isKonsepData = ref(false);
-
 const isCurrentDetail = (detail: any) =>
   String(detail?.id || '') === String(route.params.id || '') ||
   String(detail?.konsepNaskah?.id || '') === String(route.params.id || '');

@@ -182,7 +182,7 @@
         header-class="bg-primary dark:bg-primary-700 text-white text-left"
         body-class="divide-y divide-gray-100 dark:divide-gray-700"
         row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-        :row-classes-fn="(row: any) => newRowClass(row)"
+        :row-classes-fn="(row: any) => transferRowClass(row)"
         empty-message="Arsip Tertutup dengan retensi habis dan usulan pemindahan akan muncul di sini."
         @sort="handleSort"
       >
@@ -222,7 +222,7 @@
             <!-- Arsip belum jadi usulan → halaman Usul Pindah Arsip -->
             <button
               v-if="!row.isUsulan"
-              @click="navigateTo(`/maintenance/transfer-active-to-inactive-file/usul/${row.id}`)"
+              @click="openUsulan(row)"
               title="Usul Pindah Arsip"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -231,7 +231,7 @@
             <!-- Usulan DRAFT → halaman Usul Pindah Arsip (detail + pilih atasan) -->
             <button
               v-else-if="row.isUsulan && row.status === 'DRAFT'"
-              @click="navigateTo(`/maintenance/transfer-active-to-inactive-file/usul/${row.id}`)"
+              @click="openUsulan(row)"
               title="Usul Pindah Arsip"
               class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
             >
@@ -283,7 +283,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { Plus, ChevronDown } from 'lucide-vue-next';
 import { useApi } from '~/composables/useApi';
 import { useTransferActiveToInactive } from '~/composables/useTransferActiveToInactive';
@@ -332,6 +332,8 @@ interface GabunganRow {
   /** Status asli berkas (untuk baris belum-usulan: closed_retensi_aktif / retensi_inaktif). */
   berkasStatus?: string | null;
   tanggal: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   /** Status BAC presentasi, tanpa mengubah status workflow utama. */
   bacStatus?: 'MENUNGGU_TTD' | 'SUDAH_DITANDATANGANI' | null;
   bacSignedAt?: string | null;
@@ -342,6 +344,41 @@ const gabunganList = ref<GabunganRow[]>([]);
 const loading = ref(false);
 const preselectedArsip = ref<any | null>(null);
 const expandedId = ref<string | null>(null);
+
+// Baris baru hanya ditebalkan sampai user membuka detail atau menjalankan aksi.
+// Disimpan per user agar status sudah dilihat tidak kembali saat halaman dimuat ulang.
+const viewedRowIds = ref<Set<string>>(new Set());
+const viewedRowsStorageKey = computed(
+  () => `transfer-active-to-inactive:viewed:${String(user.value?.persnum ?? user.value?.id ?? 'anonymous')}`,
+);
+
+const loadViewedRows = () => {
+  if (!import.meta.client) return;
+  try {
+    const raw = localStorage.getItem(viewedRowsStorageKey.value);
+    const ids = raw ? JSON.parse(raw) : [];
+    viewedRowIds.value = new Set(
+      Array.isArray(ids) ? ids.map((id) => String(id)) : [],
+    );
+  } catch {
+    viewedRowIds.value = new Set();
+  }
+};
+
+const markRowAsViewed = (row: GabunganRow) => {
+  if (!import.meta.client || !row?.id) return;
+  const next = new Set(viewedRowIds.value);
+  next.add(String(row.id));
+  viewedRowIds.value = next;
+  try {
+    localStorage.setItem(viewedRowsStorageKey.value, JSON.stringify([...next]));
+  } catch {
+    // Status bold tetap hilang selama halaman aktif meskipun storage penuh/diblokir.
+  }
+};
+
+const transferRowClass = (row: GabunganRow): string =>
+  viewedRowIds.value.has(String(row.id)) ? '' : newRowClass(row);
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
 
@@ -371,6 +408,7 @@ const toggleExpand = (id: string) => {
 };
 
 const onSendUsulan = async (row: GabunganRow) => {
+  markRowAsViewed(row);
   // Buka CreateTransferModal (mode edit) — arsip terisi otomatis, atasan KOSONG
   try {
     selectedTransfer.value = await fetchDetail(row.id);
@@ -646,6 +684,7 @@ const openCreateModal = () => {
 };
 
 const openCreateModalWithArsip = (row: GabunganRow) => {
+  markRowAsViewed(row);
   selectedTransfer.value = null;
   prefillAtasan.value = true;
   preselectedArsip.value = {
@@ -660,7 +699,13 @@ const openCreateModalWithArsip = (row: GabunganRow) => {
 
 const openDetail = (row: GabunganRow) => {
   if (!row.isUsulan) return;
+  markRowAsViewed(row);
   navigateTo(`/maintenance/transfer-active-to-inactive-file/${row.id}`);
+};
+
+const openUsulan = (row: GabunganRow) => {
+  markRowAsViewed(row);
+  navigateTo(`/maintenance/transfer-active-to-inactive-file/usul/${row.id}`);
 };
 
 const onTransferCreated = async () => {
@@ -676,6 +721,8 @@ onMounted(() => {
   fetchKlasifikasi();
   loadGabungan();
 });
+
+watch(viewedRowsStorageKey, loadViewedRows, { immediate: true });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);

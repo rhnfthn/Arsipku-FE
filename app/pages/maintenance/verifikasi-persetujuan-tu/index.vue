@@ -6,7 +6,7 @@
         <Heading variant="heading6b" class="text-mobile-md">Verifikasi Persetujuan</Heading>
         <PageHeader :items="breadcrumbs" />
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Verifikasi penerimaan usulan pindah arsip dari Unit Tata Naskah.
+          Verifikasi penerimaan arsip pindah dari Unit Tata Naskah.
         </p>
       </div>
 
@@ -143,7 +143,7 @@
                 v-for="item in list"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                :class="newRowClass(item)"
+                :class="rowClass(item)"
               >
                 <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.arsipPerihal }}</td>
                 <td class="px-3 py-3">
@@ -159,6 +159,7 @@
                 <td class="px-3 py-3">
                   <NuxtLink
                     :to="`/maintenance/verifikasi-persetujuan-tu/${item.id}`"
+                    @click="markViewed(item)"
                     class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#457fb6] text-white hover:bg-[#3a6d9c] transition-colors"
                   >
                     <UIcon name="i-lucide-eye" class="w-3.5 h-3.5" /> Detail
@@ -223,6 +224,7 @@ const exportColumns = ref([
 
 const { fetchAtasanTuList } = useTuVerifikasi()
 const { apiGet } = useApi()
+const { rowClass, markViewed } = useViewedRows('verifikasi-persetujuan-tu')
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },

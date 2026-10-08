@@ -119,7 +119,11 @@ export interface TugasActivityItem {
   createdAt: string;
 }
 
-export type TugasReferenceType = 'naskah_masuk' | 'disposisi' | 'naskah_lainnya';
+export type TugasReferenceType =
+  | 'naskah_masuk'
+  | 'naskah_terkirim'
+  | 'disposisi'
+  | 'naskah_lainnya';
 
 export interface TugasTaskReference {
   id: string;
@@ -141,7 +145,14 @@ export interface TugasTaskEvidence {
   url: string;
 }
 
+export interface TugasCommentReaction {
+  emoji: string;
+  count: number;
+  reacted: boolean;
+}
+
 export interface TugasTaskComment {
+  reactions: TugasCommentReaction[];
   id: string;
   boardId: string;
   /** Task yang di-tag — null bila komentar umum tanpa rujukan task. */
@@ -257,4 +268,10 @@ export interface TugasTaskQuery {
 export interface TugasMyTaskQuery extends TugasTaskQuery {
   scope?: TugasMyTaskScope;
   boardId?: string;
+}
+
+export interface TugasReferenceCandidate {
+  referenceType: TugasReferenceType;
+  referenceId: string;
+  label: string;
 }
