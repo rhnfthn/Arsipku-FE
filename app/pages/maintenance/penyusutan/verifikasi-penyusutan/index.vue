@@ -142,7 +142,7 @@
                 v-for="item in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                :class="newRowClass(item)"
+                :class="rowClass(item)"
               >
                 <td class="px-3 py-3">{{ item.nama_berkas }}</td>
                 <td class="px-3 py-3">
@@ -167,14 +167,16 @@
                     <NuxtLink
                       v-if="item.status === 'selesai' || item.status === 'diterima' || item.status === 'ditolak' || hasUserApproved(item)"
                       :to="`/maintenance/penyusutan/verifikasi-penyusutan/detail/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
                     </NuxtLink>
                     <NuxtLink
-                      v-if="item.status === 'diajukan' && isCurrentVerifikator(item)"
+                      v-if="item.status === 'diajukan' && isCurrentVerifikator(item) && canApprove"
                       :to="`/maintenance/penyusutan/verifikasi-penyusutan/tindak-lanjuti/${item.id}`"
+                      @click="markViewed(item)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
                       title="Tindak Lanjuti"
                     >
@@ -283,12 +285,12 @@
             </template>
             <template v-else>
               <button
-                v-if="detailArsip?.status === 'diajukan'"
+                v-if="detailArsip?.status === 'diajukan' && canApprove"
                 @click="showVerifyForm = true; verifyAction = true"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
               >Setuju</button>
               <button
-                v-if="detailArsip?.status === 'diajukan'"
+                v-if="detailArsip?.status === 'diajukan' && canReject"
                 @click="showVerifyForm = true; verifyAction = false"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
               >Tolak</button>
@@ -314,6 +316,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
+import { usePenyusutanPermission } from '~/composables/usePenyusutanPermission'
 import { useAuth } from '~/composables/useAuth'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
@@ -321,7 +324,7 @@ import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import ExportColumnModal from '~/components/ExportColumnModal.vue'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const showExportModal = ref(false)
 const isExporting = ref(false)
@@ -338,7 +341,9 @@ const exportColumns = ref([
 ])
 
 const { user } = useAuth()
+const { rowClass, markViewed } = useViewedRows('penyusutan-verifikasi')
 const { verifikasiList, loadVerifikasiList, verifyPenyusutan } = usePenyusutan()
+const { canApprove, canReject } = usePenyusutanPermission()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },

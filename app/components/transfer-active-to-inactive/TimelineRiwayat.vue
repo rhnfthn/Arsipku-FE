@@ -45,7 +45,7 @@ import { formatDate } from '~/utils/transfer-status';
 const props = defineProps<{ item: TransferActiveToInactive }>();
 const isOpen = ref(true);
 
-/** Mapping status → index step (0-4). */
+/** Mapping status → index step (0-6). */
 const stepIndex = computed(() => {
   const s = props.item.status;
   if (s === 'DRAFT') return 0;
@@ -62,9 +62,10 @@ const stepIndex = computed(() => {
   if (s === 'DISETUJUI_PERSETUJUAN_TU') return 4;
   if (s === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') return 4;
   if (s === 'DISETUJUI_PERSETUJUAN_TERAKHIR_TU') return 5;
-  if (s === 'ARSIP_INAKTIF_DITERIMA') return 5;
-  if (s === 'PENATAAN_ARSIP_INAKTIF') return 5;
-  if (s === 'SELESAI') return 5;
+  if (s === 'MENUNGGU_TTD_PIHAK_KEDUA') return 5;
+  if (s === 'ARSIP_INAKTIF_DITERIMA') return 6;
+  if (s === 'PENATAAN_ARSIP_INAKTIF') return 6;
+  if (s === 'SELESAI') return 6;
   return 0;
 });
 
@@ -72,7 +73,7 @@ const isRejected = computed(() =>
   ['DITOLAK_ATASAN', 'DITOLAK_VERIFIKASI_TERAKHIR', 'DITOLAK_PERSETUJUAN_TU', 'DITOLAK_PERSETUJUAN_TERAKHIR_TU', 'BERKAS_FISIK_TIDAK_SESUAI'].includes(props.item.status),
 );
 
-/** Daftar langkah urutan lama→baru (index 0 = Draft, 4 = Selesai). */
+/** Daftar langkah urutan lama→baru. */
 const steps = computed(() => [
   {
     key: 'draft',
@@ -111,18 +112,28 @@ const steps = computed(() => [
   {
     key: 'penerimaan',
     step: 4,
-    label: 'Menunggu Penerimaan',
-    desc: 'TU kirim ke Atasan Managerial TU',
+    label: 'Menunggu Verifikasi Atasan TU',
+    desc: 'Seluruh level verifikator Atasan Managerial TU menyelesaikan verifikasi',
     date: props.item.tanggalDikirim,
     completed: false,
   },
   {
-    key: 'selesai',
+    key: 'bac-second-signature',
     step: 5,
-    label: 'Selesai',
-    desc: 'TU menata arsip inaktif',
+    label: 'Menunggu Tanda Tangan Pihak Kedua',
+    desc: props.item.bacPihakKeduaName
+      ? `Pejabat penerima: ${props.item.bacPihakKeduaName}`
+      : 'Pejabat pihak kedua menandatangani berita acara',
+    date: props.item.bacPihakKeduaSignedAt,
+    completed: !!props.item.bacPihakKeduaSignedAt,
+  },
+  {
+    key: 'penataan',
+    step: 6,
+    label: props.item.status === 'SELESAI' ? 'Selesai' : 'Menunggu Penataan Arsip Inaktif',
+    desc: 'Usulan kembali ke TU untuk penataan arsip inaktif',
     date: props.item.tuFinalApprovedAt,
-    completed: false,
+    completed: props.item.status === 'SELESAI',
   },
 ]);
 

@@ -63,30 +63,6 @@
         <TulisInputPenerima v-model="selectedTembusan" :label="$t('f_tembusan')" :placeholder="$t('sde_pilih_tembusan')"
           :items="internalItems" />
 
-        <!-- Garis Kewenangan (a.n.) — signer bertanda tangan atas nama pejabat pemberi kuasa -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
-          <div class="flex flex-col sm:flex-row sm:items-center w-full">
-            <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="useGarisKewenangan" class="w-4 h-4 accent-primary-500" />
-              Garis Kewenangan (a.n.)
-            </label>
-            <div class="flex items-center flex-1 w-full gap-2">
-              <template v-if="useGarisKewenangan">
-                <template v-if="isDirut">
-                  <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
-                </template>
-                <template v-else>
-                  <!-- Auto-fill atasan (level 1 di atas, di direktorat sama). Tidak ada dropdown. -->
-                  <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
-                  <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
-                  <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
-                </template>
-              </template>
-              <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
-            </div>
-          </div>
-        </div>
-
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
           <div class="flex flex-col sm:flex-row sm:items-center w-full">
@@ -247,6 +223,30 @@
             </div>
           </ClientOnly>
 
+          <!-- Garis Kewenangan (a.n.) — signer bertanda tangan atas nama pejabat pemberi kuasa -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-200 dark:border-gray-600 gap-1 sm:gap-0">
+            <div class="flex flex-col sm:flex-row sm:items-center w-full">
+              <label class="w-full sm:w-40 text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="useGarisKewenangan" class="w-4 h-4 accent-primary-500" />
+                Garis Kewenangan (a.n.)
+              </label>
+              <div class="flex items-center flex-1 w-full gap-2">
+                <template v-if="useGarisKewenangan">
+                  <template v-if="isDirut">
+                    <span class="text-sm text-gray-700 dark:text-gray-300">a.n Direksi</span>
+                  </template>
+                  <template v-else>
+                    <!-- Auto-fill atasan (level 1 di atas, di direktorat sama). Tidak ada dropdown. -->
+                    <span v-if="isLoadingAtasan" class="text-sm text-gray-400 italic">Memuat atasan...</span>
+                    <span v-else-if="atasNamaLabel" class="text-sm text-gray-700 dark:text-gray-300">a.n {{ atasNamaLabel }}</span>
+                    <span v-else class="text-sm text-gray-400 italic">Tidak ada atasan di direktorat ini</span>
+                  </template>
+                </template>
+                <span v-else class="text-xs text-gray-400">Centang untuk menandatangani atas nama pejabat pemberi kuasa (otomatis ditembuskan)</span>
+              </div>
+            </div>
+          </div>
+
           <div class="flex items-center py-3 mt-2 gap-2">
             <input type="checkbox" id="check_english" v-model="isEnglish"
               class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 cursor-pointer" />
@@ -362,7 +362,7 @@ const signMethodModalRef = ref<any>(null);
 // --- GARIS KEWENANGAN (a.n.) ---
 // Checkbox untuk aktifkan "atas nama". Kalau signer = Direktur Utama → fixed
 // "a.n Direksi" (no dropdown). Else → dropdown atasan di direktorat sama.
-const useGarisKewenangan = ref(false);
+const useGarisKewenangan = ref(true);
 const atasanOptions = ref<any[]>([]);
 const selectedAtasNamaId = ref<number | null>(null);
 const isLoadingAtasan = ref(false);
@@ -387,10 +387,12 @@ const fetchAtasan = async () => {
   try {
     const { apiGet } = useApi();
     const res = await apiGet<any>(`/org-data/atasnama/${user.value.position}`);
+    if (!useGarisKewenangan.value) return;
     atasanOptions.value = res?.data || [];
     // Auto-fill atasan pertama (paling senior di direktorat — e.g. Direktur
     // untuk signer EVP). Tidak ada dropdown, user tidak perlu pilih.
-    selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+    const restored = atasanOptions.value.find(x => Number(x.position) === Number(selectedAtasNamaId.value));
+    selectedAtasNamaId.value = restored?.position ?? atasanOptions.value[0]?.position ?? null;
   } catch (e) {
     console.error('Gagal fetch atasan:', e);
     atasanOptions.value = [];
@@ -403,8 +405,8 @@ const fetchAtasan = async () => {
 // Auto-tembusan: ketika atas nama dipilih (non-Dirut), add atasan ke tembusan.
 // Shape sama dengan mapInternalItems (label/labelJob/raw) supaya tampil benar
 // di template tembusan list. BE tetap force-CC jadi kalau FE kehapus, BE tambah lagi.
-watch(selectedAtasNamaId, (newId) => {
-  if (!newId) return;
+watch([selectedAtasNamaId, atasanOptions], ([newId]) => {
+  if (!useGarisKewenangan.value || !newId) return;
   const r = atasanOptions.value.find(
     (x) => Number(x.position) === Number(newId),
   );
@@ -778,6 +780,7 @@ onMounted(async () => {
         if (d.tgl) setDateFromString(d.tgl);
 
         // Garis Kewenangan (a.n.): restore dari draft SDE.
+        useGarisKewenangan.value = Boolean(d.atas_nama);
         if (d.atas_nama) {
           useGarisKewenangan.value = true;
           if (d.atas_nama_position_id) {
@@ -796,6 +799,7 @@ onMounted(async () => {
       }
     }
 
+    if (useGarisKewenangan.value && !isDirut.value) await fetchAtasan();
   } catch (e) {
   } finally {
     isLoadingData.value = false;

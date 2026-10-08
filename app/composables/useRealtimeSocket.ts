@@ -112,6 +112,8 @@ const tugasCommentAdded = ref<{
   occurredAt: string;
 } | null>(null);
 
+const tugasCommentReactionChanged = ref<{ boardId: string; commentId: string; occurredAt: string } | null>(null);
+
 const tugasCommentDeleted = ref<{
   boardId: string;
   taskId: string | null;
@@ -411,6 +413,12 @@ const connectSocket = async (): Promise<void> => {
       }
     });
 
+    socket.on('tugas:comment-reaction-changed', (payload: any) => {
+      if (payload?.boardId && payload?.commentId) {
+        tugasCommentReactionChanged.value = { boardId: String(payload.boardId), commentId: String(payload.commentId), occurredAt: String(payload.occurredAt ?? new Date().toISOString()) };
+      }
+    });
+
     socket.on('tugas:comment-deleted', (payload: any) => {
       if (payload?.boardId && payload?.commentId) {
         tugasCommentDeleted.value = {
@@ -568,6 +576,7 @@ export function useRealtimeSocket() {
     tugasTaskMoved,
     tugasTaskUpdate,
     tugasCommentAdded,
+    tugasCommentReactionChanged,
     tugasCommentDeleted,
     draftChanged,
     flagUpdate,

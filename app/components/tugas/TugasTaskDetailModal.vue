@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
-import {
-  X,
-  Trash2,
-  Link2,
-  TriangleAlert,
-  ListTodo,
-  SquarePlus,
-  Lock,
-  FileText,
-} from 'lucide-vue-next';
+import { X, Trash2, Lock, FileText } from 'lucide-vue-next';
+import { resolveTugasBoardIcon } from '~/utils/tugas-board-icon';
+import TugasReferenceEditor from './TugasReferenceEditor.vue';
 import TulisInputTanggal from '~/components/Tulis/InputTanggal.vue';
 import type {
   TugasMember,
@@ -22,6 +15,8 @@ import type {
 
 const props = defineProps<{
   modelValue: boolean;
+  boardType: 'personal' | 'bersama';
+  boardIcon?: string | null;
   task: TugasTask | null;
   members: TugasMember[];
   saving: boolean;
@@ -84,12 +79,9 @@ const form = ref({
   tenggat: '',
   assigneeMemberId: null as string | null,
 });
-const referenceForm = ref({
-  type: 'naskah_masuk' as TugasReferenceType,
-  number: '',
-});
 const evidenceFiles = ref<File[]>([]);
 
+const taskBoardIcon = computed(() => resolveTugasBoardIcon(props.boardIcon));
 const isCreateMode = computed(() => props.mode === 'create');
 const NO_PRIORITY = '__NO_PRIORITY__';
 const NO_PIC = '__NO_PIC__';
@@ -129,7 +121,6 @@ watch(
         tenggat: minimumDeadline.value.toString(),
         assigneeMemberId: null,
       };
-      referenceForm.value.number = '';
       evidenceFiles.value = [];
       return;
     }
@@ -141,7 +132,6 @@ watch(
       tenggat: props.task.tenggat ?? '',
       assigneeMemberId: props.task.assignee?.id ?? null,
     };
-    referenceForm.value.number = '';
     evidenceFiles.value = [];
   }
 );
@@ -163,14 +153,6 @@ const save = () => {
     return;
   }
   emit('save', payload);
-};
-
-const addReference = () => {
-  const referenceNumber = referenceForm.value.number.trim();
-  if (!referenceNumber) return;
-  emit('add-reference', referenceForm.value.type, referenceNumber, () => {
-    referenceForm.value.number = '';
-  });
 };
 
 const handleEvidenceSelection = (files: File[]) => {
@@ -243,8 +225,7 @@ const selectedAssigneeMember = computed(() =>
             <span
               class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
             >
-              <SquarePlus v-if="isCreateMode" class="h-5 w-5" />
-              <ListTodo v-else class="h-5 w-5" />
+              <component :is="taskBoardIcon" class="h-5 w-5" />
             </span>
             <div>
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">
@@ -466,81 +447,17 @@ const selectedAssigneeMember = computed(() =>
           </div>
 
           <!-- Referensi ArsipKu (Phase 7) -->
-          <div v-if="!isCreateMode">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ t('tugas_referensi') }}
-            </label>
-            <div v-if="references.length" class="space-y-1.5">
-              <div
-                v-for="reference in references"
-                :key="reference.id"
-                class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-600"
-              >
-                <Link2 v-if="reference.available" class="h-3.5 w-3.5 shrink-0 text-primary-500" />
-                <TriangleAlert v-else class="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                <NuxtLink
-                  v-if="reference.available"
-                  :to="reference.route"
-                  class="min-w-0 flex-1 truncate text-xs font-medium text-primary-600 hover:underline dark:text-primary-400"
-                  :title="reference.labelSnapshot"
-                >
-                  {{ reference.labelSnapshot }}
-                </NuxtLink>
-                <span
-                  v-else
-                  class="min-w-0 flex-1 truncate text-xs text-amber-700 dark:text-amber-300"
-                  :title="reference.labelSnapshot"
-                >
-                  {{ reference.labelSnapshot }} — {{ t('tugas_referensi_tidak_tersedia') }}
-                </span>
-                <button
-                  v-if="!isReadOnly && canUpdateTask"
-                  class="shrink-0 text-gray-300 transition-colors hover:text-red-600 dark:text-gray-600 dark:hover:text-red-400"
-                  :aria-label="t('tugas_hapus_referensi')"
-                  @click="emit('remove-reference', reference.id)"
-                >
-                  <Trash2 class="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-            <p v-else class="text-xs text-gray-500 dark:text-gray-400">
-              {{ t('tugas_referensi_kosong') }}
-            </p>
-
-            <div
-              v-if="!isReadOnly && canSubmit"
-              class="mt-2 grid gap-2 sm:grid-cols-[150px_1fr_auto]"
-            >
-              <select
-                v-model="referenceForm.type"
-                :disabled="addingReference"
-                class="rounded-lg border border-gray-300 bg-white px-2 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="naskah_masuk">{{ t('tugas_ref_naskah_masuk') }}</option>
-                <option value="disposisi">{{ t('tugas_ref_disposisi') }}</option>
-                <option value="naskah_lainnya">{{ t('tugas_ref_naskah_lainnya') }}</option>
-              </select>
-              <input
-                v-model="referenceForm.number"
-                type="text"
-                :placeholder="t('tugas_referensi_id_placeholder')"
-                :disabled="addingReference"
-                class="min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-                @keyup.enter="addReference"
-              />
-              <UButton
-                size="xs"
-                icon="i-lucide-link-2"
-                color="primary"
-                variant="soft"
-                :loading="addingReference"
-                :disabled="!referenceForm.number.trim()"
-                @click="addReference"
-              >
-                {{ t('tugas_tambah_referensi') }}
-              </UButton>
-            </div>
-          </div>
+          <TugasReferenceEditor
+            v-if="!isCreateMode && task"
+            :key="task.id"
+            :task-id="task.id"
+            :board-type="boardType"
+            :references="references"
+            :editable="!isReadOnly && canSubmit"
+            :adding="addingReference"
+            @add="(type, number, done) => emit('add-reference', type, number, done)"
+            @remove="(id) => emit('remove-reference', id)"
+          />
         </div>
 
         <!-- Footer -->
@@ -553,8 +470,8 @@ const selectedAssigneeMember = computed(() =>
                 !isReadOnly &&
                 canUpdateTask &&
                 !isCreateMode &&
-                task.status === 'done' &&
-                !task.archivedAt
+                task?.status === 'done' &&
+                !task?.archivedAt
               "
               icon="i-lucide-archive"
               color="neutral"
@@ -565,7 +482,7 @@ const selectedAssigneeMember = computed(() =>
               {{ t('tugas_arsip_task') }}
             </UButton>
             <UButton
-              v-if="!isReadOnly && canUpdateTask && !isCreateMode && task.archivedAt"
+              v-if="!isReadOnly && canUpdateTask && !isCreateMode && task?.archivedAt"
               icon="i-lucide-archive-restore"
               color="neutral"
               variant="ghost"

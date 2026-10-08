@@ -20,13 +20,24 @@ export default defineNuxtRouteMiddleware(async (to) => {
     prefixes.some((prefix) => path === prefix || path.startsWith(prefix + '/'));
 
   const isSuperadminOnlyPath = isPathMatchPrefix(superadminOnlyPrefixes);
+  const isRbacPath = path === '/rbac' || path.startsWith('/rbac/');
 
   // Redirect as early as possible using cached role to avoid unauthorized page flashes.
-  if (isSuperadminOnlyPath && roleCookie.value && roleCookie.value !== 'superadmin') {
+  if (
+    isSuperadminOnlyPath &&
+    !isRbacPath &&
+    roleCookie.value &&
+    roleCookie.value !== 'superadmin'
+  ) {
     throw createError({ statusCode: 403, statusMessage: 'Akses Ditolak', fatal: true });
   }
 
-  if (process.server && isSuperadminOnlyPath && roleCookie.value !== 'superadmin') {
+  if (
+    process.server &&
+    isSuperadminOnlyPath &&
+    !isRbacPath &&
+    roleCookie.value !== 'superadmin'
+  ) {
     throw createError({ statusCode: 403, statusMessage: 'Akses Ditolak', fatal: true });
   }
 
@@ -51,7 +62,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     tokenCookie.value = token;
   }
 
-  const { user, getProfile } = useAuth();
+  const { user, getProfile, hasPermission } = useAuth();
   if (!user.value) {
     try {
       const profile = await getProfile();
@@ -74,6 +85,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
+  if (
+    isPathMatchPrefix(['/tugas']) &&
+    (user.value?.active_profile === 'sekretaris' ||
+      ['PT', 'PH', 'PS', 'VI', 'SE'].includes(
+        String(user.value?.position_status ?? '').toUpperCase()
+      ))
+  )
+    return navigateTo('/beranda', { replace: true });
+
   const role = user.value?.role ?? roleCookie.value ?? null;
 
   if (process.client && user.value?.role && roleCookie.value !== user.value.role) {
@@ -81,6 +101,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (role === 'superadmin') return;
+
+  // RBAC dapat dikelola oleh user yang memang diberi permission granular.
+  // Endpoint backend tetap memvalidasi `role.assign-permission` saat simpan.
+  if (
+    isRbacPath &&
+    (hasPermission('role', 'read') || hasPermission('role', 'assign-permission'))
+  ) {
+    return;
+  }
 
   if (role === 'admin') {
     // Admin TIDAK boleh akses /master/*, /rbac, /konfigurasi-sistem.

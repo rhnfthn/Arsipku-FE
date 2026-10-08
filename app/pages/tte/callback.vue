@@ -29,7 +29,7 @@
 
       <div class="mt-6 flex justify-center gap-3">
         <UButton v-if="done" color="primary" icon="i-lucide-check" :to="returnTo">
-          Kembali ke Naskah
+          {{ $t('tte_callback_sent') }}
         </UButton>
         <UButton
           v-if="failed && canRetry"
@@ -51,6 +51,7 @@ import type { TteTransactionStatus } from '~/composables/useTtePortal';
 definePageMeta({ layout: false, middleware: 'auth' });
 
 const route = useRoute();
+const { t } = useI18n();
 const { submitCallback, getTransactionStatus } = useTtePortal();
 
 const transaction = ref<TteTransactionStatus | null>(null);
@@ -59,25 +60,21 @@ const errorMessage = ref('');
 const callbackCode = ref('');
 const callbackState = ref('');
 const retrying = ref(false);
+const transactionId = ref('');
+let disposed = false;
+onBeforeUnmount(() => { disposed = true; });
 
 const queryValue = (value: unknown): string =>
   Array.isArray(value) ? String(value[0] || '') : String(value || '');
 
-// Halaman tujuan setelah selesai — default beranda bila tidak ada
-const returnTo = computed(() => {
-  const target = queryValue(route.query.return_to);
-  if (target && target.startsWith('/') && !target.startsWith('//') && !target.includes('\\')) {
-    return target;
-  }
-  return '/beranda';
-});
+const returnTo = '/korespondensi/terkirim';
 
 const done = computed(() => phase.value === 'done');
 const failed = computed(() => phase.value === 'failed');
 
 const canRetry = computed(
   () =>
-    Boolean(callbackCode.value && callbackState.value) &&
+    Boolean(transactionId.value || (callbackCode.value && callbackState.value)) &&
     !['EXPIRED', 'CANCELLED'].includes(transaction.value?.status || '')
 );
 
@@ -100,7 +97,7 @@ const titleText = computed(() => {
 });
 
 const messageText = computed(() => {
-  if (phase.value === 'done') return 'Tanda tangan elektronik telah diterapkan pada dokumen Anda.';
+  if (phase.value === 'done') return t('tte_callback_redirect');
   if (phase.value === 'failed')
     return (
       errorMessage.value || 'Terjadi kendala saat memproses penandatanganan. Silakan coba lagi.'
@@ -117,30 +114,42 @@ const statusColor = computed(() => {
 });
 
 const processCallback = async () => {
-  if (!callbackCode.value || !callbackState.value) return;
+  if (retrying.value || (!transactionId.value && (!callbackCode.value || !callbackState.value))) return;
   retrying.value = true;
   phase.value = 'processing';
   errorMessage.value = '';
 
   try {
-    const result = await submitCallback({
-      code: callbackCode.value,
-      state: callbackState.value,
-    });
-    transaction.value = await getTransactionStatus(result.transactionId);
-
-    if (result.status === 'SIGNED' && transaction.value.completedAt) {
-      phase.value = 'done';
-    } else {
-      phase.value = 'failed';
-      errorMessage.value =
-        transaction.value.completionError ||
-        result.message ||
-        'Hasil TTE diterima tetapi penyelesaian naskah belum selesai.';
+    if (!transactionId.value) {
+      const result = await submitCallback({
+        code: callbackCode.value,
+        state: callbackState.value,
+      });
+      transactionId.value = result.transactionId;
     }
+
+    // Callback dan worker dapat menyelesaikan PDF secara bersamaan.
+    // Tunggu finalisasi, lalu periksa status kembali tanpa mengulang exchange code.
+    for (let attempt = 0; attempt < 15 && !disposed; attempt++) {
+      transaction.value = await getTransactionStatus(transactionId.value);
+      if (disposed) return;
+      if (transaction.value.status === 'SIGNED' && transaction.value.completedAt) {
+        phase.value = 'done';
+        await navigateTo(returnTo, { replace: true });
+        return;
+      }
+      if (['FAILED', 'EXPIRED', 'CANCELLED', 'PARTIAL'].includes(transaction.value.status) ||
+          transaction.value.completionError) break;
+      if (attempt < 14) await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    if (disposed) return;
+    phase.value = 'failed';
+    errorMessage.value = transaction.value?.completionError ||
+      transaction.value?.errorMessage || t('tte_callback_incomplete');
   } catch (error: any) {
     phase.value = 'failed';
     errorMessage.value =
+      error?.response?.data?.message ||
       error?.response?._data?.message ||
       error?.message ||
       'Gagal memproses callback dari Portal TTE.';

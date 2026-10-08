@@ -50,6 +50,10 @@
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.klasifikasiTeks || berkas.klasifikasi || '-' }}</p>
           </div>
           <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Lokasi</span>
+            <p class="text-gray-900 dark:text-white font-medium">{{ berkas.lokasi || berkas.lokasiFisik || berkas.lokasi_fisik || '-' }}</p>
+          </div>
+          <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Retensi Aktif</span>
             <p class="text-gray-900 dark:text-white font-medium">{{ berkas.retensiAktifTahun || 0 }} Tahun</p>
           </div>
@@ -103,33 +107,27 @@
           header-class="bg-[#457fb6] text-white text-left"
           row-class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
         >
-          <template #cell-nomorBerkas="{ row }">
-            <p class="font-mono text-xs font-semibold text-gray-900 dark:text-white">{{ row.nomorBerkas }}</p>
+          <template #cell-nomorSurat="{ row }">
+            <div class="min-w-40">
+              <p class="font-mono text-xs font-semibold text-gray-900 dark:text-white">{{ row.nomorSurat || '-' }}</p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.tanggalNaskah) }}</p>
+            </div>
           </template>
           <template #cell-kodeKlasifikasi="{ row }">
             <p class="text-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi }}</p>
           </template>
+          <template #cell-jumlah="{ row }">
+            <p class="text-gray-700 dark:text-gray-200">{{ row.jumlahHalaman ?? '-' }}</p>
+          </template>
           <template #cell-uraianInformasi="{ row }">
             <p class="min-w-64 max-w-xl font-medium text-gray-800 dark:text-gray-200">{{ row.uraianInformasi }}</p>
-          </template>
-          <template #cell-tanggal="{ row }">
-            <p class="whitespace-nowrap text-gray-600 dark:text-gray-300">{{ formatDate(row.tanggal) }}</p>
-          </template>
-          <template #cell-jumlah="{ row }">
-            <p class="text-center text-gray-600 dark:text-gray-300">{{ row.jumlah }}</p>
-          </template>
-          <template #cell-lokasiSimpan="{ row }">
-            <p class="text-gray-600 dark:text-gray-300">{{ row.lokasiSimpan }}</p>
-          </template>
-          <template #cell-klasifikasiKeamanan="{ row }">
-            <p class="text-gray-600 dark:text-gray-300">{{ row.klasifikasiKeamanan }}</p>
           </template>
           <template #cell-aksi="{ row }">
             <button
               type="button"
               @click="openNaskahPdf(row.naskah)"
-              class="inline-flex p-1 text-[##000000] transition-colors hover:text-[#3a6d9c]"
-              title="Lihat isi berkas"
+              class="inline-flex p-1 text-black transition-colors hover:text-[#3a6d9c] dark:text-white"
+              title="Lihat naskah"
             >
               <UIcon name="i-lucide-eye" class="h-4 w-4" />
             </button>
@@ -234,7 +232,7 @@ const breadcrumbItems = computed(() => {
   if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Penerimaan Usulan', to: '/maintenance/penerimaan-usulan' },
+      { label: 'Penerimaan Arsip', to: '/maintenance/penerimaan-usulan' },
       { label: nomorUsulan.value, to: `/maintenance/penerimaan-usulan/${usulanId.value}` },
       { label: 'Detail Berkas' },
     ];
@@ -254,7 +252,6 @@ const breadcrumbItems = computed(() => {
 });
 
 const naskahList = ref<any[]>([]);
-const daftarIsiMetadata = ref<any>(null);
 const isArchived = ref(false);
 const isMusnah = ref(false);
 const loading = ref(true);
@@ -329,25 +326,20 @@ const openNaskahPdf = async (naskah: any) => {
 };
 
 const daftarIsiColumns = [
-  { key: 'nomorBerkas', label: 'Nomor Berkas', headerClass: 'text-center' },
-  { key: 'kodeKlasifikasi', label: 'Kode Klasifikasi', headerClass: 'text-center' },
-  { key: 'uraianInformasi', label: 'Uraian Informasi Isi Berkas', headerClass: 'text-center' },
-  { key: 'tanggal', label: 'Tanggal', headerClass: 'text-center' },
-  { key: 'jumlah', label: 'Jumlah', headerClass: 'text-center' },
-  { key: 'lokasiSimpan', label: 'Lokasi Simpan', headerClass: 'text-center' },
-  { key: 'klasifikasiKeamanan', label: 'Klasifikasi Keamanan', headerClass: 'text-center' },
+  { key: 'nomorSurat', label: 'Nomor & Tanggal' },
+  { key: 'kodeKlasifikasi', label: 'Kode Klasifikasi' },
+  { key: 'uraianInformasi', label: 'Uraian Informasi Isi Berkas' },
+  { key: 'jumlah', label: 'Jumlah', headerClass: 'text-left' },
   { key: 'aksi', label: 'Aksi', headerClass: 'text-center' },
 ];
 
 const daftarIsiRows = computed(() => naskahList.value.map((naskah, index) => ({
   id: naskah.id ?? naskah.naskahId ?? index,
-  nomorBerkas: daftarIsiMetadata.value?.kode || berkas.value?.kodeBerkas || '-',
-  kodeKlasifikasi: daftarIsiMetadata.value?.kodeKlasifikasi || berkas.value?.klasifikasi || '-',
+  nomorSurat: naskah.nomorSurat ?? naskah.nomor_surat ?? '-',
+  kodeKlasifikasi: berkas.value?.klasifikasi ?? '-',
   uraianInformasi: naskah.perihal || naskah.nomorSurat || 'Tanpa uraian',
-  tanggal: naskah.tanggalNaskah || naskah.tanggal || daftarIsiMetadata.value?.tanggal || null,
-  jumlah: 1,
-  lokasiSimpan: daftarIsiMetadata.value?.lokasiSimpan || berkas.value?.lokasiSimpan || berkas.value?.lokasi || '-',
-  klasifikasiKeamanan: daftarIsiMetadata.value?.klasifikasiKeamanan || berkas.value?.klasifikasiKeamanan || berkas.value?.keamanan || '-',
+  jumlahHalaman: naskah.jumlahHalaman ?? naskah.jumlah_halaman ?? null,
+  tanggalNaskah: naskah.tanggalNaskah ?? naskah.tanggal_naskah ?? naskah.tanggal ?? null,
   naskah,
 })));
 
@@ -416,6 +408,7 @@ onMounted(async () => {
           retensiInaktifTahun: arsipBerkas.retensi_inaktif_tahun,
           tindakanPenyusutanAkhir: arsipBerkas.tindakan_penyusutan_akhir,
           isiRingkas: arsipBerkas.isi_ringkas,
+          lokasi: arsipBerkas.lokasi_fisik,
           tanggalDibuat: arsipBerkas.tanggal_dibuat,
           tanggalDitutup: arsipBerkas.tanggal_ditutup,
           status: arsipBerkas.status_akhir,
@@ -461,14 +454,6 @@ onMounted(async () => {
           usulanStatus.value = usulanRes.data.status;
         }
 
-        // Samakan metadata tabel preview dengan Daftar Isi Berkas pada halaman usulan.
-        const daftarIsiRes: any = await apiGet(
-          `/transfer-active-to-inactive/${usulanId}/daftar-isi`,
-          {},
-          { skipCache: true },
-        );
-        const rows = daftarIsiRes?.data?.daftarIsi ?? [];
-        daftarIsiMetadata.value = rows.find((row: any) => row.id === id) ?? rows[0] ?? null;
       } catch {
         // Ignore — fallback to berkas status
       }

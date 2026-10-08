@@ -31,6 +31,7 @@ const props = defineProps<{
   loading: boolean;
   sending: boolean;
   removingIds: Set<string>;
+  reactingIds: Set<string>;
   hasMore: boolean;
   loadingMore: boolean;
   /** Position ID user aktif — dipakai menandai komentar milik sendiri. */
@@ -41,7 +42,16 @@ const emit = defineEmits<{
   (e: 'send', isi: string, taskId: string | null): void;
   (e: 'remove', commentId: string, scope: 'me' | 'everyone'): void;
   (e: 'load-more'): void;
+  (e: 'react', commentId: string, emoji: string, active: boolean): void;
 }>();
+
+const reactionOptions = ['👍', '❤️', '😂', '🎉', '😮', '😢', '🙏'];
+const openReactionId = ref<string | null>(null);
+const selectReaction = (comment: TugasTaskComment, emoji: string) => {
+  const reacted = (comment.reactions ?? []).some((reaction) => reaction.emoji === emoji && reaction.reacted);
+  openReactionId.value = null;
+  emit('react', comment.id, emoji, !reacted);
+};
 
 const { t } = useI18n();
 
@@ -497,6 +507,42 @@ onMounted(async () => {
                 </span>
                 <template v-else>{{ segment.text }}</template>
               </template>
+            </div>
+            <div v-if="!comment.isDeletedForEveryone" class="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <button
+                v-for="reaction in comment.reactions ?? []"
+                :key="reaction.emoji"
+                type="button"
+                class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-50"
+                :class="reaction.reacted ? 'border-primary-300 bg-primary-50 text-primary-700 dark:border-primary-600 dark:bg-primary-900/40 dark:text-primary-200' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
+                :aria-pressed="reaction.reacted"
+                :aria-label="t('tugas_forum_reaksi_label', { emoji: reaction.emoji, count: reaction.count })"
+                :disabled="reactingIds.has(comment.id)"
+                @click="emit('react', comment.id, reaction.emoji, !reaction.reacted)"
+              >
+                <span>{{ reaction.emoji }}</span><span>{{ reaction.count }}</span>
+              </button>
+              <UPopover
+                :open="openReactionId === comment.id"
+                :content="{ side: 'top', align: isMine(comment) ? 'end' : 'start', sideOffset: 6 }"
+                @update:open="openReactionId = $event ? comment.id : null"
+              >
+                <UButton icon="i-lucide-smile-plus" color="neutral" variant="ghost" size="xs" :loading="reactingIds.has(comment.id)" :disabled="reactingIds.has(comment.id)" :aria-label="t('tugas_forum_tambah_reaksi')" />
+                <template #content>
+                  <div class="flex items-center gap-0.5 rounded-lg bg-white p-1.5 dark:bg-gray-800" :aria-label="t('tugas_forum_tambah_reaksi')">
+                    <button
+                      v-for="emoji in reactionOptions"
+                      :key="emoji"
+                      type="button"
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-lg transition-colors hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-primary-500 disabled:opacity-50 dark:hover:bg-primary-900/40"
+                      :aria-label="emoji"
+                      :aria-pressed="(comment.reactions ?? []).some((reaction) => reaction.emoji === emoji && reaction.reacted)"
+                      :disabled="reactingIds.has(comment.id)"
+                      @click="selectReaction(comment, emoji)"
+                    >{{ emoji }}</button>
+                  </div>
+                </template>
+              </UPopover>
             </div>
             <UDropdownMenu
               v-if="!comment.isDeletedForEveryone"

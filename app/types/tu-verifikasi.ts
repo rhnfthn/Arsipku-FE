@@ -13,6 +13,8 @@ export interface TuUsulanItem {
   arsipPerihal: string;
   arsipKode: string | null;
   arsipKlasifikasi?: string | null;
+  /** Lokasi fisik asli yang disimpan pada tahap pemberkasan. */
+  lokasiAwal?: string | null;
   arsipTindakanPenyusutan?: string | null;
   tanggalRetensiAktifHabis: string | null;
   arsipIds: Array<{
@@ -38,10 +40,20 @@ export interface TuUsulanItem {
   receivedAt: string | null;
   arrangedAt: string | null;
   beritaAcaraUrl: string | null;
+  beritaAcaraNomor?: string | null;
+  bacPihakPertamaPersnum?: number | null;
+  bacPihakPertamaName?: string | null;
+  bacPihakPertamaJabatan?: string | null;
+  bacPihakKeduaPersnum?: number | null;
+  bacPihakKeduaName?: string | null;
+  bacPihakKeduaJabatan?: string | null;
+  bacSignedAt?: string | null;
+  bacPihakKeduaSignedAt?: string | null;
   lokasiPenataan: string | null;
   rak: string | null;
   baris: string | null;
   kolom: string | null;
+  labelPenataan: string | null;
   keteranganPenataan: string | null;
   fotoPenataan: string | null;
   createdAt: string;
@@ -97,6 +109,14 @@ export interface VerifikasiBerkasPayload {
 export interface AjukanAtasanTuPayload {
   atasanTuPersnum?: string;
   atasanTuList?: Array<{
+    persnum: string;
+    name: string;
+    jabatan: string;
+  }>;
+  bacPihakKeduaPersnum: string;
+  bacPihakKeduaName: string;
+  bacPihakKeduaJabatan: string;
+  bacTembusan?: Array<{
     persnum: string;
     name: string;
     jabatan: string;

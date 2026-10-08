@@ -53,7 +53,7 @@ export interface DraftParams {
 }
 
 export const useDraft = () => {
-  const { get, post, del, api, apiPatch, apiPost } = useApi();
+  const { get, post, del, api, apiGet, apiPatch, apiPost } = useApi();
 
   const isLoadingDraft = ref(false);
   const items = ref<any[]>([]);
@@ -90,7 +90,7 @@ export const useDraft = () => {
       if (params.end_date) query.append('end_date', params.end_date);
       if (params.is_konsep) query.append('is_konsep', 'true');
 
-      const response = await get(`/draft/list?${query.toString()}`);
+      const response = await apiGet<any>(`/draft/list?${query.toString()}`, {}, { skipCache: true });
       const rawData = response?.data || [];
       const meta = response?.pagination || {};
 
@@ -164,6 +164,10 @@ export const useDraft = () => {
           color: getRandomColor(item.id_naskah || '0'),
           isRead: true,
           isStarred: false,
+          status: item.status,
+          tteStatus: item.tte_status,
+          tteExpiresAt: item.tte_expires_at,
+          canResumeTte: item.can_resume_tte,
           originalData: item
         };
       });

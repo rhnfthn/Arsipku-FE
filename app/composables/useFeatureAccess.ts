@@ -73,6 +73,15 @@ const routePermissions: Record<string, string> = {
   '/rbac/permissions': 'role:read',
   '/rbac/resources': 'role:read',
   '/rbac/users': 'user:read',
+  // Penyusutan — setiap submenu memiliki permission Read sendiri.
+  '/maintenance/penyusutan/pengajuan-penyusutan':
+    'pemeliharaan.penyusutan.pengajuan:read',
+  '/maintenance/penyusutan/penataan-pemusnahan':
+    'pemeliharaan.penyusutan.penataan-pemusnahan:read',
+  '/maintenance/penyusutan/verifikasi-penyusutan':
+    'pemeliharaan.penyusutan.verifikasi:read',
+  '/maintenance/penyusutan/backup-status':
+    'pemeliharaan.penyusutan.penataan-pemusnahan:read',
   // Audit Trail tetap dibatasi backend untuk SUPERADMIN melalui RolesGuard.
   '/admin/audit': 'audit:read-log',
   '/admin/audit/anomaly': 'audit:read-anomaly',
@@ -137,6 +146,20 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
   { pattern: /^\/kelola\/penggunaan\/(?:usulan-akses-berkas|usulan-saya)(?:\/|$)/, perm: 'usulan-akses-berkas:read-usulan' },
   { pattern: /^\/kelola\/penggunaan\/verifikasi-usulan(?:\/|$)/, perm: 'usulan-akses-berkas:read-verifikasi' },
   { pattern: /^\/kelola\/penggunaan\/pemberian(?:\/|$)/, perm: 'usulan-akses-berkas:read-pemberian' },
+  // Penyusutan — guard URL detail/aksi agar tidak bisa dibuka langsung
+  // setelah permission Read submenu dicabut.
+  {
+    pattern: /^\/maintenance\/penyusutan\/pengajuan-penyusutan\/(?:ajukan|detail)\/[^/]+$/,
+    perm: 'pemeliharaan.penyusutan.pengajuan:read',
+  },
+  {
+    pattern: /^\/maintenance\/penyusutan\/penataan-pemusnahan\/[^/]+$/,
+    perm: 'pemeliharaan.penyusutan.penataan-pemusnahan:read',
+  },
+  {
+    pattern: /^\/maintenance\/penyusutan\/verifikasi-penyusutan\/(?:detail|tindak-lanjuti)\/[^/]+$/,
+    perm: 'pemeliharaan.penyusutan.verifikasi:read',
+  },
 ];
 
 /**

@@ -189,32 +189,35 @@
         @click="bacSignerOpen = !bacSignerOpen"
         :aria-expanded="bacSignerOpen"
       >
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Pejabat Penandatangan</h3>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Penandatangan BAC</h3>
         <UIcon
           :name="bacSignerOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
           class="h-4 w-4 text-gray-400"
         />
       </button>
-      <div v-show="bacSignerOpen" class="mt-4 space-y-2">
-    <div
-      class="flex items-center gap-3 rounded-lg border p-3"
-      :class="usulan.bacSignedAt
-        ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-        : 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'"
-    >
+      <div v-show="bacSignerOpen" class="mt-4 space-y-3">
+        <div class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
           <div class="min-w-0 flex-1">
             <p class="text-sm font-bold text-gray-900 dark:text-white">
               {{ usulan.bacPihakPertamaName || '-' }}<span v-if="usulan.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ usulan.bacPihakPertamaJabatan }}</span>
             </p>
           </div>
-      <span
-        class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-        :class="usulan.bacSignedAt
-          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'"
-      >
-        {{ usulan.bacSignedAt ? 'Ditandatangani' : 'Penandatangan' }}
-      </span>
+          <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+            Pihak Pertama
+          </span>
+        </div>
+        <div
+          v-if="usulan.bacPihakKeduaPersnum || usulan.bacPihakKeduaName"
+          class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-900/20"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ usulan.bacPihakKeduaName || '-' }}<span v-if="usulan.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ usulan.bacPihakKeduaJabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+            Pihak Kedua
+          </span>
         </div>
       </div>
     </div>
@@ -280,7 +283,12 @@ const bacTembusan = computed(() =>
   Array.isArray(props.usulan.bacTembusan) ? props.usulan.bacTembusan : [],
 );
 const hasBacSigner = computed(
-  () => Boolean(props.usulan.bacPihakPertamaPersnum || props.usulan.bacPihakPertamaName),
+  () => Boolean(
+    props.usulan.bacPihakPertamaPersnum ||
+    props.usulan.bacPihakPertamaName ||
+    props.usulan.bacPihakKeduaPersnum ||
+    props.usulan.bacPihakKeduaName,
+  ),
 );
 const hasBacTembusan = computed(() => bacTembusan.value.length > 0);
 

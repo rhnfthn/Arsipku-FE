@@ -100,7 +100,15 @@ export const useTtePortal = () => {
     return unwrapApiResponse(res);
   };
 
+  const getPendingCorrespondence = async (idNaskah: string): Promise<TteTransactionStatus & { signingUrl: string | null }> => {
+    const response = await apiGet<TteTransactionStatus & { signingUrl: string | null }>(
+      `/tte-portal/naskah/${encodeURIComponent(idNaskah)}/pending`, {}, { skipCache: true }
+    );
+    return unwrapApiResponse(response);
+  };
+
   return {
+    getPendingCorrespondence,
     getTteMode,
     submitCallback,
     getTransactionStatus,

@@ -53,6 +53,9 @@ export interface VerifikasiUsulanItem {
   bacPihakPertamaPersnum?: number | null;
   bacPihakPertamaName?: string | null;
   bacPihakPertamaJabatan?: string | null;
+  bacPihakKeduaPersnum?: number | null;
+  bacPihakKeduaName?: string | null;
+  bacPihakKeduaJabatan?: string | null;
   bacTembusan?: Array<{
     persnum: number;
     name: string;
@@ -61,6 +64,9 @@ export interface VerifikasiUsulanItem {
   bacSignedAt?: string | null;
   bacSignedBy?: number | null;
   bacSignatureQr?: string | null;
+  bacPihakKeduaSignedAt?: string | null;
+  bacPihakKeduaSignedBy?: number | null;
+  bacPihakKeduaSignatureQr?: string | null;
   approvedAt?: string | null;
   finalVerifiedAt?: string | null;
   createdAt: string;
