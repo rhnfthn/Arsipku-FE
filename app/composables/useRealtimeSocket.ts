@@ -47,6 +47,7 @@ const arsipPersetujuanWaitingCount = ref<number>(0);
 const naskahLainnyaPersetujuanWaitingCount = ref<number>(0);
 const naskahLainnyaLegalDraftingWaitingCount = ref<number>(0);
 const tugasAssignedWaitingCount = ref<number>(0);
+const tertundaCount = ref<number>(0);
 const isConnected = ref<boolean>(false);
 const lastSummaryAt = ref<number>(0);
 const correspondenceRoutingUpdate = ref<{
@@ -269,6 +270,12 @@ const connectSocket = async (): Promise<void> => {
       lastSummaryAt.value = Date.now();
       if (payload && typeof payload.count === 'number') {
         inboxCount.value = payload.count;
+      }
+    });
+
+    socket.on('tertunda:count', (payload: any) => {
+      if (payload && typeof payload.count === 'number') {
+        tertundaCount.value = payload.count;
       }
     });
 
@@ -556,6 +563,7 @@ export function useRealtimeSocket() {
     naskahLainnyaPersetujuanWaitingCount,
     naskahLainnyaLegalDraftingWaitingCount,
     tugasAssignedWaitingCount,
+    tertundaCount,
     tugasBoardUpdate,
     tugasTaskMoved,
     tugasTaskUpdate,
