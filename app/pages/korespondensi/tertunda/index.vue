@@ -55,6 +55,10 @@ const {
   toggleFlag,
 } = useTertunda();
 
+// Badge jumlah tertunda di sidebar — ikut di-refresh saat list berubah
+// (arsip/favorit/kirim dari halaman lain) agar angka selalu akurat.
+const { fetchTertundaCount } = useTertundaCount();
+
 const {
   labels,
   fetchLabels,
@@ -325,6 +329,8 @@ const refreshData = async () => {
     Object.assign(params, filterMap[activeFilterType.value] || {});
 
     await fetchTertunda(params);
+    // Sinkronkan badge sidebar dengan data terbaru.
+    fetchTertundaCount().catch(() => {});
   } catch (err) {
     console.error("Gagal refresh data tertunda:", err);
   } finally {

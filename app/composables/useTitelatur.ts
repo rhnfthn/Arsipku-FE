@@ -98,9 +98,11 @@ export const useTitelatur = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to create titelatur";
       console.error("❌ createTitelatur error:", err);
+      // Tampilkan pesan spesifik dari BE (mis. validasi duplikasi titelatur).
+      const serverMsg = err?.response?.data?.message || err?.message;
       toast.add({
         title: "Gagal menambahkan",
-        description: "Terjadi kesalahan saat menambahkan data. Coba lagi.",
+        description: serverMsg || "Terjadi kesalahan saat menambahkan data. Coba lagi.",
         color: "error",
       });
       return false;
@@ -141,9 +143,11 @@ export const useTitelatur = () => {
     } catch (err: any) {
       error.value = err?.message || "Failed to update titelatur";
       console.error("❌ updateTitelatur error:", err);
+      // Tampilkan pesan spesifik dari BE (mis. validasi duplikasi titelatur).
+      const serverMsg = err?.response?.data?.message || err?.message;
       toast.add({
         title: "Gagal memperbarui",
-        description: "Terjadi kesalahan saat memperbarui data. Coba lagi.",
+        description: serverMsg || "Terjadi kesalahan saat memperbarui data. Coba lagi.",
         color: "error",
       });
       return false;
