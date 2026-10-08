@@ -782,6 +782,8 @@
   "del_hapus_title": "Hapus",
   "tit_title": "Titelatur Inggris",
   "tit_validationI_required": "Titelatur Indonesia wajib diisi",
+  "tit_validationI_duplicate": "Titelatur Indonesia sudah ada. Gunakan titelatur yang berbeda.",
+  "tit_validationI_duplicate_title": "Duplikat Titelatur",
   "tit_validationE_required": "Titelatur Inggris wajib diisi",
   "tit_btn_tambah": "Tambah Titelatur",
   "tit_cari_placeholder": "Cari Titelatur",

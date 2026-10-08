@@ -918,6 +918,8 @@
   "del_hapus_title": "Delete",
   "tit_title": "English Nomenclature",
   "tit_validationI_required": "Titelatur Indonesia must be required",
+  "tit_validationI_duplicate": "Indonesian nomenclature already exists. Use a different one.",
+  "tit_validationI_duplicate_title": "Duplicate Nomenclature",
   "tit_validationE_required": "Titelatur Inggris must be required",
   "tit_btn_tambah": "Add Nomenclature",
   "tit_cari_placeholder": "Search Nomenclature",
