@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-5">
     <!-- Card 1: Informasi Usulan + Keterangan + Total Arsip + File Rincian -->
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+    <div v-if="showInformationCard" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
       <button
         type="button"
         class="flex w-full items-center justify-between gap-3 text-left mb-4"
@@ -29,8 +29,8 @@
             <p class="text-gray-900 dark:text-white font-normal">{{ transfer.nomorUsulan }}</p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Perihal Arsip</span>
-            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ primaryBerkasRow?.uraianInformasi || primaryBerkasRow?.namaBerkas || primaryBerkasRow?.perihal || transfer.arsipPerihal || '-' }}</p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
@@ -39,13 +39,17 @@
             </p>
           </div>
           <div>
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
-            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.sekretarisName || '-' }}</p>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Kurun Waktu</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ primaryBerkasRow?.kurunWaktu || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi Keamanan</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ primaryBerkasRow?.klasifikasiKeamanan || '-' }}</p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
             <p class="text-gray-900 dark:text-white font-normal">
-              {{ transfer.atasanName || '-' }}<span v-if="transfer.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.atasanPositionText }}</span>
+              {{ transfer.atasanName || '-' }}<span v-if="atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> — {{ atasanPositionText }}</span>
             </p>
           </div>
           <div>
@@ -63,6 +67,25 @@
             <p class="text-gray-900 dark:text-white font-normal">
               {{ transfer.status === 'SELESAI' ? (transfer.lokasiPenataan || '-') : (transfer.lokasiAwal || '-') }}
             </p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span>
+            <div v-if="berkasRows.length" class="mt-1 space-y-1">
+              <p v-for="row in berkasRows" :key="`kode-${row.id}`" class="break-words text-gray-900 dark:text-white">
+                {{ row.kodeBerkas || row.kode || '-' }}
+              </p>
+            </div>
+            <p v-else class="text-gray-900 dark:text-white">{{ transfer.arsipKode || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Retensi Inaktif</span>
+            <div v-if="retensiInaktifRows.length" class="mt-1 space-y-1">
+              <p v-for="row in retensiInaktifRows" :key="row.id" class="break-words text-gray-900 dark:text-white">
+                {{ retentionCountdownLabel(row.tanggalRetensiInaktifBerakhir) }}
+                <span class="text-gray-500 dark:text-gray-400">(berakhir {{ formatDate(row.tanggalRetensiInaktifBerakhir) }})</span>
+              </p>
+            </div>
+            <p v-else class="text-gray-900 dark:text-white">-</p>
           </div>
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -170,19 +193,26 @@
           </button>
         </div>
       </div>
-      <div v-show="!collapsible || berkasOpen" id="daftar-berkas-print" class="overflow-x-auto">
-        <table class="w-full border-collapse text-xs" :class="berkasLayout === 'penataan' ? 'min-w-[1240px]' : 'min-w-[1120px]'">
+      <div
+        v-show="!collapsible || berkasOpen"
+        id="daftar-berkas-print"
+        :class="berkasLayout === 'penataan' ? 'w-full overflow-x-hidden' : 'overflow-x-auto'"
+      >
+        <table
+          class="w-full border-collapse text-xs"
+          :class="berkasLayout === 'penataan' ? 'table-fixed' : 'min-w-[1120px]'"
+        >
           <thead>
             <tr class="bg-[#457fb6] text-white">
               <template v-if="berkasLayout === 'penataan'">
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">No Berkas</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Kode Klasifikasi</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[240px]">Uraian Informasi Berkas</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Kurun Waktu</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah Berkas</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Lokasi Simpan</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Klasifikasi Keamanan</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Retensi Arsip Inaktif</th>
+                <th class="w-[11%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">No Berkas</th>
+                <th class="w-[12%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="w-[21%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Uraian Informasi Berkas</th>
+                <th class="w-[8%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Kurun Waktu</th>
+                <th class="w-[9%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Jumlah Berkas</th>
+                <th class="w-[11%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Lokasi Simpan</th>
+                <th class="w-[11%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Klasifikasi Keamanan</th>
+                <th class="w-[10%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Retensi Arsip Inaktif</th>
               </template>
               <template v-else>
                 <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
@@ -193,23 +223,23 @@
                 <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
                 <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
               </template>
-              <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+              <th :class="berkasLayout === 'penataan' ? 'w-[7%] px-1.5' : 'px-3'" class="print-action border border-[#457fb6] py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, idx) in berkasRows" :key="row.id ?? idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
               <template v-if="berkasLayout === 'penataan'">
-                <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
-                  <div>{{ row.klasifikasi ?? '-' }}</div>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                  <div class="font-semibold">{{ row.klasifikasi ?? '-' }}</div>
                   <div class="mt-0.5 text-xs text-gray-400">{{ row.kodeKlasifikasi ?? '-' }}</div>
                 </td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.kurunWaktu ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlahBerkas ?? row.jumlah ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkasLocation(row) }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.retensiArsipInaktif ?? '-' }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.kurunWaktu ?? '-' }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlahBerkas ?? row.jumlah ?? '-' }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkasLocation(row) }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+                <td class="break-words border-b border-gray-200 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggalRetensiInaktifBerakhir) }}</td>
               </template>
               <template v-else>
                 <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
@@ -230,19 +260,6 @@
                   >
                     <UIcon name="i-lucide-eye" class="w-4 h-4" />
                   </NuxtLink>
-                  <NuxtLink
-                    v-if="berkasLayout === 'penataan' && transfer.status === 'SELESAI' && isRetentionExpired(row.tanggalRetensiInaktifBerakhir)"
-                    :to="`/maintenance/penyusutan/pengajuan-penyusutan?berkasId=${row.id}&transferId=${transfer.id}`"
-                    class="inline-flex items-center gap-1 rounded-md bg-[#457fb6] px-2 py-1 text-[10px] font-medium text-white transition-colors hover:bg-[#3a6d9c]"
-                    title="Ajukan penyusutan"
-                  >
-                    <UIcon name="i-lucide-send" class="h-3.5 w-3.5" /> Penyusutan
-                  </NuxtLink>
-                  <span
-                    v-else-if="berkasLayout === 'penataan' && transfer.status === 'SELESAI'"
-                    class="text-[10px] text-gray-400"
-                    title="Tombol penyusutan tersedia setelah retensi inaktif berakhir"
-                  >Menunggu retensi</span>
                 </div>
               </td>
             </tr>
@@ -281,39 +298,50 @@
           </button>
         </div>
       </div>
-      <div v-show="!collapsible || daftarIsiOpen" id="daftar-isi-print" class="overflow-x-auto">
-        <table class="w-full min-w-[900px] border-collapse text-xs">
+      <div v-show="!collapsible || daftarIsiOpen" id="daftar-isi-print" class="w-full overflow-hidden">
+        <table class="w-full border-collapse text-sm">
           <thead>
             <tr class="bg-[#457fb6] text-white">
-              <th class="border border-[#457fb6] px-3 py-3 text-left font-semibold whitespace-nowrap">Nomor &amp; Tanggal</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Kode Klasifikasi</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-left font-semibold min-w-[280px]">Uraian Informasi Isi Berkas</th>
-              <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold">Jumlah</th>
-              <th class="print-action border border-[#457fb6] px-3 py-3 text-center font-semibold">Aksi</th>
+              <th class="w-[2%] px-0.5 py-3 text-center font-semibold">No</th>
+              <th class="w-[14%] px-1.5 py-3 text-center font-semibold">Nomor Naskah</th>
+              <th class="w-[10%] px-1.5 py-3 text-center font-semibold">Kode Berkas</th>
+              <th class="w-[14%] px-1.5 py-3 text-center font-semibold">Kode Klasifikasi</th>
+              <th class="w-[20%] px-1.5 py-3 text-center font-semibold">Uraian Informasi Isi Berkas</th>
+              <th class="w-[9%] px-1.5 py-3 text-center font-semibold">Tanggal</th>
+              <th class="w-[5%] px-1.5 py-3 text-center font-semibold">Jumlah</th>
+              <th class="w-[9%] px-1.5 py-3 text-center font-semibold">Lokasi Simpan</th>
+              <th class="w-[11%] px-1.5 py-3 text-center font-semibold">Klasifikasi Keamanan</th>
+              <th class="print-action w-[6%] px-1.5 py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, idx) in daftarIsiRows" :key="row.naskahId ?? `${row.id}-${idx}`" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
-                <p class="font-semibold">{{ row.nomorSurat ?? row.nomor_surat ?? row.nomor ?? '-' }}</p>
-                <p class="mt-1 text-gray-400">{{ formatDate(row.tanggal) }}</p>
+              <td class="break-words border-b border-gray-100 px-0.5 py-3 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.no ?? idx + 1 }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.nomorSurat ?? row.nomor_surat ?? row.nomor ?? '-' }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? row.kodeBerkas ?? '-' }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                <div class="font-semibold">{{ archiveClassification(row).name }}</div>
+                <div class="mt-0.5 text-xs text-gray-400">{{ archiveClassification(row).code }}</div>
               </td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.perihal ?? '-' }}</td>
-              <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
-              <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
-                <NuxtLink
-                  v-if="row.id"
-                  :to="`/maintenance/preview-berkas/${row.id}?nomor_usulan=${transfer.nomorUsulan}&usulan_id=${transfer.id}&from=${previewFrom}`"
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.perihal ?? '-' }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggal) }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkasLocation(row) }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+              <td class="print-action border-b border-gray-100 px-1.5 py-3 text-center dark:border-gray-700">
+                <button
+                  v-if="row.id && row.naskahId"
+                  type="button"
+                  @click="openNaskahPreview(row)"
                   class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
-                  title="Buka detail berkas"
+                  title="Preview PDF naskah"
                 >
                   <UIcon name="i-lucide-eye" class="h-4 w-4" />
-                </NuxtLink>
+                </button>
               </td>
             </tr>
             <tr v-if="daftarIsiRows.length === 0">
-              <td colspan="5" class="border-b border-gray-200 px-3 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
+              <td colspan="9" class="border-b border-gray-100 px-4 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
             </tr>
           </tbody>
         </table>
@@ -487,12 +515,28 @@
       </div>
     </div>
   </div>
+
+  <SharedSharePdfViewer
+    v-model="tablePdfPreviewOpen"
+    :url="tablePdfPreviewUrl"
+    :title="tablePdfPreviewTitle"
+    :loading="tablePdfPreviewLoading"
+    @close="closeTablePdfPreview"
+  />
+  <SharedSharePdfViewer
+    v-model="naskahPreviewOpen"
+    :url="naskahPreviewUrl"
+    :title="naskahPreviewTitle"
+    :loading="naskahPreviewLoading"
+    @close="closeNaskahPreview"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import type { TransferActiveToInactive, ApprovalLevel } from '~/types/transfer-active-to-inactive';
 import { statusBadgeClass, statusLabel, formatDate } from '~/utils/transfer-status';
+import { useArsipDinamis } from '~/composables/useArsipDinamis';
 
 const props = defineProps<{
   transfer: TransferActiveToInactive;
@@ -501,6 +545,7 @@ const props = defineProps<{
   unitKerjaPihakPertama?: string;
   collapsible?: boolean;
   showHeaderStatus?: boolean;
+  showInformationCard?: boolean;
   previewFrom?: string;
   showApprovalLevels?: boolean;
   showBacSigner?: boolean;
@@ -512,8 +557,11 @@ const props = defineProps<{
   showBacStatus?: boolean;
 }>();
 
+const { getNaskahDetailInBerkas, getNaskahPdfUrl } = useArsipDinamis();
+
 const collapsible = computed(() => props.collapsible === true);
 const showHeaderStatus = computed(() => props.showHeaderStatus !== false);
+const showInformationCard = computed(() => props.showInformationCard !== false);
 const showApprovalLevels = computed(() => props.showApprovalLevels !== false);
 const showBacSigner = computed(() => props.showBacSigner !== false);
 const showBacTembusan = computed(() => props.showBacTembusan !== false);
@@ -522,6 +570,18 @@ const informationTitle = computed(() => props.informationTitle ?? 'Informasi Usu
 const informationLayout = computed(() => props.informationLayout ?? 'default');
 const berkasLayout = computed(() => props.berkasLayout ?? 'default');
 const showBacStatus = computed(() => props.showBacStatus !== false);
+const atasanPositionText = computed(() =>
+  props.transfer.atasanPositionText
+  ?? (props.transfer as any).atasan_position_text
+  ?? props.transfer.approvalLevels?.[0]?.atasanPositionText
+  ?? (props.transfer.approvalLevels?.[0] as any)?.atasan_position_text
+  ?? '',
+);
+const primaryBerkasRow = computed(() =>
+  berkasRows.value.find((row: any) => String(row.id ?? '') === String(props.transfer.arsipId ?? ''))
+  ?? berkasRows.value[0]
+  ?? null,
+);
 const isRetentionExpired = (date: string | null | undefined) => {
   if (!date) return false;
   const now = new Date();
@@ -530,18 +590,22 @@ const isRetentionExpired = (date: string | null | undefined) => {
 };
 const penataanStatusLabel = (status: string) => {
   if (status !== 'SELESAI') return 'Diterima';
-  return berkasRows.value.length > 0
-    && berkasRows.value.every((row: any) => isRetentionExpired(row.tanggalRetensiInaktifBerakhir))
+  const primaryArchive = primaryBerkasRow.value;
+  if (primaryArchive?.penyusutanSudahDiajukan) return 'Selesai';
+  return primaryArchive && isRetentionExpired(primaryArchive.tanggalRetensiInaktifBerakhir)
     ? 'Siap Penyusutan'
     : 'Menunggu Retensi Inaktif';
 };
 const penataanStatusClass = (status: string) => {
   const label = penataanStatusLabel(status);
   if (label === 'Siap Penyusutan') {
-    return 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300';
+    return 'inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300';
   }
   if (label === 'Menunggu Retensi Inaktif') {
     return 'inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+  }
+  if (label === 'Selesai') {
+    return 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300';
   }
   return 'inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300';
 };
@@ -567,36 +631,173 @@ const hasBacSigner = computed(
 );
 const hasBacTembusan = computed(() => bacTembusan.value.length > 0);
 
-const printDaftarBerkas = () => {
-  openTablePrintPreview('Daftar Berkas', 'daftar-berkas-print', 'table');
+const tablePdfPreviewOpen = ref(false);
+const tablePdfPreviewLoading = ref(false);
+const tablePdfPreviewUrl = ref('');
+const tablePdfPreviewTitle = ref('Preview Daftar Berkas');
+const naskahPreviewOpen = ref(false);
+const naskahPreviewLoading = ref(false);
+const naskahPreviewUrl = ref('');
+const naskahPreviewTitle = ref('Preview Naskah');
+
+const printDaftarBerkas = () => openTablePrintPreview('Daftar Berkas', 'daftar-berkas-print');
+
+const printDaftarIsi = () => openTablePrintPreview('Daftar Isi Berkas', 'daftar-isi-print');
+
+const closeTablePdfPreview = () => {
+  if (tablePdfPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(tablePdfPreviewUrl.value);
+  }
+  tablePdfPreviewUrl.value = '';
 };
 
-const printDaftarIsi = () => {
-  openTablePrintPreview('Daftar Isi Berkas', 'daftar-isi-print', 'table');
+onBeforeUnmount(closeTablePdfPreview);
+
+const closeNaskahPreview = () => {
+  naskahPreviewOpen.value = false;
+  naskahPreviewUrl.value = '';
+  naskahPreviewLoading.value = false;
 };
 
-const openTablePrintPreview = (title: string, elementId: string, selector: string) => {
+const openNaskahPreview = async (row: any) => {
+  naskahPreviewTitle.value = row.uraianInformasi || row.nomorSurat || 'Preview Naskah';
+  naskahPreviewUrl.value = '';
+  naskahPreviewOpen.value = true;
+  naskahPreviewLoading.value = true;
+
+  try {
+    const detailRes: any = await getNaskahDetailInBerkas(String(row.id), String(row.naskahId));
+    const detailData = detailRes?.data?.data ?? detailRes?.data ?? detailRes;
+    const detail = Array.isArray(detailData) ? detailData[0] : detailData;
+    let pdfUrl = detail?.final_pdf_url ?? detail?.finalPdfUrl ?? detail?.final_pdf ?? detail?.pdf_url ?? null;
+
+    if (!pdfUrl) {
+      const pdfRes: any = await getNaskahPdfUrl(String(row.naskahId));
+      const pdfData = pdfRes?.data?.data ?? pdfRes?.data ?? pdfRes;
+      pdfUrl = pdfData?.url ?? pdfData?.final_pdf_url ?? null;
+    }
+
+    if (!pdfUrl) throw new Error('PDF naskah tidak tersedia.');
+    naskahPreviewUrl.value = pdfUrl;
+  } catch (error: any) {
+    naskahPreviewOpen.value = false;
+    useToast().add({
+      title: 'Preview naskah gagal dibuka',
+      description: error?.message || 'PDF naskah tidak tersedia.',
+      color: 'error',
+    });
+  } finally {
+    naskahPreviewLoading.value = false;
+  }
+};
+
+const openTablePrintPreview = async (title: string, elementId: string) => {
   const element = document.getElementById(elementId);
-  const table = element?.querySelector(selector);
-  if (!table) return;
-  const w = window.open('', '_blank');
-  if (!w) return;
-  const unitKerja = props.unitKerjaPihakPertama || props.transfer.divisiName || '................................';
-  const htmlEscapes: Record<string, string> = {
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  };
-  const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => htmlEscapes[char] ?? char);
-  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title><style>
-    *{box-sizing:border-box}body{font-family:'Times New Roman',serif;padding:36px;color:#111;font-size:12pt}
-    h1{font-size:18pt;margin:0 0 18px;font-weight:bold}.unit{font-size:14pt;margin:0 0 18px}
-    hr{border:0;border-top:1px solid #222;margin:0 0 20px}table{width:100%;border-collapse:collapse;font-size:10pt}
-    th{background:#457fb6;color:#fff;border:1px solid #457fb6;padding:8px;text-align:center}
-    td{border:1px solid #d1d5db;padding:8px;vertical-align:top}.print-action{display:none!important}
-    @page{size:A4 landscape;margin:15mm}
-  </style></head><body><h1>${escapeHtml(title)}</h1><p class="unit">Unit Kerja: ${escapeHtml(unitKerja)}</p><hr>${table.outerHTML}</body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(() => { w.print(); w.close(); }, 250);
+  const sourceTable = element?.querySelector('table');
+  if (!sourceTable) return;
+
+  closeTablePdfPreview();
+  tablePdfPreviewTitle.value = `Preview ${title}`;
+  tablePdfPreviewOpen.value = true;
+  tablePdfPreviewLoading.value = true;
+
+  try {
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const margin = 12;
+    const pageWidth = 297;
+    const pageHeight = 210;
+    const contentWidth = pageWidth - margin * 2;
+    const unitKerja = props.unitKerjaPihakPertama || props.transfer.divisiName || '................................';
+    const getCellText = (cell: Element) => {
+      const text = (cell as HTMLElement).innerText || cell.textContent || '';
+      return text.split('\n').map((line) => line.trim()).filter(Boolean).join('\n') || '-';
+    };
+    const headers = Array.from(sourceTable.querySelectorAll('thead th'))
+      .filter((cell) => !cell.classList.contains('print-action'));
+    const bodyRows = Array.from(sourceTable.querySelectorAll('tbody tr')).map((row) =>
+      Array.from(row.querySelectorAll('td'))
+        .filter((cell) => !cell.classList.contains('print-action'))
+        .map(getCellText),
+    );
+    const headerLabels = headers.map(getCellText);
+    const weights = headerLabels.map((label) => {
+      if (/uraian|informasi/i.test(label)) return 3.2;
+      if (/nomor|no berkas/i.test(label)) return 1.6;
+      if (/kode/i.test(label)) return 1.3;
+      if (/aksi/i.test(label)) return 0.65;
+      if (/lokasi|keamanan|retensi/i.test(label)) return 1.25;
+      return 1;
+    });
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+    const columnWidths = weights.map((weight) => (weight / totalWeight) * contentWidth);
+    const xPositions = columnWidths.map((_, index) =>
+      margin + columnWidths.slice(0, index).reduce((sum, width) => sum + width, 0),
+    );
+    const lineHeight = 4;
+    const drawPageHeading = () => {
+      pdf.setTextColor(20, 20, 20);
+      pdf.setFont('times', 'bold');
+      pdf.setFontSize(15);
+      pdf.text(title, pageWidth / 2, 15, { align: 'center' });
+      pdf.setFont('times', 'normal');
+      pdf.setFontSize(11);
+      pdf.text(`Unit Kerja: ${unitKerja}`, pageWidth / 2, 22, { align: 'center' });
+      return 32;
+    };
+    const drawTableRow = (cells: string[], y: number, isHeader = false) => {
+      pdf.setFont('times', isHeader ? 'bold' : 'normal');
+      pdf.setFontSize(isHeader ? 9 : 9.5);
+      const linesByCell = columnWidths.map((width, index) =>
+        pdf.splitTextToSize(cells[index] || '-', Math.max(8, width - 4)) as string[],
+      );
+      const rowHeight = Math.max(8, ...linesByCell.map((lines) => lines.length * lineHeight + 4));
+      const fontHeight = pdf.getFontSize() * 0.3528;
+
+      cells.forEach((_, index) => {
+        const x = xPositions[index];
+        const width = columnWidths[index];
+        const textHeight = (linesByCell[index].length - 1) * lineHeight + fontHeight;
+        const textY = y + (rowHeight - textHeight) / 2 + fontHeight;
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(40, 40, 40);
+        pdf.rect(x, y, width, rowHeight, 'FD');
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(linesByCell[index], x + width / 2, textY, {
+          align: 'center',
+          maxWidth: width - 4,
+          lineHeightFactor: 1.1,
+        });
+      });
+      return rowHeight;
+    };
+
+    let y = drawPageHeading();
+    y += drawTableRow(headerLabels, y, true);
+    for (const row of bodyRows) {
+      const estimatedLines = row.map((text, index) =>
+        pdf.splitTextToSize(text, Math.max(8, columnWidths[index] - 4)).length,
+      );
+      const estimatedHeight = Math.max(8, ...estimatedLines.map((count) => count * lineHeight + 4));
+      if (y + estimatedHeight > pageHeight - margin) {
+        pdf.addPage();
+        y = drawPageHeading();
+        y += drawTableRow(headerLabels, y, true);
+      }
+      y += drawTableRow(row, y);
+    }
+
+    tablePdfPreviewUrl.value = URL.createObjectURL(pdf.output('blob'));
+  } catch (error: any) {
+    useToast().add({
+      title: 'Preview PDF gagal dibuat',
+      description: error?.message || 'Silakan coba kembali.',
+      color: 'error',
+    });
+    tablePdfPreviewOpen.value = false;
+  } finally {
+    tablePdfPreviewLoading.value = false;
+  }
 };
 
 const berkasRows = computed(() => {
@@ -621,12 +822,39 @@ const berkasRows = computed(() => {
   }));
 });
 
+const retensiInaktifRows = computed(() =>
+  berkasRows.value.filter((row: any) => row.tanggalRetensiInaktifBerakhir),
+);
+
+const retentionCountdownLabel = (value: string | Date | null | undefined) => {
+  if (!value) return '-';
+  const dateText = value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+  const match = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return '-';
+
+  const endDate = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((endDate.getTime() - today.getTime()) / 86_400_000);
+
+  if (days > 0) return `${days} hari lagi`;
+  if (days === 0) return 'Berakhir hari ini';
+  return `Lewat ${Math.abs(days)} hari`;
+};
+
 const berkasLocation = (row: any) => props.transfer.status === 'SELESAI'
   ? props.transfer.lokasiPenataan || row.lokasiSimpan || '-'
   : row.lokasiSimpan || '-';
 
 const daftarIsiRows = computed(() => props.daftarIsi ?? []);
 const showDaftarIsiCard = computed(() => props.daftarIsi !== undefined);
+const archiveClassification = (row: any) => {
+  const archive = berkasRows.value.find((item: any) => String(item.id ?? '') === String(row.id ?? ''));
+  return {
+    name: archive?.klasifikasi ?? '-',
+    code: archive?.kodeKlasifikasi ?? row.kodeKlasifikasi ?? '-',
+  };
+};
 
 const levelStatusClass = (status: string): string => {
   if (status === 'DISETUJUI') return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';

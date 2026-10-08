@@ -290,11 +290,6 @@ const jabatanList = computed(() =>
     raw: j,
   }))
 );
-const filteredJabatanList = computed(() => {
-  const query = jabatanSearch.value.toLowerCase();
-  if (!query) return jabatanList.value.slice(0, 10);
-  return jabatanList.value.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
-});
 const personilList = computed(() =>
   personilOptions.value.map((p) => ({
     id: p.persnum,
@@ -391,6 +386,27 @@ const getSebagaiLabel = (val: string) =>
 const getJabatanLabel = (val: string) =>
   jabatanList.value.find((j) => j.value === val)?.label || val;
 
+const evpSelfSecretaryError = (form: {
+  personil: string;
+  sebagai: string;
+  jabatan: string;
+}) => {
+  if (form.sebagai !== 'SE') return '';
+
+  const position = jabatanOptions.value.find(
+    (item) => String(item.id) === String(form.jabatan),
+  );
+  const isEvp = /\bevp\b|executive vice president/i.test(
+    [position?.displayText, position?.longText, position?.bodTag].filter(Boolean).join(' '),
+  );
+  const isPositionHolder =
+    position?.persnum != null && String(position.persnum) === String(form.personil);
+
+  return isEvp && isPositionHolder
+    ? 'Pemegang jabatan EVP tidak dapat mendelegasikan dirinya sendiri sebagai Sekretaris.'
+    : '';
+};
+
 const openAdd = () => {
   newDelegasi.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
   newErrors.value = { personil: '', sebagai: '', jabatan: '', mulai: '', sampai: '' };
@@ -399,6 +415,11 @@ const openAdd = () => {
 
 const saveDelegasi = async () => {
   if (!validateForm(newDelegasi.value, newErrors.value)) return;
+  const assignmentError = evpSelfSecretaryError(newDelegasi.value);
+  if (assignmentError) {
+    newErrors.value.jabatan = assignmentError;
+    return;
+  }
   const errorMsg = validateDates(newDelegasi.value.mulai, newDelegasi.value.sampai);
   if (errorMsg) {
     toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
@@ -437,12 +458,15 @@ const saveDelegasi = async () => {
 
 function selectNewPersonil(val: string) {
   newDelegasi.value.personil = val;
+  newDelegasi.value.jabatan = '';
   newErrors.value.personil = '';
+  newErrors.value.jabatan = '';
   openNewPersonil.value = false;
 }
 function selectNewSebagai(val: string) {
   newDelegasi.value.sebagai = val;
   newErrors.value.sebagai = '';
+  newErrors.value.jabatan = '';
   openNewSebagai.value = false;
 }
 function selectNewJabatan(val: string) {
@@ -452,12 +476,15 @@ function selectNewJabatan(val: string) {
 }
 function selectEditPersonil(val: string) {
   editDelegasi.value.personil = val;
+  editDelegasi.value.jabatan = '';
   editErrors.value.personil = '';
+  editErrors.value.jabatan = '';
   openEditPersonil.value = false;
 }
 function selectEditSebagai(val: string) {
   editDelegasi.value.sebagai = val;
   editErrors.value.sebagai = '';
+  editErrors.value.jabatan = '';
   openEditSebagai.value = false;
 }
 function selectEditJabatan(val: string) {
@@ -474,6 +501,46 @@ const editDelegasi = ref({
   jabatan: '',
   mulai: '',
   sampai: '',
+});
+
+const personilForJabatan = computed(() => {
+  const selectedPersonilId = showEditModal.value
+    ? editDelegasi.value.personil
+    : newDelegasi.value.personil;
+  return personilOptions.value.find((person) => person.persnum === selectedPersonilId);
+});
+const divisionPositionForPersonil = computed(() => {
+  const currentPosition = personilForJabatan.value?.currentPosition;
+  if (!currentPosition) return undefined;
+  return jabatanOptions.value.find(
+    (position) => String(position.position) === String(currentPosition),
+  );
+});
+const jabatanInPersonilOrgChain = computed(() => {
+  const selectedPosition = divisionPositionForPersonil.value;
+  if (!selectedPosition) return [];
+
+  // Utamakan divisi; bila posisi tidak memiliki divisi, gunakan tingkat rantai
+  // organisasi terdekat yang tersedia agar daftar tidak melebar ke unit lain.
+  if (selectedPosition.divisiId != null) {
+    return jabatanList.value.filter(
+      (item) => String(item.raw.divisiId) === String(selectedPosition.divisiId),
+    );
+  }
+  if (selectedPosition.direktoratId != null) {
+    return jabatanList.value.filter(
+      (item) => String(item.raw.direktoratId) === String(selectedPosition.direktoratId),
+    );
+  }
+  return jabatanList.value.filter(
+    (item) => String(item.raw.organization) === String(selectedPosition.organization),
+  );
+});
+const filteredJabatanList = computed(() => {
+  const query = jabatanSearch.value.trim().toLowerCase();
+  const options = jabatanInPersonilOrgChain.value;
+  if (!query) return options.slice(0, 10);
+  return options.filter((item) => item.label.toLowerCase().includes(query)).slice(0, 10);
 });
 
 const openEdit = (item: any) => {
@@ -499,6 +566,11 @@ const saveEditDelegasi = async () => {
     sampai: editDelegasi.value.sampai,
   };
   if (!validateForm(editForm, editErrors.value)) return;
+  const assignmentError = evpSelfSecretaryError(editForm);
+  if (assignmentError) {
+    editErrors.value.jabatan = assignmentError;
+    return;
+  }
   const errorMsg = validateDates(editDelegasi.value.mulai, editDelegasi.value.sampai);
   if (errorMsg) {
     toast.add({ title: 'Validasi Gagal', description: errorMsg, color: 'error' });
@@ -1349,11 +1421,13 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
                   newErrors.jabatan
                     ? 'border-red-500 focus:ring-red-300'
                     : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
+                  !newDelegasi.personil ? 'cursor-not-allowed opacity-60' : '',
                 ]"
+                :disabled="!newDelegasi.personil"
                 @click.stop="toggleNewJabatan"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
-                  getJabatanLabel(newDelegasi.jabatan) || 'Pilih jabatan'
+                  getJabatanLabel(newDelegasi.jabatan) || (newDelegasi.personil ? 'Pilih jabatan' : 'Pilih personil terlebih dahulu')
                 }}</span>
                 <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
@@ -1398,6 +1472,9 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
             </div>
             <p v-if="newErrors.jabatan" class="text-red-500 text-xs mt-1">
               {{ newErrors.jabatan }}
+            </p>
+            <p v-else class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Pilihan jabatan mengikuti divisi personil yang dipilih.
             </p>
           </div>
 
@@ -1598,11 +1675,13 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
                   editErrors.jabatan
                     ? 'border-red-500 focus:ring-red-300'
                     : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary',
+                  !editDelegasi.personil ? 'cursor-not-allowed opacity-60' : '',
                 ]"
+                :disabled="!editDelegasi.personil"
                 @click.stop="toggleEditJabatan"
               >
                 <span class="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{{
-                  getJabatanLabel(editDelegasi.jabatan) || 'Pilih jabatan'
+                  getJabatanLabel(editDelegasi.jabatan) || (editDelegasi.personil ? 'Pilih jabatan' : 'Pilih personil terlebih dahulu')
                 }}</span>
                 <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </button>
@@ -1647,6 +1726,9 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
             </div>
             <p v-if="editErrors.jabatan" class="text-red-500 text-xs mt-1">
               {{ editErrors.jabatan }}
+            </p>
+            <p v-else class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Pilihan jabatan mengikuti divisi personil yang dipilih.
             </p>
           </div>
 

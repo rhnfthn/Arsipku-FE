@@ -23,6 +23,16 @@ export interface ArsipPenyusutan {
   nomorUsulan?: string;
   no_usulan?: string;
   berkasId?: string;
+  transferId?: string;
+  transfer_id?: string;
+  penataanData?: {
+    transferId?: string;
+    nomorUsulan?: string | null;
+    lokasiPenataan?: string | null;
+    transfer?: Record<string, any> | null;
+    daftarBerkas?: any[];
+    daftarIsi?: any[];
+  } | null;
   kodeBerkas?: string | null;
   kode_berkas?: string | null;
   namaBerkas?: string;
@@ -30,6 +40,13 @@ export interface ArsipPenyusutan {
   klasifikasi?: string | null;
   klasifikasiText?: string | null;
   klasifikasi_text?: string | null;
+  klasifikasiKeamanan?: string | null;
+  klasifikasi_keamanan?: string | null;
+  kurunWaktu?: string | null;
+  kurun_waktu?: string | null;
+  jumlahBerkas?: number | string | null;
+  jumlah_berkas?: number | string | null;
+  nasibAkhir?: string | null;
   tuPersnum?: number;
   tuName?: string;
   sekretaris?: string;
@@ -60,6 +77,10 @@ export interface ArsipPenyusutan {
   keterangan?: string | null;
   foto_dokumentasi?: string | null;
   fotoDokumentasi?: string | null;
+  labelPenataan?: string | null;
+  kondisiArsip?: string | null;
+  mediaArsip?: string | null;
+  keteranganPenataan?: string | null;
   isBackedUp?: boolean;
   createdAt?: string;
   updatedAt?: string;
