@@ -13,7 +13,7 @@
     </div>
 
     <div
-      class="mb-6 overflow-hidden rounded-xl border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/30"
+      class="mb-6 overflow-hidden rounde d-xl border border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950/30"
     >
       <div
         class="flex items-center gap-2 border-b border-primary-200 px-4 py-3 dark:border-primary-800"
