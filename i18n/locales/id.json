@@ -2340,5 +2340,7 @@
   "df_tte_check_failed": "Status TTE belum dapat diperiksa",
   "tte_callback_sent": "Buka Terkirim",
   "tte_callback_redirect": "Naskah selesai diproses. Mengarahkan ke halaman Terkirim.",
-  "tte_callback_incomplete": "Penyelesaian naskah belum selesai. Periksa status kembali atau buka Draf."
+  "tte_callback_incomplete": "Penyelesaian naskah belum selesai. Periksa status kembali atau buka Draf.",
+  "nl_cancel_action": "Batalkan",
+  "nl_cancel_document": "Batalkan Naskah"
 }

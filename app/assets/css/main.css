@@ -202,9 +202,11 @@ svg[aria-describedby]:focus-visible {
 .tox-tinymce-aux {
   z-index: 10500 !important;
 }
-/* Dialog TinyMCE (insert table grid, dll.) juga perlu di atas modal */
-.tox-dialog-wrap {
-  z-index: 10501 !important;
+/* Dialog sudah berada di dalam aux (10500). Pertahankan urutan internal
+   TinyMCE: dialog 1100, menu 1150. Menaikkan dialog ke 10501 menutup
+   dropdown Open link in yang dirender sebagai sibling di sink yang sama. */
+.tox .tox-dialog-wrap {
+  z-index: 1100 !important;
 }
 
 *,
