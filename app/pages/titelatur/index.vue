@@ -17,6 +17,7 @@ import { saveAs } from 'file-saver'
 definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
+const toast = useToast()
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -177,6 +178,23 @@ const openEdit = async (item: TitelaturItem) => {
 
 const saveEdit = async () => {
   if (!selectedItem.value) return
+
+  // Validasi duplikasi titelatur Indonesia (client-side, kecuali diri sendiri).
+  const normalized = editForm.value.long_text.trim().toLowerCase()
+  const duplicate = items.value.find(
+    (it) =>
+      it.id !== selectedItem.value!.id &&
+      (it.long_text || '').trim().toLowerCase() === normalized
+  )
+  if (duplicate) {
+    toast.add({
+      title: t('tit_validationI_duplicate_title'),
+      description: t('tit_validationI_duplicate'),
+      color: 'error',
+    })
+    return
+  }
+
   isSavingEdit.value = true
   try {
     const success = await updateTitelatur(selectedItem.value.id, {
@@ -235,6 +253,17 @@ const saveAdd = async () => {
 
   if (!addForm.value.long_text_en.trim()) {
     addErrors.value.long_text_en = t('tit_validationE_required')
+    isValid = false
+  }
+
+  // Validasi duplikasi titelatur Indonesia (client-side, case-insensitive).
+  // BE juga memvalidasi — ini hanya untuk feedback instan tanpa round-trip.
+  const normalized = addForm.value.long_text.trim().toLowerCase()
+  const duplicate = items.value.find(
+    (it) => (it.long_text || '').trim().toLowerCase() === normalized
+  )
+  if (duplicate) {
+    addErrors.value.long_text = t('tit_validationI_duplicate')
     isValid = false
   }
 
