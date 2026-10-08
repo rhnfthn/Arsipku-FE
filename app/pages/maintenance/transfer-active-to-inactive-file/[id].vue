@@ -225,7 +225,7 @@
             : { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', padding: '48px 56px', backgroundColor: '#ffffff', color: '#111111', fontFamily: '\'Times New Roman\', serif', fontSize: '16px', lineHeight: '1.55', boxShadow: '0 1px 3px rgba(0,0,0,.12)', border: '1px solid #e5e7eb' }"
         >
           <div style="text-align:center;margin:0 0 24px;">
-            <p style="text-decoration:underline;margin:0;">BERITA ACARA</p>
+            <p style="margin:0;">BERITA ACARA</p>
             <p style="margin:0;">TENTANG</p>
             <p style="margin:0;text-transform:uppercase;">PEMINDAHAN ARSIP INAKTIF TAHUN {{ item.tanggalUsulan ? new Date(item.tanggalUsulan).getFullYear() : new Date().getFullYear() }} - UNIT KERJA {{ bacUnitKerjaPengusul }}</p>
             <p style="margin:8px 0 0;">Nomor : {{ item.beritaAcaraNomor ?? `BA/${item.nomorUsulan}` }}</p>
@@ -235,7 +235,7 @@
             Pada hari ini {{ formatBaDay(item.tanggalUsulan) }} tanggal {{ formatBaDate(item.tanggalUsulan) }}, dilaksanakan pemindahan arsip inaktif dari Unit Kerja {{ bacUnitKerjaPengusul }} ke Unit Kerja {{ bacUnitKerjaTu }} yang melibatkan:
           </p>
 
-          <table style="width:calc(100% - 42px);margin:0 0 12px 42px;border:0;border-collapse:collapse;">
+          <table style="width:calc(100% - 42px);margin:0 0 12px 42px;border:0;border-collapse:collapse;table-layout:fixed;">
             <tbody>
               <tr>
                 <td style="width:42px;padding:0;vertical-align:top;">1.</td>
@@ -257,9 +257,9 @@
               </tr>
             </tbody>
           </table>
-          <p style="margin:18px 0 22px;padding-left:42px;text-align:justify;">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ bacUnitKerjaPihakPertama }} yang selanjutnya disebut PIHAK PERTAMA.</p>
+          <p style="margin:18px 0 22px;padding-left:84px;text-align:justify;">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ bacUnitKerjaPihakPertama }} yang selanjutnya disebut PIHAK PERTAMA.</p>
 
-          <table style="width:calc(100% - 42px);margin:0 0 12px 42px;border:0;border-collapse:collapse;">
+          <table style="width:calc(100% - 42px);margin:0 0 12px 42px;border:0;border-collapse:collapse;table-layout:fixed;">
             <tbody>
               <tr>
                 <td style="width:42px;padding:0;vertical-align:top;">2.</td>
@@ -281,30 +281,30 @@
               </tr>
             </tbody>
           </table>
-          <p style="margin:18px 0 26px;padding-left:42px;text-align:justify;">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ bacUnitKerjaPihakKedua }} yang selanjutnya disebut PIHAK KEDUA.</p>
+          <p style="margin:18px 0 26px;padding-left:84px;text-align:justify;">Dalam hal ini bertindak atas nama pimpinan Unit Kerja {{ bacUnitKerjaPihakKedua }} yang selanjutnya disebut PIHAK KEDUA.</p>
 
-          <p style="margin:0 0 22px;text-align:justify;">Menyatakan telah melaksanakan serah terima pemindahan arsip inaktif seperti tercantum pada daftar arsip terlampir.</p>
-          <p style="margin:0 0 4px;">Daftar arsip:</p>
-          <p v-if="bacArsip.length === 1" style="margin:0 0 22px;padding-left:18px;">{{ bacArsip[0].kode ?? '-' }} — {{ bacArsip[0].perihal ?? '-' }}</p>
-          <ol v-else style="margin:0 0 22px;padding-left:38px;">
+          <p style="margin:0 0 22px 84px;text-align:justify;">Menyatakan telah melaksanakan serah terima pemindahan arsip inaktif seperti tercantum pada daftar arsip terlampir.</p>
+          <p style="margin:0 0 4px 84px;">Daftar arsip:</p>
+          <p v-if="bacArsip.length === 1" style="margin:0 0 22px 84px;">{{ bacArsip[0].kode ?? '-' }} — {{ bacArsip[0].perihal ?? '-' }}</p>
+          <ol v-else style="margin:0 0 22px 84px;padding-left:0;list-style:none;">
             <li v-for="(arsip, idx) in bacArsip" :key="idx">{{ arsip.kode ?? '-' }} — {{ arsip.perihal ?? '-' }}</li>
           </ol>
 
-          <p style="margin:0 0 58px;text-align:justify;">Demikian Berita Acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+          <p style="margin:0 0 58px 84px;text-align:justify;">Demikian Berita Acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
           <table style="width:100%;border:0;margin:0;">
             <tbody>
               <tr>
-                <td style="width:50%;text-align:left;vertical-align:top;">
+                <td style="width:50%;text-align:center;vertical-align:top;">
                   <p style="margin:0 0 20px;">Pihak Pertama</p>
-                  <div v-if="item.bacSignedAt && item.bacSignatureQr" style="height:92px;margin:0 0 10px;">
+                  <div v-if="item.bacSignedAt && item.bacSignatureQr" style="height:92px;margin:0 0 10px;display:flex;justify-content:center;">
                     <img :src="item.bacSignatureQr" alt="QR tanda tangan Pihak Pertama" style="display:block;width:82px;height:82px;object-fit:contain;">
                   </div>
                   <p v-else style="margin:0 0 78px;">Ttd</p>
                   <p style="margin:0;">({{ item.bacPihakPertamaJabatan ?? 'Jabatan' }})</p>
                 </td>
-                <td style="width:50%;text-align:left;vertical-align:top;">
+                <td style="width:50%;text-align:center;vertical-align:top;">
                   <p style="margin:0 0 20px;">Pihak Kedua</p>
-                  <div v-if="item.bacPihakKeduaSignedAt && item.bacPihakKeduaSignatureQr" style="height:92px;margin:0 0 10px;">
+                  <div v-if="item.bacPihakKeduaSignedAt && item.bacPihakKeduaSignatureQr" style="height:92px;margin:0 0 10px;display:flex;justify-content:center;">
                     <img :src="item.bacPihakKeduaSignatureQr" alt="QR tanda tangan Pihak Kedua" style="display:block;width:82px;height:82px;object-fit:contain;">
                   </div>
                   <p v-else style="margin:0 0 78px;">Ttd</p>
