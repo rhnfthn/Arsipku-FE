@@ -311,7 +311,12 @@ const loadTransferMetadata = async () => {
     const linkedPenataan = item.value.penataanData
     if (linkedPenataan) {
       transferId = linkedPenataan.transferId ?? transferId
-      transferSummary = { id: linkedPenataan.transferId, status: 'SELESAI', lokasiPenataan: linkedPenataan.lokasiPenataan }
+      transferSummary = {
+        ...(linkedPenataan.transfer ?? {}),
+        id: linkedPenataan.transferId ?? linkedPenataan.transfer?.id,
+        status: 'SELESAI',
+        lokasiPenataan: linkedPenataan.lokasiPenataan ?? linkedPenataan.transfer?.lokasiPenataan,
+      }
       transferData.value = transferSummary
       if (linkedPenataan.daftarBerkas?.length) daftarBerkasRows.value = linkedPenataan.daftarBerkas
       if (linkedPenataan.daftarIsi?.length) daftarIsiRows.value = linkedPenataan.daftarIsi

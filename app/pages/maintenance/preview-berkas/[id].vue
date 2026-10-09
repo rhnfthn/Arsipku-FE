@@ -561,11 +561,25 @@ onMounted(async () => {
         const usulanRes: any = await apiGet(`/transfer-active-to-inactive/${usulanId}`, {}, { skipCache: true });
         const usulanData = usulanRes?.data?.data ?? usulanRes?.data ?? usulanRes;
         if (usulanData?.status) usulanStatus.value = usulanData.status;
-        unitKerjaPihakPertama.value = usulanData?.unitKerjaPihakPertama
-          ?? usulanData?.unit_kerja_pihak_pertama
-          ?? usulanData?.divisiName
-          ?? usulanData?.unitKerja
-          ?? '';
+        let beritaAcara: any = {};
+        try {
+          const beritaAcaraRes: any = await apiGet(
+            `/transfer-active-to-inactive/${usulanId}/berita-acara-data`,
+            {},
+            { skipCache: true },
+          );
+          beritaAcara = beritaAcaraRes?.data?.data ?? beritaAcaraRes?.data ?? beritaAcaraRes;
+        } catch {
+          // Gunakan informasi unit kerja yang tersedia pada detail usulan sebagai fallback.
+        }
+        unitKerjaPihakPertama.value = beritaAcara?.unitKerjaPengusul
+          || beritaAcara?.pengirim?.divisi
+          || beritaAcara?.pihakPertama?.unitKerja
+          || usulanData?.unitKerjaPihakPertama
+          || usulanData?.unit_kerja_pihak_pertama
+          || usulanData?.divisiName
+          || usulanData?.unitKerja
+          || '';
 
       } catch {
         // Ignore — fallback to berkas status

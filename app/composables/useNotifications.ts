@@ -76,6 +76,29 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
   const nomor = getString('nomor', 'nomorSurat', 'nomor_surat');
   const requestId = getString('requestId', 'idRequest', 'id_request', 'id_usulan', 'idUsulan');
 
+  // Notifikasi persetujuan lama memakai action umum yang juga dipakai untuk
+  // penerimaan TU. Kenali dari judul agar kliknya tetap membuka daftar verifikasi.
+  const isLegacyTransferApproval =
+    action === 'OPEN_TRANSFER_ACTIVE_TO_INACTIVE' &&
+    String(notification.title || '')
+      .trim()
+      .toLowerCase()
+      .startsWith('verifikasi usulan pemindahan arsip');
+  if (action === 'OPEN_TRANSFER_APPROVAL' || isLegacyTransferApproval) {
+    return { path: '/maintenance/verifikasi-usulan' };
+  }
+
+  // Persetujuan penutupan berkas dikirim dengan berkasId, bukan action.
+  // Arahkan langsung ke halaman review agar verifikator dapat memprosesnya.
+  if (type === 'BERKAS_VERIFIKASI') {
+    const berkasId = getString('berkasId', 'berkas_id', 'idBerkas', 'id_berkas');
+    if (berkasId) {
+      return {
+        path: `/kelola/pemeliharaan/persetujuan-pemberkasan/${encodeURIComponent(berkasId)}/review`,
+      };
+    }
+  }
+
   const detailQuery: Record<string, string> = {};
   if (jenis) detailQuery.jenis = jenis;
   if (sirkulasiId) detailQuery.sirkulasiId = sirkulasiId;

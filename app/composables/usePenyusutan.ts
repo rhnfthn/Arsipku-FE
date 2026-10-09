@@ -253,8 +253,18 @@ function normalizePenyusutan(item: any): ArsipPenyusutan {
     lokasi_simpan: item.lokasiSimpan ?? item.lokasi_simpan ?? null,
     beritaAcara: item.beritaAcara ?? item.berita_acara ?? null,
     berita_acara: item.beritaAcara ?? item.berita_acara ?? null,
-    fotoDokumentasi: item.fotoDokumentasi ?? item.foto_dokumentasi ?? null,
-    foto_dokumentasi: item.fotoDokumentasi ?? item.foto_dokumentasi ?? null,
+    fotoDokumentasi:
+      item.fotoDokumentasi ??
+      item.foto_dokumentasi ??
+      item.penataanData?.transfer?.fotoPenataan ??
+      item.penataan_data?.transfer?.fotoPenataan ??
+      null,
+    foto_dokumentasi:
+      item.fotoDokumentasi ??
+      item.foto_dokumentasi ??
+      item.penataanData?.transfer?.fotoPenataan ??
+      item.penataan_data?.transfer?.fotoPenataan ??
+      null,
     daftarArsip: item.daftarArsip ?? item.daftar_arsip ?? [],
     daftar_arsip: item.daftarArsip ?? item.daftar_arsip ?? [],
     status: item.status as StatusPenyusutan,

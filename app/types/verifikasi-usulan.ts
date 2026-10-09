@@ -41,6 +41,7 @@ export interface VerifikasiUsulanItem {
   arsipKode?: string | null;
   arsipKlasifikasi?: string | null;
   arsipKlasifikasiKode?: string | null;
+  arsipLokasiFisik?: string | null;
   arsipTindakanPenyusutan?: string | null;
   tanggalRetensiAktifHabis?: string | null;
   keterangan?: string | null;

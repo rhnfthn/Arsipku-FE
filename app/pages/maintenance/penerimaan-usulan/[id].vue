@@ -28,8 +28,18 @@
         <TransferDetailCard
           :transfer="transferView"
           :daftar-berkas="daftarBerkasDetail.length ? daftarBerkasDetail : daftarBerkas"
+          :daftar-isi="daftarIsiDetail"
           :collapsible="true"
           :show-approval-levels="false"
+          :show-bac-signer="false"
+          :show-bac-tembusan="false"
+          :show-tu-approval-levels="true"
+          :show-information-card="true"
+          information-title="Informasi Berkas"
+          information-layout="usul"
+          berkas-layout="usul"
+          :hide-secretary-info="true"
+          :fit-berkas-table="true"
           preview-from="tu"
         />
 
@@ -449,6 +459,7 @@ const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
 const daftarBerkasDetail = ref<any[]>([])
+const daftarIsiDetail = ref<any[]>([])
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] })
 
 /**
@@ -682,9 +693,12 @@ const statusBadgeClass = (s: string) => {
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true })
-    daftarBerkasDetail.value = res?.data?.daftarBerkas ?? []
+    const data = res?.data?.data ?? res?.data ?? res
+    daftarBerkasDetail.value = Array.isArray(data?.daftarBerkas) ? data.daftarBerkas : []
+    daftarIsiDetail.value = Array.isArray(data?.daftarIsi) ? data.daftarIsi : []
   } catch {
     daftarBerkasDetail.value = []
+    daftarIsiDetail.value = []
   }
 }
 

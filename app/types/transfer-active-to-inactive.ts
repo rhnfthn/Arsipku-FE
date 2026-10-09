@@ -47,6 +47,7 @@ export interface TransferActiveToInactive {
   arsipPerihal: string;
   arsipKode: string | null;
   arsipKlasifikasi?: string | null;
+  arsipKlasifikasiKode?: string | null;
   arsipTindakanPenyusutan?: string | null;
   /** Lokasi awal dari pemberkasan dan lokasi baru hasil penataan arsip. */
   lokasiAwal?: string | null;

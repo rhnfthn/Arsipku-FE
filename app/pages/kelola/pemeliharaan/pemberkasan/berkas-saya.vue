@@ -450,7 +450,7 @@
                 placeholder="Penanda tambahan untuk memudahkan pencarian, mis. Pengadaan IT, Keuangan, SDM…"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
               />
-              <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+              <p v-if="!form.kategori_berkas.trim()" class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                 Opsional — berkas bisa difilter &amp; dicari berdasarkan kategori ini.
               </p>
             </div>
@@ -469,7 +469,7 @@
               <input
                 v-model="form.lokasi"
                 type="text"
-                placeholder="Format: A1 Ruangan · 01 Rak · 0001 Box · contoh A1.01.001"
+                placeholder="Contoh: Rak A, Baris 2"
                 class="flex-1 outline-none text-gray-900 dark:text-white py-1 bg-transparent text-sm w-full placeholder-gray-400 dark:placeholder-gray-600"
                 @input="modalErrors.lokasi = false"
               />
@@ -592,6 +592,7 @@
               :disabled="isSubmitting || isUploading"
               class="flex-1 px-5 py-2 mt-2 text-sm border border-primary-500 hover:bg-primary-100 text-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               @click="
+                clearSavedCreateDraft();
                 resetForm();
                 showCreateModal = false;
               "
@@ -828,6 +829,11 @@ const defaultForm = {
 };
 
 const form = reactive({ ...defaultForm });
+const createDraftId = ref('');
+const isRestoringCreateDraft = ref(false);
+const createDraftStorageKey = 'arsipku:berkas-aktif:create-draft';
+const createDraftDbName = 'arsipku-create-berkas-drafts';
+const createDraftStoreName = 'photos';
 const modalErrors = reactive({
   klasifikasi: false,
   judul_berkas: false,
@@ -895,8 +901,118 @@ const openCreateModal = () => {
     toast.error('Anda tidak memiliki izin untuk membuat berkas');
     return;
   }
-  resetForm();
+  if (!createDraftId.value) {
+    resetForm();
+    createDraftId.value = globalThis.crypto?.randomUUID?.() || `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    persistCreateDraft();
+  }
   showCreateModal.value = true;
+};
+
+const openCreateDraftDb = (): Promise<IDBDatabase> => new Promise((resolve, reject) => {
+  const request = indexedDB.open(createDraftDbName, 1);
+  request.onupgradeneeded = () => {
+    if (!request.result.objectStoreNames.contains(createDraftStoreName)) {
+      request.result.createObjectStore(createDraftStoreName);
+    }
+  };
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error);
+});
+
+const saveCreateDraftPhoto = async (file: File | null, draftId: string) => {
+  const db = await openCreateDraftDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(createDraftStoreName, 'readwrite');
+    const store = transaction.objectStore(createDraftStoreName);
+    if (file) store.put(file, draftId);
+    else store.delete(draftId);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+  db.close();
+};
+
+const loadCreateDraftPhoto = async (draftId: string): Promise<Blob | undefined> => {
+  const db = await openCreateDraftDb();
+  const photo = await new Promise<Blob | undefined>((resolve, reject) => {
+    const request = db.transaction(createDraftStoreName, 'readonly')
+      .objectStore(createDraftStoreName).get(draftId);
+    request.onsuccess = () => resolve(request.result as Blob | undefined);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return photo;
+};
+
+const persistCreateDraft = () => {
+  if (!import.meta.client || !createDraftId.value || isRestoringCreateDraft.value) return;
+  try {
+    sessionStorage.setItem(createDraftStorageKey, JSON.stringify({
+      id: createDraftId.value,
+      form: {
+        klasifikasi: form.klasifikasi,
+        judul_berkas: form.judul_berkas,
+        tindakan_penyusutan_akhir: form.tindakan_penyusutan_akhir,
+        lokasi: form.lokasi,
+        isi_ringkas: form.isi_ringkas,
+        kategori_berkas: form.kategori_berkas,
+      },
+      photo: form.foto_lokasi_fisik ? {
+        name: form.foto_lokasi_fisik.name,
+        type: form.foto_lokasi_fisik.type,
+        lastModified: form.foto_lokasi_fisik.lastModified,
+      } : null,
+    }));
+  } catch (error) {
+    console.warn('[berkas-saya] Gagal menyimpan draft form:', error);
+  }
+};
+
+const restoreCreateDraft = async () => {
+  const rawDraft = sessionStorage.getItem(createDraftStorageKey);
+  if (!rawDraft) return;
+
+  try {
+    const draft = JSON.parse(rawDraft);
+    if (!draft?.id || !draft?.form) return;
+    isRestoringCreateDraft.value = true;
+    createDraftId.value = draft.id;
+    Object.assign(form, defaultForm, draft.form);
+    if (draft.photo?.name) {
+      try {
+        const photoBlob = await loadCreateDraftPhoto(draft.id);
+        if (photoBlob) {
+          form.foto_lokasi_fisik = new File([photoBlob], draft.photo.name, {
+            type: draft.photo.type || photoBlob.type,
+            lastModified: draft.photo.lastModified || Date.now(),
+          });
+        }
+      } catch (error) {
+        console.warn('[berkas-saya] Gagal memulihkan foto draft:', error);
+      }
+    }
+    onKlasifikasiChange();
+  } catch (error) {
+    console.warn('[berkas-saya] Draft form tidak dapat dipulihkan:', error);
+    sessionStorage.removeItem(createDraftStorageKey);
+  } finally {
+    isRestoringCreateDraft.value = false;
+  }
+};
+
+const clearSavedCreateDraft = async () => {
+  const draftId = createDraftId.value;
+  sessionStorage.removeItem(createDraftStorageKey);
+  createDraftId.value = '';
+  if (draftId) {
+    try {
+      await saveCreateDraftPhoto(null, draftId);
+    } catch (error) {
+      console.warn('[berkas-saya] Gagal menghapus foto draft:', error);
+    }
+  }
 };
 
 const resetForm = () => {
@@ -1028,6 +1144,7 @@ const onSubmitBerkas = async () => {
 
     toast.add({ title: 'Berkas berhasil dibuat', color: 'success' });
     showCreateModal.value = false;
+    await clearSavedCreateDraft();
     resetForm();
     await fetchData();
   } catch (e: any) {
@@ -1170,6 +1287,15 @@ const fetchKlasifikasi = async () => {
 
 // ── Watchers ─────────────────────────────────────────────────────
 
+watch(form, persistCreateDraft, { deep: true });
+watch(() => form.foto_lokasi_fisik, (file) => {
+  if (!createDraftId.value || isRestoringCreateDraft.value) return;
+  persistCreateDraft();
+  saveCreateDraftPhoto(file, createDraftId.value).catch((error) =>
+    console.warn('[berkas-saya] Gagal menyimpan foto draft:', error),
+  );
+});
+
 // Filter changes -> reset to page 1 (the currentPage watcher then fetches;
 // if already on page 1, fetch directly so the change still applies).
 watch([search, filterStatus, filterKlasifikasi, filterTahun], () => {
@@ -1194,9 +1320,10 @@ watch([sortKey, sortDir], () => {
 
 // ── Init ─────────────────────────────────────────────────────────
 
-onMounted(() => {
+onMounted(async () => {
   fetchData();
-  fetchKlasifikasi();
+  await fetchKlasifikasi();
+  await restoreCreateDraft();
   // Auto-sync: berkas Tertutup dengan retensi aktif habis → buat usulan DRAFT
   // otomatis di pemindahan arsip. Fire-and-forget (tidak block UI).
   apiPost('/transfer-active-to-inactive/sync-draft', {}).catch((e: any) =>
