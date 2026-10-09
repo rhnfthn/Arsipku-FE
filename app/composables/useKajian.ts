@@ -2,7 +2,7 @@ import { useApi } from './useApi';
 import type { KajianPayload } from '~/types/kajian';
 
 export const useKajian = () => {
-  const { api, get } = useApi();
+  const { api, get, getFresh } = useApi();
 
   // 1. Get Recipients (Structure: ATASAN, BAWAHAN, REKAN)
   const getRecipients = async (positionId?: string | number) => {
@@ -44,7 +44,7 @@ export const useKajian = () => {
 
   // 7. Get Detail (Untuk Edit Draft / View)
   const getKajianDetail = async (id: string) => {
-    return await get(`/KA/${id}`);
+    return await getFresh(`/KA/${id}`);
   };
 
   return {

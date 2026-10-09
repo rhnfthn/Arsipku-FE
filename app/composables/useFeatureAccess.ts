@@ -1,5 +1,5 @@
 import { useAuth } from './useAuth';
-import { isCorrespondenceDraftEdit } from '~/utils/correspondence-draft-access';
+import { isCorrespondenceDraftEdit, isNaskahLainnyaDraftEdit } from '~/utils/correspondence-draft-access';
 
 export interface FeaturePermission {
   resource: string;
@@ -198,7 +198,7 @@ export function useFeatureAccess() {
     const key = path ?? route.path;
     const routeQuery = query ?? route.query;
 
-    if (isCorrespondenceDraftEdit(key, routeQuery)) {
+    if (isCorrespondenceDraftEdit(key, routeQuery) || isNaskahLainnyaDraftEdit(key, routeQuery)) {
       return { resource: 'utama.draft', action: 'update' };
     }
 
@@ -267,6 +267,12 @@ export function useFeatureAccess() {
     canEditCorrespondenceDraft: () => {
       const route = useRoute();
       return isCorrespondenceDraftEdit(route.path, route.query) &&
+        hasPermission('utama.draft', 'update');
+    },
+    canEditNaskahLainnyaDraft: () => {
+      const route = useRoute();
+      return isNaskahLainnyaDraftEdit(route.path, route.query) &&
+        canAccessNaskahLainnya(auth.user.value?.position_status) &&
         hasPermission('utama.draft', 'update');
     },
     can,
