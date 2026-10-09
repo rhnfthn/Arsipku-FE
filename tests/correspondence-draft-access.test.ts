@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
-import { isCorrespondenceDraftEdit } from '../app/utils/correspondence-draft-access.ts';
+import { isCorrespondenceDraftEdit, isNaskahLainnyaDraftEdit } from '../app/utils/correspondence-draft-access.ts';
 
 const editors = [
   'nota-dinas', 'surat-dinas-internal', 'surat-dinas-eksternal', 'disposisi', 'kajian',
@@ -71,7 +71,7 @@ test('page access and draft actions use draft-update permission for every suppor
     useRoute: () => route,
   }, {
     './useAuth': { useAuth: () => auth },
-    '~/utils/correspondence-draft-access': { isCorrespondenceDraftEdit },
+    '~/utils/correspondence-draft-access': { isCorrespondenceDraftEdit, isNaskahLainnyaDraftEdit },
   });
   const access = useFeatureAccess();
   for (const editor of editors) {
@@ -87,6 +87,68 @@ test('page access and draft actions use draft-update permission for every suppor
   canUpdate = true;
   assert.equal(access.canAccessPage(), false);
   assert.equal(access.canEditCorrespondenceDraft(), false);
+});
+
+test('Naskah Lainnya draft edits require Update and retain position restrictions', () => {
+  let permissions = new Set(['utama.draft:update']);
+  const route = { path: '/naskah-lainnya/tulis', query: { draft_id: 'draft-id' } as Record<string, unknown> };
+  const auth = {
+    user: { value: { position_status: '' } },
+    hasPermission: (resource: string, action: string) => permissions.has(`${resource}:${action}`),
+  };
+  const { useFeatureAccess } = loadModule('../app/composables/useFeatureAccess.ts', {
+    useRoute: () => route,
+  }, {
+    './useAuth': { useAuth: () => auth },
+    '~/utils/correspondence-draft-access': { isCorrespondenceDraftEdit, isNaskahLainnyaDraftEdit },
+  });
+  const access = useFeatureAccess();
+  assert.equal(access.canAccessPage(), true);
+  assert.equal(access.canEditNaskahLainnyaDraft(), true);
+  permissions.clear();
+  assert.equal(access.canAccessPage(), false);
+  assert.equal(access.canEditNaskahLainnyaDraft(), false);
+  permissions.add('utama.draft:update');
+  for (const status of ['SE', 'VI', 'EXT']) {
+    auth.user.value.position_status = status;
+    assert.equal(access.canAccessPage(), false, status);
+    assert.equal(access.canEditNaskahLainnyaDraft(), false, status);
+  }
+  auth.user.value.position_status = '';
+  route.query = {};
+  assert.equal(access.canAccessPage(), false);
+  assert.equal(access.canEditNaskahLainnyaDraft(), false);
+  route.query = { draft_id: 'id', mode: 'data-sistem' };
+  assert.equal(access.canAccessPage(), false);
+  assert.equal(access.canEditNaskahLainnyaDraft(), false);
+  permissions.add('utama.tulis.naskah-lainnya.halaman-tulis-naskah:read');
+  assert.equal(access.canAccessPage(), true);
+});
+
+test('Naskah Lainnya helper recognizes drafts, not physical metadata or empty IDs', () => {
+  assert.equal(isNaskahLainnyaDraftEdit('/naskah-lainnya/tulis', { draft_id: 'id' }), true);
+  assert.equal(isNaskahLainnyaDraftEdit('/naskah-lainnya/tulis/', { draft_id: ['id'] }), true);
+  assert.equal(isNaskahLainnyaDraftEdit('/naskah-lainnya/tulis', { draft_id: 'id', mode: ['data-sistem'] }), false);
+  for (const draft_id of [undefined, '', '  ', [], null]) {
+    assert.equal(isNaskahLainnyaDraftEdit('/naskah-lainnya/tulis', { draft_id }), false);
+  }
+});
+
+test('Kajian detail is reloaded after updates instead of using an older cached response', async () => {
+  let detail = { perihal: 'Draft awal' };
+  const calls: string[] = [];
+  const { useKajian } = loadModule('../app/composables/useKajian.ts', {}, {
+    './useApi': { useApi: () => ({
+      api: {},
+      get: () => { throw new Error('Cached request must not be used for draft detail'); },
+      getFresh: async (url: string) => { calls.push(url); return detail; },
+    }) },
+  });
+  const kajian = useKajian();
+  assert.equal((await kajian.getKajianDetail('id')).perihal, 'Draft awal');
+  detail = { perihal: 'Draft diperbarui' };
+  assert.equal((await kajian.getKajianDetail('id')).perihal, 'Draft diperbarui');
+  assert.deepEqual(calls, ['/KA/id', '/KA/id']);
 });
 
 test('all supported existing drafts use the draft-edit access context', () => {

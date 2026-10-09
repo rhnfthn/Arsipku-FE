@@ -116,16 +116,16 @@
         <!-- Tertuju: exclude tembusan + anggota grup tembusan -->
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
           <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" label="Tertuju"
-            :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="items"
-            :groups="recipientGroups" :exclude-items="expandedExcludeTertuju" :disabled="!isSenderSelected"
+            :placeholder="isSenderSelected ? 'Pilih Tertuju' : 'Pilih pengirim terlebih dahulu'" :items="tertujuItems"
+            :exclude-items="expandedExcludeTertuju" :disabled="!isSenderSelected"
             disabled-message="Sudah dipilih di Tembusan" />
         </div>
 
         <!-- Tembusan: exclude tertuju + anggota grup tertuju -->
         <div :class="{ 'opacity-60 grayscale pointer-events-none': !isSenderSelected }">
           <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan"
-            :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="items"
-            :groups="recipientGroups" :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
+            :placeholder="isSenderSelected ? 'Pilih Tembusan' : 'Pilih pengirim terlebih dahulu'" :items="tembusanItems"
+            :exclude-items="expandedExcludeTembusan" :disabled="!isSenderSelected"
             disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
         </div>
         <TulisInputSifat v-model="selectedSifat" />
@@ -323,10 +323,10 @@ interface UploadedFile {
 // --- Composables ---
 const { createKonsep, previewPdf, forwardKonsep, createDraft, updateDraft, getKonsepDraftDetail } = useKonsep();
 const { apiGet } = useApi();
+const { getRecipients } = useSdi();
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
 const { fetchInboxDetail, fetchKonsepDetail } = useInbox();
-const { getRecipientGroups } = useRecipients();
 
 const route = useRoute();
 const router = useRouter();
@@ -355,6 +355,9 @@ const existingFiles = ref<UploadedFile[]>([]);
 const lampiranText = useEditableLampiranText(existingFiles);
 const selectedSifat = ref<SifatOption | null>(null);
 const items = ref<RecipientItem[]>([]);
+const sdiRecipientItems = computed(() => splitSdiRecipientItems(items.value));
+const tertujuItems = computed(() => sdiRecipientItems.value.tertuju);
+const tembusanItems = computed(() => sdiRecipientItems.value.tembusan);
 const senderItems = ref<RecipientItem[]>([]);
 const selectedSender = ref<RecipientItem | undefined>();
 const senderActorName = (source?: any) => {
@@ -685,18 +688,9 @@ const tinyMceInit = {
 // --- Methods ---
 const fetchRecipientsBySender = async (senderPositionId: string) => {
   try {
-    const res = await apiGet<{ success: boolean; data: { recipients: any } }>(
-      `/SDI/get-recipient?pengirim=${senderPositionId}`
-    );
-    const recipientsData = res?.data?.recipients;
-    if (recipientsData) {
-      const combinedArray = [
-        ...(recipientsData.ATASAN || []),
-        ...(recipientsData.REKAN || []),
-        ...(recipientsData.BAWAHAN || []),
-        ...(recipientsData.TEMBUSAN || []),
-      ];
-      items.value = combinedArray.map((r: any): RecipientItem => ({
+    const res = await getRecipients(senderPositionId);
+    if (res.recipients.length) {
+      items.value = res.recipients.map((r: any): RecipientItem => ({
         label: `${r.persnum_person_text || '-'} - ${r.position_text}`,
         labelJob: formatDelegatedPositionText(r.position_text, r),
         value: String(r.position),
@@ -1039,8 +1033,6 @@ onMounted(async () => {
     klasifikasiStatus.value = "loading";
     klasifikasiList.value = await getKlasifikasi();
     klasifikasiStatus.value = "success";
-    const groups = await getRecipientGroups("SDI");
-    recipientGroups.value = groups.filter((g: any) => g.aktif);
   } catch { klasifikasiStatus.value = "error"; }
 
   // A. EDIT MODE
