@@ -9,6 +9,7 @@ import {
   Calendar as CalendarIcon, Layers, Download, Search, X
 } from "lucide-vue-next";
 import * as XLSX from "xlsx";
+import { pendingTteFeedback } from "~/utils/tte-pending-feedback";
 import { useDraft } from "@/composables/useDraft";
 import { useLabel } from "~/composables/useLabel";
 import { getCategoryStyle, getCategoryFullName } from "~/utils/mail-helpers";
@@ -42,12 +43,20 @@ const checkTte = async (mail, resume = false) => {
   checkingTte.value = mail.id;
   try {
     const result = await getPendingCorrespondence(mail.id);
-    if (resume && result.signingUrl) {
-      window.location.assign(result.signingUrl);
+    await refreshData();
+    const currentMail = items.value.find(item => item.id === mail.id);
+    const feedback = pendingTteFeedback(result, resume, currentMail?.status);
+    if (feedback.kind === 'redirect') {
+      window.location.assign(feedback.url);
       return;
     }
-    await refreshData();
-    toast.add({ title: t('df_tte_checked'), color: 'success' });
+    if (feedback.kind === 'toast') {
+      toast.add({
+        title: t(feedback.title),
+        description: feedback.description ? t(feedback.description) : feedback.errorDetail,
+        color: feedback.color,
+      });
+    }
   } catch (error) {
     toast.add({ title: t('df_tte_check_failed'), description: error?.message, color: 'error' });
   } finally { checkingTte.value = null; }
