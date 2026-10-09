@@ -38,14 +38,6 @@
         @detail="openDetail"
       />
 
-      <!-- Pagination -->
-      <div v-if="meta">
-        <DataPagination
-          v-model:current-page="currentPage"
-          :total-items="meta.total"
-          :per-page="filter.limit ?? 10"
-        />
-      </div>
     </div>
 
     <!-- Export Column Modal -->
@@ -61,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
@@ -195,16 +187,6 @@ const handleExportConfirm = (selectedKeys: string[]) => {
 const openDetail = (row: VerifikasiUsulanItem) => {
   navigateTo(`/maintenance/verifikasi-usulan/${row.id}?jenis=${row.jenis}`);
 };
-
-// DataPagination v-model:current-page → trigger loadData on page change
-const currentPage = computed({
-  get: () => filter.value.page ?? 1,
-  set: (val: number) => { filter.value.page = val; },
-});
-
-watch(() => filter.value.page, () => {
-  if (filter.value.page) loadData();
-});
 
 onMounted(() => loadData());
 </script>

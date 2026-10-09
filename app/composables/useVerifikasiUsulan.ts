@@ -10,6 +10,13 @@ import type {
   JenisUsulan,
 } from '~/types/verifikasi-usulan';
 
+const CURRENT_VERIFIER_STATUSES = [
+  'MENUNGGU_VERIFIKASI_ATASAN',
+  'DISETUJUI_ATASAN',
+  'MENUNGGU_VERIFIKASI_TERAKHIR',
+  'DISETUJUI_VERIFIKASI_TERAKHIR',
+];
+
 /**
  * Composable untuk dashboard Verifikasi Usulan (gabungan inaktif + aktif ke inaktif).
  * Menggunakan 2 endpoint existing dan menggabungkan hasilnya di frontend.
@@ -56,6 +63,8 @@ export const useVerifikasiUsulan = () => {
     arsipKode: raw.arsipKode ?? raw.arsip_kode ?? null,
     arsipKlasifikasi: raw.arsipKlasifikasi ?? raw.arsip_klasifikasi ?? null,
     arsipKlasifikasiKode: raw.arsipKlasifikasiKode ?? raw.arsip_klasifikasi_kode ?? null,
+    arsipLokasiFisik:
+      raw.arsipLokasiFisik ?? raw.arsip_lokasi_fisik ?? raw.lokasiFisik ?? raw.lokasi_fisik ?? null,
     arsipTindakanPenyusutan: raw.arsipTindakanPenyusutan ?? raw.arsip_tindakan_penyusutan ?? null,
     tanggalRetensiAktifHabis:
       raw.tanggalRetensiAktifHabis ?? raw.tanggal_retensi_aktif_habis ?? null,
@@ -102,8 +111,8 @@ export const useVerifikasiUsulan = () => {
     updatedAt: raw.updatedAt ?? raw.updated_at,
     currentApprovalLevel: raw.currentApprovalLevel ?? raw.current_approval_level ?? 1,
     totalApprovalLevels: raw.totalApprovalLevels ?? raw.total_approval_levels ?? 1,
-    approvalLevels: Array.isArray(raw.approvalLevels)
-      ? raw.approvalLevels.map((l: any) => ({
+    approvalLevels: Array.isArray(raw.approvalLevels ?? raw.approval_levels)
+      ? (raw.approvalLevels ?? raw.approval_levels).map((l: any) => ({
           id: l.id,
           atasanPersnum: l.atasanPersnum ?? l.atasan_persnum,
           atasanName: l.atasanName ?? l.atasan_name ?? '-',
@@ -185,26 +194,6 @@ export const useVerifikasiUsulan = () => {
           // (halaman verifikasi hanya untuk usulan di mana user adalah atasan)
           if (userPersnum && Number(item.sekretarisPersnum) === Number(userPersnum)) continue;
 
-          // Verifikasi atasan berjalan berurutan. Hanya verifikator yang sedang
-          // aktif yang boleh melihat berkas pada dashboard verifikasi.
-          const currentVerifierStatuses: string[] = [
-            'MENUNGGU_VERIFIKASI_ATASAN',
-            'DISETUJUI_ATASAN',
-            'MENUNGGU_VERIFIKASI_TERAKHIR',
-            'DISETUJUI_VERIFIKASI_TERAKHIR',
-          ];
-          const isSequentialVerification =
-            item.jenis === 'aktif_ke_inaktif' &&
-            currentVerifierStatuses.includes(item.status);
-
-          if (
-            isSequentialVerification &&
-            userPersnum &&
-            Number(item.atasanPersnum) !== Number(userPersnum)
-          ) {
-            continue;
-          }
-
           // Filter status (client-side) — pseudo-status
           if (statusFilter) {
             if (statusFilter === 'MENUNGGU_PERSETUJUAN') {
@@ -246,10 +235,10 @@ export const useVerifikasiUsulan = () => {
         }
       }
 
-      // Sort by createdAt DESC
+      // Dahulukan transaksi yang paling baru berubah status/datanya.
       combined.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
         return dateB - dateA;
       });
 
@@ -262,10 +251,7 @@ export const useVerifikasiUsulan = () => {
       if (userPersnum) {
         await Promise.all(
           pagedData.map(async (item) => {
-            if (
-              item.jenis === 'aktif_ke_inaktif' &&
-              (item.status === 'MENUNGGU_VERIFIKASI_ATASAN' || item.status === 'DISETUJUI_ATASAN')
-            ) {
+            if (item.jenis === 'aktif_ke_inaktif' && CURRENT_VERIFIER_STATUSES.includes(item.status)) {
               item.isCurrentTurn = await checkIsCurrentTurn(item.id, item.jenis);
             } else {
               item.isCurrentTurn = false;

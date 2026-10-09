@@ -108,64 +108,123 @@
           </button>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-primary dark:bg-primary-700 text-white">
-              <tr>
-                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
-                <th class="px-3 py-3 text-center font-semibold">Kode Berkas/No Usulan</th>
-                <th class="px-3 py-3 text-center font-semibold">Klasifikasi</th>
-                <th class="px-3 py-3 text-center font-semibold">Sekretaris</th>
-                <th class="px-3 py-3 text-center font-semibold">Atasan Managerial</th>
-                <th class="px-3 py-3 text-center font-semibold">Tgl Dikirim</th>
-                <th class="px-3 py-3 text-center font-semibold">Status</th>
-                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="8" class="px-3 py-10 text-center">
-                  <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
-                </td>
-              </tr>
-              <tr v-else-if="list.length === 0">
-                <td colspan="8" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
-                  Belum ada usulan masuk.
-                </td>
-              </tr>
-              <tr
-                v-for="item in list"
-                :key="item.id"
-                class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                :class="penerimaanRowClass(item)"
+        <!-- Tabel memakai kolom yang sama dengan Pemindahan Arsip. -->
+        <DataTable
+          :columns="columns"
+          :rows="sortedList"
+          compact
+          :loading="isLoading"
+          :sort-key="sortKey"
+          :sort-dir="sortDir"
+          header-class="bg-primary dark:bg-primary-700 text-white text-left"
+          body-class="divide-y divide-gray-100 dark:divide-gray-700"
+          row-class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          :row-classes-fn="penerimaanRowClass"
+          empty-message="Belum ada usulan masuk."
+          @sort="handleSort"
+        >
+          <template #cell-arsipPerihal="{ row }">
+            <div
+              class="block min-w-0 truncate text-gray-600 dark:text-gray-300"
+              :aria-label="row.arsipPerihal || '-'"
+              :title="row.arsipPerihal || '-'"
+              tabindex="0"
+              @mouseenter="showCellTooltip($event, row.arsipPerihal || '-')"
+              @mouseleave="hideCellTooltip"
+              @focus="showCellTooltip($event, row.arsipPerihal || '-')"
+              @blur="hideCellTooltip"
+            >
+              {{ row.arsipPerihal || '-' }}
+            </div>
+          </template>
+          <template #cell-arsipKode="{ row }">
+            <div
+              class="block min-w-0 truncate font-medium text-gray-700 dark:text-gray-200"
+              :title="row.arsipKode || '-'"
+              tabindex="0"
+              @mouseenter="showCellTooltip($event, row.arsipKode || '-')"
+              @mouseleave="hideCellTooltip"
+              @focus="showCellTooltip($event, row.arsipKode || '-')"
+              @blur="hideCellTooltip"
+            >
+              {{ row.arsipKode || '-' }}
+            </div>
+          </template>
+          <template #cell-arsipKlasifikasi="{ row }">
+            <div
+              class="block min-w-0 truncate text-gray-600 dark:text-gray-300"
+              :aria-label="row.arsipKlasifikasi || '-'"
+              :title="row.arsipKlasifikasi || '-'"
+              tabindex="0"
+              @mouseenter="showCellTooltip($event, row.arsipKlasifikasi || '-')"
+              @mouseleave="hideCellTooltip"
+              @focus="showCellTooltip($event, row.arsipKlasifikasi || '-')"
+              @blur="hideCellTooltip"
+            >
+              {{ row.arsipKlasifikasi || '-' }}
+            </div>
+          </template>
+          <template #cell-lokasiFisik="{ row }">
+            <div
+              class="block min-w-0 truncate text-gray-600 dark:text-gray-300"
+              :title="row.lokasiAwal || '-'"
+              tabindex="0"
+              @mouseenter="showCellTooltip($event, row.lokasiAwal || '-')"
+              @mouseleave="hideCellTooltip"
+              @focus="showCellTooltip($event, row.lokasiAwal || '-')"
+              @blur="hideCellTooltip"
+            >
+              {{ row.lokasiAwal || '-' }}
+            </div>
+          </template>
+          <template #cell-tanggalRetensiAktifHabis="{ row }">
+            <span class="whitespace-nowrap text-gray-600 dark:text-gray-300">
+              {{ formatDate(row.tanggalRetensiAktifHabis) }}
+            </span>
+          </template>
+          <template #cell-status="{ row }">
+            <span
+              :class="statusBadgeClass(row.status)"
+              class="inline-flex max-w-full whitespace-normal break-words text-[11px] leading-tight"
+              :title="statusLabel(row.status)"
+            >
+              {{ statusLabel(row.status) }}
+            </span>
+          </template>
+          <template #cell-updatedAt="{ row }">
+            <span class="whitespace-nowrap text-gray-600 dark:text-gray-300">
+              {{ formatDate(row.updatedAt) }}
+            </span>
+          </template>
+          <template #cell-aksi="{ row }">
+            <div class="text-center" @click.stop>
+              <NuxtLink
+                :to="`/maintenance/penerimaan-usulan/${row.id}?jenis=aktif_ke_inaktif`"
+                @click="markRowAsViewed(row)"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white transition-colors hover:bg-primary-800"
+                :title="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
+                :aria-label="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
               >
-                <td class="px-3 py-3 font-medium text-gray-800 dark:text-white">{{ item.arsipPerihal }}</td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.arsipKode ?? '-' }}</div>
-                  <div v-if="item.nomorUsulan" class="text-[11px] text-gray-400">{{ item.nomorUsulan }}</div>
-                </td>
-                <td class="px-3 py-3">{{ item.arsipKlasifikasi ?? '-' }}</td>
-                <td class="px-3 py-3">{{ item.sekretarisName }}</td>
-                <td class="px-3 py-3">{{ item.atasanName }}</td>
-                <td class="px-3 py-3 whitespace-nowrap">{{ formatDate(item.tanggalDikirim) }}</td>
-                <td class="px-3 py-3">
-                  <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
-                </td>
-                <td class="px-3 py-3 text-center">
-                  <NuxtLink
-                    :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
-                    @click="markRowAsViewed(item)"
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary hover:bg-primary-800 text-white transition-colors"
-                    :title="isDetailOnly(item.status) ? 'Detail' : 'Verifikasi'"
-                  >
-                    <UIcon :name="isDetailOnly(item.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="w-4 h-4" />
-                  </NuxtLink>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                <UIcon :name="isDetailOnly(row.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="h-4 w-4" />
+              </NuxtLink>
+            </div>
+          </template>
+        </DataTable>
+
+        <Teleport to="body">
+          <div
+            v-if="cellTooltip.visible"
+            role="tooltip"
+            class="pointer-events-none fixed z-[9999] max-h-[40vh] overflow-y-auto rounded-lg bg-gray-900 px-3 py-2 text-sm text-white shadow-xl"
+            :style="{
+              top: `${cellTooltip.top}px`,
+              left: `${cellTooltip.left}px`,
+              maxWidth: 'min(26rem, calc(100vw - 24px))',
+            }"
+          >
+            {{ cellTooltip.text }}
+          </div>
+        </Teleport>
 
         <!-- Pagination -->
         <div v-if="total > 0">
@@ -195,11 +254,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useApi } from '~/composables/useApi'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
+import DataTable from '~/components/DataTable.vue'
+import { newRowClass } from '~/utils/newRow'
 
 definePageMeta({ middleware: ['auth'] })
 
@@ -226,6 +287,66 @@ const pageSizeOpen = ref(false)
 const statusOpen = ref(false)
 const klasifikasiOpen = ref(false)
 const klasifikasiList = ref<any[]>([])
+
+const columns = [
+  { key: 'arsipPerihal', label: 'Nama Berkas', sortable: true, class: 'w-[18%] max-w-0', headerClass: 'w-[18%]' },
+  { key: 'arsipKode', label: 'Kode Berkas', sortable: true, class: 'w-[12%] max-w-0', headerClass: 'w-[12%]' },
+  { key: 'arsipKlasifikasi', label: 'Klasifikasi', sortable: true, class: 'w-[13%] max-w-0', headerClass: 'w-[13%]' },
+  { key: 'lokasiFisik', label: 'Lokasi Fisik', sortable: true, class: 'w-[11%] max-w-0', headerClass: 'w-[11%]' },
+  { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', sortable: true, class: 'w-[13%]', headerClass: 'w-[13%]' },
+  { key: 'status', label: 'Status', sortable: true, class: 'w-[16%] max-w-0', headerClass: 'w-[16%]' },
+  { key: 'updatedAt', label: 'Updated', sortable: true, class: 'w-[11%]', headerClass: 'w-[11%]' },
+  { key: 'aksi', label: 'Aksi', class: 'w-[6%] text-center', headerClass: 'w-[6%] text-center' },
+]
+const sortKey = ref('')
+const sortDir = ref<'asc' | 'desc'>('asc')
+const sortedList = computed(() => {
+  if (!sortKey.value) return list.value
+  const key = (sortKey.value === 'lokasiFisik' ? 'lokasiAwal' : sortKey.value) as keyof TuUsulanItem
+  const direction = sortDir.value === 'asc' ? 1 : -1
+  return [...list.value].sort((a, b) => {
+    const left = a[key]
+    const right = b[key]
+    if (left == null || left === '') return right == null || right === '' ? 0 : 1
+    if (right == null || right === '') return -1
+    const aValue = String(left)
+    const bValue = String(right)
+    const aTime = Date.parse(aValue)
+    const bTime = Date.parse(bValue)
+    const comparison = !Number.isNaN(aTime) && !Number.isNaN(bTime)
+      ? aTime - bTime
+      : aValue.localeCompare(bValue, 'id', { numeric: true, sensitivity: 'base' })
+    return comparison * direction
+  })
+})
+const handleSort = (key: string) => {
+  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
+
+const cellTooltip = reactive({ visible: false, text: '', top: 0, left: 0 })
+const showCellTooltip = (event: Event, text: string) => {
+  if (!import.meta.client) return
+  const target = event.currentTarget
+  if (!(target instanceof HTMLElement) || target.scrollWidth <= target.clientWidth) return
+  const rect = target.getBoundingClientRect()
+  const padding = 12
+  const maxWidth = Math.min(416, window.innerWidth - padding * 2)
+  const maxHeight = Math.min(320, window.innerHeight * 0.4)
+  const left = Math.min(Math.max(padding, rect.left), window.innerWidth - maxWidth - padding)
+  const below = rect.bottom + 8
+  const top = below + maxHeight <= window.innerHeight - padding
+    ? below
+    : Math.max(padding, rect.top - maxHeight - 8)
+  cellTooltip.text = text
+  cellTooltip.left = left
+  cellTooltip.top = top
+  cellTooltip.visible = true
+}
+const hideCellTooltip = () => { cellTooltip.visible = false }
 
 // Baris baru ditebalkan sampai pengguna membuka detail atau menekan aksi.
 const viewedRowIds = ref<Set<string>>(new Set())
@@ -383,13 +504,13 @@ const showExportModal = ref(false);
 const isExporting = ref(false);
 
 const exportColumns = ref([
-  { key: 'No', label: 'No', desc: 'Nomor urut data' },
-  { key: 'nomorUsulan', label: 'Nomor Usulan', desc: 'Nomor berkas usulan' },
-  { key: 'arsip', label: 'Nama Berkas / Arsip', desc: 'Perihal arsip berkas' },
-  { key: 'sekretaris', label: 'Sekretaris / Pengusul', desc: 'Nama pengusul' },
-  { key: 'atasan', label: 'Atasan Managerial', desc: 'Nama atasan pemeriksa' },
-  { key: 'tglDikirim', label: 'Tanggal Dikirim', desc: 'Tanggal berkas dikirimkan' },
-  { key: 'status', label: 'Status', desc: 'Status verifikasi usulan' }
+  { key: 'arsipPerihal', label: 'Nama Berkas', desc: 'Nama berkas arsip' },
+  { key: 'arsipKode', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
+  { key: 'arsipKlasifikasi', label: 'Klasifikasi', desc: 'Klasifikasi arsip' },
+  { key: 'lokasiAwal', label: 'Lokasi Fisik', desc: 'Lokasi fisik dari pemberkasan' },
+  { key: 'tanggalRetensiAktifHabis', label: 'Retensi Habis', desc: 'Tanggal retensi aktif berakhir' },
+  { key: 'status', label: 'Status', desc: 'Status usulan' },
+  { key: 'updatedAt', label: 'Updated', desc: 'Tanggal pembaruan terakhir' },
 ]);
 
 const onExport = () => {
@@ -423,13 +544,13 @@ const handleExportConfirm = async (selectedKeys: string[]) => {
 
     const data = allRows.map((r: any, idx: number) => {
       const row: Record<string, any> = {};
-      if (selectedKeys.includes('No')) row['No'] = idx + 1;
-      if (selectedKeys.includes('nomorUsulan')) row['Nomor Usulan'] = r.nomorUsulan || '-';
-      if (selectedKeys.includes('arsip')) row['Nama Berkas / Arsip'] = r.arsipPerihal || '-';
-      if (selectedKeys.includes('sekretaris')) row['Sekretaris / Pengusul'] = r.sekretarisName || '-';
-      if (selectedKeys.includes('atasan')) row['Atasan Managerial'] = r.atasanName || '-';
-      if (selectedKeys.includes('tglDikirim')) row['Tanggal Dikirim'] = formatDate(r.tanggalDikirim);
+      if (selectedKeys.includes('arsipPerihal')) row['Nama Berkas'] = r.arsipPerihal || '-';
+      if (selectedKeys.includes('arsipKode')) row['Kode Berkas'] = r.arsipKode || '-';
+      if (selectedKeys.includes('arsipKlasifikasi')) row['Klasifikasi'] = r.arsipKlasifikasi || '-';
+      if (selectedKeys.includes('lokasiAwal')) row['Lokasi Fisik'] = r.lokasiAwal || '-';
+      if (selectedKeys.includes('tanggalRetensiAktifHabis')) row['Retensi Habis'] = formatDate(r.tanggalRetensiAktifHabis);
       if (selectedKeys.includes('status')) row['Status'] = statusLabel(r.status);
+      if (selectedKeys.includes('updatedAt')) row['Updated'] = formatDate(r.updatedAt);
       return row;
     });
 

@@ -1,11 +1,18 @@
 <template>
   <div class="space-y-5">
     <!-- Card 1: Informasi Usulan + Keterangan + Total Arsip + File Rincian -->
-    <div v-if="showInformationCard" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
+    <div
+      v-if="showInformationCard"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm"
+      :class="informationLayout === 'usul' ? 'overflow-hidden' : 'p-5'"
+    >
       <button
         type="button"
-        class="flex w-full items-center justify-between gap-3 text-left mb-4"
-        :class="collapsible ? 'cursor-pointer' : 'cursor-default'"
+        class="flex w-full items-center justify-between gap-3 text-left"
+        :class="[
+          collapsible ? 'cursor-pointer' : 'cursor-default',
+          informationLayout === 'usul' ? 'min-h-16 px-5 py-4' : 'mb-4',
+        ]"
         :aria-expanded="collapsible ? infoOpen : undefined"
         @click="collapsible && (infoOpen = !infoOpen)"
       >
@@ -22,8 +29,59 @@
           />
         </div>
       </button>
-      <div v-show="!collapsible || infoOpen">
-        <div v-if="informationLayout === 'penataan'" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div
+        v-show="!collapsible || infoOpen"
+        :class="informationLayout === 'usul' ? 'px-5 pb-5' : ''"
+      >
+        <div v-if="informationLayout === 'usul'" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.nomorUsulan }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">{{ informationDateLabel }}</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ formatDate(informationDateValue) }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
+            <div class="mt-1">
+              <span :class="transferDisplayStatusClass">{{ transferDisplayStatusLabel }}</span>
+            </div>
+          </div>
+          <div v-if="showBacStatus">
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Status BAC</span>
+            <p class="text-gray-900 dark:text-white font-normal">
+              {{ bacSigningStatusLabel }}
+            </p>
+          </div>
+          <div v-if="showSecretaryInfo">
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.sekretarisName }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipKode ?? '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
+            <p class="text-gray-900 dark:text-white font-normal">
+              {{ [transfer.arsipKlasifikasiKode, transfer.arsipKlasifikasi].filter(Boolean).join(' — ') || '-' }}
+            </p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Nasib Akhir</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipTindakanPenyusutan ?? '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ formatDate(transfer.tanggalRetensiAktifHabis) }}</p>
+          </div>
+          <div class="md:col-span-2">
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
+          </div>
+        </div>
+        <div v-else-if="informationLayout === 'penataan'" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ transfer.nomorUsulan }}</p>
@@ -94,22 +152,22 @@
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.nomorUsulan }}</p>
         </div>
         <div>
-          <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Usulan</span>
-          <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(transfer.tanggalUsulan) }}</p>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">{{ informationDateLabel }}</span>
+          <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(informationDateValue) }}</p>
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
           <div class="mt-1">
-            <span :class="statusBadgeClass(transfer.status)">{{ statusLabel(transfer.status) }}</span>
+            <span :class="transferDisplayStatusClass">{{ transferDisplayStatusLabel }}</span>
           </div>
         </div>
         <div v-if="showBacStatus">
           <span class="text-gray-500 dark:text-gray-400 text-xs">Status BAC</span>
           <p class="text-gray-900 dark:text-white font-medium">
-            {{ transfer.bacSignedAt ? 'Ditandatangani' : transfer.bacPihakPertamaPersnum ? 'Menunggu Tanda Tangan' : 'Belum Ditandatangani' }}
+            {{ bacSigningStatusLabel }}
           </p>
         </div>
-        <div>
+        <div v-if="showSecretaryInfo">
           <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.sekretarisName }}</p>
         </div>
@@ -120,7 +178,12 @@
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
           <p class="text-gray-900 dark:text-white font-medium">{{ transfer.arsipKlasifikasi ?? '-' }}</p>
-          <p v-if="transfer.arsipKlasifikasiKode" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ transfer.arsipKlasifikasiKode }}</p>
+          <p
+            v-if="showClassificationCode && transfer.arsipKlasifikasiKode"
+            class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+          >
+            {{ transfer.arsipKlasifikasiKode }}
+          </p>
         </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
@@ -196,11 +259,11 @@
       <div
         v-show="!collapsible || berkasOpen"
         id="daftar-berkas-print"
-        :class="berkasLayout === 'penataan' ? 'w-full overflow-x-hidden' : 'overflow-x-auto'"
+        :class="berkasLayout === 'penataan' || fitBerkasTable ? 'w-full overflow-x-hidden' : 'overflow-x-auto'"
       >
         <table
           class="w-full border-collapse text-xs"
-          :class="berkasLayout === 'penataan' ? 'table-fixed' : 'min-w-[1120px]'"
+          :class="berkasLayout === 'penataan' || fitBerkasTable ? 'table-fixed' : berkasLayout === 'usul' ? 'min-w-[1240px]' : 'min-w-[1120px]'"
         >
           <thead>
             <tr class="bg-[#457fb6] text-white">
@@ -215,15 +278,16 @@
                 <th class="w-[10%] border border-[#457fb6] px-1.5 py-3 text-center font-semibold">Retensi Arsip Inaktif</th>
               </template>
               <template v-else>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
-                <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+                <th :class="fitBerkasTable ? 'w-[12%] px-1.5 whitespace-normal break-words' : 'px-3 whitespace-nowrap'" class="border border-[#457fb6] py-3 text-center font-semibold">Nomor Berkas</th>
+                <th :class="fitBerkasTable ? 'w-[14%] px-1.5 break-words' : 'px-3'" class="border border-[#457fb6] py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
+                <th :class="fitBerkasTable ? 'w-[23%] px-1.5 break-words' : 'px-3 min-w-[280px]'" class="border border-[#457fb6] py-3 text-center font-semibold"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
+                <th :class="fitBerkasTable ? 'w-[10%] px-1.5 whitespace-normal break-words' : 'px-3 whitespace-nowrap'" class="border border-[#457fb6] py-3 text-center font-semibold">{{ berkasLayout === 'usul' ? 'Kurun Waktu' : 'Tanggal' }}</th>
+                <th :class="fitBerkasTable ? 'w-[6%] px-1.5 whitespace-normal break-words' : 'px-3 whitespace-nowrap'" class="border border-[#457fb6] py-3 text-center font-semibold">Jumlah</th>
+                <th :class="fitBerkasTable ? 'w-[9%] px-1.5 break-words' : 'px-3'" class="border border-[#457fb6] py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
+                <th :class="fitBerkasTable ? 'w-[10%] px-1.5 break-words' : 'px-3'" class="border border-[#457fb6] py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
+                <th v-if="berkasLayout === 'usul'" :class="fitBerkasTable ? 'w-[10%] px-1.5 break-words' : 'px-3'" class="border border-[#457fb6] py-3 text-center font-semibold">Retensi Arsip Aktif</th>
               </template>
-              <th :class="berkasLayout === 'penataan' ? 'w-[7%] px-1.5' : 'px-3'" class="print-action border border-[#457fb6] py-3 text-center font-semibold">Aksi</th>
+              <th :class="berkasLayout === 'penataan' ? 'w-[7%] px-1.5' : fitBerkasTable ? 'w-[6%] px-1.5' : 'px-3'" class="print-action border border-[#457fb6] py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -242,15 +306,20 @@
                 <td class="break-words border-b border-gray-200 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggalRetensiInaktifBerakhir) }}</td>
               </template>
               <template v-else>
-                <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kodeKlasifikasi ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggal) }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
-                <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+                <td :class="fitBerkasTable ? 'px-1.5 break-words' : 'px-3'" class="border-b border-gray-200 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? '-' }}</td>
+                <td :class="[fitBerkasTable ? 'px-1.5 break-words' : 'px-3', berkasLayout === 'usul' ? 'text-center' : '']" class="border-b border-gray-200 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                  {{ berkasLayout === 'usul'
+                    ? [row.kodeKlasifikasi, row.klasifikasi].filter(Boolean).join(' — ') || '-'
+                    : row.kodeKlasifikasi ?? '-' }}
+                </td>
+                <td :class="fitBerkasTable ? 'px-1.5 break-words' : 'px-3'" class="border-b border-gray-200 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.namaBerkas ?? row.perihal ?? '-' }}</td>
+                <td :class="[fitBerkasTable ? 'px-1.5 whitespace-normal break-words' : 'px-3 whitespace-nowrap', berkasLayout === 'usul' ? 'text-center' : '']" class="border-b border-gray-200 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkasLayout === 'usul' ? (row.kurunWaktu ?? formatDate(row.tanggal)) : formatDate(row.tanggal) }}</td>
+                <td :class="fitBerkasTable ? 'px-1.5 break-words' : 'px-3'" class="border-b border-gray-200 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
+                <td :class="[fitBerkasTable ? 'px-1.5 break-words' : 'px-3', berkasLayout === 'usul' ? 'text-center' : '']" class="border-b border-gray-200 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.lokasiSimpan ?? '-' }}</td>
+                <td :class="[fitBerkasTable ? 'px-1.5 break-words' : 'px-3', berkasLayout === 'usul' ? 'text-center' : '']" class="border-b border-gray-200 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
+                <td v-if="berkasLayout === 'usul'" :class="fitBerkasTable ? 'px-1.5 whitespace-normal break-words' : 'px-3 whitespace-nowrap'" class="border-b border-gray-200 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggalRetensiAktifBerakhir) }}</td>
               </template>
-              <td class="print-action border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
+              <td :class="fitBerkasTable ? 'px-1.5' : 'px-3'" class="print-action border-b border-gray-200 py-3 text-center dark:border-gray-700">
                 <div class="flex items-center justify-center gap-1">
                   <NuxtLink
                     v-if="row.id"
@@ -302,31 +371,36 @@
         <table class="w-full border-collapse text-sm">
           <thead>
             <tr class="bg-[#457fb6] text-white">
-              <th class="w-[2%] px-0.5 py-3 text-center font-semibold">No</th>
-              <th class="w-[14%] px-1.5 py-3 text-center font-semibold">Nomor Naskah</th>
+              <th v-if="informationLayout !== 'usul'" class="w-[2%] px-0.5 py-3 text-center font-semibold">No</th>
+              <th class="px-1.5 py-3 text-center font-semibold" :class="informationLayout === 'usul' ? 'w-[16%]' : 'w-[14%]'">Nomor Naskah</th>
+              <th v-if="informationLayout === 'usul'" class="w-[18%] px-1.5 py-3 text-center font-semibold">Kode Klasifikasi</th>
               <th class="w-[10%] px-1.5 py-3 text-center font-semibold">Kode Berkas</th>
-              <th class="w-[14%] px-1.5 py-3 text-center font-semibold">Kode Klasifikasi</th>
-              <th class="w-[20%] px-1.5 py-3 text-center font-semibold">Uraian Informasi Isi Berkas</th>
+              <th v-if="informationLayout !== 'usul'" class="w-[14%] px-1.5 py-3 text-center font-semibold">Kode Klasifikasi</th>
+              <th class="px-1.5 py-3 text-center font-semibold" :class="informationLayout === 'usul' ? 'w-[21%]' : 'w-[20%]'">Uraian Informasi Isi Berkas</th>
               <th class="w-[9%] px-1.5 py-3 text-center font-semibold">Tanggal</th>
               <th class="w-[5%] px-1.5 py-3 text-center font-semibold">Jumlah</th>
               <th class="w-[9%] px-1.5 py-3 text-center font-semibold">Lokasi Simpan</th>
-              <th class="w-[11%] px-1.5 py-3 text-center font-semibold">Klasifikasi Keamanan</th>
-              <th class="print-action w-[6%] px-1.5 py-3 text-center font-semibold">Aksi</th>
+              <th class="px-1.5 py-3 text-center font-semibold" :class="informationLayout === 'usul' ? 'w-[8%]' : 'w-[11%]'">Klasifikasi Keamanan</th>
+              <th v-if="informationLayout === 'usul'" class="print-action w-[4%] px-1.5 py-3 text-center font-semibold">Aksi</th>
+              <th v-else class="print-action w-[6%] px-1.5 py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, idx) in daftarIsiRows" :key="row.naskahId ?? `${row.id}-${idx}`" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-              <td class="break-words border-b border-gray-100 px-0.5 py-3 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.no ?? idx + 1 }}</td>
+              <td v-if="informationLayout !== 'usul'" class="break-words border-b border-gray-100 px-0.5 py-3 text-center text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.no ?? idx + 1 }}</td>
               <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.nomorSurat ?? row.nomor_surat ?? row.nomor ?? '-' }}</td>
+              <td v-if="informationLayout === 'usul'" class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                {{ archiveClassificationLabel(row) }}
+              </td>
               <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.kode ?? row.kodeBerkas ?? '-' }}</td>
-              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+              <td v-if="informationLayout !== 'usul'" class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">
                 <div class="font-semibold">{{ archiveClassification(row).name }}</div>
                 <div class="mt-0.5 text-xs text-gray-400">{{ archiveClassification(row).code }}</div>
               </td>
               <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ row.uraianInformasi ?? row.perihal ?? '-' }}</td>
               <td class="break-words border-b border-gray-100 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ formatDate(row.tanggal) }}</td>
               <td class="break-words border-b border-gray-100 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.jumlah ?? row.jumlahBerkas ?? '-' }}</td>
-              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkasLocation(row) }}</td>
+              <td class="break-words border-b border-gray-100 px-1.5 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300" :class="informationLayout === 'usul' ? 'text-center' : ''">{{ berkasLocation(row) }}</td>
               <td class="break-words border-b border-gray-100 px-1.5 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ row.klasifikasiKeamanan ?? '-' }}</td>
               <td class="print-action border-b border-gray-100 px-1.5 py-3 text-center dark:border-gray-700">
                 <button
@@ -341,61 +415,14 @@
               </td>
             </tr>
             <tr v-if="daftarIsiRows.length === 0">
-              <td colspan="9" class="border-b border-gray-100 px-4 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
+              <td :colspan="informationLayout === 'usul' ? 9 : 10" class="border-b border-gray-100 px-4 py-6 text-center text-gray-400 dark:border-gray-700">Belum ada isi berkas.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Penandatangan BAC ditampilkan sebelum riwayat verifikasi. -->
-    <div
-      v-if="showBacSigner && hasBacSigner"
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-    >
-      <button
-        type="button"
-        class="flex w-full items-center justify-between gap-3 text-left mb-4"
-        aria-expanded="bacSignerOpen"
-        @click="bacSignerOpen = !bacSignerOpen"
-      >
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Penandatangan BAC</h3>
-        <UIcon
-          :name="bacSignerOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-          class="h-4 w-4 text-gray-400"
-        />
-      </button>
-      <div v-show="bacSignerOpen" class="space-y-3">
-        <div
-          v-if="transfer.bacPihakPertamaPersnum || transfer.bacPihakPertamaName"
-          class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20"
-        >
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
-            </p>
-          </div>
-          <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-            Pihak Pertama
-          </span>
-        </div>
-        <div
-          v-if="transfer.bacPihakKeduaPersnum || transfer.bacPihakKeduaName"
-          class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-900/20"
-        >
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ transfer.bacPihakKeduaName || '-' }}<span v-if="transfer.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakKeduaJabatan }}</span>
-            </p>
-          </div>
-          <span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
-            Pihak Kedua
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Daftar Atasan Verifikasi (Berjenjang) -->
+    <!-- Daftar atasan berada setelah daftar isi berkas. -->
     <div
       v-if="showApprovalLevels && transfer.approvalLevels && transfer.approvalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
@@ -439,6 +466,59 @@
       </div>
     </div>
 
+    <!-- Penandatangan BAC ditampilkan setelah daftar atasan. -->
+    <div
+      v-if="showBacSigner && hasBacSigner"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+    >
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 text-left mb-4"
+        aria-expanded="bacSignerOpen"
+        @click="bacSignerOpen = !bacSignerOpen"
+      >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Penandatangan BAC</h3>
+        <UIcon
+          :name="bacSignerOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="h-4 w-4 text-gray-400"
+        />
+      </button>
+      <div v-show="bacSignerOpen" class="space-y-3">
+        <div
+          v-if="transfer.bacPihakPertamaPersnum || transfer.bacPihakPertamaName"
+          class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20"
+        >
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold text-gray-700 dark:bg-gray-600 dark:text-gray-200">
+            1
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+            Pihak Pertama
+          </span>
+        </div>
+        <div
+          v-if="transfer.bacPihakKeduaPersnum || transfer.bacPihakKeduaName"
+          class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-900/20"
+        >
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold text-gray-700 dark:bg-gray-600 dark:text-gray-200">
+            2
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              {{ transfer.bacPihakKeduaName || '-' }}<span v-if="transfer.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakKeduaJabatan }}</span>
+            </p>
+          </div>
+          <span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+            Pihak Kedua
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Card 5: Tembusan BAC -->
     <div
       v-if="showBacTembusan && hasBacTembusan"
@@ -474,7 +554,7 @@
       </div>
     </div>
 
-    <!-- Card 6: Daftar Atasan TU Verifikasi (Berjenjang) -->
+    <!-- Daftar Atasan Verifikasi, ditampilkan pada proses verifikasi TU. -->
     <div
       v-if="showTuApprovalLevels && transfer.tuApprovalLevels && transfer.tuApprovalLevels.length > 0"
       class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
@@ -486,7 +566,7 @@
         :aria-expanded="collapsible ? tuApprovalOpen : undefined"
         @click="collapsible && (tuApprovalOpen = !tuApprovalOpen)"
       >
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Atasan Verifikasi</h3>
         <UIcon
           v-if="collapsible"
           :name="tuApprovalOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
@@ -552,9 +632,16 @@ const props = defineProps<{
   showBacTembusan?: boolean;
   showTuApprovalLevels?: boolean;
   informationTitle?: string;
-  informationLayout?: 'default' | 'penataan';
-  berkasLayout?: 'default' | 'penataan';
+  informationLayout?: 'default' | 'penataan' | 'usul';
+  berkasLayout?: 'default' | 'penataan' | 'usul';
+  hideSecretaryInfo?: boolean;
+  fitBerkasTable?: boolean;
   showBacStatus?: boolean;
+  showClassificationCode?: boolean;
+  statusContext?: 'default' | 'secretary-division' | 'bac-signing';
+  signerSignedAt?: string | null;
+  informationDateLabel?: string;
+  informationDateValue?: string | Date | null;
 }>();
 
 const { getNaskahDetailInBerkas, getNaskahPdfUrl } = useArsipDinamis();
@@ -569,7 +656,32 @@ const showTuApprovalLevels = computed(() => props.showTuApprovalLevels !== false
 const informationTitle = computed(() => props.informationTitle ?? 'Informasi Usulan');
 const informationLayout = computed(() => props.informationLayout ?? 'default');
 const berkasLayout = computed(() => props.berkasLayout ?? 'default');
+const showSecretaryInfo = computed(() => props.hideSecretaryInfo !== true);
+const fitBerkasTable = computed(() => props.fitBerkasTable === true);
 const showBacStatus = computed(() => props.showBacStatus !== false);
+const showClassificationCode = computed(() => props.showClassificationCode !== false);
+const informationDateLabel = computed(() => props.informationDateLabel ?? 'Tanggal Usulan');
+const informationDateValue = computed(() => props.informationDateValue ?? props.transfer.tanggalUsulan);
+const bacSigningStatusLabel = computed(() => {
+  if (props.statusContext === 'bac-signing') {
+    return props.signerSignedAt ? 'Ditandatangani' : 'Menunggu Tanda Tangan';
+  }
+  return props.transfer.bacSignedAt
+    ? 'Ditandatangani'
+    : props.transfer.bacPihakPertamaPersnum
+      ? 'Menunggu Tanda Tangan'
+      : 'Belum Ditandatangani';
+});
+const transferDisplayStatusLabel = computed(() =>
+  props.statusContext === 'secretary-division' && (props.transfer.bacSignedAt || props.transfer.bacPihakKeduaSignedAt)
+    ? 'BAC Ditandatangani'
+    : statusLabel(props.transfer.status),
+);
+const transferDisplayStatusClass = computed(() =>
+  props.statusContext === 'secretary-division' && (props.transfer.bacSignedAt || props.transfer.bacPihakKeduaSignedAt)
+    ? 'px-2 py-0.5 text-xs rounded-full font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+    : statusBadgeClass(props.transfer.status),
+);
 const atasanPositionText = computed(() =>
   props.transfer.atasanPositionText
   ?? (props.transfer as any).atasan_position_text
@@ -854,6 +966,10 @@ const archiveClassification = (row: any) => {
     name: archive?.klasifikasi ?? '-',
     code: archive?.kodeKlasifikasi ?? row.kodeKlasifikasi ?? '-',
   };
+};
+const archiveClassificationLabel = (row: any) => {
+  const { code, name } = archiveClassification(row);
+  return [code !== '-' ? code : '', name !== '-' ? name : ''].filter(Boolean).join(' — ') || '-';
 };
 
 const levelStatusClass = (status: string): string => {
