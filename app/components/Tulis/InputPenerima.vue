@@ -7,7 +7,7 @@
 
     <div class="flex flex-wrap gap-1 w-full items-center">
       <USelectMenu :model-value="selectedValues" value-key="value" :items="combinedOptions" multiple :placeholder="placeholder"
-        :virtualize="{ estimateSize: 48, overscan: 8 }" @update:model-value="syncDropdownSelection"
+        :virtualize="recipientVirtualizer" @update:model-value="syncDropdownSelection"
         class="w-full p-0 custom-select-menu" variant="none"
         :content="selectContentProps" :filter-fields="['label']" :ui="{
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
@@ -16,42 +16,37 @@
           value: 'p-0 w-full',
           viewport: 'max-h-[500px]',
           trigger: { base: 'px-0 py-1 w-full' },
-          item: 'cursor-pointer',
+          label: 'h-7 px-2 py-1 text-xs leading-5',
+          item: 'min-h-8 px-2 py-1 cursor-pointer',
           itemWrapper: 'w-full',
           itemLabel: 'w-full'
         } as any">
         <template #item="{ item }">
-          <div v-if="item.type === 'label'" class="header-label">
-            <span class="header-label-text">
-              {{ item.label }}
-            </span>
-          </div>
-
-          <div v-else-if="item.type === 'group'" class="flex items-start gap-3 w-full py-1 overflow-hidden"
+          <div v-if="item.type === 'group'" class="flex items-center gap-2 w-full overflow-hidden"
             :class="{ 'opacity-50 cursor-not-allowed': item.disabled }" @click.stop.prevent="handleGroupClick(item)">
             <UCheckbox :model-value="isGroupSelected(item)" class="pointer-events-none shrink-0"
               :disabled="item.disabled" :ui="{ base: 'w-4 h-4' }" />
             <div class="flex-1 min-w-0">
-              <span class="block text-sm text-left truncate w-full">
+              <span class="block text-sm leading-5 text-left truncate w-full">
                 {{ item.label }}
               </span>
-              <span v-if="item.disabled" class="text-xs text-red-500 italic block">
+              <span v-if="item.disabled" class="text-xs leading-4 text-red-500 italic block">
                 {{ disabledMessage }}
               </span>
             </div>
           </div>
 
-          <div v-else class="flex items-start gap-3 w-full py-1 overflow-hidden"
+          <div v-else class="flex items-center gap-2 w-full overflow-hidden"
             :class="{ 'opacity-50 cursor-not-allowed': item.disabled }" @click.stop.prevent="handlePersonClick(item)">
             <UCheckbox :model-value="isSelected(item)" class="pointer-events-none shrink-0"
-              :disabled="item.disabled" />
+              :disabled="item.disabled" :ui="{ base: 'w-4 h-4' }" />
             <img v-if="item.image" :src="item.image" :alt="item.label"
-              class="w-7 h-7 rounded-full object-cover shrink-0" />
+              class="w-6 h-6 rounded-full object-cover shrink-0" />
             <div class="flex-1 min-w-0">
-              <span class="block text-sm text-left truncate w-full">
+              <span class="block text-sm leading-5 text-left truncate w-full">
                 {{ item.label }}
               </span>
-              <span v-if="item.disabled" class="text-xs text-red-500 italic block">
+              <span v-if="item.disabled" class="text-xs leading-4 text-red-500 italic block">
                 {{ disabledMessage }}
               </span>
             </div>
@@ -330,6 +325,13 @@ const combinedOptions = computed(() => {
   return options;
 });
 
+// USelectMenu expects a numeric estimate. Reserve extra space when disabled
+// options show a second line, while keeping normal recipient lists compact.
+const recipientVirtualizer = computed(() => ({
+  estimateSize: combinedOptions.value.some(item => item.type !== 'label' && item.disabled) ? 44 : 32,
+  overscan: 8,
+}));
+
 // --- LOGIC SELEKSI ---
 
 const isSelected = (item: any) => selectedIds.value.has(String(item.value));
@@ -382,50 +384,3 @@ const removePerson = (item: any) => {
   }
 };
 </script>
-
-<style scoped>
-/* Styling untuk label header */
-.header-label {
-  width: 100%;
-  padding: 0.5rem;
-  background-color: rgb(243 244 246);
-  text-align: center;
-  margin-left: -0.5rem;
-  margin-right: -0.5rem;
-  margin-top: -0.25rem;
-  margin-bottom: 0.25rem;
-  pointer-events: none;
-}
-
-.dark .header-label {
-  background-color: rgb(31 41 55);
-}
-
-.header-label-text {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: rgb(75 85 99);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: block;
-}
-
-.dark .header-label-text {
-  color: rgb(156 163 175);
-}
-
-/* Override default USelectMenu item styling untuk label */
-:deep(.custom-select-menu .header-label) {
-  width: 100% !important;
-  padding: 0.5rem !important;
-  background-color: rgb(243 244 246) !important;
-  text-align: center !important;
-  margin-left: -0.5rem !important;
-  margin-right: -0.5rem !important;
-  pointer-events: none !important;
-}
-
-:deep(.custom-select-menu) .dark .header-label {
-  background-color: rgb(31 41 55) !important;
-}
-</style>
