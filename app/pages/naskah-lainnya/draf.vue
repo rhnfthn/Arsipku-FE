@@ -204,7 +204,7 @@
 
               <!-- Actions -->
               <div class="pl-2 shrink-0 flex justify-end gap-1">
-                <UTooltip text="Edit">
+                <UTooltip v-if="hasPermission('utama.draft', 'update')" text="Edit">
                   <button
                     class="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg text-orange-500 dark:text-orange-400 transition-colors"
                     @click.stop="handleEdit(item)">
@@ -268,7 +268,7 @@ import { JENIS_LABELS } from "~/types/naskah-lainnya";
 
 definePageMeta({ layout: "default", middleware: ["auth"] });
 
-const { canAccessPage } = useFeatureAccess();
+const { canAccessPage, hasPermission } = useFeatureAccess();
 const { t } = useI18n();
 const { items, pending, fetchList, deleteDraft } = useNaskahLainnya();
 const toast = useToast();
@@ -355,6 +355,7 @@ function load() {
 }
 
 function handleEdit(item) {
+  if (!hasPermission('utama.draft', 'update')) return;
   navigateTo(`/naskah-lainnya/tulis?draft_id=${item.id}`);
 }
 

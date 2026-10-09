@@ -24,7 +24,6 @@ const toast = useToast();
 
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 const { getGenericDraftDetail } = useDraft();
 const { getConfigDigsig } = useDigsig();
@@ -332,17 +331,13 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, recRes, groupsRes]: [any, any, any] = await Promise.all([
+    const [klasRes, recRes]: [any, any] = await Promise.all([
       getKlasifikasi(),
       getRecipients(user.value?.position),
-      getRecipientGroups("SDI").catch(() => []),
     ]);
 
     klasifikasiList.value = klasRes ?? [];
     klasifikasiStatus.value = "success";
-    recipientGroups.value = Array.isArray(groupsRes)
-      ? groupsRes.filter((g: any) => g.aktif)
-      : [];
 
     const rawRec: any[] = recRes?.recipients ?? recRes?.data ?? [];
 
@@ -374,8 +369,7 @@ onMounted(async () => {
         raw: r,
       }));
 
-    tertujuItems.value = allMapped.filter((i) => i.group === "REKAN");
-    tembusanItems.value = allMapped.filter((i) => i.group === "REKAN" || i.group === "TEMBUSAN");
+    ({ tertuju: tertujuItems.value, tembusan: tembusanItems.value } = splitSdiRecipientItems(allMapped));
   } catch (e) {
     console.error(e);
     klasifikasiStatus.value = "error";
@@ -390,6 +384,7 @@ onMounted(async () => {
 
       if (res.success && res.data) {
         const d = res.data;
+        recipientGroups.value = [...(d.penerima_grup || []), ...(d.tembusan_grup || [])];
         subject.value = d.perihal || "";
         lampiranText.value = d.lampiran || "";
         editorContent.value = d.konten || "";
@@ -511,10 +506,10 @@ onMounted(async () => {
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
+          :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih" />
 
         <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan" placeholder="Pilih Tembusan"
-          :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
+          :items="tembusanItems" :exclude-items="excludeTembusanList"
           disabled-message="Sudah dipilih" lock-mandatory-cc />
 
         <TulisInputSifat v-model="selectedSifat" />
