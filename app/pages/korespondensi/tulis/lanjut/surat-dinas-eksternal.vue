@@ -204,35 +204,21 @@
                 </div>
 
                 <div v-if="selectedTertuju.length > 5 || selectedTembusan.length > 5"
-                  class="bg-white px-12 py-12 border-t-4 border-gray-200 text-black break-before-page mt-10">
-                  <div class="flex justify-end mb-10 text-[14px]">
-                    <div class="text-left min-w-[300px]">
-                      <table class="w-full">
-                        <tbody>
-                          <tr>
-                            <td class="align-top pr-2">{{ isEnglish ? 'Letter Attachment' : 'Lampiran Surat' }}</td>
-                          </tr>
-                          <tr>
-                            <td class="align-top pr-2">{{ isEnglish ? 'Letter Number :' : 'Nomor Surat :' }}</td>
-                            <td>.....................................</td>
-                          </tr>
-                          <tr>
-                            <td class="align-top pr-2">{{ isEnglish ? 'Letter Date :' : 'Tanggal Surat :' }}</td>
-                            <td>{{ formattedDate }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                  class="bg-white px-12 py-6 border-t-4 border-gray-200 text-black break-before-page mt-10" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.1;">
+                  <div class="text-right">
+                    <div>{{ isEnglish ? 'Letter Attachment' : 'Lampiran Surat' }}</div>
+                    <div>{{ isEnglish ? 'Letter Number :' : 'Nomor Surat :' }} .....................................</div>
+                    <div>{{ isEnglish ? 'Letter Date :' : 'Tanggal Surat :' }} {{ formattedDate }}</div>
                   </div>
-                  <div v-if="selectedTertuju.length > 5" class="mb-8">
-                    <div class="font-bold text-[14px] mb-2 uppercase">{{ isEnglish ? 'TO :' : 'KEPADA YTH :' }}</div>
-                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                  <div v-if="selectedTertuju.length > 5" class="mb-5">
+                    <div class="uppercase">{{ isEnglish ? 'TO :' : 'KEPADA YTH :' }}</div>
+                    <ol class="list-decimal m-0 pl-[30px]">
                       <li v-for="item in selectedTertuju" :key="item.value">{{ item.label }}</li>
                     </ol>
                   </div>
                   <div v-if="selectedTembusan.length > 5">
-                    <div class="font-bold text-[14px] mb-2 uppercase">{{ isEnglish ? 'COPY TO :' : 'TEMBUSAN :' }}</div>
-                    <ol class="list-decimal ml-6 text-[14px] space-y-1">
+                    <div class="uppercase">{{ isEnglish ? 'COPY TO :' : 'TEMBUSAN :' }}</div>
+                    <ol class="list-decimal m-0 pl-[30px]">
                       <li v-for="item in selectedTembusan" :key="item.value">
                         {{ item.labelJob + (item.raw?.area_text ? " - " + item.raw.area_text : "") }}
                       </li>
