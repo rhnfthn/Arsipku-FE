@@ -213,9 +213,9 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.disposisi', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+          <UButton v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.disposisi', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
             @click="handleConfirmSaveDraft" />
-          <UButton v-if="hasPermission('utama.tulis.disposisi', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.disposisi', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -250,7 +250,7 @@ const alertState = useAlertState();
 const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
-const { canAccessPage } = useFeatureAccess();
+const { canAccessPage, canEditCorrespondenceDraft } = useFeatureAccess();
 const { getRecipients, sendDisposisi, saveDraft: saveDI, sendDraft, updateDraft, getDraftDetail, generatePdf } = useDisposisi();
 const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 

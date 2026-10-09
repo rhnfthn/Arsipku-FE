@@ -17,7 +17,7 @@ const alertState = useAlertState();
 const { t } = useI18n();
 
 const { user, getProfile, hasPermission } = useAuth();
-const { canAccessPage } = useFeatureAccess();
+const { canAccessPage, canEditCorrespondenceDraft } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipients, getRecipientGroups } = useRecipients();
 const { getDraftDetail } = useDraft();
@@ -695,7 +695,7 @@ onMounted(async () => {
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800"
         >
           <UButton
-            v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
+            v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.nota-dinas', 'create')"
             :label="$t('draft')"
             color="neutral"
             variant="outline"
@@ -705,7 +705,7 @@ onMounted(async () => {
             @click="handleConfirmSaveDraft"
           />
           <UButton
-            v-if="hasPermission('utama.tulis.nota-dinas', 'create')"
+            v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.nota-dinas', 'create')"
             :label="$t('f_pratinjau')"
             color="primary"
             size="lg"

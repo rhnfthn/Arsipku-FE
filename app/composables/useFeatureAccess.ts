@@ -1,4 +1,5 @@
 import { useAuth } from './useAuth';
+import { isCorrespondenceDraftEdit } from '~/utils/correspondence-draft-access';
 
 export interface FeaturePermission {
   resource: string;
@@ -197,6 +198,10 @@ export function useFeatureAccess() {
     const key = path ?? route.path;
     const routeQuery = query ?? route.query;
 
+    if (isCorrespondenceDraftEdit(key, routeQuery)) {
+      return { resource: 'utama.draft', action: 'update' };
+    }
+
     // Halaman detail/list lama dipakai oleh tiga submenu Penggunaan. Query
     // ini menjaga akses tetap mengikuti submenu asalnya, bukan permission
     // Read Usulan Akses secara otomatis.
@@ -259,6 +264,11 @@ export function useFeatureAccess() {
 
   return {
     hasPermission,
+    canEditCorrespondenceDraft: () => {
+      const route = useRoute();
+      return isCorrespondenceDraftEdit(route.path, route.query) &&
+        hasPermission('utama.draft', 'update');
+    },
     can,
     currentRoutePermission,
     canAccessPage,

@@ -689,16 +689,21 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <UTooltip :text="mail.fullRecipients"
-                  :ui="{ content: 'h-auto py-2 px-3 max-w-xs', text: 'whitespace-pre-line text-left' }"
+                <UTooltip :disable-hoverable-content="false"
+                  :ui="{ content: 'h-auto py-2 px-3 max-w-xs' }"
                   class="min-w-0 truncate">
-                  <!-- Ganti bagian <span> penerima di template -->
-                  <span class="block w-full md:w-48 xl:w-64 truncate text-[13px] shrink-0 font-semibold cursor-help"
+                  <span tabindex="0" class="block w-full md:w-48 xl:w-64 truncate text-[13px] shrink-0 font-semibold cursor-help"
                     :class="mail.from === 'Tanpa Penerima'
                       ? 'text-gray-400 dark:text-gray-500 italic font-normal'
                       : 'text-neutral-900 dark:text-gray-100'">
                     {{ mail.from }}
                   </span>
+                  <template #content>
+                    <div tabindex="0"
+                      class="max-h-[min(15rem,50dvh)] overflow-y-auto overscroll-contain whitespace-pre-line break-words pr-2 text-left text-xs leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                      {{ mail.fullRecipients }}
+                    </div>
+                  </template>
                 </UTooltip>
 
                 <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
