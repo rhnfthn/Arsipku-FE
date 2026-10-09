@@ -202,7 +202,7 @@ const isActiveChild = (path, activePaths, exact = false) => {
 // Helper recursive: cek apakah item (atau keturunannya) aktif
 const isItemActiveRecursive = (item) => {
   if (!item) return false;
-  if (item.to && isActiveChild(item.to, item.activePaths)) return true;
+  if (item.to && isActiveChild(item.to, item.activePaths, item.exact)) return true;
   if (item.children && item.children.length > 0) {
     return item.children.some((child) => isItemActiveRecursive(child));
   }

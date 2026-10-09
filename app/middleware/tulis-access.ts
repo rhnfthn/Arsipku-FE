@@ -1,4 +1,5 @@
 import type { CorrespondenceDocumentType } from '~/composables/useCorrespondenceRoutingAccess';
+import { isCorrespondenceDraftEdit } from '~/utils/correspondence-draft-access';
 
 const documentTypeFromPath = (path: string): CorrespondenceDocumentType | null => {
   if (path.includes('/surat-dinas-internal')) return 'SDI';
@@ -11,6 +12,17 @@ const documentTypeFromPath = (path: string): CorrespondenceDocumentType | null =
 
 export default defineNuxtRouteMiddleware(async (to) => {
   if (process.server) return;
+
+  // Editing an existing draft uses Draft > Update, not new-document capabilities.
+  // The detail/update endpoints still enforce access to the requested document.
+  if (isCorrespondenceDraftEdit(to.path, to.query)) {
+    const { user, getProfile, hasPermission } = useAuth();
+    if (!user.value) await getProfile();
+    if (!hasPermission('utama.draft', 'update')) {
+      return navigateTo(`/access-denied?from=${encodeURIComponent(to.fullPath)}`);
+    }
+    return;
+  }
 
   // Membuat konsep dari disposisi adalah aksi lanjutan pada naskah yang sudah
   // ada, bukan pembuatan naskah baru dari menu tulis. Jangan blokir alur ini

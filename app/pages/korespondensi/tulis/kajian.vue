@@ -211,9 +211,9 @@
 
         <div
           class="py-6 gap-4 border-t border-gray-100 dark:border-gray-800 flex items-center bg-white dark:bg-gray-800">
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
+          <UButton v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.kajian', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text" class="px-8"
             @click="confirmSaveDraft" />
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
+          <UButton v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_pratinjau')" color="primary" size="lg" icon="i-lucide-eye" class="px-8 font-bold"
             @click="handlePreview" />
         </div>
       </div>
@@ -235,10 +235,10 @@
       </template>
       <template #footer>
         <div class="flex gap-4 w-full">
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
+          <UButton v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.kajian', 'create')" :label="$t('draft')" color="neutral" variant="outline" size="lg" icon="i-heroicons-document-text"
             class="px-8" @click="confirmSaveDraft" />
 
-          <UButton v-if="hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_kirim')" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
+          <UButton v-if="canEditCorrespondenceDraft() || hasPermission('utama.tulis.kajian', 'create')" :label="$t('f_kirim')" color="primary" size="lg" icon="i-heroicons-paper-airplane" class="px-8 font-bold"
             @click="handleConfirmKirim" />
         </div>
       </template>
@@ -294,7 +294,7 @@ const { getConfigDigsig } = useDigsig();
 const { getTteMode } = useTtePortal();
 
 const { user, getProfile, hasPermission } = useAuth();
-const { canAccessPage } = useFeatureAccess();
+const { canAccessPage, canEditCorrespondenceDraft } = useFeatureAccess();
 const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 const { getKlasifikasi } = useKlasifikasi();
 const {
