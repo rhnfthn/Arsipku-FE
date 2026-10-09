@@ -141,7 +141,7 @@
 
                 <div class="border-t border-gray-100 dark:border-gray-700" />
 
-                <!-- Atasan -->
+                <!-- Atasan
                 <div v-if="user?.atasan_langsung" class="space-y-3">
                   <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                     Atasan Langsung
@@ -159,7 +159,7 @@
                       </p>
                     </div>
                   </div>
-                </div>
+                </div> -->
 
                 <div v-if="user?.alamatInfo" class="border-t border-gray-100 dark:border-gray-700" />
 
