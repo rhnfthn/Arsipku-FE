@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { ListTodo, Search, CalendarClock, CircleCheckBig, RefreshCw, Inbox } from 'lucide-vue-next';
+import { ListTodo, CalendarClock, CircleCheckBig, RefreshCw, Inbox, SlidersHorizontal, X } from 'lucide-vue-next';
 import PageHeader from '~/components/PageHeader.vue';
 import EmptyState from '~/components/EmptyState.vue';
 import DataPagination from '~/components/DataPagination.vue';
 import DataToolbar from '~/components/DataToolbar.vue';
 import { useTugas } from '~/composables/useTugas';
-import type { TugasMyTaskItem, TugasMyTaskScope, TugasTaskPriority } from '~/types/tugas';
+import type { TugasMyTaskItem, TugasMyTaskScope, TugasTaskPriority, TugasTaskStatus } from '~/types/tugas';
 
 definePageMeta({ middleware: 'auth' });
 
 const { t } = useI18n();
-const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 const { hasPermission } = useAuth();
@@ -39,6 +38,10 @@ const activePrioritas = computed<TugasTaskPriority | null>(() => {
   const raw = String(route.query.prioritas ?? '');
   return ['rendah', 'sedang', 'tinggi'].includes(raw) ? (raw as TugasTaskPriority) : null;
 });
+const activeStatus = computed<TugasTaskStatus | null>(() => {
+  const raw = String(route.query.status ?? '');
+  return ['todo', 'in_progress', 'done'].includes(raw) ? (raw as TugasTaskStatus) : null;
+});
 const currentPage = computed(() => Number(route.query.page ?? 1) || 1);
 
 // ─── Opsi dropdown filter (USelectMenu) ─────────────────────────────────────
@@ -61,6 +64,13 @@ const prioritasOptions = computed(() => [
   { label: t('tugas_prioritas_rendah'), value: 'rendah' },
 ]);
 
+const statusOptions = computed(() => [
+  { label: t('tugas_semua_status'), value: ALL_FILTER },
+  { label: t('tugas_status_todo'), value: 'todo' },
+  { label: t('tugas_status_in_progress'), value: 'in_progress' },
+  { label: t('tugas_status_done'), value: 'done' },
+]);
+
 const selectedScope = computed({
   get: () => activeScope.value,
   set: (value: TugasMyTaskScope) => setScope(value),
@@ -70,6 +80,11 @@ const selectedPrioritas = computed({
   get: () => activePrioritas.value ?? ALL_FILTER,
   set: (value: string) =>
     setPrioritas((value === ALL_FILTER ? null : value) as TugasTaskPriority | null),
+});
+
+const selectedStatus = computed({
+  get: () => activeStatus.value ?? ALL_FILTER,
+  set: (value: string) => setStatus((value === ALL_FILTER ? null : value) as TugasTaskStatus | null),
 });
 
 const setScope = (scope: TugasMyTaskScope) => {
@@ -82,6 +97,17 @@ const setPrioritas = (prioritas: TugasTaskPriority | null) => {
   });
 };
 
+const setStatus = (status: TugasTaskStatus | null) => {
+  router.replace({ query: { ...route.query, status: status ?? undefined, page: '1' } });
+};
+
+const clearFilters = () => {
+  toolbarSearch.value = '';
+  router.replace({ query: { ...route.query, q: undefined, status: undefined, prioritas: undefined, scope: 'semua', page: '1' } });
+};
+
+const activeFilterCount = computed(() => Number(activeScope.value !== 'semua') + Number(!!activeStatus.value) + Number(!!activePrioritas.value) + Number(!!activeSearch.value));
+
 const setPage = (page: number) => {
   router.replace({ query: { ...route.query, page: String(page) } });
 };
@@ -91,6 +117,7 @@ const setPage = (page: number) => {
 const loadMyTasks = async () => {
   await fetchMyTasks({
     scope: activeScope.value,
+    status: activeStatus.value ?? undefined,
     prioritas: activePrioritas.value ?? undefined,
     q: activeSearch.value || undefined,
     page: currentPage.value,
@@ -116,7 +143,7 @@ watch(activeSearch, (value) => {
   if (value !== toolbarSearch.value) toolbarSearch.value = value;
 });
 
-watch([activeScope, activePrioritas, activeSearch, currentPage], () =>
+watch([activeScope, activeStatus, activePrioritas, activeSearch, currentPage], () =>
   loadMyTasks()
 );
 
@@ -205,35 +232,30 @@ const breadcrumbs = computed(() => [
           @refresh="loadMyTasks"
         >
           <template #actions>
-            <!-- Filter scope: Semua / Terlambat / Hari Ini / Mendatang / Selesai -->
-            <USelectMenu
-              v-model="selectedScope"
-              :items="scopeOptions"
-              value-key="value"
-              label-key="label"
-              :search-input="false"
-              class="w-36 shrink-0"
-              :ui="{
-                base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
-              }"
-              aria-label="Filter Status Task"
-            />
-
-            <!-- Filter prioritas -->
-            <USelectMenu
-              v-model="selectedPrioritas"
-              :items="prioritasOptions"
-              value-key="value"
-              label-key="label"
-              :search-input="false"
-              class="w-36 shrink-0"
-              :ui="{
-                base: 'h-8 w-full bg-white dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-200',
-              }"
-              aria-label="Filter Prioritas"
-            />
+            <div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:w-auto">
+              <label class="min-w-32">
+                <span class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ t('tugas_filter_tenggat') }}</span>
+                <USelectMenu v-model="selectedScope" :items="scopeOptions" value-key="value" label-key="label" :search-input="false" class="w-full" :ui="{ base: 'h-9 w-full bg-white text-sm dark:bg-gray-700' }" :aria-label="t('tugas_filter_tenggat')" />
+              </label>
+              <label class="min-w-36">
+                <span class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ t('tugas_filter_status') }}</span>
+                <USelectMenu v-model="selectedStatus" :items="statusOptions" value-key="value" label-key="label" :search-input="false" class="w-full" :ui="{ base: 'h-9 w-full bg-white text-sm dark:bg-gray-700' }" :aria-label="t('tugas_filter_status')" />
+              </label>
+              <label class="min-w-36">
+                <span class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ t('tugas_filter_prioritas') }}</span>
+                <USelectMenu v-model="selectedPrioritas" :items="prioritasOptions" value-key="value" label-key="label" :search-input="false" class="w-full" :ui="{ base: 'h-9 w-full bg-white text-sm dark:bg-gray-700' }" :aria-label="t('tugas_filter_prioritas')" />
+              </label>
+            </div>
           </template>
         </DataToolbar>
+        <div v-if="activeFilterCount" class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-3 py-2 dark:border-gray-700">
+          <span class="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400"><SlidersHorizontal class="h-3.5 w-3.5" />{{ t('tugas_filter_aktif', { count: activeFilterCount }) }}</span>
+          <span v-if="activeScope !== 'semua'" class="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">{{ t('tugas_filter_tenggat') }}: {{ t(`tugas_scope_${activeScope === 'hari-ini' ? 'hari_ini' : activeScope === 'terlambat' ? 'terlambat' : activeScope === 'mendatang' ? 'mendatang' : 'selesai'}`) }}</span>
+          <span v-if="activeStatus" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ t('tugas_filter_status') }}: {{ statusLabels[activeStatus] }}</span>
+          <span v-if="activePrioritas" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{{ t('tugas_filter_prioritas') }}: {{ t(`tugas_prioritas_${activePrioritas}`) }}</span>
+          <span v-if="activeSearch" class="max-w-48 truncate rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">{{ t('tugas_filter_cari') }}: {{ activeSearch }}</span>
+          <UButton size="xs" color="neutral" variant="ghost" class="ml-auto" @click="clearFilters"><X class="mr-1 h-3.5 w-3.5" />{{ t('tugas_hapus_filter') }}</UButton>
+        </div>
       </div>
 
       <!-- Loading -->
@@ -257,8 +279,10 @@ const breadcrumbs = computed(() => [
       <div v-else-if="myTasks.length === 0" class="py-12">
         <EmptyState
           :icon="ListTodo"
-          :title="t('tugas_saya_kosong')"
-          :description="t('tugas_saya_kosong_desc')"
+          :title="activeFilterCount ? t('tugas_filter_tidak_ada_hasil') : t('tugas_saya_kosong')"
+          :description="activeFilterCount ? t('tugas_filter_tidak_ada_hasil_desc') : t('tugas_saya_kosong_desc')"
+          :action-label="activeFilterCount ? t('tugas_hapus_filter') : undefined"
+          @action="clearFilters"
           icon-wrapper-class="bg-primary-50 dark:bg-primary-900/30"
           icon-class="text-primary-500"
         />
@@ -283,7 +307,7 @@ const breadcrumbs = computed(() => [
             >
               <component
                 :is="task.status === 'done' ? CircleCheckBig : task.status === 'in_progress' ? RefreshCw : Inbox"
-                :class="task.status === 'in_progress' ? 'h-4 w-4 animate-spin' : 'h-4 w-4'"
+                class="h-4 w-4"
               />
             </span>
 

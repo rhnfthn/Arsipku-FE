@@ -26,17 +26,18 @@ const { t } = useI18n();
 const { user, getProfile, hasPermission } = useAuth();
 const { canCreateSdi: hasConfiguredSdiAccess, fetchCapabilities } =
   useCorrespondenceRoutingAccess();
+const { canAccessPage, canEditCorrespondenceDraft } = useFeatureAccess();
 const canCreateSdi = computed(
   () =>
+    canEditCorrespondenceDraft() ||
     hasPermission('utama.tulis.surat-dinas-internal', 'create') ||
     hasConfiguredSdiAccess.value
 );
 watch(hasConfiguredSdiAccess, (allowed, previous) => {
   const bodTag = String(user.value?.bodTag ?? '');
-  if (previous === true && !allowed && ['BOD-2', 'BOD-3'].includes(bodTag))
+  if (!canEditCorrespondenceDraft() && previous === true && !allowed && ['BOD-2', 'BOD-3'].includes(bodTag))
     navigateTo('/beranda');
 });
-const { canAccessPage } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, updateDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
@@ -317,7 +318,7 @@ const handleConfirmSaveDraft = () => confirmSaveDraft(handleSaveDraft);
 
 // ── onMounted ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  if (!hasPermission('utama.tulis.surat-dinas-internal', 'create')) await fetchCapabilities();
+  if (!canEditCorrespondenceDraft() && !hasPermission('utama.tulis.surat-dinas-internal', 'create')) await fetchCapabilities();
   if (!canAccessPage()) return;
   loadingMessage.value = t('sdi_memuat');
   isLoadingData.value = true;
