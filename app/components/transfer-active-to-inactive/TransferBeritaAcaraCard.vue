@@ -1,16 +1,16 @@
 <template>
-  <div class="mx-auto w-full max-w-none rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-    <div class="mb-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
-      <span
+  <div class="mx-auto w-full max-w-none overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="flex min-h-16 items-center justify-between gap-3 px-5 py-4">
+      <div class="flex min-w-0 items-center gap-3">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ props.title ?? 'Berita Acara' }}</h3>
+        <span
           v-if="transfer.bacSignedAt"
-          class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+          class="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
         >
           <UIcon name="i-lucide-badge-check" class="h-3.5 w-3.5" /> Ditandatangani
         </span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-1">
         <button
           type="button"
           @click="openPreview"
@@ -32,7 +32,7 @@
       </div>
     </div>
 
-    <div v-show="open" class="overflow-x-auto">
+    <div v-show="open" class="overflow-x-auto px-5 pb-5">
       <div id="transfer-berita-acara-print" class="mx-auto w-full max-w-[794px] bg-white p-8 text-sm leading-relaxed text-black shadow-sm ring-1 ring-gray-200" style="font-family: 'Times New Roman', serif;">
         <div class="mb-6 text-center">
           <p class="m-0">BERITA ACARA</p>
@@ -97,6 +97,7 @@ const props = defineProps<{
   transfer: any
   beritaAcaraData?: any
   previewIcon?: 'eye' | 'printer'
+  title?: string
 }>()
 const open = ref(true)
 const {

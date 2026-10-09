@@ -25,7 +25,7 @@
     <!-- Content -->
     <template v-else-if="item">
       <div class="w-full space-y-5">
-          <!-- Card 1: Informasi Usulan + Keterangan + Total Arsip -->
+          <!-- Card 1: Informasi Usulan + Keterangan -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
@@ -38,10 +38,6 @@
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Diajukan ke TU</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggalDikirim) }}</p>
-              </div>
-              <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item.sekretarisName }}</p>
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span>
@@ -77,103 +73,44 @@
               </p>
             </div>
 
-            <!-- Total Arsip -->
-            <div class="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Total Arsip</h4>
-                <button @click="showTotalArsip = !showTotalArsip" class="text-xs text-primary hover:underline">
-                  {{ showTotalArsip ? 'Sembunyikan' : 'Tampilkan' }}
-                </button>
-              </div>
-              <div v-if="showTotalArsip" class="text-sm text-gray-600 dark:text-gray-300">
-                <p>Total: <span class="font-semibold text-gray-900 dark:text-white">{{ daftarBerkasDisplay.length }} berkas</span></p>
-              </div>
-            </div>
           </div>
 
-          <!-- Card 2: satu baris untuk satu berkas dan metadata dari pemberkasan awal -->
-          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="px-5 pb-3 pt-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-                Daftar Berkas ({{ daftarBerkasDisplay.length }})
-              </h3>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full min-w-[1120px] border-collapse text-xs">
-                <thead>
-                  <tr class="bg-[#457fb6] text-white">
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Nomor Berkas</th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Kode</span><span class="block">Klasifikasi</span></th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold min-w-[280px]"><span class="block">Uraian Informasi</span><span class="block">Isi Berkas</span></th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Tanggal</th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Jumlah</th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Lokasi</span><span class="block">Simpan</span></th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold"><span class="block">Klasifikasi</span><span class="block">Keamanan</span></th>
-                    <th class="border border-[#457fb6] px-3 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(berkas, idx) in daftarBerkasDisplay" :key="berkas.id ?? idx" class="odd:bg-white even:bg-gray-50/70 dark:odd:bg-gray-800 dark:even:bg-gray-700/30">
-                    <td class="border-b border-gray-200 px-3 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ berkas.kode ?? '-' }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-gray-700 dark:border-gray-700 dark:text-gray-200">{{ berkas.kodeKlasifikasi ?? '-' }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-gray-700 whitespace-normal dark:border-gray-700 dark:text-gray-200">{{ berkas.uraianInformasi ?? berkas.namaBerkas ?? berkas.perihal ?? '-' }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-gray-600 whitespace-nowrap dark:border-gray-700 dark:text-gray-300">{{ formatDate(berkas.tanggal) }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-center text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkas.jumlah ?? berkas.jumlahBerkas ?? '-' }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkas.lokasiSimpan ?? '-' }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-gray-600 dark:border-gray-700 dark:text-gray-300">{{ berkas.klasifikasiKeamanan ?? '-' }}</td>
-                    <td class="border-b border-gray-200 px-3 py-3 text-center dark:border-gray-700">
-                      <NuxtLink
-                        v-if="berkas.id"
-                        :to="`/maintenance/preview-berkas/${berkas.id}?nomor_usulan=${item.nomorUsulan}&usulan_id=${item.id}&from=tu`"
-                        class="inline-flex p-2 text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
-                        title="Lihat detail berkas"
-                      >
-                        <UIcon name="i-lucide-eye" class="h-4 w-4" />
-                      </NuxtLink>
-                    </td>
-                  </tr>
-                  <tr v-if="daftarBerkasDisplay.length === 0">
-                    <td colspan="8" class="py-4 text-center text-gray-400 italic">Tidak ada berkas</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <!-- Gunakan card bersama agar tabel, kontrol lipat, dan preview cetak konsisten. -->
+          <TransferDetailCard
+            v-if="item"
+            :transfer="item as any"
+            :daftar-berkas="daftarBerkasDisplay"
+            :daftar-isi="daftarIsiDetail"
+            :unit-kerja-pihak-pertama="unitKerjaPengusul"
+            :collapsible="true"
+            :fit-berkas-table="true"
+            information-layout="usul"
+            :show-information-card="false"
+            :show-approval-levels="false"
+            :show-bac-signer="true"
+            :show-bac-tembusan="false"
+            :show-tu-approval-levels="false"
+            preview-from="tu"
+          />
 
-          <!-- Card 3: Daftar Atasan Verifikasi (Berjenjang) -->
-          <div
-            v-if="item.approvalLevels && item.approvalLevels.length > 0"
-            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
-          >
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan Verifikasi</h3>
-            <div class="space-y-2">
-              <div
-                v-for="level in item.approvalLevels"
-                :key="level.id"
-                class="flex items-center gap-3 p-3 rounded-lg border"
-                :class="levelStatusClass(level.status)"
-              >
-                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 shrink-0">
-                  {{ level.urutan }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-bold text-gray-900 dark:text-white">{{ level.atasanName }}</p>
-                  <p v-if="level.atasanPositionText" class="text-xs text-gray-500 dark:text-gray-400">{{ level.atasanPositionText }}</p>
-                </div>
-                <span :class="levelBadgeClass(level.status)" class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0">
-                  {{ levelStatusLabel(level.status) }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 4: Daftar Atasan TU Verifikasi (Berjenjang) -->
+          <!-- Card 4: Daftar Atasan Verifikasi -->
           <div
             v-if="item.tuApprovalLevels && item.tuApprovalLevels.length > 0"
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
           >
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Daftar Atasan TU Verifikasi (Berjenjang)</h3>
-            <div class="space-y-2">
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Atasan Verifikasi</h3>
+              <button
+                type="button"
+                class="rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                :aria-expanded="!collapsedAtasanTuVerifikasi"
+                :aria-label="collapsedAtasanTuVerifikasi ? 'Buka Daftar Atasan Verifikasi' : 'Lipat Daftar Atasan Verifikasi'"
+                @click="collapsedAtasanTuVerifikasi = !collapsedAtasanTuVerifikasi"
+              >
+                <UIcon :name="collapsedAtasanTuVerifikasi ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'" class="h-4 w-4" />
+              </button>
+            </div>
+            <div v-if="!collapsedAtasanTuVerifikasi" class="space-y-2">
               <div
                 v-for="level in item.tuApprovalLevels"
                 :key="level.urutan"
@@ -413,6 +350,7 @@ import { useAuth } from '~/composables/useAuth'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue'
 import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
+import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue'
 
 definePageMeta({ middleware: ['auth'] })
 
@@ -423,9 +361,20 @@ const { fetchAtasanTuDetail, setujuiPenerimaan, tolakPenerimaan, setujuiTerakhir
 const item = ref<TuUsulanItem | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
-const showTotalArsip = ref(true)
+const collapsedAtasanTuVerifikasi = ref(false)
 const daftarBerkasDetail = ref<any[]>([])
+const daftarIsiDetail = ref<any[]>([])
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] })
+const unitKerjaPengusul = computed(() =>
+  beritaAcaraData.value?.unitKerjaPengusul
+  || beritaAcaraData.value?.pengirim?.divisi
+  || beritaAcaraData.value?.pihakPertama?.unitKerja
+  || (item.value as any)?.unitKerjaPihakPertama
+  || (item.value as any)?.unit_kerja_pihak_pertama
+  || (item.value as any)?.divisiName
+  || (item.value as any)?.unitKerja
+  || '................................',
+)
 const showSetujuiModal = ref(false)
 const showTolakModal = ref(false)
 const showSetujuiTerakhirModal = ref(false)
@@ -557,9 +506,12 @@ const loadDaftarIsi = async () => {
   try {
     const { apiGet } = useApi()
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true })
-    daftarBerkasDetail.value = res?.data?.daftarBerkas ?? []
+    const data = res?.data?.data ?? res?.data ?? res
+    daftarBerkasDetail.value = Array.isArray(data?.daftarBerkas) ? data.daftarBerkas : []
+    daftarIsiDetail.value = Array.isArray(data?.daftarIsi) ? data.daftarIsi : []
   } catch {
     daftarBerkasDetail.value = []
+    daftarIsiDetail.value = []
   }
 }
 
@@ -567,7 +519,7 @@ const loadBeritaAcaraData = async () => {
   try {
     const { apiGet } = useApi()
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true })
-    beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] }
+    beritaAcaraData.value = res?.data?.data ?? res?.data ?? res ?? { atasan: {}, pengirim: {}, daftarArsip: [] }
   } catch {
     beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] }
   }

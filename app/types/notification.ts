@@ -25,7 +25,8 @@ export type NotificationType =
   | 'TUGAS_ASSIGNED'
   | 'TUGAS_DONE'
   | 'TUGAS_DUE'
-  | 'TUGAS_TAGGED';
+  | 'TUGAS_TAGGED'
+  | 'BERKAS_VERIFIKASI';
 
 export type NotificationAction =
   | 'OPEN_INBOX_DETAIL'

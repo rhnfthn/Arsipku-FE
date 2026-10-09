@@ -161,10 +161,20 @@
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.archive?.klasifikasiKeamanan ?? '-' }}</td>
                 <td class="whitespace-nowrap px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.archive?.nasibAkhir ?? (item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen') }}</td>
                 <td class="break-words px-1.5 py-2 text-center">
-                  <button v-if="item.transfer" type="button" @click="openLampiranPreview(item.transfer)" class="text-primary hover:underline dark:text-primary-400">
-                    Lampiran/{{ item.transfer.nomorUsulan }}
+                  <button
+                    v-if="item.transfer?.id || item.transferId || item.transfer_id"
+                    type="button"
+                    @click="openLampiranPreview({
+                      id: item.transfer?.id ?? item.transferId ?? item.transfer_id,
+                      nomorUsulan: item.transfer?.nomorUsulan ?? item.nomorUsulan ?? item.no_usulan,
+                    })"
+                    class="text-primary hover:underline dark:text-primary-400"
+                  >
+                    Lampiran/{{ item.transfer?.nomorUsulan ?? item.nomorUsulan ?? item.no_usulan ?? '-' }}
                   </button>
-                  <span v-else>-</span>
+                  <span v-else class="text-primary dark:text-primary-400">
+                    {{ item.nomorUsulan || item.no_usulan ? `Lampiran/${item.nomorUsulan || item.no_usulan}` : '-' }}
+                  </span>
                 </td>
                 <td class="px-1.5 py-2 text-center">
                   <span :class="statusBadgeClass(item.status)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(item.status) }}</span>

@@ -14,7 +14,7 @@
           <Transition name="filter-dd">
             <div v-if="openRowsPerPage" class="absolute left-0 top-full mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]">
               <button
-                v-for="n in [10, 25, 50]"
+                v-for="n in rowsPerPageOptions"
                 :key="n"
                 type="button"
                 @click.stop="selectRowsPerPage(n)"
@@ -42,7 +42,7 @@
                 :class="['w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 dark:border-gray-700', modelValue.status === '' ? 'bg-primary/5 text-primary dark:text-primary-400 font-medium' : 'text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700']"
               >Semua Status</button>
               <button
-                v-for="opt in statusOptions"
+                v-for="opt in visibleStatusOptions"
                 :key="opt.value"
                 type="button"
                 @click.stop="selectFilterStatus(opt.value)"
@@ -85,10 +85,10 @@
           <UIcon name="i-lucide-search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             :value="modelValue.search"
-            @input="updateField('search', ($event.target as HTMLInputElement).value)"
-            @keydown.enter="$emit('apply')"
+            @input="onSearchInput(($event.target as HTMLInputElement).value)"
+            @keydown.enter="applySearchNow"
             type="text"
-            placeholder="Cari Berkas…"
+            :placeholder="searchPlaceholder"
             class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
           />
         </div>
@@ -97,9 +97,11 @@
       <!-- EXPORT -->
       <button
         @click="$emit('export')"
-        class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap"
+        :disabled="isExporting"
+        class="shrink-0 flex items-center gap-2 px-5 py-1.5 rounded-lg text-sm font-medium text-white bg-primary dark:bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Export
+        <UIcon v-if="isExporting" name="i-lucide-loader-circle" class="w-3.5 h-3.5 animate-spin" />
+        <UIcon v-else name="i-lucide-download" class="w-3.5 h-3.5" /> Export
       </button>
   </div>
 </template>
@@ -110,7 +112,19 @@ import { ChevronDown } from 'lucide-vue-next';
 import type { VerifikasiFilter } from '~/types/verifikasi-usulan';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 
-const props = defineProps<{ modelValue: VerifikasiFilter }>();
+const props = withDefaults(defineProps<{
+  modelValue: VerifikasiFilter;
+  statusOptions?: { value: string; label: string }[];
+  rowsPerPageOptions?: number[];
+  searchPlaceholder?: string;
+  searchOnInput?: boolean;
+  isExporting?: boolean;
+}>(), {
+  rowsPerPageOptions: () => [10, 25, 50],
+  searchPlaceholder: 'Cari Berkas…',
+  searchOnInput: false,
+  isExporting: false,
+});
 const emit = defineEmits<{ 'update:modelValue': [v: VerifikasiFilter]; apply: []; export: [] }>();
 
 const openRowsPerPage = ref(false);
@@ -138,7 +152,7 @@ onMounted(async () => {
   }
 });
 
-const statusOptions: { value: string; label: string }[] = [
+const defaultStatusOptions: { value: string; label: string }[] = [
   { value: 'DRAFT', label: 'Draft' },
   { value: 'MENUNGGU_PERSETUJUAN', label: 'Menunggu Persetujuan' },
   { value: 'MENUNGGU_VERIFIKASI', label: 'Menunggu Verifikasi' },
@@ -146,8 +160,9 @@ const statusOptions: { value: string; label: string }[] = [
   { value: 'SELESAI', label: 'Selesai' },
 ];
 
+const visibleStatusOptions = computed(() => props.statusOptions ?? defaultStatusOptions);
 const statusLabel = computed(() =>
-  statusOptions.find((o) => o.value === props.modelValue.status)?.label ?? 'Semua Status',
+  visibleStatusOptions.value.find((o) => o.value === props.modelValue.status)?.label ?? 'Semua Status',
 );
 
 function toggleRowsPerPage() {
@@ -167,18 +182,17 @@ function toggleFilterKlasifikasi() {
 }
 
 function selectRowsPerPage(n: number) {
-  updateField('limit', n);
-  updateField('page', 1);
+  emit('update:modelValue', { ...props.modelValue, limit: n, page: 1 });
   openRowsPerPage.value = false;
   emit('apply');
 }
 function selectFilterStatus(val: string) {
-  updateField('status', val as any);
+  emit('update:modelValue', { ...props.modelValue, status: val as any, page: 1 });
   openFilterStatus.value = false;
   emit('apply');
 }
 function selectFilterKlasifikasi(val: string) {
-  updateField('klasifikasi', val);
+  emit('update:modelValue', { ...props.modelValue, klasifikasi: val, page: 1 });
   openFilterKlasifikasi.value = false;
   emit('apply');
 }
@@ -186,6 +200,19 @@ function selectFilterKlasifikasi(val: string) {
 const updateField = (field: keyof VerifikasiFilter, value: any) => {
   emit('update:modelValue', { ...props.modelValue, [field]: value });
 };
+
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+function onSearchInput(value: string) {
+  emit('update:modelValue', { ...props.modelValue, search: value, page: 1 });
+  if (!props.searchOnInput) return;
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => emit('apply'), 350);
+}
+
+function applySearchNow() {
+  if (searchTimer) clearTimeout(searchTimer);
+  emit('apply');
+}
 
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -200,6 +227,9 @@ onMounted(() => {
   document.addEventListener('click', handleDocumentClick);
 });
 onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick));
+onBeforeUnmount(() => {
+  if (searchTimer) clearTimeout(searchTimer);
+});
 </script>
 
 <style scoped>

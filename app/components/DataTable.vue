@@ -15,7 +15,10 @@
             ]"
             @click="col.sortable && $emit('sort', col.key)"
           >
-            <span class="inline-flex items-center gap-1 whitespace-nowrap">
+            <span
+              class="inline-flex items-center gap-1"
+              :class="wrapHeaders ? 'whitespace-normal break-words' : 'whitespace-nowrap'"
+            >
               {{ col.label }}
               <UIcon
                 v-if="col.sortable"
@@ -100,6 +103,8 @@ withDefaults(
     rowClassesFn?: (row: Record<string, any>) => string;
     /** Layout fixed dengan padding rapat; konten panjang wajib dibatasi oleh cell slot. */
     compact?: boolean;
+    /** Izinkan judul kolom membungkus agar tabel fixed tidak melebar ke samping. */
+    wrapHeaders?: boolean;
   }>(),
   {
     loading: false,

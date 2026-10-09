@@ -1,52 +1,68 @@
 <template>
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
-    <div class="max-w-4xl mx-auto">
-      <!-- Breadcrumb -->
-      <div class="mb-6">
-        <NuxtLink to="/maintenance/penyusutan/penataan-pemusnahan" class="inline-flex items-center gap-1.5 text-sm text-[#457fb6] hover:underline mb-3">
-          <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali ke Penataan / Pemusnahan
-        </NuxtLink>
-        <Heading variant="heading6b" class="text-mobile-md">Detail Penataan / Pemusnahan</Heading>
-        <PageHeader :items="breadcrumbs" />
-      </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+      <PageHeader :title="`Penataan / Pemusnahan — ${item?.no_usulan ?? ''}`" :items="breadcrumbs" />
+      <NuxtLink to="/maintenance/penyusutan/penataan-pemusnahan"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0">
+        <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
+      </NuxtLink>
+    </div>
 
-      <div v-if="!item" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-10 text-center">
-        <p class="text-gray-500 dark:text-gray-400">Arsip tidak ditemukan.</p>
-      </div>
+    <div v-if="detailLoading" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-10 text-center shadow-sm">
+      <UIcon name="i-lucide-loader-2" class="mx-auto mb-2 h-6 w-6 animate-spin text-[#457fb6]" />
+      <p class="text-gray-500 dark:text-gray-400">Memuat detail arsip...</p>
+    </div>
 
-      <div v-else class="space-y-5">
+    <div v-else-if="!item" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-10 text-center shadow-sm">
+      <p class="text-gray-500 dark:text-gray-400">Arsip tidak ditemukan.</p>
+    </div>
+
+    <div v-else class="w-full space-y-5">
         <!-- Info Arsip -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <button
+            type="button"
+            class="mb-4 flex w-full items-center justify-between gap-3 text-left"
+            :aria-expanded="!infoArsipCollapsed"
+            @click="infoArsipCollapsed = !infoArsipCollapsed"
+          >
             <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Arsip</h3>
-          </div>
-          <div class="p-5 space-y-3">
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Kode Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ item.kode_berkas }}</span></div>
-            <div class="flex justify-between text-sm"><span class="text-gray-500">No Usulan</span><span class="font-medium text-gray-800 dark:text-white">{{ item.no_usulan }}</span></div>
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Nama Berkas</span><span class="font-medium text-gray-800 dark:text-white">{{ item.nama_berkas }}</span></div>
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Sekretaris</span><span class="font-medium text-gray-800 dark:text-white">{{ item.sekretaris }}</span></div>
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Jenis Penyusutan</span>
-              <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
+            <UIcon :name="infoArsipCollapsed ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'" class="h-4 w-4 shrink-0 text-gray-400" />
+          </button>
+          <div v-if="!infoArsipCollapsed" class="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Nomor Usulan</span><p class="break-words text-gray-900 dark:text-white">{{ item.no_usulan || '-' }}</p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Kode Berkas</span><p class="break-words text-gray-900 dark:text-white">{{ item.kode_berkas || '-' }}</p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Uraian Informasi Berkas</span><p class="break-words text-gray-900 dark:text-white">{{ item.nama_berkas || '-' }}</p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Klasifikasi</span><p class="break-words text-gray-900 dark:text-white">{{ [item.klasifikasi, item.klasifikasiText || item.klasifikasi_text].filter(Boolean).join(' — ') || '-' }}</p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Sekretaris</span><p class="break-words text-gray-900 dark:text-white">{{ item.sekretaris || '-' }}</p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Jenis Penyusutan</span><p class="mt-1">
+              <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium">
                 {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
               </span>
-            </div>
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Status</span>
-              <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
-            </div>
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Tgl Pengajuan</span><span class="font-medium text-gray-800 dark:text-white">{{ formatDate(item.tanggal_pengajuan) }}</span></div>
+            </p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Status</span><p class="mt-1">
+              <span :class="statusBadgeClass(item.status)" class="inline-flex text-xs">{{ statusLabel(item.status) }}</span>
+            </p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Tanggal Pengajuan</span><p class="text-gray-900 dark:text-white">{{ formatDate(item.tanggal_pengajuan) }}</p></div>
           </div>
         </div>
 
         <!-- Verifikator Info -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <button
+            type="button"
+            class="mb-4 flex w-full items-center justify-between gap-3 text-left"
+            :aria-expanded="!verifikasiAtasanCollapsed"
+            @click="verifikasiAtasanCollapsed = !verifikasiAtasanCollapsed"
+          >
             <h3 class="text-base font-semibold text-gray-900 dark:text-white">Verifikasi Atasan Managerial</h3>
-          </div>
-          <div class="p-5 space-y-2">
+            <UIcon :name="verifikasiAtasanCollapsed ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'" class="h-5 w-5 shrink-0 text-gray-500" />
+          </button>
+          <div v-if="!verifikasiAtasanCollapsed" class="space-y-2">
             <div
               v-for="(v, i) in item.atasan_managerial"
               :key="i"
-              class="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3"
+              class="flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
             >
               <div class="flex items-center gap-3">
                 <span class="w-6 h-6 rounded-full bg-[#457fb6] text-white text-xs flex items-center justify-center font-medium">{{ v.urutan }}</span>
@@ -60,171 +76,101 @@
           </div>
         </div>
 
-        <!-- Daftar Arsip (Berkas) -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div class="p-5 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              Daftar Arsip
-              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ daftarArsipItems.length }}</span>
-            </h3>
+        <TransferDetailCard
+          v-if="transferForTables"
+          :transfer="transferForTables"
+          :daftar-berkas="daftarBerkasRows"
+          :daftar-isi="daftarIsiRows"
+          :collapsible="true"
+          :show-information-card="false"
+          :show-approval-levels="false"
+          :show-bac-signer="false"
+          :show-bac-tembusan="false"
+          :show-tu-approval-levels="false"
+          berkas-layout="penataan"
+          preview-from="penyusutan"
+        />
+
+        <section
+          v-if="transferForTables?.id"
+          class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Lampiran</h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                PDF gabungan Berita Acara, Daftar Berkas, dan Daftar Isi Berkas.
+              </p>
+            </div>
+            <button
+              type="button"
+              :disabled="lampiranLoading"
+              @click="openCombinedLampiran"
+              :title="lampiranLoading ? 'Memuat lampiran' : 'Preview lampiran'"
+              aria-label="Preview lampiran"
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-900 transition-colors hover:bg-gray-100 disabled:cursor-wait disabled:opacity-60 dark:text-gray-100 dark:hover:bg-gray-700"
+            >
+              <UIcon :name="lampiranLoading ? 'i-lucide-loader-2' : 'i-lucide-eye'" :class="lampiranLoading ? 'animate-spin' : ''" class="h-5 w-5" />
+            </button>
           </div>
-          <div class="p-5">
-            <div v-if="daftarArsipItems.length" class="space-y-1.5">
-              <div
-                v-for="(a, idx) in daftarArsipItems"
-                :key="a.id || idx"
-                class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-              >
-                <span class="text-xs font-semibold text-gray-400">{{ idx + 1 }}.</span>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-900 dark:text-white truncate">
-                    <span v-if="a.kode" class="font-mono text-xs text-gray-500">{{ a.kode }}</span>
-                    <span v-if="a.kode"> — </span>
-                    {{ a.nama }}
-                  </p>
-                </div>
-                <NuxtLink
-                  v-if="item.jenis_penyusutan === 'permanen'"
-                  :to="`/maintenance/preview-berkas/${a.id}?from=penyusutan`"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors shrink-0"
-                  title="Lihat detail berkas"
-                >
-                  <UIcon name="i-lucide-eye" class="w-4 h-4" />
-                </NuxtLink>
+        </section>
+
+        <TransferBeritaAcaraCard
+          v-if="transferForTables"
+          :transfer="transferForTables"
+          :berita-acara-data="beritaAcaraData"
+          preview-icon="eye"
+          title="Berita Acara Pemindahan"
+        />
+
+        <section
+          v-if="transferForTables"
+          class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        >
+          <button
+            type="button"
+            class="mb-4 flex w-full items-center justify-between gap-3 text-left"
+            :aria-expanded="!lokasiPenyimpananCollapsed"
+            @click="lokasiPenyimpananCollapsed = !lokasiPenyimpananCollapsed"
+          >
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Lokasi Penyimpanan</h3>
+            <UIcon :name="lokasiPenyimpananCollapsed ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'" class="h-5 w-5 shrink-0 text-gray-500" />
+          </button>
+          <div v-if="!lokasiPenyimpananCollapsed" class="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
+            <div class="min-w-0 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Foto dokumentasi penataan</h3>
+              </div>
+              <div class="flex min-h-64 items-center justify-center overflow-hidden rounded-lg bg-gray-50 dark:bg-gray-900/40">
+                <a v-if="transferFotoUrl" :href="transferFotoUrl" target="_blank" rel="noopener noreferrer" class="group relative block h-full w-full">
+                  <img :src="transferFotoUrl" alt="Foto dokumentasi penataan arsip" class="h-64 w-full rounded-lg object-contain" />
+                  <span class="absolute inset-0 flex items-center justify-center bg-black/0 text-sm font-medium text-white opacity-0 transition group-hover:bg-black/20 group-hover:opacity-100">
+                    <UIcon name="i-lucide-eye" class="mr-1.5 h-4 w-4" />Lihat foto
+                  </span>
+                </a>
+                <p v-else class="px-4 py-10 text-sm text-gray-400">Foto dokumentasi belum tersedia.</p>
               </div>
             </div>
-            <div v-else class="text-sm text-gray-400 italic py-2">
-              Tidak ada arsip
+            <div class="grid min-w-0 content-start gap-5">
+              <section class="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                <div class="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
+                  <div><span class="text-sm text-gray-500 dark:text-gray-400">Lokasi</span><p class="mt-1 break-words text-base text-gray-800 dark:text-gray-200">{{ transferForTables.lokasiPenataan || '-' }}</p></div>
+                  <div><span class="text-sm text-gray-500 dark:text-gray-400">No. ruang</span><p class="mt-1 break-words text-base text-gray-800 dark:text-gray-200">{{ transferForTables.rak || '-' }}</p></div>
+                  <div><span class="text-sm text-gray-500 dark:text-gray-400">No. rak</span><p class="mt-1 break-words text-base text-gray-800 dark:text-gray-200">{{ transferForTables.baris || '-' }}</p></div>
+                  <div><span class="text-sm text-gray-500 dark:text-gray-400">No. boks</span><p class="mt-1 break-words text-base text-gray-800 dark:text-gray-200">{{ transferForTables.kolom || '-' }}</p></div>
+                  <div><span class="text-sm text-gray-500 dark:text-gray-400">Label boks</span><p class="mt-1 break-words text-base text-gray-800 dark:text-gray-200">{{ transferForTables.labelPenataan || '-' }}</p></div>
+                </div>
+              </section>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- Form Penataan (Permanen) -->
         <div v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'" class="space-y-5">
-          <!-- Card: Berita Acara (Upload) -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="p-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Berita Acara</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload file berita acara penataan arsip.</p>
-            </div>
-            <div class="px-5 pb-5">
-              <!-- File terpilih: nama dokumen + tombol hapus -->
-              <div v-if="beritaAcaraFiles.length > 0" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span class="w-9 h-9 rounded-lg bg-[#457fb6]/10 text-[#457fb6] flex items-center justify-center shrink-0">
-                    <UIcon :name="beritaAcaraPreviewType === 'pdf' ? 'i-lucide-file-text' : 'i-lucide-image'" class="w-5 h-5" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-white truncate">{{ beritaAcaraFiles[0].name }}</p>
-                    <p class="text-xs text-gray-500">{{ (beritaAcaraFiles[0].size / 1024).toFixed(1) }} KB</p>
-                  </div>
-                </div>
-                <button
-                  @click="removeBeritaAcara"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shrink-0"
-                  title="Hapus file"
-                >
-                  <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-              <!-- Card upload (muncul saat belum ada file) -->
-              <FileUpload
-                v-else
-                v-model="beritaAcaraFiles"
-                accept=".pdf,.jpg,.png"
-                label="Pilih atau seret file berita acara"
-                description="PDF, JPG, PNG (max 5MB)"
-              />
-            </div>
-          </div>
-
-          <!-- Card: Lokasi Penyimpanan -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="p-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Lokasi Penyimpanan</h3>
-              <div class="space-y-4">
-              <div>
-                <input
-                  v-model="lokasiSimpan"
-                  type="text"
-                  placeholder="Contoh: Gudang Arsip Inaktif Lantai 3"
-                  class="w-full h-10 px-3 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-                />
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Ruang</label>
-                  <input
-                    v-model="ruang"
-                    type="text"
-                    placeholder="Contoh: Ruang Arsip 1"
-                    class="w-full h-10 px-3 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Rak</label>
-                  <input
-                    v-model="rak"
-                    type="text"
-                    placeholder="Contoh: Rak A"
-                    class="w-full h-10 px-3 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Kode</label>
-                  <input
-                    v-model="kode"
-                    type="text"
-                    placeholder="Contoh: KODE-001"
-                    class="w-full h-10 px-3 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#457fb6]"
-                  />
-                </div>
-              </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card: Foto Dokumentasi -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="p-5">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Foto Dokumentasi</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload foto dokumentasi arsip (opsional).</p>
-            </div>
-            <div class="px-5 pb-5">
-              <!-- File terpilih: nama dokumen + tombol hapus -->
-              <div v-if="fotoFiles.length > 0" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span class="w-9 h-9 rounded-lg bg-[#457fb6]/10 text-[#457fb6] flex items-center justify-center shrink-0">
-                    <UIcon name="i-lucide-image" class="w-5 h-5" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800 dark:text-white truncate">{{ fotoFiles[0].name }}</p>
-                    <p class="text-xs text-gray-500">{{ (fotoFiles[0].size / 1024).toFixed(1) }} KB</p>
-                  </div>
-                </div>
-                <button
-                  @click="removeFoto"
-                  class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shrink-0"
-                  title="Hapus file"
-                >
-                  <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-              <!-- Card upload (muncul saat belum ada file) -->
-              <FileUpload
-                v-else
-                v-model="fotoFiles"
-                accept="image/*"
-                label="Pilih atau seret foto dokumentasi"
-                description="JPG, PNG (max 5MB)"
-              />
-            </div>
-          </div>
-
           <!-- Tombol Submit -->
           <button
             @click="submitPenataan"
-            :disabled="submitting || !lokasiSimpan || beritaAcaraFiles.length === 0"
+            :disabled="submitting || !resolvedLokasiSimpan"
             class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
@@ -233,7 +179,7 @@
         </div>
 
         <!-- Form Pemusnahan (Musnah) -->
-        <div v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'" class="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-900 overflow-hidden">
+        <div v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'" class="overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm dark:border-red-900 dark:bg-gray-800">
           <div class="p-5 border-b border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20">
             <h3 class="text-base font-semibold text-red-700 dark:text-red-300">Form Pemusnahan Arsip</h3>
             <p class="text-sm text-red-600 dark:text-red-400 mt-1">⚠️ Arsip akan dipindahkan ke database backup. Arsip asli tidak akan bisa dilihat lagi, hanya berita acara yang bisa diunduh.</p>
@@ -294,7 +240,7 @@
         <!-- Status Selesai -->
         <div v-if="item.status === 'selesai'" class="space-y-5">
           <!-- Info Selesai + Foto Dokumentasi (gabungan) — hanya untuk jenis permanen -->
-          <div v-if="item.jenis_penyusutan === 'permanen'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div v-if="false" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="p-5">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">
@@ -391,7 +337,7 @@
           </div>
 
           <!-- Berita Acara (always show — with edit button) -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div v-if="item.jenis_penyusutan === 'musnah'" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="p-5 flex items-center justify-between">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <UIcon name="i-lucide-file-text" class="w-4 h-4 text-primary-500" /> Berita Acara
@@ -478,7 +424,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Modal Konfirmasi Backup Data -->
     <Teleport to="body">
@@ -537,15 +482,25 @@
       :loading="false"
       @close="closePenyusutanBeritaAcara"
     />
+
+    <SharedSharePdfViewer
+      v-model="lampiranViewerOpen"
+      :url="lampiranViewerUrl"
+      title="Lampiran"
+      :loading="lampiranLoading"
+      @close="closeCombinedLampiran"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
 import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
+import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue'
+import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
 definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
@@ -563,20 +518,18 @@ const breadcrumbs = computed(() => [
   { label: 'Detail', to: `/maintenance/penyusutan/penataan-pemusnahan/${route.params.id}` },
 ])
 
-const lokasiSimpan = ref('')
-const rak = ref('')
-const kode = ref('')
-const ruang = ref('')
 const beritaAcaraFiles = ref<File[]>([])
 const beritaAcaraPreview = ref('')
 const beritaAcaraPreviewType = ref<'pdf' | 'image'>('pdf')
 const beritaAcaraViewerOpen = ref(false)
 const beritaAcaraViewerUrl = ref('')
-const fotoFiles = ref<File[]>([])
-const fotoPreview = ref('')
 const submitting = ref(false)
+const detailLoading = ref(true)
 const showBackupModal = ref(false)
 const backupCatatan = ref('')
+const infoArsipCollapsed = ref(false)
+const verifikasiAtasanCollapsed = ref(false)
+const lokasiPenyimpananCollapsed = ref(false)
 
 /** Buka modal konfirmasi backup data. */
 const openBackupModal = () => {
@@ -588,12 +541,6 @@ const openBackupModal = () => {
 const removeBeritaAcara = () => {
   beritaAcaraFiles.value = []
   beritaAcaraPreview.value = ''
-}
-
-/** Hapus file foto dokumentasi yang dipilih — card upload muncul kembali. */
-const removeFoto = () => {
-  fotoFiles.value = []
-  fotoPreview.value = ''
 }
 
 /** True jika user login adalah pemilik (TU) dari pengajuan ini. */
@@ -673,6 +620,35 @@ const saveFotoDokumentasi = async () => {
 }
 
 const item = ref<ArsipPenyusutan | null>(null)
+const transferData = ref<any>(null)
+const daftarBerkasRows = ref<any[]>([])
+const daftarIsiRows = ref<any[]>([])
+const beritaAcaraData = ref<any>(null)
+const transferFotoUrl = ref('')
+const lampiranLoading = ref(false)
+const lampiranViewerOpen = ref(false)
+const lampiranViewerUrl = ref('')
+
+const transferForTables = computed(() => {
+  if (!transferData.value) return null
+  return {
+    ...transferData.value,
+    id: transferData.value.id ?? item.value?.penataanData?.transferId ?? item.value?.transferId,
+    status: transferData.value.status ?? 'SELESAI',
+    lokasiPenataan: transferData.value.lokasiPenataan ?? item.value?.penataanData?.lokasiPenataan ?? item.value?.lokasi_simpan,
+  }
+})
+
+const resolvedLokasiSimpan = computed(() => {
+  if (item.value?.lokasi_simpan) return item.value.lokasi_simpan
+  const transfer = transferForTables.value
+  return [
+    transfer?.lokasiPenataan ?? transfer?.lokasi_penataan,
+    transfer?.rak,
+    transfer?.baris,
+    transfer?.kolom,
+  ].filter(Boolean).join(' / ')
+})
 
 // Split lokasi_simpan into parts for display
 const lokasiParts = computed(() => {
@@ -680,11 +656,52 @@ const lokasiParts = computed(() => {
   return lokasi.split(' / ').map(s => s.trim()).filter(Boolean)
 })
 
-// Daftar arsip (naskah) — normalize dari daftar_arsip (snake_case) atau daftarArsip (camelCase)
-const daftarArsipItems = computed(() => {
-  const raw = item.value?.daftar_arsip ?? item.value?.daftarArsip ?? []
-  return Array.isArray(raw) ? raw : []
-})
+const loadTransferCardData = async () => {
+  if (!item.value) return
+  const metadata = item.value.penataanData
+  const transferId = metadata?.transferId ?? metadata?.transfer?.id ?? item.value.transferId ?? item.value.transfer_id
+  transferData.value = metadata?.transfer ?? null
+  daftarBerkasRows.value = Array.isArray(metadata?.daftarBerkas) ? metadata.daftarBerkas : []
+  daftarIsiRows.value = Array.isArray(metadata?.daftarIsi) ? metadata.daftarIsi : []
+
+  if (!transferId) return
+
+  try {
+    if (!transferData.value) {
+      const transferResponse: any = await apiGet(`/transfer-active-to-inactive/${transferId}`, {}, { skipCache: true })
+      transferData.value = transferResponse?.data?.data ?? transferResponse?.data ?? transferResponse
+    }
+  } catch (error) {
+    console.warn('Gagal memuat informasi usulan pemindahan terkait:', error)
+  }
+
+  try {
+    if (!daftarBerkasRows.value.length || !daftarIsiRows.value.length) {
+      const listResponse: any = await apiGet(`/transfer-active-to-inactive/${transferId}/daftar-isi`, {}, { skipCache: true })
+      const lists = listResponse?.data?.data ?? listResponse?.data ?? listResponse
+      if (Array.isArray(lists?.daftarBerkas)) daftarBerkasRows.value = lists.daftarBerkas
+      if (Array.isArray(lists?.daftarIsi)) daftarIsiRows.value = lists.daftarIsi
+    }
+  } catch (error) {
+    console.warn('Gagal memuat daftar berkas penyusutan:', error)
+  }
+
+  try {
+    const beritaResponse: any = await apiGet(`/transfer-active-to-inactive/${transferId}/berita-acara-data`, {}, { skipCache: true })
+    beritaAcaraData.value = beritaResponse?.data?.data ?? beritaResponse?.data ?? beritaResponse
+  } catch (error) {
+    console.warn('Gagal memuat berita acara pemindahan terkait:', error)
+  }
+
+  const fotoKey = transferData.value?.fotoPenataan ?? transferData.value?.foto_penataan
+  if (fotoKey) {
+    if (/^https?:\/\//i.test(fotoKey)) {
+      transferFotoUrl.value = fotoKey
+    } else {
+      transferFotoUrl.value = await getFileUrl(fotoKey) ?? ''
+    }
+  }
+}
 
 // ── Fresh presigned URLs for MinIO files ──
 const beritaAcaraUrl = ref('')
@@ -753,7 +770,7 @@ const verifikatorBadgeClass = (status: string) => {
   return map[s] ?? 'px-2 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
 
-// Preview foto saat fotoFiles berubah
+// Preview file berita acara saat file dipilih.
 watch(beritaAcaraFiles, (newFiles) => {
   if (newFiles.length > 0) {
     const file = newFiles[0]
@@ -768,18 +785,6 @@ watch(beritaAcaraFiles, (newFiles) => {
     }
   } else {
     beritaAcaraPreview.value = ''
-  }
-}, { deep: true })
-
-watch(fotoFiles, (newFiles) => {
-  if (newFiles.length > 0) {
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      fotoPreview.value = ev.target?.result as string
-    }
-    reader.readAsDataURL(newFiles[0])
-  } else {
-    fotoPreview.value = ''
   }
 }, { deep: true })
 
@@ -839,31 +844,72 @@ const closePenyusutanBeritaAcara = () => {
   beritaAcaraViewerUrl.value = ''
 }
 
+const closeCombinedLampiran = () => {
+  lampiranViewerOpen.value = false
+  if (lampiranViewerUrl.value.startsWith('blob:')) URL.revokeObjectURL(lampiranViewerUrl.value)
+  lampiranViewerUrl.value = ''
+}
+
+const openCombinedLampiran = async () => {
+  const transferId = transferForTables.value?.id
+  if (!transferId) {
+    toast.add({ title: 'Lampiran tidak tersedia', description: 'Data usulan pemindahan terkait belum ditemukan.', color: 'warning' })
+    return
+  }
+
+  closeCombinedLampiran()
+  lampiranViewerOpen.value = true
+  lampiranLoading.value = true
+  try {
+    let response: any = await apiGet(
+      `/transfer-active-to-inactive/${transferId}/lampiran-penataan.pdf`,
+      { responseType: 'blob', headers: { Accept: 'application/pdf' } },
+      { skipCache: true },
+    )
+    if (response && typeof response === 'object' && !(response instanceof Blob) && 'data' in response) {
+      response = response.data
+    }
+    const pdfBlob = response instanceof Blob
+      ? response
+      : response instanceof ArrayBuffer
+        ? new Blob([response], { type: 'application/pdf' })
+        : ArrayBuffer.isView(response)
+          ? new Blob([new Uint8Array(response.buffer, response.byteOffset, response.byteLength)], { type: 'application/pdf' })
+          : null
+    if (!pdfBlob || pdfBlob.size === 0 || (await pdfBlob.slice(0, 5).text()) !== '%PDF-') {
+      throw new Error('Lampiran gabungan bukan PDF yang valid.')
+    }
+    lampiranViewerUrl.value = URL.createObjectURL(pdfBlob)
+  } catch (error: any) {
+    lampiranViewerOpen.value = false
+    let description = error?.response?.data?.message || error?.message
+    if (error?.response?.data instanceof Blob) {
+      try {
+        const body = JSON.parse(await error.response.data.text())
+        description = body?.message || description
+      } catch { /* gunakan pesan fallback */ }
+    }
+    toast.add({ title: 'Lampiran gagal dibuka', description: description || 'Silakan coba kembali.', color: 'error' })
+  } finally {
+    lampiranLoading.value = false
+  }
+}
+
 const submitPenataan = async () => {
-  if (!item.value || !lokasiSimpan.value || beritaAcaraFiles.value.length === 0) return
+  if (!item.value || !resolvedLokasiSimpan.value) return
   submitting.value = true
   try {
-    // Gabungkan lokasi: lokasiSimpan + ruang + rak + kode
-    const lokasiParts = [lokasiSimpan.value]
-    if (ruang.value) lokasiParts.push(ruang.value)
-    if (rak.value) lokasiParts.push(rak.value)
-    if (kode.value) lokasiParts.push(kode.value)
-    const lokasiFull = lokasiParts.join(' / ')
+    const lokasiFull = resolvedLokasiSimpan.value
 
-    // Upload berita acara ke MinIO
-    let beritaAcaraPath: string | null = null
-    if (beritaAcaraFiles.value.length > 0) {
-      beritaAcaraPath = await uploadFile(beritaAcaraFiles.value[0])
-    }
-    // Upload foto dokumentasi ke MinIO jika ada
-    let fotoPath: string | null = null
-    if (fotoFiles.value.length > 0) {
-      fotoPath = await uploadFile(fotoFiles.value[0])
-      if (!fotoPath) {
-        toast.add({ title: 'Peringatan', description: 'Foto dokumentasi gagal diupload, tetapi penataan tetap disimpan.', color: 'warning' })
-      }
-    }
-    await simpanPenataan(item.value.id, { lokasiSimpan: lokasiFull, beritaAcara: beritaAcaraPath ?? '', fotoDokumentasi: fotoPath ?? '' })
+    // Gunakan berita acara yang sudah tersedia dari usulan pemindahan terkait
+    // atau lampiran penataan yang telah tersimpan; tidak perlu upload duplikat.
+    const beritaAcaraPath = item.value.beritaAcara || item.value.berita_acara || beritaAcaraUrl.value ||
+      transferForTables.value?.beritaAcaraUrl ||
+      transferForTables.value?.berita_acara_url ||
+      ''
+    const fotoPath = item.value.fotoDokumentasi || item.value.foto_dokumentasi ||
+      transferForTables.value?.fotoPenataan || transferForTables.value?.foto_penataan || ''
+    await simpanPenataan(item.value.id, { lokasiSimpan: lokasiFull, beritaAcara: beritaAcaraPath, fotoDokumentasi: fotoPath })
     toast.add({ title: 'Berhasil', description: 'Penataan arsip permanen berhasil disimpan.', color: 'success' })
     // Reload detail + fetch fresh file URLs
     item.value = await fetchById(route.params.id as string)
@@ -919,17 +965,24 @@ const submitBackupData = async () => {
 }
 
 onMounted(async () => {
-  item.value = await fetchById(route.params.id as string)
-  if (item.value && !isOwner.value) {
-    // Endpoint tidak boleh diakses — redirect ke beranda.
-    useToast().add({
-      title: 'Akses Ditolak',
-      description: 'Anda tidak memiliki akses ke halaman ini.',
-      color: 'error',
-    })
-    navigateTo('/beranda')
-    return
+  detailLoading.value = true
+  try {
+    item.value = await fetchById(route.params.id as string)
+    if (item.value && !isOwner.value) {
+      // Endpoint tidak boleh diakses — redirect ke beranda.
+      useToast().add({
+        title: 'Akses Ditolak',
+        description: 'Anda tidak memiliki akses ke halaman ini.',
+        color: 'error',
+      })
+      await navigateTo('/beranda')
+      return
+    }
+    if (item.value) await Promise.all([loadFileUrls(), loadTransferCardData()])
+  } finally {
+    detailLoading.value = false
   }
-  await loadFileUrls()
 })
+
+onBeforeUnmount(closeCombinedLampiran)
 </script>

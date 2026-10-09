@@ -215,7 +215,7 @@
                 </span>
                 <div>
                   <h2 class="font-semibold text-gray-900 dark:text-white">Tembusan</h2>
-                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pejabat tembusan Berita Acara (khusus EVP ke atas).</p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pejabat tembusan Berita Acara (khusus AVP ke atas).</p>
                 </div>
               </div>
               <UButton
@@ -250,7 +250,7 @@
                 <input
                   v-model="tembusanSearch"
                   type="text"
-                  :placeholder="pejabatLoading ? 'Memuat data pejabat...' : 'Ketik nama atau persnum pejabat EVP ke atas...'"
+                  :placeholder="pejabatLoading ? 'Memuat data pejabat...' : 'Ketik nama atau persnum pejabat AVP ke atas...'"
                   :disabled="pejabatLoading"
                   @focus="tembusanDropdownOpen = true"
                   @input="tembusanDropdownOpen = true"
@@ -279,7 +279,7 @@
                   v-if="tembusanDropdownOpen && filteredTembusan.length === 0 && !pejabatLoading"
                   class="absolute left-0 right-0 top-full mt-1 z-[10001] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 text-center text-sm text-gray-400"
                 >
-                  Tidak ada pejabat EVP ke atas ditemukan
+                  Tidak ada pejabat AVP ke atas ditemukan
                 </div>
               </div>
             </div>
@@ -329,6 +329,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useApi } from '~/composables/useApi';
+import { useAuth } from '~/composables/useAuth';
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import { formatDate } from '~/utils/transfer-status';
 
@@ -346,6 +347,7 @@ const emit = defineEmits<{
 }>();
 
 const { apiGet, apiPost, apiPatch } = useApi();
+const { user, getProfile } = useAuth();
 
 const submitting = ref(false);
 const keterangan = ref('');
@@ -371,21 +373,46 @@ const pihakPertamaSearch = ref('');
 const pihakPertamaDropdownOpen = ref(false);
 const pihakPertamaDropdownRef = ref<HTMLElement | null>(null);
 
-// ── Tembusan (khusus EVP ke atas) ──
+// ── Daftar pejabat global untuk pihak pertama dan Tembusan ──
+const pejabatOptions = ref<AtasanOption[]>([]);
+const pejabatLoading = ref(false);
+
+// ── Tembusan (khusus AVP ke atas) ──
 const tembusanList = ref<AtasanOption[]>([]);
 const tembusanSearch = ref('');
 const tembusanDropdownOpen = ref(false);
 const tembusanDropdownRef = ref<HTMLElement | null>(null);
 const showTembusanInput = ref(true);
 
-/** Sumber pejabat: sama dengan atasan managerial (org_data chief=1). */
-const pejabatLoading = computed(() => atasanLoading.value);
-const pejabatOptions = computed(() => atasanOptions.value);
+/** Sumber global pejabat managerial (chief=1), terpisah dari rantai atasan pengusul. */
+const loadPejabatOptions = async () => {
+  pejabatLoading.value = true;
+  try {
+    const tgl = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const res: any = await apiGet(`/org-data/pengirim/managerial?tgl=${tgl}`, {}, { skipCache: true });
+    const data = res?.data?.data ?? res?.data ?? [];
+    pejabatOptions.value = Array.isArray(data)
+      ? data
+          .map((r: any) => ({
+            position: Number(r.position ?? r.position_id ?? 0),
+            persnum: Number(r.persnum ?? r.persnum_person ?? r.relation_persnum ?? 0),
+            name: r.persnum_person_text ?? r.name ?? r.label ?? '-',
+            positionText: r.position_text ?? r.positionText ?? r.labelJob ?? '-',
+          }))
+          .filter((p: AtasanOption) => p.name.trim() !== '' && p.name.trim() !== '-')
+      : [];
+  } catch (e) {
+    console.error('Gagal memuat daftar pejabat managerial:', e);
+    pejabatOptions.value = [];
+  } finally {
+    pejabatLoading.value = false;
+  }
+};
 
-/** Filter khusus EVP ke atas (EVP / Direktur / CEO / Presiden). */
+/** Filter khusus AVP ke atas. */
 const isEvpKeAtas = (p: AtasanOption): boolean => {
   const t = (p.positionText || '').toUpperCase();
-  return t.includes('EVP') || t.includes('DIREKTUR') || t.includes('CEO') || t.includes('PRESIDEN');
+  return /\bAVP\b|\bVP\b|\bEVP\b|DIREKTUR|CEO|PRESIDEN/.test(t);
 };
 
 const filteredPihakPertama = computed(() => {
@@ -461,7 +488,9 @@ const toggleAtasan = (a: AtasanOption) => {
   }
   atasanSearch.value = '';
   atasanDropdownOpen.value = false;
-  showAtasanInput.value = selectedAtasanList.value.length < 3;
+  // Setelah memilih (atau membatalkan pilihan) satu nama, tutup input;
+  // tambah jenjang berikutnya dilakukan eksplisit lewat tombol Tambah.
+  showAtasanInput.value = false;
 };
 
 const removeAtasan = (idx: number) => {
@@ -474,10 +503,43 @@ const close = () => emit('update:modelValue', false);
 const loadAtasanManagerial = async () => {
   atasanLoading.value = true;
   try {
-    const tgl = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const res: any = await apiGet(`/org-data/pengirim/managerial?tgl=${tgl}`, {}, { skipCache: true });
+    if (!user.value) await getProfile();
+
+    // Pilihan atasan harus mengikuti rantai jabatan pengusul, bukan seluruh
+    // pejabat managerial di organisasi. Pada draft, pengusul adalah sekretaris
+    // yang tercatat di usulan; saat membuat usulan baru, gunakan pengguna aktif.
+    const proposerPersnum = Number(props.usulan?.sekretarisPersnum ?? user.value?.persnum);
+    if (!proposerPersnum) {
+      atasanOptions.value = [];
+      return;
+    }
+
+    const myPositionRes: any = await apiGet(
+      `/org-data/my-position?persnum=${encodeURIComponent(String(proposerPersnum))}`,
+      {},
+      { skipCache: true },
+    );
+    const myPosition = myPositionRes?.data?.data ?? myPositionRes?.data ?? myPositionRes;
+    let positionId = Number(myPosition?.position ?? myPosition?.position_id ?? 0);
+
+    // Fallback hanya aman bila pengusul adalah pengguna yang sedang login.
+    // Untuk draft milik orang lain, jangan memakai jabatan pengguna saat ini.
+    if (!positionId && proposerPersnum === Number(user.value?.persnum)) {
+      positionId = Number(user.value?.position ?? user.value?.position_id ?? 0);
+    }
+    if (!positionId) {
+      atasanOptions.value = [];
+      console.warn('Posisi pengusul tidak ditemukan; daftar atasan tidak dapat dimuat.');
+      return;
+    }
+
+    const res: any = await apiGet(
+      `/org-data/atasan-managerial/${encodeURIComponent(String(positionId))}`,
+      {},
+      { skipCache: true },
+    );
     const data = res?.data?.data ?? res?.data ?? [];
-    if (res?.success && Array.isArray(data)) {
+    if (Array.isArray(data)) {
       atasanOptions.value = data
         .map((r: any) => ({
           position: Number(r.position ?? r.position_id ?? 0),
@@ -519,7 +581,8 @@ watch(
     } else {
       selectedAtasanList.value = [];
     }
-    showAtasanInput.value = selectedAtasanList.value.length < 3;
+    // Draft dengan atasan terpilih hanya menampilkan input setelah tombol Tambah.
+    showAtasanInput.value = selectedAtasanList.value.length === 0;
     // Pre-fill pejabat BAC dari usulan existing
     const u: any = props.usulan;
     if (u?.bacPihakPertamaPersnum) {
@@ -540,6 +603,7 @@ watch(
     }));
     showTembusanInput.value = tembusanList.value.length < 5;
     if (atasanOptions.value.length === 0) loadAtasanManagerial();
+    if (pejabatOptions.value.length === 0) loadPejabatOptions();
   },
 );
 

@@ -40,13 +40,11 @@
 
       <!-- Alur detail satu kolom agar urutan verifikasi mudah diikuti. -->
       <div class="mx-auto w-full max-w-none space-y-5">
-          <VerifikasiDetail :usulan="usulan" :daftar-arsip="daftarIsi" />
-
-          <!-- BAC ditampilkan langsung seperti pada halaman Sekretaris Divisi. -->
-          <TransferBeritaAcaraCard
-            v-if="showBeritaAcara"
-            :transfer="usulanToTransfer"
-            :berita-acara-data="beritaAcaraData"
+          <VerifikasiDetail
+            :usulan="usulan"
+            :daftar-arsip="daftarIsi"
+            :daftar-isi="daftarIsiNaskah"
+            :unit-kerja="beritaAcaraData?.unitKerjaPengusul || usulanToTransfer.divisiName"
           />
 
           <TimelineRiwayat :item="usulanToTransfer" />
@@ -174,7 +172,6 @@ import { useRoute } from 'vue-router';
 import { useVerifikasiUsulan } from '~/composables/useVerifikasiUsulan';
 import { useAuth } from '~/composables/useAuth';
 import { useApi } from '~/composables/useApi';
-import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue';
 import VerifikasiDetail from '~/components/verifikasi-usulan/VerifikasiDetail.vue';
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue';
 import RejectModal from '~/components/verifikasi-usulan/RejectModal.vue';
@@ -213,6 +210,7 @@ const berkasFisikUrl = ref('');
 const beritaAcaraUrl = ref('');
 const isCurrentTurn = ref(false);
 const daftarIsi = ref<any[]>([]);
+const daftarIsiNaskah = ref<any[]>([]);
 const beritaAcaraData = ref<any>({});
 const checklistBerkasFisik = ref(false);
 const checklistBeritaAcara = ref(false);
@@ -223,9 +221,12 @@ const { apiGet } = useApi();
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
-    daftarIsi.value = res?.data?.daftarBerkas ?? [];
+    const data = res?.data?.data ?? res?.data ?? res;
+    daftarIsi.value = Array.isArray(data?.daftarBerkas) ? data.daftarBerkas : [];
+    daftarIsiNaskah.value = Array.isArray(data?.daftarIsi) ? data.daftarIsi : [];
   } catch {
     daftarIsi.value = [];
+    daftarIsiNaskah.value = [];
   }
 };
 const loadBeritaAcaraData = async () => {
@@ -309,27 +310,6 @@ const items = computed(() => [
   { label: 'Pemindahan', to: '/maintenance/verifikasi-usulan' },
   { label: usulan.value?.nomorUsulan ?? 'Detail', to: `/maintenance/verifikasi-usulan/${route.params.id}` },
 ]);
-
-const showBeritaAcara = computed(() => {
-  if (!usulan.value) return false;
-  return [
-    'MENUNGGU_VERIFIKASI_TERAKHIR',
-    'DISETUJUI_ATASAN',
-    'DISETUJUI_VERIFIKASI_TERAKHIR',
-    'USUL_PINDAH_DIKIRIM',
-    'SIAPKAN_BERKAS_FISIK',
-    'DIKIRIM',
-    'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
-    'BERKAS_FISIK_SESUAI',
-    'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
-    'DISETUJUI_PERSETUJUAN_TU',
-    'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
-    'DISETUJUI_PERSETUJUAN_TERAKHIR_TU',
-    'ARSIP_INAKTIF_DITERIMA',
-    'PENATAAN_ARSIP_INAKTIF',
-    'SELESAI',
-  ].includes(usulan.value.status);
-});
 
 /** Riwayat aktor yang terlibat dalam usulan. */
 const riwayatList = computed(() => {

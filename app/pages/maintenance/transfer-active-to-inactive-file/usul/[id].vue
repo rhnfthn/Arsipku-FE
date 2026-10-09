@@ -31,9 +31,20 @@
         <TransferDetailCard
           v-if="item"
           :transfer="item"
-          :daftar-berkas="daftarIsi"
+          :daftar-berkas="daftarBerkasRows"
+          :daftar-isi="daftarIsiRows"
           :collapsible="true"
           :show-header-status="false"
+          :show-information-card="true"
+          information-layout="usul"
+          berkas-layout="usul"
+          :show-bac-status="true"
+          :show-approval-levels="true"
+          :show-bac-signer="true"
+          :show-bac-tembusan="true"
+          :show-tu-approval-levels="true"
+          :show-classification-code="false"
+          :unit-kerja-pihak-pertama="unitKerjaPengusul || item?.divisiName || ''"
         />
 
         <!-- Mode berkas (belum jadi usulan): card Informasi Berkas -->
@@ -67,15 +78,22 @@
         <!-- Timeline ditaruh di bawah seluruh detail, tidak lagi sticky di samping. -->
         <TimelineRiwayat v-if="item" :item="item" />
 
-        <!-- Button: Ajukan ke Atasan -->
-        <button
-          v-if="showForm"
-          @click="isAjukanModalOpen = true"
-          class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center gap-2"
-        >
-          <UIcon name="i-lucide-send" class="w-4 h-4" />
-          Ajukan ke Atasan
-        </button>
+        <!-- Aksi usulan draft -->
+        <div v-if="showForm" class="flex flex-wrap items-center gap-2">
+          <NuxtLink
+            to="/maintenance/transfer-active-to-inactive-file"
+            class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-2"
+          >
+            Batal
+          </NuxtLink>
+          <button
+            @click="isAjukanModalOpen = true"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors inline-flex items-center gap-2"
+          >
+            <UIcon name="i-lucide-send" class="w-4 h-4" />
+            Ajukan ke Atasan
+          </button>
+        </div>
 
         <!-- Info: usulan sudah diajukan (bukan DRAFT) -->
         <div
@@ -138,7 +156,9 @@ const loading = ref(true);
 const item = ref<TransferActiveToInactive | null>(null);
 /** Mode berkas: id = berkas ID (belum jadi usulan) → tampilkan info berkas. */
 const berkas = ref<any | null>(null);
-const daftarIsi = ref<any[]>([]);
+const daftarBerkasRows = ref<any[]>([]);
+const daftarIsiRows = ref<any[]>([]);
+const unitKerjaPengusul = ref('');
 
 const isAjukanModalOpen = ref(false);
 const berkasInfoOpen = ref(true);
@@ -196,7 +216,7 @@ const load = async () => {
       const usulan = await fetchDetail(id);
       if (usulan?.arsipId) {
         item.value = usulan;
-        await loadDaftarIsi(id);
+        await Promise.all([loadDaftarIsi(id), loadUnitKerjaPengusul(id)]);
         return;
       }
     } catch {
@@ -213,6 +233,21 @@ const load = async () => {
   }
 };
 
+const loadUnitKerjaPengusul = async (id: string) => {
+  try {
+    const res: any = await apiGet(
+      `/transfer-active-to-inactive/${id}/berita-acara-data`,
+      {},
+      { skipCache: true },
+    );
+    const data = res?.data?.data ?? res?.data ?? res;
+    unitKerjaPengusul.value = data?.unitKerjaPengusul ?? data?.pengirim?.divisi ?? '';
+  } catch (e) {
+    console.warn('Gagal memuat unit kerja pengusul untuk preview cetak:', e);
+    unitKerjaPengusul.value = '';
+  }
+};
+
 const loadDaftarIsi = async (id: string) => {
   try {
     const res: any = await apiGet(
@@ -220,10 +255,12 @@ const loadDaftarIsi = async (id: string) => {
       {},
       { skipCache: true },
     );
-    daftarIsi.value = res?.data?.daftarBerkas ?? [];
+    daftarBerkasRows.value = res?.data?.daftarBerkas ?? [];
+    daftarIsiRows.value = res?.data?.daftarIsi ?? [];
   } catch (e) {
     console.error('Gagal memuat daftar isi berkas:', e);
-    daftarIsi.value = [];
+    daftarBerkasRows.value = [];
+    daftarIsiRows.value = [];
   }
 };
 
