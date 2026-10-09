@@ -1,4 +1,8 @@
 {
+  "qr_pdf_title": "PDF final naskah",
+  "qr_pdf_unavailable": "PDF belum dapat dibuka",
+  "qr_pdf_error": "Pastikan sesi login masih aktif dan Anda memiliki izin melihat naskah. PDF final mungkin belum tersedia.",
+
   "skipAnimation": "Lewati Animasi",
   "Selamat Datang": "Selamat Datang",
   "Arsipku": "ARSIPKU",
