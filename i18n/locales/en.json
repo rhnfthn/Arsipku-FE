@@ -1,4 +1,8 @@
 {
+  "qr_pdf_title": "Final document PDF",
+  "qr_pdf_unavailable": "PDF cannot be opened",
+  "qr_pdf_error": "Make sure your login session is active and you have permission to view the document. The final PDF may not be available yet.",
+
   "skipAnimation": "Skip Animation",
   "Selamat Datang": "Welcome",
   "Arsipku": "ARSIPKU",
