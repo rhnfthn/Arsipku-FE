@@ -5,12 +5,12 @@
       :disabled="disabled"
       :items="processedItems"
       value-key="value"
+      :filter-fields="['label', 'labelName', 'labelJob']"
       :searchable="true"
       :search-input="{ placeholder: searchPlaceholder }"
       variant="none"
       class="w-full p-0 custom-select-menu"
       :content="{ side: 'bottom', sideOffset: 8, class: 'max-h-[380px]' } as any"
-      :filter-fields="['label']"
       :ui="
         {
           base: 'bg-white dark:bg-gray-900 hover:border-gray-400 dark:hover:border-gray-600 transition-colors w-full',
@@ -19,7 +19,7 @@
           value: 'p-0 w-full',
           viewport: 'max-h-[380px]',
           trigger: { base: 'px-0 py-1 w-full' },
-          item: 'cursor-pointer',
+          item: 'min-h-10 px-2 py-1 cursor-pointer',
           itemWrapper: 'w-full',
           itemLabel: 'w-full',
         } as any
@@ -46,28 +46,28 @@
       <!-- Item dropdown: pola sama dengan TulisInputPenerima (checkbox + nama + jabatan) -->
       <template #item="{ item }">
         <div
-          class="flex items-start gap-3 w-full py-1 overflow-hidden"
+          class="flex items-start gap-2 w-full overflow-hidden"
           :class="{ 'opacity-50 cursor-not-allowed': item.disabled }"
         >
           <UCheckbox
             :model-value="isSelected(item)"
-            class="pointer-events-none shrink-0"
+            class="pointer-events-none shrink-0 mt-0.5"
             :disabled="item.disabled"
             :ui="{ base: 'w-4 h-4' }"
           />
           <div class="flex-1 min-w-0">
             <span
-              class="block text-sm text-left whitespace-normal break-words w-full text-gray-900 dark:text-white"
+              class="block text-sm leading-5 text-left whitespace-normal break-words w-full text-gray-900 dark:text-white"
             >
               {{ item.labelName || item.label }}
             </span>
             <span
               v-if="item.labelJob"
-              class="block text-xs text-left whitespace-normal break-words w-full text-gray-500 dark:text-gray-400 mt-0.5"
+              class="block text-xs leading-4 text-left whitespace-normal break-words w-full text-gray-500 dark:text-gray-400"
             >
               {{ item.labelJob }}
             </span>
-            <span v-if="item.disabled" class="text-xs text-red-500 italic block">
+            <span v-if="item.disabled" class="text-xs leading-4 text-red-500 italic block">
               {{ disabledMessage }}
             </span>
           </div>
