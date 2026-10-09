@@ -39,7 +39,6 @@ watch(hasConfiguredSdiAccess, (allowed, previous) => {
     navigateTo('/beranda');
 });
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipientGroups } = useRecipients();
 const { getRecipients, sendSDI, saveDraft, updateDraft, sendDraft, generatePdf, getSDIDetail } = useSdi();
 const { renderedPositionLabel, renderedActorName } = useDelegationMode();
 
@@ -353,7 +352,7 @@ onMounted(async () => {
       return 10;
     };
 
-    tertujuItems.value = rawRecipients
+    const allMapped = rawRecipients
       .sort((a: any, b: any) => getHierarchyRank(a) - getHierarchyRank(b))
       .map((r: any) => ({
         label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
@@ -362,10 +361,7 @@ onMounted(async () => {
         value: String(r.position || r.position_id || r.id),
         raw: r,
       }));
-    tembusanItems.value = tertujuItems.value;
-
-    const groups = await getRecipientGroups("SDI");
-    recipientGroups.value = groups.filter((g: any) => g.aktif);
+    ({ tertuju: tertujuItems.value, tembusan: tembusanItems.value } = splitSdiRecipientItems(allMapped));
   } catch {
     klasifikasiStatus.value = "error";
   }
@@ -377,6 +373,7 @@ onMounted(async () => {
 
       if (res.success && res.data) {
         const d = res.data;
+        recipientGroups.value = [...(d.penerima_grup || []), ...(d.tembusan_grup || [])];
 
         subject.value = d.perihal || "";
         lampiranText.value = d.lampiran || "";
@@ -399,9 +396,9 @@ onMounted(async () => {
             });
           });
 
-          // Kumpulkan persnum yang diwakili grup (via tertujuItems yang ada di list)
+          // Pulihkan grup dari daftar lengkap, termasuk pejabat khusus tembusan.
           const grupPersnums = new Set<string>();
-          tertujuItems.value.forEach((item: any) => {
+          tembusanItems.value.forEach((item: any) => {
             const posId = String(item.raw?.position || '');
             if (grupPositionIds.has(posId)) {
               const persnum = String(item.raw?.persnum_person || '');
@@ -409,9 +406,9 @@ onMounted(async () => {
             }
           });
 
-          // Kumpulkan SEMUA persnum yang ada di tertujuItems (untuk deteksi individu sejati)
+          // Kumpulkan semua persnum pada daftar penerima SDI.
           const allKnownPersnums = new Set<string>();
-          tertujuItems.value.forEach((item: any) => {
+          tembusanItems.value.forEach((item: any) => {
             const persnum = String(item.raw?.persnum_person || '');
             if (persnum) allKnownPersnums.add(persnum);
           });
@@ -420,13 +417,13 @@ onMounted(async () => {
             .filter((item: any) => {
               const pn = String(item.persnum || '');
               if (!allKnownPersnums.has(pn) && grupPositionIds.size > 0) return false;
-              // Buang jika tidak dikenal di tertujuItems DAN ada grup aktif
+              // Buang jika tidak dikenal di daftar penerima DAN ada grup aktif
               // (berarti dia anggota grup yang tidak visible untuk user ini)
               if (!allKnownPersnums.has(pn) && grupPositionIds.size > 0) return false;
               return true;
             })
             .map((item: any) => {
-              const found = tertujuItems.value.find(
+              const found = tembusanItems.value.find(
                 (m: any) => String(m.raw?.persnum_person) === String(item.persnum)
               );
               return found || {
@@ -505,10 +502,10 @@ onMounted(async () => {
         <TulisInputTanggal v-model="date" :label="$t('f_tanggal_surat')" />
 
         <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" :label="$t('tertuju')" :placeholder="$t('sdi_pilih_tertuju')" :items="tertujuItems"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" :disabled-message="$t('sdi_sudah_dipilih')" />
+          :exclude-items="excludeTertujuList" :disabled-message="$t('sdi_sudah_dipilih')" />
 
         <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" :label="$t('f_tembusan')" :placeholder="$t('sdi_pilih_tembusan')"
-          :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
+          :items="tembusanItems" :exclude-items="excludeTembusanList"
           :disabled-message="$t('sdi_sudah_dipilih')" lock-mandatory-cc />
 
         <TulisInputSifat v-model="selectedSifat" />

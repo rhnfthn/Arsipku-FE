@@ -8,6 +8,9 @@
 
     <PageHeader :title="$t('buat_naskah')" :items="breadcrumbs" />
 
+    <UAlert v-if="draftLoadError" color="error" variant="soft"
+      :title="$t('nd_gagal_memuat_draft')" :description="draftLoadError" class="mb-4" />
+
     <UCard
       variant="soft"
       :ui="{
@@ -718,7 +721,7 @@ import type { Verifikator } from '~/types/digsig';
 definePageMeta({ layout: 'default', middleware: ['auth'] });
 
 const { t } = useI18n();
-const { canAccessPage } = useFeatureAccess();
+const { canAccessPage, canEditNaskahLainnyaDraft } = useFeatureAccess();
 const { getKlasifikasi } = useKlasifikasi();
 const { getConfigDigsig } = useDigsig();
 const { user, getProfile, hasPermission, refreshPermissions } = useAuth();
@@ -748,13 +751,20 @@ const { verifikatorList, fetchVerifikator } = useNaskahDinas();
 const isRevisi = computed(() => detail.value?.tahapan === 'perlu_perbaikan');
 const isPhysicalMetadataMode = computed(() => route.query.mode === 'data-sistem');
 const isPhysicalSigning = computed(() => form.value.signOption === 'ttd_basah');
+const draftLoadError = ref('');
+const draftFormReady = computed(() =>
+  !route.query.draft_id || (Boolean(createdId.value) && !isRestoringDraft.value && !draftLoadError.value)
+);
 const canPreview = computed(() =>
-  hasPermission('utama.tulis.naskah-lainnya.button-pratinjau', 'create')
+  draftFormReady.value && (canEditNaskahLainnyaDraft() ||
+    hasPermission('utama.tulis.naskah-lainnya.button-pratinjau', 'create'))
 );
 const canSaveDraft = computed(() =>
-  hasPermission('utama.tulis.naskah-lainnya.button-simpan-draft', 'create')
+  draftFormReady.value && (route.query.draft_id && !isPhysicalMetadataMode.value
+    ? canEditNaskahLainnyaDraft()
+    : hasPermission('utama.tulis.naskah-lainnya.button-simpan-draft', 'create'))
 );
-const canSend = computed(() => hasPermission('utama.tulis.naskah-lainnya.button-kirim', 'create'));
+const canSend = computed(() => draftFormReady.value && hasPermission('utama.tulis.naskah-lainnya.button-kirim', 'create'));
 
 const breadcrumbs = computed(() => [
   { label: t('beranda'), to: '/beranda' },
@@ -1164,6 +1174,10 @@ onMounted(async () => {
   // Ambil permission terbaru agar perubahan role langsung memengaruhi tombol
   // tanpa menunggu token/session lama.
   await refreshPermissions();
+  if (!canAccessPage()) {
+    isLoadingData.value = false;
+    return;
+  }
 
   try {
     klasifikasiStatus.value = 'loading';
@@ -1246,6 +1260,7 @@ onMounted(async () => {
       isRestoringDraft.value = true;
       await fetchDetail(draftId);
       const d = detail.value as NaskahDetail | null;
+      if (!d) throw new Error(t('nd_gagal_memuat_draft'));
       if (d) {
         createdId.value = d.id;
         form.value.jenis = d.jenis as JenisNaskah;
@@ -1356,8 +1371,9 @@ onMounted(async () => {
           }
         }
       }
-    } catch {
-      // abaikan — form kosong jika draft tidak ditemukan
+    } catch (error: any) {
+      draftLoadError.value = String(error?.response?.data?.message || error?.message || t('nd_gagal_memuat_draft'));
+      useToast().add({ title: t('nd_gagal_memuat_draft'), description: draftLoadError.value, color: 'error' });
     } finally {
       isRestoringDraft.value = false;
     }
@@ -1621,6 +1637,7 @@ async function handleSaveDraft() {
 }
 
 async function confirmSaveDraft() {
+  if (!canSaveDraft.value) return;
   showDraftConfirm.value = false;
   if (isPhysicalMetadataMode.value) {
     const signers = (form.value.penandatanganList ?? []).map((signer) => ({
@@ -1693,6 +1710,7 @@ function selectSignOption(option: 'qr_only' | 'ttd_basah') {
 }
 
 const doKirim = async () => {
+  if (!canSend.value) return;
   if (!validateRequiredFieldsForSend()) return;
   saving.value = true;
   try {

@@ -33,10 +33,10 @@
         <TulisInputTanggal v-model="date" label="Tanggal Surat" />
 
         <TulisInputPenerima hide-gm-abbreviation v-model="selectedTertuju" label="Tertuju" placeholder="Pilih Tertuju" :items="tertujuItems"
-          :groups="recipientGroups" :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih di Tembusan" />
+          :exclude-items="excludeTertujuList" disabled-message="Sudah dipilih di Tembusan" />
 
         <TulisInputPenerima hide-gm-abbreviation v-model="selectedTembusan" recipient-type="TEMBUSAN" label="Tembusan" placeholder="Pilih Tembusan"
-          :items="tembusanItems" :groups="recipientGroups" :exclude-items="excludeTembusanList"
+          :items="tembusanItems" :exclude-items="excludeTembusanList"
           disabled-message="Sudah dipilih di Tertuju" lock-mandatory-cc />
 
         <TulisInputSifat v-model="selectedSifat" />
@@ -217,7 +217,6 @@ import { Alert } from "@/composables/useAlert";
 
 import { useDigSign } from "@/composables/useDigSign";
 import { useInbox } from "@/composables/useInbox";
-import { useRecipients } from "@/composables/useRecipients";
 import { useKonsep } from "@/composables/useKonsep";
 import { useMandatoryRoutingCc } from "~/composables/useMandatoryRoutingCc";
 
@@ -231,8 +230,7 @@ const alertState = useAlertState();
 // Composables Setup
 const { user, getProfile } = useAuth();
 const { getKlasifikasi } = useKlasifikasi();
-const { getRecipients, getRecipientGroups } = useRecipients();
-const { generatePdf } = useSdi();
+const { getRecipients, generatePdf } = useSdi();
 const { getKtp } = useDigSign();
 const { fetchKonsepDetail } = useInbox();
 const { finalizeKonsep } = useKonsep();
@@ -353,7 +351,7 @@ const mapApiToUI = (list: any[]) => {
   if (!list || !Array.isArray(list)) return [];
   return list.map((item) => {
     const posId = String(item.position_id || item.position || item.value || item.id || item);
-    const master = tertujuItems.value.find((m: any) => m.value === posId);
+    const master = tembusanItems.value.find((m: any) => m.value === posId);
     if (master) return master;
 
     const posText = item.position_text || item.positionText || item.labelJob || item.label || posId;
@@ -370,8 +368,8 @@ const mapGroupsToUI = (grupList: any[]) => {
   if (!grupList || !Array.isArray(grupList)) return [];
   return grupList.map(g => {
     const groupId = String(g.group_id || g.id || g.value);
-    const master = recipientGroups.value.find(mg => String(mg.id) === groupId);
-    return master ? { label: master.nama, labelJob: master.nama, value: `GROUP_${master.id}`, isGroup: true, raw: master } : null;
+    const master = recipientGroups.value.find(mg => String(mg.id) === groupId) || g;
+    return master ? { label: master.nama, labelJob: master.nama, value: `GROUP_${groupId}`, isGroup: true, raw: master } : null;
   }).filter(Boolean);
 };
 
@@ -567,25 +565,23 @@ onMounted(async () => {
 
   try {
     klasifikasiStatus.value = "loading";
-    const [klasRes, recRes, groupsRes] = await Promise.all([
+    const [klasRes, recRes] = await Promise.all([
       getKlasifikasi(),
       getRecipients(user.value?.position),
-      getRecipientGroups("SDI").catch(() => [])
     ]);
 
     // Ekstrak langsung jika data terbungkus dalam properti .data
     klasifikasiList.value = Array.isArray(klasRes) ? klasRes : ((klasRes as any)?.data || (klasRes as any)?.klasifikasi || []);
-    recipientGroups.value = Array.isArray(groupsRes) ? groupsRes.filter((g: any) => g.aktif) : [];
 
     const rawData = recRes.recipients || (recRes as any).data || [];
-    tertujuItems.value = rawData.map((r: any) => ({
+    const allMapped = rawData.map((r: any) => ({
       label: `${r.persnum_person_text || r.persnum || "empty"} - (${r.position_abbreviation || r.abbreviation}) ${r.position_text || r.positionText}`,
       labelJob: formatDelegatedPositionText(r.position_text || r.positionText, r),
       organization: r.organization_text,
       value: String(r.position || r.position_id || r.id),
       raw: r,
     }));
-    tembusanItems.value = tertujuItems.value;
+    ({ tertuju: tertujuItems.value, tembusan: tembusanItems.value } = splitSdiRecipientItems(allMapped));
     klasifikasiStatus.value = "success";
   } catch {
     klasifikasiStatus.value = "error";
@@ -666,8 +662,8 @@ onMounted(async () => {
             })
             .map((item: any) => {
               const posId = String(item.position_id || item.position || '');
-              // Cari di tertujuItems berdasarkan value (= position_id)
-              const found = tertujuItems.value.find((m: any) => String(m.value) === posId);
+              // Pulihkan dari daftar lengkap, termasuk pejabat khusus tembusan.
+              const found = tembusanItems.value.find((m: any) => String(m.value) === posId);
               return found || {
                 label: `${item.nama || ''} - (${item.abbreviation || ''}) ${item.position_text || ''}`,
                 labelJob: formatDelegatedPositionText(item.position_text || '', item),
