@@ -143,19 +143,13 @@
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ row.nasibAkhir ?? '-' }}</td>
                 <td class="break-words px-1.5 py-2 text-gray-600 dark:text-gray-300">
                   <button
-                    v-if="row.transfer.status === 'SELESAI'"
+                    v-if="row.transfer.beritaAcaraNomor"
                     type="button"
-                    class="text-primary hover:underline dark:text-primary-400"
-                    :title="`Preview Lampiran/${row.transfer.nomorUsulan}`"
+                    class="text-left text-primary hover:underline dark:text-primary-400"
+                    :title="`Preview PDF gabungan Berita Acara, Daftar Berkas, dan Daftar Isi — ${row.transfer.nomorUsulan}`"
                     @click.stop="openPenataanLampiran(row.transfer)"
                   >Lampiran/{{ row.transfer.nomorUsulan }}</button>
-                  <button
-                    v-else-if="row.transfer.beritaAcaraNomor"
-                    type="button"
-                    class="text-primary hover:underline dark:text-primary-400"
-                    @click.stop="openBacPreview(String(row.transfer.id), row.transfer.beritaAcaraNomor)"
-                  >{{ row.transfer.beritaAcaraNomor }}</button>
-                  <span v-else>-</span>
+                  <span v-else class="text-gray-400">-</span>
                 </td>
                 <td class="px-1.5 py-2 text-center">
                   <span :class="statusBadgeClass(row.status, row.tanggalRetensiInaktifBerakhir, row.penyusutanSudahDiajukan)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(row.status, row.tanggalRetensiInaktifBerakhir, row.penyusutanSudahDiajukan) }}</span>

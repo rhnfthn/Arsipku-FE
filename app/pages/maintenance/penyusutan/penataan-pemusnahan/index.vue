@@ -7,8 +7,9 @@
         <PageHeader :items="breadcrumbs" />
       </div>
 
-      <!-- Filter & Search -->
-      <div class="flex flex-wrap items-center gap-3 mb-4">
+      <!-- Filter, Search & Table -->
+      <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800">
+      <div class="flex flex-wrap items-center gap-3 border-b border-gray-300 p-4 dark:border-gray-700">
         <div ref="pageSizeRef" class="relative shrink-0 z-30">
           <button
             @click="pageSizeOpen = !pageSizeOpen"
@@ -19,7 +20,7 @@
           </button>
           <div v-if="pageSizeOpen" class="absolute top-full left-0 mt-1.5 z-50 min-w-[80px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
             <button
-              v-for="size in [10, 30, 50]"
+              v-for="size in [10, 25, 50]"
               :key="size"
               @click="onLimitChange(size); pageSizeOpen = false"
               class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -93,60 +94,62 @@
       </div>
 
       <!-- Table -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+      <div>
+          <table class="w-full table-fixed text-xs">
             <thead class="bg-[#457fb6] text-white">
               <tr>
-                <th class="px-3 py-3 text-center font-semibold">Nama Berkas</th>
-                <th class="px-3 py-3 text-center font-semibold">Kode Berkas / No Usulan</th>
-                <th class="px-3 py-3 text-center font-semibold">Klasifikasi</th>
-                <th class="px-3 py-3 text-center font-semibold">Jenis</th>
-                <th class="px-3 py-3 text-center font-semibold">Status</th>
-                <th class="px-3 py-3 text-center font-semibold">Aksi</th>
+                <th class="w-[4%] px-1.5 py-2 text-center font-semibold">No</th>
+                <th class="w-[12%] px-1.5 py-2 text-center font-semibold">Kode Klasifikasi</th>
+                <th class="w-[18%] px-1.5 py-2 text-center font-semibold">Uraian Informasi Berkas</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Kurun Waktu</th>
+                <th class="w-[6%] px-1.5 py-2 text-center font-semibold">Jumlah Berkas</th>
+                <th class="w-[9%] px-1.5 py-2 text-center font-semibold">Lokasi Simpan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Klasifikasi Keamanan</th>
+                <th class="w-[8%] px-1.5 py-2 text-center font-semibold">Nasib Akhir</th>
+                <th class="w-[10%] px-1.5 py-2 text-center font-semibold">Keterangan</th>
+                <th class="w-[10%] px-1.5 py-2 text-center font-semibold">Status</th>
+                <th class="w-[6%] px-1.5 py-2 text-center font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="6" class="px-3 py-10 text-center">
+                <td colspan="11" class="px-3 py-10 text-center">
                   <UIcon name="i-lucide-loader-2" class="w-6 h-6 text-primary animate-spin mx-auto" />
                 </td>
               </tr>
               <tr v-else-if="filteredList.length === 0">
-                <td colspan="6" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="11" class="px-3 py-10 text-center text-gray-500 dark:text-gray-400">
                   Belum ada arsip untuk penataan/pemusnahan.
                 </td>
               </tr>
               <tr
-                v-for="item in paginatedList"
+                v-for="(item, index) in paginatedList"
                 :key="item.id"
                 class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
                 :class="rowClass(item)"
               >
-                <td class="px-3 py-3">{{ item.nama_berkas }}</td>
-                <td class="px-3 py-3">
-                  <div class="font-medium text-gray-800 dark:text-white">{{ item.kode_berkas }}</div>
-                  <div v-if="item.no_usulan" class="text-[11px] text-gray-400">{{ item.no_usulan }}</div>
-                </td>
-                <td class="px-3 py-3">
+                <td class="break-words px-1.5 py-2 text-center text-gray-700 dark:text-gray-200">{{ (page - 1) * limit + index + 1 }}</td>
+                <td class="break-words px-1.5 py-2 text-center">
                   <div class="font-medium text-gray-800 dark:text-white">{{ item.klasifikasiText || item.klasifikasi_text || item.klasifikasi || '-' }}</div>
-                  <div v-if="item.klasifikasi" class="text-[11px] text-gray-400">{{ item.klasifikasi }}</div>
+                  <div class="mt-0.5 text-[10px] text-gray-400">{{ item._archive?.klasifikasiKode || item.klasifikasi || '-' }}</div>
                 </td>
-                <td class="px-3 py-3">
-                  <span :class="item.jenis_penyusutan === 'permanen' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'" class="px-2 py-0.5 rounded-full text-[11px] font-medium">
-                    {{ item.jenis_penyusutan === 'permanen' ? 'Permanen' : 'Musnah' }}
-                  </span>
+                <td class="break-words px-1.5 py-2 text-gray-700 dark:text-gray-200">{{ item._archive?.uraianInformasi || item.nama_berkas || '-' }}</td>
+                <td class="whitespace-nowrap px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.kurunWaktu || item.kurun_waktu || item._archive?.kurunWaktu || '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.jumlahBerkas ?? item.jumlah_berkas ?? item._archive?.jumlahBerkas ?? item.daftarArsip?.length ?? item.daftar_arsip?.length ?? 1 }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item._archive?.lokasiSimpan || item._transfer?.lokasiPenataan || item.lokasiSimpan || item.lokasi_simpan || '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.klasifikasiKeamanan || item.klasifikasi_keamanan || item._archive?.klasifikasiKeamanan || '-' }}</td>
+                <td class="whitespace-nowrap px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.nasibAkhir || item._archive?.nasibAkhir || (item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen') }}</td>
+                <td class="break-words px-1.5 py-2 text-center text-primary dark:text-primary-400">{{ item.no_usulan ? `Lampiran/${item.no_usulan}` : '-' }}</td>
+                <td class="px-1.5 py-2 text-center">
+                  <span :class="statusBadgeClass(item.status)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(item.status) }}</span>
                 </td>
-                <td class="px-3 py-3">
-                  <span :class="statusBadgeClass(item.status)" class="text-[11px]">{{ statusLabel(item.status) }}</span>
-                </td>
-                <td class="px-3 py-3 text-center">
+                <td class="px-1.5 py-2 text-center">
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
                       v-if="item.status === 'selesai'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
                       @click="markViewed(item)"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-200 transition-colors"
+                      class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Detail"
                     >
                       <UIcon name="i-lucide-eye" class="w-4 h-4" />
@@ -155,7 +158,7 @@
                       v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
                       @click="markViewed(item)"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Penataan"
                     >
                       <UIcon name="i-lucide-archive" class="w-4 h-4" />
@@ -164,7 +167,7 @@
                       v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'"
                       :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
                       @click="markViewed(item)"
-                      class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                      class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Pemusnahan"
                     >
                       <UIcon name="i-lucide-trash-2" class="w-4 h-4" />
@@ -176,13 +179,13 @@
           </table>
         </div>
 
-        <div v-if="total > 0">
+        <div v-if="total > 0" class="border-t border-gray-200 dark:border-gray-700">
           <Pagination
             :current-page="page"
             :total-pages="totalPages"
             :total-items="total"
             :rows-per-page="limit"
-            :rows-options="[10, 20, 50]"
+            :rows-options="[]"
             @update:page="onPageChange"
             @update:rows-per-page="onLimitChange"
           />
@@ -205,10 +208,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePenyusutan } from '~/composables/usePenyusutan'
+import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 
 definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
 
 const { penataanList, loadPenataanList } = usePenyusutan()
+const { fetchPenataanList } = useTuVerifikasi()
 const { rowClass, markViewed } = useViewedRows('penyusutan-penataan-pemusnahan')
 
 const breadcrumbs = computed(() => [
@@ -229,6 +234,52 @@ const klasifikasiOpen = ref(false)
 const pageSizeRef = ref<HTMLElement | null>(null)
 const statusRef = ref<HTMLElement | null>(null)
 const klasifikasiRef = ref<HTMLElement | null>(null)
+const archiveMetadataById = ref(new Map<string, { archive: any; transfer: any }>())
+
+const loadArchiveMetadata = async () => {
+  try {
+    const metadata = new Map<string, { archive: any; transfer: any }>()
+    let currentPage = 1
+    let totalPages = 1
+
+    do {
+      const response: any = await fetchPenataanList({ page: currentPage, limit: 100 })
+      const payload = response?.data ?? response
+      const transfers = Array.isArray(payload?.data) ? payload.data : []
+
+      for (const transfer of transfers) {
+        for (const archive of transfer.arsipRows ?? []) {
+          if (archive?.id != null) metadata.set(String(archive.id), { archive, transfer })
+        }
+      }
+
+      totalPages = Math.max(1, Number(payload?.meta?.totalPages) || 1)
+      currentPage += 1
+    } while (currentPage <= totalPages)
+
+    archiveMetadataById.value = metadata
+  } catch (error) {
+    // Detail penyusutan tetap dapat ditampilkan jika metadata arsip tidak tersedia.
+    console.warn('Metadata arsip penataan tidak dapat dimuat:', error)
+  }
+}
+
+const enrichedPenataanList = computed(() => penataanList.value.map((item: any) => {
+  const archiveId = item.berkasId ?? item.berkas_id
+  const metadata = archiveId != null ? archiveMetadataById.value.get(String(archiveId)) : undefined
+  if (!metadata) return item
+
+  return {
+    ...item,
+    _archive: metadata.archive,
+    _transfer: metadata.transfer,
+    klasifikasiText: item.klasifikasiText || item.klasifikasi_text || metadata.archive.klasifikasi,
+    kurunWaktu: item.kurunWaktu || item.kurun_waktu || metadata.archive.kurunWaktu,
+    jumlahBerkas: item.jumlahBerkas ?? item.jumlah_berkas ?? metadata.archive.jumlahBerkas,
+    klasifikasiKeamanan: item.klasifikasiKeamanan || item.klasifikasi_keamanan || metadata.archive.klasifikasiKeamanan,
+    nasibAkhir: item.nasibAkhir || metadata.archive.nasibAkhir,
+  }
+}))
 
 const statusOptions = [
   { value: '', label: 'Semua Status' },
@@ -239,7 +290,7 @@ const statusOptions = [
 const klasifikasiList = computed(() => {
   const seen = new Set<string>()
   const result: string[] = []
-  for (const a of penataanList.value) {
+  for (const a of enrichedPenataanList.value) {
     if (a.klasifikasi && !seen.has(a.klasifikasi)) {
       seen.add(a.klasifikasi)
       result.push(a.klasifikasi)
@@ -254,7 +305,7 @@ const klasifikasiLabel = computed(() => {
 })
 
 const filteredList = computed(() => {
-  let result = penataanList.value.filter((a) => a.status === 'diterima' || a.status === 'selesai')
+  let result = enrichedPenataanList.value.filter((a) => a.status === 'diterima' || a.status === 'selesai')
   if (searchInput.value) {
     const q = searchInput.value.toLowerCase()
     result = result.filter((a) =>
@@ -377,7 +428,7 @@ const onClickOutside = (e: MouseEvent) => {
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   isLoading.value = true
-  loadPenataanList().finally(() => { isLoading.value = false })
+  Promise.all([loadPenataanList(), loadArchiveMetadata()]).finally(() => { isLoading.value = false })
 })
 
 onBeforeUnmount(() => {

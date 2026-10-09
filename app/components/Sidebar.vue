@@ -396,6 +396,39 @@ const { fetchFolders, fetchVerificationFolders } = useSdeMasal();
 const { apiGet } = useApi();
 const { bsreAlert } = useDigsig();
 let kelolaNotificationRefreshTimer = null;
+let bacSigningCountInterval = null;
+const bacSigningWaitingCount = ref(0);
+
+const fetchBacSigningWaitingCount = async () => {
+  // Backend membatasi endpoint ini untuk akun asli EVP ke atas. Hindari
+  // polling dari user yang sekadar punya permission menu atau sedang memakai
+  // profile delegasi agar tidak menghasilkan request 403.
+  if (
+    !hasPermission('pemeliharaan.penandatanganan-bac', 'read') ||
+    !hasEvpOrAboveAccess(user.value)
+  ) {
+    bacSigningWaitingCount.value = 0;
+    return;
+  }
+
+  try {
+    const response = await apiGet(
+      '/transfer-active-to-inactive/signing-list',
+      {},
+      { skipCache: true },
+    );
+    const rows = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+        ? response
+        : [];
+    bacSigningWaitingCount.value = rows.filter(
+      (row) => row.bacStatus === 'MENUNGGU_TTD',
+    ).length;
+  } catch (error) {
+    console.warn('Gagal memperbarui badge penandatanganan BAC:', error);
+  }
+};
 const {
   labels,
   labelCounts,
@@ -648,6 +681,7 @@ watch(
       // Cek apakah user adalah atasan managerial di penyusutan
       checkAtasanManagerialPenyusutan();
       fetchRoutingCapabilities().catch(() => {});
+      fetchBacSigningWaitingCount().catch(() => {});
     }
   },
   { immediate: true }
@@ -657,7 +691,14 @@ watch(
 watch(
   () => (process.client ? localStorage.getItem('token') : null),
   (token) => {
-    if (!token) rtDestroy();
+    if (!token) {
+      rtDestroy();
+      bacSigningWaitingCount.value = 0;
+      if (bacSigningCountInterval) {
+        clearInterval(bacSigningCountInterval);
+        bacSigningCountInterval = null;
+      }
+    }
   }
 );
 
@@ -695,6 +736,15 @@ onMounted(async () => {
     }
     // Fetch Kelola counts untuk badge menu Kelola
     fetchKelolaCounts().catch(() => {});
+    if (
+      hasPermission('pemeliharaan.penandatanganan-bac', 'read') &&
+      hasEvpOrAboveAccess(user.value)
+    ) {
+      fetchBacSigningWaitingCount().catch(() => {});
+      bacSigningCountInterval = setInterval(() => {
+        fetchBacSigningWaitingCount().catch(() => {});
+      }, 30_000);
+    }
     // Sinkronkan badge SDE Massal dengan folder yang benar-benar menunggu aksi.
     await fetchNotifications(1, 100, true);
     await refreshSdeMasalCounts();
@@ -706,6 +756,10 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (bacSigningCountInterval) {
+    clearInterval(bacSigningCountInterval);
+    bacSigningCountInterval = null;
+  }
   if (kelolaNotificationRefreshTimer) {
     clearTimeout(kelolaNotificationRefreshTimer);
     kelolaNotificationRefreshTimer = null;
@@ -816,6 +870,9 @@ watch(sdeMasalUnreadCount, async () => {
 watch(
   () => route.path,
   async (path) => {
+    if (path.startsWith('/maintenance')) {
+      fetchBacSigningWaitingCount().catch(() => {});
+    }
     if (path === '/korespondensi/sde-masal/verifikasi') {
       await fetchNotifications(1, 100, true);
     }
@@ -1580,6 +1637,24 @@ const isManagerialPosition = computed(() => {
   return false;
 });
 
+// Persetujuan penutupan berkas hanya untuk jabatan AVP ke atas.
+// Gunakan tag organisasi dan nama/singkatan jabatan karena profil organisasi
+// tidak selalu mengisi keduanya secara konsisten.
+const isAvpOrAbovePosition = computed(() => {
+  const positionStatus = String(activePositionStatus.value ?? '').toUpperCase();
+  if (['SE', 'PS', 'VI', 'EXT'].includes(positionStatus)) return false;
+
+  const bodTag = String(user.value?.bodTag ?? '').trim().toUpperCase();
+  if (['BOD', 'BOD-1', 'BOD-2', 'BOD-3'].includes(bodTag)) return true;
+
+  const positionText = String(user.value?.positionText ?? '').toUpperCase();
+  const abbreviation = String(user.value?.abbreviation ?? '').toUpperCase();
+  return (
+    /\b(AVP|VP|EVP|DIREKTUR|DIRUT|DIRECTOR|CEO|PRESIDEN|PRESIDENT)\b/.test(positionText) ||
+    ['AVP', 'VP', 'EVP', 'BOD', 'DIRUT'].includes(abbreviation)
+  );
+});
+
 /** Penandatangan BAC hanya untuk pejabat EVP dan jenjang di atasnya. */
 const isEvpOrAbovePosition = computed(() => {
   return hasEvpOrAboveAccess(user.value);
@@ -1805,6 +1880,7 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
         icon: 'i-lucide-file-check',
         permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+        showIfCanPersetujuan: true,
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
@@ -1813,6 +1889,7 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
         icon: 'i-lucide-pen-tool',
         permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
         showIfEvpOrAbove: true,
+        badge: bacSigningWaitingCount.value > 0 ? bacSigningWaitingCount.value : null,
       },
       {
         label: 'Tembusan BAC',
@@ -1893,6 +1970,7 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         to: '/kelola/pemeliharaan/persetujuan-pemberkasan',
         icon: 'i-lucide-file-check',
         permission: { resource: 'pemeliharaan.verifikasi', action: 'read' },
+        showIfCanPersetujuan: true,
         badge: rtArsipPersetujuanCount.value > 0 ? rtArsipPersetujuanCount.value : null,
       },
       {
@@ -1901,6 +1979,7 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
         icon: 'i-lucide-pen-tool',
         permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
         showIfEvpOrAbove: true,
+        badge: bacSigningWaitingCount.value > 0 ? bacSigningWaitingCount.value : null,
       },
       {
         label: 'Tembusan BAC',
@@ -2042,6 +2121,7 @@ const adminMenuKelola = computed(() => {
       icon: 'i-lucide-pen-tool',
       permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
       showIfEvpOrAbove: true,
+      badge: bacSigningWaitingCount.value > 0 ? bacSigningWaitingCount.value : null,
     },
     {
       label: 'Tembusan BAC',
@@ -2232,6 +2312,7 @@ const userMenuKelola = computed(() => {
       icon: 'i-lucide-pen-tool',
       permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
       showIfEvpOrAbove: true,
+      badge: bacSigningWaitingCount.value > 0 ? bacSigningWaitingCount.value : null,
     },
     {
       label: 'Tembusan BAC',
@@ -2498,10 +2579,8 @@ const filterMenuByPermission = (items) => {
       return null;
     }
 
-    // Cek showIfCanPersetujuan — tampilkan HANYA jika user adalah atasan
-    // managerial (bisa memberikan persetujuan pemberkasan). Unit Dokumen /
-    // non-managerial TIDAK lihat menu "Persetujuan".
-    if (cloned.showIfCanPersetujuan && !canPersetujuan.value && !isSuperadmin.value) {
+    // Persetujuan Pemberkasan hanya tampil untuk jabatan AVP sampai Direksi.
+    if (cloned.showIfCanPersetujuan && !isAvpOrAbovePosition.value) {
       return null;
     }
 

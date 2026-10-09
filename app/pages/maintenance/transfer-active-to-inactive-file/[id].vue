@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader
-        :title="isBacSignerView ? 'Preview Berita Acara' : `Detail Usulan ${item?.nomorUsulan ?? ''}`"
+        :title="isPenandatangananRoute ? 'Detail Penandatanganan BAC' : isBacSignerView ? 'Preview Berita Acara' : `Detail Usulan ${item?.nomorUsulan ?? ''}`"
         :items="items"
       />
       <NuxtLink
@@ -32,12 +32,34 @@
 
     <!-- Content -->
     <template v-else-if="item">
-      <div v-if="!isBacSignerView" class="mx-auto w-full max-w-none space-y-5">
+      <!-- Urutan baku lintas status: Informasi Usulan, Daftar Berkas, Daftar Isi,
+           Atasan, Penandatangan BAC, Tembusan BAC, Timeline, lalu status/aksi. -->
+      <div v-if="!isBacSignerView || isPenandatangananRoute" class="mx-auto w-full max-w-none space-y-5">
           <TransferDetailCard
             :transfer="item"
-            :daftar-berkas="daftarIsi"
+            :daftar-berkas="daftarBerkasRows"
+            :daftar-isi="daftarIsiRows"
             :collapsible="true"
+            :fit-berkas-table="isPenandatangananRoute"
+            :show-header-status="false"
+            :show-information-card="true"
+            information-layout="usul"
+            berkas-layout="usul"
+            :show-bac-status="true"
+            :status-context="isPenandatangananRoute ? 'bac-signing' : 'secretary-division'"
+            :signer-signed-at="isPenandatangananRoute ? bacSignerSignedAt : undefined"
+            :information-date-label="isPenandatangananRoute ? 'Tanggal Diajukan ke TU' : undefined"
+            :information-date-value="isPenandatangananRoute ? (item.tanggalDikirim || item.tanggalUsulan) : undefined"
+            :hide-secretary-info="isPenandatangananRoute"
+            :show-approval-levels="true"
+            :show-bac-signer="true"
+            :show-bac-tembusan="true"
+            :show-tu-approval-levels="false"
+            :show-classification-code="false"
+            :unit-kerja-pihak-pertama="bacUnitKerjaPengusul"
           />
+
+          <TimelineRiwayat v-if="item" :item="item" />
 
           <!-- Catatan Penolakan (hanya jika DITOLAK_ATASAN) -->
           <div
@@ -369,11 +391,6 @@
         </div>
       </div>
 
-      <!-- Riwayat tampil sebelum aksi persetujuan terakhir. -->
-      <div v-if="!isBacSignerView" class="mt-5">
-        <TimelineRiwayat :item="item" />
-      </div>
-
       <!-- Persetujuan terakhir dan aksinya selalu berada setelah timeline. -->
       <div
         v-if="!isBacSignerView && item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
@@ -398,6 +415,12 @@
         </div>
       </div>
     </template>
+    <div v-else-if="signingAccessError" class="rounded-2xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm dark:border-red-800 dark:bg-gray-800 dark:text-red-300">
+      <p>{{ signingAccessError }}</p>
+      <NuxtLink to="/maintenance/penandatanganan" class="mt-4 inline-flex items-center gap-2 text-primary hover:underline">
+        <UIcon name="i-lucide-arrow-left" class="h-4 w-4" /> Kembali ke Penandatanganan
+      </NuxtLink>
+    </div>
 
     <!-- Not Found -->
     <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">
@@ -546,9 +569,15 @@ import DigsigPassphraseModal from '~/components/Tulis/DigsigPassphraseModal.vue'
 import type { TransferActiveToInactive } from '~/types/transfer-active-to-inactive';
 import { useDigsig } from '~/composables/useDigsig';
 
-definePageMeta({ middleware: ['auth'] });
+definePageMeta({
+  middleware: ['auth'],
+  alias: ['/maintenance/penandatanganan/:id'],
+});
 
 const route = useRoute();
+const isPenandatangananRoute = computed(() =>
+  route.path.startsWith('/maintenance/penandatanganan/'),
+);
 const { apiGet, apiPost } = useApi();
 const { user, isAdmin, isSuperadmin } = useAuth();
 const { getConfigDigsig } = useDigsig();
@@ -608,6 +637,7 @@ const tuIntakeStatus = ['DIKIRIM', 'MENUNGGU_VERIFIKASI_BERKAS_FISIK'];
 
 const item = ref<TransferActiveToInactive | null>(null);
 const loading = ref(true);
+const signingAccessError = ref('');
 const actionLoading = ref(false);
 const isEditModalOpen = ref(false);
 const isResubmitModalOpen = ref(false);
@@ -634,7 +664,8 @@ const {
 } = useBacPdfPreview();
 /** Pre-fill atasan di CreateTransferModal? false saat buka dari tombol Kirim (Draft). */
 const prefillAtasan = ref(true);
-const daftarIsi = ref<any[]>([]);
+const daftarBerkasRows = ref<any[]>([]);
+const daftarIsiRows = ref<any[]>([]);
 const beritaAcaraData = ref<any>({ atasan: {}, pengirim: {}, daftarArsip: [] });
 
 const bacSignerType = computed<'pihak_pertama' | 'pihak_kedua'>(() =>
@@ -648,7 +679,7 @@ const bacSignerSignedAt = computed(() =>
 
 const isBacSignerView = computed(() => {
   if (!item.value || !user.value) return false;
-  if (route.query.from === 'penandatanganan') {
+  if (isPenandatangananRoute.value || route.query.from === 'penandatanganan') {
     const assignedPersnum = bacSignerType.value === 'pihak_kedua'
       ? item.value.bacPihakKeduaPersnum
       : item.value.bacPihakPertamaPersnum;
@@ -667,30 +698,14 @@ const bacSignerInfo = computed(() => ({
 
 const items = computed(() => [
   { label: 'Beranda', to: '/' },
-  { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
-  { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
-  { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/transfer-active-to-inactive-file/${route.params.id}` },
+  { label: 'Pemeliharaan', to: isPenandatangananRoute.value ? '/maintenance/penandatanganan' : '/maintenance/transfer-active-to-inactive-file' },
+  { label: isPenandatangananRoute.value ? 'Penandatanganan' : 'Pemindahan Arsip Aktif ke Inaktif', to: isPenandatangananRoute.value ? '/maintenance/penandatanganan' : '/maintenance/transfer-active-to-inactive-file' },
+  { label: item.value?.nomorUsulan ?? 'Detail', to: route.fullPath },
 ]);
 
 const showBeritaAcara = computed(() => {
-  if (!item.value) return false;
-  return [
-    'DISETUJUI_ATASAN',
-    'DISETUJUI_VERIFIKASI_TERAKHIR',
-    'USUL_PINDAH_DIKIRIM',
-    'SIAPKAN_BERKAS_FISIK',
-    'DIKIRIM',
-    'MENUNGGU_VERIFIKASI_BERKAS_FISIK',
-    'BERKAS_FISIK_SESUAI',
-    'MENUNGGU_VERIFIKASI_PERSETUJUAN_TU',
-    'DISETUJUI_PERSETUJUAN_TU',
-    'MENUNGGU_PERSETUJUAN_TERAKHIR_TU',
-    'DISETUJUI_PERSETUJUAN_TERAKHIR_TU',
-    'MENUNGGU_TTD_PIHAK_KEDUA',
-    'ARSIP_INAKTIF_DITERIMA',
-    'PENATAAN_ARSIP_INAKTIF',
-    'SELESAI',
-  ].includes(item.value.status);
+  if (!item.value || !isSekretarisPengusul.value) return false;
+  return Boolean(item.value.bacSignedAt || item.value.bacPihakKeduaSignedAt);
 });
 
 const bacArsip = computed(() => beritaAcaraData.value?.daftarArsip ?? []);
@@ -755,6 +770,30 @@ const loadDetail = async () => {
   }
 };
 
+const loadSigningDetail = async () => {
+  loading.value = true;
+  signingAccessError.value = '';
+  try {
+    const response: any = await apiGet(
+      `/transfer-active-to-inactive/${route.params.id}/signing-detail?signer=${bacSignerType.value}`,
+      {},
+      { skipCache: true },
+    );
+    item.value = response?.data ?? null;
+    if (!item.value) throw new Error('Detail penandatanganan tidak ditemukan.');
+    if (!isBacSignerView.value) throw new Error('Anda bukan penandatangan BAC yang ditugaskan.');
+    await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
+    await renderBacImage();
+  } catch (error: any) {
+    item.value = null;
+    signingAccessError.value =
+      error?.data?.message || error?.response?.data?.message || error?.message ||
+      'Anda tidak memiliki akses ke detail penandatanganan ini.';
+  } finally {
+    loading.value = false;
+  }
+};
+
 const refresh = async () => {
   item.value = await fetchDetail(route.params.id as string);
   await Promise.all([loadDaftarIsi(), loadBeritaAcaraData()]);
@@ -764,11 +803,13 @@ const refresh = async () => {
 const loadDaftarIsi = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/daftar-isi`, {}, { skipCache: true });
-    // Daftar Berkas = satu baris per berkas agar jumlah naskah, lokasi,
-    // klasifikasi, dan keamanan ditampilkan dari metadata pemberkasan awal.
-    daftarIsi.value = res?.data?.daftarBerkas ?? [];
+    // Kedua status menggunakan sumber dan susunan kartu yang sama seperti
+    // halaman draft; perubahan status hanya mengubah badge/timeline/aksi.
+    daftarBerkasRows.value = res?.data?.daftarBerkas ?? [];
+    daftarIsiRows.value = res?.data?.daftarIsi ?? [];
   } catch (e) {
-    daftarIsi.value = [];
+    daftarBerkasRows.value = [];
+    daftarIsiRows.value = [];
   }
 };
 
@@ -1048,7 +1089,7 @@ watch([isResubmitModalOpen, isSetujuiTerakhirModalOpen, isEditModalOpen], ([a, b
   }
 });
 
-onMounted(() => loadDetail());
+onMounted(() => isPenandatangananRoute.value ? loadSigningDetail() : loadDetail());
 
 onBeforeUnmount(() => {
   if (bacImageUrl.value?.startsWith('blob:')) URL.revokeObjectURL(bacImageUrl.value);
