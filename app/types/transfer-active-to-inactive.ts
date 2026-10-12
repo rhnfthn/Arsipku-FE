@@ -46,6 +46,9 @@ export interface TransferActiveToInactive {
   arsipId: string;
   arsipPerihal: string;
   arsipKode: string | null;
+  arsipKlasifikasi: string | null;
+  arsipKlasifikasiKode: string | null;
+  arsipLokasiFisik: string | null;
   arsipKlasifikasi?: string | null;
   arsipKlasifikasiKode?: string | null;
   arsipTindakanPenyusutan?: string | null;
@@ -122,6 +125,9 @@ export interface BacTembusanListItem {
   nomorUsulan: string;
   arsipPerihal: string;
   arsipKode: string | null;
+  arsipKlasifikasi: string | null;
+  arsipKlasifikasiKode: string | null;
+  arsipLokasiFisik: string | null;
   tanggalUsulan: string;
   status: TransferActiveToInactiveStatus;
   beritaAcaraNomor: string | null;

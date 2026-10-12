@@ -347,6 +347,10 @@
               </tr>
             </tbody>
           </table>
+          <p v-if="bacAllSignaturesComplete" style="margin:28px 0 0;text-align:center;font-size:9pt;line-height:1.35;">
+            Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik<br>
+            yang diterbitkan oleh Balai Besar Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
+          </p>
         </div>
 
         </div>
@@ -761,6 +765,15 @@ const bacUnitKerjaPihakPertama = computed(
 const bacUnitKerjaPihakKedua = computed(
   () => beritaAcaraData.value?.pihakKedua?.unitKerja || '',
 );
+const bacAllSignaturesComplete = computed(() => {
+  const pihakKeduaDiperlukan = Boolean(
+    item.value?.bacPihakKeduaPersnum || beritaAcaraData.value?.pihakKedua?.nama,
+  );
+  return Boolean(
+    item.value?.bacSignedAt &&
+      (!pihakKeduaDiperlukan || item.value?.bacPihakKeduaSignedAt),
+  );
+});
 
 /** Format tanggal untuk Berita Acara: "31 Juli 2026" */
 const formatBaDate = (dateStr: string | null) => {

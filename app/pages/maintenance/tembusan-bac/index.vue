@@ -17,17 +17,17 @@
           aria-label="Jumlah data per halaman"
         />
         <USelectMenu
-          v-model="statusFilter"
-          :items="statusFilterOptions"
+          v-model="classificationFilter"
+          :items="classificationFilterOptions"
           value-key="value"
           label-key="label"
-          placeholder="Semua Status"
+          placeholder="Semua Klasifikasi"
           :search-input="false"
-          class="w-[176px] shrink-0"
+          class="w-[220px] shrink-0"
           :ui="{
             base: 'h-10 w-full bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200',
           }"
-          aria-label="Filter status BAC"
+          aria-label="Filter klasifikasi"
         />
         <div class="relative min-w-[220px] flex-1">
           <UIcon
@@ -37,7 +37,7 @@
           <input
             v-model="searchQuery"
             type="search"
-            placeholder="Cari nomor usulan, arsip, atau nama pihak..."
+            placeholder="Cari di semua kolom..."
             class="h-10 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-700 outline-none transition focus:border-[#457fb6] focus:ring-2 focus:ring-[#457fb6]/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -52,22 +52,20 @@
         </button>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[1200px] border-collapse text-sm">
+      <div class="overflow-hidden">
+        <table class="w-full table-fixed border-collapse text-sm">
           <thead class="bg-[#457fb6] text-white">
             <tr>
-              <th class="px-5 py-4 text-left font-semibold">Nama Berkas</th>
-              <th class="px-5 py-4 text-left font-semibold">Kode Berkas / No. Usulan</th>
-              <th class="px-5 py-4 text-left font-semibold">Penandatangan</th>
-              <th class="px-5 py-4 text-left font-semibold">Pihak</th>
-              <th class="px-5 py-4 text-left font-semibold">Status</th>
-              <th class="px-5 py-4 text-left font-semibold">Tanggal</th>
-              <th class="px-5 py-4 text-center font-semibold">Aksi</th>
+              <th class="w-[29%] whitespace-nowrap px-3 py-4 text-left font-semibold">Nama Berkas</th>
+              <th class="w-[17%] whitespace-nowrap px-3 py-4 text-left font-semibold">Kode Berkas</th>
+              <th class="w-[30%] whitespace-nowrap px-3 py-4 text-left font-semibold">Klasifikasi</th>
+              <th class="w-[14%] whitespace-nowrap px-3 py-4 text-left font-semibold">Tanggal</th>
+              <th class="w-[10%] whitespace-nowrap px-3 py-4 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="7" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+              <td colspan="5" class="px-3 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                 <span class="inline-flex items-center gap-2">
                   <UIcon name="i-lucide-loader-2" class="h-4 w-4 animate-spin" />
                   Memuat data...
@@ -75,12 +73,12 @@
               </td>
             </tr>
             <tr v-else-if="rows.length === 0">
-              <td colspan="7" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+              <td colspan="5" class="px-3 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                 Belum ada BAC yang diterima sebagai tembusan.
               </td>
             </tr>
             <tr v-else-if="filteredRows.length === 0">
-              <td colspan="7" class="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+              <td colspan="5" class="px-3 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                 Tidak ada data yang cocok dengan pencarian.
               </td>
             </tr>
@@ -90,53 +88,24 @@
               class="border-b border-gray-200 last:border-0 odd:bg-white even:bg-gray-50/70 hover:bg-blue-50 dark:border-gray-700 dark:odd:bg-gray-800 dark:even:bg-gray-700/30 dark:hover:bg-gray-700/50"
               :class="rowClass(row)"
             >
-              <td class="max-w-md px-5 py-4 font-medium text-gray-800 dark:text-gray-100">
+              <td class="break-words px-3 py-4 font-medium text-gray-800 dark:text-gray-100">
                 {{ row.arsipPerihal || '-' }}
               </td>
-              <td class="whitespace-nowrap px-5 py-4 text-center text-gray-600 dark:text-gray-300">
-                <div class="font-semibold text-gray-800 dark:text-gray-100">
-                  {{ row.arsipKode || '-' }}
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ row.nomorUsulan || '-' }}
-                </div>
+              <td class="break-words px-3 py-4 text-gray-600 dark:text-gray-300">
+                {{ row.arsipKode || '-' }}
               </td>
-              <td class="px-5 py-4 text-gray-600 dark:text-gray-300">
-                <div class="font-medium">{{ signerForRow(row).name || '-' }}</div>
+              <td class="break-words px-3 py-4 text-gray-600 dark:text-gray-300">
+                <div class="font-medium text-gray-800 dark:text-gray-100">
+                  {{ row.arsipKlasifikasiKode || '-' }}
+                </div>
                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {{ signerForRow(row).position || '-' }}
+                  {{ row.arsipKlasifikasi || '-' }}
                 </div>
               </td>
-              <td class="px-5 py-4">
-                <div class="flex">
-                  <span
-                    class="inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium"
-                    :class="signerForRow(row).isSecond
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'"
-                  >
-                    {{ signerForRow(row).isSecond ? 'Kedua' : 'Pertama' }}
-                  </span>
-                </div>
-              </td>
-              <td class="whitespace-nowrap px-5 py-4">
-                <span
-                  class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                  :class="
-                    isBacSigned(row.bacStatus)
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                  "
-                >
-                  {{
-                    bacStatusLabel(row.bacStatus)
-                  }}
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-5 py-4 text-gray-600 dark:text-gray-300">
+              <td class="break-words px-3 py-4 text-gray-600 dark:text-gray-300">
                 {{ row.bacSignedAt ? formatDate(row.bacSignedAt) : '-' }}
               </td>
-              <td class="px-5 py-4 text-center">
+              <td class="px-3 py-4 text-center">
                 <button
                   type="button"
                   class="inline-flex items-center justify-center p-1 text-gray-600 transition-colors hover:text-[#457fb6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#457fb6] dark:text-gray-300"
@@ -180,6 +149,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useApi } from '~/composables/useApi';
+import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import type { BacTembusanListItem } from '~/types/transfer-active-to-inactive';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -195,15 +165,21 @@ const toast = useToast();
 const rows = ref<BacTembusanListItem[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
-const statusFilter = ref<'all' | 'waiting' | 'signed'>('all');
+const classificationFilter = ref('all');
 const currentPage = ref(1);
 const pageSize = ref(10);
 const pageSizeOptions = [10, 25, 50];
-const statusFilterOptions = [
-  { label: 'Semua Status', value: 'all' },
-  { label: 'Menunggu', value: 'waiting' },
-  { label: 'Ditandatangani', value: 'signed' },
-];
+const classificationOptions = ref<{ klasifikasi: string; klasifikasi_text: string }[]>([]);
+const { getKlasifikasiList } = useKlasifikasi();
+const classificationFilterOptions = computed(() => {
+  return [
+    { label: 'Semua Klasifikasi', value: 'all' },
+    ...classificationOptions.value.map((option) => ({
+      label: `${option.klasifikasi} — ${option.klasifikasi_text}`,
+      value: option.klasifikasi,
+    })),
+  ];
+});
 const {
   bacPreviewOpen,
   bacPreviewLoading,
@@ -233,20 +209,11 @@ const signerForRow = (row: BacTembusanListItem) => {
 const filteredRows = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase('id');
   return rows.value.filter((row) =>
-    (statusFilter.value === 'all' ||
-      (statusFilter.value === 'signed' && isBacSigned(row.bacStatus)) ||
-      (statusFilter.value === 'waiting' && !isBacSigned(row.bacStatus))) &&
+    (classificationFilter.value === 'all' || row.arsipKlasifikasiKode === classificationFilter.value) &&
     (!query ||
-      [
-        row.nomorUsulan,
-        row.beritaAcaraNomor,
-        row.arsipKode,
-        row.arsipPerihal,
-        row.bacPihakPertamaName,
-        row.bacPihakPertamaJabatan,
-        row.bacPihakKeduaName,
-        row.bacPihakKeduaJabatan,
-      ]
+      Object.values(row as unknown as Record<string, unknown>)
+        .concat(bacStatusLabel(row.bacStatus))
+        .concat(formatDate(row.bacSignedAt))
         .filter(Boolean)
         .some((value) => String(value).toLocaleLowerCase('id').includes(query)))
   );
@@ -264,7 +231,7 @@ const onPageChange = (page: number) => {
   currentPage.value = Math.min(Math.max(1, page), pageCount.value);
 };
 
-watch([searchQuery, statusFilter, pageSize], () => {
+watch([searchQuery, classificationFilter, pageSize], () => {
   currentPage.value = 1;
 });
 
@@ -299,6 +266,18 @@ const loadRows = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+const loadKlasifikasi = async () => {
+  try {
+    const list = await getKlasifikasiList();
+    classificationOptions.value = (list ?? []).map((item) => ({
+      klasifikasi: item.klasifikasi,
+      klasifikasi_text: item.klasifikasi_text ?? item.nama ?? item.klasifikasi,
+    }));
+  } catch (error) {
+    console.error('Gagal memuat klasifikasi:', error);
   }
 };
 
@@ -339,5 +318,8 @@ const openBac = async (row: BacTembusanListItem) => {
   await openBacPreview(row.id, row.beritaAcaraNomor || row.nomorUsulan);
 };
 
-onMounted(loadRows);
+onMounted(() => {
+  loadRows();
+  loadKlasifikasi();
+});
 </script>
