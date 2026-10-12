@@ -77,6 +77,10 @@
             <td class="w-1/2 align-top text-center"><p class="mb-5">Pihak Kedua</p><div v-if="transfer.bacPihakKeduaSignedAt && transfer.bacPihakKeduaSignatureQr" class="mb-2 flex h-[92px] justify-center"><img :src="transfer.bacPihakKeduaSignatureQr" alt="QR tanda tangan Pihak Kedua" class="block h-[82px] w-[82px] object-contain" /></div><p v-else class="mb-[78px]">Ttd</p><p>({{ transfer.bacPihakKeduaJabatan ?? 'Jabatan' }})</p></td>
           </tr></tbody>
         </table>
+        <p v-if="allSignaturesComplete" class="mt-7 text-center text-[9pt] leading-snug">
+          Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik<br />
+          yang diterbitkan oleh Balai Besar Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
+        </p>
       </div>
     </div>
 
@@ -141,6 +145,13 @@ const unitKerjaPihakPertama = computed(() => data.value?.pihakPertama?.unitKerja
 // Pihak kedua baru dipilih Unit Dokumen, sehingga tetap kosong sebelum tahap tersebut.
 const unitKerjaPihakKedua = computed(() => data.value?.pihakKedua?.unitKerja || '')
 const year = computed(() => props.transfer?.tanggalUsulan ? new Date(props.transfer.tanggalUsulan).getFullYear() : new Date().getFullYear())
+const allSignaturesComplete = computed(() => {
+  const pihakKeduaDiperlukan = Boolean(props.transfer?.bacPihakKeduaPersnum || data.value?.pihakKedua?.nama)
+  return Boolean(
+    props.transfer?.bacSignedAt &&
+      (!pihakKeduaDiperlukan || props.transfer?.bacPihakKeduaSignedAt),
+  )
+})
 
 const formatBaDate = (dateStr: string | null) => {
   if (!dateStr) return '-'
