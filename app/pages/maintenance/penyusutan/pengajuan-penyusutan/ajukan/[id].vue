@@ -2,7 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader :title="`Ajukan Penyusutan — ${item?.no_usulan ?? ''}`" :items="breadcrumbs" />
-      <NuxtLink to="/maintenance/penyusutan/pengajuan-penyusutan"
+      <NuxtLink to="/kelola/penyusutan/pengajuan-penyusutan"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0">
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
       </NuxtLink>
@@ -28,8 +28,8 @@
             </button>
             <div v-if="!collapsedCards.info" class="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
               <div><span class="text-xs text-gray-500 dark:text-gray-400">Nomor Usulan</span><p class="text-gray-900 dark:text-white">{{ item.no_usulan || '-' }}</p></div>
-              <div><span class="text-xs text-gray-500 dark:text-gray-400">Kode Berkas</span><p class="text-gray-900 dark:text-white">{{ item.kode_berkas || '-' }}</p></div>
               <div><span class="text-xs text-gray-500 dark:text-gray-400">Uraian Informasi Berkas</span><p class="text-gray-900 dark:text-white">{{ item.nama_berkas || '-' }}</p></div>
+              <div><span class="text-xs text-gray-500 dark:text-gray-400">Kode Berkas</span><p class="text-gray-900 dark:text-white">{{ item.kode_berkas || '-' }}</p></div>
               <div><span class="text-xs text-gray-500 dark:text-gray-400">Klasifikasi</span><p class="text-gray-900 dark:text-white">{{ [classificationCode, classificationName !== '-' ? classificationName : ''].filter(Boolean).join(' ') || '-' }}</p></div>
               <div><span class="text-xs text-gray-500 dark:text-gray-400">Kurun Waktu</span><p class="text-gray-900 dark:text-white">{{ item.kurunWaktu || '-' }}</p></div>
               <div><span class="text-xs text-gray-500 dark:text-gray-400">Jumlah Berkas</span><p class="text-gray-900 dark:text-white">{{ item.jumlahBerkas ?? '-' }}</p></div>
@@ -61,6 +61,7 @@
             :transfer="transferForTables"
             :daftar-berkas="daftarBerkasRows"
             :daftar-isi="daftarIsiRows"
+            :unit-kerja-pihak-pertama="unitKerjaPihakPertama"
             :collapsible="true"
             :show-information-card="false"
             :show-approval-levels="false"
@@ -74,7 +75,7 @@
             v-if="transferForTables"
             :transfer="transferForTables"
             :berita-acara-data="beritaAcaraData"
-            preview-icon="eye"
+            preview-icon="printer"
           />
 
           <!-- Foto, lokasi, dan kondisi mengikuti susunan detail Penataan Arsip. -->
@@ -158,7 +159,7 @@
       <!-- Tombol Aksi (di bawah halaman) -->
       <div class="flex items-center gap-3 mt-5">
         <NuxtLink
-          to="/maintenance/penyusutan/pengajuan-penyusutan"
+          to="/kelola/penyusutan/pengajuan-penyusutan"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >Batal</NuxtLink>
         <button
@@ -334,9 +335,18 @@ import type { JenisPenyusutan } from '~/types/penyusutan'
 import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue'
 import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 
-definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
+definePageMeta({
+  middleware: ['auth', 'penyusutan-access'],
+  alias: ['/kelola/penyusutan/pengajuan-penyusutan/ajukan/:id'],
+})
 
 const route = useRoute()
+if (route.path.startsWith('/maintenance/penyusutan/pengajuan-penyusutan/ajukan/')) {
+  await navigateTo({
+    path: `/kelola/penyusutan/pengajuan-penyusutan/ajukan/${route.params.id}`,
+    query: route.query,
+  }, { replace: true })
+}
 const toast = useToast()
 const { ajukanPenyusutan, fetchById } = usePenyusutan()
 const { canCreate } = usePenyusutanPermission()
@@ -346,8 +356,8 @@ const { getBerkasById } = useArsipDinamis()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Pengajuan Penyusutan', to: '/maintenance/penyusutan/pengajuan-penyusutan' },
-  { label: 'Ajukan Penyusutan', to: `/maintenance/penyusutan/pengajuan-penyusutan/ajukan/${route.params.id}` },
+  { label: 'Pengajuan Penyusutan', to: '/kelola/penyusutan/pengajuan-penyusutan' },
+  { label: 'Ajukan Penyusutan', to: `/kelola/penyusutan/pengajuan-penyusutan/ajukan/${route.params.id}` },
 ])
 
 const item = ref<any>(null)
@@ -393,6 +403,24 @@ const transferForTables = computed(() => {
       perihal: row.uraianInformasi ?? row.namaBerkas,
     })),
   }
+})
+
+const unitKerjaPihakPertama = computed(() => {
+  const candidates = [
+    beritaAcaraData.value?.unitKerjaPengusul,
+    beritaAcaraData.value?.pihakPertama?.unitKerja,
+    beritaAcaraData.value?.pengirim?.unitKerja,
+    beritaAcaraData.value?.pengirim?.divisi,
+    transferData.value?.unitKerjaPengusul,
+    transferData.value?.divisiName,
+    transferData.value?.divisi_name,
+    item.value?.unitKerjaPengusul,
+    item.value?.divisiName,
+    item.value?.divisi_name,
+  ]
+  return candidates
+    .map((value) => String(value ?? '').trim())
+    .find((value) => value && !/^\.{3,}$/.test(value)) ?? '................................'
 })
 
 const toggleCard = (key: string) => {
@@ -459,6 +487,13 @@ const loadItem = async () => {
         const transferDetail = transferRes?.data ?? transferRes
         if (transferDetail) {
           transferData.value = transferDetail
+          try {
+            const beritaAcaraRes: any = await apiGet(`/transfer-active-to-inactive/${transferId}/berita-acara-data`, {}, { skipCache: true })
+            beritaAcaraData.value = beritaAcaraRes?.data?.data ?? beritaAcaraRes?.data ?? beritaAcaraRes
+          } catch (error) {
+            console.error('Gagal memuat data berita acara penyusutan:', error)
+            beritaAcaraData.value = null
+          }
           let selectedArchiveMetadata: any = null
           try {
             const daftarIsiRes: any = await apiGet(`/transfer-active-to-inactive/${transferId}/daftar-isi`, {}, { skipCache: true })
@@ -818,7 +853,7 @@ const submitAjukan = async () => {
     })
     showAjukanModal.value = false
     toast.add({ title: 'Berhasil', description: 'Pengajuan penyusutan berhasil dikirim ke atasan managerial.', color: 'success' })
-    navigateTo('/maintenance/penyusutan/pengajuan-penyusutan')
+    navigateTo('/kelola/penyusutan/pengajuan-penyusutan')
   } catch (e: any) {
     toast.add({ title: 'Gagal', description: e?.message || 'Gagal mengajukan penyusutan', color: 'error' })
   } finally {

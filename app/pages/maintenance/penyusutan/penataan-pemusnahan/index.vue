@@ -139,7 +139,22 @@
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item._archive?.lokasiSimpan || item._transfer?.lokasiPenataan || item.lokasiSimpan || item.lokasi_simpan || '-' }}</td>
                 <td class="break-words px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.klasifikasiKeamanan || item.klasifikasi_keamanan || item._archive?.klasifikasiKeamanan || '-' }}</td>
                 <td class="whitespace-nowrap px-1.5 py-2 text-center text-gray-600 dark:text-gray-300">{{ item.nasibAkhir || item._archive?.nasibAkhir || (item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen') }}</td>
-                <td class="break-words px-1.5 py-2 text-center text-primary dark:text-primary-400">{{ item.no_usulan ? `Lampiran/${item.no_usulan}` : '-' }}</td>
+                <td class="break-words px-1.5 py-2 text-center">
+                  <button
+                    v-if="item._transfer?.id || item.transferId || item.transfer_id || item.penataanData?.transferId"
+                    type="button"
+                    @click="openLampiranPreview({
+                      id: item._transfer?.id ?? item.transferId ?? item.transfer_id ?? item.penataanData?.transferId,
+                      nomorUsulan: item._transfer?.nomorUsulan ?? item.nomorUsulan ?? item.no_usulan,
+                    })"
+                    class="text-primary hover:underline dark:text-primary-400"
+                  >
+                    Lampiran/{{ item._transfer?.nomorUsulan ?? item.nomorUsulan ?? item.no_usulan ?? '-' }}
+                  </button>
+                  <span v-else class="text-primary dark:text-primary-400">
+                    {{ item.no_usulan ? `Lampiran/${item.no_usulan}` : '-' }}
+                  </span>
+                </td>
                 <td class="px-1.5 py-2 text-center">
                   <span :class="statusBadgeClass(item.status)" class="inline-flex max-w-full justify-center whitespace-normal break-words text-center text-[10px] leading-tight">{{ statusLabel(item.status) }}</span>
                 </td>
@@ -147,7 +162,7 @@
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
                       v-if="item.status === 'selesai'"
-                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      :to="`/kelola/penyusutan/penataan-pemusnahan/${item.id}`"
                       @click="markViewed(item)"
                       class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Detail"
@@ -156,7 +171,7 @@
                     </NuxtLink>
                     <NuxtLink
                       v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'"
-                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      :to="`/kelola/penyusutan/penataan-pemusnahan/${item.id}`"
                       @click="markViewed(item)"
                       class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Penataan"
@@ -165,7 +180,7 @@
                     </NuxtLink>
                     <NuxtLink
                       v-if="item.jenis_penyusutan === 'musnah' && item.status === 'diterima'"
-                      :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+                      :to="`/kelola/penyusutan/penataan-pemusnahan/${item.id}`"
                       @click="markViewed(item)"
                       class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Pemusnahan"
@@ -202,24 +217,42 @@
       :is-exporting="isExporting"
       @confirm="handleExportConfirm"
     />
+    <SharedSharePdfViewer
+      v-model="lampiranPreviewOpen"
+      :url="lampiranPreviewUrl"
+      :title="lampiranPreviewTitle"
+      :loading="lampiranPreviewLoading"
+      @close="closeLampiranPreview"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 
-definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
+definePageMeta({
+  middleware: ['auth', 'penyusutan-access'],
+  alias: ['/kelola/penyusutan/penataan-pemusnahan'],
+})
+
+const route = useRoute()
+if (route.path === '/maintenance/penyusutan/penataan-pemusnahan') {
+  await navigateTo('/kelola/penyusutan/penataan-pemusnahan', { replace: true })
+}
 
 const { penataanList, loadPenataanList } = usePenyusutan()
 const { fetchPenataanList } = useTuVerifikasi()
 const { rowClass, markViewed } = useViewedRows('penyusutan-penataan-pemusnahan')
+const { apiGet } = useApi()
+const toast = useToast()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penyusutan', to: '/maintenance/penyusutan/daftar-retensi-habis' },
-  { label: 'Penataan / Pemusnahan', to: '/maintenance/penyusutan/penataan-pemusnahan' },
+  { label: 'Penyusutan', to: '/kelola/penyusutan/penataan-pemusnahan' },
+  { label: 'Penataan / Pemusnahan', to: '/kelola/penyusutan/penataan-pemusnahan' },
 ])
 
 const isLoading = ref(false)
@@ -235,6 +268,53 @@ const pageSizeRef = ref<HTMLElement | null>(null)
 const statusRef = ref<HTMLElement | null>(null)
 const klasifikasiRef = ref<HTMLElement | null>(null)
 const archiveMetadataById = ref(new Map<string, { archive: any; transfer: any }>())
+const lampiranPreviewOpen = ref(false)
+const lampiranPreviewLoading = ref(false)
+const lampiranPreviewUrl = ref('')
+const lampiranPreviewTitle = ref('Preview Lampiran')
+
+const closeLampiranPreview = () => {
+  lampiranPreviewOpen.value = false
+  if (lampiranPreviewUrl.value.startsWith('blob:')) URL.revokeObjectURL(lampiranPreviewUrl.value)
+  lampiranPreviewUrl.value = ''
+}
+
+const openLampiranPreview = async (transfer: any) => {
+  if (!transfer?.id) return
+  closeLampiranPreview()
+  lampiranPreviewTitle.value = `Lampiran/${transfer.nomorUsulan || ''}`
+  lampiranPreviewOpen.value = true
+  lampiranPreviewLoading.value = true
+  try {
+    let response: any = await apiGet<unknown>(
+      `/transfer-active-to-inactive/${transfer.id}/lampiran-penataan.pdf`,
+      { responseType: 'blob', headers: { Accept: 'application/pdf' } },
+      { skipCache: true },
+    )
+    if (response && typeof response === 'object' && !(response instanceof Blob) && 'data' in response) response = response.data
+    const pdfBlob = response instanceof Blob
+      ? response
+      : response instanceof ArrayBuffer
+        ? new Blob([response], { type: 'application/pdf' })
+        : ArrayBuffer.isView(response)
+          ? new Blob([new Uint8Array(response.buffer, response.byteOffset, response.byteLength)], { type: 'application/pdf' })
+          : null
+    if (!pdfBlob || pdfBlob.size === 0 || (await pdfBlob.slice(0, 5).text()) !== '%PDF-') throw new Error('Lampiran bukan PDF yang valid.')
+    lampiranPreviewUrl.value = URL.createObjectURL(pdfBlob)
+  } catch (error: any) {
+    let description = error?.response?.data?.message || error?.message
+    if (error?.response?.data instanceof Blob) {
+      try {
+        const body = JSON.parse(await error.response.data.text())
+        description = body?.message || description
+      } catch { /* gunakan pesan fallback */ }
+    }
+    lampiranPreviewOpen.value = false
+    toast.add({ title: 'Preview lampiran gagal dibuka', description: description || 'Silakan coba kembali.', color: 'error' })
+  } finally {
+    lampiranPreviewLoading.value = false
+  }
+}
 
 const loadArchiveMetadata = async () => {
   try {

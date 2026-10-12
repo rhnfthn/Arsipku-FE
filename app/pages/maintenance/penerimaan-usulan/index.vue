@@ -199,7 +199,7 @@
           <template #cell-aksi="{ row }">
             <div class="text-center" @click.stop>
               <NuxtLink
-                :to="`/pemeliharaan/penerimaan-arsip/${row.id}?jenis=aktif_ke_inaktif`"
+                :to="`/kelola/pemeliharaan/penerimaan-arsip/${row.id}?jenis=aktif_ke_inaktif`"
                 @click="markRowAsViewed(row)"
                 class="inline-flex h-8 w-8 items-center justify-center text-gray-900 transition-colors hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300"
                 :title="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
@@ -264,8 +264,11 @@ import { newRowClass } from '~/utils/newRow'
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
-if (route.path === '/maintenance/penerimaan-usulan') {
-  await navigateTo('/pemeliharaan/penerimaan-arsip', { replace: true })
+if (
+  route.path === '/maintenance/penerimaan-usulan' ||
+  route.path === '/pemeliharaan/penerimaan-arsip'
+) {
+  await navigateTo('/kelola/pemeliharaan/penerimaan-arsip', { replace: true })
 }
 
 const { fetchNotifikasiList } = useTuVerifikasi()
@@ -275,7 +278,7 @@ const { user } = useAuth()
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan' },
-  { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
+  { label: 'Penerimaan Arsip', to: '/kelola/pemeliharaan/penerimaan-arsip' },
 ])
 
 const list = ref<TuUsulanItem[]>([])

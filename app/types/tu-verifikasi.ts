@@ -13,6 +13,7 @@ export interface TuUsulanItem {
   arsipPerihal: string;
   arsipKode: string | null;
   arsipKlasifikasi?: string | null;
+  arsipKlasifikasiKode?: string | null;
   /** Lokasi fisik asli yang disimpan pada tahap pemberkasan. */
   lokasiAwal?: string | null;
   arsipTindakanPenyusutan?: string | null;

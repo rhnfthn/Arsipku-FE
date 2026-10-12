@@ -144,7 +144,7 @@ const { loadBackupStatus } = usePenyusutan()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penyusutan', to: '/maintenance/penyusutan/penataan-pemusnahan' },
+  { label: 'Penyusutan', to: '/kelola/penyusutan/penataan-pemusnahan' },
   { label: 'Status Backup Data', to: '/maintenance/penyusutan/backup-status' },
 ])
 

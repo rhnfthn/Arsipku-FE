@@ -7,7 +7,7 @@
         :items="breadcrumbs"
       />
       <NuxtLink
-        to="/pemeliharaan/penerimaan-arsip"
+        to="/kelola/pemeliharaan/penerimaan-arsip"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
       >
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
@@ -455,14 +455,14 @@ definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
 
-if (route.path.startsWith('/maintenance/penerimaan-usulan/')) {
-  await navigateTo(
-    route.fullPath.replace(
-      /^\/maintenance\/penerimaan-usulan(?=\/|$)/,
-      '/pemeliharaan/penerimaan-arsip',
-    ),
-    { replace: true },
-  )
+if (
+  route.path.startsWith('/maintenance/penerimaan-usulan/') ||
+  route.path.startsWith('/pemeliharaan/penerimaan-arsip/')
+) {
+  await navigateTo({
+    path: `/kelola/pemeliharaan/penerimaan-arsip/${route.params.id}`,
+    query: route.query,
+  }, { replace: true })
 }
 
 const { apiGet } = useApi()
@@ -636,8 +636,8 @@ const removeAtasanTu = (idx: number) => {
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan' },
-  { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
-  { label: item.value?.nomorUsulan ?? 'Detail', to: `/pemeliharaan/penerimaan-arsip/${route.params.id}` },
+  { label: 'Penerimaan Arsip', to: '/kelola/pemeliharaan/penerimaan-arsip' },
+  { label: item.value?.nomorUsulan ?? 'Detail', to: `/kelola/pemeliharaan/penerimaan-arsip/${route.params.id}` },
 ])
 
 const daftarBerkas = computed(() => {

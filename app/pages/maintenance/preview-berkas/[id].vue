@@ -273,8 +273,8 @@ const breadcrumbItems = computed(() => {
   if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
-      { label: nomorUsulan.value, to: `/pemeliharaan/penerimaan-arsip/${usulanId.value}` },
+      { label: 'Penerimaan Arsip', to: '/kelola/pemeliharaan/penerimaan-arsip' },
+      { label: nomorUsulan.value, to: `/kelola/pemeliharaan/penerimaan-arsip/${usulanId.value}` },
       { label: 'Detail Berkas' },
     ];
   }

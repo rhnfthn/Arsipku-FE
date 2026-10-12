@@ -48,8 +48,18 @@
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipKode ?? '-' }}</p>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Nasib Akhir</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
+                <p class="text-gray-900 dark:text-white font-medium">
+                  {{ [item.arsipKlasifikasiKode, item.arsipKlasifikasi].filter(Boolean).join(' — ') || '-' }}
+                </p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggalRetensiAktifHabis) }}</p>
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>

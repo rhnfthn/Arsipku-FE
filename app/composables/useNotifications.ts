@@ -167,10 +167,10 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SDE_MASAL_FOLDER: '/korespondensi/sde-masal/folder',
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
     // Menu Kelola (Pemindahan Arsip / Penyusutan)
-    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/pemeliharaan/penerimaan-arsip',
+    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/kelola/pemeliharaan/penerimaan-arsip',
     OPEN_TRANSFER_BAC_SIGNING: '/pemeliharaan/penandatanganan',
     OPEN_TRANSFER_BAC_COPY: '/pemeliharaan/tembusan-bac',
-    OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',
+    OPEN_PENYUSUTAN: '/kelola/penyusutan/penataan-pemusnahan',
   };
 
   const base = action ? baseRoutes[action] : null;

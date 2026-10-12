@@ -2,7 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader :title="`Detail Pengajuan — ${item?.no_usulan ?? ''}`" :items="breadcrumbs" />
-      <NuxtLink to="/maintenance/penyusutan/pengajuan-penyusutan"
+      <NuxtLink to="/kelola/penyusutan/pengajuan-penyusutan"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0">
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
       </NuxtLink>
@@ -197,9 +197,18 @@ import PenyusutanDetailContent from '~/components/penyusutan/PenyusutanDetailCon
 import TransferDetailCard from '~/components/transfer-active-to-inactive/TransferDetailCard.vue'
 import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 
-definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
+definePageMeta({
+  middleware: ['auth', 'penyusutan-access'],
+  alias: ['/kelola/penyusutan/pengajuan-penyusutan/detail/:id'],
+})
 
 const route = useRoute()
+if (route.path.startsWith('/maintenance/penyusutan/pengajuan-penyusutan/detail/')) {
+  await navigateTo({
+    path: `/kelola/penyusutan/pengajuan-penyusutan/detail/${route.params.id}`,
+    query: route.query,
+  }, { replace: true })
+}
 const { fetchById } = usePenyusutan()
 const { fetchPenataanDetail } = useTuVerifikasi()
 const { api, apiGet } = useApi()
@@ -208,8 +217,8 @@ const runtimeConfig = useRuntimeConfig()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Pengajuan Penyusutan', to: '/maintenance/penyusutan/pengajuan-penyusutan' },
-  { label: 'Detail Pengajuan', to: `/maintenance/penyusutan/pengajuan-penyusutan/detail/${route.params.id}` },
+  { label: 'Pengajuan Penyusutan', to: '/kelola/penyusutan/pengajuan-penyusutan' },
+  { label: 'Detail Pengajuan', to: `/kelola/penyusutan/pengajuan-penyusutan/detail/${route.params.id}` },
 ])
 
 const item = ref<ArsipPenyusutan | null>(null)

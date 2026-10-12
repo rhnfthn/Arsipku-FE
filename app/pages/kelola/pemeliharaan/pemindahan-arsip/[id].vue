@@ -106,7 +106,7 @@
                   Usulan sudah dikirim ke Unit Tata Naskah. Lanjutkan verifikasi berkas dan pengajuan ke Atasan Managerial TU.
                 </p>
                 <NuxtLink
-                  :to="`/pemeliharaan/penerimaan-arsip/${item.id}?jenis=aktif_ke_inaktif`"
+                  :to="`/kelola/pemeliharaan/penerimaan-arsip/${item.id}?jenis=aktif_ke_inaktif`"
                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white transition-colors"
                 >
                   <UIcon name="i-lucide-file-check" class="w-4 h-4" /> Buka Penerimaan Arsip
@@ -1106,7 +1106,7 @@ const onSetujuiTerakhir = () => {
 /** Lanjutkan Penataan — redirect ke halaman penataan arsip inaktif. */
 const onLanjutkanPenataan = () => {
   if (!item.value) return;
-  navigateTo(`/maintenance/penataan-arsip-inaktif/${item.value.id}`);
+  navigateTo(`/kelola/pemeliharaan/penataan-arsip-inaktif/${item.value.id}`);
 };
 
 const onConfirmSetujuiTerakhir = async () => {
