@@ -199,13 +199,13 @@
           <template #cell-aksi="{ row }">
             <div class="text-center" @click.stop>
               <NuxtLink
-                :to="`/maintenance/penerimaan-usulan/${row.id}?jenis=aktif_ke_inaktif`"
+                :to="`/pemeliharaan/penerimaan-arsip/${row.id}?jenis=aktif_ke_inaktif`"
                 @click="markRowAsViewed(row)"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white transition-colors hover:bg-primary-800"
+                class="inline-flex h-8 w-8 items-center justify-center text-gray-900 transition-colors hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300"
                 :title="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
                 :aria-label="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
               >
-                <UIcon :name="isDetailOnly(row.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="h-4 w-4" />
+                <UIcon :name="isDetailOnly(row.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="h-5 w-5 stroke-[1.8]" />
               </NuxtLink>
             </div>
           </template>
@@ -264,13 +264,19 @@ import { newRowClass } from '~/utils/newRow'
 
 definePageMeta({ middleware: ['auth'] })
 
+const route = useRoute()
+if (route.path === '/maintenance/penerimaan-usulan') {
+  await navigateTo('/pemeliharaan/penerimaan-arsip', { replace: true })
+}
+
 const { fetchNotifikasiList } = useTuVerifikasi()
 const { apiGet } = useApi()
 const { user } = useAuth()
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penerimaan Arsip', to: '/maintenance/penerimaan-usulan' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
 ])
 
 const list = ref<TuUsulanItem[]>([])

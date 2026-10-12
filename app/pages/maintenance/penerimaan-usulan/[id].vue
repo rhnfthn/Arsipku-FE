@@ -7,7 +7,7 @@
         :items="breadcrumbs"
       />
       <NuxtLink
-        to="/maintenance/penerimaan-usulan"
+        to="/pemeliharaan/penerimaan-arsip"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
       >
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
@@ -37,9 +37,11 @@
           :show-information-card="true"
           information-title="Informasi Berkas"
           information-layout="usul"
+          :description-next-to-number="true"
           berkas-layout="usul"
           :hide-secretary-info="true"
           :fit-berkas-table="true"
+          :unit-kerja-pihak-pertama="unitKerjaPengusulForPrint"
           preview-from="tu"
         />
 
@@ -452,6 +454,17 @@ import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRi
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
+
+if (route.path.startsWith('/maintenance/penerimaan-usulan/')) {
+  await navigateTo(
+    route.fullPath.replace(
+      /^\/maintenance\/penerimaan-usulan(?=\/|$)/,
+      '/pemeliharaan/penerimaan-arsip',
+    ),
+    { replace: true },
+  )
+}
+
 const { apiGet } = useApi()
 const { fetchNotifikasiDetail, fetchAtasanTuOptions, ajukanAtasanTu, kembalikanKeAtasan } = useTuVerifikasi()
 
@@ -480,6 +493,18 @@ const transferView = computed(() => {
   return awaitingTuSubmission
     ? { ...item.value, bacTembusan: [] }
     : item.value
+})
+
+const unitKerjaPengusulForPrint = computed(() => {
+  const candidates = [
+    beritaAcaraData.value?.unitKerjaPengusul,
+    beritaAcaraData.value?.pengirim?.divisi,
+    beritaAcaraData.value?.pengirim?.unitKerja,
+    item.value?.divisiName,
+  ]
+  return candidates
+    .map((value) => String(value ?? '').trim())
+    .find((value) => value && !/^\.{3,}$/.test(value)) ?? null
 })
 
 // Modal state
@@ -610,8 +635,9 @@ const removeAtasanTu = (idx: number) => {
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penerimaan Arsip', to: '/maintenance/penerimaan-usulan' },
-  { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/penerimaan-usulan/${route.params.id}` },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
+  { label: item.value?.nomorUsulan ?? 'Detail', to: `/pemeliharaan/penerimaan-arsip/${route.params.id}` },
 ])
 
 const daftarBerkas = computed(() => {
@@ -705,7 +731,7 @@ const loadDaftarIsi = async () => {
 const loadBeritaAcaraData = async () => {
   try {
     const res: any = await apiGet(`/transfer-active-to-inactive/${route.params.id}/berita-acara-data`, {}, { skipCache: true })
-    beritaAcaraData.value = res?.data ?? { atasan: {}, pengirim: {}, daftarArsip: [] }
+    beritaAcaraData.value = res?.data?.data ?? res?.data ?? res ?? { atasan: {}, pengirim: {}, daftarArsip: [] }
   } catch {
     beritaAcaraData.value = { atasan: {}, pengirim: {}, daftarArsip: [] }
   }

@@ -18,6 +18,10 @@
           <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
           <p class="font-normal text-gray-900 dark:text-white">{{ usulan.nomorUsulan }}</p>
         </div>
+        <div v-if="descriptionNextToNumber">
+          <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
+          <p class="font-normal text-gray-900 dark:text-white">{{ usulan.arsipPerihal || '-' }}</p>
+        </div>
         <div>
           <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Usulan</span>
           <p class="font-normal text-gray-900 dark:text-white">{{ formatVerifikasiDate(usulan.tanggalUsulan) }}</p>
@@ -54,7 +58,7 @@
           <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
           <p class="font-normal text-gray-900 dark:text-white">{{ formatVerifikasiDate(usulan.tanggalRetensiAktifHabis ?? null) }}</p>
         </div>
-        <div class="md:col-span-2">
+        <div v-if="!descriptionNextToNumber" class="md:col-span-2">
           <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
           <p class="font-normal text-gray-900 dark:text-white">{{ usulan.arsipPerihal || '-' }}</p>
         </div>
@@ -262,7 +266,7 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ level.atasanName }}<span v-if="level.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.atasanPositionText }}</span>
             </p>
           </div>
@@ -293,7 +297,7 @@
       <div v-show="bacSignerOpen" class="mt-4 space-y-3">
         <div class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ usulan.bacPihakPertamaName || '-' }}<span v-if="usulan.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ usulan.bacPihakPertamaJabatan }}</span>
             </p>
           </div>
@@ -306,7 +310,7 @@
           class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-900/20"
         >
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ usulan.bacPihakKeduaName || '-' }}<span v-if="usulan.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ usulan.bacPihakKeduaJabatan }}</span>
             </p>
           </div>
@@ -319,7 +323,7 @@
 
     <!-- Card: Tembusan BAC -->
     <div
-      v-if="hasBacTembusan"
+      v-if="hasBacSigner || hasBacTembusan"
       class="order-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
     >
       <button
@@ -335,20 +339,25 @@
         />
       </button>
       <div v-show="bacTembusanOpen" class="mt-4 space-y-2">
-        <div
-          v-for="(copy, index) in bacTembusan"
-          :key="`bac-copy-${copy.persnum}-${index}`"
-          class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-        >
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ copy.name || '-' }}<span v-if="copy.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ copy.jabatan }}</span>
-            </p>
+        <template v-if="hasBacTembusan">
+          <div
+            v-for="(copy, index) in bacTembusan"
+            :key="`bac-copy-${copy.persnum}-${index}`"
+            class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-normal text-gray-900 dark:text-white">
+                {{ copy.name || '-' }}<span v-if="copy.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ copy.jabatan }}</span>
+              </p>
+            </div>
+            <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              Tembusan
+            </span>
           </div>
-          <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-            Tembusan
-          </span>
-        </div>
+        </template>
+        <p v-else class="rounded-lg border border-dashed border-gray-200 px-3 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          Belum ada data tembusan BAC.
+        </p>
       </div>
     </div>
   </div>
@@ -397,6 +406,7 @@ const props = defineProps<{
   daftarArsip?: any[];
   daftarIsi?: any[];
   unitKerja?: string | null;
+  descriptionNextToNumber?: boolean;
 }>();
 
 const infoOpen = ref(true);

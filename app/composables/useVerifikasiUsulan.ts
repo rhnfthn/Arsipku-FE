@@ -49,7 +49,18 @@ export const useVerifikasiUsulan = () => {
   };
 
   /** Normalisasi item dari endpoint inaktif / aktif-ke-inaktif ke format gabungan. */
-  const normalize = (raw: any, jenis: JenisUsulan): VerifikasiUsulanItem => ({
+  const normalize = (raw: any, jenis: JenisUsulan): VerifikasiUsulanItem => {
+    const rawBacTembusan = raw.bacTembusan ?? raw.bac_tembusan;
+    let parsedBacTembusan = rawBacTembusan;
+    if (typeof parsedBacTembusan === 'string') {
+      try {
+        parsedBacTembusan = JSON.parse(parsedBacTembusan);
+      } catch {
+        parsedBacTembusan = null;
+      }
+    }
+
+    return {
     id: raw.id,
     jenis,
     nomorUsulan: raw.nomorUsulan ?? '-',
@@ -89,8 +100,8 @@ export const useVerifikasiUsulan = () => {
       raw.bacPihakKeduaName ?? raw.bac_pihak_kedua_name ?? null,
     bacPihakKeduaJabatan:
       raw.bacPihakKeduaJabatan ?? raw.bac_pihak_kedua_jabatan ?? null,
-    bacTembusan: Array.isArray(raw.bacTembusan ?? raw.bac_tembusan)
-      ? (raw.bacTembusan ?? raw.bac_tembusan).map((copy: any) => ({
+    bacTembusan: Array.isArray(parsedBacTembusan)
+      ? parsedBacTembusan.map((copy: any) => ({
           persnum: Number(copy?.persnum ?? copy?.personum ?? 0),
           name: copy?.name ?? copy?.nama ?? '-',
           jabatan: copy?.jabatan ?? copy?.positionText ?? copy?.position_text ?? '-',
@@ -134,7 +145,8 @@ export const useVerifikasiUsulan = () => {
           catatan: l.catatan ?? null,
         }))
       : undefined,
-  });
+    };
+  };
 
   /** Fetch gabungan dari 2 endpoint. */
   const fetchList = async (filter: VerifikasiFilter = {}) => {

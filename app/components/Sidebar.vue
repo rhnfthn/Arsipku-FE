@@ -1690,7 +1690,7 @@ const unitDokumenKelolaMenus = computed(() => {
       },
       {
         label: 'Penerimaan Arsip',
-        to: '/maintenance/penerimaan-usulan',
+        to: '/pemeliharaan/penerimaan-arsip',
         icon: 'i-lucide-bell',
         permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
         badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
@@ -1787,7 +1787,7 @@ const sekretarisKelolaMenus = computed(() => {
       },
       {
         label: 'Penerimaan Arsip',
-        to: '/maintenance/penerimaan-usulan',
+        to: '/pemeliharaan/penerimaan-arsip',
         icon: 'i-lucide-bell',
         permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
         badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
@@ -1900,7 +1900,7 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
       },
       {
         label: 'Pemindahan',
-        to: '/maintenance/verifikasi-usulan',
+        to: '/pemeliharaan/pemindahan',
         icon: 'i-lucide-file-check-2',
         permission: { resource: 'pemeliharaan.verifikasi-pemindahan', action: 'read' },
       },
@@ -2132,7 +2132,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Penerimaan Arsip',
-      to: '/maintenance/penerimaan-usulan',
+      to: '/pemeliharaan/penerimaan-arsip',
       icon: 'i-lucide-bell',
       permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
       showIfTuRole: true,
@@ -2162,7 +2162,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Pemindahan',
-      to: '/maintenance/verifikasi-usulan',
+      to: '/pemeliharaan/pemindahan',
       icon: 'i-lucide-file-check-2',
       permission: { resource: 'pemeliharaan.verifikasi-pemindahan', action: 'read' },
       showIfAtasanSekretaris: true,
@@ -2323,7 +2323,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Penerimaan Arsip',
-      to: '/maintenance/penerimaan-usulan',
+      to: '/pemeliharaan/penerimaan-arsip',
       icon: 'i-lucide-bell',
       permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
       showIfTuRole: true,
@@ -2353,7 +2353,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Pemindahan',
-      to: '/maintenance/verifikasi-usulan',
+      to: '/pemeliharaan/pemindahan',
       icon: 'i-lucide-file-check-2',
       permission: { resource: 'pemeliharaan.verifikasi-pemindahan', action: 'read' },
       showIfAtasanSekretaris: true,

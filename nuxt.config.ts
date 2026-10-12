@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { resolve } from 'node:path';
+
 export default defineNuxtConfig({
   // ArsipKu adalah dashboard internal authenticated, tidak butuh SEO/SSR.
   // Disable SSR = SPA mode → eliminasi semua hydration mismatch karena
@@ -13,6 +15,36 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-07-15',
+
+  hooks: {
+    'pages:extend'(pages) {
+      // Canonical Indonesian routes for Atasan Managerial Sekretaris Divisi.
+      // Reuse the existing page implementations so business logic remains
+      // identical while the public URL changes.
+      pages.push(
+        {
+          name: 'pemeliharaan-pemindahan',
+          path: '/pemeliharaan/pemindahan',
+          file: resolve(process.cwd(), 'app/pages/maintenance/verifikasi-usulan/index.vue'),
+        },
+        {
+          name: 'pemeliharaan-pemindahan-id',
+          path: '/pemeliharaan/pemindahan/:id()',
+          file: resolve(process.cwd(), 'app/pages/maintenance/verifikasi-usulan/[id].vue'),
+        },
+        {
+          name: 'pemeliharaan-penerimaan-arsip',
+          path: '/pemeliharaan/penerimaan-arsip',
+          file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/index.vue'),
+        },
+        {
+          name: 'pemeliharaan-penerimaan-arsip-id',
+          path: '/pemeliharaan/penerimaan-arsip/:id()',
+          file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/[id].vue'),
+        },
+      );
+    },
+  },
 
   devtools: {
     enabled: process.env.NUXT_DEVTOOLS_ENABLED === 'true' || false,
