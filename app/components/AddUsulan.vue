@@ -156,7 +156,7 @@
                 !form.penandatanganJabatan ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'
               ]"
             >
-              {{ form.penandatanganJabatan || $t('add_usl_pilih_penandatangan') }}
+              {{ form.penandatanganJabatan ? [penandatanganNama, form.penandatanganJabatan].filter(Boolean).join(' - ') : $t('add_usl_pilih_penandatangan') }}
               <ChevronDown class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
             <p
@@ -185,7 +185,7 @@
                   @click="selectPenandatangan(item)"
                   class="w-full text-left px-3 py-2 text-xs hover:bg-primary-100 dark:hover:bg-primary-900/20 dark:text-gray-200"
                 >
-                  {{ item.displayText }}
+                  {{ [item.nama, item.displayText].filter(Boolean).join(' - ') }}
                 </button>
                 <p
                   v-if="filteredPenandatangan.length === 0"
