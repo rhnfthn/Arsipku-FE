@@ -112,7 +112,7 @@
             <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi Keamanan</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ primaryBerkasRow?.klasifikasiKeamanan || '-' }}</p>
           </div>
-          <div>
+          <div v-if="showAtasanManagerial">
             <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
             <p class="text-gray-900 dark:text-white font-normal">
               {{ transfer.atasanName || '-' }}<span v-if="atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> — {{ atasanPositionText }}</span>
@@ -193,7 +193,7 @@
             {{ transfer.arsipKlasifikasiKode }}
           </p>
         </div>
-        <div>
+        <div v-if="showAtasanManagerial">
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
           <p class="text-gray-900 dark:text-white font-medium">
             {{ transfer.atasanName }}<span v-if="transfer.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.atasanPositionText }}</span>
@@ -646,6 +646,7 @@ const props = defineProps<{
   fitBerkasTable?: boolean;
   showBacStatus?: boolean;
   showClassificationCode?: boolean;
+  showAtasanManagerial?: boolean;
   statusContext?: 'default' | 'secretary-division' | 'bac-signing';
   signerSignedAt?: string | null;
   informationDateLabel?: string;
@@ -669,6 +670,7 @@ const showSecretaryInfo = computed(() => props.hideSecretaryInfo !== true);
 const fitBerkasTable = computed(() => props.fitBerkasTable === true);
 const showBacStatus = computed(() => props.showBacStatus !== false);
 const showClassificationCode = computed(() => props.showClassificationCode !== false);
+const showAtasanManagerial = computed(() => props.showAtasanManagerial !== false);
 const informationDateLabel = computed(() => props.informationDateLabel ?? 'Tanggal Usulan');
 const informationDateValue = computed(() => props.informationDateValue ?? props.transfer.tanggalUsulan);
 const descriptionNextToNumber = computed(() => props.descriptionNextToNumber === true);
@@ -830,7 +832,12 @@ const openTablePrintPreview = async (title: string, elementId: string) => {
     const pageWidth = 297;
     const pageHeight = 210;
     const contentWidth = pageWidth - margin * 2;
-    const unitKerja = props.unitKerjaPihakPertama || props.transfer.divisiName || '................................';
+    const unitKerja = props.unitKerjaPihakPertama
+      || (props.transfer as any).unitKerjaPengusul
+      || (props.transfer as any).unit_kerja_pengusul
+      || props.transfer.divisiName
+      || (props.transfer as any).divisi_name
+      || '................................';
     const getCellText = (cell: Element) => {
       const text = (cell as HTMLElement).innerText || cell.textContent || '';
       return text.split('\n').map((line) => line.trim()).filter(Boolean).join('\n') || '-';

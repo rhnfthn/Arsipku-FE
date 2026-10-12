@@ -77,7 +77,11 @@ const routePermissions: Record<string, string> = {
   // Penyusutan — setiap submenu memiliki permission Read sendiri.
   '/maintenance/penyusutan/pengajuan-penyusutan':
     'pemeliharaan.penyusutan.pengajuan:read',
+  '/kelola/penyusutan/pengajuan-penyusutan':
+    'pemeliharaan.penyusutan.pengajuan:read',
   '/maintenance/penyusutan/penataan-pemusnahan':
+    'pemeliharaan.penyusutan.penataan-pemusnahan:read',
+  '/kelola/penyusutan/penataan-pemusnahan':
     'pemeliharaan.penyusutan.penataan-pemusnahan:read',
   '/maintenance/penyusutan/verifikasi-penyusutan':
     'pemeliharaan.penyusutan.verifikasi:read',
@@ -154,7 +158,15 @@ const routePermissionPatterns: { pattern: RegExp; perm: string }[] = [
     perm: 'pemeliharaan.penyusutan.pengajuan:read',
   },
   {
+    pattern: /^\/kelola\/penyusutan\/pengajuan-penyusutan\/(?:ajukan|detail)\/[^/]+$/,
+    perm: 'pemeliharaan.penyusutan.pengajuan:read',
+  },
+  {
     pattern: /^\/maintenance\/penyusutan\/penataan-pemusnahan\/[^/]+$/,
+    perm: 'pemeliharaan.penyusutan.penataan-pemusnahan:read',
+  },
+  {
+    pattern: /^\/kelola\/penyusutan\/penataan-pemusnahan\/[^/]+$/,
     perm: 'pemeliharaan.penyusutan.penataan-pemusnahan:read',
   },
   {

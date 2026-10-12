@@ -1690,14 +1690,14 @@ const unitDokumenKelolaMenus = computed(() => {
       },
       {
         label: 'Penerimaan Arsip',
-        to: '/pemeliharaan/penerimaan-arsip',
+        to: '/kelola/pemeliharaan/penerimaan-arsip',
         icon: 'i-lucide-bell',
         permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
         badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
-        to: '/maintenance/penataan-arsip-inaktif',
+        to: '/kelola/pemeliharaan/penataan-arsip-inaktif',
         icon: 'i-lucide-archive',
         permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
         badge:
@@ -1741,7 +1741,7 @@ const unitDokumenKelolaMenus = computed(() => {
     children: [
       {
         label: 'Pengajuan Penyusutan',
-        to: '/maintenance/penyusutan/pengajuan-penyusutan',
+        to: '/kelola/penyusutan/pengajuan-penyusutan',
         icon: 'i-lucide-list',
         permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
         badge:
@@ -1751,7 +1751,7 @@ const unitDokumenKelolaMenus = computed(() => {
       },
       {
         label: 'Penataan dan Pemusnahan',
-        to: '/maintenance/penyusutan/penataan-pemusnahan',
+        to: '/kelola/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
         permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
         badge:
@@ -1787,14 +1787,14 @@ const sekretarisKelolaMenus = computed(() => {
       },
       {
         label: 'Penerimaan Arsip',
-        to: '/pemeliharaan/penerimaan-arsip',
+        to: '/kelola/pemeliharaan/penerimaan-arsip',
         icon: 'i-lucide-bell',
         permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
         badge: kelolaCounts.value.penerimaanUsulan > 0 ? kelolaCounts.value.penerimaanUsulan : null,
       },
       {
         label: 'Penataan Arsip Inaktif',
-        to: '/maintenance/penataan-arsip-inaktif',
+        to: '/kelola/pemeliharaan/penataan-arsip-inaktif',
         icon: 'i-lucide-archive',
         permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
         badge:
@@ -1839,7 +1839,7 @@ const sekretarisKelolaMenus = computed(() => {
     children: [
       {
         label: 'Pengajuan Penyusutan',
-        to: '/maintenance/penyusutan/pengajuan-penyusutan',
+        to: '/kelola/penyusutan/pengajuan-penyusutan',
         icon: 'i-lucide-list',
         permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
         badge:
@@ -1849,7 +1849,7 @@ const sekretarisKelolaMenus = computed(() => {
       },
       {
         label: 'Penataan dan Pemusnahan',
-        to: '/maintenance/penyusutan/penataan-pemusnahan',
+        to: '/kelola/penyusutan/penataan-pemusnahan',
         icon: 'i-lucide-archive',
         permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
         badge:
@@ -2132,7 +2132,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Penerimaan Arsip',
-      to: '/pemeliharaan/penerimaan-arsip',
+      to: '/kelola/pemeliharaan/penerimaan-arsip',
       icon: 'i-lucide-bell',
       permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
       showIfTuRole: true,
@@ -2140,7 +2140,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Penataan Arsip Inaktif',
-      to: '/maintenance/penataan-arsip-inaktif',
+      to: '/kelola/pemeliharaan/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
       permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
       showIfTuRole: true,
@@ -2235,7 +2235,7 @@ const adminMenuKelola = computed(() => {
   const penyusutanChildren = [
     {
       label: 'Pengajuan Penyusutan',
-      to: '/maintenance/penyusutan/pengajuan-penyusutan',
+      to: '/kelola/penyusutan/pengajuan-penyusutan',
       icon: 'i-lucide-list',
       permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
       showIfTuRole: true,
@@ -2244,7 +2244,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Penataan & Pemusnahan',
-      to: '/maintenance/penyusutan/penataan-pemusnahan',
+      to: '/kelola/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive',
       permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
       showIfTuRole: true,
@@ -2323,7 +2323,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Penerimaan Arsip',
-      to: '/pemeliharaan/penerimaan-arsip',
+      to: '/kelola/pemeliharaan/penerimaan-arsip',
       icon: 'i-lucide-bell',
       permission: { resource: 'pemeliharaan.penerimaan-usulan', action: 'read' },
       showIfTuRole: true,
@@ -2331,7 +2331,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Penataan Arsip Inaktif',
-      to: '/maintenance/penataan-arsip-inaktif',
+      to: '/kelola/pemeliharaan/penataan-arsip-inaktif',
       icon: 'i-lucide-archive',
       permission: { resource: 'pemeliharaan.penataan-arsip-inaktif', action: 'read' },
       showIfTuRole: true,
@@ -2427,7 +2427,7 @@ const userMenuKelola = computed(() => {
   const penyusutanChildrenKelola = [
     {
       label: 'Pengajuan Penyusutan',
-      to: '/maintenance/penyusutan/pengajuan-penyusutan',
+      to: '/kelola/penyusutan/pengajuan-penyusutan',
       icon: 'i-lucide-list',
       permission: { resource: 'pemeliharaan.penyusutan.pengajuan', action: 'read' },
       showIfTuRole: true,
@@ -2436,7 +2436,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Penataan & Pemusnahan',
-      to: '/maintenance/penyusutan/penataan-pemusnahan',
+      to: '/kelola/penyusutan/penataan-pemusnahan',
       icon: 'i-lucide-archive',
       permission: { resource: 'pemeliharaan.penyusutan.penataan-pemusnahan', action: 'read' },
       showIfTuRole: true,

@@ -2,7 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader :title="`Penataan Arsip Inaktif — ${item?.nomorUsulan ?? ''}`" :items="breadcrumbs" />
-      <NuxtLink to="/maintenance/penataan-arsip-inaktif"
+      <NuxtLink to="/kelola/pemeliharaan/penataan-arsip-inaktif"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0">
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
       </NuxtLink>
@@ -28,6 +28,7 @@
           :show-bac-signer="false"
           :show-bac-tembusan="false"
           :show-tu-approval-levels="false"
+          :show-atasan-managerial="false"
           :show-information-card="true"
           information-title="Informasi Berkas"
           information-layout="penataan"
@@ -38,12 +39,24 @@
           v-if="canShowBeritaAcara && sharedTransfer"
           :transfer="sharedTransfer"
           :berita-acara-data="beritaAcaraData"
-          preview-icon="eye"
+          preview-icon="printer"
         />
 
         <!-- Penataan Arsip (form) -->
         <div v-if="item.status === 'ARSIP_INAKTIF_DITERIMA' && mode === 'penataan'" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Form Penataan Arsip</h3>
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Form Penataan Arsip</h3>
+            <button
+              type="button"
+              class="rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+              :aria-expanded="formPenataanOpen"
+              :aria-label="formPenataanOpen ? 'Lipat Form Penataan Arsip' : 'Buka Form Penataan Arsip'"
+              @click="formPenataanOpen = !formPenataanOpen"
+            >
+              <UIcon :name="formPenataanOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="h-5 w-5" />
+            </button>
+          </div>
+          <div v-show="formPenataanOpen">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Lokasi Penyimpanan</label>
@@ -116,6 +129,7 @@
                 </button>
               </div>
             </div>
+          </div>
           </div>
         </div>
 
@@ -234,7 +248,13 @@
 
     <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-10 text-center text-gray-400">Arsip tidak ditemukan</div>
 
-    <div v-if="item?.status === 'SELESAI' && eligibleArchives.length" class="mt-5 flex justify-start">
+    <div v-if="item?.status === 'SELESAI' && eligibleArchives.length" class="mt-5 flex justify-start gap-3">
+      <NuxtLink
+        to="/kelola/pemeliharaan/penataan-arsip-inaktif"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+      >
+        <UIcon name="i-lucide-arrow-left" class="h-4 w-4" /> Batal
+      </NuxtLink>
       <button
         type="button"
         @click="openPenyusutanModal"
@@ -292,9 +312,25 @@ import TransferDetailCard from '~/components/transfer-active-to-inactive/Transfe
 import TimelineRiwayat from '~/components/transfer-active-to-inactive/TimelineRiwayat.vue'
 import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({
+  middleware: ['auth'],
+  alias: [
+    '/kelola/penataan-arsip-inaktif/:id',
+    '/kelola/pemeliharaan/penataan-arsip-inaktif/:id',
+  ],
+})
 
 const route = useRoute()
+if (
+  route.path.startsWith('/maintenance/penataan-arsip-inaktif/') ||
+  route.path.startsWith('/kelola/penataan-arsip-inaktif/') ||
+  route.path.startsWith('/pemeliharaan/penataan-arsip-inaktif/')
+) {
+  await navigateTo({
+    path: `/kelola/pemeliharaan/penataan-arsip-inaktif/${route.params.id}`,
+    query: route.query,
+  }, { replace: true })
+}
 const { fetchPenataanDetail, selesaiPenataan, uploadFotoPenataan } = useTuVerifikasi()
 const { api, apiGet, apiPost } = useApi()
 const config = useRuntimeConfig()
@@ -306,6 +342,7 @@ const daftarIsiData = ref<any[]>([])
 const loading = ref(true)
 const actionLoading = ref(false)
 const mode = ref<'detail' | 'penataan'>('detail')
+const formPenataanOpen = ref(true)
 const fromPenataanQuery = route.query.mode === 'penataan'
 const sharedTransfer = computed(() =>
   item.value ? (item.value as unknown as TransferActiveToInactive) : null
@@ -409,7 +446,7 @@ const createPenyusutanDraft = async () => {
     penyusutanBerkasIds.value = new Set([...penyusutanBerkasIds.value, berkasId])
     useToast().add({ title: 'Berhasil', description: 'Berkas dipindahkan ke Pengajuan Penyusutan dengan status draft.', color: 'success' })
     showPenyusutanModal.value = false
-    await navigateTo('/maintenance/penyusutan/pengajuan-penyusutan')
+    await navigateTo('/kelola/penyusutan/pengajuan-penyusutan')
   } catch (e: any) {
     useToast().add({ title: 'Gagal', description: e?.data?.message || e?.message || 'Gagal menyimpan draft penyusutan.', color: 'error' })
   } finally {
@@ -630,8 +667,8 @@ const removeFoto = () => {
 const breadcrumbs = computed(() => [
   { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan' },
-  { label: 'Penataan Arsip Inaktif', to: '/maintenance/penataan-arsip-inaktif' },
-  { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/penataan-arsip-inaktif/${route.params.id}` },
+  { label: 'Penataan Arsip Inaktif', to: '/kelola/pemeliharaan/penataan-arsip-inaktif' },
+  { label: item.value?.nomorUsulan ?? 'Detail', to: `/kelola/pemeliharaan/penataan-arsip-inaktif/${route.params.id}` },
 ])
 
 const loadDetail = async () => {

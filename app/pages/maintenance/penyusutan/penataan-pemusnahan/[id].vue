@@ -2,7 +2,7 @@
   <div class="min-h-screen pt-5 dark:bg-gray-900 transition-colors">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
       <PageHeader :title="`Penataan / Pemusnahan — ${item?.no_usulan ?? ''}`" :items="breadcrumbs" />
-      <NuxtLink to="/maintenance/penyusutan/penataan-pemusnahan"
+      <NuxtLink to="/kelola/penyusutan/penataan-pemusnahan"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0">
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
       </NuxtLink>
@@ -31,8 +31,8 @@
           </button>
           <div v-if="!infoArsipCollapsed" class="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
             <div><span class="text-xs text-gray-500 dark:text-gray-400">Nomor Usulan</span><p class="break-words text-gray-900 dark:text-white">{{ item.no_usulan || '-' }}</p></div>
-            <div><span class="text-xs text-gray-500 dark:text-gray-400">Kode Berkas</span><p class="break-words text-gray-900 dark:text-white">{{ item.kode_berkas || '-' }}</p></div>
             <div><span class="text-xs text-gray-500 dark:text-gray-400">Uraian Informasi Berkas</span><p class="break-words text-gray-900 dark:text-white">{{ item.nama_berkas || '-' }}</p></div>
+            <div><span class="text-xs text-gray-500 dark:text-gray-400">Kode Berkas</span><p class="break-words text-gray-900 dark:text-white">{{ item.kode_berkas || '-' }}</p></div>
             <div><span class="text-xs text-gray-500 dark:text-gray-400">Klasifikasi</span><p class="break-words text-gray-900 dark:text-white">{{ [item.klasifikasi, item.klasifikasiText || item.klasifikasi_text].filter(Boolean).join(' — ') || '-' }}</p></div>
             <div><span class="text-xs text-gray-500 dark:text-gray-400">Sekretaris</span><p class="break-words text-gray-900 dark:text-white">{{ item.sekretaris || '-' }}</p></div>
             <div><span class="text-xs text-gray-500 dark:text-gray-400">Jenis Penyusutan</span><p class="mt-1">
@@ -44,6 +44,18 @@
               <span :class="statusBadgeClass(item.status)" class="inline-flex text-xs">{{ statusLabel(item.status) }}</span>
             </p></div>
             <div><span class="text-xs text-gray-500 dark:text-gray-400">Tanggal Pengajuan</span><p class="text-gray-900 dark:text-white">{{ formatDate(item.tanggal_pengajuan) }}</p></div>
+            <div class="min-w-0">
+              <span class="block text-xs text-gray-500 dark:text-gray-400">Lampiran</span>
+              <button
+                type="button"
+                :disabled="lampiranLoading || !transferForTables?.id"
+                @click="openCombinedLampiran"
+                class="mt-1 inline-flex min-w-0 items-center gap-2 text-base font-medium text-[#457fb6] hover:underline disabled:cursor-wait disabled:opacity-60 dark:text-[#76b4e8]"
+              >
+                <UIcon :name="lampiranLoading ? 'i-lucide-loader-2' : 'i-lucide-file-text'" :class="lampiranLoading ? 'animate-spin' : ''" class="h-5 w-5 shrink-0" />
+                <span class="break-all">Lampiran/{{ item.no_usulan || '-' }}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -87,33 +99,10 @@
           :show-bac-signer="false"
           :show-bac-tembusan="false"
           :show-tu-approval-levels="false"
+          :unit-kerja-pihak-pertama="unitKerjaPihakPertama"
           berkas-layout="penataan"
           preview-from="penyusutan"
         />
-
-        <section
-          v-if="transferForTables?.id"
-          class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-        >
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Lampiran</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                PDF gabungan Berita Acara, Daftar Berkas, dan Daftar Isi Berkas.
-              </p>
-            </div>
-            <button
-              type="button"
-              :disabled="lampiranLoading"
-              @click="openCombinedLampiran"
-              :title="lampiranLoading ? 'Memuat lampiran' : 'Preview lampiran'"
-              aria-label="Preview lampiran"
-              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-900 transition-colors hover:bg-gray-100 disabled:cursor-wait disabled:opacity-60 dark:text-gray-100 dark:hover:bg-gray-700"
-            >
-              <UIcon :name="lampiranLoading ? 'i-lucide-loader-2' : 'i-lucide-eye'" :class="lampiranLoading ? 'animate-spin' : ''" class="h-5 w-5" />
-            </button>
-          </div>
-        </section>
 
         <TransferBeritaAcaraCard
           v-if="transferForTables"
@@ -168,14 +157,22 @@
         <!-- Form Penataan (Permanen) -->
         <div v-if="item.jenis_penyusutan === 'permanen' && item.status === 'diterima'" class="space-y-5">
           <!-- Tombol Submit -->
-          <button
-            @click="submitPenataan"
-            :disabled="submitting || !resolvedLokasiSimpan"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-            Simpan Penataan
-          </button>
+          <div class="flex flex-wrap items-center gap-3">
+            <NuxtLink
+              to="/kelola/penyusutan/penataan-pemusnahan"
+              class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Batal
+            </NuxtLink>
+            <button
+              @click="submitPenataan"
+              :disabled="submitting || !resolvedLokasiSimpan"
+              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <UIcon v-if="submitting" name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+              Simpan Penataan
+            </button>
+          </div>
         </div>
 
         <!-- Form Pemusnahan (Musnah) -->
@@ -219,7 +216,7 @@
 
             <div class="flex items-center gap-3">
               <NuxtLink
-                to="/maintenance/penyusutan/penataan-pemusnahan"
+                to="/kelola/penyusutan/penataan-pemusnahan"
                 class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Batal
@@ -503,9 +500,18 @@ import TransferDetailCard from '~/components/transfer-active-to-inactive/Transfe
 import TransferBeritaAcaraCard from '~/components/transfer-active-to-inactive/TransferBeritaAcaraCard.vue'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
+definePageMeta({
+  middleware: ['auth', 'penyusutan-access'],
+  alias: ['/kelola/penyusutan/penataan-pemusnahan/:id'],
+})
 
 const route = useRoute()
+if (route.path.startsWith('/maintenance/penyusutan/penataan-pemusnahan/')) {
+  await navigateTo({
+    path: `/kelola/penyusutan/penataan-pemusnahan/${route.params.id}`,
+    query: route.query,
+  }, { replace: true })
+}
 const toast = useToast()
 const { user } = useAuth()
 const { apiGet, apiPost } = useApi()
@@ -513,9 +519,9 @@ const { fetchById, simpanPenataan, pemusnahan, updateFotoDokumentasi, updateBeri
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Penyusutan', to: '/maintenance/penyusutan/daftar-retensi-habis' },
-  { label: 'Penataan / Pemusnahan', to: '/maintenance/penyusutan/penataan-pemusnahan' },
-  { label: 'Detail', to: `/maintenance/penyusutan/penataan-pemusnahan/${route.params.id}` },
+  { label: 'Penyusutan', to: '/kelola/penyusutan/penataan-pemusnahan' },
+  { label: 'Penataan / Pemusnahan', to: '/kelola/penyusutan/penataan-pemusnahan' },
+  { label: 'Detail', to: `/kelola/penyusutan/penataan-pemusnahan/${route.params.id}` },
 ])
 
 const beritaAcaraFiles = ref<File[]>([])
@@ -637,6 +643,28 @@ const transferForTables = computed(() => {
     status: transferData.value.status ?? 'SELESAI',
     lokasiPenataan: transferData.value.lokasiPenataan ?? item.value?.penataanData?.lokasiPenataan ?? item.value?.lokasi_simpan,
   }
+})
+
+const unitKerjaPihakPertama = computed(() => {
+  const candidates = [
+    beritaAcaraData.value?.unitKerjaPengusul,
+    beritaAcaraData.value?.pihakPertama?.unitKerja,
+    beritaAcaraData.value?.pengirim?.unitKerja,
+    beritaAcaraData.value?.pengirim?.divisi,
+    transferData.value?.unitKerjaPengusul,
+    transferData.value?.unit_kerja_pengusul,
+    transferData.value?.divisiName,
+    transferData.value?.divisi_name,
+    item.value?.unitKerjaPengusul,
+    item.value?.unit_kerja_pengusul,
+    item.value?.divisiName,
+    item.value?.divisi_name,
+  ]
+
+  return candidates
+    .map((value) => String(value ?? '').trim())
+    .find((value) => value && !/^\.{3,}$/.test(value))
+    || '................................'
 })
 
 const resolvedLokasiSimpan = computed(() => {

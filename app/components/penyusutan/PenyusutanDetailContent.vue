@@ -17,7 +17,7 @@
           <div><span class="text-xs text-gray-500 dark:text-gray-400">Status</span><p class="mt-1"><span :class="statusBadgeClass(item.status)" class="inline-flex text-xs">{{ statusLabel(item.status) }}</span></p></div>
           <div><span class="text-xs text-gray-500 dark:text-gray-400">Lokasi Simpan</span><p class="text-gray-900 dark:text-white">{{ item.lokasi_simpan || '-' }}</p></div>
           <div><span class="text-xs text-gray-500 dark:text-gray-400">Nasib Akhir</span><p class="text-gray-900 dark:text-white">{{ item.nasibAkhir || (item.jenis_penyusutan === 'musnah' ? 'Musnah' : 'Permanen') }}</p></div>
-          <div class="min-w-0"><span class="block text-xs text-gray-500 dark:text-gray-400">Lampiran</span><button type="button" :disabled="lampiranLoading" @click="openLampiran" class="mt-1 flex min-w-0 items-center gap-2 text-base font-medium text-primary-800 hover:underline disabled:opacity-60 dark:text-primary-300"><UIcon :name="lampiranLoading ? 'i-lucide-loader-2' : 'i-lucide-file-text'" :class="lampiranLoading ? 'animate-spin' : ''" class="h-5 w-5 shrink-0" /><span class="break-all">Lampiran/{{ item.no_usulan || '-' }}</span></button></div>
+          <div class="min-w-0"><span class="block text-xs text-gray-500 dark:text-gray-400">Lampiran</span><button type="button" :disabled="lampiranLoading" @click="openLampiran" class="mt-1 flex min-w-0 items-center gap-2 text-base font-medium text-[#457fb6] hover:underline disabled:opacity-60 dark:text-[#76b4e8]"><UIcon :name="lampiranLoading ? 'i-lucide-loader-2' : 'i-lucide-file-text'" :class="lampiranLoading ? 'animate-spin' : ''" class="h-5 w-5 shrink-0" /><span class="break-all">Lampiran/{{ item.no_usulan || '-' }}</span></button></div>
         </div>
         <div v-if="!collapsed.info && (item.keterangan || item.catatan)" class="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
           <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Keterangan</h4>
@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <TransferDetailCard :transfer="normalizedTransfer" :daftar-berkas="archiveRows" :daftar-isi="daftarIsi" :collapsible="true" :show-information-card="false" :show-approval-levels="false" :show-bac-signer="false" :show-bac-tembusan="false" :show-tu-approval-levels="false" berkas-layout="penataan" />
+      <TransferDetailCard :transfer="normalizedTransfer" :daftar-berkas="archiveRows" :daftar-isi="daftarIsi" :unit-kerja-pihak-pertama="unitKerjaPihakPertama" :collapsible="true" :show-information-card="false" :show-approval-levels="false" :show-bac-signer="false" :show-bac-tembusan="false" :show-tu-approval-levels="false" berkas-layout="penataan" />
       <TransferBeritaAcaraCard :transfer="normalizedTransfer" :berita-acara-data="beritaAcaraData" preview-icon="eye" />
 
       <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -128,6 +128,31 @@ const normalizedTransfer = computed(() => {
     baris: props.item.baris ?? transfer.baris ?? null,
     kolom: props.item.kolom ?? transfer.kolom ?? null,
   }
+})
+
+const unitKerjaPihakPertama = computed(() => {
+  const item = props.item as any
+  const transfer = props.transfer ?? {}
+  const beritaAcara = props.beritaAcaraData ?? {}
+  const candidates = [
+    beritaAcara.unitKerjaPengusul,
+    beritaAcara.pihakPertama?.unitKerja,
+    beritaAcara.pengirim?.unitKerja,
+    beritaAcara.pengirim?.divisi,
+    transfer.unitKerjaPengusul,
+    transfer.unit_kerja_pengusul,
+    transfer.divisiName,
+    transfer.divisi_name,
+    item.unitKerjaPengusul,
+    item.unit_kerja_pengusul,
+    item.divisiName,
+    item.divisi_name,
+  ]
+
+  return candidates
+    .map((value) => String(value ?? '').trim())
+    .find((value) => value && !/\.{3,}/.test(value))
+    || '................................'
 })
 
 const fotoDokumentasiUrl = computed(() => {

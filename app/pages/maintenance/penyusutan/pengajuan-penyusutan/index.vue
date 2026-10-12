@@ -183,7 +183,7 @@
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
                       v-if="item.status !== 'draft'"
-                      :to="`/maintenance/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
+                      :to="`/kelola/penyusutan/pengajuan-penyusutan/detail/${item.id}`"
                       @click="markViewed(item)"
                       class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300"
                       title="Detail"
@@ -193,8 +193,8 @@
                     <NuxtLink
                       v-if="item.atasan_managerial.length === 0 && canCreate"
                       :to="item.transferId
-                        ? `/maintenance/penyusutan/pengajuan-penyusutan/ajukan/${item.transferId}?berkas_id=${encodeURIComponent(item.berkasId)}`
-                        : `/maintenance/penyusutan/pengajuan-penyusutan/ajukan/${item.id}`"
+                        ? `/kelola/penyusutan/pengajuan-penyusutan/ajukan/${item.transferId}?berkas_id=${encodeURIComponent(item.berkasId)}`
+                        : `/kelola/penyusutan/pengajuan-penyusutan/ajukan/${item.id}`"
                       @click="markViewed(item)"
                       class="inline-flex items-center justify-center rounded-md px-1.5 py-1 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                       title="Ajukan Penyusutan"
@@ -245,12 +245,21 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePenyusutan } from '~/composables/usePenyusutan'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useApi } from '~/composables/useApi'
 import type { ArsipPenyusutan } from '~/types/penyusutan'
 
-definePageMeta({ middleware: ['auth', 'penyusutan-access'] })
+definePageMeta({
+  middleware: ['auth', 'penyusutan-access'],
+  alias: ['/kelola/penyusutan/pengajuan-penyusutan'],
+})
+
+const route = useRoute()
+if (route.path === '/maintenance/penyusutan/pengajuan-penyusutan') {
+  await navigateTo('/kelola/penyusutan/pengajuan-penyusutan', { replace: true })
+}
 
 const { loadData: loadPenyusutan, list: penyusutanList } = usePenyusutan()
 const { canCreate } = usePenyusutanPermission()
@@ -318,7 +327,7 @@ const openLampiranPreview = async (transfer: any) => {
 
 const breadcrumbs = computed(() => [
   { label: 'Beranda', to: '/beranda' },
-  { label: 'Pengajuan Penyusutan', to: '/maintenance/penyusutan/pengajuan-penyusutan' },
+  { label: 'Pengajuan Penyusutan', to: '/kelola/penyusutan/pengajuan-penyusutan' },
 ])
 
 const isLoading = ref(false)

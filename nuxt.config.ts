@@ -34,11 +34,21 @@ export default defineNuxtConfig({
         },
         {
           name: 'pemeliharaan-penerimaan-arsip',
-          path: '/pemeliharaan/penerimaan-arsip',
+          path: '/kelola/pemeliharaan/penerimaan-arsip',
           file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/index.vue'),
         },
         {
           name: 'pemeliharaan-penerimaan-arsip-id',
+          path: '/kelola/pemeliharaan/penerimaan-arsip/:id()',
+          file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/[id].vue'),
+        },
+        {
+          name: 'legacy-pemeliharaan-penerimaan-arsip',
+          path: '/pemeliharaan/penerimaan-arsip',
+          file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/index.vue'),
+        },
+        {
+          name: 'legacy-pemeliharaan-penerimaan-arsip-id',
           path: '/pemeliharaan/penerimaan-arsip/:id()',
           file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/[id].vue'),
         },
