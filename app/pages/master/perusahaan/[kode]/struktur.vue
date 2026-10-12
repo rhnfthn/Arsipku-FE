@@ -303,6 +303,45 @@
           </div>
         </div>
 
+        <div v-if="companyExpanded && organizationTree.length" class="border-b border-gray-200 bg-primary-50/50 px-4 py-4 dark:border-gray-700 dark:bg-primary-900/10">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex min-w-0 flex-1 items-start gap-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-input)] bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300"><UIcon name="i-lucide-focus" class="size-5" /></div>
+              <div class="min-w-0 flex-1">
+                <Paragraph variant="body2sb" class="text-gray-900 dark:text-white">{{ $t('stu_focus') }}</Paragraph>
+                <nav class="mt-1 flex flex-wrap items-center gap-1" :aria-label="$t('stu_focus_path')">
+                  <UButton size="xs" :color="focusPath.length ? 'neutral' : 'primary'" variant="ghost" icon="i-lucide-building-2" class="max-w-full" @click="focusStructure('ALL')"><span class="truncate">{{ company?.namaPanjang }}</span></UButton>
+                  <template v-for="(node, index) in focusPath" :key="node.id">
+                    <UIcon name="i-lucide-chevron-right" class="size-3 shrink-0 text-gray-400" />
+                    <UButton size="xs" :color="index === focusPath.length - 1 ? 'primary' : 'neutral'" :variant="index === focusPath.length - 1 ? 'subtle' : 'ghost'" class="max-w-full" :aria-current="index === focusPath.length - 1 ? 'location' : undefined" @click="focusStructure(String(node.id))"><span class="truncate">{{ node.name }}</span></UButton>
+                  </template>
+                </nav>
+              </div>
+            </div>
+            <div v-if="focusPath.length" class="flex items-center gap-1">
+              <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="focusStructure(focusPath.length > 1 ? String(focusPath[focusPath.length - 2].id) : 'ALL')">{{ $t('stu_focus_back') }}</UButton>
+              <UButton icon="i-lucide-expand" color="primary" variant="outline" @click="focusStructure('ALL')">{{ $t('stu_focus_all') }}</UButton>
+            </div>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <USelectMenu
+              v-if="focusOptions.length"
+              :key="selectedFocusId"
+              :model-value="undefined"
+              @update:model-value="focusStructure"
+              :items="focusOptions"
+              value-key="value"
+              icon="i-lucide-git-branch"
+              :placeholder="$t('stu_focus_next')"
+              :aria-label="$t('stu_focus_next')"
+              :search-input="{ placeholder: $t('stu_focus_search') }"
+              class="w-full sm:w-96"
+              :disabled="loadingStructure"
+            />
+            <Paragraph variant="caption1" class="text-gray-500 dark:text-gray-400">{{ $t(focusOptions.length ? 'stu_focus_hint' : 'stu_focus_leaf') }}</Paragraph>
+          </div>
+        </div>
+
         <!-- Organization Tree -->
         <div v-if="companyExpanded" ref="treeContainer" :class="structureView === 'list' ? 'p-8' : ''">
           <div v-if="loadingStructure" class="space-y-4 p-8">
@@ -312,7 +351,7 @@
           <UAlert v-else-if="structureLoadFailed" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="$t('stu_chart_load_failed')" class="m-6" />
           <OrganizationChart
             v-else-if="structureView === 'chart' && displayTree.length"
-            :key="String(route.params.kode)"
+            :key="`${route.params.kode}-${selectedFocusId}`"
             :company-name="company?.namaPanjang || ''" :nodes="displayTree"
             :expanded-nodes="expandedNodes" :loading-nodes="loadingChartNodes"
             :search-results="searchResultsMap" :highlight-node-id="highlightNodeId"
@@ -1033,6 +1072,7 @@ definePageMeta({
 })
 
 import type { StructureChartNode, StructureChartAction } from '~/types/structure-chart'
+import { getStructureFocusPath } from '~/utils/structure-focus'
 
 import { useStruktur } from '~/composables/useStruktur'
 import { useCompany } from '~/composables/useCompany'
@@ -1079,6 +1119,7 @@ const confirmDeleteOpen = ref(false)
 const itemToDelete = ref<any>(null)
 
 const companyExpanded = ref(true)
+const selectedFocusId = ref('ALL')
 const expandedNodes = ref<Record<string, boolean>>({})
 const previousExpandedState = ref<Record<string, boolean>>({})
 const hoveredNode = ref<string | null>(null)
@@ -1266,7 +1307,38 @@ const searchResultsMap = computed(() => {
   return map
 })
 
-const displayTree = computed(() => organizationTree.value)
+const focusPath = computed(() => getStructureFocusPath(organizationTree.value, selectedFocusId.value))
+const focusedNode = computed(() => focusPath.value.at(-1))
+const focusOptions = computed(() => (focusedNode.value?.children || organizationTree.value)
+  .filter(node => node.type === 'direktorat' || node.type === 'unit')
+  .map(node => ({ value: String(node.id), label: node.name })))
+const displayTree = computed(() => focusedNode.value ? [focusedNode.value] : organizationTree.value)
+
+const focusStructure = async (id: string) => {
+  if (!id) return
+  selectedFocusId.value = id
+  highlightNodeId.value = null
+  if (id === 'ALL') return
+  const node = getStructureFocusPath(organizationTree.value, id).at(-1)
+  if (!node) return
+  companyExpanded.value = true
+  expandedNodes.value[node.id] = true
+  if (node._positionsLoaded) return
+  loadingChartNodes.value[node.id] = true
+  try {
+    await loadPositions(node)
+  } catch (error) {
+    expandedNodes.value[node.id] = false
+    console.error('❌ gagal memuat fokus struktur:', error)
+    toast.add({ title: t('stu_chart_load_failed'), color: 'error' })
+  } finally {
+    loadingChartNodes.value[node.id] = false
+  }
+}
+
+watch(focusPath, (path) => {
+  if (selectedFocusId.value !== 'ALL' && !path.length) selectedFocusId.value = 'ALL'
+})
 
 // ─── Toast helpers ────────────────────────────────────────────────────────────
 const showSuccessToast = (message: string) => {
@@ -1949,6 +2021,11 @@ const focusSearchSuggestion = async (item: SearchSuggestionItem) => {
         (matchOrganizationId || matchOrganizationCode)
       )
     })
+
+    // Keep global search results visible outside the currently focused branch.
+    if (organizationNode && focusedNode.value && !findNodeInTree([focusedNode.value], candidate => candidate.id === organizationNode.id)) {
+      selectedFocusId.value = String(organizationNode.id)
+    }
 
     if (item.type === 'organization') {
       if (organizationNode) {
@@ -2810,6 +2887,7 @@ watch(
     // Reset tree dan state lain agar tidak bocor data perusahaan sebelumnya
     clearSearch()
     searchCache.value = {}
+    selectedFocusId.value = 'ALL'
     organizationTree.value = []
     expandedNodes.value = {}
     selectedParentNode.value = null
