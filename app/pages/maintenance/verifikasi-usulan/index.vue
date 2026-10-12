@@ -107,7 +107,7 @@ const isMultiRole = computed(() => {
 });
 
 const items = [
-  { label: 'Beranda', to: '/' },
+  { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan/pemindahan' },
   { label: 'Pemindahan', to: '/pemeliharaan/pemindahan' },
 ];

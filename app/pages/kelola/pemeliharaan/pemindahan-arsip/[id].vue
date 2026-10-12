@@ -15,7 +15,7 @@
       </NuxtLink>
       <NuxtLink
         v-else
-        to="/maintenance/penandatanganan"
+        to="/pemeliharaan/penandatanganan"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
       >
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
@@ -34,7 +34,7 @@
     <template v-else-if="item">
       <!-- Urutan baku lintas status: Informasi Usulan, Daftar Berkas, Daftar Isi,
            Atasan, Penandatangan BAC, Tembusan BAC, status/aksi, Berita Acara,
-           lalu Timeline Riwayat sebagai card paling bawah. -->
+           Timeline Riwayat, lalu Persetujuan Terakhir sebagai card paling bawah. -->
       <div v-if="!isBacSignerView || isPenandatangananRoute" class="mx-auto w-full max-w-none space-y-5">
           <TransferDetailCard
             :transfer="item"
@@ -46,17 +46,17 @@
             :show-information-card="true"
             information-layout="usul"
             berkas-layout="usul"
-            :description-next-to-number="isSekretarisPengusul"
+            :description-next-to-number="isSekretarisPengusul || isPenandatangananRoute"
             :show-bac-status="!isSekretarisPengusul"
             :status-context="isPenandatangananRoute ? 'bac-signing' : 'secretary-division'"
             :signer-signed-at="isPenandatangananRoute ? bacSignerSignedAt : undefined"
             :information-date-label="isPenandatangananRoute ? 'Tanggal Diajukan ke TU' : undefined"
             :information-date-value="isPenandatangananRoute ? (item.tanggalDikirim || item.tanggalUsulan) : undefined"
             :hide-secretary-info="isPenandatangananRoute"
-            :show-approval-levels="true"
+            :show-approval-levels="false"
             :show-bac-signer="true"
             :show-bac-tembusan="true"
-            :show-tu-approval-levels="false"
+            :show-tu-approval-levels="true"
             :show-classification-code="false"
             :unit-kerja-pihak-pertama="bacUnitKerjaPengusul"
           />
@@ -205,7 +205,6 @@
             </span>
           </div>
           <div class="flex items-center gap-2">
-          <div v-if="!isBacSignerView" class="flex gap-2">
             <button
               type="button"
               @click="openBeritaAcaraPreview"
@@ -215,7 +214,6 @@
             >
               <UIcon name="i-lucide-printer" class="h-5 w-5" />
             </button>
-          </div>
           <button
             type="button"
             :aria-expanded="!isBeritaAcaraCollapsed"
@@ -351,17 +349,6 @@
           </table>
         </div>
 
-        <div v-if="isBacSignerView && !bacSignerSignedAt" class="mx-auto mt-4 flex w-full max-w-[794px] justify-start">
-          <button
-            type="button"
-            @click="openBacSign"
-            :disabled="bacSigning"
-            class="inline-flex items-center gap-2 rounded-lg bg-[#457fb6] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3a6d9c] disabled:cursor-wait disabled:opacity-50"
-          >
-            <UIcon :name="bacSigning ? 'i-lucide-loader-2' : 'i-lucide-pen-tool'" class="h-4 w-4" :class="bacSigning ? 'animate-spin' : ''" />
-            Tanda Tangan
-          </button>
-        </div>
         </div>
       </div>
 
@@ -405,7 +392,32 @@
         </div>
       </div>
 
-      <!-- Persetujuan terakhir dan aksinya ditampilkan sebelum Timeline Riwayat. -->
+      <TimelineRiwayat v-if="item" :item="item" class="mt-5" />
+
+      <!-- Aksi penandatanganan berada paling bawah setelah Timeline Riwayat. -->
+      <div
+        v-if="isBacSignerView && !bacSignerSignedAt"
+        class="mt-5 flex flex-wrap justify-start gap-2"
+      >
+        <button
+          type="button"
+          @click="cancelBacSigning"
+          class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          @click="openBacSign"
+          :disabled="bacSigning"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#457fb6] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3a6d9c] disabled:cursor-wait disabled:opacity-50"
+        >
+          <UIcon :name="bacSigning ? 'i-lucide-loader-2' : 'i-lucide-pen-tool'" class="h-4 w-4" :class="bacSigning ? 'animate-spin' : ''" />
+          Tanda Tangan
+        </button>
+      </div>
+
+      <!-- Persetujuan terakhir selalu menjadi card paling bawah setelah Timeline Riwayat. -->
       <div
         v-if="!isBacSignerView && item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
         class="mx-auto mt-5 w-full max-w-none rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-800 dark:bg-emerald-900/20"
@@ -428,12 +440,10 @@
           </div>
         </div>
       </div>
-
-      <TimelineRiwayat v-if="item" :item="item" />
     </template>
     <div v-else-if="signingAccessError" class="rounded-2xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm dark:border-red-800 dark:bg-gray-800 dark:text-red-300">
       <p>{{ signingAccessError }}</p>
-      <NuxtLink to="/maintenance/penandatanganan" class="mt-4 inline-flex items-center gap-2 text-primary hover:underline">
+      <NuxtLink to="/pemeliharaan/penandatanganan" class="mt-4 inline-flex items-center gap-2 text-primary hover:underline">
         <UIcon name="i-lucide-arrow-left" class="h-4 w-4" /> Kembali ke Penandatanganan
       </NuxtLink>
     </div>
@@ -595,11 +605,15 @@ import { useDigsig } from '~/composables/useDigsig';
 
 definePageMeta({
   middleware: ['auth'],
-  alias: ['/maintenance/penandatanganan/:id'],
+  alias: [
+    '/pemeliharaan/penandatanganan/:id',
+    '/maintenance/penandatanganan/:id',
+  ],
 });
 
 const route = useRoute();
 const isPenandatangananRoute = computed(() =>
+  route.path.startsWith('/pemeliharaan/penandatanganan/') ||
   route.path.startsWith('/maintenance/penandatanganan/'),
 );
 const { apiGet, apiPost } = useApi();
@@ -722,9 +736,9 @@ const bacSignerInfo = computed(() => ({
 }));
 
 const items = computed(() => [
-  { label: 'Beranda', to: '/' },
-  { label: 'Pemeliharaan', to: isPenandatangananRoute.value ? '/maintenance/penandatanganan' : '/kelola/pemeliharaan/pemindahan-arsip' },
-  { label: isPenandatangananRoute.value ? 'Penandatanganan' : 'Pemindahan Arsip', to: isPenandatangananRoute.value ? '/maintenance/penandatanganan' : '/kelola/pemeliharaan/pemindahan-arsip' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: isPenandatangananRoute.value ? '/pemeliharaan/penandatanganan' : '/kelola/pemeliharaan/pemindahan-arsip' },
+  { label: isPenandatangananRoute.value ? 'Penandatanganan' : 'Pemindahan Arsip', to: isPenandatangananRoute.value ? '/pemeliharaan/penandatanganan' : '/kelola/pemeliharaan/pemindahan-arsip' },
   { label: item.value?.nomorUsulan ?? 'Detail', to: route.fullPath },
 ]);
 
@@ -896,7 +910,7 @@ const loadBacSignConfig = async () => {
 };
 
 const cancelBacSigning = () => {
-  navigateTo('/maintenance/penandatanganan');
+  navigateTo('/pemeliharaan/penandatanganan');
 };
 
 const openBacSign = async () => {
@@ -957,7 +971,7 @@ const submitBacSign = async (payload: { method: string; passphrase?: string; fil
       description: 'Tanda tangan BAC berhasil diproses.',
       color: 'success',
     });
-    await navigateTo('/maintenance/penandatanganan');
+    await navigateTo('/pemeliharaan/penandatanganan');
   } catch (e: any) {
     console.error('Gagal menandatangani BAC:', e);
     useToast().add({

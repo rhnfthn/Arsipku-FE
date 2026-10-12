@@ -315,7 +315,7 @@ const jenis = computed<JenisUsulan>(() => {
 });
 
 const items = computed(() => [
-  { label: 'Beranda', to: '/' },
+  { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan' },
   { label: 'Pemindahan', to: '/pemeliharaan/pemindahan' },
   { label: usulan.value?.nomorUsulan ?? 'Detail', to: `/pemeliharaan/pemindahan/${route.params.id}` },

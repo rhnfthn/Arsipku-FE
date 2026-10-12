@@ -42,6 +42,16 @@ export default defineNuxtConfig({
           path: '/pemeliharaan/penerimaan-arsip/:id()',
           file: resolve(process.cwd(), 'app/pages/maintenance/penerimaan-usulan/[id].vue'),
         },
+        {
+          name: 'pemeliharaan-verifikasi-persetujuan-tu',
+          path: '/pemeliharaan/verifikasi-persetujuan-tu',
+          file: resolve(process.cwd(), 'app/pages/maintenance/verifikasi-persetujuan-tu/index.vue'),
+        },
+        {
+          name: 'pemeliharaan-verifikasi-persetujuan-tu-id',
+          path: '/pemeliharaan/verifikasi-persetujuan-tu/:id()',
+          file: resolve(process.cwd(), 'app/pages/maintenance/verifikasi-persetujuan-tu/[id].vue'),
+        },
       );
     },
   },

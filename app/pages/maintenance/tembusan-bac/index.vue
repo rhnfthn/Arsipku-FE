@@ -184,7 +184,10 @@ import type { BacTembusanListItem } from '~/types/transfer-active-to-inactive';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-definePageMeta({ middleware: ['auth', 'evp-or-above'] });
+definePageMeta({
+  middleware: ['auth', 'evp-or-above'],
+  alias: ['/pemeliharaan/tembusan-bac'],
+});
 
 const { apiGet } = useApi();
 const { rowClass, markViewed } = useViewedRows('tembusan-bac');
@@ -266,9 +269,9 @@ watch([searchQuery, statusFilter, pageSize], () => {
 });
 
 const breadcrumbItems = [
-  { label: 'Beranda', to: '/' },
-  { label: 'Pemeliharaan', to: '/maintenance/tembusan-bac' },
-  { label: 'Tembusan Berita Acara', to: '/maintenance/tembusan-bac' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan/tembusan-bac' },
+  { label: 'Tembusan Berita Acara', to: '/pemeliharaan/tembusan-bac' },
 ];
 
 const formatDate = (value: string | null) => {

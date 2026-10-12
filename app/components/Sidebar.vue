@@ -1885,7 +1885,7 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
       },
       {
         label: 'Penandatanganan',
-        to: '/maintenance/penandatanganan',
+        to: '/pemeliharaan/penandatanganan',
         icon: 'i-lucide-pen-tool',
         permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
         showIfEvpOrAbove: true,
@@ -1893,7 +1893,7 @@ const atasanManagerialSekretarisKelolaMenus = computed(() => [
       },
       {
         label: 'Tembusan BAC',
-        to: '/maintenance/tembusan-bac',
+        to: '/pemeliharaan/tembusan-bac',
         icon: 'i-lucide-copy',
         permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
         showIfEvpOrAbove: true,
@@ -1975,7 +1975,7 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
       },
       {
         label: 'Penandatanganan',
-        to: '/maintenance/penandatanganan',
+        to: '/pemeliharaan/penandatanganan',
         icon: 'i-lucide-pen-tool',
         permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
         showIfEvpOrAbove: true,
@@ -1983,14 +1983,14 @@ const atasanManagerialUnitDokumenKelolaMenus = computed(() => [
       },
       {
         label: 'Tembusan BAC',
-        to: '/maintenance/tembusan-bac',
+        to: '/pemeliharaan/tembusan-bac',
         icon: 'i-lucide-copy',
         permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
         showIfEvpOrAbove: true,
       },
       {
         label: 'Verifikasi Persetujuan',
-        to: '/maintenance/verifikasi-persetujuan-tu',
+        to: '/pemeliharaan/verifikasi-persetujuan-tu',
         icon: 'i-lucide-file-check-2',
         permission: { resource: 'pemeliharaan.verifikasi-persetujuan-tu', action: 'read' },
         badge:
@@ -2117,7 +2117,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Penandatanganan',
-      to: '/maintenance/penandatanganan',
+      to: '/pemeliharaan/penandatanganan',
       icon: 'i-lucide-pen-tool',
       permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
       showIfEvpOrAbove: true,
@@ -2125,7 +2125,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Tembusan BAC',
-      to: '/maintenance/tembusan-bac',
+      to: '/pemeliharaan/tembusan-bac',
       icon: 'i-lucide-copy',
       permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
       showIfEvpOrAbove: true,
@@ -2151,7 +2151,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Verifikasi Persetujuan',
-      to: '/maintenance/verifikasi-persetujuan-tu',
+      to: '/pemeliharaan/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
       permission: { resource: 'pemeliharaan.verifikasi-persetujuan-tu', action: 'read' },
       showIfAtasanTu: true,
@@ -2308,7 +2308,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Penandatanganan',
-      to: '/maintenance/penandatanganan',
+      to: '/pemeliharaan/penandatanganan',
       icon: 'i-lucide-pen-tool',
       permission: { resource: 'pemeliharaan.penandatanganan-bac', action: 'read' },
       showIfEvpOrAbove: true,
@@ -2316,7 +2316,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Tembusan BAC',
-      to: '/maintenance/tembusan-bac',
+      to: '/pemeliharaan/tembusan-bac',
       icon: 'i-lucide-copy',
       permission: { resource: 'pemeliharaan.tembusan-bac', action: 'read' },
       showIfEvpOrAbove: true,
@@ -2342,7 +2342,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Verifikasi Persetujuan',
-      to: '/maintenance/verifikasi-persetujuan-tu',
+      to: '/pemeliharaan/verifikasi-persetujuan-tu',
       icon: 'i-lucide-file-check-2',
       permission: { resource: 'pemeliharaan.verifikasi-persetujuan-tu', action: 'read' },
       showIfAtasanTu: true,

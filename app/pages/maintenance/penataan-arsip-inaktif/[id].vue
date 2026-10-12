@@ -628,7 +628,8 @@ const removeFoto = () => {
 }
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
   { label: 'Penataan Arsip Inaktif', to: '/maintenance/penataan-arsip-inaktif' },
   { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/penataan-arsip-inaktif/${route.params.id}` },
 ])

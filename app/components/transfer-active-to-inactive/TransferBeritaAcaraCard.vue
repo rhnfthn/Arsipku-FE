@@ -4,7 +4,7 @@
       <div class="flex min-w-0 items-center gap-3">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ props.title ?? 'Berita Acara' }}</h3>
         <span
-          v-if="transfer.bacSignedAt"
+          v-if="signatureSignedAt"
           class="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
         >
           <UIcon name="i-lucide-badge-check" class="h-3.5 w-3.5" /> Ditandatangani
@@ -98,6 +98,7 @@ const props = defineProps<{
   beritaAcaraData?: any
   previewIcon?: 'eye' | 'printer'
   title?: string
+  signatureStatus?: 'any' | 'pihak-pertama' | 'pihak-kedua'
 }>()
 const open = ref(true)
 const {
@@ -113,6 +114,11 @@ const openPreview = () => openBacPreview(
   props.transfer.beritaAcaraNomor || props.transfer.nomorUsulan,
 )
 const data = computed(() => props.beritaAcaraData ?? {})
+const signatureSignedAt = computed(() => {
+  if (props.signatureStatus === 'pihak-kedua') return props.transfer?.bacPihakKeduaSignedAt
+  if (props.signatureStatus === 'pihak-pertama') return props.transfer?.bacSignedAt
+  return props.transfer?.bacSignedAt || props.transfer?.bacPihakKeduaSignedAt
+})
 const arsip = computed(() => {
   const fromBeritaAcara = data.value?.daftarArsip
   if (Array.isArray(fromBeritaAcara) && fromBeritaAcara.length > 0) return fromBeritaAcara
