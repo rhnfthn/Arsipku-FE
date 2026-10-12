@@ -85,7 +85,7 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
       .toLowerCase()
       .startsWith('verifikasi usulan pemindahan arsip');
   if (action === 'OPEN_TRANSFER_APPROVAL' || isLegacyTransferApproval) {
-    return { path: '/maintenance/verifikasi-usulan' };
+    return { path: '/pemeliharaan/pemindahan' };
   }
 
   // Persetujuan penutupan berkas dikirim dengan berkasId, bukan action.
@@ -167,7 +167,7 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SDE_MASAL_FOLDER: '/korespondensi/sde-masal/folder',
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
     // Menu Kelola (Pemindahan Arsip / Penyusutan)
-    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/maintenance/penerimaan-usulan',
+    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/pemeliharaan/penerimaan-arsip',
     OPEN_TRANSFER_BAC_SIGNING: '/maintenance/penandatanganan',
     OPEN_TRANSFER_BAC_COPY: '/maintenance/tembusan-bac',
     OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',

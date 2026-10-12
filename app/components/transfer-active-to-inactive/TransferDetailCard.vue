@@ -459,7 +459,7 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ level.atasanName }}<span v-if="level.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.atasanPositionText }}</span>
             </p>
           </div>
@@ -496,7 +496,7 @@
             1
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
             </p>
           </div>
@@ -512,7 +512,7 @@
             2
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ transfer.bacPihakKeduaName || '-' }}<span v-if="transfer.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakKeduaJabatan }}</span>
             </p>
           </div>
@@ -526,7 +526,7 @@
     <!-- Card 5: Tembusan BAC -->
     <div
       v-if="showBacTembusan && hasBacTembusan"
-      class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <button
         type="button"
@@ -547,7 +547,7 @@
           class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
         >
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ copy.name || '-' }}<span v-if="copy.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ copy.jabatan }}</span>
             </p>
           </div>
@@ -588,7 +588,7 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ level.name }}<span v-if="level.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.jabatan }}</span>
             </p>
           </div>

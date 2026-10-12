@@ -118,7 +118,18 @@ const arsip = computed(() => {
   if (Array.isArray(fromBeritaAcara) && fromBeritaAcara.length > 0) return fromBeritaAcara
   return Array.isArray(props.transfer?.arsipIds) ? props.transfer.arsipIds : []
 })
-const unitKerjaPengusul = computed(() => data.value?.unitKerjaPengusul || props.transfer?.divisiName || '.........')
+const unitKerjaPengusul = computed(() => {
+  const candidates = [
+    data.value?.unitKerjaPengusul,
+    data.value?.pengirim?.divisi,
+    data.value?.pengirim?.unitKerja,
+    props.transfer?.unitKerjaPengusul,
+    props.transfer?.divisiName,
+  ]
+  return candidates
+    .map((value) => String(value ?? '').trim())
+    .find((value) => value && !/^\.{3,}$/.test(value)) ?? '.........'
+})
 const unitKerjaTu = computed(() => data.value?.unitKerjaTu || 'UC')
 const unitKerjaPihakPertama = computed(() => data.value?.pihakPertama?.unitKerja || unitKerjaPengusul.value)
 // Pihak kedua baru dipilih Unit Dokumen, sehingga tetap kosong sebelum tahap tersebut.

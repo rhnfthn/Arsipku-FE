@@ -273,16 +273,16 @@ const breadcrumbItems = computed(() => {
   if (fromPage.value === 'tu' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Penerimaan Arsip', to: '/maintenance/penerimaan-usulan' },
-      { label: nomorUsulan.value, to: `/maintenance/penerimaan-usulan/${usulanId.value}` },
+      { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
+      { label: nomorUsulan.value, to: `/pemeliharaan/penerimaan-arsip/${usulanId.value}` },
       { label: 'Detail Berkas' },
     ];
   }
   if (nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Verifikasi Usulan', to: '/maintenance/verifikasi-usulan' },
-      { label: nomorUsulan.value, to: `/maintenance/verifikasi-usulan/${usulanId.value}?jenis=aktif_ke_inaktif` },
+      { label: 'Verifikasi Usulan', to: '/pemeliharaan/pemindahan' },
+      { label: nomorUsulan.value, to: `/pemeliharaan/pemindahan/${usulanId.value}?jenis=aktif_ke_inaktif` },
       { label: 'Detail Berkas' },
     ];
   }

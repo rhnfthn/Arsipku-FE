@@ -33,7 +33,8 @@
     <!-- Content -->
     <template v-else-if="item">
       <!-- Urutan baku lintas status: Informasi Usulan, Daftar Berkas, Daftar Isi,
-           Atasan, Penandatangan BAC, Tembusan BAC, Timeline, lalu status/aksi. -->
+           Atasan, Penandatangan BAC, Tembusan BAC, status/aksi, Berita Acara,
+           lalu Timeline Riwayat sebagai card paling bawah. -->
       <div v-if="!isBacSignerView || isPenandatangananRoute" class="mx-auto w-full max-w-none space-y-5">
           <TransferDetailCard
             :transfer="item"
@@ -59,8 +60,6 @@
             :show-classification-code="false"
             :unit-kerja-pihak-pertama="bacUnitKerjaPengusul"
           />
-
-          <TimelineRiwayat v-if="item" :item="item" />
 
           <div
             v-if="isSekretarisPengusul && item.status === 'DRAFT'"
@@ -107,7 +106,7 @@
                   Usulan sudah dikirim ke Unit Tata Naskah. Lanjutkan verifikasi berkas dan pengajuan ke Atasan Managerial TU.
                 </p>
                 <NuxtLink
-                  :to="`/maintenance/penerimaan-usulan/${item.id}?jenis=aktif_ke_inaktif`"
+                  :to="`/pemeliharaan/penerimaan-arsip/${item.id}?jenis=aktif_ke_inaktif`"
                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary-800 text-white transition-colors"
                 >
                   <UIcon name="i-lucide-file-check" class="w-4 h-4" /> Buka Penerimaan Arsip
@@ -214,7 +213,7 @@
               aria-label="Preview Berita Acara"
               class="inline-flex h-9 w-9 items-center justify-center text-gray-600 transition-colors hover:text-[#457fb6] dark:text-gray-300"
             >
-              <UIcon name="i-lucide-eye" class="h-5 w-5" />
+              <UIcon name="i-lucide-printer" class="h-5 w-5" />
             </button>
           </div>
           <button
@@ -406,7 +405,7 @@
         </div>
       </div>
 
-      <!-- Persetujuan terakhir dan aksinya selalu berada setelah timeline. -->
+      <!-- Persetujuan terakhir dan aksinya ditampilkan sebelum Timeline Riwayat. -->
       <div
         v-if="!isBacSignerView && item && (item.status === 'DISETUJUI_PERSETUJUAN_TU' || item.status === 'MENUNGGU_PERSETUJUAN_TERAKHIR_TU') && isAtasanTuFinal"
         class="mx-auto mt-5 w-full max-w-none rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-800 dark:bg-emerald-900/20"
@@ -429,6 +428,8 @@
           </div>
         </div>
       </div>
+
+      <TimelineRiwayat v-if="item" :item="item" />
     </template>
     <div v-else-if="signingAccessError" class="rounded-2xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm dark:border-red-800 dark:bg-gray-800 dark:text-red-300">
       <p>{{ signingAccessError }}</p>
