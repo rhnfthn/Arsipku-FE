@@ -159,6 +159,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/maintenance/verify-physical-inactive-file',
     '/maintenance/final-approval-transfer-inactive-file',
     '/maintenance/transfer-active-to-inactive-file',
+    '/kelola/pemeliharaan/pemindahan-arsip',
     '/maintenance/transfer-active-to-inactive',
     '/maintenance/approval-transfer-active-to-inactive-file',
     '/maintenance/approval-transfer-active-to-inactive',

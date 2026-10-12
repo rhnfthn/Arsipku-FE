@@ -264,9 +264,9 @@ const breadcrumbItems = computed(() => {
   if (fromPage.value === 'transfer' && nomorUsulan.value && usulanId.value) {
     return [
       { label: 'Beranda', to: '/' },
-      { label: 'Pemeliharaan', to: '/maintenance/transfer-active-to-inactive-file' },
-      { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/maintenance/transfer-active-to-inactive-file' },
-      { label: nomorUsulan.value, to: `/maintenance/transfer-active-to-inactive-file/${usulanId.value}` },
+      { label: 'Pemeliharaan', to: '/kelola/pemeliharaan/pemindahan-arsip' },
+      { label: 'Pemindahan Arsip Aktif ke Inaktif', to: '/kelola/pemeliharaan/pemindahan-arsip' },
+      { label: nomorUsulan.value, to: `/kelola/pemeliharaan/pemindahan-arsip/${usulanId.value}` },
       { label: 'Detail Berkas' },
     ];
   }
