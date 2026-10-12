@@ -115,6 +115,14 @@ export const pickKorespondensiListQuery = (source: Record<string, unknown>) => {
   return query;
 };
 
+// `jenis` pada URL detail menentukan cara memuat naskah yang sedang dibuka.
+// Navigasi antar-pesan mengikuti tab daftar asal, bukan jenis naskah tersebut.
+export const getKorespondensiNavigationJenis = (source: Record<string, unknown>) => {
+  const tab = firstQueryValue(source.tab)?.toUpperCase();
+  if (!tab || tab === 'ALL' || tab === 'SEMUA') return undefined;
+  return tab === 'KO' ? 'K' : tab;
+};
+
 export const applyKorespondensiListQuery = (
   source: Record<string, unknown>,
   state: ApplyState,

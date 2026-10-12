@@ -21,7 +21,7 @@ import {
   List,
   Layers,
 } from 'lucide-vue-next';
-import { pickKorespondensiListQuery } from '~/utils/korespondensi-list-state';
+import { getKorespondensiNavigationJenis, pickKorespondensiListQuery } from '~/utils/korespondensi-list-state';
 import { compareNaskahFlowNewestFirst } from '~/utils/naskah-flow-order';
 
 import DetailNaskah from '@/components/DetailNaskah.vue';
@@ -414,7 +414,7 @@ const loadData = async () => {
   try {
     isLoadingNav.value = true;
     try {
-      const nav = await fetchInboxNavigation(id.value, jenisQuery.value);
+      const nav = await fetchInboxNavigation(id.value, getKorespondensiNavigationJenis(route.query));
       navPrev.value = nav.previous;
       navNext.value = nav.next;
     } catch (navErr) {
