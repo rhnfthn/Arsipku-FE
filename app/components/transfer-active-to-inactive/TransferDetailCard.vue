@@ -38,6 +38,10 @@
             <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ transfer.nomorUsulan }}</p>
           </div>
+          <div v-if="descriptionNextToNumber">
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
+          </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">{{ informationDateLabel }}</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ formatDate(informationDateValue) }}</p>
@@ -76,7 +80,7 @@
             <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ formatDate(transfer.tanggalRetensiAktifHabis) }}</p>
           </div>
-          <div class="md:col-span-2">
+          <div v-if="!descriptionNextToNumber" class="md:col-span-2">
             <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
           </div>
@@ -642,6 +646,7 @@ const props = defineProps<{
   signerSignedAt?: string | null;
   informationDateLabel?: string;
   informationDateValue?: string | Date | null;
+  descriptionNextToNumber?: boolean;
 }>();
 
 const { getNaskahDetailInBerkas, getNaskahPdfUrl } = useArsipDinamis();
@@ -662,6 +667,7 @@ const showBacStatus = computed(() => props.showBacStatus !== false);
 const showClassificationCode = computed(() => props.showClassificationCode !== false);
 const informationDateLabel = computed(() => props.informationDateLabel ?? 'Tanggal Usulan');
 const informationDateValue = computed(() => props.informationDateValue ?? props.transfer.tanggalUsulan);
+const descriptionNextToNumber = computed(() => props.descriptionNextToNumber === true);
 const bacSigningStatusLabel = computed(() => {
   if (props.statusContext === 'bac-signing') {
     return props.signerSignedAt ? 'Ditandatangani' : 'Menunggu Tanda Tangan';

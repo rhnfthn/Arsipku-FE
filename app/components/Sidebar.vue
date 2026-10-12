@@ -1780,7 +1780,7 @@ const sekretarisKelolaMenus = computed(() => {
       },
       {
         label: 'Pemindahan Arsip',
-        to: '/maintenance/transfer-active-to-inactive-file',
+        to: '/kelola/pemeliharaan/pemindahan-arsip',
         icon: 'i-lucide-file-up',
         permission: { resource: 'pemeliharaan.pemindahan', action: 'read' },
         showIfDivisionSecretary: true,
@@ -2110,7 +2110,7 @@ const adminMenuKelola = computed(() => {
     },
     {
       label: 'Pemindahan Arsip',
-      to: '/maintenance/transfer-active-to-inactive-file',
+      to: '/kelola/pemeliharaan/pemindahan-arsip',
       icon: 'i-lucide-file-up',
       permission: { resource: 'pemeliharaan.pemindahan', action: 'read' },
       showIfDivisionSecretary: true,
@@ -2301,7 +2301,7 @@ const userMenuKelola = computed(() => {
     },
     {
       label: 'Pemindahan Arsip',
-      to: '/maintenance/transfer-active-to-inactive-file',
+      to: '/kelola/pemeliharaan/pemindahan-arsip',
       icon: 'i-lucide-file-up',
       permission: { resource: 'pemeliharaan.pemindahan', action: 'read' },
       showIfDivisionSecretary: true,

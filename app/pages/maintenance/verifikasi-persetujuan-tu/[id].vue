@@ -564,7 +564,7 @@ const onConfirmSetujui = async () => {
     })
     showSetujuiModal.value = false
     useToast().add({ title: 'Berhasil', description: 'Penerimaan usulan disetujui.', color: 'success' })
-    await navigateTo(`/maintenance/transfer-active-to-inactive-file/${item.value.id}`)
+    await navigateTo(`/kelola/pemeliharaan/pemindahan-arsip/${item.value.id}`)
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Gagal menyetujui.'
     useToast().add({ title: 'Gagal', description: msg, color: 'error' })
@@ -598,7 +598,7 @@ const onConfirmSetujuiTerakhir = async () => {
     })
     showSetujuiTerakhirModal.value = false
     useToast().add({ title: 'Berhasil', description: 'Persetujuan terakhir diberikan. Arsip diterima.', color: 'success' })
-    await navigateTo(`/maintenance/transfer-active-to-inactive-file/${item.value.id}`)
+    await navigateTo(`/kelola/pemeliharaan/pemindahan-arsip/${item.value.id}`)
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Gagal menyetujui terakhir.'
     useToast().add({ title: 'Gagal', description: msg, color: 'error' })
