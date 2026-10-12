@@ -837,9 +837,11 @@ const refreshSdeMasalCounts = async () => {
       ).size;
 
     // Pengajuan: perubahan yang kembali ke konseptor, termasuk status
-    // DIKEMBALIKAN. Verifikasi: folder baru yang sedang menunggu giliran.
+    // DIKEMBALIKAN. Badge Verifikasi menghitung tugas aktif, bukan jumlah
+    // notifikasi unread, supaya angka tidak hilang hanya karena notifikasi
+    // sudah dibuka tetapi folder belum diverifikasi.
     sdeMasalPengajuanCount.value = countUnreadFolders(creatorFolderIds);
-    sdeMasalVerificationCount.value = countUnreadFolders(verificationFolderIds);
+    sdeMasalVerificationCount.value = verificationFolderIds.size;
   } catch {
     // Jangan menampilkan badge palsu ketika daftar folder gagal dimuat.
     sdeMasalPengajuanCount.value = 0;
@@ -975,6 +977,7 @@ const sdeMasalMenu = computed(() => ({
       to: '/korespondensi/sde-masal/verifikasi',
       exact: true,
       permission: { resource: 'sde-masal', action: 'read-verification' },
+      showIfAvpOrAbove: true,
       badge: sdeMasalVerificationCount.value > 0 ? sdeMasalVerificationCount.value : null,
     },
   ],
@@ -1645,7 +1648,7 @@ const isAvpOrAbovePosition = computed(() => {
   if (['SE', 'PS', 'VI', 'EXT'].includes(positionStatus)) return false;
 
   const bodTag = String(user.value?.bodTag ?? '').trim().toUpperCase();
-  if (['BOD', 'BOD-1', 'BOD-2', 'BOD-3'].includes(bodTag)) return true;
+  if (['BOD', 'BOD-0', 'BOD-1', 'BOD-2', 'BOD-3'].includes(bodTag)) return true;
 
   const positionText = String(user.value?.positionText ?? '').toUpperCase();
   const abbreviation = String(user.value?.abbreviation ?? '').toUpperCase();
@@ -2581,6 +2584,11 @@ const filterMenuByPermission = (items) => {
 
     // Persetujuan Pemberkasan hanya tampil untuk jabatan AVP sampai Direksi.
     if (cloned.showIfCanPersetujuan && !isAvpOrAbovePosition.value) {
+      return null;
+    }
+
+    // Verifikasi SDE Massal hanya tersedia untuk AVP ke atas atau BOD.
+    if (cloned.showIfAvpOrAbove && !isAvpOrAbovePosition.value) {
       return null;
     }
 

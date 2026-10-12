@@ -19,60 +19,54 @@
 
     <!-- Kanvas surat mengikuti struktur Surat Dinas Eksternal. -->
     <div
-      class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-4 font-['Times_New_Roman']"
+      class="flex flex-col bg-gray-100 transition-all duration-300 relative border border-gray-200 rounded-lg overflow-hidden mt-6 font-['Times_New_Roman']"
     >
       <div
-        class="bg-white pb-10 pt-10 border-b border-gray-100 select-none text-black min-h-[900px]"
+        class="bg-white pt-10 pb-10 border-b border-gray-100 select-none text-black min-h-[1000px]"
       >
-        <div class="flex items-center px-10">
-          <div class="flex items-end gap-4">
-            <img src="/logoAirnav.png" alt="Logo AirNav" class="h-16 w-auto object-contain" />
-            <span class="mb-1 text-[18px] font-bold tracking-wide">AirNav Indonesia</span>
-          </div>
-          <div class="ml-auto w-[260px] text-left text-[10px] leading-[1.15] text-slate-700">
-            <div class="font-bold uppercase">KANTOR PUSAT PERUM LPPNPI</div>
-            <div>Gedung AirNav Indonesia Tangerang</div>
-            <div>Jl. Ir. H. Juanda No. 1 Tangerang</div>
-            <div>Banten 15121 Indonesia</div>
-            <div>Telp : 021-55915000</div>
-            <div>www.airnavindonesia.co.id</div>
+        <div class="bg-white px-8 pt-8 pb-4 border-b border-gray-100 select-none">
+          <TulisKopSurat :alamat-info="user?.alamatInfo" />
+        </div>
+
+        <div class="flex mb-4 text-[14px] px-10">
+          <div>{{ formattedDate }}</div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-8 mb-8 text-[14px] px-10">
+          <div class="w-full">
+            <table class="w-full align-top">
+              <tbody>
+                <tr>
+                  <td class="w-[80px] align-top">Nomor</td>
+                  <td class="w-[10px] align-top">:</td>
+                  <td class="align-top">................................................</td>
+                </tr>
+                <tr>
+                  <td class="align-top">Sifat</td>
+                  <td class="align-top">:</td>
+                  <td class="align-top capitalize">{{ konsep?.sifat || 'Biasa' }}</td>
+                </tr>
+                <tr>
+                  <td class="align-top">Lampiran</td>
+                  <td class="align-top">:</td>
+                  <td class="align-top">-</td>
+                </tr>
+                <tr>
+                  <td class="align-top">Perihal</td>
+                  <td class="align-top">:</td>
+                  <td class="align-top font-bold text-justify" v-pre>
+                    <span class="sde-var-preview">{{perihal}}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="mt-5">Kepada Yth.</div>
+            <div class="mb-1 font-bold" v-pre><span class="sde-var-preview">{{tertuju}}</span></div>
+            <div class="mb-1">Di Tempat</div>
           </div>
         </div>
 
-        <div class="mt-16 px-10 text-[14px]">{{ formattedDate }}</div>
-        <div class="mt-8 px-10 text-[14px]">
-          <table class="w-full">
-            <tbody>
-              <tr>
-                <td class="w-20 align-top">Nomor</td>
-                <td class="w-3 align-top">:</td>
-                <td>................................................</td>
-              </tr>
-              <tr>
-                <td class="align-top">Sifat</td>
-                <td class="align-top">:</td>
-                <td class="capitalize">{{ konsep?.sifat || 'Biasa' }}</td>
-              </tr>
-              <tr>
-                <td class="align-top">Lampiran</td>
-                <td class="align-top">:</td>
-                <td>-</td>
-              </tr>
-              <tr>
-                <td class="align-top">Perihal</td>
-                <td class="align-top">:</td>
-                <td class="font-bold" v-pre><span class="sde-var-preview">{{perihal}}</span></td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="mt-10">Kepada Yth.</div>
-          <div class="mb-3 font-bold" v-pre><span class="sde-var-preview">{{tertuju}}</span></div>
-          <div>Di Tempat</div>
-        </div>
-
-        <div
-          class="mt-16 min-h-[300px] border-t border-gray-200 relative group dark:border-gray-700"
-        >
+        <div class="min-h-[300px] relative group">
           <ClientOnly>
             <TinymceEditorAsync
               api-key="no-api-key"
@@ -83,22 +77,19 @@
           </ClientOnly>
         </div>
 
-        <div class="mt-12 flex px-10 text-black">
-          <!-- Layout tanda tangan mengikuti PDF SDE biasa: kolom kiri 50%. -->
-          <div class="w-1/2 text-center">
+        <div class="flex mt-12 text-black px-10">
+          <div class="text-center min-w-[250px]">
             <div class="mb-24 text-[14px]">
-              <div>{{ formattedDate }}</div>
+              <div v-if="konsep?.atasNama" class="font-bold mb-1">a.n {{ konsep.atasNama }}</div>
               <div class="font-bold">{{ signaturePosition }}</div>
             </div>
-            <div class="text-[14px] font-bold underline">{{ signatureName }}</div>
+            <div class="font-bold text-[14px] underline">{{ signatureName }}</div>
           </div>
         </div>
         <div class="mt-8 px-10 text-[12px] text-black">
-          <div class="mb-1 font-bold underline">Tembusan :</div>
-          <div class="ml-4 pl-2">
-            <div v-pre>1. <span class="sde-var-preview">{{tembusan_internal}}</span></div>
-            <div class="mt-1" v-pre>2. <span class="sde-var-preview">{{tembusan_eksternal}}</span></div>
-          </div>
+          <div class="font-bold mb-1">Tembusan Yth:</div>
+          <div v-pre><span class="sde-var-preview">{{tembusan_internal}}</span></div>
+          <div v-pre><span class="sde-var-preview">{{tembusan_eksternal}}</span></div>
         </div>
       </div>
     </div>
@@ -159,7 +150,7 @@ const detectedVariables = computed(() => [
 // Template konten default — KOSONG. User mengetik konten secara dinamis.
 // Header surat (nomor/sifat/lampiran/perihal), tujuan, tanda tangan, dan
 // tembusan sudah ada di kanvas di luar editor — jangan diduplikat di konten.
-const defaultTemplateContent = `<p><br></p>`;
+const defaultTemplateContent = '';
 
 // Auto-set konten saat step dibuka.
 // Prioritas: 1) konten yang sudah tersimpan di model (dari localStorage/wizardState),

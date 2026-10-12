@@ -277,6 +277,18 @@ const findTertujuEksternal = (value: string | number | null | undefined) => {
 const getRecipientCompanyName = (item: SdeMasalPenerima) =>
   findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
 
+const getPreviewItem = (item: SdeMasalPenerima): SdeMasalPenerima => {
+  const authorityPositionId = String(props.konsep?.atasNamaPositionId || '').trim();
+  if (!authorityPositionId) return item;
+
+  const internalIds = String(item.tembusanInternal || '')
+    .split(/[,;]/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (!internalIds.includes(authorityPositionId)) internalIds.push(authorityPositionId);
+  return { ...item, tembusanInternal: internalIds.join(';') };
+};
+
 const openPreview = async (idx: number) => {
   previewIdx.value = idx;
   await generatePdfFor(idx);
@@ -301,6 +313,26 @@ const revokePdf = () => {
   pdfUrl.value = null;
 };
 
+const attachmentRefs = (row: any): Array<{ fileName: string; key: string; url?: string }> => {
+  if (Array.isArray(row?.lampiran)) return row.lampiran;
+  if (typeof row?.lampiran === 'string') {
+    try {
+      const parsed = JSON.parse(row.lampiran);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Format lama dapat berupa satu key atau URL lampiran.
+    }
+  }
+  const key = row?.lampiranKey || (typeof row?.lampiran === 'string' ? row.lampiran : '');
+  if (!key) return [];
+  const raw = String(key).split('?')[0];
+  return [{
+    fileName: raw.split('/').pop() || 'Lampiran',
+    key,
+    url: row?.lampiranKey ? row.lampiran : undefined,
+  }];
+};
+
 /**
  * Generate PDF asli via POST /SDE/preview-pdf (Puppeteer di backend),
  * lalu tampilkan via iframe → native PDF viewer browser.
@@ -320,28 +352,30 @@ const generatePdfFor = async (idx: number) => {
     setTertujuEksternalLookup(tertujuEksternal.value);
     await ensureInternalPositionLookup();
 
+    const previewItem = getPreviewItem(item);
+
     const konten = renderSdeMasalKonten(
       props.template.konten,
-      item,
+      previewItem,
       props.konsep ?? null,
-      getRecipientCompanyName(item)
+      getRecipientCompanyName(previewItem)
     );
 
     const formData = new FormData();
     formData.append('htmlContent', konten);
     formData.append('konten', konten);
     formData.append('klasifikasi', props.konsep?.klasifikasiName?.split(' - ')[0] || '');
-    formData.append('perihal', item.perihal || props.konsep?.perihal || '');
+    formData.append('perihal', previewItem.perihal || props.konsep?.perihal || '');
     formData.append('sifat', props.konsep?.sifat || 'biasa');
     formData.append(
       'penerima',
-      JSON.stringify([getRecipientCompanyName(item) || item.tertuju || item.idTertuju || ''])
+      JSON.stringify([getRecipientCompanyName(previewItem) || previewItem.tertuju || previewItem.idTertuju || ''])
     );
     // Tembusan: kirim kode eksternal & internal untuk di-resolve backend
     // (urutan: eksternal dulu, lalu internal) → di-hardcode di kanvas PDF.
     // tembusan legacy dikirim sebagai fallback bila kolom baru kosong.
     formData.append('tembusan_eksternal', item.tembusanEksternal || '');
-    formData.append('tembusan_internal', item.tembusanInternal || '');
+    formData.append('tembusan_internal', previewItem.tembusanInternal || '');
     formData.append('tembusan', JSON.stringify(item.tembusan ? [item.tembusan] : []));
     formData.append(
       'nama_tempat',
@@ -350,8 +384,16 @@ const generatePdfFor = async (idx: number) => {
     // Penandatangan = pengirim yang dipilih di konsep (bukan user login)
     formData.append('nama_jabatan', pengirimJabatan.value || user.value?.positionText || '');
     formData.append('nama_lengkap', pengirimNama.value || user.value?.nama || '');
+    formData.append('atas_nama', props.konsep?.atasNama || '');
     if (props.konsep?.tanggalKonsep) {
       formData.append('tgl', props.konsep.tanggalKonsep);
+    }
+    const previewAttachments = attachmentRefs(item);
+    if (previewAttachments.length > 0) {
+      formData.append(
+        'lampiran_direct_refs',
+        JSON.stringify(previewAttachments.map(({ fileName, key }) => ({ fileName, key })))
+      );
     }
 
     const response = await api.post('/sde-masal/preview-pdf', formData, {
