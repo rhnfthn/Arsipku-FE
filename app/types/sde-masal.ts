@@ -41,6 +41,7 @@ export interface SdeMasalFolder {
     | 'DIFINALISASI'
     | 'MENUNGGU_VERIFIKASI'
     | 'SEBAGIAN_TERKIRIM'
+    | 'SIAP_KIRIM'
     | 'TERKIRIM'
     | 'DITOLAK';
   createdBy?: string | null;

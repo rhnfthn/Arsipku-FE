@@ -88,6 +88,15 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     return { path: '/pemeliharaan/pemindahan' };
   }
 
+  // Notifikasi SDE Massal dibuka langsung ke folder yang membutuhkan aksi,
+  // bukan berhenti di daftar verifikasi.
+  if (action === 'OPEN_SDE_MASAL_VERIFIKASI') {
+    const folderId = getString('folderId', 'folder_id');
+    return folderId
+      ? { path: `/korespondensi/sde-masal/folder/${encodeURIComponent(folderId)}` }
+      : { path: '/korespondensi/sde-masal/verifikasi' };
+  }
+
   // Persetujuan penutupan berkas dikirim dengan berkasId, bukan action.
   // Arahkan langsung ke halaman review agar verifikator dapat memprosesnya.
   if (type === 'BERKAS_VERIFIKASI') {
