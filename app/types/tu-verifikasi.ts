@@ -47,6 +47,11 @@ export interface TuUsulanItem {
   bacPihakKeduaPersnum?: number | null;
   bacPihakKeduaName?: string | null;
   bacPihakKeduaJabatan?: string | null;
+  bacTembusan?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+  }> | null;
   bacSignedAt?: string | null;
   bacPihakKeduaSignedAt?: string | null;
   lokasiPenataan: string | null;

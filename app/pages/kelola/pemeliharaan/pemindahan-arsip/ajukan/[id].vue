@@ -165,7 +165,7 @@ const isAjukanModalOpen = ref(false);
 const berkasInfoOpen = ref(true);
 
 const breadcrumbItems = computed(() => [
-  { label: 'Beranda', to: '/' },
+  { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/kelola/pemeliharaan/pemindahan-arsip' },
   {
     label: 'Pemindahan Arsip Aktif ke Inaktif',

@@ -92,7 +92,7 @@
               <input
                 v-model="searchInput"
                 type="text"
-                placeholder="Cari Berkas…"
+                placeholder="Cari berkas, klasifikasi, atau status…"
                 class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
                 @input="onSearchInput"
               />
@@ -233,9 +233,8 @@
             :total-pages="totalPages"
             :total-items="total"
             :rows-per-page="limit"
-            :rows-options="[10, 20, 50]"
+            :rows-options="[]"
             @update:page="onPageChange"
-            @update:rows-per-page="onLimitChange"
           />
         </div>
       </div>
@@ -274,7 +273,7 @@ const { apiGet } = useApi()
 const { user } = useAuth()
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan' },
   { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
 ])

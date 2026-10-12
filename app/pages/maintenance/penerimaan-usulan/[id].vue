@@ -31,15 +31,14 @@
           :daftar-isi="daftarIsiDetail"
           :collapsible="true"
           :show-approval-levels="false"
-          :show-bac-signer="false"
-          :show-bac-tembusan="false"
+          :show-bac-signer="true"
+          :show-bac-tembusan="true"
           :show-tu-approval-levels="true"
           :show-information-card="true"
           information-title="Informasi Berkas"
           information-layout="usul"
           :description-next-to-number="true"
           berkas-layout="usul"
-          :hide-secretary-info="true"
           :fit-berkas-table="true"
           :unit-kerja-pihak-pertama="unitKerjaPengusulForPrint"
           preview-from="tu"
@@ -49,6 +48,7 @@
         <TransferBeritaAcaraCard
           :transfer="transferView"
           :berita-acara-data="beritaAcaraData"
+          signature-status="pihak-kedua"
         />
 
         <TimelineRiwayat :item="item as any" />
@@ -634,7 +634,7 @@ const removeAtasanTu = (idx: number) => {
 }
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
+  { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/pemeliharaan' },
   { label: 'Penerimaan Arsip', to: '/pemeliharaan/penerimaan-arsip' },
   { label: item.value?.nomorUsulan ?? 'Detail', to: `/pemeliharaan/penerimaan-arsip/${route.params.id}` },

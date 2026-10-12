@@ -168,8 +168,8 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
     // Menu Kelola (Pemindahan Arsip / Penyusutan)
     OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/pemeliharaan/penerimaan-arsip',
-    OPEN_TRANSFER_BAC_SIGNING: '/maintenance/penandatanganan',
-    OPEN_TRANSFER_BAC_COPY: '/maintenance/tembusan-bac',
+    OPEN_TRANSFER_BAC_SIGNING: '/pemeliharaan/penandatanganan',
+    OPEN_TRANSFER_BAC_COPY: '/pemeliharaan/tembusan-bac',
     OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',
   };
 

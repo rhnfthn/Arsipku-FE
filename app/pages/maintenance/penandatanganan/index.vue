@@ -246,13 +246,16 @@ import { useApi } from '~/composables/useApi';
 import { useKlasifikasi } from '~/composables/useKlasifikasi';
 import { formatDate } from '~/utils/transfer-status';
 
-definePageMeta({ middleware: ['auth', 'evp-or-above'] });
+definePageMeta({
+  middleware: ['auth', 'evp-or-above'],
+  alias: ['/pemeliharaan/penandatanganan'],
+});
 
 const { rowClass, markViewed } = useViewedRows('penandatanganan');
 
 const openSigningRow = (row: SigningRow) => {
   markViewed(row);
-  return navigateTo(`/maintenance/penandatanganan/${row.id}?signer=${row.signerType || 'pihak_pertama'}`);
+  return navigateTo(`/pemeliharaan/penandatanganan/${row.id}?signer=${row.signerType || 'pihak_pertama'}`);
 };
 
 interface SigningRow {
@@ -341,9 +344,9 @@ const hideCellTooltip = () => {
 };
 
 const breadcrumbItems = [
-  { label: 'Beranda', to: '/' },
-  { label: 'Pemeliharaan', to: '/maintenance/penandatanganan' },
-  { label: 'Penandatanganan', to: '/maintenance/penandatanganan' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan/penandatanganan' },
+  { label: 'Penandatanganan', to: '/pemeliharaan/penandatanganan' },
 ];
 
 const columns = [

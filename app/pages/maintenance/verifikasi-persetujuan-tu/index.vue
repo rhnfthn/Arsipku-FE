@@ -5,9 +5,6 @@
       <div class="mb-6">
         <Heading variant="heading6b" class="text-mobile-md">Verifikasi Persetujuan</Heading>
         <PageHeader :items="breadcrumbs" />
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Verifikasi penerimaan arsip pindah dari Unit Tata Naskah.
-        </p>
       </div>
 
       <!-- Filter dan tabel memakai toolbar, tabel, serta card yang sama dengan halaman Pemindahan. -->
@@ -69,7 +66,7 @@
           <template #cell-aksi="{ row }">
             <div class="text-center" @click.stop>
               <NuxtLink
-                :to="`/maintenance/verifikasi-persetujuan-tu/${row.id}`"
+                :to="`/pemeliharaan/verifikasi-persetujuan-tu/${row.id}`"
                 @click="markViewed(row)"
                 class="inline-flex h-8 w-8 items-center justify-center text-gray-900 transition-colors hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300"
                 :aria-label="`Detail ${row.nomorUsulan || row.arsipPerihal || ''}`"
@@ -112,6 +109,11 @@ definePageMeta({ middleware: ['auth'] })
 const showExportModal = ref(false)
 const isExporting = ref(false)
 
+const route = useRoute()
+if (route.path === '/maintenance/verifikasi-persetujuan-tu') {
+  await navigateTo('/pemeliharaan/verifikasi-persetujuan-tu', { replace: true })
+}
+
 const exportColumns = ref([
   { key: 'arsipPerihal', label: 'Nama Berkas', desc: 'Perihal atau nama berkas' },
   { key: 'arsipKode', label: 'Kode Berkas', desc: 'Kode berkas arsip' },
@@ -126,8 +128,9 @@ const { fetchAtasanTuList } = useTuVerifikasi()
 const { rowClass, markViewed } = useViewedRows('verifikasi-persetujuan-tu')
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
-  { label: 'Verifikasi Persetujuan', to: '/maintenance/verifikasi-persetujuan-tu' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Verifikasi Persetujuan', to: '/pemeliharaan/verifikasi-persetujuan-tu' },
 ])
 
 const list = ref<TuUsulanItem[]>([])

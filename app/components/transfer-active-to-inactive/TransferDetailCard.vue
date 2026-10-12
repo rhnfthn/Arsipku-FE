@@ -59,8 +59,12 @@
             </p>
           </div>
           <div v-if="showSecretaryInfo">
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
-            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.sekretarisName }}</p>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Unit Dokumen</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.tuName || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Lokasi Fisik</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.lokasiAwal || '-' }}</p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span>

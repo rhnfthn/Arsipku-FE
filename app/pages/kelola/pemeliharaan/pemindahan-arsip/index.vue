@@ -412,7 +412,7 @@ const isSekretaris = computed(() => {
 });
 
 const items = [
-  { label: 'Beranda', to: '/' },
+  { label: 'Kelola', to: '/kelola' },
   { label: 'Pemeliharaan', to: '/kelola/pemeliharaan/pemindahan-arsip' },
   {
     label: 'Pemindahan Arsip',
