@@ -7,7 +7,7 @@
         :items="breadcrumbs"
       />
       <NuxtLink
-        to="/maintenance/verifikasi-persetujuan-tu"
+        to="/pemeliharaan/verifikasi-persetujuan-tu"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
       >
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
@@ -25,15 +25,19 @@
     <!-- Content -->
     <template v-else-if="item">
       <div class="w-full space-y-5">
-          <!-- Card 1: Informasi Usulan + Keterangan -->
+          <!-- Card 1: Informasi Berkas + Keterangan -->
           <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Usulan</h3>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Informasi Berkas</h3>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.nomorUsulan }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipPerihal || '-' }}</p>
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Diajukan ke TU</span>
@@ -44,24 +48,30 @@
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipKode ?? '-' }}</p>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item.atasanName || '-' }}</p>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Nasib Akhir</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Jenis</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipTindakanPenyusutan ?? '-' }}</p>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi</span>
+                <p class="text-gray-900 dark:text-white font-medium">
+                  {{ [item.arsipKlasifikasiKode, item.arsipKlasifikasi].filter(Boolean).join(' — ') || '-' }}
+                </p>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(item.tanggalRetensiAktifHabis) }}</p>
               </div>
               <div>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">Status</span>
                 <p class="mt-1"><span :class="statusBadgeClass(item.status)" class="text-xs">{{ statusLabel(item.status) }}</span></p>
               </div>
               <div>
-                <span class="text-gray-500 dark:text-gray-400 text-xs">TU Pengirim</span>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Unit Dokumen</span>
                 <p class="text-gray-900 dark:text-white font-medium">{{ item.tuName || '-' }}</p>
               </div>
-              <div class="md:col-span-2">
-                <span class="text-gray-500 dark:text-gray-400 text-xs">Perihal Arsip</span>
-                <p class="text-gray-900 dark:text-white font-medium">{{ item.arsipPerihal }}</p>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400 text-xs">Lokasi Fisik</span>
+                <p class="text-gray-900 dark:text-white font-medium">{{ item.lokasiAwal || '-' }}</p>
               </div>
             </div>
 
@@ -135,6 +145,7 @@
           <TransferBeritaAcaraCard
             :transfer="item"
             :berita-acara-data="beritaAcaraData"
+            signature-status="pihak-kedua"
             preview-icon="eye"
           />
 
@@ -355,6 +366,9 @@ import TransferDetailCard from '~/components/transfer-active-to-inactive/Transfe
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
+if (route.path.startsWith('/maintenance/verifikasi-persetujuan-tu/')) {
+  await navigateTo(`/pemeliharaan/verifikasi-persetujuan-tu/${route.params.id}`, { replace: true })
+}
 const { user } = useAuth()
 const { fetchAtasanTuDetail, setujuiPenerimaan, tolakPenerimaan, setujuiTerakhir } = useTuVerifikasi()
 
@@ -383,9 +397,10 @@ const catatanVerifikasi = ref('')
 const alasanPenolakan = ref('')
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
-  { label: 'Verifikasi Persetujuan', to: '/maintenance/verifikasi-persetujuan-tu' },
-  { label: item.value?.nomorUsulan ?? 'Detail', to: `/maintenance/verifikasi-persetujuan-tu/${route.params.id}` },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Verifikasi Persetujuan', to: '/pemeliharaan/verifikasi-persetujuan-tu' },
+  { label: item.value?.nomorUsulan ?? 'Detail', to: `/pemeliharaan/verifikasi-persetujuan-tu/${route.params.id}` },
 ])
 
 const daftarBerkas = computed(() => {
@@ -564,7 +579,7 @@ const onConfirmSetujui = async () => {
     })
     showSetujuiModal.value = false
     useToast().add({ title: 'Berhasil', description: 'Penerimaan usulan disetujui.', color: 'success' })
-    await navigateTo(`/maintenance/transfer-active-to-inactive-file/${item.value.id}`)
+    await navigateTo(`/pemeliharaan/verifikasi-persetujuan-tu/${item.value.id}`)
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Gagal menyetujui.'
     useToast().add({ title: 'Gagal', description: msg, color: 'error' })
@@ -598,7 +613,7 @@ const onConfirmSetujuiTerakhir = async () => {
     })
     showSetujuiTerakhirModal.value = false
     useToast().add({ title: 'Berhasil', description: 'Persetujuan terakhir diberikan. Arsip diterima.', color: 'success' })
-    await navigateTo(`/maintenance/transfer-active-to-inactive-file/${item.value.id}`)
+    await navigateTo(`/pemeliharaan/verifikasi-persetujuan-tu/${item.value.id}`)
   } catch (e: any) {
     const msg = e?.data?.message || e?.message || 'Gagal menyetujui terakhir.'
     useToast().add({ title: 'Gagal', description: msg, color: 'error' })

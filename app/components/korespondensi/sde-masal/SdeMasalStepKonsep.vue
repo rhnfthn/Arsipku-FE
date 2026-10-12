@@ -220,6 +220,7 @@ watch(
   () => {
     const parentNaskahId = props.parentNaskahId || model.value?.parentNaskahId;
     model.value = {
+      ...model.value,
       judul: judulModel.value.trim(),
       tanggalKonsep: tanggalKonsepStr.value,
       klasifikasiId: klasifikasiModel.value || '',

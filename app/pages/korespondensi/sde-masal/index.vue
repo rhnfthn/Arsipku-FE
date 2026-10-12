@@ -43,7 +43,7 @@
           <UIcon name="i-lucide-search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
           <input v-model="filter.search" type="text" placeholder="Cari judul folder atau pengirim..." class="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors focus:border-primary-400 focus:bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" @input="scheduleSearch" @keyup.enter="reload" />
         </div>
-        <button @click="exportData" :disabled="exporting" class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary dark:bg-primary-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-800 dark:hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"><UIcon :name="exporting ? 'i-lucide-loader-2' : 'i-lucide-download'" :class="['size-4', exporting && 'animate-spin']" />Export</button>
+        <button @click="openExportModal" :disabled="isExporting" class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary dark:bg-primary-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-800 dark:hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"><UIcon :name="isExporting ? 'i-lucide-loader-2' : 'i-lucide-download'" :class="['size-4', isExporting && 'animate-spin']" />Export</button>
       </div>
 
       <div class="overflow-x-auto">
@@ -124,6 +124,15 @@
         @update:page="changePage"
       />
     </div>
+
+    <ExportColumnModal
+      v-model="showExportModal"
+      :columns="exportColumns"
+      :total-rows="folders.length"
+      title="Pilih Kolom Export SDE Massal"
+      :is-exporting="isExporting"
+      @confirm="handleExportConfirm"
+    />
   </div>
 </template>
 
@@ -131,6 +140,7 @@
 import { onBeforeUnmount } from 'vue';
 import type { SdeMasalFolder } from '~/types/sde-masal';
 import type { Klasifikasi } from '~/types/klasifikasi';
+import ExportColumnModal from '~/components/ExportColumnModal.vue';
 import { sdeMasalStatusBadge, sdeMasalStatusLabel } from '~/utils/sde-masal-status';
 
 // Daftar tetap dibatasi oleh scope creator dari API; staff dapat melihat
@@ -147,7 +157,8 @@ const {
 const folders = ref<SdeMasalFolder[]>([]);
 const klasifikasiList = ref<Klasifikasi[]>([]);
 const loading = ref(true);
-const exporting = ref(false);
+const showExportModal = ref(false);
+const isExporting = ref(false);
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 const meta = reactive({ page: 1, limit: 10, total: 0, totalPages: 0 });
 const filter = reactive({
@@ -257,6 +268,14 @@ const formatDate = (value: string | Date) =>
 const statusLabel = sdeMasalStatusLabel;
 const statusBadge = sdeMasalStatusBadge;
 
+const exportColumns = [
+  { key: 'judul', label: 'Judul Folder', desc: 'Judul folder SDE Massal' },
+  { key: 'pengirim', label: 'Pengirim', desc: 'Nama pengirim atau pembuat folder' },
+  { key: 'klasifikasi', label: 'Klasifikasi', desc: 'Kode klasifikasi dan uraian' },
+  { key: 'status', label: 'Status', desc: 'Status proses SDE Massal' },
+  { key: 'tanggal', label: 'Tanggal', desc: 'Tanggal folder dibuat atau diajukan' },
+];
+
 const isChangedFolder = (folder: SdeMasalFolder) =>
   notifications.value.some((notification) => {
     const data = notification.data;
@@ -280,25 +299,38 @@ const sortedFolders = computed(() =>
   }),
 );
 
-const exportData = async () => {
-  exporting.value = true;
+const openExportModal = () => {
+  if (!folders.value.length) return;
+  showExportModal.value = true;
+};
+
+const handleExportConfirm = async (selectedKeys: string[]) => {
+  if (!folders.value.length || selectedKeys.length === 0) return;
+  isExporting.value = true;
   try {
-    if (!folders.value.length) return;
     const XLSX = await import('xlsx');
-    const worksheet = XLSX.utils.json_to_sheet(folders.value.map((f) => ({
-      'Judul Folder': f.judul || '-',
-      'Pengirim': f.pengirimName || '-',
-      'Klasifikasi': f.klasifikasi || '-',
-      'Status': statusLabel(f.status),
-      'Tanggal': formatDate(f.tanggal || f.createdAt),
-    })));
+    const rows = folders.value.map((folder) => {
+      const row: Record<string, string> = {};
+      if (selectedKeys.includes('judul')) row['Judul Folder'] = folder.judul || '-';
+      if (selectedKeys.includes('pengirim')) row.Pengirim = folder.pengirimName || '-';
+      if (selectedKeys.includes('klasifikasi')) {
+        row.Klasifikasi = [folder.klasifikasi, folder.klasifikasiText]
+          .filter(Boolean)
+          .join(' - ') || '-';
+      }
+      if (selectedKeys.includes('status')) row.Status = statusLabel(folder.status);
+      if (selectedKeys.includes('tanggal')) row.Tanggal = formatDate(folder.tanggal || folder.createdAt);
+      return row;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'SDE Masal');
     XLSX.writeFile(workbook, 'sde-masal-folders.xlsx');
+    showExportModal.value = false;
   } catch (e: any) {
     console.error('Gagal export:', e);
   } finally {
-    exporting.value = false;
+    isExporting.value = false;
   }
 };
 

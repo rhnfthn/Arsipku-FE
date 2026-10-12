@@ -158,7 +158,7 @@
                   <div class="flex items-center justify-center gap-1.5">
                     <NuxtLink
                       v-if="row.transfer.status !== 'ARSIP_INAKTIF_DITERIMA'"
-                      :to="`/maintenance/penataan-arsip-inaktif/${row.transfer.id}`"
+                      :to="`/kelola/pemeliharaan/penataan-arsip-inaktif/${row.transfer.id}`"
                       @click="markViewed(row.transfer)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 transition-colors"
                       title="Detail"
@@ -167,7 +167,7 @@
                     </NuxtLink>
                     <NuxtLink
                       v-if="row.transfer.status === 'ARSIP_INAKTIF_DITERIMA'"
-                      :to="`/maintenance/penataan-arsip-inaktif/${row.transfer.id}?mode=penataan`"
+                      :to="`/kelola/pemeliharaan/penataan-arsip-inaktif/${row.transfer.id}?mode=penataan`"
                       @click="markViewed(row.transfer)"
                       class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-900 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 transition-colors"
                       title="Penataan"
@@ -225,13 +225,28 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTuVerifikasi } from '~/composables/useTuVerifikasi'
 import { useApi } from '~/composables/useApi'
 import { useKlasifikasi } from '~/composables/useKlasifikasi'
 import { useBacPdfPreview } from '~/composables/useBacPdfPreview'
 import type { TuUsulanItem } from '~/types/tu-verifikasi'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({
+  middleware: ['auth'],
+  alias: [
+    '/pemeliharaan/penataan-arsip-inaktif',
+    '/kelola/pemeliharaan/penataan-arsip-inaktif',
+  ],
+})
+
+const route = useRoute()
+if (
+  route.path === '/maintenance/penataan-arsip-inaktif' ||
+  route.path === '/pemeliharaan/penataan-arsip-inaktif'
+) {
+  await navigateTo('/kelola/pemeliharaan/penataan-arsip-inaktif', { replace: true })
+}
 
 const { fetchPenataanList } = useTuVerifikasi()
 const { rowClass, markViewed } = useViewedRows('penataan-arsip-inaktif')
@@ -302,8 +317,9 @@ const openPenataanLampiran = async (transfer: any) => {
 }
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
-  { label: 'Penataan Arsip Inaktif', to: '/maintenance/penataan-arsip-inaktif' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Penataan Arsip Inaktif', to: '/kelola/pemeliharaan/penataan-arsip-inaktif' },
 ])
 
 const list = ref<TuUsulanItem[]>([])

@@ -65,6 +65,14 @@ export const useSdeMasal = () => {
     return res?.data ?? null;
   };
 
+  const sendFolderEmails = async (
+    folderId: string,
+    emails?: Array<{ itemId: string; to: string; cc?: string; bcc?: string }>
+  ) => {
+    const res: any = await apiPost(`/sde-masal/folder/${folderId}/send-emails`, { emails });
+    return res?.data ?? null;
+  };
+
   const rejectFolder = async (folderId: string, reason: string) => {
     const res: any = await apiPost(`/sde-masal/folder/${folderId}/reject`, { reason });
     return res?.data ?? null;
@@ -501,6 +509,7 @@ export const useSdeMasal = () => {
     fetchFolders,
     finalizeDirect,
     sendToSigner,
+    sendFolderEmails,
     rejectFolder,
     approveFolderVerification,
     rejectFolderVerification,

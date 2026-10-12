@@ -531,6 +531,9 @@
               Position ID
             </th>
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
+              e-NIK
+            </th>
+            <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
               Jabatan
             </th>
             <th class="px-4 py-3 border-b border-b-gray-100 dark:border-b-gray-700 font-semibold">
@@ -546,7 +549,7 @@
         </thead>
         <tbody>
           <tr v-if="internalLoading">
-            <td colspan="5" class="px-4 py-6">
+            <td colspan="6" class="px-4 py-6">
               <div class="space-y-4 animate-pulse">
                 <div v-for="n in 5" :key="'sk-int-' + n" class="h-12 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
               </div>
@@ -555,7 +558,7 @@
           <tr
             v-else-if="filteredInternal.length === 0"
           >
-            <td colspan="5" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+            <td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
               Tidak ada data posisi internal.
             </td>
           </tr>
@@ -580,11 +583,27 @@
                 </button>
               </div>
             </td>
+            <td class="px-4 py-3 font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span>{{ displayInternalValue(item.persnum_person) }}</span>
+                <button
+                  v-if="item.persnum_person"
+                  type="button"
+                  @click="copyKode(String(item.persnum_person))"
+                  class="shrink-0 p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary-400 transition-colors"
+                  title="Salin e-NIK"
+                  aria-label="Salin e-NIK"
+                >
+                  <Check v-if="copiedKode === String(item.persnum_person)" class="w-4 h-4 text-green-500" />
+                  <Copy v-else class="w-4 h-4" />
+                </button>
+              </div>
+            </td>
             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
               {{ item.position_text || '-' }}
             </td>
             <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
-              {{ item.persnum_person_text || '-' }}
+              {{ displayInternalValue(item.persnum_person_text) }}
             </td>
             <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
               {{ item.organization_text || '-' }}
@@ -1012,6 +1031,9 @@ const internalPerPage = ref(10);
 const openInternalRowsDropdown = ref(false);
 const internalOrganizationFilter = ref<string | undefined>();
 const internalAreaFilter = ref<string | undefined>();
+const currentUserDivisionId = ref<string | number | null>(null);
+const currentUserDirectorateId = ref<string | number | null>(null);
+const currentUserDirectorateName = ref('');
 
 const externalStatusOptions = computed(() => [
   { label: t('te_aktif'), value: 'aktif' },
@@ -1028,6 +1050,7 @@ const fetchInternal = async () => {
     );
     const rows = result?.data?.barisData || result?.barisData || [];
     internalData.value = rows;
+    await resolveCurrentUserDivision(rows);
   } catch (err) {
     console.error('Gagal memuat posisi internal:', err);
     internalData.value = [];
@@ -1036,9 +1059,96 @@ const fetchInternal = async () => {
   }
 };
 
-const hasInternalOfficer = (item: any) => {
-  const officer = String(item?.persnum_person_text ?? '').trim();
-  return officer !== '' && officer !== '-';
+const positionRank = (item: any) => {
+  const text = String(item?.position_text ?? '').toUpperCase();
+  if (/DIREKTUR\s+UTAMA|PRESIDENT\s+DIRECTOR/.test(text)) return 0;
+  if (/\bDIREKTUR\b/.test(text)) return 1;
+  if (/\bEVP\b|EXECUTIVE\s+VICE\s+PRESIDENT/.test(text)) return 2;
+  if (/\bVP\b|VICE\s+PRESIDENT/.test(text)) return 3;
+  if (/\bAVP\b|ASSISTANT\s+VICE\s+PRESIDENT/.test(text)) return 4;
+  return 5;
+};
+
+const displayInternalValue = (value: unknown) => {
+  const text = String(value ?? '').trim();
+  return text && text !== '-' ? text : '-';
+};
+
+const isSameDirectorate = (item: any) => {
+  const itemId = item?.direktorat_id;
+  if (currentUserDirectorateId.value != null && itemId != null) {
+    return String(itemId) === String(currentUserDirectorateId.value);
+  }
+
+  const itemName = String(item?.direktorat_name ?? '').trim().toLowerCase();
+  return Boolean(itemName && currentUserDirectorateName.value && itemName === currentUserDirectorateName.value);
+};
+
+const isSameDivision = (item: any) =>
+  currentUserDivisionId.value != null &&
+  String(item?.divisi_id ?? '') === String(currentUserDivisionId.value);
+
+const internalSortGroup = (item: any) => {
+  const rank = positionRank(item);
+  if (rank === 0) return 0;
+  if (rank === 1 && isSameDirectorate(item)) return 1;
+  if (isSameDivision(item)) return 2;
+  return 3;
+};
+
+const compareInternalRows = (a: any, b: any) => {
+  const groupDifference = internalSortGroup(a) - internalSortGroup(b);
+  if (groupDifference !== 0) return groupDifference;
+
+  const rankDifference = positionRank(a) - positionRank(b);
+  if (rankDifference !== 0) return rankDifference;
+
+  return String(a?.persnum_person_text ?? '').localeCompare(
+    String(b?.persnum_person_text ?? ''),
+    'id',
+  );
+};
+
+const resolveCurrentUserDivision = async (rows: any[]) => {
+  const profile = user.value || await auth.getProfile();
+  const activePosition = typeof profile?.position === 'object'
+    ? profile.position?.position ?? profile.position?.id
+    : profile?.position ?? profile?.position_id;
+  const currentRow = rows.find(
+    (row) => activePosition != null && String(row?.position) === String(activePosition),
+  );
+
+  if (currentRow?.divisi_id != null) {
+    currentUserDivisionId.value = currentRow.divisi_id;
+  }
+  if (currentRow?.direktorat_id != null) {
+    currentUserDirectorateId.value = currentRow.direktorat_id;
+  }
+  if (currentRow?.direktorat_name) {
+    currentUserDirectorateName.value = String(currentRow.direktorat_name).trim().toLowerCase();
+  }
+  if (
+    currentRow?.divisi_id != null &&
+    (currentRow?.direktorat_id != null || currentRow?.direktorat_name)
+  ) {
+    return;
+  }
+
+  if (profile?.persnum != null) {
+    try {
+      const positionResult: any = await apiGet(
+        `/org-data/my-position?persnum=${encodeURIComponent(String(profile.persnum))}`,
+        {},
+        { skipCache: true },
+      );
+      const positionData = positionResult?.data ?? positionResult;
+      currentUserDivisionId.value = positionData?.divisi_id ?? null;
+      currentUserDirectorateId.value = positionData?.direktorat_id ?? null;
+      currentUserDirectorateName.value = String(positionData?.direktorat_name ?? '').trim().toLowerCase();
+    } catch (error) {
+      console.warn('Gagal menentukan divisi pengguna:', error);
+    }
+  }
 };
 
 const formatArea = (value: unknown) => {
@@ -1047,12 +1157,25 @@ const formatArea = (value: unknown) => {
   return area.toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 };
 
-const internalRowsWithOfficer = computed(() => internalData.value.filter(hasInternalOfficer));
+const isMissingInternalValue = (value: unknown) => {
+  const text = String(value ?? '').trim();
+  return !text || text === '-' || text === '—';
+};
+
+// Hanya tampilkan posisi yang memiliki e-NIK atau pejabat. Posisi kosong yang
+// dikirim org-data dengan kedua nilai "-" bukan tertuju internal yang valid.
+const internalRows = computed(() =>
+  internalData.value.filter(
+    (item) =>
+      !isMissingInternalValue(item.persnum_person) ||
+      !isMissingInternalValue(item.persnum_person_text),
+  ),
+);
 
 const internalOrganizationOptions = computed(() =>
   Array.from(
     new Set(
-      internalRowsWithOfficer.value
+      internalRows.value
         .map((item) => String(item.organization_text ?? '').trim())
         .filter(Boolean)
     )
@@ -1062,7 +1185,7 @@ const internalOrganizationOptions = computed(() =>
 const internalAreaOptions = computed(() =>
   Array.from(
     new Set(
-      internalRowsWithOfficer.value
+      internalRows.value
         .map((item) => formatArea(item.area_text))
         .filter((area) => area !== '-')
     )
@@ -1074,25 +1197,28 @@ const filteredInternal = computed(() => {
   const organization = (internalOrganizationFilter.value ?? '').trim().toLowerCase();
   const area = (internalAreaFilter.value ?? '').trim().toLowerCase();
 
-  return internalRowsWithOfficer.value.filter((item) => {
-    const searchableText = [
-      String(item.position ?? ''),
-      item.position_text,
-      item.persnum_person_text,
-      item.organization_text,
-      item.area_text,
-    ]
-      .join(' ')
-      .toLowerCase();
-    const itemOrganization = String(item.organization_text ?? '').trim().toLowerCase();
-    const itemArea = formatArea(item.area_text).toLowerCase();
+  return internalRows.value
+    .filter((item) => {
+      const searchableText = [
+        String(item.position ?? ''),
+        item.position_text,
+        item.persnum_person,
+        item.persnum_person_text,
+        item.organization_text,
+        item.area_text,
+      ]
+        .join(' ')
+        .toLowerCase();
+      const itemOrganization = String(item.organization_text ?? '').trim().toLowerCase();
+      const itemArea = formatArea(item.area_text).toLowerCase();
 
-    return (
-      (!q || searchableText.includes(q)) &&
-      (!organization || itemOrganization === organization) &&
-      (!area || itemArea === area)
-    );
-  });
+      return (
+        (!q || searchableText.includes(q)) &&
+        (!organization || itemOrganization === organization) &&
+        (!area || itemArea === area)
+      );
+    })
+    .sort(compareInternalRows);
 });
 
 const internalTotalPages = computed(() =>
@@ -1116,6 +1242,7 @@ const onExportInternal = () => {
   const exportData = filteredInternal.value.map((item, idx) => ({
     No: idx + 1,
     'Position ID': item.position ?? '-',
+    'e-NIK': item.persnum_person ?? '-',
     Jabatan: item.position_text ?? '-',
     Pejabat: item.persnum_person_text ?? '-',
     'Unit Organisasi': item.organization_text ?? '-',
@@ -1131,6 +1258,7 @@ const onExportInternal = () => {
   worksheet['!cols'] = [
     { wch: 5 },
     { wch: 14 },
+    { wch: 18 },
     { wch: 40 },
     { wch: 30 },
     { wch: 30 },

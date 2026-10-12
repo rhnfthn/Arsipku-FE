@@ -38,6 +38,10 @@
             <span class="text-gray-500 dark:text-gray-400 text-xs">Nomor Usulan</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ transfer.nomorUsulan }}</p>
           </div>
+          <div v-if="descriptionNextToNumber">
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
+          </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">{{ informationDateLabel }}</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ formatDate(informationDateValue) }}</p>
@@ -55,8 +59,12 @@
             </p>
           </div>
           <div v-if="showSecretaryInfo">
-            <span class="text-gray-500 dark:text-gray-400 text-xs">Pengusul (Sekretaris)</span>
-            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.sekretarisName }}</p>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Unit Dokumen</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.tuName || '-' }}</p>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 text-xs">Lokasi Fisik</span>
+            <p class="text-gray-900 dark:text-white font-normal">{{ transfer.lokasiAwal || '-' }}</p>
           </div>
           <div>
             <span class="text-gray-500 dark:text-gray-400 text-xs">Kode Berkas</span>
@@ -76,7 +84,7 @@
             <span class="text-gray-500 dark:text-gray-400 text-xs">Tanggal Retensi Habis</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ formatDate(transfer.tanggalRetensiAktifHabis) }}</p>
           </div>
-          <div class="md:col-span-2">
+          <div v-if="!descriptionNextToNumber" class="md:col-span-2">
             <span class="text-gray-500 dark:text-gray-400 text-xs">Uraian Informasi Berkas</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ transfer.arsipPerihal || '-' }}</p>
           </div>
@@ -104,7 +112,7 @@
             <span class="text-gray-500 dark:text-gray-400 text-xs">Klasifikasi Keamanan</span>
             <p class="text-gray-900 dark:text-white font-normal">{{ primaryBerkasRow?.klasifikasiKeamanan || '-' }}</p>
           </div>
-          <div>
+          <div v-if="showAtasanManagerial">
             <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
             <p class="text-gray-900 dark:text-white font-normal">
               {{ transfer.atasanName || '-' }}<span v-if="atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> — {{ atasanPositionText }}</span>
@@ -185,7 +193,7 @@
             {{ transfer.arsipKlasifikasiKode }}
           </p>
         </div>
-        <div>
+        <div v-if="showAtasanManagerial">
           <span class="text-gray-500 dark:text-gray-400 text-xs">Atasan Managerial</span>
           <p class="text-gray-900 dark:text-white font-medium">
             {{ transfer.atasanName }}<span v-if="transfer.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.atasanPositionText }}</span>
@@ -455,7 +463,7 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ level.atasanName }}<span v-if="level.atasanPositionText" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.atasanPositionText }}</span>
             </p>
           </div>
@@ -492,7 +500,7 @@
             1
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ transfer.bacPihakPertamaName || '-' }}<span v-if="transfer.bacPihakPertamaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakPertamaJabatan }}</span>
             </p>
           </div>
@@ -508,7 +516,7 @@
             2
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ transfer.bacPihakKeduaName || '-' }}<span v-if="transfer.bacPihakKeduaJabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ transfer.bacPihakKeduaJabatan }}</span>
             </p>
           </div>
@@ -522,7 +530,7 @@
     <!-- Card 5: Tembusan BAC -->
     <div
       v-if="showBacTembusan && hasBacTembusan"
-      class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-5"
     >
       <button
         type="button"
@@ -543,7 +551,7 @@
           class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
         >
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ copy.name || '-' }}<span v-if="copy.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ copy.jabatan }}</span>
             </p>
           </div>
@@ -584,7 +592,7 @@
             {{ level.urutan }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
+              <p class="text-sm font-normal text-gray-900 dark:text-white">
               {{ level.name }}<span v-if="level.jabatan" class="font-normal text-gray-500 dark:text-gray-400"> - {{ level.jabatan }}</span>
             </p>
           </div>
@@ -638,10 +646,12 @@ const props = defineProps<{
   fitBerkasTable?: boolean;
   showBacStatus?: boolean;
   showClassificationCode?: boolean;
+  showAtasanManagerial?: boolean;
   statusContext?: 'default' | 'secretary-division' | 'bac-signing';
   signerSignedAt?: string | null;
   informationDateLabel?: string;
   informationDateValue?: string | Date | null;
+  descriptionNextToNumber?: boolean;
 }>();
 
 const { getNaskahDetailInBerkas, getNaskahPdfUrl } = useArsipDinamis();
@@ -660,8 +670,10 @@ const showSecretaryInfo = computed(() => props.hideSecretaryInfo !== true);
 const fitBerkasTable = computed(() => props.fitBerkasTable === true);
 const showBacStatus = computed(() => props.showBacStatus !== false);
 const showClassificationCode = computed(() => props.showClassificationCode !== false);
+const showAtasanManagerial = computed(() => props.showAtasanManagerial !== false);
 const informationDateLabel = computed(() => props.informationDateLabel ?? 'Tanggal Usulan');
 const informationDateValue = computed(() => props.informationDateValue ?? props.transfer.tanggalUsulan);
+const descriptionNextToNumber = computed(() => props.descriptionNextToNumber === true);
 const bacSigningStatusLabel = computed(() => {
   if (props.statusContext === 'bac-signing') {
     return props.signerSignedAt ? 'Ditandatangani' : 'Menunggu Tanda Tangan';
@@ -820,7 +832,12 @@ const openTablePrintPreview = async (title: string, elementId: string) => {
     const pageWidth = 297;
     const pageHeight = 210;
     const contentWidth = pageWidth - margin * 2;
-    const unitKerja = props.unitKerjaPihakPertama || props.transfer.divisiName || '................................';
+    const unitKerja = props.unitKerjaPihakPertama
+      || (props.transfer as any).unitKerjaPengusul
+      || (props.transfer as any).unit_kerja_pengusul
+      || props.transfer.divisiName
+      || (props.transfer as any).divisi_name
+      || '................................';
     const getCellText = (cell: Element) => {
       const text = (cell as HTMLElement).innerText || cell.textContent || '';
       return text.split('\n').map((line) => line.trim()).filter(Boolean).join('\n') || '-';

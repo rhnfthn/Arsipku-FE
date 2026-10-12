@@ -68,7 +68,7 @@
         :key="folderId || 'new-sde-masal'"
         v-model="wizardState.konsep"
         :parent-naskah-id="props.parentNaskahId || wizardState.konsep?.parentNaskahId"
-        :readonly="Boolean(props.folderId)"
+        :readonly="isFolderReadonly"
       />
 
       <!-- Step 2: Template, variabel, dan penerima dalam satu langkah -->
@@ -108,6 +108,38 @@
             <p class="w-full text-sm leading-relaxed text-gray-900 dark:text-white sm:ml-6">
                 {{ wizardState.konsep?.pengirimName || '-' }}
             </p>
+          </div>
+          <!-- Garis Kewenangan dipilih pada pembuatan naskah, bukan konsep folder. -->
+          <div
+            :class="[
+              'flex flex-col gap-1 border-b border-gray-200 py-3 dark:border-gray-700 sm:flex-row sm:items-center sm:gap-0',
+              { 'pointer-events-none opacity-60 grayscale': !wizardState.konsep?.pengirimId },
+            ]"
+          >
+            <label class="flex w-full shrink-0 items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
+              <input
+                v-model="useGarisKewenangan"
+                type="checkbox"
+                :disabled="!wizardState.konsep?.pengirimId"
+                class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600"
+              />
+              <span>Garis Kewenangan (a.n.)</span>
+            </label>
+            <div class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+              <span v-if="useGarisKewenangan && isDirut">a.n Direksi</span>
+              <span v-else-if="useGarisKewenangan && isLoadingAtasan" class="text-gray-400">
+                Memuat atasan...
+              </span>
+              <span v-else-if="useGarisKewenangan && atasNamaLabel">
+                a.n {{ atasNamaLabel }}
+              </span>
+              <span v-else-if="useGarisKewenangan" class="text-gray-400">
+                Tidak ada atasan di direktorat ini
+              </span>
+              <span v-else class="text-gray-400">
+                Centang untuk menandatangani atas nama pejabat pemberi kuasa
+              </span>
+            </div>
           </div>
           <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
             <span class="w-full shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-40">
@@ -280,6 +312,7 @@ import { useToast } from '#imports';
 import type {
   SdeMasalAttachmentRef,
   SdeMasalConcept,
+  SdeMasalFolder,
   SdeMasalPenerima,
   SdeMasalTemplate,
 } from '~/types/sde-masal';
@@ -296,7 +329,7 @@ const props = defineProps<{
 
 const router = useRouter();
 const toast = useToast();
-const { api } = useApi();
+const { api, apiGet } = useApi();
 const {
   generateMassal,
   createFolder,
@@ -311,6 +344,15 @@ const {
 const currentStep = ref(1);
 const generating = ref(false);
 const folderId = ref<string | null>(null);
+const folderStatus = ref<SdeMasalFolder['status'] | null>(null);
+
+// Folder draft/revisi tetap boleh diedit penuh. Setelah folder diajukan,
+// konsep dikunci dan hanya dapat dilihat melalui halaman detail/proses.
+const isFolderReadonly = computed(() => {
+  if (!props.folderId) return false;
+  const status = String(folderStatus.value || '').toUpperCase();
+  return !['DRAFT', 'DIKEMBALIKAN'].includes(status);
+});
 // ZIP lampiran bersifat opsional. Nilai awal true agar ketiadaan ZIP tidak
 // mengunci tombol lanjut; komponen upload akan mengubahnya saat ZIP dipilih.
 const attachmentsReady = ref(true);
@@ -325,6 +367,149 @@ const wizardState = reactive<{
   penerimaList: [],
   template: null,
   variables: [],
+});
+
+// Garis kewenangan dipilih saat masuk ke langkah pembuatan naskah (step 2),
+// setelah pengirim konsep sudah ditentukan.
+const useGarisKewenangan = ref(true);
+const atasanOptions = ref<any[]>([]);
+const selectedAtasNamaId = ref<number | null>(null);
+const isLoadingAtasan = ref(false);
+const atasNamaManualLabel = ref('');
+const authorityStateInitialized = ref(false);
+const authoritySenderId = ref<string | null>(null);
+
+const signerPositionText = computed(() => {
+  const senderName = String(wizardState.konsep?.pengirimName || '');
+  return senderName.split(' - ').slice(1).join(' - ').trim();
+});
+const isDirut = computed(() => /direktur\s+utama/i.test(signerPositionText.value));
+
+const atasNamaLabel = computed(() => {
+  if (!useGarisKewenangan.value) return '';
+  if (isDirut.value) return 'Direksi';
+  if (atasNamaManualLabel.value) return atasNamaManualLabel.value;
+  const selected = atasanOptions.value.find(
+    (row) => Number(row.position) === Number(selectedAtasNamaId.value),
+  );
+  return selected?.position_text || '';
+});
+
+const syncAuthorityToConcept = () => {
+  if (!wizardState.konsep) return;
+  wizardState.konsep = {
+    ...wizardState.konsep,
+    atasNama: useGarisKewenangan.value ? atasNamaLabel.value || null : null,
+    atasNamaPositionId:
+      useGarisKewenangan.value && !isDirut.value && selectedAtasNamaId.value
+        ? String(selectedAtasNamaId.value)
+        : null,
+  };
+};
+
+const fetchAtasan = async () => {
+  const signerPositionId = wizardState.konsep?.pengirimId;
+  if (isDirut.value || !signerPositionId) return;
+
+  isLoadingAtasan.value = true;
+  try {
+    const response = await apiGet<any>(`/org-data/atasnama/${signerPositionId}`);
+    if (
+      !useGarisKewenangan.value ||
+      String(wizardState.konsep?.pengirimId) !== String(signerPositionId)
+    ) {
+      return;
+    }
+
+    atasanOptions.value = Array.isArray(response?.data) ? response.data : [];
+    const restored = atasanOptions.value.find(
+      (row) => Number(row.position) === Number(selectedAtasNamaId.value),
+    );
+    selectedAtasNamaId.value =
+      restored?.position ?? atasanOptions.value[0]?.position ?? null;
+  } catch (error) {
+    console.error('Gagal fetch atasan garis kewenangan SDE Massal:', error);
+    atasanOptions.value = [];
+    selectedAtasNamaId.value = null;
+  } finally {
+    isLoadingAtasan.value = false;
+  }
+};
+
+const initializeAuthorityFromConcept = (concept: SdeMasalConcept | null) => {
+  if (authorityStateInitialized.value || !concept) return;
+
+  if (concept.atasNama || concept.atasNamaPositionId) {
+    useGarisKewenangan.value = true;
+    atasNamaManualLabel.value = concept.atasNama || '';
+    selectedAtasNamaId.value = concept.atasNamaPositionId
+      ? Number(concept.atasNamaPositionId)
+      : null;
+  } else if (props.folderId) {
+    // Folder lama tanpa garis kewenangan tidak diberi atasan baru otomatis.
+    useGarisKewenangan.value = false;
+  }
+
+  authoritySenderId.value = concept.pengirimId || null;
+  authorityStateInitialized.value = true;
+};
+
+watch(
+  () => wizardState.konsep,
+  (concept) => initializeAuthorityFromConcept(concept),
+  { immediate: true, deep: true },
+);
+
+watch(
+  [useGarisKewenangan, selectedAtasNamaId, atasanOptions, atasNamaManualLabel],
+  syncAuthorityToConcept,
+  { deep: true },
+);
+
+// Bila user kembali ke step 1 dan mengganti pengirim, hitung ulang atasan
+// ketika masuk kembali ke step 2.
+watch(
+  [currentStep, () => wizardState.konsep?.pengirimId],
+  ([step, senderId]) => {
+    if (step !== 2 || !senderId) return;
+    const nextSenderId = String(senderId);
+    // Sinkronkan label langsung saat step 2 dibuka. Ini penting untuk
+    // Direktur Utama karena "a.n Direksi" tidak membutuhkan request atasan.
+    syncAuthorityToConcept();
+    if (authoritySenderId.value && authoritySenderId.value !== nextSenderId) {
+      atasanOptions.value = [];
+      selectedAtasNamaId.value = null;
+      atasNamaManualLabel.value = '';
+      useGarisKewenangan.value = true;
+    }
+    authoritySenderId.value = nextSenderId;
+    if (
+      useGarisKewenangan.value &&
+      !isDirut.value &&
+      !atasNamaManualLabel.value &&
+      !selectedAtasNamaId.value
+    ) {
+      fetchAtasan();
+    }
+  },
+  { immediate: true },
+);
+
+watch(useGarisKewenangan, (enabled) => {
+  if (enabled && !isDirut.value) {
+    if (atasNamaManualLabel.value) return;
+    if (atasanOptions.value.length > 0) {
+      selectedAtasNamaId.value = atasanOptions.value[0]?.position ?? null;
+    } else {
+      fetchAtasan();
+    }
+    return;
+  }
+
+  if (!enabled) {
+    selectedAtasNamaId.value = null;
+    atasNamaManualLabel.value = '';
+  }
 });
 
 const draftStorageKey = `sde-masal-wizard:${props.parentNaskahId || 'new'}`;
@@ -356,6 +541,7 @@ onMounted(async () => {
       }
       if (f) {
         folderId.value = f.id;
+        folderStatus.value = f.status || null;
         wizardState.konsep = {
           judul: f.judul || '',
           tanggalKonsep: f.tanggal ? String(f.tanggal).slice(0, 10) : '',
@@ -712,6 +898,7 @@ const resetWizard = () => {
   wizardState.template = null;
   wizardState.variables = [];
   folderId.value = null;
+  folderStatus.value = null;
   currentStep.value = 1;
   persistenceReady.value = false;
   localStorage.removeItem(draftStorageKey);

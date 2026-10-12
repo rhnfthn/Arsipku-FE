@@ -4,7 +4,7 @@
       <div class="flex min-w-0 items-center gap-3">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ props.title ?? 'Berita Acara' }}</h3>
         <span
-          v-if="transfer.bacSignedAt"
+          v-if="signatureSignedAt"
           class="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
         >
           <UIcon name="i-lucide-badge-check" class="h-3.5 w-3.5" /> Ditandatangani
@@ -77,6 +77,10 @@
             <td class="w-1/2 align-top text-center"><p class="mb-5">Pihak Kedua</p><div v-if="transfer.bacPihakKeduaSignedAt && transfer.bacPihakKeduaSignatureQr" class="mb-2 flex h-[92px] justify-center"><img :src="transfer.bacPihakKeduaSignatureQr" alt="QR tanda tangan Pihak Kedua" class="block h-[82px] w-[82px] object-contain" /></div><p v-else class="mb-[78px]">Ttd</p><p>({{ transfer.bacPihakKeduaJabatan ?? 'Jabatan' }})</p></td>
           </tr></tbody>
         </table>
+        <p v-if="allSignaturesComplete" class="mt-7 text-center text-[9pt] leading-snug">
+          Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik<br />
+          yang diterbitkan oleh Balai Besar Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara
+        </p>
       </div>
     </div>
 
@@ -98,6 +102,7 @@ const props = defineProps<{
   beritaAcaraData?: any
   previewIcon?: 'eye' | 'printer'
   title?: string
+  signatureStatus?: 'any' | 'pihak-pertama' | 'pihak-kedua'
 }>()
 const open = ref(true)
 const {
@@ -113,17 +118,40 @@ const openPreview = () => openBacPreview(
   props.transfer.beritaAcaraNomor || props.transfer.nomorUsulan,
 )
 const data = computed(() => props.beritaAcaraData ?? {})
+const signatureSignedAt = computed(() => {
+  if (props.signatureStatus === 'pihak-kedua') return props.transfer?.bacPihakKeduaSignedAt
+  if (props.signatureStatus === 'pihak-pertama') return props.transfer?.bacSignedAt
+  return props.transfer?.bacSignedAt || props.transfer?.bacPihakKeduaSignedAt
+})
 const arsip = computed(() => {
   const fromBeritaAcara = data.value?.daftarArsip
   if (Array.isArray(fromBeritaAcara) && fromBeritaAcara.length > 0) return fromBeritaAcara
   return Array.isArray(props.transfer?.arsipIds) ? props.transfer.arsipIds : []
 })
-const unitKerjaPengusul = computed(() => data.value?.unitKerjaPengusul || props.transfer?.divisiName || '.........')
+const unitKerjaPengusul = computed(() => {
+  const candidates = [
+    data.value?.unitKerjaPengusul,
+    data.value?.pengirim?.divisi,
+    data.value?.pengirim?.unitKerja,
+    props.transfer?.unitKerjaPengusul,
+    props.transfer?.divisiName,
+  ]
+  return candidates
+    .map((value) => String(value ?? '').trim())
+    .find((value) => value && !/^\.{3,}$/.test(value)) ?? '.........'
+})
 const unitKerjaTu = computed(() => data.value?.unitKerjaTu || 'UC')
 const unitKerjaPihakPertama = computed(() => data.value?.pihakPertama?.unitKerja || unitKerjaPengusul.value)
 // Pihak kedua baru dipilih Unit Dokumen, sehingga tetap kosong sebelum tahap tersebut.
 const unitKerjaPihakKedua = computed(() => data.value?.pihakKedua?.unitKerja || '')
 const year = computed(() => props.transfer?.tanggalUsulan ? new Date(props.transfer.tanggalUsulan).getFullYear() : new Date().getFullYear())
+const allSignaturesComplete = computed(() => {
+  const pihakKeduaDiperlukan = Boolean(props.transfer?.bacPihakKeduaPersnum || data.value?.pihakKedua?.nama)
+  return Boolean(
+    props.transfer?.bacSignedAt &&
+      (!pihakKeduaDiperlukan || props.transfer?.bacPihakKeduaSignedAt),
+  )
+})
 
 const formatBaDate = (dateStr: string | null) => {
   if (!dateStr) return '-'

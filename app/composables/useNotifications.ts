@@ -85,7 +85,16 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
       .toLowerCase()
       .startsWith('verifikasi usulan pemindahan arsip');
   if (action === 'OPEN_TRANSFER_APPROVAL' || isLegacyTransferApproval) {
-    return { path: '/maintenance/verifikasi-usulan' };
+    return { path: '/pemeliharaan/pemindahan' };
+  }
+
+  // Notifikasi SDE Massal dibuka langsung ke folder yang membutuhkan aksi,
+  // bukan berhenti di daftar verifikasi.
+  if (action === 'OPEN_SDE_MASAL_VERIFIKASI') {
+    const folderId = getString('folderId', 'folder_id');
+    return folderId
+      ? { path: `/korespondensi/sde-masal/folder/${encodeURIComponent(folderId)}` }
+      : { path: '/korespondensi/sde-masal/verifikasi' };
   }
 
   // Persetujuan penutupan berkas dikirim dengan berkasId, bukan action.
@@ -167,10 +176,10 @@ export const resolveNotificationRoute = (notification: NotificationItem) => {
     OPEN_SDE_MASAL_FOLDER: '/korespondensi/sde-masal/folder',
     OPEN_SDE_MASAL_VERIFIKASI: '/korespondensi/sde-masal/verifikasi',
     // Menu Kelola (Pemindahan Arsip / Penyusutan)
-    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/maintenance/penerimaan-usulan',
-    OPEN_TRANSFER_BAC_SIGNING: '/maintenance/penandatanganan',
-    OPEN_TRANSFER_BAC_COPY: '/maintenance/tembusan-bac',
-    OPEN_PENYUSUTAN: '/maintenance/penyusutan/penataan-pemusnahan',
+    OPEN_TRANSFER_ACTIVE_TO_INACTIVE: '/kelola/pemeliharaan/penerimaan-arsip',
+    OPEN_TRANSFER_BAC_SIGNING: '/pemeliharaan/penandatanganan',
+    OPEN_TRANSFER_BAC_COPY: '/pemeliharaan/tembusan-bac',
+    OPEN_PENYUSUTAN: '/kelola/penyusutan/penataan-pemusnahan',
   };
 
   const base = action ? baseRoutes[action] : null;

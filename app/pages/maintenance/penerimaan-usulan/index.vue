@@ -92,7 +92,7 @@
               <input
                 v-model="searchInput"
                 type="text"
-                placeholder="Cari Berkas…"
+                placeholder="Cari berkas, klasifikasi, atau status…"
                 class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-gray-600 transition"
                 @input="onSearchInput"
               />
@@ -199,13 +199,13 @@
           <template #cell-aksi="{ row }">
             <div class="text-center" @click.stop>
               <NuxtLink
-                :to="`/maintenance/penerimaan-usulan/${row.id}?jenis=aktif_ke_inaktif`"
+                :to="`/kelola/pemeliharaan/penerimaan-arsip/${row.id}?jenis=aktif_ke_inaktif`"
                 @click="markRowAsViewed(row)"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white transition-colors hover:bg-primary-800"
+                class="inline-flex h-8 w-8 items-center justify-center text-gray-900 transition-colors hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300"
                 :title="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
                 :aria-label="isDetailOnly(row.status) ? 'Detail' : 'Verifikasi'"
               >
-                <UIcon :name="isDetailOnly(row.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="h-4 w-4" />
+                <UIcon :name="isDetailOnly(row.status) ? 'i-lucide-eye' : 'i-lucide-file-check'" class="h-5 w-5 stroke-[1.8]" />
               </NuxtLink>
             </div>
           </template>
@@ -233,9 +233,8 @@
             :total-pages="totalPages"
             :total-items="total"
             :rows-per-page="limit"
-            :rows-options="[10, 20, 50]"
+            :rows-options="[]"
             @update:page="onPageChange"
-            @update:rows-per-page="onLimitChange"
           />
         </div>
       </div>
@@ -264,13 +263,22 @@ import { newRowClass } from '~/utils/newRow'
 
 definePageMeta({ middleware: ['auth'] })
 
+const route = useRoute()
+if (
+  route.path === '/maintenance/penerimaan-usulan' ||
+  route.path === '/pemeliharaan/penerimaan-arsip'
+) {
+  await navigateTo('/kelola/pemeliharaan/penerimaan-arsip', { replace: true })
+}
+
 const { fetchNotifikasiList } = useTuVerifikasi()
 const { apiGet } = useApi()
 const { user } = useAuth()
 
 const breadcrumbs = computed(() => [
-  { label: 'Beranda', to: '/beranda' },
-  { label: 'Penerimaan Arsip', to: '/maintenance/penerimaan-usulan' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Penerimaan Arsip', to: '/kelola/pemeliharaan/penerimaan-arsip' },
 ])
 
 const list = ref<TuUsulanItem[]>([])

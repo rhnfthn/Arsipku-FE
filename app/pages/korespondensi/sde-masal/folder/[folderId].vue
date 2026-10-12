@@ -149,7 +149,7 @@
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Penerima</th>
                 <th class="px-4 py-3 font-semibold whitespace-nowrap">Email</th>
                 <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Status</th>
-                <th v-if="!isFolderCompleted" class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -192,35 +192,14 @@
                 <td class="px-4 py-2.5 text-center">
                   <span :class="naskahStatusBadge(item.status)">{{ naskahStatusLabel(item.status) }}</span>
                 </td>
-                <td v-if="!isFolderCompleted" class="px-4 py-2.5">
+                <td class="px-4 py-2.5">
                   <div class="flex items-center justify-center gap-1">
                     <button
-                      class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
+                      class="inline-flex items-center justify-center rounded-lg p-2 text-gray-800 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:text-gray-200 dark:hover:bg-gray-700"
                       title="Lihat preview surat"
                       @click="openPreview(item)"
                     >
                       <UIcon name="i-lucide-eye" class="size-4" />
-                    </button>
-                    <button
-                      v-if="item.finalPdf"
-                      class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-gray-700"
-                      title="Unduh PDF"
-                      @click="downloadPdf(item)"
-                    >
-                      <UIcon name="i-lucide-download" class="size-4" />
-                    </button>
-                    <button
-                      v-if="isGagal(item.status) && isSignerAwaiting"
-                      class="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                      :disabled="retryingId === item.id"
-                      :title="retryingId === item.id ? 'Sedang mengirim ulang…' : 'Kirim ulang'"
-                      @click="retryItem(item)"
-                    >
-                      <UIcon
-                        :name="retryingId === item.id ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
-                        class="size-4"
-                        :class="{ 'animate-spin': retryingId === item.id }"
-                      />
                     </button>
                   </div>
                 </td>
@@ -231,8 +210,24 @@
       </div>
 
       <!-- Aksi workflow selalu berada setelah Daftar Naskah. -->
-      <div v-if="isVerifierAwaiting || isSignerAwaiting" class="flex flex-wrap justify-start gap-2">
-        <template v-if="isVerifierAwaiting && !isBodVerifier">
+      <div v-if="isVerifierAwaiting || isSignerAwaiting || isEmailReady" class="flex flex-wrap justify-start gap-2">
+        <template v-if="isEmailReady">
+          <NuxtLink
+            to="/korespondensi/sde-masal"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            Batal
+          </NuxtLink>
+          <UButton
+            label="Kirim Semua Email"
+            icon="i-lucide-send"
+            color="primary"
+            :loading="emailSending"
+            :disabled="emailPreviewRows.length === 0"
+            @click="openEmailModal"
+          />
+        </template>
+        <template v-else-if="isVerifierAwaiting && !isBodVerifier">
           <!-- Verifikator non-BOD: read-only, hanya memantau chain -->
           <div class="flex w-full items-center gap-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
             <UIcon name="i-lucide-eye" class="size-5 shrink-0" />
@@ -372,6 +367,81 @@
       </template>
     </UModal>
 
+    <UModal
+      v-model:open="showEmailModal"
+      title="Kirim Semua Email"
+      :ui="{ overlay: 'bg-black/40 backdrop-blur-[2px]' }"
+    >
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Periksa tujuan email setiap naskah. Email baru dikirim setelah tombol Kirim ditekan.
+          </p>
+          <div class="max-h-80 space-y-2 overflow-y-auto">
+            <div
+              v-for="item in emailPreviewRows"
+              :key="item.id"
+              class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-900"
+            >
+              <button
+                type="button"
+                class="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                @click="toggleEmailItem(item.id)"
+              >
+                <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                  {{ emailPreviewRows.findIndex((candidate) => candidate.id === item.id) + 1 }}
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+                    {{ item.nomor || item.perihal || '-' }}
+                  </span>
+                  <span v-if="!emailExpanded[item.id]" class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">
+                    {{ emailDrafts[item.id]?.to || 'Email penerima belum diisi' }}
+                  </span>
+                </span>
+                <UIcon
+                  :name="emailExpanded[item.id] ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="size-4 shrink-0 text-gray-400"
+                />
+              </button>
+              <div v-if="emailExpanded[item.id]" class="space-y-2 border-t border-gray-100 px-3 pb-3 pt-3 dark:border-gray-800">
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Email penerima</label>
+                  <UInput v-model="emailDrafts[item.id].to" type="email" size="sm" placeholder="Email penerima" class="w-full" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">CC</label>
+                  <UInput v-model="emailDrafts[item.id].cc" type="text" size="sm" placeholder="CC (opsional)" class="w-full" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">BCC</label>
+                  <UInput v-model="emailDrafts[item.id].bcc" type="text" size="sm" placeholder="BCC (opsional)" class="w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-start gap-2">
+          <UButton
+            label="Batal"
+            color="neutral"
+            variant="outline"
+            :disabled="emailSending"
+            @click="showEmailModal = false"
+          />
+          <UButton
+            label="Kirim"
+            icon="i-lucide-send"
+            color="primary"
+            :loading="emailSending"
+            @click="sendAllEmails"
+          />
+        </div>
+      </template>
+    </UModal>
+
     <!-- Preview Full-screen PDF (native PDF viewer browser, seragam dengan wizard) -->
     <Teleport to="body">
       <div
@@ -496,6 +566,7 @@ const { api, apiGet } = useApi();
 const {
   findNaskahInFolder,
   finalizeDirect,
+  sendFolderEmails,
   rejectFolder,
   approveFolderVerification,
   rejectFolderVerification,
@@ -511,6 +582,10 @@ const workflowLoading = ref(false);
 const selectedItemIds = ref<string[]>([]);
 const showApproveConfirm = ref(false);
 const showSendConfirm = ref(false);
+const showEmailModal = ref(false);
+const emailSending = ref(false);
+const emailDrafts = ref<Record<string, { to: string; cc: string; bcc: string }>>({});
+const emailExpanded = ref<Record<string, boolean>>({});
 const showRejectModal = ref(false);
 const rejectReason = ref('');
 const isPassphraseModalOpen = ref(false);
@@ -520,10 +595,24 @@ const qrDisabled = ref(true);
 const basahDisabled = ref(true);
 const selectedSendType = ref<'digsig' | 'qr_only' | 'ttd_basah'>('qr_only');
 const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
+const emailPreviewRows = computed(() =>
+  items.value.filter((item) => item.naskahId && item.statusVerifikasi === 'TERKIRIM'),
+);
+const allSignedItems = computed(
+  () => items.value.length > 0 && items.value.every((item) => item.statusVerifikasi === 'TERKIRIM'),
+);
+const hasUnsentEmail = computed(() =>
+  emailPreviewRows.value.some((item) => !String((item.recipient as any)?.emailSentAt || '').trim()),
+);
+// Kompatibilitas untuk folder lama yang sudah tersimpan sebagai TERKIRIM
+// sebelum metadata emailSentAt diperkenalkan.
+const effectiveFolderStatus = computed(() =>
+  folder.value?.status === 'TERKIRIM' && allSignedItems.value && hasUnsentEmail.value
+    ? 'SIAP_KIRIM'
+    : folder.value?.status,
+);
 const isFolderCompleted = computed(
-  () =>
-    folder.value?.status === 'TERKIRIM' ||
-    (items.value.length > 0 && items.value.every((item) => item.statusVerifikasi === 'TERKIRIM')),
+  () => effectiveFolderStatus.value === 'TERKIRIM',
 );
 const isSignerAwaiting = computed(
   () =>
@@ -539,6 +628,13 @@ const isFolderCreator = computed(
     !!folder.value &&
     !!currentPosition.value &&
     String(folder.value.createdBy || '') === currentPosition.value,
+);
+const isEmailReady = computed(
+  () =>
+    !!folder.value &&
+    effectiveFolderStatus.value === 'SIAP_KIRIM' &&
+    isFolderCreator.value &&
+    emailPreviewRows.value.length > 0,
 );
 const isVerifierAwaiting = computed(() => {
   if (!folder.value || folder.value.status !== 'MENUNGGU_VERIFIKASI') return false;
@@ -618,6 +714,59 @@ const submitVerificationReject = async () => {
     toast.add({ title: 'Gagal menolak folder', description: error?.message || 'Coba lagi.', color: 'error' });
   } finally {
     workflowLoading.value = false;
+  }
+};
+
+const openEmailModal = () => {
+  if (!emailPreviewRows.value.length) return;
+  emailDrafts.value = Object.fromEntries(
+    emailPreviewRows.value.map((item) => [
+      item.id,
+      {
+        to: item.emailTertuju || '',
+        cc: item.emailCc || '',
+        bcc: item.emailBcc || '',
+      },
+    ]),
+  );
+  emailExpanded.value = Object.fromEntries(
+    emailPreviewRows.value.map((item, index) => [item.id, index === 0]),
+  );
+  showEmailModal.value = true;
+};
+
+const toggleEmailItem = (itemId: string) => {
+  emailExpanded.value[itemId] = !emailExpanded.value[itemId];
+};
+
+const sendAllEmails = async () => {
+  if (!folder.value || emailSending.value || !emailPreviewRows.value.length) return;
+  const emailOverrides = emailPreviewRows.value.map((item) => ({
+    itemId: item.id,
+    to: emailDrafts.value[item.id]?.to?.trim() || '',
+    cc: emailDrafts.value[item.id]?.cc?.trim() || '',
+    bcc: emailDrafts.value[item.id]?.bcc?.trim() || '',
+  }));
+  if (emailOverrides.some((item) => !item.to)) {
+    toast.add({ title: 'Email belum lengkap', description: 'Email penerima wajib diisi untuk setiap naskah.', color: 'warning' });
+    return;
+  }
+  emailSending.value = true;
+  try {
+    const result = await sendFolderEmails(folder.value.id, emailOverrides);
+    showEmailModal.value = false;
+    toast.add({
+      title: 'Email berhasil dikirim',
+      description: `${Number(result?.sent || 0)} naskah berhasil dikirim ke penerima.`,
+      color: 'success',
+    });
+    await loadData();
+  } catch (error: any) {
+    const message = error?.response?.data?.message || error?.message || 'Gagal mengirim email.';
+    toast.add({ title: 'Pengiriman email gagal', description: String(message), color: 'error' });
+    await loadData();
+  } finally {
+    emailSending.value = false;
   }
 };
 
@@ -822,6 +971,29 @@ const closePreview = () => {
   revokePdf();
 };
 
+const loadSignedPreview = async (item: SdeMasalFolderItem): Promise<boolean> => {
+  if (!item.naskahId || !item.finalPdf) return false;
+
+  isLoadingPdf.value = true;
+  pdfError.value = null;
+  revokePdf();
+  try {
+    const response = await api.get(`/sde-masal/naskah/${item.naskahId}/preview-pdf`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    if (!blob.size) return false;
+    currentBlobUrl = URL.createObjectURL(blob);
+    pdfUrl.value = currentBlobUrl;
+    return true;
+  } catch (error) {
+    console.warn('Preview PDF final SDE Massal gagal, gunakan preview draft:', error);
+    return false;
+  } finally {
+    isLoadingPdf.value = false;
+  }
+};
+
 const openPreview = async (item: SdeMasalFolderItem) => {
   const idx = items.value.findIndex((i) => i.id === item.id);
   if (idx < 0) return;
@@ -891,6 +1063,10 @@ const gotoPreview = async (idx: number) => {
 const generatePdfFor = async (idx: number) => {
   const item = items.value[idx];
   if (!item || !folder.value) return;
+
+  // Item yang sudah berhasil ditandatangani harus memakai preview PDF final
+  // agar QR asli tetap tampil, bukan QR placeholder PREVIEW.
+  if (await loadSignedPreview(item)) return;
 
   isLoadingPdf.value = true;
   revokePdf();
@@ -1014,8 +1190,26 @@ const retryItem = async (item: SdeMasalFolderItem) => {
     retryingId.value = null;
   }
 };
-const downloadPdf = (item: SdeMasalFolderItem) => {
+const downloadPdf = async (item: SdeMasalFolderItem) => {
   if (!item.finalPdf) return;
+  if (item.naskahId) {
+    try {
+      const response = await api.get(`/sde-masal/naskah/${item.naskahId}/preview-pdf`, {
+        responseType: 'blob',
+      });
+      const blobUrl = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = `${item.nomor || item.perihal || 'sde-masal'}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      return;
+    } catch (error) {
+      console.warn('Unduh PDF final SDE Massal gagal, gunakan file tersimpan:', error);
+    }
+  }
   const base = api?.defaults?.baseURL || '';
   window.open(
     item.finalPdf.startsWith('http')
@@ -1062,7 +1256,7 @@ const timelineSteps = computed(() => {
 
   const steps: TimelineStep[] = [];
   const firstItem = items.value[0];
-  const folderStatus = folder.value?.status;
+  const folderStatus = effectiveFolderStatus.value;
   const submitted = Boolean(firstItem?.submittedAt || (folderStatus && folderStatus !== 'DRAFT'));
 
   const pushStep = (step: Omit<TimelineStep, 'number'>) => {
@@ -1116,7 +1310,7 @@ const timelineSteps = computed(() => {
   }
 
   const allVerified = verifikatorList.value.length > 0 && verifikatorList.value.every((v) => v.status === 'verified');
-  const senderDone = isFolderCompleted.value || ['DIFINALISASI', 'SEBAGIAN_TERKIRIM', 'TERKIRIM'].includes(folderStatus || '');
+  const senderDone = isFolderCompleted.value || ['DIFINALISASI', 'SEBAGIAN_TERKIRIM', 'SIAP_KIRIM', 'TERKIRIM'].includes(folderStatus || '');
   const portalPending = folderStatus === 'MENUNGGU_TTE';
   const senderActive =
     !isFolderCompleted.value &&
@@ -1132,15 +1326,18 @@ const timelineSteps = computed(() => {
       ));
 
   const sent = isFolderCompleted.value;
+  const readyToSend = folderStatus === 'SIAP_KIRIM';
   const partiallySent = folderStatus === 'SEBAGIAN_TERKIRIM';
   pushStep(sent
     ? completedStep('Selesai', 'Naskah SDE Massal telah difinalisasi dan masuk ke Terkirim', firstItem?.updatedAt ? formatDate(firstItem.updatedAt) : undefined)
     : pendingStep(
-        'Dikirim ke Penerima',
+        readyToSend ? 'Siap Kirim' : 'Dikirim ke Penerima',
         portalPending
           ? 'Surat dikirim setelah callback Portal TTE berhasil'
-          : 'Menunggu surat dikirim kepada penerima',
-        partiallySent,
+          : readyToSend
+            ? 'Naskah telah ditandatangani dan menunggu pengiriman email oleh konseptor'
+            : 'Menunggu surat dikirim kepada penerima',
+        partiallySent || readyToSend,
       ));
 
   return steps;

@@ -13,6 +13,7 @@ export interface TuUsulanItem {
   arsipPerihal: string;
   arsipKode: string | null;
   arsipKlasifikasi?: string | null;
+  arsipKlasifikasiKode?: string | null;
   /** Lokasi fisik asli yang disimpan pada tahap pemberkasan. */
   lokasiAwal?: string | null;
   arsipTindakanPenyusutan?: string | null;
@@ -47,6 +48,11 @@ export interface TuUsulanItem {
   bacPihakKeduaPersnum?: number | null;
   bacPihakKeduaName?: string | null;
   bacPihakKeduaJabatan?: string | null;
+  bacTembusan?: Array<{
+    persnum: number;
+    name: string;
+    jabatan: string;
+  }> | null;
   bacSignedAt?: string | null;
   bacPihakKeduaSignedAt?: string | null;
   lokasiPenataan: string | null;

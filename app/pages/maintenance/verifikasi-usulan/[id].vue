@@ -7,7 +7,7 @@
         :items="items"
       />
       <NuxtLink
-        to="/maintenance/verifikasi-usulan"
+        to="/pemeliharaan/pemindahan"
         class="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition-colors shrink-0"
       >
         <UIcon name="i-lucide-arrow-left" class="w-4 h-4" /> Kembali
@@ -45,6 +45,7 @@
             :daftar-arsip="daftarIsi"
             :daftar-isi="daftarIsiNaskah"
             :unit-kerja="beritaAcaraData?.unitKerjaPengusul || usulanToTransfer.divisiName"
+            :description-next-to-number="true"
           />
 
           <TimelineRiwayat :item="usulanToTransfer" />
@@ -185,6 +186,14 @@ definePageMeta({ middleware: ['auth', 'atasan-managerial-secretary-only'] });
 
 const route = useRoute();
 const { user } = useAuth();
+
+if (route.path.startsWith('/maintenance/verifikasi-usulan/')) {
+  await navigateTo(
+    route.fullPath.replace('/maintenance/verifikasi-usulan', '/pemeliharaan/pemindahan'),
+    { replace: true },
+  );
+}
+
 const {
   fetchDetail,
   verify,
@@ -306,9 +315,10 @@ const jenis = computed<JenisUsulan>(() => {
 });
 
 const items = computed(() => [
-  { label: 'Beranda', to: '/' },
-  { label: 'Pemindahan', to: '/maintenance/verifikasi-usulan' },
-  { label: usulan.value?.nomorUsulan ?? 'Detail', to: `/maintenance/verifikasi-usulan/${route.params.id}` },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan' },
+  { label: 'Pemindahan', to: '/pemeliharaan/pemindahan' },
+  { label: usulan.value?.nomorUsulan ?? 'Detail', to: `/pemeliharaan/pemindahan/${route.params.id}` },
 ]);
 
 /** Riwayat aktor yang terlibat dalam usulan. */

@@ -83,6 +83,10 @@ const exportColumns = ref([
 
 const route = useRoute();
 const { user } = useAuth();
+
+if (route.path === '/maintenance/verifikasi-usulan') {
+  await navigateTo('/pemeliharaan/pemindahan', { replace: true });
+}
 const {
   fetchList,
   fetchSummary,
@@ -103,9 +107,9 @@ const isMultiRole = computed(() => {
 });
 
 const items = [
-  { label: 'Beranda', to: '/' },
-  { label: 'Pemeliharaan', to: '/maintenance/verifikasi-usulan' },
-  { label: 'Pemindahan', to: '/maintenance/verifikasi-usulan' },
+  { label: 'Kelola', to: '/kelola' },
+  { label: 'Pemeliharaan', to: '/pemeliharaan/pemindahan' },
+  { label: 'Pemindahan', to: '/pemeliharaan/pemindahan' },
 ];
 
 const filter = ref<VerifikasiFilter>({
@@ -185,7 +189,7 @@ const handleExportConfirm = (selectedKeys: string[]) => {
 };
 
 const openDetail = (row: VerifikasiUsulanItem) => {
-  navigateTo(`/maintenance/verifikasi-usulan/${row.id}?jenis=${row.jenis}`);
+  navigateTo(`/pemeliharaan/pemindahan/${row.id}?jenis=${row.jenis}`);
 };
 
 onMounted(() => loadData());

@@ -139,7 +139,7 @@
         </button>
         <NuxtLink
           v-if="item.status === 'diterima' && isFirstVerifikator"
-          :to="`/maintenance/penyusutan/penataan-pemusnahan/${item.id}`"
+          :to="`/kelola/penyusutan/penataan-pemusnahan/${item.id}`"
           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg bg-[#457fb6] hover:bg-[#3a6d9c] text-white transition-colors"
         >
           <UIcon :name="item.jenis_penyusutan === 'permanen' ? 'i-lucide-archive' : 'i-lucide-trash-2'" class="w-4 h-4" />
