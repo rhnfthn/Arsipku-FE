@@ -7,7 +7,7 @@ import {
   PanelRightOpen, PanelRightClose, List, ArrowUpDown,
   Mail, Send, Save, RotateCcw, RefreshCw, Layers
 } from "lucide-vue-next";
-import { pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
+import { getKorespondensiNavigationJenis, pickKorespondensiListQuery } from "~/utils/korespondensi-list-state";
 
 // Import Component Baru
 // Jika Anda pakai DetailNaskah, import DetailNaskah seperti sebelumnya:
@@ -30,8 +30,8 @@ const { apiPost, apiGet, api } = useApi();
 const { getBerkasList, addNaskahToBerkas, getBerkasStatusByNaskah } = useArsipDinamis();
 const { canReadBerkasStatus } = useArsipDinamisPermission();
 
-const id = route.params.id as string;
-const jenisQuery = route.query.jenis as string;
+const id = computed(() => route.params.id as string);
+const jenisQuery = computed(() => (route.query.jenis as string) || '');
 const returnListQuery = computed(() => pickKorespondensiListQuery(route.query));
 const returnPath = computed(() => {
   const value = route.query.return_path;
@@ -114,7 +114,7 @@ const isSingleData = computed(() => {
 // --- COMPUTED: Deteksi Halaman Terkirim ---
 const isTerkirim = computed(() => {
   const path = route.path.toLowerCase();
-  const jenis = (jenisQuery || '').toUpperCase();
+  const jenis = jenisQuery.value.toUpperCase();
   return path.includes('terkirim') || path.includes('keluar') || jenis === 'SK';
 });
 
@@ -329,7 +329,7 @@ const isHighlighted = (detail: any) => {
   }
 
   // 3. Cek ID Konsep Utama (Highlight card 'create')
-  if (String(target) === String(id) && detail.aksi === 'create') {
+  if (String(target) === String(id.value) && detail.aksi === 'create') {
     return true;
   }
 
@@ -352,7 +352,7 @@ const scrollToTarget = async () => {
     const foundDetail = details.value.find((d: any) => {
       if (d.id && String(d.id) === String(targetId)) return true;
       if (d.urutan && String(d.urutan) === String(targetId)) return true;
-      if (d.aksi === 'create' && String(targetId) === String(id)) return true;
+      if (d.aksi === 'create' && String(targetId) === String(id.value)) return true;
       return false;
     });
 
@@ -400,7 +400,7 @@ const allowedActions = computed(() => {
 // --- DATA FETCHING ---
 // --- DATA FETCHING ---
 const loadData = async () => {
-  if (!id) return;
+  if (!id.value) return;
   isLoading.value = true;
   details.value = [];
   selected.value = null;
@@ -411,7 +411,7 @@ const loadData = async () => {
   try {
     isLoadingNav.value = true;
     try {
-      const nav = await fetchSentNavigation(id, jenisQuery);
+      const nav = await fetchSentNavigation(id.value, getKorespondensiNavigationJenis(route.query));
       navPrev.value = nav.previous;
       navNext.value = nav.next;
     } catch (navErr) {
@@ -420,10 +420,10 @@ const loadData = async () => {
       isLoadingNav.value = false;
     }
 
-    if (jenisQuery === 'K') {
+    if (jenisQuery.value === 'K') {
       // === KONSEP === (di halaman terkirim)
       isKonsepData.value = true;
-      const response = await fetchKonsepDetail(id);
+      const response = await fetchKonsepDetail(id.value);
       const rawData: any = (response as any)?.data || response;
       const konsepTo = rawData?.to_konsep || null;
 
@@ -504,7 +504,7 @@ const loadData = async () => {
     } else {
       // === SURAT MASUK / KELUAR ===
       isKonsepData.value = false;
-      const response = await fetchInboxDetail(id, jenisQuery);
+      const response = await fetchInboxDetail(id.value, jenisQuery.value);
 
       const rawData: any = (response as any)?.data || response;
       let rawFlows: any[] = [];
@@ -519,7 +519,7 @@ const loadData = async () => {
           // Flat array: backend returns all naskah in the chain (e.g. [SDE, SDI, Konsep])
           // Find the naskah matching the URL id — this is the "viewed" naskah
           rawFlows = rawData;
-          inboxData = rawData.find((item: any) => String(item.id) === String(id)) || rawData[0];
+          inboxData = rawData.find((item: any) => String(item.id) === String(id.value)) || rawData[0];
           // Move the matched naskah to the front so it renders as the head card
           if (inboxData && rawFlows[0] !== inboxData) {
             rawFlows = [inboxData, ...rawFlows.filter((item: any) => item !== inboxData)];
@@ -629,7 +629,7 @@ watch(
 
 const goToNav = (target: any) => {
   if (!target?.id_naskah) return;
-  const targetJenis = target.jenis || jenisQuery || 'ND';
+  const targetJenis = target.jenis || jenisQuery.value || 'ND';
   router.push({
     path: `/korespondensi/terkirim/${target.id_naskah}`,
     query: { ...returnListQuery.value, ...returnPathQuery.value, jenis: targetJenis },
@@ -645,7 +645,7 @@ const shareNaskah = ref<any>(null);
 
 const handleShare = () => {
   const s = selected.value;
-  const naskahId = s?.id || s?.naskahId || s?.id_naskah || id;
+  const naskahId = s?.id || s?.naskahId || s?.id_naskah || id.value;
   if (!naskahId) {
     useToast().add({ title: 'Tidak bisa membagikan', description: 'Naskah ID tidak ditemukan', color: 'error' });
     return;
@@ -740,7 +740,7 @@ const fetchBerkasStatus = async (naskahId: string) => {
 
 const openAddToBerkasModal = async () => {
   const s = selected.value;
-  const naskahId = s?.id || s?.naskahId || s?.id_naskah || id;
+  const naskahId = s?.id || s?.naskahId || s?.id_naskah || id.value;
   if (!naskahId) return;
   selectedNaskahForBerkas.value = {
     naskahId,
@@ -1102,7 +1102,7 @@ const openSdeMasalPreview = async (naskahId: string, title = "Dokumen") => {
 
 const openDetailPreview = async (detail: any, url: string, title = "Dokumen") => {
   const jenis = String(detail?.jenis || '').toUpperCase().replace(/[- ]/g, '_');
-  const routeJenis = String(jenisQuery || '').toUpperCase().replace(/[- ]/g, '_');
+  const routeJenis = jenisQuery.value.toUpperCase().replace(/[- ]/g, '_');
   const isSde =
     jenis === 'SDE' ||
     jenis === 'SDE_MASAL' ||
@@ -1113,7 +1113,7 @@ const openDetailPreview = async (detail: any, url: string, title = "Dokumen") =>
     // Pada beberapa response Terkirim, detail.id dapat berisi ID flow,
     // sedangkan route.params.id tetap merupakan ID naskah. Coba keduanya
     // supaya SDE Massal tidak jatuh kembali ke final_pdf historis.
-    const candidateIds = [detail?.id, id]
+    const candidateIds = [detail?.id, id.value]
       .filter(Boolean)
       .map(String)
       .filter((value, index, values) => values.indexOf(value) === index);
