@@ -28,6 +28,7 @@ export interface SdeMasalFolder {
   pengirimId: string | null;
   pengirimName: string | null;
   sifat: string | null;
+  recipientType?: 'EXTERNAL' | 'INTERNAL';
   atasNama: string | null;
   atasNamaPositionId: string | null;
   kontenTemplate: string | null;
@@ -87,6 +88,15 @@ export interface SdeMasalPenerima {
   variables?: Record<string, string>;
   no?: number;
   persnum?: string;
+  recipientType?: 'EXTERNAL' | 'INTERNAL';
+  employeeIdInput?: string;
+  employeeId?: string;
+  employeePersnum?: string;
+  employeePositionId?: string;
+  employeeName?: string;
+  employeePositionText?: string;
+  employeeOrganizationText?: string;
+  employeeEmail?: string | null;
   nama?: string;
   jabatan?: string;
   tertuju: string;

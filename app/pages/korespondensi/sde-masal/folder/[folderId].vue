@@ -48,6 +48,12 @@
             <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Sifat</span>
             <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">{{ folder.sifat || 'biasa' }}</p>
           </div>
+          <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Jenis Penerima</span>
+            <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
+              {{ folder.recipientType === 'INTERNAL' ? 'Karyawan Internal' : 'Tertuju Eksternal' }}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -219,7 +225,7 @@
             Batal
           </NuxtLink>
           <UButton
-            label="Kirim Semua Email"
+            :label="folder.recipientType === 'INTERNAL' ? 'Kirim ke Kotak Masuk' : 'Kirim Semua Email'"
             icon="i-lucide-send"
             color="primary"
             :loading="emailSending"
@@ -369,13 +375,15 @@
 
     <UModal
       v-model:open="showEmailModal"
-      title="Kirim Semua Email"
+      :title="folder?.recipientType === 'INTERNAL' ? 'Kirim ke Kotak Masuk' : 'Kirim Semua Email'"
       :ui="{ overlay: 'bg-black/40 backdrop-blur-[2px]' }"
     >
       <template #body>
         <div class="space-y-3">
           <p class="text-sm text-gray-600 dark:text-gray-300">
-            Periksa tujuan email setiap naskah. Email baru dikirim setelah tombol Kirim ditekan.
+            {{ folder?.recipientType === 'INTERNAL'
+              ? 'Periksa penerima internal setiap naskah. Naskah akan muncul di Kotak Masuk penerima setelah tombol Kirim ditekan.'
+              : 'Periksa tujuan email setiap naskah. Email baru dikirim setelah tombol Kirim ditekan.' }}
           </p>
           <div class="max-h-80 space-y-2 overflow-y-auto">
             <div
@@ -396,7 +404,9 @@
                     {{ item.nomor || item.perihal || '-' }}
                   </span>
                   <span v-if="!emailExpanded[item.id]" class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">
-                    {{ emailDrafts[item.id]?.to || 'Email penerima belum diisi' }}
+                    {{ folder?.recipientType === 'INTERNAL'
+                      ? item.recipient?.employeeName || item.penerima || 'Penerima internal belum tersedia'
+                      : emailDrafts[item.id]?.to || 'Email penerima belum diisi' }}
                   </span>
                 </span>
                 <UIcon
@@ -405,6 +415,15 @@
                 />
               </button>
               <div v-if="emailExpanded[item.id]" class="space-y-2 border-t border-gray-100 px-3 pb-3 pt-3 dark:border-gray-800">
+                <div v-if="folder?.recipientType === 'INTERNAL'" class="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+                  <p class="font-medium">{{ item.recipient?.employeeName || item.penerima || '-' }}</p>
+                  <p class="mt-1 text-xs">{{ item.recipient?.employeePositionText || '-' }} · {{ item.recipient?.employeeOrganizationText || '-' }}</p>
+                  <p class="mt-1 text-xs text-blue-700 dark:text-blue-300">ID Karyawan: {{ item.recipient?.employeeIdInput || item.recipient?.employeePersnum || '-' }}</p>
+                  <p v-if="item.recipient?.internalInboxSendError" class="mt-2 rounded-md bg-red-100 px-2 py-1.5 text-xs text-red-800 dark:bg-red-950/50 dark:text-red-200">
+                    Pengiriman gagal: {{ item.recipient.internalInboxSendError }}. Naskah ini dapat dicoba kirim ulang.
+                  </p>
+                </div>
+                <template v-else>
                 <div>
                   <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Email penerima</label>
                   <UInput v-model="emailDrafts[item.id].to" type="email" size="sm" placeholder="Email penerima" class="w-full" />
@@ -417,6 +436,7 @@
                   <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">BCC</label>
                   <UInput v-model="emailDrafts[item.id].bcc" type="text" size="sm" placeholder="BCC (opsional)" class="w-full" />
                 </div>
+                </template>
               </div>
             </div>
           </div>
@@ -432,7 +452,7 @@
             @click="showEmailModal = false"
           />
           <UButton
-            label="Kirim"
+            :label="folder?.recipientType === 'INTERNAL' ? 'Kirim' : 'Kirim Email'"
             icon="i-lucide-send"
             color="primary"
             :loading="emailSending"
@@ -595,14 +615,23 @@ const qrDisabled = ref(true);
 const basahDisabled = ref(true);
 const selectedSendType = ref<'digsig' | 'qr_only' | 'ttd_basah'>('qr_only');
 const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
+const isInternalRecipient = computed(() => folder.value?.recipientType === 'INTERNAL');
 const emailPreviewRows = computed(() =>
-  items.value.filter((item) => item.naskahId && item.statusVerifikasi === 'TERKIRIM'),
+  items.value.filter((item) => {
+    if (!item.naskahId || item.statusVerifikasi !== 'TERKIRIM') return false;
+    if (!isInternalRecipient.value) return true;
+    return !String((item.recipient as any)?.internalInboxSentAt || '').trim();
+  }),
 );
 const allSignedItems = computed(
   () => items.value.length > 0 && items.value.every((item) => item.statusVerifikasi === 'TERKIRIM'),
 );
 const hasUnsentEmail = computed(() =>
-  emailPreviewRows.value.some((item) => !String((item.recipient as any)?.emailSentAt || '').trim()),
+  emailPreviewRows.value.some((item) =>
+    !String(
+      (item.recipient as any)?.[isInternalRecipient.value ? 'internalInboxSentAt' : 'emailSentAt'] || '',
+    ).trim(),
+  ),
 );
 // Kompatibilitas untuk folder lama yang sudah tersimpan sebagai TERKIRIM
 // sebelum metadata emailSentAt diperkenalkan.
@@ -723,7 +752,9 @@ const openEmailModal = () => {
     emailPreviewRows.value.map((item) => [
       item.id,
       {
-        to: item.emailTertuju || '',
+        to: isInternalRecipient.value
+          ? item.recipient?.employeeName || item.penerima || ''
+          : item.emailTertuju || '',
         cc: item.emailCc || '',
         bcc: item.emailBcc || '',
       },
@@ -747,23 +778,36 @@ const sendAllEmails = async () => {
     cc: emailDrafts.value[item.id]?.cc?.trim() || '',
     bcc: emailDrafts.value[item.id]?.bcc?.trim() || '',
   }));
-  if (emailOverrides.some((item) => !item.to)) {
+  if (!isInternalRecipient.value && emailOverrides.some((item) => !item.to)) {
     toast.add({ title: 'Email belum lengkap', description: 'Email penerima wajib diisi untuk setiap naskah.', color: 'warning' });
     return;
   }
   emailSending.value = true;
   try {
-    const result = await sendFolderEmails(folder.value.id, emailOverrides);
+    const result = await sendFolderEmails(
+      folder.value.id,
+      isInternalRecipient.value ? [] : emailOverrides,
+    );
     showEmailModal.value = false;
     toast.add({
-      title: 'Email berhasil dikirim',
-      description: `${Number(result?.sent || 0)} naskah berhasil dikirim ke penerima.`,
-      color: 'success',
+      title: isInternalRecipient.value
+        ? Number(result?.failed || 0) > 0
+          ? 'Sebagian naskah belum terkirim'
+          : 'Berhasil dikirim ke Kotak Masuk'
+        : Number(result?.failed || 0) > 0
+          ? 'Sebagian email belum terkirim'
+          : 'Email berhasil dikirim',
+      description: `${Number(result?.sent || 0)} berhasil, ${Number(result?.skipped || 0)} dilewati, ${Number(result?.failed || 0)} gagal.`,
+      color: Number(result?.failed || 0) > 0 ? 'warning' : 'success',
     });
     await loadData();
   } catch (error: any) {
-    const message = error?.response?.data?.message || error?.message || 'Gagal mengirim email.';
-    toast.add({ title: 'Pengiriman email gagal', description: String(message), color: 'error' });
+    const message = error?.response?.data?.message || error?.message || 'Gagal mengirim.';
+    toast.add({
+      title: isInternalRecipient.value ? 'Pengiriman ke Kotak Masuk gagal' : 'Pengiriman email gagal',
+      description: String(message),
+      color: 'error',
+    });
     await loadData();
   } finally {
     emailSending.value = false;

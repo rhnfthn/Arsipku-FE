@@ -172,7 +172,8 @@ export const useSdeMasal = () => {
    */
   const parseExcelLocal = async (
     file: File,
-    expectedColumns: string[] = []
+    expectedColumns: string[] = [],
+    recipientType: 'EXTERNAL' | 'INTERNAL' = 'EXTERNAL'
   ): Promise<SdeMasalPenerima[]> => {
     const XLSX = await import('xlsx');
     const arrayBuffer = await file.arrayBuffer();
@@ -253,6 +254,17 @@ export const useSdeMasal = () => {
       const perihalRow = getCol(row, 'Perihal', 'perihal');
       const tertujuRow = getCol(row, 'Tertuju', 'tertuju');
       const idTertuju = getCol(row, 'id_tertuju', 'idTertuju');
+      const employeeIdInput = recipientType === 'INTERNAL'
+        ? getCol(
+            row,
+            'id karyawan (e-nik/persnum)',
+            'id_karyawan',
+            'e-nik',
+            'enik',
+            'persnum',
+            'employee_id'
+          )
+        : '';
       const email = getCol(row, 'email', 'Email');
       const tembusan = getCol(row, 'tembusan', 'Tembusan');
       const tembusanInternal = getCol(
@@ -302,6 +314,7 @@ export const useSdeMasal = () => {
       const hasNoKnownValue =
         !perihalRow &&
         !idTertuju &&
+        !employeeIdInput &&
         !email &&
         !tembusan &&
         !tembusanInternal &&
@@ -334,22 +347,32 @@ export const useSdeMasal = () => {
       }
 
       // Skip baris tanpa perihal DAN tanpa tertuju/idTertuju — baris kosong/contoh
-      if (!perihalRow && !tertujuRow && !idTertuju) {
+      if (
+        !perihalRow &&
+        !tertujuRow &&
+        !idTertuju &&
+        !employeeIdInput
+      ) {
         return;
       }
 
       no++;
       // Validasi: Perihal wajib
-      const isValid = !!perihalRow && !!tertujuRow && isTemplateValid;
+      const hasRecipient = recipientType === 'INTERNAL'
+        ? !!employeeIdInput
+        : !!tertujuRow;
+      const isValid = !!perihalRow && hasRecipient && isTemplateValid;
       const isRevision = isRevisionRaw === '1' || isRevisionRaw.toLowerCase() === 'true' ? 1 : 0;
 
       result.push({
         variables,
         no,
         persnum: '',
+        recipientType,
+        employeeIdInput,
         nama: '',
         jabatan: '',
-        tertuju: tertujuRow || idTertuju || '',
+        tertuju: recipientType === 'INTERNAL' ? '' : tertujuRow || idTertuju || '',
         alamat: null,
         kota: null,
         kodePos: null,
@@ -381,7 +404,9 @@ export const useSdeMasal = () => {
         isValid,
         validationMessage: isValid
           ? undefined
-          : templateValidationMessage || 'Perihal dan tertuju wajib diisi',
+          : templateValidationMessage || (recipientType === 'INTERNAL'
+            ? 'Perihal dan ID Karyawan (e-NIK/Persnum) wajib diisi'
+            : 'Perihal dan tertuju wajib diisi'),
       });
     });
 

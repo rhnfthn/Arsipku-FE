@@ -162,12 +162,13 @@
         />
         <SdeMasalStepUpload
           v-model="wizardState.penerimaList"
+          v-model:recipient-type="wizardState.recipientType"
           :konsep="wizardState.konsep"
           :dynamic-variables="wizardState.variables"
-        :template="wizardState.template"
-        :folder-id="folderId"
-        @attachments-state="handleAttachmentsState"
-      />
+          :template="wizardState.template"
+          :folder-id="folderId"
+          @attachments-state="handleAttachmentsState"
+        />
       </div>
 
       <!-- Step 3: Preview dan Konfirmasi -->
@@ -175,6 +176,7 @@
         v-else-if="currentStep === 3"
         :konsep="wizardState.konsep"
         :penerima-list="wizardState.penerimaList"
+        :recipient-type="wizardState.recipientType"
         :template="wizardState.template"
         :folder-id="folderId"
         :generating="generating"
@@ -362,11 +364,13 @@ const wizardState = reactive<{
   penerimaList: SdeMasalPenerima[];
   template: SdeMasalTemplate | null;
   variables: string[];
+  recipientType: 'EXTERNAL' | 'INTERNAL';
 }>({
   konsep: null,
   penerimaList: [],
   template: null,
   variables: [],
+  recipientType: 'EXTERNAL',
 });
 
 // Garis kewenangan dipilih saat masuk ke langkah pembuatan naskah (step 2),
@@ -542,6 +546,7 @@ onMounted(async () => {
       if (f) {
         folderId.value = f.id;
         folderStatus.value = f.status || null;
+        wizardState.recipientType = f.recipientType === 'INTERNAL' ? 'INTERNAL' : 'EXTERNAL';
         wizardState.konsep = {
           judul: f.judul || '',
           tanggalKonsep: f.tanggal ? String(f.tanggal).slice(0, 10) : '',
@@ -600,6 +605,7 @@ onMounted(async () => {
       wizardState.penerimaList = Array.isArray(draft.penerimaList) ? draft.penerimaList : [];
       wizardState.template = draft.template || null;
       wizardState.variables = Array.isArray(draft.variables) ? draft.variables : [];
+      wizardState.recipientType = draft.recipientType === 'INTERNAL' ? 'INTERNAL' : 'EXTERNAL';
       folderId.value = draft.folderId || null;
       currentStep.value = savedStep;
     }
@@ -624,6 +630,7 @@ watch(
     penerimaList: wizardState.penerimaList,
     template: wizardState.template,
     variables: wizardState.variables,
+    recipientType: wizardState.recipientType,
     folderId: folderId.value,
     currentStep: currentStep.value,
   }),
@@ -734,6 +741,9 @@ const goNext = async () => {
   }
   if (currentStep.value === 2) {
     try {
+      // Folder awal dibuat sebelum pilihan penerima tersedia; simpan mode
+      // sebelum generate item agar backend memvalidasi/merekam tipe yang tepat.
+      await persistCompleteFolder();
       await ensureItemsGenerated();
       await ensureMassAttachmentsCommitted();
     } catch (error: any) {
@@ -762,6 +772,7 @@ const buildFolderPayload = (signOption?: 'digsig' | 'qr_only' | 'ttd_basah') => 
     pengirimId: konsep?.pengirimId,
     pengirimName: konsep?.pengirimName,
     sifat: konsep?.sifat || 'biasa',
+    recipientType: wizardState.recipientType,
     atasNama: konsep?.atasNama || null,
     atasNamaPositionId: konsep?.atasNamaPositionId || null,
     kontenTemplate: wizardState.template?.konten,
@@ -897,6 +908,7 @@ const resetWizard = () => {
   wizardState.penerimaList = [];
   wizardState.template = null;
   wizardState.variables = [];
+  wizardState.recipientType = 'EXTERNAL';
   folderId.value = null;
   folderStatus.value = null;
   currentStep.value = 1;

@@ -17,6 +17,9 @@
               >
                 {{ column }}
               </th>
+              <th v-if="recipientType === 'INTERNAL'" class="whitespace-nowrap border border-gray-200 px-3 py-2 text-left font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                Hasil Pencocokan Pegawai
+              </th>
               <th
                 class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
               >
@@ -44,6 +47,13 @@
               >
                 {{ getValue(item, column) || '-' }}
               </td>
+              <td v-if="recipientType === 'INTERNAL'" class="min-w-64 border border-gray-100 px-3 py-2 align-top text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                <template v-if="item.isValid">
+                  <span class="block font-medium text-gray-900 dark:text-white">{{ item.employeeName }}</span>
+                  <span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{{ item.employeePositionText }} · {{ item.employeeOrganizationText }}</span>
+                </template>
+                <span v-else class="text-xs text-gray-400">Periksa validasi baris</span>
+              </td>
               <td class="border border-gray-100 px-3 py-2 text-center dark:border-gray-700">
                 <span
                   v-if="item.isValid"
@@ -56,6 +66,9 @@
                   :title="item.validationMessage"
                   ><UIcon name="i-lucide-x-circle" class="size-3" />Invalid</span
                 >
+                <p v-if="!item.isValid && item.validationMessage" class="mt-1 max-w-48 text-left text-xs text-red-600 dark:text-red-300">
+                  {{ item.validationMessage }}
+                </p>
               </td>
               <td class="border border-gray-100 px-3 py-2 text-center dark:border-gray-700">
                 <UButton
@@ -206,6 +219,7 @@ const props = defineProps<{
   columns: string[];
   konsep?: SdeMasalConcept | null;
   template?: SdeMasalTemplate | null;
+  recipientType?: 'EXTERNAL' | 'INTERNAL';
 }>();
 
 const { api } = useApi();
@@ -275,7 +289,9 @@ const findTertujuEksternal = (value: string | number | null | undefined) => {
 };
 
 const getRecipientCompanyName = (item: SdeMasalPenerima) =>
-  findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
+  props.recipientType === 'INTERNAL' || item.recipientType === 'INTERNAL'
+    ? null
+    : findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
 
 const getPreviewItem = (item: SdeMasalPenerima): SdeMasalPenerima => {
   const authorityPositionId = String(props.konsep?.atasNamaPositionId || '').trim();
@@ -436,6 +452,7 @@ const generatePdfFor = async (idx: number) => {
 const getValue = (item: SdeMasalPenerima, column: string) => {
   if (column === 'perihal') return item.perihal || '';
   if (column === 'tertuju') return item.tertuju || item.idTertuju || '';
+  if (column === 'id karyawan (e-nik/persnum)') return item.employeeIdInput || '';
   if (column === 'lampiran') {
     if (Array.isArray(item.lampiran)) return item.lampiran.map((ref) => ref.fileName).join('; ');
     return item.lampiran || item.variables?.lampiran || '';

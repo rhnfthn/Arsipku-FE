@@ -169,6 +169,7 @@
               @click="openPreview(index)"
             />
             <UButton
+              v-if="!isInternalRecipient"
               icon="i-lucide-mail"
               color="neutral"
               variant="soft"
@@ -527,6 +528,7 @@ const props = defineProps<{
   template: SdeMasalTemplate | null;
   folderId: string | null;
   generating: boolean;
+  recipientType?: 'EXTERNAL' | 'INTERNAL';
 }>();
 
 const emit = defineEmits<{
@@ -803,7 +805,9 @@ const findTertujuEksternal = (value: string | number | null | undefined) => {
 };
 
 const getRecipientCompanyName = (item: SdeMasalPenerima) =>
-  findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
+  props.recipientType === 'INTERNAL' || item.recipientType === 'INTERNAL'
+    ? null
+    : findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
 
 // Pemberi kuasa non-Dirut otomatis menjadi tembusan internal pada alur SDE
 // biasa. Tambahkan position ID yang sama ke preview agar isi PDF identik
@@ -863,7 +867,9 @@ const getTertujuEksternal = (penerima: SdeMasalPenerima | Record<string, any>) =
 };
 
 const getPenerimaName = (penerima: SdeMasalPenerima | Record<string, any>) =>
-  getTertujuEksternal(penerima)?.nama || penerima.tertuju || penerima.idTertuju || '-';
+  props.recipientType === 'INTERNAL' || penerima.recipientType === 'INTERNAL'
+    ? penerima.tertuju || penerima.employeeName || '-'
+    : getTertujuEksternal(penerima)?.nama || penerima.tertuju || penerima.idTertuju || '-';
 
 // Status verifikasi label + badge
 const statusVerifikasiLabel = (status?: string) =>
@@ -887,14 +893,15 @@ const statusVerifikasiBadge = (status?: string) =>
   })[status || 'MENUNGGU'] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium';
 
 // Kolom DataTable
-const columns = [
+const isInternalRecipient = computed(() => props.recipientType === 'INTERNAL');
+const columns = computed(() => [
   { key: 'perihal', label: 'Perihal' },
   { key: 'tertuju', label: 'Tertuju' },
-  { key: 'email', label: 'Email', headerClass: 'text-center' },
+  ...(!isInternalRecipient.value ? [{ key: 'email', label: 'Email', headerClass: 'text-center' }] : []),
   { key: 'status', label: 'Status Verifikasi', headerClass: 'text-center', class: 'text-center' },
   { key: 'lampiran', label: 'Lampiran', headerClass: 'text-center', class: 'text-center' },
   { key: 'aksi', label: 'Aksi', headerClass: 'text-center', class: 'text-center' },
-];
+]);
 
 // Filter & search
 const searchQuery = ref('');
