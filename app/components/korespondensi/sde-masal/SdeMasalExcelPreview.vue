@@ -17,9 +17,6 @@
               >
                 {{ column }}
               </th>
-              <th v-if="recipientType === 'INTERNAL'" class="whitespace-nowrap border border-gray-200 px-3 py-2 text-left font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
-                Hasil Pencocokan Pegawai
-              </th>
               <th
                 class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300"
               >
@@ -46,13 +43,6 @@
                 :class="{ 'font-medium text-gray-900 dark:text-white': column === 'perihal' }"
               >
                 {{ getValue(item, column) || '-' }}
-              </td>
-              <td v-if="recipientType === 'INTERNAL'" class="min-w-64 border border-gray-100 px-3 py-2 align-top text-gray-700 dark:border-gray-700 dark:text-gray-300">
-                <template v-if="item.isValid">
-                  <span class="block font-medium text-gray-900 dark:text-white">{{ item.employeeName }}</span>
-                  <span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{{ item.employeePositionText }} · {{ item.employeeOrganizationText }}</span>
-                </template>
-                <span v-else class="text-xs text-gray-400">Periksa validasi baris</span>
               </td>
               <td class="border border-gray-100 px-3 py-2 text-center dark:border-gray-700">
                 <span
@@ -219,7 +209,6 @@ const props = defineProps<{
   columns: string[];
   konsep?: SdeMasalConcept | null;
   template?: SdeMasalTemplate | null;
-  recipientType?: 'EXTERNAL' | 'INTERNAL';
 }>();
 
 const { api } = useApi();
@@ -289,7 +278,7 @@ const findTertujuEksternal = (value: string | number | null | undefined) => {
 };
 
 const getRecipientCompanyName = (item: SdeMasalPenerima) =>
-  props.recipientType === 'INTERNAL' || item.recipientType === 'INTERNAL'
+  item.recipientType === 'INTERNAL'
     ? null
     : findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
 
@@ -385,7 +374,11 @@ const generatePdfFor = async (idx: number) => {
     formData.append('sifat', props.konsep?.sifat || 'biasa');
     formData.append(
       'penerima',
-      JSON.stringify([getRecipientCompanyName(previewItem) || previewItem.tertuju || previewItem.idTertuju || ''])
+      JSON.stringify([
+        previewItem.recipientType === 'INTERNAL'
+          ? previewItem.employeeName || previewItem.tertuju || ''
+          : getRecipientCompanyName(previewItem) || previewItem.tertuju || previewItem.idTertuju || '',
+      ])
     );
     // Tembusan: kirim kode eksternal & internal untuk di-resolve backend
     // (urutan: eksternal dulu, lalu internal) → di-hardcode di kanvas PDF.
@@ -451,6 +444,7 @@ const generatePdfFor = async (idx: number) => {
 
 const getValue = (item: SdeMasalPenerima, column: string) => {
   if (column === 'perihal') return item.perihal || '';
+  if (column === 'id_tertuju') return item.recipientIdInput || item.idTertuju || item.tertuju || '';
   if (column === 'tertuju') return item.tertuju || item.idTertuju || '';
   if (column === 'id karyawan (e-nik/persnum)') return item.employeeIdInput || '';
   if (column === 'lampiran') {

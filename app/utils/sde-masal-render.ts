@@ -30,14 +30,41 @@ export function setTertujuEksternalLookup(data: { kode?: string; nama: string }[
 }
 
 // Lookup position ID internal → jabatan (position_text) dari org-data.
-let internalPositionLookup: { position: string; position_text: string }[] = [];
+let internalPositionLookup: {
+  position: string;
+  position_text: string;
+  persnum_person?: string;
+  persnum?: string;
+  e_nik?: string;
+  enik?: string;
+  eNik?: string;
+  persnum_person_text?: string;
+  position_status?: string;
+}[] = [];
 
 export function setInternalPositionLookup(
-  data: { position: string | number; position_text?: string }[]
+  data: {
+    position: string | number;
+    position_text?: string;
+    persnum_person?: string | number;
+    persnum?: string | number;
+    e_nik?: string | number;
+    enik?: string | number;
+    eNik?: string | number;
+    persnum_person_text?: string;
+    position_status?: string;
+  }[]
 ) {
   internalPositionLookup = (data || []).map((row) => ({
     position: String(row.position ?? ''),
-    position_text: correspondenceRecipientLabel({ raw: row }),
+    position_text: String(row.position_text || correspondenceRecipientLabel({ raw: row })),
+    persnum_person: String(row.persnum_person ?? ''),
+    persnum: String(row.persnum ?? ''),
+    e_nik: String(row.e_nik ?? ''),
+    enik: String(row.enik ?? ''),
+    eNik: String(row.eNik ?? ''),
+    persnum_person_text: String(row.persnum_person_text ?? ''),
+    position_status: String(row.position_status ?? ''),
   }));
 }
 
@@ -75,8 +102,12 @@ export function resolveTembusanInternalNames(value: string | null | undefined): 
     .map((id) => id.trim())
     .filter(Boolean)
     .map((id) => {
-      const found = internalPositionLookup.find((item) => String(item.position) === id);
-      return found?.position_text || id;
+      const matches = internalPositionLookup.filter((item) =>
+        [item.position, item.persnum_person, item.persnum, item.e_nik, item.enik, item.eNik]
+          .some((candidate) => String(candidate ?? '').trim() === id)
+      );
+      const found = matches.find((item) => item.position_status.toLowerCase() === 'ybs') || matches[0];
+      return found?.persnum_person_text || found?.position_text || id;
     });
 }
 
@@ -142,7 +173,7 @@ export function renderSdeMasalKonten(
   const nama = val('nama');
   const jabatan = val('jabatan') || p.jabatanPenerima || '';
   const tertuju =
-    recipientCompanyName ||
+    (p.recipientType === 'INTERNAL' ? p.employeeName || p.tertuju : recipientCompanyName) ||
     p.idTertuju ||
     p.tertuju ||
     (nama && jabatan ? `${nama} - ${jabatan}` : nama || jabatan || '-');

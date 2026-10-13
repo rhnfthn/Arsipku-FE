@@ -172,8 +172,7 @@ export const useSdeMasal = () => {
    */
   const parseExcelLocal = async (
     file: File,
-    expectedColumns: string[] = [],
-    recipientType: 'EXTERNAL' | 'INTERNAL' = 'EXTERNAL'
+    expectedColumns: string[] = []
   ): Promise<SdeMasalPenerima[]> => {
     const XLSX = await import('xlsx');
     const arrayBuffer = await file.arrayBuffer();
@@ -197,8 +196,10 @@ export const useSdeMasal = () => {
         .trim()
         .toLowerCase();
     const availableHeaders = new Set(headerRow.map(normalizeHeader).filter(Boolean));
-    const missingColumns = expectedColumns.filter(
-      (column) => !availableHeaders.has(normalizeHeader(column))
+    const missingColumns = expectedColumns.filter((column) =>
+      column === 'id_tertuju'
+        ? !['id_tertuju', 'tertuju'].some((alias) => availableHeaders.has(alias))
+        : !availableHeaders.has(normalizeHeader(column))
     );
     const isTemplateValid = missingColumns.length === 0;
     const templateValidationMessage = isTemplateValid
@@ -254,17 +255,18 @@ export const useSdeMasal = () => {
       const perihalRow = getCol(row, 'Perihal', 'perihal');
       const tertujuRow = getCol(row, 'Tertuju', 'tertuju');
       const idTertuju = getCol(row, 'id_tertuju', 'idTertuju');
-      const employeeIdInput = recipientType === 'INTERNAL'
-        ? getCol(
-            row,
-            'id karyawan (e-nik/persnum)',
-            'id_karyawan',
-            'e-nik',
-            'enik',
-            'persnum',
-            'employee_id'
-          )
-        : '';
+      const recipientIdInput = getCol(
+        row,
+        'id_tertuju',
+        'idTertuju',
+        'ID Tertuju (Eksternal) / e-NIK/Persnum (Internal)',
+        'id karyawan (e-nik/persnum)',
+        'id_karyawan',
+        'e-nik',
+        'enik',
+        'persnum',
+        'employee_id'
+      );
       const email = getCol(row, 'email', 'Email');
       const tembusan = getCol(row, 'tembusan', 'Tembusan');
       const tembusanInternal = getCol(
@@ -314,7 +316,7 @@ export const useSdeMasal = () => {
       const hasNoKnownValue =
         !perihalRow &&
         !idTertuju &&
-        !employeeIdInput &&
+        !recipientIdInput &&
         !email &&
         !tembusan &&
         !tembusanInternal &&
@@ -351,16 +353,14 @@ export const useSdeMasal = () => {
         !perihalRow &&
         !tertujuRow &&
         !idTertuju &&
-        !employeeIdInput
+        !recipientIdInput
       ) {
         return;
       }
 
       no++;
       // Validasi: Perihal wajib
-      const hasRecipient = recipientType === 'INTERNAL'
-        ? !!employeeIdInput
-        : !!tertujuRow;
+      const hasRecipient = !!(recipientIdInput || tertujuRow || idTertuju);
       const isValid = !!perihalRow && hasRecipient && isTemplateValid;
       const isRevision = isRevisionRaw === '1' || isRevisionRaw.toLowerCase() === 'true' ? 1 : 0;
 
@@ -368,11 +368,12 @@ export const useSdeMasal = () => {
         variables,
         no,
         persnum: '',
-        recipientType,
-        employeeIdInput,
+        recipientType: undefined,
+        recipientIdInput: recipientIdInput || idTertuju,
+        employeeIdInput: '',
         nama: '',
         jabatan: '',
-        tertuju: recipientType === 'INTERNAL' ? '' : tertujuRow || idTertuju || '',
+        tertuju: tertujuRow || idTertuju || recipientIdInput || '',
         alamat: null,
         kota: null,
         kodePos: null,
@@ -404,9 +405,7 @@ export const useSdeMasal = () => {
         isValid,
         validationMessage: isValid
           ? undefined
-          : templateValidationMessage || (recipientType === 'INTERNAL'
-            ? 'Perihal dan ID Karyawan (e-NIK/Persnum) wajib diisi'
-            : 'Perihal dan tertuju wajib diisi'),
+          : templateValidationMessage || 'Perihal dan ID tertuju wajib diisi',
       });
     });
 

@@ -29,6 +29,7 @@ export interface SdeMasalFolder {
   pengirimName: string | null;
   sifat: string | null;
   recipientType?: 'EXTERNAL' | 'INTERNAL';
+  recipientIdInput?: string;
   atasNama: string | null;
   atasNamaPositionId: string | null;
   kontenTemplate: string | null;
@@ -97,6 +98,8 @@ export interface SdeMasalPenerima {
   employeePositionText?: string;
   employeeOrganizationText?: string;
   employeeEmail?: string | null;
+  /** ID tunggal dari Excel: kode/ID tertuju eksternal atau e-NIK/Persnum internal. */
+  recipientIdInput?: string;
   nama?: string;
   jabatan?: string;
   tertuju: string;

@@ -13,6 +13,39 @@
             to="/master/tertuju-eksternal"
             target="_blank"
           />
+          <UPopover :content="{ align: 'start', side: 'bottom', sideOffset: 8 }">
+            <UButton
+              label="Panduan"
+              color="primary"
+              variant="soft"
+              icon="i-lucide-circle-help"
+              class="w-full justify-center sm:w-auto"
+            />
+            <template #content>
+              <div class="w-80 max-w-[calc(100vw-2rem)] space-y-3 p-4 text-sm text-gray-700 dark:text-gray-200">
+                <p class="font-semibold text-gray-900 dark:text-white">Panduan Variabel & Penerima</p>
+                <ul class="list-disc space-y-2 pl-4">
+                  <li>
+                    Gunakan simbol <code v-pre class="rounded bg-gray-100 px-1 py-0.5 font-mono text-primary-700 dark:bg-gray-700 dark:text-primary-300">{{x}}</code>
+                    pada isi surat sebagai variabel. Nama variabel di dalam kurung kurawal harus sama dengan nama kolom Excel.
+                  </li>
+                  <li>
+                    Tembusan internal dan eksternal boleh lebih dari satu; pisahkan setiap ID dengan titik koma
+                    <code class="rounded bg-gray-100 px-1 py-0.5 font-mono text-primary-700 dark:bg-gray-700 dark:text-primary-300">;</code>.
+                  </li>
+                  <li>
+                    Jika mengisi lebih dari satu alamat email pada kolom email, CC, atau BCC, pisahkan dengan koma
+                    <code class="rounded bg-gray-100 px-1 py-0.5 font-mono text-primary-700 dark:bg-gray-700 dark:text-primary-300">,</code>.
+                  </li>
+                  <li>
+                    Untuk lampiran, isi kolom <code class="rounded bg-gray-100 px-1 py-0.5 font-mono text-primary-700 dark:bg-gray-700 dark:text-primary-300">lampiran</code>
+                    dengan nama file PDF yang sama persis seperti di dalam ZIP. Jika lebih dari satu file, pisahkan namanya dengan titik koma
+                    <code class="rounded bg-gray-100 px-1 py-0.5 font-mono text-primary-700 dark:bg-gray-700 dark:text-primary-300">;</code>, lalu unggah semua PDF dalam satu file ZIP.
+                  </li>
+                </ul>
+              </div>
+            </template>
+          </UPopover>
         </template>
       </TulisTemplateManager>
     </div>

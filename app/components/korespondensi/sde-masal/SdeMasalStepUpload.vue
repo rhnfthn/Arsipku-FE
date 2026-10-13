@@ -1,43 +1,11 @@
 <template>
   <div class="flex-1 overflow-y-auto space-y-5">
-    <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/50">
-      <div class="mb-3">
-        <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">Jenis Penerima</p>
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Pilih jenis tujuan untuk daftar Excel ini. Pilihan awal tetap tertuju eksternal.
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <UButton
-          label="Tertuju Eksternal"
-          icon="i-lucide-building-2"
-          :color="recipientType === 'EXTERNAL' ? 'primary' : 'neutral'"
-          :variant="recipientType === 'EXTERNAL' ? 'solid' : 'outline'"
-          :disabled="penerimaList.length > 0"
-          @click="recipientType = 'EXTERNAL'"
-        />
-        <UButton
-          label="Karyawan Internal"
-          icon="i-lucide-users"
-          :color="recipientType === 'INTERNAL' ? 'primary' : 'neutral'"
-          :variant="recipientType === 'INTERNAL' ? 'solid' : 'outline'"
-          :disabled="penerimaList.length > 0"
-          @click="recipientType = 'INTERNAL'"
-        />
-      </div>
-      <p v-if="penerimaList.length > 0" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        Hapus file Excel terlebih dahulu untuk mengganti jenis penerima.
-      </p>
-      <p v-if="recipientType === 'INTERNAL'" class="mt-3 rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
-        Excel harus berisi satu baris per karyawan dan kolom <span class="font-semibold">ID Karyawan (e-NIK/Persnum)</span>. Nama penerima akan diverifikasi dari direktori pegawai.
-      </p>
-    </div>
-
     <!-- Template Excel dinamis dari variabel konten -->
     <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/60 dark:bg-blue-950/30 space-y-3">
       <div class="flex items-center justify-between gap-2">
         <div>
           <p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Kolom Template dari Konten Surat</p>
+          <p class="mt-1 text-xs text-blue-800 dark:text-blue-300">Isi kolom <span class="font-semibold">id_tertuju</span> dengan kode/ID tertuju eksternal atau e-NIK/Persnum karyawan internal.</p>
         </div>
         <UButton label="Unduh Template Excel" color="primary" icon="i-lucide-download" size="sm" @click="handleDownloadDynamicTemplate" />
       </div>
@@ -238,14 +206,15 @@
     </Teleport>
 
     <!-- Preview Excel -->
-    <SdeMasalExcelPreview v-if="penerimaList.length > 0" :items="penerimaList" :columns="templateColumns" :konsep="konsep" :template="template" :recipient-type="recipientType" />
+    <SdeMasalExcelPreview v-if="penerimaList.length > 0" :items="penerimaList" :columns="templateColumns" :konsep="konsep" :template="template" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useSdeMasal } from '~/composables/useSdeMasal';
 import { useApi } from '~/composables/useApi';
+import { useTertujuEksternal } from '~/composables/useTertujuEksternal';
 import type {
   SdeMasalAttachmentRef,
   SdeMasalPenerima,
@@ -269,12 +238,10 @@ const emit = defineEmits<{
 }>();
 
 const model = defineModel<SdeMasalPenerima[]>({ default: () => [] });
-const recipientType = defineModel<'EXTERNAL' | 'INTERNAL'>('recipientType', {
-  default: 'EXTERNAL',
-});
 
 const { downloadTemplate, parseExcelLocal, prepareMassAttachments } = useSdeMasal();
 const { apiGet } = useApi();
+const { data: eksternalDirectory, fetchTertujuEksternal } = useTertujuEksternal();
 const internalDirectory = ref<any[]>([]);
 const internalDirectoryLoaded = ref(false);
 
@@ -309,37 +276,9 @@ onMounted(() => {
 });
 
 const templateColumns = computed(() => {
-  if (recipientType.value === 'INTERNAL') {
-    return [
-      'perihal',
-      'id karyawan (e-nik/persnum)',
-      'tembusan_internal',
-      'tembusan_eksternal',
-      'email_cc',
-      'email_bcc',
-      'lampiran',
-      ...(props.dynamicVariables || []).filter(
-        (value) =>
-          ![
-            'perihal',
-            'tertuju',
-            'id karyawan (e-nik/persnum)',
-            'id_karyawan',
-            'persnum',
-            'tembusan',
-            'tembusan_internal',
-            'tembusan_eksternal',
-            'email',
-            'email_tertuju',
-            'email_cc',
-            'email_bcc',
-          ].includes(value.toLowerCase())
-      ),
-    ];
-  }
   return [
     'perihal',
-    'tertuju',
+    'id_tertuju',
     'tembusan_internal',
     'tembusan_eksternal',
     'email_tertuju',
@@ -351,6 +290,7 @@ const templateColumns = computed(() => {
         ![
           'perihal',
           'tertuju',
+          'id_tertuju',
           'tembusan',
           'tembusan_internal',
           'tembusan_eksternal',
@@ -412,36 +352,20 @@ const parseFile = async (file: File) => {
   parsing.value = true;
   parseError.value = null;
   try {
-    const result = await parseExcelLocal(file, templateColumns.value, recipientType.value);
+    const result = await parseExcelLocal(file, templateColumns.value);
     const mapped = result.map((item) => {
       const perihal = item.perihal || props.defaultPerihal || '';
       const tertuju = item.tertuju || props.defaultTertuju || '';
-      if (recipientType.value === 'INTERNAL') {
-        return {
-          ...item,
-          recipientType: 'INTERNAL' as const,
-          employeeIdInput: item.employeeIdInput || '',
-          perihal,
-          tertuju: '',
-          isValid: Boolean(perihal && item.employeeIdInput) && !item.validationMessage?.startsWith('Template Excel tidak sesuai'),
-          validationMessage: item.validationMessage || (item.employeeIdInput ? (!perihal ? 'Perihal wajib diisi' : undefined) : 'ID Karyawan (e-NIK/Persnum) wajib diisi'),
-        };
-      }
       return {
         ...item,
-        recipientType: 'EXTERNAL' as const,
         perihal,
         tertuju,
-        isValid: Boolean(perihal && tertuju) && !item.validationMessage?.startsWith('Template Excel tidak sesuai'),
-        validationMessage: Boolean(perihal && tertuju) ? undefined : 'Perihal dan tertuju wajib diisi',
+        isValid: Boolean(perihal && (item.recipientIdInput || tertuju)) && !item.validationMessage?.startsWith('Template Excel tidak sesuai'),
+        validationMessage: item.validationMessage || (!perihal ? 'Perihal wajib diisi' : !(item.recipientIdInput || tertuju) ? 'ID tertuju wajib diisi' : undefined),
       };
     });
-    if (recipientType.value === 'INTERNAL') {
-      await ensureInternalDirectory();
-      model.value = resolveInternalRows(mapped);
-    } else {
-      model.value = mapped;
-    }
+    await ensureRecipientDirectories();
+    model.value = resolveRecipientRows(mapped);
     attachmentPreview.value = null;
     attachmentConfirmed.value = false;
     updateAttachmentReadiness();
@@ -463,34 +387,69 @@ const normalizeEmployeeId = (value: unknown) => {
   return normalized;
 };
 
-const ensureInternalDirectory = async () => {
-  if (internalDirectoryLoaded.value) return;
-  const response: any = await apiGet(
-    `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`,
-    {},
-    { skipCache: true }
-  );
-  internalDirectory.value = response?.data?.barisData || response?.barisData || [];
-  internalDirectoryLoaded.value = true;
-  if (!internalDirectory.value.length) {
-    throw new Error('Direktori karyawan internal kosong atau belum tersedia.');
+const ensureRecipientDirectories = async () => {
+  if (!internalDirectoryLoaded.value) {
+    const response: any = await apiGet(
+      `/org-data/getdata?tgl=${new Date().toISOString().slice(0, 10)}`,
+      {},
+      { skipCache: true }
+    );
+    internalDirectory.value = response?.data?.barisData || response?.barisData || [];
+    internalDirectoryLoaded.value = true;
   }
+  if (!eksternalDirectory.value.length) await fetchTertujuEksternal();
 };
 
-const resolveInternalRows = (rows: SdeMasalPenerima[]) => {
+const normalizeCode = (value: unknown) => String(value ?? '').trim().replace(/^0+/, '').toLowerCase();
+
+const resolveRecipientRows = (rows: SdeMasalPenerima[]) => {
   const seen = new Set<string>();
   return rows.map((item) => {
     if (item.validationMessage?.startsWith('Template Excel tidak sesuai')) {
       return { ...item, isValid: false };
     }
-    const id = normalizeEmployeeId(item.employeeIdInput);
-    if (!id) return { ...item, isValid: false, validationMessage: 'ID Karyawan (e-NIK/Persnum) wajib diisi' };
+    const id = normalizeEmployeeId(item.recipientIdInput || item.idTertuju || item.tertuju);
+    if (!id) return { ...item, isValid: false, validationMessage: 'ID tertuju wajib diisi' };
+    // Nilai numerik pada kolom tertuju merupakan ID, bukan nama bebas. Jika
+    // tidak cocok dengan direktori, tandai invalid agar tidak salah dianggap
+    // sebagai penerima eksternal legacy.
+    const strictId = Boolean(item.recipientIdInput || item.idTertuju) || /^\d+$/.test(id);
+    const externalMatches = eksternalDirectory.value.filter((external) =>
+      (String(external.id || '').toLowerCase() === id.toLowerCase()) ||
+      (normalizeCode(external.kode) === normalizeCode(id))
+    );
     const matches = internalDirectory.value.filter((position) =>
-      [position?.persnum_person, position?.persnum, position?.e_nik, position?.enik]
+      [position?.persnum_person, position?.persnum, position?.e_nik, position?.enik, position?.eNik]
         .some((candidate) => normalizeEmployeeId(candidate) === id)
     );
-    if (!matches.length) {
-      return { ...item, isValid: false, validationMessage: `ID karyawan "${id}" tidak ditemukan di direktori` };
+    if (externalMatches.length && matches.length) {
+      return { ...item, isValid: false, validationMessage: `ID "${id}" cocok sebagai tertuju eksternal dan karyawan internal; periksa ID yang dimasukkan` };
+    }
+    if (externalMatches.length > 1) {
+      return { ...item, isValid: false, validationMessage: `ID tertuju eksternal "${id}" cocok ke lebih dari satu data` };
+    }
+    if (!externalMatches.length && !matches.length) {
+      if (!strictId) {
+        return {
+          ...item,
+          recipientType: 'EXTERNAL' as const,
+          isValid: Boolean(item.perihal?.trim()),
+          validationMessage: item.perihal?.trim() ? undefined : 'Perihal wajib diisi',
+        };
+      }
+      return { ...item, isValid: false, validationMessage: `ID tertuju "${id}" tidak ditemukan sebagai eksternal maupun karyawan internal` };
+    }
+    if (externalMatches.length === 1) {
+      const external = externalMatches[0];
+      return {
+        ...item,
+        recipientType: 'EXTERNAL' as const,
+        recipientIdInput: id,
+        idTertuju: external.id || external.kode || id,
+        tertuju: external.nama || external.kode || id,
+        isValid: Boolean(item.perihal?.trim()),
+        validationMessage: item.perihal?.trim() ? undefined : 'Perihal wajib diisi',
+      };
     }
     const employeeIds = new Set(matches.map((position) => normalizeEmployeeId(position?.persnum_person ?? position?.persnum)).filter(Boolean));
     if (employeeIds.size !== 1) {
@@ -512,10 +471,11 @@ const resolveInternalRows = (rows: SdeMasalPenerima[]) => {
     if (!item.perihal?.trim()) {
       return { ...item, isValid: false, validationMessage: 'Perihal wajib diisi' };
     }
-    const display = `${employeeName} — ${employeePositionText} — ${employeeOrganizationText}`;
+    const display = employeeName;
     return {
       ...item,
       recipientType: 'INTERNAL' as const,
+      recipientIdInput: id,
       employeeIdInput: id,
       employeeId,
       employeePersnum: normalizeEmployeeId(position?.persnum_person ?? position?.persnum) || employeeId,
@@ -530,7 +490,7 @@ const resolveInternalRows = (rows: SdeMasalPenerima[]) => {
       variables: {
         ...item.variables,
         tertuju: display,
-        nama: employeeName,
+        nama: item.variables?.nama || employeeName,
         jabatan: employeePositionText,
         unit_kerja: employeeOrganizationText,
         id_karyawan: employeeId,
@@ -541,12 +501,6 @@ const resolveInternalRows = (rows: SdeMasalPenerima[]) => {
     };
   });
 };
-
-watch(recipientType, () => {
-  if (selectedFile.value && penerimaList.value.length === 0) {
-    parseFile(selectedFile.value);
-  }
-});
 
 const normalizeAttachmentName = (value: unknown) => String(value ?? '').trim().toLowerCase();
 
@@ -716,9 +670,7 @@ const handleDownloadDynamicTemplate = async () => {
   const workbook = XLSX.utils.book_new();
   const defaults = columns.map((column) => column === 'perihal'
     ? props.defaultPerihal || ''
-    : column === 'tertuju'
-      ? props.defaultTertuju || ''
-      : '');
+    : '');
   const dataSheet = XLSX.utils.aoa_to_sheet([columns, defaults]);
   const mappingSheet = XLSX.utils.aoa_to_sheet([
     ['Kolom Excel', 'Variabel Konten'],

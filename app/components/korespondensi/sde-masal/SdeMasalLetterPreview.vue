@@ -160,6 +160,7 @@ const recipientCompanyName = computed(() => {
 const penerimaLabel = computed(() => {
   const p = selectedPenerima.value;
   if (!p) return '[Jabatan Penerima]';
+  if (p.recipientType === 'INTERNAL') return p.employeeName || p.tertuju || p.nama || '-';
   return p.jabatanPenerima || recipientCompanyName.value || p.idTertuju || p.tertuju || `${p.nama || ''}${p.nama && p.jabatan ? ' - ' : ''}${p.jabatan || ''}` || '[Jabatan Penerima]';
 });
 

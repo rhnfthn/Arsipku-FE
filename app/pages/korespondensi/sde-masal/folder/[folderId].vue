@@ -49,9 +49,9 @@
             <p class="w-full text-sm capitalize text-gray-900 dark:text-white sm:ml-6">{{ folder.sifat || 'biasa' }}</p>
           </div>
           <div class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-0">
-            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Jenis Penerima</span>
+            <span class="w-full shrink-0 text-sm text-gray-500 dark:text-gray-400 sm:w-40">Penerima</span>
             <p class="w-full text-sm text-gray-900 dark:text-white sm:ml-6">
-              {{ folder.recipientType === 'INTERNAL' ? 'Karyawan Internal' : 'Tertuju Eksternal' }}
+              {{ recipientSummary }}
             </p>
           </div>
         </div>
@@ -225,7 +225,7 @@
             Batal
           </NuxtLink>
           <UButton
-            :label="folder.recipientType === 'INTERNAL' ? 'Kirim ke Kotak Masuk' : 'Kirim Semua Email'"
+            :label="sendActionLabel"
             icon="i-lucide-send"
             color="primary"
             :loading="emailSending"
@@ -375,15 +375,13 @@
 
     <UModal
       v-model:open="showEmailModal"
-      :title="folder?.recipientType === 'INTERNAL' ? 'Kirim ke Kotak Masuk' : 'Kirim Semua Email'"
+      :title="sendActionLabel"
       :ui="{ overlay: 'bg-black/40 backdrop-blur-[2px]' }"
     >
       <template #body>
         <div class="space-y-3">
           <p class="text-sm text-gray-600 dark:text-gray-300">
-            {{ folder?.recipientType === 'INTERNAL'
-              ? 'Periksa penerima internal setiap naskah. Naskah akan muncul di Kotak Masuk penerima setelah tombol Kirim ditekan.'
-              : 'Periksa tujuan email setiap naskah. Email baru dikirim setelah tombol Kirim ditekan.' }}
+            Periksa tujuan setiap naskah. Penerima internal akan menerima naskah di Kotak Masuk, sedangkan penerima eksternal dikirimi email setelah tombol Kirim ditekan.
           </p>
           <div class="max-h-80 space-y-2 overflow-y-auto">
             <div
@@ -404,7 +402,7 @@
                     {{ item.nomor || item.perihal || '-' }}
                   </span>
                   <span v-if="!emailExpanded[item.id]" class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">
-                    {{ folder?.recipientType === 'INTERNAL'
+                    {{ (item.recipient?.recipientType || folder?.recipientType) === 'INTERNAL'
                       ? item.recipient?.employeeName || item.penerima || 'Penerima internal belum tersedia'
                       : emailDrafts[item.id]?.to || 'Email penerima belum diisi' }}
                   </span>
@@ -415,7 +413,7 @@
                 />
               </button>
               <div v-if="emailExpanded[item.id]" class="space-y-2 border-t border-gray-100 px-3 pb-3 pt-3 dark:border-gray-800">
-                <div v-if="folder?.recipientType === 'INTERNAL'" class="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+                <div v-if="(item.recipient?.recipientType || folder?.recipientType) === 'INTERNAL'" class="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
                   <p class="font-medium">{{ item.recipient?.employeeName || item.penerima || '-' }}</p>
                   <p class="mt-1 text-xs">{{ item.recipient?.employeePositionText || '-' }} · {{ item.recipient?.employeeOrganizationText || '-' }}</p>
                   <p class="mt-1 text-xs text-blue-700 dark:text-blue-300">ID Karyawan: {{ item.recipient?.employeeIdInput || item.recipient?.employeePersnum || '-' }}</p>
@@ -452,7 +450,7 @@
             @click="showEmailModal = false"
           />
           <UButton
-            :label="folder?.recipientType === 'INTERNAL' ? 'Kirim' : 'Kirim Email'"
+            :label="sendActionLabel"
             icon="i-lucide-send"
             color="primary"
             :loading="emailSending"
@@ -615,23 +613,41 @@ const qrDisabled = ref(true);
 const basahDisabled = ref(true);
 const selectedSendType = ref<'digsig' | 'qr_only' | 'ttd_basah'>('qr_only');
 const tteMode = ref<'bsre_direct' | 'portal'>('bsre_direct');
-const isInternalRecipient = computed(() => folder.value?.recipientType === 'INTERNAL');
+const recipientKind = (item: SdeMasalFolderItem) =>
+  item.recipient?.recipientType || folder.value?.recipientType || 'EXTERNAL';
+const hasInternalRecipients = computed(() =>
+  items.value.some((item) => recipientKind(item) === 'INTERNAL'),
+);
+const hasExternalRecipients = computed(() =>
+  items.value.some((item) => recipientKind(item) !== 'INTERNAL'),
+);
+const recipientSummary = computed(() => {
+  if (hasInternalRecipients.value && hasExternalRecipients.value) return 'Internal dan eksternal';
+  if (hasInternalRecipients.value) return 'Karyawan internal';
+  return 'Tertuju eksternal';
+});
+const sendActionLabel = computed(() =>
+  hasInternalRecipients.value && hasExternalRecipients.value
+    ? 'Kirim Semua Naskah'
+    : hasInternalRecipients.value
+      ? 'Kirim ke Kotak Masuk'
+      : 'Kirim Semua Email',
+);
 const emailPreviewRows = computed(() =>
   items.value.filter((item) => {
     if (!item.naskahId || item.statusVerifikasi !== 'TERKIRIM') return false;
-    if (!isInternalRecipient.value) return true;
-    return !String((item.recipient as any)?.internalInboxSentAt || '').trim();
+    const isInternal = recipientKind(item) === 'INTERNAL';
+    const sentAt = isInternal
+      ? item.recipient?.internalInboxSentAt
+      : item.recipient?.emailSentAt;
+    return !String(sentAt || '').trim();
   }),
 );
 const allSignedItems = computed(
   () => items.value.length > 0 && items.value.every((item) => item.statusVerifikasi === 'TERKIRIM'),
 );
 const hasUnsentEmail = computed(() =>
-  emailPreviewRows.value.some((item) =>
-    !String(
-      (item.recipient as any)?.[isInternalRecipient.value ? 'internalInboxSentAt' : 'emailSentAt'] || '',
-    ).trim(),
-  ),
+  emailPreviewRows.value.length > 0,
 );
 // Kompatibilitas untuk folder lama yang sudah tersimpan sebagai TERKIRIM
 // sebelum metadata emailSentAt diperkenalkan.
@@ -652,17 +668,17 @@ const isSignerAwaiting = computed(
 );
 const currentPersnum = computed(() => String(user.value?.persnum || '').trim());
 const currentPosition = computed(() => String(user.value?.position || user.value?.position_id || '').trim());
-const isFolderCreator = computed(
+const isFolderSender = computed(
   () =>
     !!folder.value &&
     !!currentPosition.value &&
-    String(folder.value.createdBy || '') === currentPosition.value,
+    String(folder.value.pengirimId || '') === currentPosition.value,
 );
 const isEmailReady = computed(
   () =>
     !!folder.value &&
     effectiveFolderStatus.value === 'SIAP_KIRIM' &&
-    isFolderCreator.value &&
+    isFolderSender.value &&
     emailPreviewRows.value.length > 0,
 );
 const isVerifierAwaiting = computed(() => {
@@ -752,7 +768,7 @@ const openEmailModal = () => {
     emailPreviewRows.value.map((item) => [
       item.id,
       {
-        to: isInternalRecipient.value
+        to: recipientKind(item) === 'INTERNAL'
           ? item.recipient?.employeeName || item.penerima || ''
           : item.emailTertuju || '',
         cc: item.emailCc || '',
@@ -778,7 +794,10 @@ const sendAllEmails = async () => {
     cc: emailDrafts.value[item.id]?.cc?.trim() || '',
     bcc: emailDrafts.value[item.id]?.bcc?.trim() || '',
   }));
-  if (!isInternalRecipient.value && emailOverrides.some((item) => !item.to)) {
+  if (emailPreviewRows.value.some((row) =>
+    recipientKind(row) !== 'INTERNAL' &&
+    !emailOverrides.find((override) => override.itemId === row.id)?.to,
+  )) {
     toast.add({ title: 'Email belum lengkap', description: 'Email penerima wajib diisi untuk setiap naskah.', color: 'warning' });
     return;
   }
@@ -786,17 +805,13 @@ const sendAllEmails = async () => {
   try {
     const result = await sendFolderEmails(
       folder.value.id,
-      isInternalRecipient.value ? [] : emailOverrides,
+      emailOverrides,
     );
     showEmailModal.value = false;
     toast.add({
-      title: isInternalRecipient.value
-        ? Number(result?.failed || 0) > 0
-          ? 'Sebagian naskah belum terkirim'
-          : 'Berhasil dikirim ke Kotak Masuk'
-        : Number(result?.failed || 0) > 0
-          ? 'Sebagian email belum terkirim'
-          : 'Email berhasil dikirim',
+      title: Number(result?.failed || 0) > 0
+        ? 'Sebagian naskah belum terkirim'
+        : 'Semua naskah berhasil dikirim',
       description: `${Number(result?.sent || 0)} berhasil, ${Number(result?.skipped || 0)} dilewati, ${Number(result?.failed || 0)} gagal.`,
       color: Number(result?.failed || 0) > 0 ? 'warning' : 'success',
     });
@@ -804,7 +819,7 @@ const sendAllEmails = async () => {
   } catch (error: any) {
     const message = error?.response?.data?.message || error?.message || 'Gagal mengirim.';
     toast.add({
-      title: isInternalRecipient.value ? 'Pengiriman ke Kotak Masuk gagal' : 'Pengiriman email gagal',
+      title: 'Pengiriman naskah gagal',
       description: String(message),
       color: 'error',
     });
@@ -1026,12 +1041,13 @@ const loadSignedPreview = async (item: SdeMasalFolderItem): Promise<boolean> => 
       responseType: 'blob',
     });
     const blob = new Blob([response.data], { type: 'application/pdf' });
-    if (!blob.size) return false;
+    if (!blob.size) throw new Error('File PDF final kosong.');
     currentBlobUrl = URL.createObjectURL(blob);
     pdfUrl.value = currentBlobUrl;
     return true;
   } catch (error) {
-    console.warn('Preview PDF final SDE Massal gagal, gunakan preview draft:', error);
+    console.warn('Preview PDF final SDE Massal gagal:', error);
+    pdfError.value = 'Gagal memuat PDF final. Silakan buka kembali preview dokumen.';
     return false;
   } finally {
     isLoadingPdf.value = false;
@@ -1108,9 +1124,12 @@ const generatePdfFor = async (idx: number) => {
   const item = items.value[idx];
   if (!item || !folder.value) return;
 
-  // Item yang sudah berhasil ditandatangani harus memakai preview PDF final
-  // agar QR asli tetap tampil, bukan QR placeholder PREVIEW.
-  if (await loadSignedPreview(item)) return;
+  // Setelah finalisasi, gunakan file final yang sama dengan hasil tanda
+  // tangan. Jika gagal dimuat, tampilkan error dari preview final.
+  if (item.naskahId && item.finalPdf) {
+    await loadSignedPreview(item);
+    return;
+  }
 
   isLoadingPdf.value = true;
   revokePdf();
@@ -1135,10 +1154,10 @@ const generatePdfFor = async (idx: number) => {
     formData.append('klasifikasi', previewKonsep.value?.klasifikasiName?.split(' - ')[0] || '');
     formData.append('perihal', item.perihal || previewKonsep.value?.perihal || '');
     formData.append('sifat', previewKonsep.value?.sifat || 'biasa');
-    formData.append(
-      'penerima',
-      JSON.stringify([getRecipientCompanyName(item) || item.penerima || ''])
-    );
+    const pdfRecipientName = recipientKind(item) === 'INTERNAL'
+      ? recipient.employeeName || recipient.variables?.nama || recipient.nama || recipient.tertuju || item.penerima || ''
+      : getRecipientCompanyName(item) || item.penerima || '';
+    formData.append('penerima', JSON.stringify(pdfRecipientName ? [pdfRecipientName] : []));
     formData.append('tembusan_eksternal', recipient.tembusanEksternal || '');
     formData.append('tembusan_internal', recipient.tembusanInternal || '');
     formData.append('tembusan', JSON.stringify(recipient.tembusan ? [recipient.tembusan] : []));

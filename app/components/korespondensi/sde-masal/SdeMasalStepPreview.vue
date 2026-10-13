@@ -128,6 +128,7 @@
         </template>
         <template #cell-email="{ row }">
           <div class="flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-300">
+            <span v-if="row.recipientType === 'INTERNAL'" class="text-blue-700 dark:text-blue-300">Kotak Masuk Internal</span>
             <span v-if="row.emailTertuju" class="truncate" :title="row.emailTertuju">
               <span class="text-gray-400 dark:text-gray-500">To:</span> {{ row.emailTertuju }}
             </span>
@@ -137,7 +138,7 @@
             <span v-if="row.emailBcc" class="truncate" :title="row.emailBcc">
               <span class="text-gray-400 dark:text-gray-500">BCC:</span> {{ row.emailBcc }}
             </span>
-            <span v-if="!row.emailTertuju && !row.emailCc && !row.emailBcc" class="text-gray-300 dark:text-gray-600">-</span>
+            <span v-if="row.recipientType !== 'INTERNAL' && !row.emailTertuju && !row.emailCc && !row.emailBcc" class="text-gray-300 dark:text-gray-600">-</span>
           </div>
         </template>
         <template #cell-status="{ row }">
@@ -169,7 +170,7 @@
               @click="openPreview(index)"
             />
             <UButton
-              v-if="!isInternalRecipient"
+              v-if="row.recipientType !== 'INTERNAL'"
               icon="i-lucide-mail"
               color="neutral"
               variant="soft"
@@ -528,7 +529,6 @@ const props = defineProps<{
   template: SdeMasalTemplate | null;
   folderId: string | null;
   generating: boolean;
-  recipientType?: 'EXTERNAL' | 'INTERNAL';
 }>();
 
 const emit = defineEmits<{
@@ -702,7 +702,11 @@ const generatePdfFor = async (idx: number) => {
     formData.append('sifat', props.konsep?.sifat || 'biasa');
     formData.append(
       'penerima',
-      JSON.stringify([getRecipientCompanyName(previewItem) || previewItem.tertuju || previewItem.idTertuju || ''])
+      JSON.stringify([
+        previewItem.recipientType === 'INTERNAL'
+          ? previewItem.employeeName || previewItem.tertuju || ''
+          : getRecipientCompanyName(previewItem) || previewItem.tertuju || previewItem.idTertuju || '',
+      ])
     );
     // Tembusan: kirim kode eksternal & internal untuk di-resolve backend
     // (urutan: eksternal dulu, lalu internal) → di-hardcode di kanvas PDF.
@@ -805,7 +809,7 @@ const findTertujuEksternal = (value: string | number | null | undefined) => {
 };
 
 const getRecipientCompanyName = (item: SdeMasalPenerima) =>
-  props.recipientType === 'INTERNAL' || item.recipientType === 'INTERNAL'
+  item.recipientType === 'INTERNAL'
     ? null
     : findTertujuEksternal(item.idTertuju || item.tertuju)?.nama || null;
 
@@ -867,8 +871,8 @@ const getTertujuEksternal = (penerima: SdeMasalPenerima | Record<string, any>) =
 };
 
 const getPenerimaName = (penerima: SdeMasalPenerima | Record<string, any>) =>
-  props.recipientType === 'INTERNAL' || penerima.recipientType === 'INTERNAL'
-    ? penerima.tertuju || penerima.employeeName || '-'
+  penerima.recipientType === 'INTERNAL'
+    ? penerima.employeeName || penerima.tertuju || '-'
     : getTertujuEksternal(penerima)?.nama || penerima.tertuju || penerima.idTertuju || '-';
 
 // Status verifikasi label + badge
@@ -893,11 +897,10 @@ const statusVerifikasiBadge = (status?: string) =>
   })[status || 'MENUNGGU'] || 'px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium';
 
 // Kolom DataTable
-const isInternalRecipient = computed(() => props.recipientType === 'INTERNAL');
 const columns = computed(() => [
   { key: 'perihal', label: 'Perihal' },
   { key: 'tertuju', label: 'Tertuju' },
-  ...(!isInternalRecipient.value ? [{ key: 'email', label: 'Email', headerClass: 'text-center' }] : []),
+  { key: 'email', label: 'Email / Pengiriman', headerClass: 'text-center' },
   { key: 'status', label: 'Status Verifikasi', headerClass: 'text-center', class: 'text-center' },
   { key: 'lampiran', label: 'Lampiran', headerClass: 'text-center', class: 'text-center' },
   { key: 'aksi', label: 'Aksi', headerClass: 'text-center', class: 'text-center' },
